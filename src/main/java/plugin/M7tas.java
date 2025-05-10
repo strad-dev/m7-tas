@@ -1,0 +1,520 @@
+package plugin;
+
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mojang.datafixers.util.Pair;
+import instructions.*;
+import net.minecraft.network.NetworkManager;
+import net.minecraft.network.protocol.EnumProtocolDirection;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.a;
+import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
+import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
+import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.*;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.phys.Vec3D;
+import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.v1_21_R3.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_21_R3.profile.CraftPlayerProfile;
+import org.bukkit.entity.Player;
+import org.bukkit.event.entity.CreatureSpawnEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+
+public final class M7tas extends JavaPlugin implements CommandExecutor {
+	/**
+	 * A mapping between unique role identifiers and their associated Player instances.
+	 * This map is used to manage and track Player entities (either real or fake) within the
+	 * context of the plugin's functionality. It facilitates operations such as spawning,
+	 * teleporting, or assigning specific actions to these players based on their role.
+	 * <p>
+	 * Key:
+	 * - String: Represents the role or identifier associated with a specific Player.
+	 * <p>
+	 * Value:
+	 * - Player: The Player instance associated with the given role.
+	 * <p>
+	 * This map is primarily managed through methods within the M7tas class, and it is
+	 * updated dynamically as players (real or fake) are spawned or removed.
+	 */
+	private final Map<String, Player> actorMap = new HashMap<>();
+
+	/**
+	 * A map containing associations between classes and their corresponding {@link Player} objects.
+	 * This map is primarily used to manage and track fake players spawned into the world.
+	 * The keys in this map represent the class each fake player is suppose dto play
+	 * while the values are instances of {@link Player} representing the fake players.
+	 * <p>
+	 * The map is cleared and repopulated during the process of spawning all fake players,
+	 * ensuring synchronization with the current set of active NPCs.
+	 */
+	private final Map<String, Player> npcMap = new HashMap<>();
+
+	/**
+	 * A map that associates a Player instance with their respective role designation in the game.
+	 * The keys represent player entities, while the values represent the assigned role as a string.
+	 * This map is utilized to define and reference the roles of players, particularly in scenarios
+	 * involving the management and behavior customization of fake player entities in the system.
+	 * <p>
+	 * The roles assigned can be used to dictate specific behaviors, tasks, or attributes for each
+	 * player entity in the context of the plugin.
+	 * <p>
+	 * This map is cleared and re-initialized during operations like spawning fake players
+	 * (e.g., {@code spawnAllFakes}) and when disabling the plugin.
+	 * <p>
+	 * This map should <strong>ONLY BE USED WITH REAL PLAYERS</strong>!
+	 */
+	private final Map<Player, String> playerRoles = new HashMap<>();
+
+	/**
+	 * A list used to store fake player entities created and managed by the plugin.
+	 * <p>
+	 * These players are non-persistent and act as simulated player entities in the world.
+	 * They can be spawned using the {@code spawnFakePlayer} method and are handled during
+	 * plugin enable and disable events. The list is cleared when the plugin is disabled
+	 * and populated when calling {@code spawnAllFakes}.
+	 */
+	private final List<Player> fakePlayers = new ArrayList<>();
+
+	private static Plugin plugin;
+
+	private boolean fakeTickerStarted = false;
+	private Method APPLY_GRAVITY;
+
+	private static final Map<String, String[]> SKIN_DATA = Map.of("Archer", new String[]{"fb/7dBo3U4jZ1WUPvBfVnPrFoFk34pyZlNAOjfqk8E8FDzGuD+TOAM1D1WNe4aOdQYPAz7oqiMsQ7X1EeipUHrWQM1Cn7+XTs2mNt8jZ5PHGwq+BjwiLHmiBzn4zrXqMXyqP3+YN/MbjCR4dWafIilJft3oSAHEi2cpqV8EL78fZxYeDkVr3BHhonQDsjJZo9AGM9/bTip7FSrj/aQa6zvUYnkOI2HmUbT+xs2+3yOk0Hmk2EdJVcDhC1r9fbcqKZaE726RE4DdQt0toBEb6NVihWKBNvmmSiLkgm+xzlPYVkjpu/BvZHimEFFjGfcDYUDcx2EgRhjy0eYcYFvxSoLQJYHHNQuHJRfddYG63GdiZ6Kke21Q/xlVa9GtVRDnWB14UgkGDsvfs11PYEUB9yi87MsYCw4oa9nlTe8kNpjzYFEpVqloym7rZTYTReQmCwQUoGrsKSaI/Asint2SLIPwbJVMV3vO4Ye6UyoFaGS5aBCUVoiLFuJGy2warsWvTHeYvUeaOXWoBkEJA+mzllMbwQ1BEV5rWjsGXx0aSWH5uVslXWDLvj5lX/hA2qWE4Xp/o81AbdbUIOb/A6PZugRy/TDHcNr+hIwlVZGTOcPg6qarQLKJtIenHux5GycZZuQDRMhDak1c3aQvMuqZK2Vo96n/WL45c9hZ2T8kTMKU=", "ewogICJ0aW1lc3RhbXAiIDogMTY2MDMzMjQ4MDAzMCwKICAicHJvZmlsZUlkIiA6ICIzOWEzOTMzZWE4MjU0OGU3ODQwNzQ1YzBjNGY3MjU2ZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJkZW1pbmVjcmFmdGVybG9sIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzM2NWQwYTZhNjliNjk3MDZkZmEyZmU4MTMyYTZjNjRjYTM1OTJjZDY2MWZhNzJlYTA0MzQxZTgyOWU1NGFhMjAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ=="}, "Berserk", new String[]{"Xt20RWBBt0qYZCRuFnorgjlvjPDQHAOqqRQCzSXIz37rSQHqbwkPms6VV0W41GX7cNBvucavv4/uB9SNWRG0k1njpDqafV7w60rWgupj/hbj9HAeUkjj6UOgzQsPeyCyiTk4YOsFwFvqCjA2H9orL6yniz+4gq9IHEMDY9JF4whEhYNa9P4oXemL6it3orbXKqPNYuAoDD/xLkbhIqTaMTzkfzRjGeUvHeu/XMWzJ5E8U2V2tBh6Dp0l54YdaEZsq48IjyGixFxCjRSQZOwVfO7O+ErLpTa+Qe7Tc43jbsfQY3iJ78Wtw/MHw0TR7j18mLGlHF2WTvCA1nItFIhPGEsYTKw4XJvV5E0s2PFrMKdzyTMPU4uQt8i2lIcWsADooqSLdrP9Rx8Xly4qAbIK0vTZ09w1HYI37YHdWFv+vtuEdb2GIuU+xt7aAWRh70y4E53/+RqYtbsWxsxX8Wp6fNP2X7/hIGKKeDPNwzGTe9UIMdOjeyXQIV2+fPc8i43OYA/Q0v6YLyEqBGj29v3dFrcNlpnZK3vq2KpXvwnOJ8KagB+59TSd9Dt/wJt4W9Pk700vmdvm4ncgxBKRXyrAT2K6yIytUDODRXXjnOEiqLm27+AoDK04BmTX8owfjJl5nCYkeBsDwAkIJp8QzehHoOiOfYUsvyQbTZKbPjgpcjI=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2ODM3NDMzNywKICAicHJvZmlsZUlkIiA6ICJkZmY3OWM0MDZhZWI0NThhODZjZjY3ODllMTgzMTMxNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJBc2FwSWNleSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zYTFiZTU4MTRmZGRmNzcyYmEwM2QzNzliMDBiOWJjYjM0NDI3YTlkZGQ5NjcyOWQ2YmZiNGY0NDAzOWE1YWYwIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0sCiAgICAiQ0FQRSIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjM0MGMwZTAzZGQyNGExMWIxNWE4YjMzYzJhN2U5ZTMyYWJiMjA1MWIyNDgxZDBiYTdkZWZkNjM1Y2E3YTkzMyIKICAgIH0KICB9Cn0="}, "Healer", new String[]{"q6hGMu81OOF789B3u/t3bLv9uDnYgXetWXp1xaMaSofRnD12c/ylUKFIEyOL9Wi5a3XAV9ki2fhVFu6sMD12jHVZeAfcCPqIeSJe4xxpgcw+RsI3aYOEVB5PD6QGc2zEuuElwBYs08lgZ841OecTnuCIitrmLRl46PpNB5rOyh4d2PrGSYtpScdThJYMv13dxJKNmdd1mZwCKZBCBWdpGMBO47aJ9WXZuavghvt99QqzrPzELf7I3M/CuiZMJCMuZrMMs5rDg21hWSFsddheVX1aJPuMYQQH0ECJhmpuNBJUrlqNVyvziHYVn6LBFgw/jZVJqn/m7upVvlhjUH7d/otyYz0DjBYyrc6uee49DSZySOOipDF0GsKDQzZyphx5NyT3b2qiHjMzTHMTvxlMTbHYbjpynqj24wCkuIvBp2TpgMP3+aWlqrwWWweFbgTNpvWrNhi5t0feyzIpNjp2UbJRHWTjnZC2NEb2yW9qQDT8VtD9xaFnWahwMGuXcmB1TNIEVRwMTVMxjbLESW38UUf+a3sNuFIqTB8F7jNY57bMJWV8qKHVwhPz6u8dDb7ActPHEP0VB4Y1SXzDVZ9kY2Cew1OfWdGNlyeyGUcNYXoG9IQKaTJ8DgJW5lK9nuPZq9Y+2e7Pepin/CadaKmLDdgJpKViGH3qA2+naCJj4dg=", "ewogICJ0aW1lc3RhbXAiIDogMTczNjQ3MTMwMjU5MiwKICAicHJvZmlsZUlkIiA6ICJiNzRlYjViMTc5OTc0YzZjODk3ZTgwNTM4Y2M1NmYwMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJQYW5kYUNoYW4yOCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82OTMzODhjODdlMjBlN2VjNzM4YjgxNWIwYTc4ZTRlNWRkODdmNTZiZDcyMjM5NmIwYTU2MTE3OTExOTgwMjRiIgogICAgfQogIH0KfQ=="}, "Mage", new String[]{"rZA8PML/9GK5A7lyrS4lbSjySvOoMJoPMDk5fAp8sazpWzaomd8aMK3t1u15RA5m+/Opf4m5X88EPJHW0/mBXHWOjT/0G2W4NiOzCjv/qm1hhVZk7S8+Al6nfxWiZBpWUJ8neoFdNdrtDHHeQX0LtHlwjXJ6kQwXExtnv7+HUaZ7AIpGnFSIFrNvnPr8cZ6JKL9r8F8Qv6ymWPibKhqPOaZviJIX++lDeQ7OASQosimVFDei7/GxTnBfvyenNtBbtX4XjlfOkhOohPL/TVBgjtGOu/NGnh8xAd+UdaEAIiSU9tkBOV1uujRkCtMvKGL6ctaYqJYkE+Aepvf4p/Q1M9i0wvudyLhOFqvu+C5/Z9O7zMNt54nLIHMYmWoaHJzIAQnCWvIuewABfOrUgbjITBTxfc33oGeTFgEjMGEhqXJw5EL7zbQXzJMNuzYSTZ3/GyONp09B9G88obHvrj6nzo8yYHLA9L52HExVMOYuSByCw4MByy08tUrBnzf3o6jIdp1Ji/SYKEapg3wF9PqPkyXI3nV6nbm+qQVX2UmNV78xw6gq35hqa4AeAa2S5jWLhYPV+TopfmN9n1AZ9/EBBFNfA58gsJCmQxc1aKxmqBDuSX59KcAf454onhSDCVrWbkzFVjyuP4KnFGQynjfMVCPhn1ueo57MWpp1ZYFJK+M=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2NzIyOTA2OSwKICAicHJvZmlsZUlkIiA6ICJjZGI5ZTljNmMwOTY0ZjU4OWM0OTM1Mzk1ZDdiODk3YyIsCiAgInByb2ZpbGVOYW1lIiA6ICJCZWV0aG92ZW5fIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZThjY2Y3YTgwZmZmZjBkN2I3Nzc3M2UzMjFkMGJkMjA4OWIxZTAwNzUzZjE3OTVmNjIwMjA3NzVhYzY1OTciCiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzIzNDBjMGUwM2RkMjRhMTFiMTVhOGIzM2MyYTdlOWUzMmFiYjIwNTFiMjQ4MWQwYmE3ZGVmZDYzNWNhN2E5MzMiCiAgICB9CiAgfQp9"}, "Tank", new String[]{"IVG0H6Xtsz4GkksjRWFihXARKK1vAgsPQ2ytytOcB1EwItw5OS25+pftk6b/40VH3+OX6RCHhbeUG4g1REWtSmpWKA9NgqYEsv1gvnRFAiWywuLrYaKGG+T0OQ48CkPA995wQo4YvnPPOzzhsF3IsjNC3v6aDCC8B9JS0iM8mK9ttEmRQnEcNLkiswrN8uo8MTfSE6/e90BJSGMnia3VjFvIM5mpe/YsYW1qguk1z+Ndn7uXBt0VnDCq3sRt0njR+MdgQMKcJGIhCRxMry9ezoGzh05DzQeWwwC9XVM0CuXi1brHYw3Mbchht20+khErLgyZNHE/XZ0D0U77lCihJ7oyImqf0XmENmlUZqC7IE73u/YhuZMRB1HaJEm374zgZ9dWV14CmaqHDMFHtFgO8wSLT3tOo24U5dHA3Ihjf9UOBJSz+IOOvG7N7i67OYmrqXqdV0pSacKODvzTd3UhxfqNWZIDMq23vC5funtDwiWT3STFo4jwn51Fu04V1iSO9SrLnbNG2kKJvbYO6P1cK5cIf9PKnIOrTCvh7OZ/pgA8ZIJgnIE/ml5AHFKL9ji7mSqYB4qv9CYaJT0yXBWRPqzng8UZ4rHCoBqdwIn+2WmUjfHdVsuI/ECU7UkU83Ol004Br4fquLj8tWAXwQZn7s90r96Vg2a1TUWyBLH60BQ=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2ODAwNzgxMywKICAicHJvZmlsZUlkIiA6ICIzYjBmNTM5MmRlNzM0YmZjYmJkOTMxYzMxYmFkODMxMCIsCiAgInByb2ZpbGVOYW1lIiA6ICJjYXRhbmRCIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2FkZTVhZjZhMzlkYjVjMDYxMjU3YTBkZDliNjA1YWQyNjBjMjFkYTNkMmZkMjhmNDM0MGIzZmU1YzgwZTM4ZDQiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ=="});
+
+	private ItemStack getCustomHead(String displayName, String identifier, String textureValue, String textureSignature) {
+		GameProfile gp = new GameProfile(UUID.randomUUID(), identifier);
+		gp.getProperties().put("textures", new Property("textures", textureValue, textureSignature));
+
+		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
+
+		ItemStack helmet = new ItemStack(Material.PLAYER_HEAD);
+		SkullMeta meta = (SkullMeta) helmet.getItemMeta();
+		assert meta != null;
+		meta.setDisplayName(displayName);
+		meta.setOwnerProfile(profile);
+		helmet.setItemMeta(meta);
+		return helmet;
+	}
+
+	public ItemStack getDiamondHead() {
+		return getCustomHead(ChatColor.RED + "Ancient Diamond Necron Head", "dNecronHead", "ewogICJ0aW1lc3RhbXAiIDogMTYxNzM5MDg5NDU4NiwKICAicHJvZmlsZUlkIiA6ICJjNWFhNTRhNmNmNTI0YmFmYmRiODUwNmUyMjRiNzViZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJOZWNyb25IYW5kbGVQTFMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOGIxMTVjZGM0NWZkODRmMjFmYmE3YWMwZjJiYzc3YmMzYjYzMDJiZTY3MDg0MmY2ZTExZjY2ZWI1NTdmMTNlZSIKICAgIH0KICB9Cn0=", "hwaaE9h0QvFmtFvk2bNyAYlPo34NvaCjX3VWPv5zaRVM8KjfqQB5sB85vlFRVwCXK/HnQS2qMJ39ZuYplxT895lIShidIVdF5UP8T6cb1svhA9TmEVKFY4pKFyhUjIhD95HvO3OoNWPlCmb9Mho4XIo3K4AavnKPbuu3/I58gQmfKI71xDq7r+DRf9Dlxc8r3mcsUrdEwTfvC2/eFszHc/vqQXNm1smH2QJVfki+AgddNndFt7qumeicVFmsk2GmPNHxjlgH0xPL0hG8WGEmH5+Fnnj/eoYSutnpDRXVPY0H/KOMIa2Prga524stPC0gYmVU9y/wviXzDmKiiAa4uPVhwd/L/DgUSIGio6NlLMyA+Uvyy02HEr3TmzQ6bPqLphSttaDaVWW8Ltd1wvz/+Hhii5tYSSm3l5cAZQAO1O/JN/FKqA7tv0v0ZWp8AS1qw0QeLrRrLKlri2Zmzj5iYv7exfAVUiYB8f95ZZOWg1FLOufSJeFsQC5S7gsnsdJsWvnwvUNQI4RDfIc59a5Hvgzr90jgMTNoBGSXyrsXpeXJb+T9R8xfSEQY5V1XwFd+3lz8XRbBUQHubxN+b9AGj5FpQ2j5oaAz+BXY2+Iq20qVvkFMeJXdTRT0VIZM4r06ml0R3SZ1Jfui4xMH9OmhR+Hz3mmMvLN+BewhmtucN28=");
+	}
+
+	public ItemStack getWitherGoggles() {
+		return getCustomHead(ChatColor.GOLD + "Necrotic Wither Goggles", "witherGoggles", "ewogICJ0aW1lc3RhbXAiIDogMTYyMzU3OTEyODk1MCwKICAicHJvZmlsZUlkIiA6ICJkMGI4MjE1OThmMTE0NzI1ODBmNmNiZTliOGUxYmU3MCIsCiAgInByb2ZpbGVOYW1lIiA6ICJqYmFydHl5IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzM3Y2ViOGYwNzU4ZTJkOGFjNDlkZTZmOTc3NjAzYzdiZmMyM2ZkODJhODU3NDgxMGE0NWY1ZTk3YzY0MzZkNzkiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==", "GE3o8T5syjzY6RzfHRSe8lEdWOpwWwn3QCh8SqYjpOUMIn6FpjfDUOknG1Ar/VgQm5gjDpkPSOCPiZCll2FSb7vyZ1syToKXC/TEBbSDtrk6yZ5EzWglh9/88HZQqcxrcQ1OZdWV3DdkuUfGAas3SHPSeCUT8DtpKpmOER1bqeNJK/se0aUGEwglOyYbj4TD+nocjoyIQG1mq8RXM1rLVMJgfG3p2gTcnqjjnTgSjb1BwqCdTEuMp348czCZNtODlpQU3uyeATPim0BViVfY9bpdlzEzwWQglkM03lw9LNhZ+CDREwLsx2I7bKPiD7AEcOHwuGmmv0+OPV4C03CM8ZnntH/TC96CuTVxF4bBV/idsTJHVndSyWzEE/ZvAPfdNjU6UGBwswHs7F6eNv3/okiJqes+dgesxBMZ/Q56KkzlMTrc0VVLQ25TI42qgkPkGPUMxg5Z1cY0qgie/hU4XzO4PIH7XOvRWrqCQy6WcESyyE+JOhtlkPiuOPsnPEwBvFYQMhKtuCPx3Ph+7YBlDkcL85b5HmBOrBZwyXQL+Q72tCaZgY2hHpNP6J5PavuQuPzEqJs9C4p6xgUAc0NZnP/KrUe7dN2/627rGK9uNc4yIU9pNxXT+YP2q4TKvT0638IGVzWSM5KLXxXRDIF3lKMLgst8dtjIjEmd5c3d7G0=");
+	}
+
+	@SuppressWarnings("unused")
+	public ItemStack getStormHelmet() {
+		return getCustomHead("§6Ancient Storm's Helmet", "stormHelmet", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjgwNzcwMTU2MSwKICAicHJvZmlsZUlkIiA6ICJjNDIzYjQwMWZiOGU0ODc3YjMzMmVmMjhiZDdlZGZmZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJSZWFjdGlvbkJyaW5lWVQiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTliYWVjNWZiNGNkOWRjNTk2ZDYxMGI2YzZiZDM4YWI5OTAxYjY4Yzk1OTQ5ZTJkNzFiOTI1MzE3MjcwZDAxMSIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "s8X+QmhjqwppG9pqW9SYQloIzPVTw3PBpMprwnx9pl9j2uNdBgJbpwhahgo3WjpXOV9aiewogO7HDqZ71fns/rkPLVBANO6mlnYS8J+J8rLkQFiinQERx4ucYtHM9atzZnG7dDv6QTK6Bvur8SwVhZIOYSj7YWN1ecrbm9RskNhiRSXVwFH/TcWdSv4z/c0zG2b+OXaD68NAwxTd8lszNl+JSWFU6dP/l8GP1EWDNz8WagfwzeOTaHU2rDztRCUXlNGeF16QdZBXgFUva3Kel6D0QSE492Q1vTt5f55xwk38Yjbw6wkv2se+arcd9sbInuxlJamev6J4FX0r1QhGpgxHDvu30O/htK7ni8Og4AWgESQg/ONo/R7GUYsysao3lV46cHGK9JBEQEG0Zlq+gQ9ajzLojLchfSMM03/V8FpyLKBsplMJuG3NNz4QLXlflWU3UpuXD7SDGgIcn4UVRlANhC/Nj2qO4DUVkMA6V3OSGFWdLe9ICMZfLPXQiGFkZd4SmJLp6dy/Z2C7DGZci7qSkTXBW8j1Zmz52dSvaNqQvb10nSS+EVG8yggniRMheW8s8d6fs4fwrXfj+so2ayTjtImr8eafK1CpIARWCDEXZhQEs/rFv4dpuRaziJw69eVpem0ZwMRe7V4bf98SA5+yxgdYMtxoWUi+uMvKC8U=");
+	}
+
+	public ItemStack getBonzoMask() {
+		return getCustomHead(ChatColor.DARK_PURPLE + "Ancient Bonzo's Mask", "bonzoMask", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjgxMDU3MDM4NCwKICAicHJvZmlsZUlkIiA6ICJhZTg3MzEyNjBmMzY0ZWE2YjU3YTRkYjI5Mjk1YTA1OCIsCiAgInByb2ZpbGVOYW1lIiA6ICJGdW50aW1lX0ZveHlfMTkiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQ2MDFmNzM2YmQ0MmE3Zjg0YzU4ZGUzY2YxMjBhZTRhZTYwZmViODJiMDM3ZThjYjBkMjhhMWUyMTYxODc5ZiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "MBSY1gYYDruisd3+61+sS9xWwBABXOkLgcNwhZOhSNMyAE4yyhEGomaMT5hNckff6KyKBerAMJkWBK8i6kmmEyYKcQfb2jVSFWzQOCZmreGr7n/PEs4hXsGTGXLI1NCEqRpyv2kxUjsnjpDsmJQicSXd2Q/z5NpuC9VwG1mnz7+nzzJxxIx5QtzoLDKrXjpfJtNwGgq+0k0m7lJYIeyjXOCvCgnZO1VyAvmYLIo1DD/4IXCVqErAlRouLhzjJrBNSz95rMr/sQ0T5qFsclzcMTydeti9Pb5j+OhXDavkGFkrsfEpiXzQnW82ZqQ+2ZL8FYVyIEV+0z4kbrbXf4bcLtxQZskKNe/8xN5+UE9KdBcFQ0nF1EEM8Ia+9ChpcGggMqJAq/Zs3Vd1L37/JA5ahZtZqyXS3azKw6Lfh0UWkh+c64svuJI0XJVNNG1cTdGg6CVV37D2UkfHk6dAIlP/7XybHj0ZB3Ew8hThCi48EK0RH37fQvbbujRBjuxFGvU8l5ON4iZRkV+7qyCgLmnhYXGDMsEoGcfAT3m0m2i0+CVH6jitRz6PlbWKhdhT3TW5lBF82TO2QF+muzDD9yTpT7v6YUTQOmISHm/svXnbCp2+du79iijYbW2iQaM8r8ahkC83Owbuhhkgd+SgbTY7JwyBlR7U9j4TBzL+h+Advqw=");
+	}
+
+	public ItemStack getSpiritMask() {
+		ItemStack helmet = getCustomHead(ChatColor.LIGHT_PURPLE + "Ancient Spirit Mask", "spiritMask", "ewogICJ0aW1lc3RhbXAiIDogMTcwODQ5MDg0MTAzMywKICAicHJvZmlsZUlkIiA6ICJmZWY5ZDJmY2NkODE0MzJhYjA3NWRhMzBkNWZlMjdmMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJKb2VuVE5UIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2M3Yzc1YzQ3MDI2YzI3YjlkY2Y5MTQyNzY2NmFiMWRhZTdjNDgzNTVlZDJkNGI5MTgyZWRmMjg0YzIzMmM1YzAiCiAgICB9CiAgfQp9", "TetuPlRZ+JwBiWh7uOqE0/394o1M5duQUMhdMDxf2MX5wCMW1nnRrMZpUG7dXiE6RXUt/pZNepD/JxKpwcWBVRXfcaaQWlT44oX6XRFuDhJsyrmbEjIXSmVM46CelVlI0oyyo0a2uEve7bkYyl20Cax/5tQ1zzRWOTSRzZVkR3X8BLlWhmmgCNKNVsrS3B1TSs4OTKL3Z4t1/OhmyXdCGBp8DLfNbBqhgpVAEkTvzNdGV3e6+/dwbRSs/DjOK/ZXBug589JPY4eiNU8GsmtURVvBa88gr7ug67MYtqY4d4If6147QK6oPoWzp4blRNxVWJHRJSWo+XTSwa4yp21jaPNBQHYyX4zy2MnyYHV7Yhyc64hrV/uO1+t6CA4W07vOqth5zFxan5SUmV/lE+mh2q2uGr3ipAZSkkk7vOoWZvPCG6bo3ZdCsjEx8cQxpw/BXDkpuanySt71oFk3C/NSJCvsifZB52WQkJMK2M+LQCwRhCiN1a5QFWjxAdNINXC87qJAzIOgNkyq69OPPASGC9Hau9lED8iawkRO+rAeCfhczxtCBNLQPN/Gs7zE0MMzChUyK1uWO8MK+Vd+98RmA3vb3VHeShAzQriNJMIDFarNKWt9U+S3DkevXn8lMUEpyKpVH+sQy3DZ3z952JNk8ByPEPd2Lxfc8g1QbkNyLBo=");
+		SkullMeta meta = (SkullMeta) helmet.getItemMeta();
+		assert meta != null;
+
+		List<String> lore = new ArrayList<>();
+		lore.add("I couldn't find the actual Spirit Mask skin");
+		lore.add("online so this is the next best thing.");
+		meta.setLore(lore);
+		helmet.setItemMeta(meta);
+		return helmet;
+	}
+
+	public ItemStack getSkyBlockItem(Material material, String name, String id) {
+		ItemStack item = new ItemStack(material);
+		ItemMeta meta = item.getItemMeta();
+		assert meta != null;
+		meta.setDisplayName(name);
+		List<String> lore = new ArrayList<>();
+		lore.add(id);
+		meta.setLore(lore);
+		item.setItemMeta(meta);
+		return item;
+	}
+
+	private void spawnAllFakes(Location location) {
+		// clear any old ones
+		onDisable();
+		npcMap.clear();
+		actorMap.clear();
+		playerRoles.clear();
+
+		for(var entry : SKIN_DATA.entrySet()) {
+			String role = entry.getKey();
+			String[] skin = entry.getValue();
+
+			Player fake = spawnFakePlayer(location, role, skin[0], skin[1]);
+			fakePlayers.add(fake);
+			npcMap.put(role, fake);
+			actorMap.put(role, fake);
+		}
+		startFakePlayerTicker();
+	}
+
+	@Override
+	public void onEnable() {
+		plugin = this;
+
+		// register ALL our commands on the same executor
+		for(var cmd : List.of("spectate", "unspectate", "tas", "reset")) {
+			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
+		}
+
+		try {
+			APPLY_GRAVITY = Entity.class.getDeclaredMethod("bf");
+			APPLY_GRAVITY.setAccessible(true);
+		} catch(NoSuchMethodException e) {
+			throw new RuntimeException("Unable to reflect applyGravity()", e);
+		}
+	}
+
+	@Override
+	public void onDisable() {
+		for(Player p : fakePlayers) {
+			p.kickPlayer("");
+		}
+		fakePlayers.clear();
+	}
+
+	@SuppressWarnings("NullableProblems")
+	@Override
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+		if(!(sender instanceof Player p)) {
+			sender.sendMessage("Only players can run this.");
+			return true;
+		}
+
+		switch(cmd.getName().toLowerCase()) {
+			case "setup" -> {
+				spawnAllFakes(new Location(p.getWorld(), -120.5, 100, -220.5));
+				p.sendMessage("Cleared all NPCs and spawned new ones.");
+				return true;
+			}
+			case "spectate" -> {
+				if(args.length < 1) {
+					p.sendMessage("Please specify a class to spectate.");
+					return true;
+				}
+
+				String role = args[0];
+				if(!SKIN_DATA.containsKey(role)) {
+					p.sendMessage("Invalid class specified.");
+					return true;
+				}
+
+				if(playerRoles.containsKey(p)) {
+					p.sendMessage("You are already spectating a class. Use /unspectate first.");
+					return true;
+				}
+
+				actorMap.replace(role, p);
+				playerRoles.put(p, role);
+				Objects.requireNonNull(p.getAttribute(Attribute.ATTACK_SPEED)).setBaseValue(100);
+				p.sendMessage("You are now spectating " + role + ".");
+				return true;
+			}
+			case "unspectate" -> {
+				if(playerRoles.containsKey(p)) {
+					// Replaces the player that ran the command with the original fake NPC
+					actorMap.replace(playerRoles.get(p), npcMap.get(playerRoles.get(p)));
+					playerRoles.remove(p);
+					p.sendMessage("You are no longer spectating a class.");
+					return true;
+				}
+				p.sendMessage("You are not spectating a class.");
+				return true;
+			}
+			case "tas" -> {
+				runTAS();
+				p.sendMessage("Running TAS.");
+				return true;
+			}
+
+			case "reset" -> {
+				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
+				actorMap.keySet().forEach(npc -> actorMap.get(npc).teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
+				p.sendMessage("Reset all NPCs.  If you were teleported, try /unspectate and run the command again.");
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Spawns a “real” EntityPlayer into the world (no Citizens, no persistence).
+	 *
+	 * @param loc   where to spawn
+	 * @param name  the fake player’s username
+	 * @param value base64 skin texture
+	 * @param sig   skin signature
+	 */
+	public Player spawnFakePlayer(Location loc, String name, String value, String sig) {
+		// 1) NMS server & world handles
+		MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
+		WorldServer nmsWorld = ((CraftWorld) Objects.requireNonNull(loc.getWorld())).getHandle();
+
+		// 2) Build a GameProfile with skin properties
+		GameProfile profile = new GameProfile(UUID.randomUUID(), name);
+		profile.getProperties().removeAll("textures");
+		profile.getProperties().put("textures", new Property("textures", value, sig));
+
+		// 3) Create EntityPlayer with a dummy InteractManager
+		ClientInformation clientInfo = ClientInformation.a();
+		EntityPlayer nmsPlayer = new EntityPlayer(nmsServer, nmsWorld, profile, clientInfo);
+
+		// 4) Fake-network channel & connection
+		NetworkManager nm = new NetworkManager(EnumProtocolDirection.b);
+		CommonListenerCookie cookie = CommonListenerCookie.a(profile, false);
+		// EntityPlayer = ServerPlayer
+		// EntityPlayer.f -> EntityPlayer.PlayerConnection
+		nmsPlayer.f = new PlayerConnection(nmsServer, nm, nmsPlayer, cookie);
+
+		// 5) Position & add to world
+		// Entity.a_(double, double, double) -> Entity.setPos(...)
+		nmsPlayer.a_(loc.getX(), loc.getY(), loc.getZ());
+		nmsWorld.addFreshEntity(nmsPlayer, CreatureSpawnEvent.SpawnReason.CUSTOM);
+		nmsPlayer.f(false);
+
+		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
+		// MinecraftServer.ag() -> MinecraftServer.getPlayerList()
+		nmsServer.ag().a(nmsPlayer);
+
+		// 7) Send packets to Players about the new Entity
+		ChunkProviderServer provider = nmsWorld.m();
+		provider.a.a(nmsPlayer);
+
+		int id = nmsPlayer.ar(); // in your mappings this is nmsEntity.ar()
+		PlayerChunkMap.EntityTracker wrapper = provider.a.K.get(id);
+
+		EntityTrackerEntry entry = wrapper.b;
+
+		EnumSet<a> addAction = EnumSet.of(a.a);
+		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
+		PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsPlayer, entry);
+
+		for(Player bukkit : Bukkit.getOnlinePlayers()) {
+			// cast to CraftPlayer to get the NMS handle
+			ServerPlayerConnection conn = ((CraftPlayer) bukkit).getHandle().f;
+			conn.b(add);
+			conn.b(spawn);
+		}
+
+		// 8) Return the Bukkit wrapper
+		return nmsPlayer.getBukkitEntity();
+	}
+
+	private void runTAS() {
+		if(actorMap.isEmpty()) return;
+
+		for(String entry : actorMap.keySet()) {
+			Player p = actorMap.get(entry);
+
+			// Set Inventory
+			ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
+			pearls.setAmount(16);
+			PlayerInventory inventory = p.getInventory();
+			inventory.clear();
+
+			switch(entry) {
+				case "Archer", "Berserk", "Healer", "Tank" -> {
+					ItemStack chestplate = createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
+					ItemStack leggings = createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Leggings");
+					ItemStack boots = createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Boots");
+
+					inventory.setHelmet(getDiamondHead());
+					inventory.setChestplate(chestplate);
+					inventory.setLeggings(leggings);
+					inventory.setBoots(boots);
+				}
+				case "Mage" -> {
+					ItemStack chestplate = createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Loving Storm's Chestplate");
+					ItemStack leggings = createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Necrotic Storm's Leggings");
+					ItemStack boots = createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Necrotic Storm's Boots");
+
+					inventory.setHelmet(getWitherGoggles());
+					inventory.setChestplate(chestplate);
+					inventory.setLeggings(leggings);
+					inventory.setBoots(boots);
+				}
+			}
+
+			// Common items for all roles
+			inventory.setItem(0, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Heroic Hyperion", "skyblock/combat/scylla"));
+			inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, ChatColor.GOLD + "Warped Aspect of the Void", "skyblock/combat/aspect_of_the_void"));
+			inventory.setItem(5, getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.BLUE + "Scraped Diamond Pickaxe", ""));
+			inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.GOLD + "Gyrokinetic Wand", "skyblock/combat/gyro"));
+			inventory.setItem(7, pearls);
+			inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
+			inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, ChatColor.DARK_PURPLE + "Bonzo Staff", "skyblock/combat/bonzo_staff"));
+			inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.DARK_PURPLE + "Tactical Insertion", "skyblock/combat/tactical_insertion"));
+
+			switch(entry) {
+				case "Archer" -> {
+					//noinspection DuplicatedCode
+					inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
+					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
+					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+					inventory.setItem(9, getBonzoMask());
+					inventory.setItem(10, getSpiritMask());
+					inventory.setItem(30, getSkyBlockItem(Material.BOW, ChatColor.GOLD + "Rapid Death Bow", ""));
+					inventory.setItem(32, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
+					inventory.setItem(34, getSkyBlockItem(Material.HOPPER, ChatColor.GOLD + "Weirder Tuba", ""));
+					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
+				}
+				case "Berserk" -> {
+					//noinspection DuplicatedCode
+					inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
+					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
+					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+					inventory.setItem(9, getBonzoMask());
+					inventory.setItem(10, getSpiritMask());
+					inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
+					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
+					inventory.setItem(34, getSkyBlockItem(Material.HOPPER, ChatColor.GOLD + "Weirder Tuba", ""));
+					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
+				}
+				case "Healer" -> {
+					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
+					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
+					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+					inventory.setItem(9, getBonzoMask());
+					inventory.setItem(10, getSpiritMask());
+					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
+					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
+					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
+				}
+				case "Mage" -> {
+					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
+					inventory.setItem(3, getSkyBlockItem(Material.GOLDEN_SWORD, ChatColor.LIGHT_PURPLE + "Gilded Midas Sword", ""));
+					inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
+					inventory.setItem(9, getDiamondHead());
+					inventory.setItem(10, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
+					inventory.setItem(30, getSkyBlockItem(Material.IRON_SHOVEL, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
+					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
+					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+				}
+				case "Tank" -> {
+					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
+					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
+					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
+					inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded", "skyblock/combat/axe_of_the_shredded"));
+					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
+					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+				}
+			}
+
+			CraftPlayer player = (CraftPlayer) p;
+			EntityPlayer nmsPlayer = player.getHandle();
+
+			net.minecraft.world.item.ItemStack helmet = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getHelmet());
+			net.minecraft.world.item.ItemStack chestplate = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getChestplate());
+			net.minecraft.world.item.ItemStack leggings = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getLeggings());
+			net.minecraft.world.item.ItemStack boots = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getBoots());
+			net.minecraft.world.item.ItemStack hand = CraftItemStack.asNMSCopy(inventory.getItemInMainHand());
+
+			nmsPlayer.setItemSlot(EnumItemSlot.f, helmet, false);
+			nmsPlayer.setItemSlot(EnumItemSlot.e, chestplate, false);
+			nmsPlayer.setItemSlot(EnumItemSlot.d, leggings, false);
+			nmsPlayer.setItemSlot(EnumItemSlot.c, boots, false);
+			nmsPlayer.setItemSlot(EnumItemSlot.a, hand, false);
+
+			List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> gear = List.of(Pair.of(EnumItemSlot.f, helmet), Pair.of(EnumItemSlot.e, chestplate), Pair.of(EnumItemSlot.d, leggings), Pair.of(EnumItemSlot.c, boots), Pair.of(EnumItemSlot.a, hand));
+
+			PacketPlayOutEntityEquipment equipmentPacket = new PacketPlayOutEntityEquipment(nmsPlayer.ar(), gear);
+
+			for(Player viewer : Bukkit.getOnlinePlayers()) {
+				((CraftPlayer) viewer).getHandle().f.b(equipmentPacket);
+			}
+		}
+
+		Archer.ArcherInstructions(actorMap.get("Archer"));
+		Berserk.BerserkInstructions(actorMap.get("Berserk"));
+		Healer.HealerInstructions(actorMap.get("Healer"));
+		Mage.MageInstructions(actorMap.get("Mage"));
+		Tank.TankInstructions(actorMap.get("Tank"));
+	}
+
+	public static Plugin getInstance() {
+		return plugin;
+	}
+
+	private ItemStack createLeatherArmor(Material material, Color color, String name) {
+		ItemStack item = new ItemStack(material);
+		LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
+		assert meta != null;
+		meta.setColor(color);
+		meta.setDisplayName(name);
+		item.setItemMeta(meta);
+		return item;
+	}
+
+
+	private void startFakePlayerTicker() {
+		if(fakeTickerStarted) return;
+		fakeTickerStarted = true;
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				// tick() each fake player every server tick
+				for(Player bukkit : fakePlayers) {
+					if(!(bukkit instanceof CraftPlayer)) continue;
+					EntityPlayer npc = ((CraftPlayer) bukkit).getHandle();
+					npc.f(false);
+					try {
+						APPLY_GRAVITY.invoke(npc);
+					} catch(InvocationTargetException | IllegalAccessException e) {
+						//noinspection CallToPrintStackTrace
+						e.printStackTrace();
+					}
+					Vec3D vel = npc.dy();
+					npc.a(EnumMoveType.a, vel);
+					npc.h();
+					PositionMoveRotation pmr = PositionMoveRotation.a(npc);
+
+					// and re-broadcast its new position to all viewers:
+					// (so that clients see the collision/bounce/fall)
+					PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+					for(Player viewer : Bukkit.getOnlinePlayers()) {
+						((CraftPlayer) viewer).getHandle().f.b(tp);
+					}
+				}
+			}
+		}.runTaskTimer(this, 0, 1);
+	}
+}

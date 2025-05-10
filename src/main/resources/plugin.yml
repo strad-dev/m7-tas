@@ -1,0 +1,21 @@
+name: m7tas
+version: '1.0-SNAPSHOT'
+main: plugin.M7tas
+api-version: '1.21'
+
+commands:
+  setup:
+    description: Clear all classes and spawn them
+    usage: /setup
+  spectate:
+    description: Spectate a class
+    usage: /spectate <Archer|Berserk|Healer|Mage|Tank>
+  unspectate:
+    description: Stop spectating a class
+    usage: /unspectate [role]
+  tas:
+    description: Begin TAS
+    usage: /tas
+  reset:
+    description: Resets all classes to their spawn locations
+    usage: /reset
