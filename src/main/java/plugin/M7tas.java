@@ -4,20 +4,19 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.datafixers.util.Pair;
 import instructions.*;
+import instructions.Server;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.EnumProtocolDirection;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.a;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
 import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.PlayerConnection;
-import net.minecraft.server.network.ServerPlayerConnection;
-import net.minecraft.world.entity.*;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EnumItemSlot;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
@@ -40,7 +39,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -324,12 +322,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
 		PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsPlayer, entry);
 
-		for(Player bukkit : Bukkit.getOnlinePlayers()) {
-			// cast to CraftPlayer to get the NMS handle
-			ServerPlayerConnection conn = ((CraftPlayer) bukkit).getHandle().f;
-			conn.b(add);
-			conn.b(spawn);
-		}
+		Utils.broadcastPacket(add);
+		Utils.broadcastPacket(spawn);
 
 		// 8) Return the Bukkit wrapper
 		return nmsPlayer.getBukkitEntity();
@@ -457,16 +451,16 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 
 			PacketPlayOutEntityEquipment equipmentPacket = new PacketPlayOutEntityEquipment(nmsPlayer.ar(), gear);
 
-			for(Player viewer : Bukkit.getOnlinePlayers()) {
-				((CraftPlayer) viewer).getHandle().f.b(equipmentPacket);
-			}
+			Utils.broadcastPacket(equipmentPacket);
 		}
 
-		Archer.ArcherInstructions(actorMap.get("Archer"));
-		Berserk.BerserkInstructions(actorMap.get("Berserk"));
-		Healer.HealerInstructions(actorMap.get("Healer"));
-		Mage.MageInstructions(actorMap.get("Mage"));
-		Tank.TankInstructions(actorMap.get("Tank"));
+		Archer.archerInstructions(actorMap.get("Archer"));
+		Berserk.berserkInstructions(actorMap.get("Berserk"));
+		Healer.healerInstructions(actorMap.get("Healer"));
+		Mage.mageInstructions(actorMap.get("Mage"));
+		Tank.tankInstructions(actorMap.get("Tank"));
+
+		Server.serverInstructions(Bukkit.getWorld("world"));
 	}
 
 	public static Plugin getInstance() {
@@ -496,23 +490,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 					if(!(bukkit instanceof CraftPlayer)) continue;
 					EntityPlayer npc = ((CraftPlayer) bukkit).getHandle();
 					npc.f(false);
-					try {
-						APPLY_GRAVITY.invoke(npc);
-					} catch(InvocationTargetException | IllegalAccessException e) {
-						//noinspection CallToPrintStackTrace
-						e.printStackTrace();
-					}
-					Vec3D vel = npc.dy();
-					npc.a(EnumMoveType.a, vel);
-					npc.h();
-					PositionMoveRotation pmr = PositionMoveRotation.a(npc);
-
-					// and re-broadcast its new position to all viewers:
-					// (so that clients see the collision/bounce/fall)
-					PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
-					for(Player viewer : Bukkit.getOnlinePlayers()) {
-						((CraftPlayer) viewer).getHandle().f.b(tp);
-					}
+					npc.d_();
 				}
 			}
 		}.runTaskTimer(this, 0, 1);

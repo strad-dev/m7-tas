@@ -47,28 +47,3 @@ public class Actions {
 		}.runTaskTimer(M7tas.getInstance(), 0, 1);
 	}
 }
-
-
-/*
- * private void runTAS() {
- * 		if (fakePlayers.isEmpty()) return;
- *
- * 		// schedule a repeating task
- * 		new BukkitRunnable() {
- * 			double t = 0;
- * 			final Location center = fakePlayers.getFirst().getLocation().clone();
- * 			            @Override
- *            public void run() {
- * 				t += Math.PI/40;
- * 				for (int i = 0; i < fakePlayers.size(); i++) {
- * 					Player p = fakePlayers.get(i);
- * 					double offset = i * (2*Math.PI / fakePlayers.size());
- * 					Location dest = center.clone()
- * 							.add(Math.cos(t+offset)*3, 0, Math.sin(t+offset)*3);
- * 					p.teleport(dest);  // works on a real EntityPlayer
- *                }
- * 				// Cancel after one full rotation:
- * 				if (t > 2*Math.PI) cancel();
- *            }        * 		}.runTaskTimer(this, 0, 2);
- * 	}
- */

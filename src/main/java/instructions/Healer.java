@@ -7,9 +7,9 @@ import org.bukkit.util.Vector;
 import plugin.M7tas;
 
 public class Healer {
-	public static void HealerInstructions(Player p) {
+	public static void healerInstructions(Player p) {
 		System.out.println("Healer Instructions: " + p.getName());
 		p.teleport(new Location(p.getWorld(), -120.5, 72, -220.5));
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Actions.move(p, new Vector(0, 0, 0.8634), 10), 120);
+		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Actions.move(p, new Vector(0, 0, 0.8634), 4), 120);
 	}
 }

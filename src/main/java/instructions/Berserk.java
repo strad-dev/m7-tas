@@ -7,9 +7,9 @@ import org.bukkit.util.Vector;
 import plugin.M7tas;
 
 public class Berserk {
-	public static void BerserkInstructions(Player p) {
+	public static void berserkInstructions(Player p) {
 		System.out.println("Berserk Instructions: " + p.getName());
 		p.teleport(new Location(p.getWorld(), -120.5, 72, -220.5));
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Actions.move(p, new Vector(-0.8634, 0, 0), 10), 80);
+		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Actions.move(p, new Vector(-0.8634, 0, 0), 4), 80);
 	}
 }
