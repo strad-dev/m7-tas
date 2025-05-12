@@ -15,7 +15,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.PlayerConnection;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EnumItemSlot;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -27,7 +26,9 @@ import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_21_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_21_R3.profile.CraftPlayerProfile;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
@@ -37,12 +38,13 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.lang.reflect.Method;
 import java.util.*;
 
-public final class M7tas extends JavaPlugin implements CommandExecutor {
+public final class M7tas extends JavaPlugin implements CommandExecutor, Listener {
 	/**
 	 * A mapping between unique role identifiers and their associated Player instances.
 	 * This map is used to manage and track Player entities (either real or fake) within the
@@ -100,7 +102,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 	private static Plugin plugin;
 
 	private boolean fakeTickerStarted = false;
-	private Method APPLY_GRAVITY;
 
 	private static final Map<String, String[]> SKIN_DATA = Map.of("Archer", new String[]{"fb/7dBo3U4jZ1WUPvBfVnPrFoFk34pyZlNAOjfqk8E8FDzGuD+TOAM1D1WNe4aOdQYPAz7oqiMsQ7X1EeipUHrWQM1Cn7+XTs2mNt8jZ5PHGwq+BjwiLHmiBzn4zrXqMXyqP3+YN/MbjCR4dWafIilJft3oSAHEi2cpqV8EL78fZxYeDkVr3BHhonQDsjJZo9AGM9/bTip7FSrj/aQa6zvUYnkOI2HmUbT+xs2+3yOk0Hmk2EdJVcDhC1r9fbcqKZaE726RE4DdQt0toBEb6NVihWKBNvmmSiLkgm+xzlPYVkjpu/BvZHimEFFjGfcDYUDcx2EgRhjy0eYcYFvxSoLQJYHHNQuHJRfddYG63GdiZ6Kke21Q/xlVa9GtVRDnWB14UgkGDsvfs11PYEUB9yi87MsYCw4oa9nlTe8kNpjzYFEpVqloym7rZTYTReQmCwQUoGrsKSaI/Asint2SLIPwbJVMV3vO4Ye6UyoFaGS5aBCUVoiLFuJGy2warsWvTHeYvUeaOXWoBkEJA+mzllMbwQ1BEV5rWjsGXx0aSWH5uVslXWDLvj5lX/hA2qWE4Xp/o81AbdbUIOb/A6PZugRy/TDHcNr+hIwlVZGTOcPg6qarQLKJtIenHux5GycZZuQDRMhDak1c3aQvMuqZK2Vo96n/WL45c9hZ2T8kTMKU=", "ewogICJ0aW1lc3RhbXAiIDogMTY2MDMzMjQ4MDAzMCwKICAicHJvZmlsZUlkIiA6ICIzOWEzOTMzZWE4MjU0OGU3ODQwNzQ1YzBjNGY3MjU2ZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJkZW1pbmVjcmFmdGVybG9sIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzM2NWQwYTZhNjliNjk3MDZkZmEyZmU4MTMyYTZjNjRjYTM1OTJjZDY2MWZhNzJlYTA0MzQxZTgyOWU1NGFhMjAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ=="}, "Berserk", new String[]{"Xt20RWBBt0qYZCRuFnorgjlvjPDQHAOqqRQCzSXIz37rSQHqbwkPms6VV0W41GX7cNBvucavv4/uB9SNWRG0k1njpDqafV7w60rWgupj/hbj9HAeUkjj6UOgzQsPeyCyiTk4YOsFwFvqCjA2H9orL6yniz+4gq9IHEMDY9JF4whEhYNa9P4oXemL6it3orbXKqPNYuAoDD/xLkbhIqTaMTzkfzRjGeUvHeu/XMWzJ5E8U2V2tBh6Dp0l54YdaEZsq48IjyGixFxCjRSQZOwVfO7O+ErLpTa+Qe7Tc43jbsfQY3iJ78Wtw/MHw0TR7j18mLGlHF2WTvCA1nItFIhPGEsYTKw4XJvV5E0s2PFrMKdzyTMPU4uQt8i2lIcWsADooqSLdrP9Rx8Xly4qAbIK0vTZ09w1HYI37YHdWFv+vtuEdb2GIuU+xt7aAWRh70y4E53/+RqYtbsWxsxX8Wp6fNP2X7/hIGKKeDPNwzGTe9UIMdOjeyXQIV2+fPc8i43OYA/Q0v6YLyEqBGj29v3dFrcNlpnZK3vq2KpXvwnOJ8KagB+59TSd9Dt/wJt4W9Pk700vmdvm4ncgxBKRXyrAT2K6yIytUDODRXXjnOEiqLm27+AoDK04BmTX8owfjJl5nCYkeBsDwAkIJp8QzehHoOiOfYUsvyQbTZKbPjgpcjI=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2ODM3NDMzNywKICAicHJvZmlsZUlkIiA6ICJkZmY3OWM0MDZhZWI0NThhODZjZjY3ODllMTgzMTMxNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJBc2FwSWNleSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zYTFiZTU4MTRmZGRmNzcyYmEwM2QzNzliMDBiOWJjYjM0NDI3YTlkZGQ5NjcyOWQ2YmZiNGY0NDAzOWE1YWYwIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0sCiAgICAiQ0FQRSIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjM0MGMwZTAzZGQyNGExMWIxNWE4YjMzYzJhN2U5ZTMyYWJiMjA1MWIyNDgxZDBiYTdkZWZkNjM1Y2E3YTkzMyIKICAgIH0KICB9Cn0="}, "Healer", new String[]{"q6hGMu81OOF789B3u/t3bLv9uDnYgXetWXp1xaMaSofRnD12c/ylUKFIEyOL9Wi5a3XAV9ki2fhVFu6sMD12jHVZeAfcCPqIeSJe4xxpgcw+RsI3aYOEVB5PD6QGc2zEuuElwBYs08lgZ841OecTnuCIitrmLRl46PpNB5rOyh4d2PrGSYtpScdThJYMv13dxJKNmdd1mZwCKZBCBWdpGMBO47aJ9WXZuavghvt99QqzrPzELf7I3M/CuiZMJCMuZrMMs5rDg21hWSFsddheVX1aJPuMYQQH0ECJhmpuNBJUrlqNVyvziHYVn6LBFgw/jZVJqn/m7upVvlhjUH7d/otyYz0DjBYyrc6uee49DSZySOOipDF0GsKDQzZyphx5NyT3b2qiHjMzTHMTvxlMTbHYbjpynqj24wCkuIvBp2TpgMP3+aWlqrwWWweFbgTNpvWrNhi5t0feyzIpNjp2UbJRHWTjnZC2NEb2yW9qQDT8VtD9xaFnWahwMGuXcmB1TNIEVRwMTVMxjbLESW38UUf+a3sNuFIqTB8F7jNY57bMJWV8qKHVwhPz6u8dDb7ActPHEP0VB4Y1SXzDVZ9kY2Cew1OfWdGNlyeyGUcNYXoG9IQKaTJ8DgJW5lK9nuPZq9Y+2e7Pepin/CadaKmLDdgJpKViGH3qA2+naCJj4dg=", "ewogICJ0aW1lc3RhbXAiIDogMTczNjQ3MTMwMjU5MiwKICAicHJvZmlsZUlkIiA6ICJiNzRlYjViMTc5OTc0YzZjODk3ZTgwNTM4Y2M1NmYwMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJQYW5kYUNoYW4yOCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82OTMzODhjODdlMjBlN2VjNzM4YjgxNWIwYTc4ZTRlNWRkODdmNTZiZDcyMjM5NmIwYTU2MTE3OTExOTgwMjRiIgogICAgfQogIH0KfQ=="}, "Mage", new String[]{"rZA8PML/9GK5A7lyrS4lbSjySvOoMJoPMDk5fAp8sazpWzaomd8aMK3t1u15RA5m+/Opf4m5X88EPJHW0/mBXHWOjT/0G2W4NiOzCjv/qm1hhVZk7S8+Al6nfxWiZBpWUJ8neoFdNdrtDHHeQX0LtHlwjXJ6kQwXExtnv7+HUaZ7AIpGnFSIFrNvnPr8cZ6JKL9r8F8Qv6ymWPibKhqPOaZviJIX++lDeQ7OASQosimVFDei7/GxTnBfvyenNtBbtX4XjlfOkhOohPL/TVBgjtGOu/NGnh8xAd+UdaEAIiSU9tkBOV1uujRkCtMvKGL6ctaYqJYkE+Aepvf4p/Q1M9i0wvudyLhOFqvu+C5/Z9O7zMNt54nLIHMYmWoaHJzIAQnCWvIuewABfOrUgbjITBTxfc33oGeTFgEjMGEhqXJw5EL7zbQXzJMNuzYSTZ3/GyONp09B9G88obHvrj6nzo8yYHLA9L52HExVMOYuSByCw4MByy08tUrBnzf3o6jIdp1Ji/SYKEapg3wF9PqPkyXI3nV6nbm+qQVX2UmNV78xw6gq35hqa4AeAa2S5jWLhYPV+TopfmN9n1AZ9/EBBFNfA58gsJCmQxc1aKxmqBDuSX59KcAf454onhSDCVrWbkzFVjyuP4KnFGQynjfMVCPhn1ueo57MWpp1ZYFJK+M=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2NzIyOTA2OSwKICAicHJvZmlsZUlkIiA6ICJjZGI5ZTljNmMwOTY0ZjU4OWM0OTM1Mzk1ZDdiODk3YyIsCiAgInByb2ZpbGVOYW1lIiA6ICJCZWV0aG92ZW5fIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZThjY2Y3YTgwZmZmZjBkN2I3Nzc3M2UzMjFkMGJkMjA4OWIxZTAwNzUzZjE3OTVmNjIwMjA3NzVhYzY1OTciCiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzIzNDBjMGUwM2RkMjRhMTFiMTVhOGIzM2MyYTdlOWUzMmFiYjIwNTFiMjQ4MWQwYmE3ZGVmZDYzNWNhN2E5MzMiCiAgICB9CiAgfQp9"}, "Tank", new String[]{"IVG0H6Xtsz4GkksjRWFihXARKK1vAgsPQ2ytytOcB1EwItw5OS25+pftk6b/40VH3+OX6RCHhbeUG4g1REWtSmpWKA9NgqYEsv1gvnRFAiWywuLrYaKGG+T0OQ48CkPA995wQo4YvnPPOzzhsF3IsjNC3v6aDCC8B9JS0iM8mK9ttEmRQnEcNLkiswrN8uo8MTfSE6/e90BJSGMnia3VjFvIM5mpe/YsYW1qguk1z+Ndn7uXBt0VnDCq3sRt0njR+MdgQMKcJGIhCRxMry9ezoGzh05DzQeWwwC9XVM0CuXi1brHYw3Mbchht20+khErLgyZNHE/XZ0D0U77lCihJ7oyImqf0XmENmlUZqC7IE73u/YhuZMRB1HaJEm374zgZ9dWV14CmaqHDMFHtFgO8wSLT3tOo24U5dHA3Ihjf9UOBJSz+IOOvG7N7i67OYmrqXqdV0pSacKODvzTd3UhxfqNWZIDMq23vC5funtDwiWT3STFo4jwn51Fu04V1iSO9SrLnbNG2kKJvbYO6P1cK5cIf9PKnIOrTCvh7OZ/pgA8ZIJgnIE/ml5AHFKL9ji7mSqYB4qv9CYaJT0yXBWRPqzng8UZ4rHCoBqdwIn+2WmUjfHdVsuI/ECU7UkU83Ol004Br4fquLj8tWAXwQZn7s90r96Vg2a1TUWyBLH60BQ=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2ODAwNzgxMywKICAicHJvZmlsZUlkIiA6ICIzYjBmNTM5MmRlNzM0YmZjYmJkOTMxYzMxYmFkODMxMCIsCiAgInByb2ZpbGVOYW1lIiA6ICJjYXRhbmRCIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2FkZTVhZjZhMzlkYjVjMDYxMjU3YTBkZDliNjA1YWQyNjBjMjFkYTNkMmZkMjhmNDM0MGIzZmU1YzgwZTM4ZDQiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ=="});
 
@@ -123,11 +124,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 		return getCustomHead(ChatColor.RED + "Ancient Diamond Necron Head", "dNecronHead", "ewogICJ0aW1lc3RhbXAiIDogMTYxNzM5MDg5NDU4NiwKICAicHJvZmlsZUlkIiA6ICJjNWFhNTRhNmNmNTI0YmFmYmRiODUwNmUyMjRiNzViZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJOZWNyb25IYW5kbGVQTFMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOGIxMTVjZGM0NWZkODRmMjFmYmE3YWMwZjJiYzc3YmMzYjYzMDJiZTY3MDg0MmY2ZTExZjY2ZWI1NTdmMTNlZSIKICAgIH0KICB9Cn0=", "hwaaE9h0QvFmtFvk2bNyAYlPo34NvaCjX3VWPv5zaRVM8KjfqQB5sB85vlFRVwCXK/HnQS2qMJ39ZuYplxT895lIShidIVdF5UP8T6cb1svhA9TmEVKFY4pKFyhUjIhD95HvO3OoNWPlCmb9Mho4XIo3K4AavnKPbuu3/I58gQmfKI71xDq7r+DRf9Dlxc8r3mcsUrdEwTfvC2/eFszHc/vqQXNm1smH2QJVfki+AgddNndFt7qumeicVFmsk2GmPNHxjlgH0xPL0hG8WGEmH5+Fnnj/eoYSutnpDRXVPY0H/KOMIa2Prga524stPC0gYmVU9y/wviXzDmKiiAa4uPVhwd/L/DgUSIGio6NlLMyA+Uvyy02HEr3TmzQ6bPqLphSttaDaVWW8Ltd1wvz/+Hhii5tYSSm3l5cAZQAO1O/JN/FKqA7tv0v0ZWp8AS1qw0QeLrRrLKlri2Zmzj5iYv7exfAVUiYB8f95ZZOWg1FLOufSJeFsQC5S7gsnsdJsWvnwvUNQI4RDfIc59a5Hvgzr90jgMTNoBGSXyrsXpeXJb+T9R8xfSEQY5V1XwFd+3lz8XRbBUQHubxN+b9AGj5FpQ2j5oaAz+BXY2+Iq20qVvkFMeJXdTRT0VIZM4r06ml0R3SZ1Jfui4xMH9OmhR+Hz3mmMvLN+BewhmtucN28=");
 	}
 
-	public ItemStack getWitherGoggles() {
-		return getCustomHead(ChatColor.GOLD + "Necrotic Wither Goggles", "witherGoggles", "ewogICJ0aW1lc3RhbXAiIDogMTYyMzU3OTEyODk1MCwKICAicHJvZmlsZUlkIiA6ICJkMGI4MjE1OThmMTE0NzI1ODBmNmNiZTliOGUxYmU3MCIsCiAgInByb2ZpbGVOYW1lIiA6ICJqYmFydHl5IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzM3Y2ViOGYwNzU4ZTJkOGFjNDlkZTZmOTc3NjAzYzdiZmMyM2ZkODJhODU3NDgxMGE0NWY1ZTk3YzY0MzZkNzkiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==", "GE3o8T5syjzY6RzfHRSe8lEdWOpwWwn3QCh8SqYjpOUMIn6FpjfDUOknG1Ar/VgQm5gjDpkPSOCPiZCll2FSb7vyZ1syToKXC/TEBbSDtrk6yZ5EzWglh9/88HZQqcxrcQ1OZdWV3DdkuUfGAas3SHPSeCUT8DtpKpmOER1bqeNJK/se0aUGEwglOyYbj4TD+nocjoyIQG1mq8RXM1rLVMJgfG3p2gTcnqjjnTgSjb1BwqCdTEuMp348czCZNtODlpQU3uyeATPim0BViVfY9bpdlzEzwWQglkM03lw9LNhZ+CDREwLsx2I7bKPiD7AEcOHwuGmmv0+OPV4C03CM8ZnntH/TC96CuTVxF4bBV/idsTJHVndSyWzEE/ZvAPfdNjU6UGBwswHs7F6eNv3/okiJqes+dgesxBMZ/Q56KkzlMTrc0VVLQ25TI42qgkPkGPUMxg5Z1cY0qgie/hU4XzO4PIH7XOvRWrqCQy6WcESyyE+JOhtlkPiuOPsnPEwBvFYQMhKtuCPx3Ph+7YBlDkcL85b5HmBOrBZwyXQL+Q72tCaZgY2hHpNP6J5PavuQuPzEqJs9C4p6xgUAc0NZnP/KrUe7dN2/627rGK9uNc4yIU9pNxXT+YP2q4TKvT0638IGVzWSM5KLXxXRDIF3lKMLgst8dtjIjEmd5c3d7G0=");
-	}
-
-	@SuppressWarnings("unused")
 	public ItemStack getStormHelmet() {
 		return getCustomHead("§6Ancient Storm's Helmet", "stormHelmet", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjgwNzcwMTU2MSwKICAicHJvZmlsZUlkIiA6ICJjNDIzYjQwMWZiOGU0ODc3YjMzMmVmMjhiZDdlZGZmZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJSZWFjdGlvbkJyaW5lWVQiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOTliYWVjNWZiNGNkOWRjNTk2ZDYxMGI2YzZiZDM4YWI5OTAxYjY4Yzk1OTQ5ZTJkNzFiOTI1MzE3MjcwZDAxMSIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "s8X+QmhjqwppG9pqW9SYQloIzPVTw3PBpMprwnx9pl9j2uNdBgJbpwhahgo3WjpXOV9aiewogO7HDqZ71fns/rkPLVBANO6mlnYS8J+J8rLkQFiinQERx4ucYtHM9atzZnG7dDv6QTK6Bvur8SwVhZIOYSj7YWN1ecrbm9RskNhiRSXVwFH/TcWdSv4z/c0zG2b+OXaD68NAwxTd8lszNl+JSWFU6dP/l8GP1EWDNz8WagfwzeOTaHU2rDztRCUXlNGeF16QdZBXgFUva3Kel6D0QSE492Q1vTt5f55xwk38Yjbw6wkv2se+arcd9sbInuxlJamev6J4FX0r1QhGpgxHDvu30O/htK7ni8Og4AWgESQg/ONo/R7GUYsysao3lV46cHGK9JBEQEG0Zlq+gQ9ajzLojLchfSMM03/V8FpyLKBsplMJuG3NNz4QLXlflWU3UpuXD7SDGgIcn4UVRlANhC/Nj2qO4DUVkMA6V3OSGFWdLe9ICMZfLPXQiGFkZd4SmJLp6dy/Z2C7DGZci7qSkTXBW8j1Zmz52dSvaNqQvb10nSS+EVG8yggniRMheW8s8d6fs4fwrXfj+so2ayTjtImr8eafK1CpIARWCDEXZhQEs/rFv4dpuRaziJw69eVpem0ZwMRe7V4bf98SA5+yxgdYMtxoWUi+uMvKC8U=");
 	}
@@ -188,13 +184,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 		for(var cmd : List.of("spectate", "unspectate", "tas", "reset")) {
 			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
 		}
-
-		try {
-			APPLY_GRAVITY = Entity.class.getDeclaredMethod("bf");
-			APPLY_GRAVITY.setAccessible(true);
-		} catch(NoSuchMethodException e) {
-			throw new RuntimeException("Unable to reflect applyGravity()", e);
-		}
+		getServer().getPluginManager().registerEvents(new MovementDropper(), this);
 	}
 
 	@Override
@@ -255,7 +245,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 			}
 			case "tas" -> {
 				runTAS();
-				p.sendMessage("Running TAS.");
 				return true;
 			}
 
@@ -330,14 +319,29 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 	}
 
 	private void runTAS() {
-		if(actorMap.isEmpty()) return;
+		if(actorMap.isEmpty()) {
+			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
+			return;
+		}
+
+		System.out.println(actorMap);
 
 		for(String entry : actorMap.keySet()) {
 			Player p = actorMap.get(entry);
 
+			p.getScoreboardTags().clear();
+			Objects.requireNonNull(Objects.requireNonNull(plugin.getServer().getScoreboardManager()).getMainScoreboard().getObjective("Intelligence")).getScore(p.getName()).setScore(2500);
+			p.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, -1, 255, true, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, -1, 255, true, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 3, true, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, -1, 4, true, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, -1, 2, true, false));
+
 			// Set Inventory
 			ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
 			pearls.setAmount(16);
+			ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.BLUE + "Scraped Diamond Pickaxe", "");
+			pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 10);
 			PlayerInventory inventory = p.getInventory();
 			inventory.clear();
 
@@ -353,11 +357,11 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 					inventory.setBoots(boots);
 				}
 				case "Mage" -> {
-					ItemStack chestplate = createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Loving Storm's Chestplate");
-					ItemStack leggings = createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Necrotic Storm's Leggings");
-					ItemStack boots = createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Necrotic Storm's Boots");
+					ItemStack chestplate = createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Chestplate");
+					ItemStack leggings = createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Leggings");
+					ItemStack boots = createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Ancient Storm's Boots");
 
-					inventory.setHelmet(getWitherGoggles());
+					inventory.setHelmet(getStormHelmet());
 					inventory.setChestplate(chestplate);
 					inventory.setLeggings(leggings);
 					inventory.setBoots(boots);
@@ -367,7 +371,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 			// Common items for all roles
 			inventory.setItem(0, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Heroic Hyperion", "skyblock/combat/scylla"));
 			inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, ChatColor.GOLD + "Warped Aspect of the Void", "skyblock/combat/aspect_of_the_void"));
-			inventory.setItem(5, getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.BLUE + "Scraped Diamond Pickaxe", ""));
+			inventory.setItem(5, pickaxe);
 			inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.GOLD + "Gyrokinetic Wand", "skyblock/combat/gyro"));
 			inventory.setItem(7, pearls);
 			inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
@@ -417,7 +421,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 					inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
 					inventory.setItem(9, getDiamondHead());
 					inventory.setItem(10, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
-					inventory.setItem(30, getSkyBlockItem(Material.IRON_SHOVEL, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
+					inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
 					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
 					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
 				}
@@ -476,7 +480,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor {
 		item.setItemMeta(meta);
 		return item;
 	}
-
 
 	private void startFakePlayerTicker() {
 		if(fakeTickerStarted) return;

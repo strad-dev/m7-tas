@@ -2,7 +2,9 @@ package instructions.bosses;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R3.profile.CraftPlayerProfile;
 import org.bukkit.entity.EntityType;
@@ -20,7 +22,10 @@ public class Watcher {
 	private static Zombie watcher;
 
 	public static void watcherInstructions(World world) {
-		watcher = (Zombie) world.spawnEntity(new Location(world, -120.5, 78.0, -88.5, -180, 0), EntityType.ZOMBIE);
+		if(watcher != null) {
+			watcher.remove();
+		}
+		watcher = (Zombie) world.spawnEntity(new Location(world, -120.5, 72.0, -88.5, -180, 0), EntityType.ZOMBIE);
 		watcher.setAI(false);
 		watcher.setSilent(true);
 
@@ -36,8 +41,8 @@ public class Watcher {
 		helmet.setItemMeta(meta);
 
 		Objects.requireNonNull(watcher.getEquipment()).setHelmet(helmet);
-		watcher.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, 1000000, 255, false, false));
-		watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 1000000, 255, false, false));
+		watcher.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255, false, false));
+		watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 255, false, false));
 		Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
 	}
 }
