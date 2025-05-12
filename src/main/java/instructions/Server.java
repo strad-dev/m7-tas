@@ -34,9 +34,7 @@ public class Server {
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
 			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 		}, 140);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
-		}, 140);
+		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 140);
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world), 161);
 
 //		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
