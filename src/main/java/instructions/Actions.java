@@ -11,14 +11,10 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.M7tas;
@@ -118,6 +114,9 @@ public class Actions {
 	 */
 	public static void simulateEtherwarp(Player p, Location to) {
 		wipeNmsVelocity(p);
+		Location from = p.getLocation();
+		to.setYaw(from.getYaw());
+		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
 		p.teleport(to);
@@ -138,6 +137,9 @@ public class Actions {
 	 */
 	public static void simulateAOTV(Player p, Location to) {
 		wipeNmsVelocity(p);
+		Location from = p.getLocation();
+		to.setYaw(from.getYaw());
+		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
 		p.teleport(to);
