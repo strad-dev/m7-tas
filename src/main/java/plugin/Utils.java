@@ -14,9 +14,13 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.Container;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -161,6 +165,24 @@ public class Utils {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			((CraftPlayer) p).getHandle().f.b(pkt);
 		}
+	}
+
+	/**
+	 * Creates a leather armor item with the specified material, color, and name.
+	 *
+	 * @param material The material type of the leather armor.
+	 * @param color The color to apply to the leather armor.
+	 * @param name The display name to set for the leather armor.
+	 * @return A new ItemStack representing the customized leather armor.
+	 */
+	public static ItemStack createLeatherArmor(Material material, Color color, String name) {
+		ItemStack item = new ItemStack(material);
+		LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
+		assert meta != null;
+		meta.setColor(color);
+		meta.setDisplayName(name);
+		item.setItemMeta(meta);
+		return item;
 	}
 
 	/**

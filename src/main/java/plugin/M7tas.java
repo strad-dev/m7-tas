@@ -34,7 +34,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -347,9 +346,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 			switch(entry) {
 				case "Archer", "Berserk", "Healer", "Tank" -> {
-					ItemStack chestplate = createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
-					ItemStack leggings = createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Leggings");
-					ItemStack boots = createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Boots");
+					ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
+					ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Leggings");
+					ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Boots");
 
 					inventory.setHelmet(getDiamondHead());
 					inventory.setChestplate(chestplate);
@@ -357,9 +356,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					inventory.setBoots(boots);
 				}
 				case "Mage" -> {
-					ItemStack chestplate = createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Chestplate");
-					ItemStack leggings = createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Leggings");
-					ItemStack boots = createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Ancient Storm's Boots");
+					ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Chestplate");
+					ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Leggings");
+					ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Ancient Storm's Boots");
 
 					inventory.setHelmet(getStormHelmet());
 					inventory.setChestplate(chestplate);
@@ -469,16 +468,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 	public static Plugin getInstance() {
 		return plugin;
-	}
-
-	private ItemStack createLeatherArmor(Material material, Color color, String name) {
-		ItemStack item = new ItemStack(material);
-		LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
-		assert meta != null;
-		meta.setColor(color);
-		meta.setDisplayName(name);
-		item.setItemMeta(meta);
-		return item;
 	}
 
 	private void startFakePlayerTicker() {

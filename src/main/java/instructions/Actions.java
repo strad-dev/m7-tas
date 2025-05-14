@@ -178,7 +178,7 @@ public class Actions {
 		p.playSound(p, Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		Material material = b.getType();
 		b.setType(Material.AIR);
-		Utils.scheduleTask(() -> b.setType(material), 4);
+		Utils.scheduleTask(() -> b.setType(material), 16);
 	}
 
 	/**
@@ -199,7 +199,7 @@ public class Actions {
 		Actions.simulateLeftClickAir(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 20);
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 80);
 	}
 
 	/**
