@@ -6,20 +6,24 @@ import net.minecraft.world.entity.EnumMoveType;
 import net.minecraft.world.entity.player.PlayerInventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3D;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.M7tas;
 import plugin.MovementDropper;
 import plugin.Utils;
+
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class Actions {
@@ -200,6 +204,45 @@ public class Actions {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 80);
+	}
+
+	/**
+	 * Simulates a "Crypt" action within a specified cuboid area. The method performs
+	 * a sequence of operations: simulating a left-click air interaction, clearing
+	 * the specified area by filling it with air, playing a sound effect, and then
+	 * cloning a specified structure after a short delay.
+	 *
+	 * @param p  The player for whom the crypt simulation is performed.
+	 * @param x1 The x-coordinate of the first corner of the cuboid area.
+	 * @param y1 The y-coordinate of the first corner of the cuboid area.
+	 * @param z1 The z-coordinate of the first corner of the cuboid area.
+	 * @param x2 The x-coordinate of the opposite corner of the cuboid area.
+	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
+	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
+	 */
+	public static void simulateCrypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
+		Actions.simulateLeftClickAir(p);
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
+		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
+		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) Math.min(x1, x2) / 2, y1, (double) Math.min(z1, z2) / 2), EntityType.ZOMBIE);
+		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 1 + "/" + 1);
+		zombie.setCustomNameVisible(true);
+		zombie.setAI(false);
+		zombie.setSilent(true);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
+		zombie.setHealth(1);
+
+		assert zombie.getEquipment() != null;
+		zombie.getEquipment().setItemInMainHand(new org.bukkit.inventory.ItemStack(Material.BONE));
+		Utils.scheduleTask(() -> {
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + (y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
+			try {
+				zombie.remove();
+			} catch (Exception exception) {
+				// nothing here
+			}
+		}, 80);
 	}
 
 	/**
