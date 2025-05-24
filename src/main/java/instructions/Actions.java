@@ -1,8 +1,11 @@
 package instructions;
 
+import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityVelocity;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.entity.EnumMoveType;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.player.PlayerInventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3D;
@@ -11,18 +14,18 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.M7tas;
 import plugin.MovementDropper;
 import plugin.Utils;
 
+import java.util.EnumSet;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
@@ -35,32 +38,45 @@ public class Actions {
 	 * @param durationTicks The total number of Ticks to move
 	 */
 	public static void move(Player p, Vector perTick, int durationTicks) {
-		if(!(p instanceof CraftPlayer cp) || durationTicks <= 0) return;
-		EntityPlayer nms = cp.getHandle();
+		// only handle CraftPlayer/NMS and positive duration
+		if (!(p instanceof CraftPlayer cp) || durationTicks <= 0) return;
+
+		EntityPlayer npc = cp.getHandle();
+		// convert Bukkit Vector to NMS Vec3D
 		Vec3D motion = new Vec3D(perTick.getX(), perTick.getY(), perTick.getZ());
 
 		new BukkitRunnable() {
 			int ticks = 0;
-
 			@Override
 			public void run() {
-				if(ticks++ >= durationTicks) {
+				if (ticks++ >= durationTicks) {
 					cancel();
 					return;
 				}
-				// 1) set the server‐side motion
-				nms.i(motion);
-				nms.a(EnumMoveType.a, motion);
-				nms.h();
 
-				// 2) let each viewer animate that motion
-				PacketPlayOutEntityVelocity vel = new PacketPlayOutEntityVelocity(nms);
-				for(Player viewer : Bukkit.getOnlinePlayers()) {
-					((CraftPlayer) viewer).getHandle().f.b(vel);
-				}
+				// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
+				npc.a(EnumMoveType.a, motion);
+				// 2) Apply gravity, friction, fall damage checks, etc.
+				npc.h();
+
+				// 3) Package up the new position + rotation
+				PositionMoveRotation pmr = PositionMoveRotation.a(npc);
+
+				// 4) Create teleport packet with NO relative flags
+				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(
+						npc.ar(),
+						pmr,
+						EnumSet.noneOf(Relative.class),
+						npc.aJ()  // head yaw/pitch
+				);
+
+				// 5) Broadcast to all online players (including spectators)
+				Utils.broadcastPacket(tp);
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0, 1);
+			// schedule at 0 tick delay, repeating every tick
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
+
 
 	/**
 	 * Change which hotbar slot (0–8) the fake player is “holding”,
@@ -124,7 +140,7 @@ public class Actions {
 
 		p.setVelocity(new Vector(0, 0, 0));
 		p.teleport(to);
-		p.playSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 
 		MovementDropper.pauseMovementReads(p, 4);
 
@@ -137,7 +153,6 @@ public class Actions {
 	 * with an "Aspect of the Void" (AOTV) item. The method resets the player's
 	 * velocity, teleports them to the specified location, and plays a teleport
 	 * sound effect.
-	 *
 	 */
 	public static void simulateAOTV(Player p, Location to) {
 		wipeNmsVelocity(p);
@@ -147,7 +162,7 @@ public class Actions {
 
 		p.setVelocity(new Vector(0, 0, 0));
 		p.teleport(to);
-		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 
 		MovementDropper.pauseMovementReads(p, 4);
 
@@ -156,7 +171,7 @@ public class Actions {
 	}
 
 	private static void wipeNmsVelocity(Player p) {
-		EntityPlayer ep = ((CraftPlayer)p).getHandle();
+		EntityPlayer ep = ((CraftPlayer) p).getHandle();
 
 		// a) zero server‐side velocity
 		ep.i(Vec3D.c);   // (0,0,0)
@@ -179,7 +194,7 @@ public class Actions {
 	 */
 	public static void simulateStonking(Player p, Block b) {
 		p.swingMainHand();
-		p.playSound(p, Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
+		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		Material material = b.getType();
 		b.setType(Material.AIR);
 		Utils.scheduleTask(() -> b.setType(material), 16);
@@ -202,7 +217,7 @@ public class Actions {
 	public static void simulateSuperboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.simulateLeftClickAir(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
-		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 80);
 	}
 
@@ -223,12 +238,13 @@ public class Actions {
 	public static void simulateCrypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.simulateLeftClickAir(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
-		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) Math.min(x1, x2) / 2, y1, (double) Math.min(z1, z2) / 2), EntityType.ZOMBIE);
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
+		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), Math.min(x1, x2), y1, Math.min(z1, z2)), EntityType.ZOMBIE);
 		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 1 + "/" + 1);
 		zombie.setCustomNameVisible(true);
 		zombie.setAI(false);
 		zombie.setSilent(true);
+		zombie.setAdult();
 		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
 		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
 		zombie.setHealth(1);
@@ -239,10 +255,24 @@ public class Actions {
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + (y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
 			try {
 				zombie.remove();
-			} catch (Exception exception) {
+			} catch(Exception exception) {
 				// nothing here
 			}
 		}, 80);
+	}
+
+	/**
+	 * Simulates the action of a player throwing a pearl in the direction they are facing.
+	 * This method is typically used for replicating the behavior of an ender pearl throw,
+	 * including potentially initiating movement or teleportation.
+	 *
+	 * @param p       The player for whom the pearl throw is being simulated.
+	 */
+	public static void simulatePearlThrow(Player p) {
+		EnderPearl pearl = (EnderPearl) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ENDER_PEARL);
+		pearl.setGravity(false);
+		pearl.setShooter(null);
+		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(0.75)); // Normal pearl speed is ~3.0
 	}
 
 	/**

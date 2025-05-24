@@ -70,6 +70,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	 * The map is cleared and repopulated during the process of spawning all fake players,
 	 * ensuring synchronization with the current set of active NPCs.
 	 */
+	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 	private final Map<String, Player> npcMap = new HashMap<>();
 
 	/**
@@ -86,6 +87,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	 * <p>
 	 * This map should <strong>ONLY BE USED WITH REAL PLAYERS</strong>!
 	 */
+	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 	private final Map<Player, String> playerRoles = new HashMap<>();
 
 	/**
@@ -209,7 +211,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				return true;
 			}
 			case "spectate" -> {
-				if(args.length < 1) {
+				/*if(args.length < 1) {
 					p.sendMessage("Please specify a class to spectate.");
 					return true;
 				}
@@ -228,10 +230,12 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				actorMap.replace(role, p);
 				playerRoles.put(p, role);
 				Objects.requireNonNull(p.getAttribute(Attribute.ATTACK_SPEED)).setBaseValue(100);
-				p.sendMessage("You are now spectating " + role + ".");
+				p.sendMessage("You are now spectating " + role + ".");*/
+				p.sendMessage(ChatColor.RED + "Oops!  Something went wrong.  Give me 3-5 business days to fix!");
 				return true;
 			}
 			case "unspectate" -> {
+				/*
 				if(playerRoles.containsKey(p)) {
 					// Replaces the player that ran the command with the original fake NPC
 					actorMap.replace(playerRoles.get(p), npcMap.get(playerRoles.get(p)));
@@ -239,7 +243,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					p.sendMessage("You are no longer spectating a class.");
 					return true;
 				}
-				p.sendMessage("You are not spectating a class.");
+				p.sendMessage("You are not spectating a class.");*/
+				p.sendMessage(ChatColor.RED + "This command doesn't work.");
 				return true;
 			}
 			case "tas" -> {
@@ -250,7 +255,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			case "reset" -> {
 				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
 				actorMap.keySet().forEach(npc -> actorMap.get(npc).teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
-				p.sendMessage("Reset all NPCs.  If you were teleported, try /unspectate and run the command again.");
+				p.sendMessage("Reset all NPC locations.");
 				return true;
 			}
 		}
@@ -333,7 +338,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			p.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, -1, 255, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, -1, 255, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 3, true, false));
-			p.addPotionEffect(new PotionEffect(PotionEffectType.HEALTH_BOOST, -1, 4, true, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, -1, 255, true, false));
+			Objects.requireNonNull(p.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
+			p.setHealth(40);
 			p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, -1, 2, true, false));
 
 			// Set Inventory

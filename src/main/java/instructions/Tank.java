@@ -15,7 +15,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(p, 2, 29), 60);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(p, 2), 61);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(p), 101);
-		Utils.scheduleTask(() -> Actions.move(p, new Vector(-0.8634, 0, 0), 3), 102);
+		Utils.scheduleTask(() -> Actions.move(p, new Vector(-0.8634, 0, 0), 4), 102);
 		Utils.scheduleTask(() -> p.teleport(new Location(p.getWorld(), -120.5, 75, -220.5)), 141);
 	}
 

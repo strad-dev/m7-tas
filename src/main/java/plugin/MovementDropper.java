@@ -67,7 +67,7 @@ public class MovementDropper implements Listener {
 	 */
 	@EventHandler
 	public void onLogin(PlayerLoginEvent ev) {
-		Bukkit.getScheduler().runTaskLater(PLUGIN, () -> {
+		/*Bukkit.getScheduler().runTaskLater(PLUGIN, () -> {
 			Channel ch = getChannel(ev.getPlayer());
 			if(ch == null) return;
 			ChannelPipeline pipe = ch.pipeline();
@@ -76,6 +76,6 @@ public class MovementDropper implements Listener {
 						new ChannelDuplexHandler() {
 						});
 			}
-		}, 1);
+		}, 1);*/
 	}
 }
