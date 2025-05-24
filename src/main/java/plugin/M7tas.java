@@ -2,6 +2,7 @@ package plugin;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
@@ -104,7 +105,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 	private boolean fakeTickerStarted = false;
 
-	private static final Map<String, String[]> SKIN_DATA = Map.of("Archer", new String[]{"fb/7dBo3U4jZ1WUPvBfVnPrFoFk34pyZlNAOjfqk8E8FDzGuD+TOAM1D1WNe4aOdQYPAz7oqiMsQ7X1EeipUHrWQM1Cn7+XTs2mNt8jZ5PHGwq+BjwiLHmiBzn4zrXqMXyqP3+YN/MbjCR4dWafIilJft3oSAHEi2cpqV8EL78fZxYeDkVr3BHhonQDsjJZo9AGM9/bTip7FSrj/aQa6zvUYnkOI2HmUbT+xs2+3yOk0Hmk2EdJVcDhC1r9fbcqKZaE726RE4DdQt0toBEb6NVihWKBNvmmSiLkgm+xzlPYVkjpu/BvZHimEFFjGfcDYUDcx2EgRhjy0eYcYFvxSoLQJYHHNQuHJRfddYG63GdiZ6Kke21Q/xlVa9GtVRDnWB14UgkGDsvfs11PYEUB9yi87MsYCw4oa9nlTe8kNpjzYFEpVqloym7rZTYTReQmCwQUoGrsKSaI/Asint2SLIPwbJVMV3vO4Ye6UyoFaGS5aBCUVoiLFuJGy2warsWvTHeYvUeaOXWoBkEJA+mzllMbwQ1BEV5rWjsGXx0aSWH5uVslXWDLvj5lX/hA2qWE4Xp/o81AbdbUIOb/A6PZugRy/TDHcNr+hIwlVZGTOcPg6qarQLKJtIenHux5GycZZuQDRMhDak1c3aQvMuqZK2Vo96n/WL45c9hZ2T8kTMKU=", "ewogICJ0aW1lc3RhbXAiIDogMTY2MDMzMjQ4MDAzMCwKICAicHJvZmlsZUlkIiA6ICIzOWEzOTMzZWE4MjU0OGU3ODQwNzQ1YzBjNGY3MjU2ZCIsCiAgInByb2ZpbGVOYW1lIiA6ICJkZW1pbmVjcmFmdGVybG9sIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzM2NWQwYTZhNjliNjk3MDZkZmEyZmU4MTMyYTZjNjRjYTM1OTJjZDY2MWZhNzJlYTA0MzQxZTgyOWU1NGFhMjAiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ=="}, "Berserk", new String[]{"Xt20RWBBt0qYZCRuFnorgjlvjPDQHAOqqRQCzSXIz37rSQHqbwkPms6VV0W41GX7cNBvucavv4/uB9SNWRG0k1njpDqafV7w60rWgupj/hbj9HAeUkjj6UOgzQsPeyCyiTk4YOsFwFvqCjA2H9orL6yniz+4gq9IHEMDY9JF4whEhYNa9P4oXemL6it3orbXKqPNYuAoDD/xLkbhIqTaMTzkfzRjGeUvHeu/XMWzJ5E8U2V2tBh6Dp0l54YdaEZsq48IjyGixFxCjRSQZOwVfO7O+ErLpTa+Qe7Tc43jbsfQY3iJ78Wtw/MHw0TR7j18mLGlHF2WTvCA1nItFIhPGEsYTKw4XJvV5E0s2PFrMKdzyTMPU4uQt8i2lIcWsADooqSLdrP9Rx8Xly4qAbIK0vTZ09w1HYI37YHdWFv+vtuEdb2GIuU+xt7aAWRh70y4E53/+RqYtbsWxsxX8Wp6fNP2X7/hIGKKeDPNwzGTe9UIMdOjeyXQIV2+fPc8i43OYA/Q0v6YLyEqBGj29v3dFrcNlpnZK3vq2KpXvwnOJ8KagB+59TSd9Dt/wJt4W9Pk700vmdvm4ncgxBKRXyrAT2K6yIytUDODRXXjnOEiqLm27+AoDK04BmTX8owfjJl5nCYkeBsDwAkIJp8QzehHoOiOfYUsvyQbTZKbPjgpcjI=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2ODM3NDMzNywKICAicHJvZmlsZUlkIiA6ICJkZmY3OWM0MDZhZWI0NThhODZjZjY3ODllMTgzMTMxNyIsCiAgInByb2ZpbGVOYW1lIiA6ICJBc2FwSWNleSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zYTFiZTU4MTRmZGRmNzcyYmEwM2QzNzliMDBiOWJjYjM0NDI3YTlkZGQ5NjcyOWQ2YmZiNGY0NDAzOWE1YWYwIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0sCiAgICAiQ0FQRSIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjM0MGMwZTAzZGQyNGExMWIxNWE4YjMzYzJhN2U5ZTMyYWJiMjA1MWIyNDgxZDBiYTdkZWZkNjM1Y2E3YTkzMyIKICAgIH0KICB9Cn0="}, "Healer", new String[]{"q6hGMu81OOF789B3u/t3bLv9uDnYgXetWXp1xaMaSofRnD12c/ylUKFIEyOL9Wi5a3XAV9ki2fhVFu6sMD12jHVZeAfcCPqIeSJe4xxpgcw+RsI3aYOEVB5PD6QGc2zEuuElwBYs08lgZ841OecTnuCIitrmLRl46PpNB5rOyh4d2PrGSYtpScdThJYMv13dxJKNmdd1mZwCKZBCBWdpGMBO47aJ9WXZuavghvt99QqzrPzELf7I3M/CuiZMJCMuZrMMs5rDg21hWSFsddheVX1aJPuMYQQH0ECJhmpuNBJUrlqNVyvziHYVn6LBFgw/jZVJqn/m7upVvlhjUH7d/otyYz0DjBYyrc6uee49DSZySOOipDF0GsKDQzZyphx5NyT3b2qiHjMzTHMTvxlMTbHYbjpynqj24wCkuIvBp2TpgMP3+aWlqrwWWweFbgTNpvWrNhi5t0feyzIpNjp2UbJRHWTjnZC2NEb2yW9qQDT8VtD9xaFnWahwMGuXcmB1TNIEVRwMTVMxjbLESW38UUf+a3sNuFIqTB8F7jNY57bMJWV8qKHVwhPz6u8dDb7ActPHEP0VB4Y1SXzDVZ9kY2Cew1OfWdGNlyeyGUcNYXoG9IQKaTJ8DgJW5lK9nuPZq9Y+2e7Pepin/CadaKmLDdgJpKViGH3qA2+naCJj4dg=", "ewogICJ0aW1lc3RhbXAiIDogMTczNjQ3MTMwMjU5MiwKICAicHJvZmlsZUlkIiA6ICJiNzRlYjViMTc5OTc0YzZjODk3ZTgwNTM4Y2M1NmYwMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJQYW5kYUNoYW4yOCIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS82OTMzODhjODdlMjBlN2VjNzM4YjgxNWIwYTc4ZTRlNWRkODdmNTZiZDcyMjM5NmIwYTU2MTE3OTExOTgwMjRiIgogICAgfQogIH0KfQ=="}, "Mage", new String[]{"rZA8PML/9GK5A7lyrS4lbSjySvOoMJoPMDk5fAp8sazpWzaomd8aMK3t1u15RA5m+/Opf4m5X88EPJHW0/mBXHWOjT/0G2W4NiOzCjv/qm1hhVZk7S8+Al6nfxWiZBpWUJ8neoFdNdrtDHHeQX0LtHlwjXJ6kQwXExtnv7+HUaZ7AIpGnFSIFrNvnPr8cZ6JKL9r8F8Qv6ymWPibKhqPOaZviJIX++lDeQ7OASQosimVFDei7/GxTnBfvyenNtBbtX4XjlfOkhOohPL/TVBgjtGOu/NGnh8xAd+UdaEAIiSU9tkBOV1uujRkCtMvKGL6ctaYqJYkE+Aepvf4p/Q1M9i0wvudyLhOFqvu+C5/Z9O7zMNt54nLIHMYmWoaHJzIAQnCWvIuewABfOrUgbjITBTxfc33oGeTFgEjMGEhqXJw5EL7zbQXzJMNuzYSTZ3/GyONp09B9G88obHvrj6nzo8yYHLA9L52HExVMOYuSByCw4MByy08tUrBnzf3o6jIdp1Ji/SYKEapg3wF9PqPkyXI3nV6nbm+qQVX2UmNV78xw6gq35hqa4AeAa2S5jWLhYPV+TopfmN9n1AZ9/EBBFNfA58gsJCmQxc1aKxmqBDuSX59KcAf454onhSDCVrWbkzFVjyuP4KnFGQynjfMVCPhn1ueo57MWpp1ZYFJK+M=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2NzIyOTA2OSwKICAicHJvZmlsZUlkIiA6ICJjZGI5ZTljNmMwOTY0ZjU4OWM0OTM1Mzk1ZDdiODk3YyIsCiAgInByb2ZpbGVOYW1lIiA6ICJCZWV0aG92ZW5fIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2NhZThjY2Y3YTgwZmZmZjBkN2I3Nzc3M2UzMjFkMGJkMjA4OWIxZTAwNzUzZjE3OTVmNjIwMjA3NzVhYzY1OTciCiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzIzNDBjMGUwM2RkMjRhMTFiMTVhOGIzM2MyYTdlOWUzMmFiYjIwNTFiMjQ4MWQwYmE3ZGVmZDYzNWNhN2E5MzMiCiAgICB9CiAgfQp9"}, "Tank", new String[]{"IVG0H6Xtsz4GkksjRWFihXARKK1vAgsPQ2ytytOcB1EwItw5OS25+pftk6b/40VH3+OX6RCHhbeUG4g1REWtSmpWKA9NgqYEsv1gvnRFAiWywuLrYaKGG+T0OQ48CkPA995wQo4YvnPPOzzhsF3IsjNC3v6aDCC8B9JS0iM8mK9ttEmRQnEcNLkiswrN8uo8MTfSE6/e90BJSGMnia3VjFvIM5mpe/YsYW1qguk1z+Ndn7uXBt0VnDCq3sRt0njR+MdgQMKcJGIhCRxMry9ezoGzh05DzQeWwwC9XVM0CuXi1brHYw3Mbchht20+khErLgyZNHE/XZ0D0U77lCihJ7oyImqf0XmENmlUZqC7IE73u/YhuZMRB1HaJEm374zgZ9dWV14CmaqHDMFHtFgO8wSLT3tOo24U5dHA3Ihjf9UOBJSz+IOOvG7N7i67OYmrqXqdV0pSacKODvzTd3UhxfqNWZIDMq23vC5funtDwiWT3STFo4jwn51Fu04V1iSO9SrLnbNG2kKJvbYO6P1cK5cIf9PKnIOrTCvh7OZ/pgA8ZIJgnIE/ml5AHFKL9ji7mSqYB4qv9CYaJT0yXBWRPqzng8UZ4rHCoBqdwIn+2WmUjfHdVsuI/ECU7UkU83Ol004Br4fquLj8tWAXwQZn7s90r96Vg2a1TUWyBLH60BQ=", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjY2ODAwNzgxMywKICAicHJvZmlsZUlkIiA6ICIzYjBmNTM5MmRlNzM0YmZjYmJkOTMxYzMxYmFkODMxMCIsCiAgInByb2ZpbGVOYW1lIiA6ICJjYXRhbmRCIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2FkZTVhZjZhMzlkYjVjMDYxMjU3YTBkZDliNjA1YWQyNjBjMjFkYTNkMmZkMjhmNDM0MGIzZmU1YzgwZTM4ZDQiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ=="});
+	/*
+	 * Archer - akc0303
+	 * Berserk - AsapIcey
+	 * Healer - Meepy_
+	 * Mage - Beethoven_
+	 * Tank - cookiethebald
+	 */
+	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Healer", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Tank", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
 	public static List<Player> getFakePlayers() {
 		return fakePlayers;
@@ -171,9 +179,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 		for(var entry : SKIN_DATA.entrySet()) {
 			String role = entry.getKey();
-			String[] skin = entry.getValue();
+			String skin = entry.getValue();
 
-			Player fake = spawnFakePlayer(location, role, skin[0], skin[1]);
+			Player fake = spawnFakePlayer(location, role, UUID.fromString(skin));
 			fakePlayers.add(fake);
 			npcMap.put(role, fake);
 			actorMap.put(role, fake);
@@ -268,22 +276,49 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	/**
+	 * Builds a fake GameProfile with textures copied from another GameProfile's skin.
+	 * This method is used to create an NPC's GameProfile that mimics the skin of another Minecraft user.
+	 *
+	 * @param fakeUuid the UUID of the NPC's fake GameProfile
+	 * @param fakeName the name of the NPC's fake GameProfile
+	 * @param skinOwnerUuid the UUID of the player whose skin will be used for copying textures
+	 * @return a GameProfile with the specified UUID, name, and the copied skin texture property
+	 */
+	public static GameProfile buildFakeProfileWithSkin(UUID fakeUuid, String fakeName, UUID skinOwnerUuid) {
+		// 1) Create a GameProfile only for fetching textures
+		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
+		ProfileResult result = nms.aq().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
+
+		if (result == null) {
+			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
+		}
+
+		GameProfile populated = result.profile();
+		Property tex = populated.getProperties()
+				.get("textures")
+				.iterator()
+				.next();
+
+		// 3) Create your own NPC profile and copy in that Property:
+		GameProfile npcProfile = new GameProfile(fakeUuid, fakeName);
+		npcProfile.getProperties().put("textures", tex);
+		return npcProfile;
+	}
+
+	/**
 	 * Spawns a “real” EntityPlayer into the world (no Citizens, no persistence).
 	 *
 	 * @param loc   where to spawn
-	 * @param name  the fake player’s username
-	 * @param value base64 skin texture
-	 * @param sig   skin signature
+	 * @param fakePlayerName  the fake player’s username
+	 * @param skinOwner the owner of the skin being used
 	 */
-	public Player spawnFakePlayer(Location loc, String name, String value, String sig) {
+	public Player spawnFakePlayer(Location loc, String fakePlayerName, UUID skinOwner) {
 		// 1) NMS server & world handles
 		MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
 		WorldServer nmsWorld = ((CraftWorld) Objects.requireNonNull(loc.getWorld())).getHandle();
 
 		// 2) Build a GameProfile with skin properties
-		GameProfile profile = new GameProfile(UUID.randomUUID(), name);
-		profile.getProperties().removeAll("textures");
-		profile.getProperties().put("textures", new Property("textures", value, sig));
+		GameProfile profile = buildFakeProfileWithSkin(UUID.randomUUID(), fakePlayerName, skinOwner);
 
 		// 3) Create EntityPlayer with a dummy InteractManager
 		ClientInformation clientInfo = ClientInformation.a();
