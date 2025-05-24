@@ -29,37 +29,37 @@ public class JoinListener implements Listener {
 	 */
 	@EventHandler
 	public void onJoin(PlayerJoinEvent ev) {
-		PlayerConnection conn = ((CraftPlayer)ev.getPlayer())
-				.getHandle()     // EntityPlayer
-				.f;              // PlayerConnection
+		Utils.scheduleTask(() -> {
 
-		// Re-send each fake NPC’s “add + spawn” packets just to this connection:
-		for (Player fake : M7tas.getFakePlayers()) {
-			// 1) NMS handles
-			EntityPlayer npc = ((CraftPlayer)fake).getHandle();
-			WorldServer  world = ((CraftWorld)Objects.requireNonNull(fake.getWorld()))
-					.getHandle();
-			ChunkProviderServer provider = world.m();
 
-			// ensure the chunk-provider is tracking our NPC
-			provider.a.a(npc);
+			PlayerConnection conn = ((CraftPlayer) ev.getPlayer()).getHandle()     // EntityPlayer
+					.f;              // PlayerConnection
 
-			// fetch the EntityTrackerEntry so we can spawn with all watchers
-			int id = npc.ar();
-			EntityTrackerEntry entry = provider.a.K.get(id).b;
+			// Re-send each fake NPC’s “add + spawn” packets just to this connection:
+			for(Player fake : M7tas.getFakePlayers()) {
+				// 1) NMS handles
+				EntityPlayer npc = ((CraftPlayer) fake).getHandle();
+				WorldServer world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
+				ChunkProviderServer provider = world.m();
 
-			// 2) Build the “ADD_PLAYER” info packet
-			EnumSet<a> addAction = EnumSet.of(a.a);
-			ClientboundPlayerInfoUpdatePacket addPkt =
-					new ClientboundPlayerInfoUpdatePacket(addAction, List.of(npc));
+				// ensure the chunk-provider is tracking our NPC
+				provider.a.a(npc);
 
-			// 3) Build the spawn packet (uses the same entry you used at creation)
-			PacketPlayOutSpawnEntity spawnPkt =
-					new PacketPlayOutSpawnEntity(npc, entry);
+				// fetch the EntityTrackerEntry so we can spawn with all watchers
+				int id = npc.ar();
+				EntityTrackerEntry entry = provider.a.K.get(id).b;
 
-			// 4) Send JUST to the joining player
-			conn.b(addPkt);
-			conn.b(spawnPkt);
-		}
+				// 2) Build the “ADD_PLAYER” info packet
+				EnumSet<a> addAction = EnumSet.of(a.a);
+				ClientboundPlayerInfoUpdatePacket addPkt = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(npc));
+
+				// 3) Build the spawn packet (uses the same entry you used at creation)
+				PacketPlayOutSpawnEntity spawnPkt = new PacketPlayOutSpawnEntity(npc, entry);
+
+				// 4) Send JUST to the joining player
+				conn.b(addPkt);
+				conn.b(spawnPkt);
+			}
+		}, 1);
 	}
 }
