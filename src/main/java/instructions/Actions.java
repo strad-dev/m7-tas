@@ -22,7 +22,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.M7tas;
-import plugin.MovementDropper;
+import plugin.JoinListener;
 import plugin.Utils;
 
 import java.util.EnumSet;
@@ -142,8 +142,6 @@ public class Actions {
 		p.teleport(to);
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 
-		MovementDropper.pauseMovementReads(p, 4);
-
 		Utils.scheduleTask(() -> wipeNmsVelocity(p), 1);
 		Utils.scheduleTask(() -> wipeNmsVelocity(p), 2);
 	}
@@ -163,8 +161,6 @@ public class Actions {
 		p.setVelocity(new Vector(0, 0, 0));
 		p.teleport(to);
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
-
-		MovementDropper.pauseMovementReads(p, 4);
 
 		Utils.scheduleTask(() -> wipeNmsVelocity(p), 1);
 		Utils.scheduleTask(() -> wipeNmsVelocity(p), 2);
