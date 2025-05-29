@@ -8,10 +8,8 @@ import instructions.*;
 import instructions.Server;
 import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.EnumProtocolDirection;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
+import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.a;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
-import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
@@ -279,8 +277,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	 * Builds a fake GameProfile with textures copied from another GameProfile's skin.
 	 * This method is used to create an NPC's GameProfile that mimics the skin of another Minecraft user.
 	 *
-	 * @param fakeUuid the UUID of the NPC's fake GameProfile
-	 * @param fakeName the name of the NPC's fake GameProfile
+	 * @param fakeUuid      the UUID of the NPC's fake GameProfile
+	 * @param fakeName      the name of the NPC's fake GameProfile
 	 * @param skinOwnerUuid the UUID of the player whose skin will be used for copying textures
 	 * @return a GameProfile with the specified UUID, name, and the copied skin texture property
 	 */
@@ -289,7 +287,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
 		ProfileResult result = nms.aq().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
 
-		if (result == null) {
+		if(result == null) {
 			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
 		}
 
@@ -308,9 +306,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	/**
 	 * Spawns a “real” EntityPlayer into the world (no Citizens, no persistence).
 	 *
-	 * @param loc   where to spawn
-	 * @param fakePlayerName  the fake player’s username
-	 * @param skinOwner the owner of the skin being used
+	 * @param loc            where to spawn
+	 * @param fakePlayerName the fake player’s username
+	 * @param skinOwner      the owner of the skin being used
 	 */
 	public Player spawnFakePlayer(Location loc, String fakePlayerName, UUID skinOwner) {
 		// 1) NMS server & world handles
@@ -524,9 +522,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			@Override
 			public void run() {
 				// tick() each fake player every server tick
-				for(Player bukkit : fakePlayers) {
-					if(!(bukkit instanceof CraftPlayer)) continue;
-					EntityPlayer npc = ((CraftPlayer) bukkit).getHandle();
+				for(Player fake : fakePlayers) {
+					if(!(fake instanceof CraftPlayer)) continue;
+					EntityPlayer npc = ((CraftPlayer) fake).getHandle();
 					npc.f(false);
 					npc.d_();
 				}

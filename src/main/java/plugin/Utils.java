@@ -2,37 +2,32 @@ package plugin;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
-import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
-import net.minecraft.network.protocol.game.PacketPlayOutWindowItems;
-import net.minecraft.network.syncher.DataWatcherObject;
-import net.minecraft.network.syncher.DataWatcherRegistry;
+import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.WorldServer;
+import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.Container;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class Utils {
-	private static final DataWatcherObject<Byte> SHARED_FLAGS =
-			new DataWatcherObject<>(0, DataWatcherRegistry.a);
 	/**
 	 * Wrapper for Bukkit.getScheduler().runTaskLater(Plugin, Runnable, long)
 	 *
-	 * @param task The task to run later.
+	 * @param task  The task to run later.
 	 * @param delay In how many ticks this task should be run.
 	 */
 	public static void scheduleTask(Runnable task, long delay) {
@@ -50,8 +45,8 @@ public class Utils {
 	 *                  NMS entity (EntityPlayer) before the synchronization is performed.
 	 */
 	public static void forceFullSync(Player bukkit, Consumer<EntityPlayer> nmsChange) {
-		if (!(bukkit instanceof CraftPlayer)) return;
-		EntityPlayer nms = ((CraftPlayer)bukkit).getHandle();
+		if(!(bukkit instanceof CraftPlayer)) return;
+		EntityPlayer nms = ((CraftPlayer) bukkit).getHandle();
 
 		// 1) apply your NMS mutation
 		nmsChange.accept(nms);
@@ -61,9 +56,8 @@ public class Utils {
 		forceRotationSync(bukkit);
 		forceFullInventorySync(bukkit);
 
-		PacketPlayOutHeldItemSlot held =
-				new PacketPlayOutHeldItemSlot(nms.gi().j);
-		((CraftPlayer)bukkit).getHandle().f.b(held);
+		PacketPlayOutHeldItemSlot held = new PacketPlayOutHeldItemSlot(nms.gi().j);
+		((CraftPlayer) bukkit).getHandle().f.b(held);
 	}
 
 	/**
@@ -75,8 +69,7 @@ public class Utils {
 		Container menu = handle.cd; // the open window (0 = player inv)
 
 		// Build the packet with the current contents
-		PacketPlayOutWindowItems pkt =
-				new PacketPlayOutWindowItems(menu.l, menu.j(), menu.c(), menu.g());
+		PacketPlayOutWindowItems pkt = new PacketPlayOutWindowItems(menu.l, menu.j(), menu.c(), menu.g());
 
 		// Send it only to this player's connection
 		handle.f.b(pkt);
@@ -91,16 +84,12 @@ public class Utils {
 		net.minecraft.world.item.ItemStack handStack = npc.gi().a(npc.gi().j);
 
 		// build an equipment packet for MAIN_HAND
-		PacketPlayOutEntityEquipment equipPkt =
-				new PacketPlayOutEntityEquipment(
-						npc.ar(),
-						Collections.singletonList(Pair.of(EnumItemSlot.a, handStack))
-				);
+		PacketPlayOutEntityEquipment equipPkt = new PacketPlayOutEntityEquipment(npc.ar(), Collections.singletonList(Pair.of(EnumItemSlot.a, handStack)));
 
 		// send it to every real viewer
 		broadcastPacket(equipPkt);
 	}
-
+	
 	/*
 	 * Forces a metadata synchronization for the specified entity player.
 	 * This method ensures that all metadata entries are marked and sent to all online players.
@@ -145,15 +134,39 @@ public class Utils {
 
 		// build a teleport‐style packet carrying the new yaw/pitch (and position)
 		PositionMoveRotation pmr = PositionMoveRotation.a(nms);
-		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(
-				nms.ar(),
-				pmr,
-				EnumSet.noneOf(Relative.class),
-				nms.aJ()
-		);
+		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nms.ar(), pmr, EnumSet.noneOf(Relative.class), nms.aJ());
 
 		// send to only the real connections
 		broadcastPacket(tp);
+	}
+
+	public static void forceInstantTeleport(Player bukkit, Location to) {
+		CraftPlayer p = (CraftPlayer) bukkit;
+		EntityPlayer nms = p.getHandle();
+		WorldServer world = ((CraftWorld) bukkit.getWorld()).getHandle();
+
+		// 1) Update the server‐side EntityPlayer position & rotation immediately
+		nms.teleportTo(world, to.getX(), to.getY(), to.getZ(), EnumSet.noneOf(Relative.class), to.getYaw(), to.getPitch(), false, PlayerTeleportEvent.TeleportCause.PLUGIN);
+		nms.v(to.getYaw());
+		nms.w(to.getPitch());
+		nms.aZ = to.getYaw();
+		nms.aX = to.getYaw();
+
+		PositionMoveRotation pmr = PositionMoveRotation.a(nms);
+
+		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nms.ar(), pmr, EnumSet.noneOf(Relative.class), nms.aJ());
+
+		broadcastPacket(tp);
+
+		PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
+
+		for(Player viewer : Bukkit.getOnlinePlayers()) {
+			if(viewer.getGameMode() == GameMode.SPECTATOR && Objects.equals(viewer.getSpectatorTarget(), bukkit)) {
+				EntityPlayer nmsViewer = ((CraftPlayer) viewer).getHandle();
+				PlayerConnection conn = nmsViewer.f;
+				conn.b(snapCam);
+			}
+		}
 	}
 
 	/**
@@ -171,8 +184,8 @@ public class Utils {
 	 * Creates a leather armor item with the specified material, color, and name.
 	 *
 	 * @param material The material type of the leather armor.
-	 * @param color The color to apply to the leather armor.
-	 * @param name The display name to set for the leather armor.
+	 * @param color    The color to apply to the leather armor.
+	 * @param name     The display name to set for the leather armor.
 	 * @return A new ItemStack representing the customized leather armor.
 	 */
 	public static ItemStack createLeatherArmor(Material material, Color color, String name) {

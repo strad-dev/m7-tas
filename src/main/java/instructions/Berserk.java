@@ -42,246 +42,246 @@ public class Berserk {
 		// Tick 162 (clear tick 2)
 		Actions.setFakePlayerHotbarSlot(berserk, 1);
 		Actions.turnHead(berserk, 90, 36.5f);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -24.5, 69, -197.5)), 4);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -175.3f, 3.5f), 8);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -22.5, 69, -223.5)), 12);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -24.5, 69, -197.5)), 1);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -175.3f, 3.5f), 2);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -22.5, 69, -223.5)), 3);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -126.9f, 12.2f);
 			Actions.setFakePlayerHotbarSlot(berserk, 5);
-		}, 16);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-22, 70, -224)), 20);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-22, 70, -225)), 24);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-21, 70, -225)), 28);
+		}, 4);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-22, 70, -224)), 5);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-22, 70, -225)), 6);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-21, 70, -225)), 7);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe 1/1 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 32);
+		}, 8);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 3.1f, 2.4f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 36);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -24.5, 69, -184.5)), 40);
+		}, 9);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -24.5, 69, -184.5)), 10);
 
 		/*
 		 *  ██████╗██╗  ██╗ █████╗ ███╗   ███╗██████╗ ███████╗██████╗ ███████╗
 		 * ██╔════╝██║  ██║██╔══██╗████╗ ████║██╔══██╗██╔════╝██╔══██╗██╔════╝
-		 * ██║     ███████║███████║██╔████╔██║██████╔╝█████╗  ██████╔╝███████╗
-		 * ██║     ██╔══██║██╔══██║██║╚██╔╝██║██╔══██╗██╔══╝  ██╔══██╗╚════██║
+		 * ██║	 ███████║███████║██╔████╔██║██████╔╝█████╗  ██████╔╝███████╗
+		 * ██║	 ██╔══██║██╔══██║██║╚██╔╝██║██╔══██╗██╔══╝  ██╔══██╗╚════██║
 		 * ╚██████╗██║  ██║██║  ██║██║ ╚═╝ ██║██████╔╝███████╗██║  ██║███████║
-		 *  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝
+		 *  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝	 ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -60.4f, 28), 44);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -20.5, 69, -182.5)), 48);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -138.5f, 90), 52);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -20.5, 59, -182.5)), 56);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -134.2f, 51.1f), 60);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -60.4f, 28), 11);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -20.5, 69, -182.5)), 12);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -138.5f, 90), 13);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -20.5, 59, -182.5)), 14);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -134.2f, 51.1f), 15);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers 1/5 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 64);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0, -90), 68);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -20.5, 72, -182.5)), 72);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 81.0f, -67.7f), 76);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -23.5, 82, -181.5)), 80);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 57.5f, 9.3f), 84);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -31.5, 82, -176.5)), 88);
+		}, 16);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0, -90), 17);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -20.5, 72, -182.5)), 18);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 81.0f, -67.7f), 19);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -23.5, 82, -181.5)), 20);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 57.5f, 9.3f), 21);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -31.5, 82, -176.5)), 22);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 62.5f, 10.8f);
 			Actions.setFakePlayerHotbarSlot(berserk, 0);
-		}, 92);
+		}, 23);
 		Utils.scheduleTask(() -> {
 			Actions.simulateRightClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers 2/5 (Killed Bat)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
-		}, 96);
+		}, 24);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 161.0f, 9.5f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 100);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -38.5, 80, -183.5)), 104);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 108.8f, 5.1f), 108);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -55.5, 80, -189.5)), 112);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -144.1f, 3.7f), 116);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -45.5, 81, -203.5)), 120);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -168.7f, 9.2f), 124);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -44.5, 81, -213.5)), 128);
+		}, 25);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -38.5, 80, -183.5)), 26);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 108.8f, 5.1f), 27);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -55.5, 80, -189.5)), 28);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -144.1f, 3.7f), 29);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -45.5, 81, -203.5)), 30);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -168.7f, 9.2f), 31);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -44.5, 81, -213.5)), 32);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 146.5f, -2.3f);
 			Actions.setFakePlayerHotbarSlot(berserk, 3);
-		}, 132);
-		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -47, 81, -217, -46, 84, -216), 136);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 140);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 83.5, -228.5)), 144);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 116.2f, 38.9f), 148);
+		}, 33);
+		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -47, 81, -217, -46, 84, -216), 34);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 35);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 83.5, -228.5)), 36);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 116.2f, 38.9f), 37);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers 3/5 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 152);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0.7f, -3.3f), 156);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 86, -219.5)), 160);
+		}, 38);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0.7f, -3.3f), 39);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 86, -219.5)), 40);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 0f, 45f);
 			Actions.setFakePlayerHotbarSlot(berserk, 5);
-		}, 164);
+		}, 41);
 		Utils.scheduleTask(() -> {
 			Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-55, 87, -219));
-			Actions.move(berserk, new Vector(0, 0, 0.2806), 12);
-		}, 168);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-55, 86, -219)), 172);
+			Actions.move(berserk, new Vector(0, 0, 1.1224), 3);
+		}, 42);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-55, 86, -219)), 43);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 14.8f, 45f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 176);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -59.5, 69, -198.5)), 180);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 36f, 16f), 184);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -62.5, 69, -194.5)), 188);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 5), 192);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-64, 70, -194)), 196);
+		}, 44);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -59.5, 69, -198.5)), 45);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 36f, 16f), 46);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -62.5, 69, -194.5)), 47);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 5), 48);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-64, 70, -194)), 49);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers 4/5 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 200);
+		}, 50);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90f, 14.9f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 204);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -56.5, 69, -194.5)), 208);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 9.3f, 5.2f), 212);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -58.5, 69, -176.5)), 216);
+		}, 51);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -56.5, 69, -194.5)), 52);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 9.3f, 5.2f), 53);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -58.5, 69, -176.5)), 54);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 75f, 15.9f);
 			Actions.setFakePlayerHotbarSlot(berserk, 3);
-		}, 220);
-		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -61, 69, -177, -62, 73, -174), 224);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 228);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -64.5, 69.0625, -175.5)), 232);
+		}, 55);
+		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -61, 69, -177, -62, 73, -174), 56);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 57);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -64.5, 69.0625, -175.5)), 58);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers 5/5 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 236);
+		}, 59);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -95.4f, -3.2f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 240);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 71.5, -176.5)), 244);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 165.2f, 6.8f), 248);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -64.5, 69, -215.5)), 252);
+		}, 60);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 71.5, -176.5)), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 165.2f, 6.8f), 62);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -64.5, 69, -215.5)), 63);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 90f, 0f);
 			Actions.setFakePlayerHotbarSlot(berserk, 4);
-			Actions.move(berserk, new Vector(-0.2806, 0, 0), 48);
-		}, 256);
+			Actions.move(berserk, new Vector(-1.1224, 0, 0), 13);
+		}, 64);
 
 		/*
 		 *  ██████╗ █████╗ ████████╗██╗    ██╗ █████╗ ██╗     ██╗  ██╗
 		 * ██╔════╝██╔══██╗╚══██╔══╝██║    ██║██╔══██╗██║     ██║ ██╔╝
-		 * ██║     ███████║   ██║   ██║ █╗ ██║███████║██║     █████╔╝
-		 * ██║     ██╔══██║   ██║   ██║███╗██║██╔══██║██║     ██╔═██╗
+		 * ██║     ███████║   ██║   ██║ █╗ ██║███████║██║     █████╔╝ 
+		 * ██║     ██╔══██║   ██║   ██║███╗██║██╔══██║██║     ██╔═██╗ 
 		 * ╚██████╗██║  ██║   ██║   ╚███╔███╔╝██║  ██║███████╗██║  ██╗
 		 *  ╚═════╝╚═╝  ╚═╝   ╚═╝    ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 		 */
-		Utils.scheduleTask(Berserk::simulateShoot, 260);
-		Utils.scheduleTask(Berserk::simulateShoot, 280);
-		Utils.scheduleTask(Berserk::simulateShoot, 300);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(berserk), 304);
+		Utils.scheduleTask(Berserk::simulateShoot, 65);
+		Utils.scheduleTask(Berserk::simulateShoot, 70);
+		Utils.scheduleTask(Berserk::simulateShoot, 75);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(berserk), 76);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 72.2f, 1.3f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 308);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -93.5, 70.5, -210.5)), 312);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 64.3f, 34.8f), 316);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -101.5, 66, -206.5)), 320);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -152.6f, 69.1f), 324);
+		}, 77);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -93.5, 70.5, -210.5)), 78);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 64.3f, 34.8f), 79);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -101.5, 66, -206.5)), 80);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -152.6f, 69.1f), 81);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk 1/6 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 328);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -120.0f, 26.4f), 332);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -93.5, 63, -211.5)), 336);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -33.2f, 68.7f), 340);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -96.5, 50, -206.5)), 344);
+		}, 82);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -120.0f, 26.4f), 83);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -93.5, 63, -211.5)), 84);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -33.2f, 68.7f), 85);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -96.5, 50, -206.5)), 86);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -96.4f, 17.5f);
 			Actions.setFakePlayerHotbarSlot(berserk, 3);
-		}, 348);
-		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -94, 50, -207, -93, 53, -209), 352);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 356);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -90.5, 50, -207.5)), 360);
+		}, 87);
+		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -94, 50, -207, -93, 53, -209), 88);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 89);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -90.5, 50, -207.5)), 90);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk 2/6 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 364);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 70.0f, 17.0f), 368);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -95.5, 50, -205.5)), 372);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -2.6f, -18.9f), 376);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -94.5, 59, -184.5)), 380);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 1.6f, -2.4f), 384);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -95.5, 63, -146.5)), 388);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -106.2f, 12.2f), 392);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -92.5, 64, -147.5)), 396);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90.4f, 22.1f), 400);
+		}, 91);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 70.0f, 17.0f), 92);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -95.5, 50, -205.5)), 93);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -2.6f, -18.9f), 94);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -94.5, 59, -184.5)), 95);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 1.6f, -2.4f), 96);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -95.5, 63, -146.5)), 97);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -106.2f, 12.2f), 98);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -92.5, 64, -147.5)), 99);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90.4f, 22.1f), 100);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk 3/6 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 404);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 36.6f), 408);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -95.5, 63, -147.5)), 412);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -85.1f, 87.4f), 416);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -94.5, 50, -147.5)), 420);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 24.1f), 424);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -94.5, 49, -141.5)), 428);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -110.2f, 18.8f), 432);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 36.6f), 102);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -95.5, 63, -147.5)), 103);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -85.1f, 87.4f), 104);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -94.5, 50, -147.5)), 105);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 24.1f), 106);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -94.5, 49, -141.5)), 107);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -110.2f, 18.8f), 108);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk 4/6 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 436);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 1.7f), 440);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -94.5, 51, -148.5)), 444);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -114.5f, 16.2f), 448);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -91.5, 50, -149.5)), 452);
+		}, 109);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 1.7f), 110);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -94.5, 51, -148.5)), 111);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -114.5f, 16.2f), 112);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -91.5, 50, -149.5)), 113);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90f, 0f);
 			Actions.setFakePlayerHotbarSlot(berserk, 3);
-			Actions.move(berserk, new Vector(0.2806, 0, 0), 19);
-		}, 456);
-		Utils.scheduleTask(() -> Actions.simulateCrypt(berserk, -86, 49, -150, -84, 51, -149), 460);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 464);
-		Utils.scheduleTask(Berserk::simulateShoot, 468);
+			Actions.move(berserk, new Vector(1.1224, 0, 0), 5);
+		}, 114);
+		Utils.scheduleTask(() -> Actions.simulateCrypt(berserk, -86, 49, -150, -84, 51, -149), 115);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 116);
+		Utils.scheduleTask(Berserk::simulateShoot, 117);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -106f, 12.6f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 472);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -80.5, 49, -150.5)), 476);
+		}, 118);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -80.5, 49, -150.5)), 119);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 135.4f, 14.9f);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk 5/6 (Obtained Item)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
-		}, 480);
+		}, 120);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk 6/6 (Obtained Wither Essence)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-		}, 484);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 5.3f, 3.3f), 488);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -81.5, 49, -139.5)), 492);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -160.2f, -65.2f), 496);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -78.5, 70.5, -148.5)), 500);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -136.3f, -28.3f), 504);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -74.5, 69, -152.5)), 508);
+		}, 121);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 5.3f, 3.3f), 122);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -81.5, 49, -139.5)), 123);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -160.2f, -65.2f), 124);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -78.5, 70.5, -148.5)), 125);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -136.3f, 28.3f), 126);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -74.5, 69, -152.5)), 127);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90, -5);
 			Actions.setFakePlayerHotbarSlot(berserk, 4);
-			Actions.move(berserk, new Vector(0.2806, 0, 0), 48);
-		}, 512);
+			Actions.move(berserk, new Vector(1.1224, 0, 0), 13);
+		}, 128);
 
 		/*
 		 * ██████╗ ██╗███╗   ██╗ ██████╗     ██████╗ ██╗ ██████╗     ███████╗██╗████████╗███████╗
@@ -291,95 +291,98 @@ public class Berserk {
 		 * ██████╔╝██║██║ ╚████║╚██████╔╝    ██████╔╝██║╚██████╔╝    ███████║██║   ██║   ███████╗
 		 * ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═════╝ ╚═╝ ╚═════╝     ╚══════╝╚═╝   ╚═╝   ╚══════╝
 		 */
-		Utils.scheduleTask(Berserk::simulateShoot, 516);
-		Utils.scheduleTask(Berserk::simulateShoot, 536);
-		Utils.scheduleTask(Berserk::simulateShoot, 556);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(berserk), 560);
+		Utils.scheduleTask(Berserk::simulateShoot, 129);
+		Utils.scheduleTask(Berserk::simulateShoot, 134);
+		Utils.scheduleTask(Berserk::simulateShoot, 139);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(berserk), 140);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -84.2f, 4f);
 			Actions.setFakePlayerHotbarSlot(berserk, 7);
-		}, 564);
+		}, 141);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Actions.simulatePearlThrow(berserk);
-		}, 568);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -80.5f, -38.4f), 572);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -43.5, 85, -149.5)), 576);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -52.1f, -22.7f), 580);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -33.5, 92, -141.5)), 584);
+		}, 142);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -80.5f, -38.4f), 143);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -43.5, 85, -149.5)), 144);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -52.1f, -22.7f), 145);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -33.5, 92, -141.5)), 146);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 0f, 20f);
 			Actions.setFakePlayerHotbarSlot(berserk, 3);
-		}, 588);
-		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -35, 92, -141, -33, 96, -140), 592);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 596);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -33.5, 92, -136.5)), 600);
+		}, 147);
+		Utils.scheduleTask(() -> Actions.simulateSuperboom(berserk, -35, 92, -141, -33, 96, -140), 148);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 149);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -33.5, 92, -136.5)), 150);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Dino Dig Site 1/4 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 			Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -50.059, 68.82469, -151.404));
-		}, 604);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 44f, 65.2f), 608);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 57, -146.5)), 612);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 616);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -54.5, 57, -144.5)), 620);
+		}, 151);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 44f, 65.2f), 152);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -54.5, 57, -146.5)), 153);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 154);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -54.5, 57, -144.5)), 155);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 135.7f, 34.6f);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Dino Dig Site 2/4 (Obtained Item)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
-		}, 624);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -61.5, 50, -151.5)), 628);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 40.2f), 632);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -63.5, 50, -151.5)), 636);
+		}, 156);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(berserk, new Location(berserk.getWorld(), -61.5, 50, -151.5)), 157);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 40.2f), 158);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -63.5, 50, -151.5)), 159);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 180.0f, -6.1f);
 			Actions.setFakePlayerHotbarSlot(berserk, 5);
-		}, 640);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-64, 51, -156)), 644);
+		}, 160);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-64, 51, -156)), 161);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Dino Dig Site 3/4 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		}, 648);
+		}, 162);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -70.5f, -23.5f);
 			Actions.setFakePlayerHotbarSlot(berserk, 1);
-		}, 652);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -50.5, 58, -146.5)), 656);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -111.1f, 19.6f), 660);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -18.5, 48, -158.5)), 664);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -10.7f, 10.4f), 668);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -16.5, 48, -147.5)), 672);
+		}, 163);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -50.5, 58, -146.5)), 164);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -111.1f, 19.6f), 165);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -18.5, 48, -158.5)), 166);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -10.7f, 10.4f), 167);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -16.5, 48, -147.5)), 168);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 0f, 34f);
 			Actions.setFakePlayerHotbarSlot(berserk, 0);
-		}, 676);
+		}, 169);
 		Utils.scheduleTask(() -> {
 			Actions.simulateRightClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Dino Dig Site 4/4 (Killed Bat)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
-		}, 680);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 175.6f, 3.2f), 684);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -17.5, 48, -157.5)), 688);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 26.5f, -64.1f), 692);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -20.5, 62, -152.5)), 696);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 17.8f, -7.6f), 700);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -31.5, 69, -119.5)), 704);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 93.6f, 4.9f), 708);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -50.5, 69, -120.5)), 712);
+		}, 170);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 175.6f, 3.2f);
+			Actions.setFakePlayerHotbarSlot(berserk, 1);
+		}, 171);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -17.5, 48, -157.5)), 172);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 26.5f, -64.1f), 173);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -20.5, 62, -152.5)), 174);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 17.8f, -7.6f), 175);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -31.5, 69, -119.5)), 176);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 93.6f, 4.9f), 177);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(berserk.getWorld(), -50.5, 69, -120.5)), 178);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 90f, 13.8f);
 			Actions.setFakePlayerHotbarSlot(berserk, 5);
-		}, 716);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-52, 70, -121)), 720);
-		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-53, 70, -121)), 724);
+		}, 179);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-52, 70, -121)), 180);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, berserk.getWorld().getBlockAt(-53, 70, -121)), 181);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Deathmite 6/6 (Opened Chest)");
 			berserk.getWorld().playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 184 Ticks (9.2 seconds)");
-		}, 728);
+		}, 182);
 		// /execute in minecraft:overworld run tp @s -18.50 48.00 -157.50 -16.02 -42
 	}
 

@@ -1,7 +1,6 @@
 package instructions;
 
 import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityVelocity;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.entity.EnumMoveType;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -132,17 +131,23 @@ public class Actions {
 	 * @param to The target location to which the player will be teleported.
 	 */
 	public static void simulateEtherwarp(Player p, Location to) {
-		wipeNmsVelocity(p);
 		Location from = p.getLocation();
 		to.setYaw(from.getYaw());
 		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
-		p.teleport(to);
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
+		Utils.forceInstantTeleport(p, to);
 
-		Utils.scheduleTask(() -> wipeNmsVelocity(p), 1);
-		Utils.scheduleTask(() -> wipeNmsVelocity(p), 2);
+		for (Player viewer : Bukkit.getOnlinePlayers()) {
+			if (viewer.getGameMode() == GameMode.SPECTATOR
+					&& viewer.getSpectatorTarget() != null
+					&& viewer.getSpectatorTarget().equals(p)) {
+
+				Utils.forceInstantTeleport(viewer, to);
+			}
+		}
+
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 	}
 
 	/**
@@ -152,20 +157,26 @@ public class Actions {
 	 * sound effect.
 	 */
 	public static void simulateAOTV(Player p, Location to) {
-		wipeNmsVelocity(p);
 		Location from = p.getLocation();
 		to.setYaw(from.getYaw());
 		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
-		p.teleport(to);
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+		Utils.forceInstantTeleport(p, to);
 
-		Utils.scheduleTask(() -> wipeNmsVelocity(p), 1);
-		Utils.scheduleTask(() -> wipeNmsVelocity(p), 2);
+		for (Player viewer : Bukkit.getOnlinePlayers()) {
+			if (viewer.getGameMode() == GameMode.SPECTATOR
+					&& viewer.getSpectatorTarget() != null
+					&& viewer.getSpectatorTarget().equals(p)) {
+
+				Utils.forceInstantTeleport(viewer, to);
+			}
+		}
+
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}
 
-	private static void wipeNmsVelocity(Player p) {
+	/* private static void wipeNmsVelocity(Player p) {
 		EntityPlayer ep = ((CraftPlayer) p).getHandle();
 
 		// a) zero server‐side velocity
@@ -177,8 +188,7 @@ public class Actions {
 		// c) tell all clients to drop their velocity too
 		PacketPlayOutEntityVelocity vel = new PacketPlayOutEntityVelocity(ep);
 		Utils.broadcastPacket(vel);
-	}
-
+	} */
 
 	/**
 	 * Simulates the "stonking" action on a given block. This involves temporarily
@@ -192,7 +202,7 @@ public class Actions {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		Material material = b.getType();
 		b.setType(Material.AIR);
-		Utils.scheduleTask(() -> b.setType(material), 16);
+		Utils.scheduleTask(() -> b.setType(material), 4);
 	}
 
 	/**
@@ -213,7 +223,7 @@ public class Actions {
 		Actions.simulateLeftClickAir(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 80);
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 20);
 	}
 
 	/**
@@ -253,7 +263,7 @@ public class Actions {
 			} catch(Exception exception) {
 				// nothing here
 			}
-		}, 80);
+		}, 20);
 	}
 
 	/**
@@ -267,7 +277,7 @@ public class Actions {
 		EnderPearl pearl = (EnderPearl) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ENDER_PEARL);
 		pearl.setGravity(false);
 		pearl.setShooter(null);
-		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(0.75)); // Normal pearl speed is ~3.0
+		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(1.5)); // Normal pearl speed is ~3.0
 	}
 
 	/**
