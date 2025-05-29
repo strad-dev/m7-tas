@@ -21,7 +21,6 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Objects;
-import java.util.function.Consumer;
 
 public class Utils {
 	/**
@@ -32,32 +31,6 @@ public class Utils {
 	 */
 	public static void scheduleTask(Runnable task, long delay) {
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay);
-	}
-
-	/**
-	 * Forces a complete resynchronization of the specified player's data, including
-	 * metadata, hand items, rotation, and open inventory window. This method allows
-	 * applying custom modifications to the player's NMS (server-side) entity before
-	 * triggering the sync actions.
-	 *
-	 * @param bukkit    The Bukkit player whose data will be resynchronized.
-	 * @param nmsChange A consumer for applying custom modifications to the player's
-	 *                  NMS entity (EntityPlayer) before the synchronization is performed.
-	 */
-	public static void forceFullSync(Player bukkit, Consumer<EntityPlayer> nmsChange) {
-		if(!(bukkit instanceof CraftPlayer)) return;
-		EntityPlayer nms = ((CraftPlayer) bukkit).getHandle();
-
-		// 1) apply your NMS mutation
-		nmsChange.accept(nms);
-
-		// 2) push out all four sync channels:
-		syncFakePlayerHand(bukkit);
-		forceRotationSync(bukkit);
-		forceFullInventorySync(bukkit);
-
-		PacketPlayOutHeldItemSlot held = new PacketPlayOutHeldItemSlot(nms.gi().j);
-		((CraftPlayer) bukkit).getHandle().f.b(held);
 	}
 
 	/**
@@ -89,7 +62,7 @@ public class Utils {
 		// send it to every real viewer
 		broadcastPacket(equipPkt);
 	}
-	
+
 	/*
 	 * Forces a metadata synchronization for the specified entity player.
 	 * This method ensures that all metadata entries are marked and sent to all online players.
@@ -121,24 +94,6 @@ public class Utils {
 		// 5) mark these entries as “sent” so they’re no longer dirty -> assignValues() -> aks.a()
 		dw.a(entries);
 	} */
-
-	/**
-	 * Forces a synchronization of the player's rotation across all online players.
-	 * This method sends a teleport-style packet that updates the yaw and pitch of the specified player.
-	 *
-	 * @param bukkit The Bukkit player whose rotation will be synchronized.
-	 */
-	public static void forceRotationSync(Player bukkit) {
-		CraftPlayer cp = (CraftPlayer) bukkit;
-		EntityPlayer nms = cp.getHandle();
-
-		// build a teleport‐style packet carrying the new yaw/pitch (and position)
-		PositionMoveRotation pmr = PositionMoveRotation.a(nms);
-		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nms.ar(), pmr, EnumSet.noneOf(Relative.class), nms.aJ());
-
-		// send to only the real connections
-		broadcastPacket(tp);
-	}
 
 	public static void forceInstantTeleport(Player bukkit, Location to) {
 		CraftPlayer p = (CraftPlayer) bukkit;

@@ -86,6 +86,8 @@ public class Server {
 			zombie.setAI(false);
 			zombie.setSilent(true);
 			zombie.setAdult();
+			zombie.setPersistent(true);
+			zombie.setRemoveWhenFarAway(false);
 			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-20);
 			Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(healthValues[i]);
 			zombie.setHealth(healthValues[i]);
@@ -111,6 +113,8 @@ public class Server {
 		yellowShadowAssassin.setAI(false);
 		yellowShadowAssassin.setSilent(true);
 		yellowShadowAssassin.setAdult();
+		yellowShadowAssassin.setPersistent(true);
+		yellowShadowAssassin.setRemoveWhenFarAway(false);
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-3);
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 		yellowShadowAssassin.setHealth(30);

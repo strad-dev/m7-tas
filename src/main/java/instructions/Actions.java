@@ -1,12 +1,12 @@
 package instructions;
 
 import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
+import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
 import net.minecraft.server.level.EntityPlayer;
 import net.minecraft.world.entity.EnumMoveType;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.player.PlayerInventory;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3D;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -84,7 +84,18 @@ public class Actions {
 	 * @param hotbarIndex The index of the new hotbar slot (0–8).
 	 */
 	public static void setFakePlayerHotbarSlot(Player p, int hotbarIndex) {
-		Utils.forceFullSync(p, ep -> ep.gi().j = hotbarIndex);
+		if (!(p instanceof CraftPlayer cp)) return;
+		EntityPlayer npc = cp.getHandle();
+
+		// 1) Update the NMS held‐slot index
+		npc.gi().j = hotbarIndex;
+
+		// 2) Tell that player’s client “your held slot is now hotbarIndex”
+		PacketPlayOutHeldItemSlot heldPkt = new PacketPlayOutHeldItemSlot(hotbarIndex);
+		cp.getHandle().f.b(heldPkt);
+
+		// 3) Broadcast the new main‐hand item to all viewers
+		Utils.syncFakePlayerHand(p);
 	}
 
 	/**
@@ -95,14 +106,23 @@ public class Actions {
 	 * @param slotB same range
 	 */
 	public static void swapFakePlayerInventorySlots(Player p, int slotA, int slotB) {
-		Utils.forceFullSync(p, ep -> {
-			EntityPlayer npc = ((CraftPlayer) p).getHandle();
-			PlayerInventory inv = npc.gi();
-			ItemStack a = inv.a(slotA);
-			ItemStack b = inv.a(slotB);
-			inv.a(slotA, b);
-			inv.a(slotB, a);
-		});
+		if (!(p instanceof CraftPlayer cp)) return;
+		EntityPlayer npc = cp.getHandle();
+		PlayerInventory inv = npc.gi();
+
+		// 1) Swap internally
+		net.minecraft.world.item.ItemStack a = inv.a(slotA);
+		net.minecraft.world.item.ItemStack b = inv.a(slotB);
+		inv.a(slotA, b);
+		inv.a(slotB, a);
+
+		// 2) Re‐send the entire inventory window to that client
+		Utils.forceFullInventorySync(p);
+
+		// 3) If either swapped slot was in the hotbar, update the hand‐item too
+		if (slotA < 9 || slotB < 9) {
+			Utils.syncFakePlayerHand(p);
+		}
 	}
 
 	/**
@@ -116,11 +136,20 @@ public class Actions {
 	 * @param pitch look pitch, in degrees (–90 = straight up, +90 = straight down)
 	 */
 	public static void turnHead(Player p, float yaw, float pitch) {
-		Utils.forceFullSync(p, ep -> {
-			ep.v(yaw);
-			ep.aZ = yaw;
-			ep.w(pitch);
-		});
+		Location to = p.getLocation();
+		to.setYaw(yaw);
+		to.setPitch(pitch);
+
+		Utils.forceInstantTeleport(p, to);
+
+		for (Player viewer : Bukkit.getOnlinePlayers()) {
+			if (viewer.getGameMode() == GameMode.SPECTATOR
+					&& viewer.getSpectatorTarget() != null
+					&& viewer.getSpectatorTarget().equals(p)) {
+
+				Utils.forceInstantTeleport(viewer, to);
+			}
+		}
 	}
 
 	/**
@@ -278,6 +307,9 @@ public class Actions {
 		pearl.setGravity(false);
 		pearl.setShooter(null);
 		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(1.5)); // Normal pearl speed is ~3.0
+
+		Actions.simulateLeftClickAir(p);
+		p.getInventory().getItemInMainHand().setAmount(p.getInventory().getItemInMainHand().getAmount() - 1);
 	}
 
 	/**
