@@ -10,6 +10,9 @@ import net.minecraft.network.NetworkManager;
 import net.minecraft.network.protocol.EnumProtocolDirection;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.a;
+import net.minecraft.network.syncher.DataWatcher;
+import net.minecraft.network.syncher.DataWatcherObject;
+import net.minecraft.network.syncher.DataWatcherRegistry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
@@ -352,8 +355,15 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
 		PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsPlayer, entry);
 
+		DataWatcher synchedEntityData = nmsPlayer.au();
+		DataWatcherObject<Byte> accessor = new DataWatcherObject<>(17, DataWatcherRegistry.a);
+		synchedEntityData.a(accessor, (byte) 127);
+
+		PacketPlayOutEntityMetadata entityMetadataPacket = new PacketPlayOutEntityMetadata(nmsPlayer.ar(), synchedEntityData.c());
+
 		Utils.broadcastPacket(add);
 		Utils.broadcastPacket(spawn);
+		Utils.broadcastPacket(entityMetadataPacket);
 
 		// 8) Return the Bukkit wrapper
 		return nmsPlayer.getBukkitEntity();

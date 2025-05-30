@@ -4,6 +4,7 @@ import instructions.bosses.Watcher;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -12,16 +13,19 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.Objects;
+import java.util.Random;
 
 public class Server {
 	private static final Zombie[] archaeologists = new Zombie[10];
 	private static Zombie yellowShadowAssassin = null;
+	private static final LivingEntity[] trashMobs = new LivingEntity[45]; // each 1x1 has 15 mobs spawned
 
 	public static void serverInstructions(World world) {
 		// Begin with 3 seconds of delay
 		Bukkit.broadcastMessage("TAS starts in 3 seconds.");
 
-		spawnMobs(world);
+		spawnMinibosses(world);
+		spawn1x1Mobs(world);
 
 		// 5-second countdown
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
@@ -57,7 +61,7 @@ public class Server {
 	}
 
 
-	private static void spawnMobs(World world) {
+	private static void spawnMinibosses(World world) {
 		for(Zombie zombie : archaeologists) {
 			if(zombie != null) {
 				zombie.remove();
@@ -123,5 +127,169 @@ public class Server {
 		assert yellowShadowAssassin.getEquipment() != null;
 		yellowShadowAssassin.getEquipment().setBoots(boots);
 		yellowShadowAssassin.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SWORD));
+	}
+
+	public static void activatePirateDoor() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 minecraft:glass");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 minecraft:air"), 20);
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone -24 0 -98 -27 7 -99 -27 82 -99"), 100);
+	}
+
+	private static Location getRandomLocation(Location center) {
+		double x = center.getX() + (Math.random() * 2 - 1) * 3.0;
+		double z = center.getZ() + (Math.random() * 2 - 1) * 3.0;
+		return new Location(center.getWorld(), x, center.getY(), z);
+	}
+
+	private static LivingEntity spawnTrashMob(Location loc) {
+		boolean isZombie = Math.random() < 0.5;
+		LivingEntity mob = (LivingEntity) Objects.requireNonNull(loc.getWorld()).spawnEntity(loc, isZombie ? EntityType.ZOMBIE : EntityType.SKELETON);
+
+		int health = new Random().nextInt(5) + 1; // 1-5 HP
+		mob.setCustomNameVisible(true);
+		if(mob instanceof Zombie) ((Zombie) mob).setAdult();
+		mob.setAI(false);
+		mob.setSilent(true);
+		mob.setPersistent(true);
+		mob.setRemoveWhenFarAway(false);
+
+		Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(health);
+		mob.setHealth(health);
+
+		Color helmetColor = Color.WHITE;
+		Color chestplateColor = Color.WHITE;
+		Color leggingsColor = Color.WHITE;
+		Color bootsColor = Color.WHITE;
+		String name = "";
+		Material weapon = Material.AIR;
+		double defense = 0;
+
+		if(mob instanceof Zombie) {
+			switch(health) {
+				case 1 -> {
+					name = "Crypt Lurker";
+					weapon = Material.BONE;
+					defense = 2;
+				}
+				case 2 -> {
+					name = "Zombie Soldier";
+					defense = 9;
+					helmetColor = Color.fromRGB(0xD07F00);
+					chestplateColor = Color.fromRGB(0xD07F00);
+					leggingsColor = Color.fromRGB(0xD07F00);
+					bootsColor = Color.fromRGB(0xD07F00);
+				}
+				case 3 -> {
+					name = "Tank Zombie";
+					defense = 9;
+					helmetColor = Color.fromRGB(0xFFFFFE);
+					chestplateColor = Color.fromRGB(0x828282);
+					leggingsColor = Color.fromRGB(0x828282);
+					bootsColor = Color.fromRGB(0xFFFFFE);
+				}
+				case 4 -> {
+					name = "Super Tank Zombie";
+					weapon = Material.STONE_SWORD;
+					defense = 9;
+					helmetColor = Color.fromRGB(0xE6E6E6);
+					chestplateColor = Color.fromRGB(0x5A6464);
+					leggingsColor = Color.fromRGB(0x5A6464);
+					bootsColor = Color.fromRGB(0xE6E6E6);
+				}
+				case 5 -> {
+					name = "Zombie Commander";
+					weapon = Material.FISHING_ROD;
+					defense = 9;
+					helmetColor = Color.fromRGB(0xD51230);
+					chestplateColor = Color.fromRGB(0xD51230);
+					leggingsColor = Color.fromRGB(0xD51230);
+					bootsColor = Color.fromRGB(0xD51230);
+				}
+			}
+		} else {
+			switch(health) {
+				case 1 -> {
+					name = "Skeleton Soldier";
+					weapon = Material.BOW;
+					defense = 7;
+					helmetColor = Color.fromRGB(0xFFBC0B);
+					chestplateColor = Color.fromRGB(0xFFBC0B);
+					leggingsColor = Color.fromRGB(0xFFBC0B);
+					bootsColor = Color.fromRGB(0xFFBC0B);
+				}
+				case 2 -> {
+					name = "Skeleton Master";
+					weapon = Material.BOW;
+					defense = 7;
+					helmetColor = Color.fromRGB(0xFF6B0B);
+					chestplateColor = Color.fromRGB(0xFF6B0B);
+					leggingsColor = Color.fromRGB(0xFF6B0B);
+					bootsColor = Color.fromRGB(0xFF6B0B);
+				}
+				case 3 -> {
+					name = "Skeleton Lord";
+					weapon = Material.BOW;
+					defense = 7;
+					helmetColor = Color.fromRGB(0xFFFF55);
+					chestplateColor = Color.fromRGB(0x268105);
+					leggingsColor = Color.fromRGB(0x268105);
+					bootsColor = Color.fromRGB(0x268105);
+				}
+				case 4 -> {
+					name = "Skeletor Prime";
+					weapon = Material.BONE;
+					defense = 7;
+					helmetColor = Color.fromRGB(0xAAAAAA);
+					chestplateColor = Color.fromRGB(0x191919);
+					leggingsColor = Color.fromRGB(0x191919);
+					bootsColor = Color.fromRGB(0x191919);
+				}
+				case 5 -> {
+					name = "Super Archer";
+					weapon = Material.BOW;
+				}
+			}
+		}
+
+		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + health + "/" + health);
+		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-defense);
+
+		if(weapon != Material.AIR) {
+			assert mob.getEquipment() != null;
+			mob.getEquipment().setItemInMainHand(new ItemStack(weapon));
+		}
+
+		if(helmetColor != Color.WHITE) {
+			assert mob.getEquipment() != null;
+			mob.getEquipment().setHelmet(Utils.createLeatherArmor(Material.LEATHER_HELMET, helmetColor, name + " Helmet"));
+			mob.getEquipment().setChestplate(Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, chestplateColor, name + " Chestplate"));
+			mob.getEquipment().setLeggings(Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, leggingsColor, name + " Leggings"));
+			mob.getEquipment().setBoots(Utils.createLeatherArmor(Material.LEATHER_BOOTS, bootsColor, name + " Boots"));
+		}
+
+		return mob;
+	}
+
+	public static void spawn1x1Mobs(World world) {
+		Location zodd = new Location(world, -91.5, 67, -91.5);
+		Location admin = new Location(world, -88.5, 69, -24.5);
+		Location tomioka = new Location(world, -216.5, 69, -120.5);
+
+		// Remove existing mobs
+		for(LivingEntity mob : trashMobs) {
+			if(mob != null) {
+				mob.remove();
+			}
+		}
+
+		int index = 0;
+		Location[] spawnPoints = {zodd, admin, tomioka};
+
+		for(Location center : spawnPoints) {
+			for(int i = 0; i < 15; i++) {
+				Location spawnLoc = getRandomLocation(center);
+				trashMobs[index++] = spawnTrashMob(spawnLoc);
+			}
+		}
 	}
 }
