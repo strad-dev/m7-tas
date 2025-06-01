@@ -171,9 +171,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		return item;
 	}
 
-	private void spawnAllFakes(Location location) {
+	private void spawnAllFakes(World world) {
 		// clear any old ones
-		onDisable();
+		kickAllFakes();
 		npcMap.clear();
 		actorMap.clear();
 		playerRoles.clear();
@@ -182,7 +182,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			String role = entry.getKey();
 			String skin = entry.getValue();
 
-			Player fake = spawnFakePlayer(location, role, UUID.fromString(skin));
+			Player fake = spawnFakePlayer(world, role, UUID.fromString(skin));
 			fakePlayers.add(fake);
 			npcMap.put(role, fake);
 			actorMap.put(role, fake);
@@ -190,193 +190,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		startFakePlayerTicker();
 	}
 
-	@Override
-	public void onEnable() {
-		plugin = this;
-
-		// register ALL our commands on the same executor
-		for(var cmd : List.of("spectate", "unspectate", "tas", "reset")) {
-			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
-		}
-		getServer().getPluginManager().registerEvents(new JoinListener(), this);
-	}
-
-	@Override
-	public void onDisable() {
-		for(Player p : fakePlayers) {
-			p.kickPlayer("");
-		}
-		fakePlayers.clear();
-	}
-
-	@SuppressWarnings("NullableProblems")
-	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this.");
-			return true;
-		}
-
-		switch(cmd.getName().toLowerCase()) {
-			case "setup" -> {
-				spawnAllFakes(new Location(p.getWorld(), -120.5, 100, -220.5));
-				p.sendMessage("Cleared all NPCs and spawned new ones.");
-				return true;
-			}
-			case "spectate" -> {
-				/*if(args.length < 1) {
-					p.sendMessage("Please specify a class to spectate.");
-					return true;
-				}
-
-				String role = args[0];
-				if(!SKIN_DATA.containsKey(role)) {
-					p.sendMessage("Invalid class specified.");
-					return true;
-				}
-
-				if(playerRoles.containsKey(p)) {
-					p.sendMessage("You are already spectating a class. Use /unspectate first.");
-					return true;
-				}
-
-				actorMap.replace(role, p);
-				playerRoles.put(p, role);
-				Objects.requireNonNull(p.getAttribute(Attribute.ATTACK_SPEED)).setBaseValue(100);
-				p.sendMessage("You are now spectating " + role + ".");*/
-				p.sendMessage(ChatColor.RED + "Oops!  Something went wrong.  Give me 3-5 business days to fix!");
-				return true;
-			}
-			case "unspectate" -> {
-				/*
-				if(playerRoles.containsKey(p)) {
-					// Replaces the player that ran the command with the original fake NPC
-					actorMap.replace(playerRoles.get(p), npcMap.get(playerRoles.get(p)));
-					playerRoles.remove(p);
-					p.sendMessage("You are no longer spectating a class.");
-					return true;
-				}
-				p.sendMessage("You are not spectating a class.");*/
-				p.sendMessage(ChatColor.RED + "This command doesn't work.");
-				return true;
-			}
-			case "tas" -> {
-				runTAS();
-				return true;
-			}
-
-			case "reset" -> {
-				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
-				actorMap.keySet().forEach(npc -> actorMap.get(npc).teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
-				p.sendMessage("Reset all NPC locations.");
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Builds a fake GameProfile with textures copied from another GameProfile's skin.
-	 * This method is used to create an NPC's GameProfile that mimics the skin of another Minecraft user.
-	 *
-	 * @param fakeUuid      the UUID of the NPC's fake GameProfile
-	 * @param fakeName      the name of the NPC's fake GameProfile
-	 * @param skinOwnerUuid the UUID of the player whose skin will be used for copying textures
-	 * @return a GameProfile with the specified UUID, name, and the copied skin texture property
-	 */
-	public static GameProfile buildFakeProfileWithSkin(UUID fakeUuid, String fakeName, UUID skinOwnerUuid) {
-		// 1) Create a GameProfile only for fetching textures
-		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
-		ProfileResult result = nms.aq().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
-
-		if(result == null) {
-			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
-		}
-
-		GameProfile populated = result.profile();
-		Property tex = populated.getProperties()
-				.get("textures")
-				.iterator()
-				.next();
-
-		// 3) Create your own NPC profile and copy in that Property:
-		GameProfile npcProfile = new GameProfile(fakeUuid, fakeName);
-		npcProfile.getProperties().put("textures", tex);
-		return npcProfile;
-	}
-
-	/**
-	 * Spawns a “real” EntityPlayer into the world (no Citizens, no persistence).
-	 *
-	 * @param loc            where to spawn
-	 * @param fakePlayerName the fake player’s username
-	 * @param skinOwner      the owner of the skin being used
-	 */
-	public Player spawnFakePlayer(Location loc, String fakePlayerName, UUID skinOwner) {
-		// 1) NMS server & world handles
-		MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
-		WorldServer nmsWorld = ((CraftWorld) Objects.requireNonNull(loc.getWorld())).getHandle();
-
-		// 2) Build a GameProfile with skin properties
-		GameProfile profile = buildFakeProfileWithSkin(UUID.randomUUID(), fakePlayerName, skinOwner);
-
-		// 3) Create EntityPlayer with a dummy InteractManager
-		ClientInformation clientInfo = ClientInformation.a();
-		EntityPlayer nmsPlayer = new EntityPlayer(nmsServer, nmsWorld, profile, clientInfo);
-
-		// 4) Fake-network channel & connection
-		NetworkManager nm = new NetworkManager(EnumProtocolDirection.b);
-		CommonListenerCookie cookie = CommonListenerCookie.a(profile, false);
-		// EntityPlayer = ServerPlayer
-		// EntityPlayer.f -> EntityPlayer.PlayerConnection
-		nmsPlayer.f = new PlayerConnection(nmsServer, nm, nmsPlayer, cookie);
-
-		// 5) Position & add to world
-		// Entity.a_(double, double, double) -> Entity.setPos(...)
-		nmsPlayer.a_(loc.getX(), loc.getY(), loc.getZ());
-		nmsWorld.addFreshEntity(nmsPlayer, CreatureSpawnEvent.SpawnReason.CUSTOM);
-		nmsPlayer.f(false);
-
-		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
-		// MinecraftServer.ag() -> MinecraftServer.getPlayerList()
-		nmsServer.ag().a(nmsPlayer);
-
-		// 7) Send packets to Players about the new Entity
-		ChunkProviderServer provider = nmsWorld.m();
-		provider.a.a(nmsPlayer);
-
-		int id = nmsPlayer.ar(); // in your mappings this is nmsEntity.ar()
-		PlayerChunkMap.EntityTracker wrapper = provider.a.K.get(id);
-
-		EntityTrackerEntry entry = wrapper.b;
-
-		EnumSet<a> addAction = EnumSet.of(a.a);
-		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
-		PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsPlayer, entry);
-
-		DataWatcher synchedEntityData = nmsPlayer.au();
-		DataWatcherObject<Byte> accessor = new DataWatcherObject<>(17, DataWatcherRegistry.a);
-		synchedEntityData.a(accessor, (byte) 127);
-
-		PacketPlayOutEntityMetadata entityMetadataPacket = new PacketPlayOutEntityMetadata(nmsPlayer.ar(), synchedEntityData.c());
-
-		Utils.broadcastPacket(add);
-		Utils.broadcastPacket(spawn);
-		Utils.broadcastPacket(entityMetadataPacket);
-
-		// 8) Return the Bukkit wrapper
-		return nmsPlayer.getBukkitEntity();
-	}
-
-	private void runTAS() {
-		if(actorMap.isEmpty()) {
-			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
-			return;
-		}
-
-		System.out.println(actorMap);
-
+	private void setInventories() {
 		for(String entry : actorMap.keySet()) {
 			Player p = actorMap.get(entry);
 
@@ -386,6 +200,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, -1, 255, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 3, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, -1, 255, true, false));
+			Objects.requireNonNull(p.getAttribute(Attribute.KNOCKBACK_RESISTANCE)).setBaseValue(1);
 			Objects.requireNonNull(p.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			p.setHealth(40);
 			p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, -1, 2, true, false));
@@ -395,6 +210,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			pearls.setAmount(16);
 			ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.BLUE + "Scraped Diamond Pickaxe", "");
 			pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 10);
+			ItemStack treecap = getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.LIGHT_PURPLE + "Toil Treecapitator", "");
+			treecap.addUnsafeEnchantment(Enchantment.EFFICIENCY, 5);
 			PlayerInventory inventory = p.getInventory();
 			inventory.clear();
 
@@ -466,6 +283,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
 					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
 					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+					inventory.setItem(34, treecap);
 					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
 				}
 				case "Mage" -> {
@@ -510,6 +328,207 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 			Utils.broadcastPacket(equipmentPacket);
 		}
+	}
+
+	@Override
+	public void onEnable() {
+		plugin = this;
+
+		// register ALL our commands on the same executor
+		for(var cmd : List.of("spectate", "unspectate", "tas", "reset")) {
+			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
+		}
+		getServer().getPluginManager().registerEvents(new JoinListener(), this);
+	}
+
+	@Override
+	public void onDisable() {
+		kickAllFakes();
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!player,type=!villager]");
+	}
+
+	private void kickAllFakes() {
+		for(Player p : fakePlayers) {
+			p.kickPlayer("");
+		}
+		fakePlayers.clear();
+	}
+
+	@SuppressWarnings("NullableProblems")
+	@Override
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+		if(!(sender instanceof Player p)) {
+			sender.sendMessage("Only players can run this.");
+			return true;
+		}
+
+		switch(cmd.getName().toLowerCase()) {
+			case "setup" -> {
+				spawnAllFakes(p.getWorld());
+				Server.serverSetup(p.getWorld());
+				p.sendMessage("Cleared all NPCs and spawned new ones.");
+				return true;
+			}
+			case "spectate" -> {
+				/*if(args.length < 1) {
+					p.sendMessage("Please specify a class to spectate.");
+					return true;
+				}
+
+				String role = args[0];
+				if(!SKIN_DATA.containsKey(role)) {
+					p.sendMessage("Invalid class specified.");
+					return true;
+				}
+
+				if(playerRoles.containsKey(p)) {
+					p.sendMessage("You are already spectating a class. Use /unspectate first.");
+					return true;
+				}
+
+				actorMap.replace(role, p);
+				playerRoles.put(p, role);
+				Objects.requireNonNull(p.getAttribute(Attribute.ATTACK_SPEED)).setBaseValue(100);
+				p.sendMessage("You are now spectating " + role + ".");*/
+				p.sendMessage(ChatColor.RED + "Oops!  Something went wrong.  Give me 3-5 business days to fix!");
+				return true;
+			}
+			case "unspectate" -> {
+				/*
+				if(playerRoles.containsKey(p)) {
+					// Replaces the player that ran the command with the original fake NPC
+					actorMap.replace(playerRoles.get(p), npcMap.get(playerRoles.get(p)));
+					playerRoles.remove(p);
+					p.sendMessage("You are no longer spectating a class.");
+					return true;
+				}
+				p.sendMessage("You are not spectating a class.");*/
+				p.sendMessage(ChatColor.RED + "This command doesn't work.");
+				return true;
+			}
+			case "tas" -> {
+				runTAS(p.getWorld());
+				return true;
+			}
+
+			case "reset" -> {
+				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
+				actorMap.keySet().forEach(npc -> actorMap.get(npc).teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
+				p.sendMessage("Reset all NPC locations.");
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Builds a fake GameProfile with textures copied from another GameProfile's skin.
+	 * This method is used to create an NPC's GameProfile that mimics the skin of another Minecraft user.
+	 *
+	 * @param fakeUuid      the UUID of the NPC's fake GameProfile
+	 * @param fakeName      the name of the NPC's fake GameProfile
+	 * @param skinOwnerUuid the UUID of the player whose skin will be used for copying textures
+	 * @return a GameProfile with the specified UUID, name, and the copied skin texture property
+	 */
+	public static GameProfile buildFakeProfileWithSkin(UUID fakeUuid, String fakeName, UUID skinOwnerUuid) {
+		// 1) Create a GameProfile only for fetching textures
+		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
+		ProfileResult result = nms.aq().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
+
+		if(result == null) {
+			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
+		}
+
+		GameProfile populated = result.profile();
+		Property tex = populated.getProperties()
+				.get("textures")
+				.iterator()
+				.next();
+
+		// 3) Create your own NPC profile and copy in that Property:
+		GameProfile npcProfile = new GameProfile(fakeUuid, fakeName);
+		npcProfile.getProperties().put("textures", tex);
+		return npcProfile;
+	}
+
+	/**
+	 * Spawns a “real” EntityPlayer into the world (no Citizens, no persistence).
+	 *
+	 * @param world          the World
+	 * @param fakePlayerName the fake player’s username
+	 * @param skinOwner      the owner of the skin being used
+	 */
+	public Player spawnFakePlayer(World world, String fakePlayerName, UUID skinOwner) {
+		// 1) NMS server & world handles
+		MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
+		WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+
+		// 2) Build a GameProfile with skin properties
+		GameProfile profile = buildFakeProfileWithSkin(UUID.randomUUID(), fakePlayerName, skinOwner);
+
+		// 3) Create EntityPlayer with a dummy InteractManager
+		ClientInformation clientInfo = ClientInformation.a();
+		EntityPlayer nmsPlayer = new EntityPlayer(nmsServer, nmsWorld, profile, clientInfo);
+
+		// 4) Fake-network channel & connection
+		NetworkManager nm = new NetworkManager(EnumProtocolDirection.b);
+		CommonListenerCookie cookie = CommonListenerCookie.a(profile, false);
+		// EntityPlayer = ServerPlayer
+		// EntityPlayer.f -> EntityPlayer.PlayerConnection
+		nmsPlayer.f = new PlayerConnection(nmsServer, nm, nmsPlayer, cookie);
+
+		// 5) Position & add to world
+		// Entity.a_(double, double, double) -> Entity.setPos(...)
+		switch(fakePlayerName) {
+			case "Archer" -> nmsPlayer.a_(-120.5, 69, -202.5);
+			case "Berserk" -> nmsPlayer.a_(-21.5, 70, -197.5);
+			case "Healer" -> nmsPlayer.a_(-28.5, 69, -44.5);
+			case "Mage" -> nmsPlayer.a_(-132.5, 69, -76.5);
+			case "Tank" -> nmsPlayer.a_(-197.5, 67, -223.5);
+		}
+		nmsWorld.addFreshEntity(nmsPlayer, CreatureSpawnEvent.SpawnReason.CUSTOM);
+		nmsPlayer.f(false);
+
+		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
+		// MinecraftServer.ag() -> MinecraftServer.getPlayerList()
+		nmsServer.ag().a(nmsPlayer);
+
+		// 7) Send packets to Players about the new Entity
+		ChunkProviderServer provider = nmsWorld.m();
+		provider.a.a(nmsPlayer);
+
+		int id = nmsPlayer.ar(); // in your mappings this is nmsEntity.ar()
+		PlayerChunkMap.EntityTracker wrapper = provider.a.K.get(id);
+
+		EntityTrackerEntry entry = wrapper.b;
+
+		EnumSet<a> addAction = EnumSet.of(a.a);
+		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
+		PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsPlayer, entry);
+
+		DataWatcher synchedEntityData = nmsPlayer.au();
+		DataWatcherObject<Byte> accessor = new DataWatcherObject<>(17, DataWatcherRegistry.a);
+		synchedEntityData.a(accessor, (byte) 127);
+
+		PacketPlayOutEntityMetadata entityMetadataPacket = new PacketPlayOutEntityMetadata(nmsPlayer.ar(), synchedEntityData.c());
+
+		Utils.broadcastPacket(add);
+		Utils.broadcastPacket(spawn);
+		Utils.broadcastPacket(entityMetadataPacket);
+
+		// 8) Return the Bukkit wrapper
+		return nmsPlayer.getBukkitEntity();
+	}
+
+	private void runTAS(World world) {
+		if(actorMap.isEmpty()) {
+			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
+			return;
+		}
+
+		setInventories();
+		Server.serverSetup(world);
 
 		Archer.archerInstructions(actorMap.get("Archer"));
 		Berserk.berserkInstructions(actorMap.get("Berserk"));
@@ -517,7 +536,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		Mage.mageInstructions(actorMap.get("Mage"));
 		Tank.tankInstructions(actorMap.get("Tank"));
 
-		Server.serverInstructions(Bukkit.getWorld("world"));
+		Server.serverInstructions(world);
 	}
 
 	public static Plugin getInstance() {

@@ -1,17 +1,20 @@
 package instructions;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Mage {
 	private static Player mage;
+	private static World world;
 
 	public static void mageInstructions(Player p) {
 		mage = p;
-		System.out.println("Mage Instructions: " + p.getName());
-		p.teleport(new Location(p.getWorld(), -132.5, 69, -76.5, -180, 0));
+		world = mage.getWorld();
+		Actions.turnHead(mage, -180f, 0f);
+		Actions.simulateAOTV(mage, new Location(world, -132.5, 69, -76.5));
 		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(p, 2, 29), 60);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(p, 2), 61);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(p), 101);

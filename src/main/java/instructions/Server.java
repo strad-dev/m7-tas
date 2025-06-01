@@ -18,14 +18,11 @@ import java.util.Random;
 public class Server {
 	private static final Zombie[] archaeologists = new Zombie[10];
 	private static Zombie yellowShadowAssassin = null;
-	private static final LivingEntity[] trashMobs = new LivingEntity[45]; // each 1x1 has 15 mobs spawned
+	private static final LivingEntity[] trashMobs = new LivingEntity[18]; // each 1x1 has 6 mobs spawned
 
 	public static void serverInstructions(World world) {
 		// Begin with 3 seconds of delay
 		Bukkit.broadcastMessage("TAS starts in 3 seconds.");
-
-		spawnMinibosses(world);
-		spawn1x1Mobs(world);
 
 		// 5-second countdown
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
@@ -58,6 +55,11 @@ public class Server {
 //		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
 //		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
 //		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 2.0F, 0.5F);
+	}
+
+	public static void serverSetup(World world) {
+		spawnMinibosses(world);
+		spawn1x1Mobs(world);
 	}
 
 
@@ -136,9 +138,9 @@ public class Server {
 	}
 
 	private static Location getRandomLocation(Location center) {
-		double x = center.getX() + (Math.random() * 2 - 1) * 3.0;
-		double z = center.getZ() + (Math.random() * 2 - 1) * 3.0;
-		return new Location(center.getWorld(), x, center.getY(), z);
+		double x = center.getX() + (Math.random() * 2 - 1) * 1.25;
+		double z = center.getZ() + (Math.random() * 2 - 1) * 1.25;
+		return new Location(center.getWorld(), x, center.getY(), z, (float) (Math.random() * 360) - 180, 0);
 	}
 
 	private static LivingEntity spawnTrashMob(Location loc) {
@@ -271,7 +273,7 @@ public class Server {
 	}
 
 	public static void spawn1x1Mobs(World world) {
-		Location zodd = new Location(world, -91.5, 67, -91.5);
+		Location zodd = new Location(world, -90.5, 67, -90.5);
 		Location admin = new Location(world, -88.5, 69, -24.5);
 		Location tomioka = new Location(world, -216.5, 69, -120.5);
 
@@ -286,7 +288,7 @@ public class Server {
 		Location[] spawnPoints = {zodd, admin, tomioka};
 
 		for(Location center : spawnPoints) {
-			for(int i = 0; i < 15; i++) {
+			for(int i = 0; i < 6; i++) {
 				Location spawnLoc = getRandomLocation(center);
 				trashMobs[index++] = spawnTrashMob(spawnLoc);
 			}

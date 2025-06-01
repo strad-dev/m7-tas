@@ -11,6 +11,7 @@ import net.minecraft.world.phys.Vec3D;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.EntityType;
@@ -153,10 +154,13 @@ public class Actions {
 	}
 
 	/**
-	 * Simulates an etherwarp for the specified player. The player is teleported to the
-	 * provided location, their velocity is reset, and a sound effect is played.
+	 * Simulates the teleportation of a Player to a specified location while preserving
+	 * their orientation (yaw and pitch). This method resets the player's velocity,
+	 * adjusts their yaw and pitch to match the origin location, and teleports any spectator
+	 * viewers who are spectating the player to the same destination. A teleportation sound
+	 * effect is played at the player's location.
 	 *
-	 * @param p  The player to simulate the etherwarp for.
+	 * @param p  The player to be teleported and simulated.
 	 * @param to The target location to which the player will be teleported.
 	 */
 	public static void simulateEtherwarp(Player p, Location to) {
@@ -180,10 +184,15 @@ public class Actions {
 	}
 
 	/**
-	 * Simulates an instant teleportation similar to an ability or action performed
-	 * with an "Aspect of the Void" (AOTV) item. The method resets the player's
-	 * velocity, teleports them to the specified location, and plays a teleport
-	 * sound effect.
+	 * Simulates the teleportation of a Player to a specified location while preserving
+	 * their orientation (yaw and pitch). Additionally, resets the player's velocity
+	 * and teleports any spectator viewers following the player to the same location.
+	 * A teleportation sound effect is played at the player's location.
+	 * <p>
+	 * This function is also used when an Ender Pearl lands.
+	 *
+	 * @param p  The player to be teleported and simulated.
+	 * @param to The target location to which the player will be teleported.
 	 */
 	public static void simulateAOTV(Player p, Location to) {
 		Location from = p.getLocation();
@@ -230,8 +239,12 @@ public class Actions {
 		p.swingMainHand();
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		Material material = b.getType();
+		BlockData blockdata = b.getBlockData();
 		b.setType(Material.AIR);
-		Utils.scheduleTask(() -> b.setType(material), 4);
+		Utils.scheduleTask(() -> {
+			b.setType(material);
+			b.setBlockData(blockdata);
+		}, 4);
 	}
 
 	/**
@@ -250,13 +263,13 @@ public class Actions {
 	 */
 	public static void simulateSuperboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.simulateLeftClickAir(p);
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks"), 20);
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 20);
 	}
 
 	/**
-	 * Simulates a "Crypt" action within a specified cuboid area. The method performs
+	 * Simulates a "Blow Up Crypt" action within a specified cuboid area. The method performs
 	 * a sequence of operations: simulating a left-click air interaction, clearing
 	 * the specified area by filling it with air, playing a sound effect, and then
 	 * cloning a specified structure after a short delay.
@@ -287,6 +300,28 @@ public class Actions {
 		zombie.getEquipment().setItemInMainHand(new org.bukkit.inventory.ItemStack(Material.BONE));
 		Utils.scheduleTask(() -> {
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + (y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
+			try {
+				zombie.remove();
+			} catch(Exception exception) {
+				// nothing here
+			}
+		}, 20);
+	}
+
+	public static void mimicChest(Player p, Block b) {
+		simulateStonking(p, b);
+
+		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
+		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 2 + "/" + 2);
+		zombie.setCustomNameVisible(true);
+		zombie.setAI(false);
+		zombie.setSilent(true);
+		zombie.setBaby();
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(2);
+		zombie.setHealth(2);
+
+		Utils.scheduleTask(() -> {
 			try {
 				zombie.remove();
 			} catch(Exception exception) {

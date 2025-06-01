@@ -1,17 +1,20 @@
 package instructions;
 
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Tank {
 	private static Player tank;
+	private static World world;
 
 	public static void tankInstructions(Player p) {
 		tank = p;
-		System.out.println("Tank Instructions: " + p.getName());
-		p.teleport(new Location(p.getWorld(), -197.5, 67, -223.5, -90, 0));
+		world = tank.getWorld();
+		Actions.turnHead(tank, -90f, 0f);
+		Actions.simulateAOTV(tank, new Location(world, -197.5, 67, -223.5));
 		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(p, 2, 29), 60);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(p, 2), 61);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(p), 101);

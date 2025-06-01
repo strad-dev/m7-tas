@@ -30,8 +30,6 @@ public class JoinListener implements Listener {
 	@EventHandler
 	public void onJoin(PlayerJoinEvent ev) {
 		Utils.scheduleTask(() -> {
-
-
 			PlayerConnection conn = ((CraftPlayer) ev.getPlayer()).getHandle()     // EntityPlayer
 					.f;              // PlayerConnection
 
