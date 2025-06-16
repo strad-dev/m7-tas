@@ -8,6 +8,7 @@ import plugin.Utils;
 
 public class Tank {
 	private static Player tank;
+	@SuppressWarnings("FieldCanBeLocal")
 	private static World world;
 
 	public static void tankInstructions(Player p) {
@@ -22,6 +23,7 @@ public class Tank {
 		Utils.scheduleTask(() -> p.teleport(new Location(p.getWorld(), -120.5, 75, -220.5)), 141);
 	}
 
+	@SuppressWarnings("unused")
 	public static Player getTank() {
 		return tank;
 	}

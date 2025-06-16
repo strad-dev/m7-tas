@@ -440,7 +440,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(healer, new Location(world, -132.5, 82, -58.5)), 180);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 135f, 77.5f);
-			Actions.move(healer, new Vector(-0.183848, 0, -183848), 1);
+			Actions.move(healer, new Vector(-0.183848, 0, -0.183848), 1);
 		}, 181);
 		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(healer), 182);
 		Utils.scheduleTask(() -> Actions.simulateStonking(healer, world.getBlockAt(-133, 81, -59)), 183);
@@ -453,7 +453,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 136.1f, 71.7f), 186);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(healer, new Location(world, -135.5, 70, -61.5)), 187);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 135.1f, 71.7f);
+			Actions.turnHead(healer, 135f, 50f);
 			Actions.setFakePlayerHotbarSlot(healer, 4);
 		}, 188);
 		Utils.scheduleTask(() -> {
@@ -488,6 +488,7 @@ public class Healer {
 		}, 200);
 	}
 
+	@SuppressWarnings("unused")
 	public static Player getHealer() {
 		return healer;
 	}

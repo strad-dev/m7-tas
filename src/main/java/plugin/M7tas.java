@@ -363,10 +363,27 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		}
 
 		switch(cmd.getName().toLowerCase()) {
+			/*
+			 * Setup
+			 * - Clears all NPCs and spawns new ones
+			 * - Teleports all NPCs to their initial locations
+			 * - Does an initial mob spawning (to test without running the full TAS)
+			 */
 			case "setup" -> {
 				spawnAllFakes(p.getWorld());
 				Server.serverSetup(p.getWorld());
 				p.sendMessage("Cleared all NPCs and spawned new ones.");
+				return true;
+			}
+			/*
+			 * TAS
+			 * - Gives all NPCs the appropriate inventory
+			 * - Re-teleports all NPCs to their initial locations
+			 * - Re-spawns all mobs
+			 * - Runs the TAS script
+			 */
+			case "tas" -> {
+				runTAS(p.getWorld());
 				return true;
 			}
 			case "spectate" -> {
@@ -406,11 +423,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				p.sendMessage(ChatColor.RED + "This command doesn't work.");
 				return true;
 			}
-			case "tas" -> {
-				runTAS(p.getWorld());
-				return true;
-			}
-
 			case "reset" -> {
 				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
 				actorMap.keySet().forEach(npc -> actorMap.get(npc).teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));

@@ -339,9 +339,9 @@ public class Actions {
 	 */
 	public static void simulatePearlThrow(Player p) {
 		EnderPearl pearl = (EnderPearl) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ENDER_PEARL);
-		pearl.setGravity(false);
+		pearl.setGravity(true);
 		pearl.setShooter(null);
-		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(1.5)); // Normal pearl speed is ~3.0
+		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(3)); // Normal pearl speed is ~3.0
 
 		Actions.simulateLeftClickAir(p);
 		p.getInventory().getItemInMainHand().setAmount(p.getInventory().getItemInMainHand().getAmount() - 1);
@@ -351,6 +351,7 @@ public class Actions {
 	 * Simulate a left‐click (attack) in the air.  Your other plugin
 	 * will see a PlayerInteractEvent with Action.LEFT_CLICK_AIR.
 	 */
+	@SuppressWarnings("ConstantConditions")
 	public static void simulateLeftClickAir(Player p) {
 		// 1) do the swing animation
 		p.swingMainHand();
@@ -366,6 +367,7 @@ public class Actions {
 	 * Simulate a right‐click (use) in the air.  Your other plugin
 	 * will see a PlayerInteractEvent with Action.RIGHT_CLICK_AIR.
 	 */
+	@SuppressWarnings("ConstantConditions")
 	public static void simulateRightClickAir(Player p) {
 		PlayerInteractEvent ev = new PlayerInteractEvent(p, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 		Bukkit.getPluginManager().callEvent(ev);

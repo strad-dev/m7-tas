@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 
 public class Archer {
 	private static Player archer;
+	@SuppressWarnings("FieldCanBeLocal")
 	private static World world;
 
 	public static void archerInstructions(Player p) {

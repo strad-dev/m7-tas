@@ -440,6 +440,7 @@ public class Berserk {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static Player getBerserk() {
 		return berserk;
 	}
