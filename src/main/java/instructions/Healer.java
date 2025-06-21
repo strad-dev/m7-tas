@@ -14,11 +14,17 @@ public class Healer {
 		world = healer.getWorld();
 		Actions.turnHead(healer, -168.6f, 2.9f);
 		Actions.simulateAOTV(healer, new Location(world, -28.5, 69, -44.5));
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(p, 2, 29), 60);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(p, 2), 61);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(p), 101);
-		Utils.scheduleTask(() -> Actions.move(p, new Vector(0, 0, 0.8634), 5), 102);
-		Utils.scheduleTask(() -> p.teleport(new Location(p.getWorld(), -120.5, 75, -220.5)), 141);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 2, 29), 60);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 2), 61);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 101);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.move(healer, new Vector(0, 0, 0.8634), 5);
+		}, 102);
+		Utils.scheduleTask(() -> {
+			healer.teleport(new Location(healer.getWorld(), -120.5, 75, -220.5));
+			Actions.swapFakePlayerInventorySlots(healer, 2, 29);
+		}, 141);
 		// Tick 160 (clear tick 0: run begins)
 		// Tick 161 (clear tick 1: teleport back)
 		Utils.scheduleTask(Healer::clear, 162);

@@ -497,7 +497,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			case "Berserk" -> nmsPlayer.a_(-21.5, 70, -197.5);
 			case "Healer" -> nmsPlayer.a_(-28.5, 69, -44.5);
 			case "Mage" -> nmsPlayer.a_(-132.5, 69, -76.5);
-			case "Tank" -> nmsPlayer.a_(-197.5, 67, -223.5);
+			case "Tank" -> nmsPlayer.a_(-196.5, 68, -222.5);
 		}
 		nmsWorld.addFreshEntity(nmsPlayer, CreatureSpawnEvent.SpawnReason.CUSTOM);
 		nmsPlayer.f(false);

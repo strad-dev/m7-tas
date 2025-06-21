@@ -22,16 +22,19 @@ public class Mage {
 
 	public static void mageInstructions(Player p) {
 		mage = p;
-		world = mage.getWorld();
-		Actions.turnHead(mage, -180f, 0f);
-		Actions.simulateAOTV(mage, new Location(world, -132.5, 69, -76.5));
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(p, 2, 29), 60);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(p, 2), 61);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(p), 101);
-		Utils.scheduleTask(() -> Actions.move(p, new Vector(0, 0, 0.8634), 4), 102);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(p, 4), 121);
-		Utils.scheduleTask(() -> p.teleport(new Location(p.getWorld(), -120.5, 75, -220.5)), 141);
-		Utils.scheduleTask(() -> p.teleport(Archer.getArcher()), 162);
+		world = Mage.mage.getWorld();
+		Actions.turnHead(Mage.mage, -180f, 0f);
+		Actions.simulateAOTV(Mage.mage, new Location(world, -132.5, 69, -76.5));
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 2, 29), 60);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 2), 61);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(mage), 101);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 4), 102);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 121);
+		Utils.scheduleTask(() -> {
+			mage.teleport(new Location(mage.getWorld(), -120.5, 75, -220.5));
+			Actions.swapFakePlayerInventorySlots(mage, 2, 29);
+		}, 141);
+		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Archer.getArcher()), 162);
 	}
 
 	private static void simulateBeam() {

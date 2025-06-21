@@ -244,7 +244,7 @@ public class Actions {
 		Utils.scheduleTask(() -> {
 			b.setType(material);
 			b.setBlockData(blockdata);
-		}, 4);
+		}, 5);
 	}
 
 	/**
@@ -265,7 +265,7 @@ public class Actions {
 		Actions.simulateLeftClickAir(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 20);
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 21);
 	}
 
 	/**
@@ -305,14 +305,18 @@ public class Actions {
 			} catch(Exception exception) {
 				// nothing here
 			}
-		}, 20);
+		}, 21);
+	}
+
+	public static void simulateLeap(Player p, Player target) {
+		simulateAOTV(p, target.getLocation());
 	}
 
 	public static void mimicChest(Player p, Block b) {
 		simulateStonking(p, b);
 
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
-		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 2 + "/" + 2);
+		zombie.setCustomName("Mimic " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 2 + "/" + 2);
 		zombie.setCustomNameVisible(true);
 		zombie.setAI(false);
 		zombie.setSilent(true);
@@ -327,7 +331,7 @@ public class Actions {
 			} catch(Exception exception) {
 				// nothing here
 			}
-		}, 20);
+		}, 21);
 	}
 
 	/**

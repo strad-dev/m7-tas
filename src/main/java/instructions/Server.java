@@ -137,6 +137,11 @@ public class Server {
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone -24 0 -98 -27 7 -99 -27 82 -99"), 100);
 	}
 
+	public static void activateSpiderGate() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -212 87 -166 -212 83 -170 air replace cobblestone_wall");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone -212 0 -166 -212 4 -170 -212 83 -170"), 100);
+	}
+
 	private static Location getRandomLocation(Location center) {
 		double x = center.getX() + (Math.random() * 2 - 1) * 1.25;
 		double z = center.getZ() + (Math.random() * 2 - 1) * 1.25;
