@@ -136,7 +136,7 @@ public class Berserk {
 		}, 40);
 		Utils.scheduleTask(() -> {
 			Actions.simulateStonking(berserk, world.getBlockAt(-55, 87, -219));
-			Actions.move(berserk, new Vector(0, 0, 1.1224), 3);
+			Actions.move(berserk, new Vector(0, 0, 1.12242), 3);
 		}, 41);
 		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, world.getBlockAt(-55, 86, -219)), 42);
 		Utils.scheduleTask(() -> {
@@ -256,7 +256,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90f, 0f);
 			Actions.setFakePlayerHotbarSlot(berserk, 3);
-			Actions.move(berserk, new Vector(1.1224, 0, 0), 5);
+			Actions.move(berserk, new Vector(1.12242, 0, 0), 5);
 		}, 109);
 		Utils.scheduleTask(() -> Actions.simulateCrypt(berserk, -86, 49, -150, -84, 51, -149), 110);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 111);
@@ -485,7 +485,7 @@ public class Berserk {
 			Actions.simulateAOTV(berserk, new Location(world, -208.156, 91, -160.633));
 		}, 211);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Spider 8/9 (Obtained Item)");
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Spider 7/9 (Obtained Item)");
 			world.playSound(berserk.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
 		}, 212);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(berserk, new Location(world, -213.5, 83, -161.5)), 213);

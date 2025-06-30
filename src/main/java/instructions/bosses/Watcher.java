@@ -5,13 +5,18 @@ import com.mojang.authlib.properties.Property;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R3.profile.CraftPlayerProfile;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
+import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.*;
@@ -26,10 +31,15 @@ public class Watcher {
 	private static final List<String> SPAWN_LINES = List.of("This guy looks like a fighter.", "Hmmm... this one!", "You'll do.", "Go, fight!", "Go and live again!");
 	private static final List<String> KILLED_LINES = List.of("Not bad.", "That one was weak anyway.", "I'm impressed.", "Very nice.", "Aw, I liked that one.");
 	private static int mobCount = 0;
+	private static int killedCount = 0;
 	private static final Random random = new Random();
+	private static final double MAX_SPEED = 0.64; // blocks per tick
+	private static int ticksSinceStart;
 
 	public static void watcherInstructions(World temp) {
 		mobCount = 0;
+		killedCount = 0;
+		ticksSinceStart = 1;
 		world = temp;
 		ORIGINAL_POSITION.setWorld(world);
 		if(watcher != null) {
@@ -57,97 +67,214 @@ public class Watcher {
 		watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 255, false, false));
 		Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
 
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 72, -88.5)); // Diamante Giant
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 72, -92.5)); // Bonzo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 76, -92.5)); // Meepy_
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 76, -88.5)); // Mallyanke
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -88.5)); // Diamante Giant
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -92.5)); // Bonzo
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -92.5)); // Meepy_
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -88.5)); // Mallyanke
 		/* -------------------- "Let's see how you can handle this" -------------------- */
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 72, -88.5)); // valej
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 72, -84.5)); // sillygreenj
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 72, -77.5)); // a6j3
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 76, -77.5)); // Nucleararmadillo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 80, -77.5)); // TankForM7
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 80, -84.5)); // baldkc0303
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 76, -84.5)); // nil4k
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 76, -88.5)); // editqble
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 80, -88.5)); // uncheck
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 80, -92.5)); // EvilMerlyn
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 76, -92.5)); // JennAiel
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 72, -92.5)); // Stenoe
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 72, -99.5)); // aalatif_
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 76, -99.5)); // Deanvm
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 80, -99.5)); // Beethoven_
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -88.5)); // valej
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -84.5)); // sillygreenj
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -77.5)); // a6j3
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -77.5)); // Nucleararmadillo
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -77.5)); // TankForM7
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -84.5)); // baldkc0303
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -84.5)); // nil4k
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -88.5)); // editqble
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -88.5)); // uncheck
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -92.5)); // EvilMerlyn
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -92.5)); // JennAiel
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -92.5)); // Stenoe
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -99.5)); // aalatif_
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -99.5)); // Deanvm
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -99.5)); // Beethoven_
 
 		sendChatMessage("Things feel a little more roomy now, eh?");
 		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
 		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
 		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				ticksSinceStart++;
+				if(watcher == null || !watcher.isValid() || watcher.isDead()) {
+					cancel();
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
 	private static void travelToAndSpawnMob(Location l, String mobName) {
 		Location current = watcher.getLocation();
-		double speed = 0.6; // blocks per tick
-
-		moveEntitySmooth(current, l, speed, () -> {
+		moveEntitySmooth(watcher, current, l, MAX_SPEED, () -> {
+			mobCount++;
 			Location headStart = l.clone();
 			Location endLoc = new Location(world, -120.5, 75, -88.5);
 
-			moveEntitySmooth(headStart, endLoc, 0.3, () -> spawnMob(endLoc, mobName));
+			// Create armor stand with zombie head
+			ArmorStand stand = world.spawn(headStart, ArmorStand.class);
+			stand.setGravity(false);
+			stand.setVisible(false);
+			stand.setCustomNameVisible(false);
+			stand.setInvulnerable(true);
+			stand.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255));
+			ItemStack zombieHead = new ItemStack(Material.ZOMBIE_HEAD);
+			Objects.requireNonNull(stand.getEquipment()).setHelmet(zombieHead);
+
+			moveEntitySmooth(stand, headStart.clone().add(0, 1, 0), endLoc, 0.4, () -> {
+				spawnMob(endLoc, mobName);
+				stand.remove(); // Remove armor stand after reaching destination
+			});
 
 			sendChatMessage(SPAWN_LINES.get(random.nextInt(5)));
 
 			Utils.scheduleTask(() -> {
-				mobCount++;
 				if(mobCount == 4 || mobCount == 19) {
 					returnToOriginalPosition();
 				} else {
 					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
 				}
-			}, 10);
+			}, 16);
 		});
 	}
 
-	private static void moveEntitySmooth(Location start, Location end, double speed, Runnable onComplete) {
-		Vector direction = end.clone().subtract(start).toVector().normalize().multiply(speed);
-		int steps = (int) (start.distance(end) / speed);
-		for(int i = 0; i < steps; i++) {
-			int finalI = i;
-			Utils.scheduleTask(() -> {
-				Location newLoc = start.clone().add(direction.clone().multiply(finalI));
-				watcher.teleport(newLoc);
-				if(finalI == steps - 1 && onComplete != null) {
-					onComplete.run();
-				}
-			}, i);
+	private static void moveEntitySmooth(Entity entity, Location start, Location end, double maxSpeed, Runnable onComplete) {
+		final double accel = 0.08;
+		final Vector totalVector = end.toVector().subtract(start.toVector());
+		final double totalDistance = totalVector.length();
+		final Vector direction = totalVector.clone().normalize();
+
+		final double accelDist = (maxSpeed * maxSpeed) / (2 * accel);
+
+		int accelTicks, cruiseTicks, decelTicks;
+
+		if(totalDistance < (accelDist + accelDist)) {
+			// Triangular motion profile: peak speed is less than maxSpeed
+			double peakSpeed = Math.sqrt(totalDistance * accel);
+			accelTicks = (int) Math.ceil(peakSpeed / accel);
+			decelTicks = accelTicks;
+			cruiseTicks = 0;
+		} else {
+			accelTicks = (int) Math.ceil(maxSpeed / accel);
+			decelTicks = accelTicks;
+			double cruiseDistance = totalDistance - accelDist - accelDist;
+			cruiseTicks = (int) Math.ceil(cruiseDistance / maxSpeed);
 		}
+
+		final int totalTicks = accelTicks + cruiseTicks + decelTicks;
+		entity.teleport(start.clone());
+
+		new BukkitRunnable() {
+			int tick = 0;
+			double currentSpeed = 0;
+			final Location currentLoc = start.clone();
+
+			@Override
+			public void run() {
+				if(!entity.isValid()) {
+					cancel();
+					return;
+				}
+
+				// Phase-based motion
+				if(tick < accelTicks) {
+					currentSpeed = accel * (tick + 1);
+				} else if(tick < accelTicks + cruiseTicks) {
+					currentSpeed = maxSpeed;
+				} else {
+					int decelTick = tick - accelTicks - cruiseTicks;
+					currentSpeed = maxSpeed - accel * (decelTick + 1);
+					if(currentSpeed < 0) currentSpeed = 0;
+				}
+
+				Vector moveVec = direction.clone().multiply(currentSpeed);
+				currentLoc.add(moveVec);
+
+				if(entity.equals(watcher)) {
+					watcher.teleport(currentLoc.clone().setDirection(direction));
+				} else {
+					entity.teleport(currentLoc.clone());
+				}
+
+				if(entity instanceof ArmorStand armorStand) {
+					world.spawnParticle(Particle.DUST, currentLoc.clone().add(0, 1.5, 0), 0, new Particle.DustOptions(Color.BLACK, 1));
+					world.spawnParticle(Particle.DUST, currentLoc.clone().add(0, 1.5, 0), 0, new Particle.DustOptions(Color.PURPLE, 1));
+					world.spawnParticle(Particle.DUST, currentLoc.clone().add(0, 1.5, 0), 0, new Particle.DustOptions(Color.WHITE, 1));
+					EulerAngle pose = armorStand.getHeadPose();
+					armorStand.setHeadPose(pose.add(0, Math.toRadians(25), 0));
+				}
+
+				tick++;
+				if(tick >= totalTicks) {
+					entity.teleport(end);
+
+					if(entity.equals(watcher)) {
+						Vector lookVec = ORIGINAL_POSITION.toVector().subtract(end.toVector());
+						if(lookVec.lengthSquared() < 1e-6) {
+							lookVec = new Vector(0, 0, 1);
+						} else {
+							lookVec.normalize();
+						}
+						Location finalLoc = end.clone();
+						finalLoc.setDirection(lookVec);
+						watcher.teleport(finalLoc);
+					}
+
+					if(onComplete != null) {
+						onComplete.run();
+					}
+					cancel();
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
 	private static void spawnMob(Location location, String mobName) {
 		Zombie mob = (Zombie) world.spawnEntity(location, EntityType.ZOMBIE);
 		mob.setCustomNameVisible(true);
-		mob.setAI(false);
+		mob.setAI(true);
+		Utils.scheduleTask(() -> mob.setAI(false), 20);
+		mob.setGravity(true);
 		mob.setSilent(true);
 		mob.setAdult();
 		mob.setPersistent(true);
 		mob.setRemoveWhenFarAway(false);
-		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
 		if(mobName.equals("Diamante Giant")) {
 			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 80 + "/" + 80);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(80);
 			mob.setHealth(80);
-			Objects.requireNonNull(mob.getAttribute(Attribute.SCALE)).setBaseValue(16);
+			Objects.requireNonNull(mob.getAttribute(Attribute.SCALE)).setBaseValue(6);
+			Objects.requireNonNull(mob.getEquipment()).setHelmet(new ItemStack(Material.DIAMOND_HELMET));
+			mob.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
+			mob.getEquipment().setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
+			mob.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
+			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
 			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 50 + "/" + 50);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(50);
 			mob.setHealth(50);
+			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
 			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 24 + "/" + 24);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-12);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(24);
 			mob.setHealth(24);
+			Objects.requireNonNull(mob.getEquipment()).setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
+			mob.getEquipment().setLeggings(new ItemStack(Material.CHAINMAIL_LEGGINGS));
+			mob.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));
+			mob.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
 		}
+		Bukkit.broadcastMessage(mob.getCustomName() + ChatColor.RESET + " spawned at tick " + ticksSinceStart);
+		killedCount++;
 
-		if(mobCount == 19) {
+		if(killedCount >= 19) {
 			Utils.scheduleTask(() -> sendChatMessage("You have proven yourself.  You may pass."), 1);
+			Utils.scheduleTask(() -> {
+				watcher.remove();
+				world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
+				Bukkit.broadcastMessage("Blood finished in " + ticksSinceStart + " ticks");
+			}, 81);
 		} else {
 			Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 1);
 		}
@@ -156,10 +283,10 @@ public class Watcher {
 	private static void returnToOriginalPosition() {
 		if(watcher != null && world != null) {
 			if(mobCount != 19) {
-				moveEntitySmooth(watcher.getLocation(), ORIGINAL_POSITION, 0.6, () -> sendChatMessage("Let's see how you can handle this."));
-				Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount - 1), MOB_NAMES.get(mobCount - 1)), 40);
+				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, () -> sendChatMessage("Let's see how you can handle this."));
+				Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount)), 60);
 			} else {
-				moveEntitySmooth(watcher.getLocation(), ORIGINAL_POSITION, 0.6, null);
+				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, null);
 			}
 		}
 	}

@@ -60,6 +60,8 @@ public class Server {
 	public static void serverSetup(World world) {
 		spawnMinibosses(world);
 		spawn1x1Mobs(world);
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 coal_block");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 red_terracotta");
 	}
 
 
@@ -131,9 +133,22 @@ public class Server {
 		yellowShadowAssassin.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SWORD));
 	}
 
+	public static void openWitherDoor() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 glass");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 air"), 20);
+		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
+	}
+
+	public static void openBloodDoor() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 glass");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 air"), 20);
+		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
+		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 1.0F, 0.5F);
+	}
+
 	public static void activatePirateDoor() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 minecraft:glass");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 minecraft:air"), 20);
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 glass");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 air"), 20);
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone -24 0 -98 -27 7 -99 -27 82 -99"), 100);
 	}
 

@@ -1,5 +1,7 @@
 package instructions;
 
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
@@ -28,8 +30,127 @@ public class Archer {
 	}
 
 	public static void clear() {
-		// look at 9.3 yaw after clear
+		/*
+		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗
+		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔══██╗██║   ██║██╔════╝██║  ██║
+		 * ██████╔╝██║     ██║   ██║██║   ██║██║  ██║    ██████╔╝██║   ██║███████╗███████║
+		 * ██╔══██╗██║     ██║   ██║██║   ██║██║  ██║    ██╔══██╗██║   ██║╚════██║██╔══██║
+		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ██║  ██║╚██████╔╝███████║██║  ██║
+		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 6.6f, 9.9f), 3);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -119.5, 69, -187.5)), 4);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 20.4f, 8f);
+			Actions.setFakePlayerHotbarSlot(archer, 4);
+		}, 5);
+		Utils.scheduleTask(() -> {
+			simulateShoot();
+			Actions.move(archer, new Vector(-0.39124, 0, 1.05202), 2);
+		}, 6);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(archer, 2);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Red Blue Cleared");
+		}, 7);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Mage.getMage()), 9);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, 8.6f);
+			Actions.setFakePlayerHotbarSlot(archer, 1);
+		}, 10);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -120.5, 69, -127.5)), 29);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 35f), 30);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -120.5, 67, -122.5)), 31);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 32);
+		Utils.scheduleTask(() -> {
+				simulateShoot();
+				Actions.move(archer, new Vector(0, 0, 1.11242), 2);
+		}, 33);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(archer, 1);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared");
+		}, 34);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 35);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -127.5, 69, -120.5)), 36);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 3.5f), 37);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -154.5, 69, -120.5)), 38);
 
+		/*
+		 * ██╗    ██╗███████╗██╗     ██╗
+		 * ██║    ██║██╔════╝██║     ██║
+		 * ██║ █╗ ██║█████╗  ██║     ██║
+		 * ██║███╗██║██╔══╝  ██║     ██║
+		 * ╚███╔███╔╝███████╗███████╗███████╗
+		 *  ╚══╝╚══╝ ╚══════╝╚══════╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 39);
+		Utils.scheduleTask(Archer::simulateShoot, 40);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(archer, 1);
+			Actions.turnHead(archer, -175.9f, -8.7f);
+		}, 41);
+
+		// pearl 1: /execute in minecraft:overworld run tp @s -149.50 88.00 -119.50 120 0
+		// lands -164.153 87 -128.022 in 13 ticks
+
+		// pearl 2: /execute in minecraft:overworld run tp @s -143.50 90.00 -119.50 106 66
+		// lands -151.559 69 -121.912 in 16 ticks
+
+		// pearl 3: /execute in minecraft:overworld run tp @s -181.50 70.00 -120.50 82 11
+		// lands -187.230 70 -119.704 in 5 ticks
+
+		/*
+		 * ████████╗ ██████╗ ███╗   ███╗██╗ ██████╗ ██╗  ██╗ █████╗
+		 * ╚══██╔══╝██╔═══██╗████╗ ████║██║██╔═══██╗██║ ██╔╝██╔══██╗
+		 *    ██║   ██║   ██║██╔████╔██║██║██║   ██║█████╔╝ ███████║
+		 *    ██║   ██║   ██║██║╚██╔╝██║██║██║   ██║██╔═██╗ ██╔══██║
+		 *    ██║   ╚██████╔╝██║ ╚═╝ ██║██║╚██████╔╝██║  ██╗██║  ██║
+		 *    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
+		 */
+
+		/*
+		 *  ██████╗ ██████╗  █████╗ ██╗   ██╗███████╗██╗
+		 * ██╔════╝ ██╔══██╗██╔══██╗██║   ██║██╔════╝██║
+		 * ██║  ███╗██████╔╝███████║██║   ██║█████╗  ██║
+		 * ██║   ██║██╔══██╗██╔══██║╚██╗ ██╔╝██╔══╝  ██║
+		 * ╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ███████╗███████╗
+		 *  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝
+		 */
+
+		// pearl 1: /execute in minecraft:overworld run tp @s -149.50 73.00 -100.50 50 29
+		// lands -155.261 69 -95.686 in 7 ticks
+
+		// pearl 2: /execute in minecraft:overworld run tp @s -155.26 69.00 -95.69 -7 0
+		// lands -153.855 69 -83.063 in 10 ticks
+
+		/*
+		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
+		 * ████╗ ████║██║   ██║██╔════╝██╔════╝██║   ██║████╗ ████║
+		 * ██╔████╔██║██║   ██║███████╗█████╗  ██║   ██║██╔████╔██║
+		 * ██║╚██╔╝██║██║   ██║╚════██║██╔══╝  ██║   ██║██║╚██╔╝██║
+		 * ██║ ╚═╝ ██║╚██████╔╝███████║███████╗╚██████╔╝██║ ╚═╝ ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝
+		 */
+
+		/*
+		 * ███╗   ███╗ █████╗ ██████╗ ██╗  ██╗███████╗████████╗
+		 * ████╗ ████║██╔══██╗██╔══██╗██║ ██╔╝██╔════╝╚══██╔══╝
+		 * ██╔████╔██║███████║██████╔╝█████╔╝ █████╗     ██║
+		 * ██║╚██╔╝██║██╔══██║██╔══██╗██╔═██╗ ██╔══╝     ██║
+		 * ██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██╗███████╗   ██║
+		 * ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝
+		 */
+
+		// pearl 1: /execute in minecraft:overworld run tp @s -175.50 69.00 -58.50 80 1
+		// lands -186.655 69 -56.488 in 9 ticks
+
+		/*
+		 * ██╗   ██╗███████╗██╗     ██╗      ██████╗ ██╗    ██╗
+		 * ╚██╗ ██╔╝██╔════╝██║     ██║     ██╔═══██╗██║    ██║
+		 *  ╚████╔╝ █████╗  ██║     ██║     ██║   ██║██║ █╗ ██║
+		 *   ╚██╔╝  ██╔══╝  ██║     ██║     ██║   ██║██║███╗██║
+		 *    ██║   ███████╗███████╗███████╗╚██████╔╝╚███╔███╔╝
+		 *    ╚═╝   ╚══════╝╚══════╝╚══════╝ ╚═════╝  ╚══╝╚══╝
+		 */
 	}
 
 	private static void simulateShoot() {

@@ -272,7 +272,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(healer, new Location(world, -74.5, 76, -53.5)), 104);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -166.8f, -32.3f), 105);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(healer, new Location(world, -73.5, 80.5, -57.5)), 106);
-		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, -1.1224), 2), 107);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, -1.12242), 2), 107);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 161.5f, 29.7f), 108);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(healer);

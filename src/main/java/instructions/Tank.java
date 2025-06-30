@@ -377,15 +377,21 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(tank, new Location(world, -177.5, 64, -154.5)), 206);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 149.5f, -61f), 207);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(tank, new Location(world, -182.5, 84, -163.5)), 208);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 90f), 209);
 		Utils.scheduleTask(() -> {
-			Actions.simulateLeftClickAir(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 6/9 (Opened Chest)");
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 7/9 (Killed Bat)");
-			world.playSound(tank.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
+			Actions.turnHead(tank, 90f, -90f);
+			Actions.setFakePlayerHotbarSlot(tank, 0);
+		}, 209);
+		Utils.scheduleTask(() -> {
+			Actions.simulateRightClickAir(tank);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 6/9 (Killed Bat)");
 			world.playSound(tank.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 212 Ticks (10.6 seconds)");
 		}, 210);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 90f), 211);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 7/9 (Opened Chest)");
+			world.playSound(tank.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 214 Ticks (10.8 seconds)");
+		}, 212);
 	}
 
 	@SuppressWarnings("unused")

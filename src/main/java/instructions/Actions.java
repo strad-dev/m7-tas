@@ -38,7 +38,7 @@ public class Actions {
 	 */
 	public static void move(Player p, Vector perTick, int durationTicks) {
 		// only handle CraftPlayer/NMS and positive duration
-		if (!(p instanceof CraftPlayer cp) || durationTicks <= 0) return;
+		if(!(p instanceof CraftPlayer cp) || durationTicks <= 0) return;
 
 		EntityPlayer npc = cp.getHandle();
 		// convert Bukkit Vector to NMS Vec3D
@@ -46,9 +46,10 @@ public class Actions {
 
 		new BukkitRunnable() {
 			int ticks = 0;
+
 			@Override
 			public void run() {
-				if (ticks++ >= durationTicks) {
+				if(ticks++ >= durationTicks) {
 					cancel();
 					return;
 				}
@@ -62,11 +63,7 @@ public class Actions {
 				PositionMoveRotation pmr = PositionMoveRotation.a(npc);
 
 				// 4) Create teleport packet with NO relative flags
-				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(
-						npc.ar(),
-						pmr,
-						EnumSet.noneOf(Relative.class),
-						npc.aJ()  // head yaw/pitch
+				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ()  // head yaw/pitch
 				);
 
 				// 5) Broadcast to all online players (including spectators)
@@ -85,7 +82,7 @@ public class Actions {
 	 * @param hotbarIndex The index of the new hotbar slot (0–8).
 	 */
 	public static void setFakePlayerHotbarSlot(Player p, int hotbarIndex) {
-		if (!(p instanceof CraftPlayer cp)) return;
+		if(!(p instanceof CraftPlayer cp)) return;
 		EntityPlayer npc = cp.getHandle();
 
 		// 1) Update the NMS held‐slot index
@@ -107,7 +104,7 @@ public class Actions {
 	 * @param slotB same range
 	 */
 	public static void swapFakePlayerInventorySlots(Player p, int slotA, int slotB) {
-		if (!(p instanceof CraftPlayer cp)) return;
+		if(!(p instanceof CraftPlayer cp)) return;
 		EntityPlayer npc = cp.getHandle();
 		PlayerInventory inv = npc.gi();
 
@@ -121,7 +118,7 @@ public class Actions {
 		Utils.forceFullInventorySync(p);
 
 		// 3) If either swapped slot was in the hotbar, update the hand‐item too
-		if (slotA < 9 || slotB < 9) {
+		if(slotA < 9 || slotB < 9) {
 			Utils.syncFakePlayerHand(p);
 		}
 	}
@@ -143,10 +140,8 @@ public class Actions {
 
 		Utils.forceInstantTeleport(p, to);
 
-		for (Player viewer : Bukkit.getOnlinePlayers()) {
-			if (viewer.getGameMode() == GameMode.SPECTATOR
-					&& viewer.getSpectatorTarget() != null
-					&& viewer.getSpectatorTarget().equals(p)) {
+		for(Player viewer : Bukkit.getOnlinePlayers()) {
+			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
 
 				Utils.forceInstantTeleport(viewer, to);
 			}
@@ -171,10 +166,8 @@ public class Actions {
 		p.setVelocity(new Vector(0, 0, 0));
 		Utils.forceInstantTeleport(p, to);
 
-		for (Player viewer : Bukkit.getOnlinePlayers()) {
-			if (viewer.getGameMode() == GameMode.SPECTATOR
-					&& viewer.getSpectatorTarget() != null
-					&& viewer.getSpectatorTarget().equals(p)) {
+		for(Player viewer : Bukkit.getOnlinePlayers()) {
+			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
 
 				Utils.forceInstantTeleport(viewer, to);
 			}
@@ -202,10 +195,8 @@ public class Actions {
 		p.setVelocity(new Vector(0, 0, 0));
 		Utils.forceInstantTeleport(p, to);
 
-		for (Player viewer : Bukkit.getOnlinePlayers()) {
-			if (viewer.getGameMode() == GameMode.SPECTATOR
-					&& viewer.getSpectatorTarget() != null
-					&& viewer.getSpectatorTarget().equals(p)) {
+		for(Player viewer : Bukkit.getOnlinePlayers()) {
+			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
 
 				Utils.forceInstantTeleport(viewer, to);
 			}
@@ -309,7 +300,16 @@ public class Actions {
 	}
 
 	public static void simulateLeap(Player p, Player target) {
-		simulateAOTV(p, target.getLocation());
+		p.setVelocity(new Vector(0, 0, 0));
+		Utils.forceInstantTeleport(p, target.getLocation());
+
+		for(Player viewer : Bukkit.getOnlinePlayers()) {
+			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
+				Utils.forceInstantTeleport(viewer, target.getLocation());
+			}
+		}
+
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}
 
 	public static void mimicChest(Player p, Block b) {
@@ -339,7 +339,7 @@ public class Actions {
 	 * This method is typically used for replicating the behavior of an ender pearl throw,
 	 * including potentially initiating movement or teleportation.
 	 *
-	 * @param p       The player for whom the pearl throw is being simulated.
+	 * @param p The player for whom the pearl throw is being simulated.
 	 */
 	public static void simulatePearlThrow(Player p) {
 		EnderPearl pearl = (EnderPearl) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ENDER_PEARL);
