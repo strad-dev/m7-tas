@@ -18,18 +18,21 @@ public class Archer {
 	private static Player archer;
 	private static World world;
 
-	public static void archerInstructions(Player p) {
+	public static void archerInstructions(Player p, String section) {
 		archer = p;
 		world = archer.getWorld();
 		archer.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, -1, 1));
 		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 7);
-		Actions.simulateAOTV(archer, new Location(world, -118.5, 70, -202.5));
-		Actions.setFakePlayerHotbarSlot(archer, 1);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
-		Utils.scheduleTask(Archer::clear, 162);
+
+		if(section.equals("all") || section.equals("clear")) {
+			Actions.simulateAOTV(archer, new Location(world, -118.5, 70, -202.5));
+			Actions.setFakePlayerHotbarSlot(archer, 1);
+			Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
+			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		}
 	}
 
-	public static void clear() {
+	public static void clear(boolean doContinue) {
 		/*
 		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗
 		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔══██╗██║   ██║██╔════╝██║  ██║
@@ -62,8 +65,8 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -120.5, 67, -122.5)), 31);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 32);
 		Utils.scheduleTask(() -> {
-				simulateShoot();
-				Actions.move(archer, new Vector(0, 0, 1.11242), 2);
+			simulateShoot();
+			Actions.move(archer, new Vector(0, 0, 1.11242), 2);
 		}, 33);
 		Utils.scheduleTask(() -> {
 			Actions.setFakePlayerHotbarSlot(archer, 1);

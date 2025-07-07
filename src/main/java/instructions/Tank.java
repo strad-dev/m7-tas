@@ -10,28 +10,31 @@ public class Tank {
 	@SuppressWarnings("FieldCanBeLocal")
 	private static World world;
 
-	public static void tankInstructions(Player p) {
+	public static void tankInstructions(Player p, String section) {
 		tank = p;
 		world = Tank.tank.getWorld();
-		Actions.turnHead(Tank.tank, 0f, 5.6f);
-		Actions.simulateAOTV(Tank.tank, new Location(world, -196.5, 68, -222.5));
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 2, 29), 60);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 61);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 101);
-		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(Tank.tank, 1);
-			Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
-		}, 102);
-		Utils.scheduleTask(() -> {
-			tank.teleport(new Location(tank.getWorld(), -120.5, 75, -220.5));
-			Actions.swapFakePlayerInventorySlots(Tank.tank, 2, 29);
-		}, 141);
-		// Tick 160 (clear tick 0: run begins)
-		// Tick 161 (clear tick 1: teleport back)
-		Utils.scheduleTask(Tank::clear, 162);
+
+		if(section.equals("all") || section.equals("clear")) {
+			Actions.turnHead(Tank.tank, 0f, 5.6f);
+			Actions.simulateAOTV(Tank.tank, new Location(world, -196.5, 68, -222.5));
+			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 2, 29), 60);
+			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 61);
+			Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 101);
+			Utils.scheduleTask(() -> {
+				Actions.setFakePlayerHotbarSlot(Tank.tank, 1);
+				Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
+			}, 102);
+			Utils.scheduleTask(() -> {
+				tank.teleport(new Location(tank.getWorld(), -120.5, 75, -220.5));
+				Actions.swapFakePlayerInventorySlots(Tank.tank, 2, 29);
+			}, 141);
+			// Tick 160 (clear tick 0: run begins)
+			// Tick 161 (clear tick 1: teleport back
+			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		}
 	}
 
-	private static void clear() {
+	private static void clear(boolean doContinue) {
 		/*
 		 * ████████╗██████╗  █████╗ ██████╗
 		 * ╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗

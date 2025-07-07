@@ -20,26 +20,29 @@ public class Mage {
 	private static Player mage;
 	private static World world;
 
-	public static void mageInstructions(Player p) {
+	public static void mageInstructions(Player p, String section) {
 		mage = p;
 		world = Mage.mage.getWorld();
-		Actions.turnHead(Mage.mage, -180f, 0f);
-		Actions.simulateAOTV(Mage.mage, new Location(world, -132.5, 69, -76.5));
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 2, 29), 60);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 2), 61);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(mage), 101);
-		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 121);
-		Utils.scheduleTask(() -> {
-			mage.teleport(new Location(mage.getWorld(), -120.5, 75, -220.5));
-			Actions.swapFakePlayerInventorySlots(mage, 2, 29);
-		}, 141);
-		// Tick 160 (clear tick 0: run begins)
-		// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
-		Utils.scheduleTask(Mage::clear, 162);
+
+		if(section.equals("all") || section.equals("clear")) {
+			Actions.turnHead(Mage.mage, -180f, 0f);
+			Actions.simulateAOTV(Mage.mage, new Location(world, -132.5, 69, -76.5));
+			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 2, 29), 60);
+			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 2), 61);
+			Utils.scheduleTask(() -> Actions.simulateRightClickAir(mage), 101);
+			Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
+			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 121);
+			Utils.scheduleTask(() -> {
+				mage.teleport(new Location(mage.getWorld(), -120.5, 75, -220.5));
+				Actions.swapFakePlayerInventorySlots(mage, 2, 29);
+			}, 141);
+			// Tick 160 (clear tick 0: run begins)
+			// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
+			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		}
 	}
 
-	private static void clear() {
+	private static void clear(boolean doContinue) {
 		/*
 		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗
 		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔══██╗██║   ██║██╔════╝██║  ██║
@@ -48,6 +51,7 @@ public class Mage {
 		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ██║  ██║╚██████╔╝███████║██║  ██║
 		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 		 */
+		// Tick 162 (clear tick 5, delay = 3)
 		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Archer.getArcher()), 3);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 3.4f, -3.4f);
@@ -67,7 +71,10 @@ public class Mage {
 		// lands -114.535 67 -119.218 in 8 ticks
 
 		// pearl 2: /execute in minecraft:overworld run tp @s -114.54 67.00 -119.22 -124 -78
-		// lands
+		// lands -112.3 78.2 -120.7 in 10 ticks
+
+		// pearl 3: /execute in minecraft:overworld run tp @s -122.50 82.00 -129.50 -90.00 4.00
+		// lands -113.923 82 -129.565 in 7 ticks
 	}
 
 	private static void simulateBeam() {

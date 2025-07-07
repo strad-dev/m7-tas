@@ -383,7 +383,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			 * - Runs the TAS script
 			 */
 			case "tas" -> {
-				runTAS(p.getWorld());
+				String section = "all";
+				if(args.length >= 1) {
+					section = args[0].toLowerCase();
+					if(!section.equals("all") && !section.equals("clear") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
+						p.sendMessage("Invalid section specified.  Valid sections: clear maxor storm goldor necron witherking");
+					}
+				}
+				runTAS(p.getWorld(), section);
 				return true;
 			}
 			case "spectate" -> {
@@ -533,7 +540,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		return nmsPlayer.getBukkitEntity();
 	}
 
-	private void runTAS(World world) {
+	private void runTAS(World world, String section) {
 		if(actorMap.isEmpty()) {
 			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
 			return;
@@ -542,13 +549,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		setInventories();
 		Server.serverSetup(world);
 
-		Archer.archerInstructions(actorMap.get("Archer"));
-		Berserk.berserkInstructions(actorMap.get("Berserk"));
-		Healer.healerInstructions(actorMap.get("Healer"));
-		Mage.mageInstructions(actorMap.get("Mage"));
-		Tank.tankInstructions(actorMap.get("Tank"));
+		Archer.archerInstructions(actorMap.get("Archer"), section);
+		Berserk.berserkInstructions(actorMap.get("Berserk"), section);
+		Healer.healerInstructions(actorMap.get("Healer"), section);
+		Mage.mageInstructions(actorMap.get("Mage"), section);
+		Tank.tankInstructions(actorMap.get("Tank"), section);
 
-		Server.serverInstructions(world);
+		Server.serverInstructions(world, section);
 	}
 
 	public static Plugin getInstance() {

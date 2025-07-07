@@ -31,15 +31,11 @@ public class Watcher {
 	private static final List<String> SPAWN_LINES = List.of("This guy looks like a fighter.", "Hmmm... this one!", "You'll do.", "Go, fight!", "Go and live again!");
 	private static final List<String> KILLED_LINES = List.of("Not bad.", "That one was weak anyway.", "I'm impressed.", "Very nice.", "Aw, I liked that one.");
 	private static int mobCount = 0;
-	private static int killedCount = 0;
 	private static final Random random = new Random();
 	private static final double MAX_SPEED = 0.64; // blocks per tick
-	private static int ticksSinceStart;
 
-	public static void watcherInstructions(World temp) {
+	public static void watcherInstructions(World temp, boolean doContinue) {
 		mobCount = 0;
-		killedCount = 0;
-		ticksSinceStart = 1;
 		world = temp;
 		ORIGINAL_POSITION.setWorld(world);
 		if(watcher != null) {
@@ -88,19 +84,35 @@ public class Watcher {
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -99.5)); // Deanvm
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -99.5)); // Beethoven_
 
+		// tick 0 = clear tick 1
 		sendChatMessage("Things feel a little more roomy now, eh?");
 		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
 		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
 		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				ticksSinceStart++;
-				if(watcher == null || !watcher.isValid() || watcher.isDead()) {
-					cancel();
-				}
-			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 441);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 446);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 451);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 456);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 494);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 527);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 568);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 598);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 631);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 660);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 689);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 717);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 752);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 784);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 813);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 845);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 886);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 916);
+		Utils.scheduleTask(() -> sendChatMessage("You have proven yourself.  You may pass."), 949);
+		Utils.scheduleTask(() -> {
+			watcher.remove();
+			world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
+		}, 1028);
+		// start maxor at tick 1029 (clear tick 1030) IF doContinue
 	}
 
 	private static void travelToAndSpawnMob(Location l, String mobName) {
@@ -264,19 +276,6 @@ public class Watcher {
 			mob.getEquipment().setLeggings(new ItemStack(Material.CHAINMAIL_LEGGINGS));
 			mob.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
-		}
-		Bukkit.broadcastMessage(mob.getCustomName() + ChatColor.RESET + " spawned at tick " + ticksSinceStart);
-		killedCount++;
-
-		if(killedCount >= 19) {
-			Utils.scheduleTask(() -> sendChatMessage("You have proven yourself.  You may pass."), 1);
-			Utils.scheduleTask(() -> {
-				watcher.remove();
-				world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
-				Bukkit.broadcastMessage("Blood finished in " + ticksSinceStart + " ticks");
-			}, 81);
-		} else {
-			Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 1);
 		}
 	}
 

@@ -20,41 +20,43 @@ public class Server {
 	private static Zombie yellowShadowAssassin = null;
 	private static final LivingEntity[] trashMobs = new LivingEntity[18]; // each 1x1 has 6 mobs spawned
 
-	public static void serverInstructions(World world) {
+	public static void serverInstructions(World world, String section) {
 		// Begin with 3 seconds of delay
 		Bukkit.broadcastMessage("TAS starts in 3 seconds.");
 
-		// 5-second countdown
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds.");
-			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		}, 60);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
-			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		}, 80);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
-			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		}, 100);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
-			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		}, 120);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
-			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		}, 140);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
-			Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		}, 160);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 160);
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world), 161);
+		if(section.equals("all") || section.equals("clear")) {
+			// 5-second countdown
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds.");
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, 60);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, 80);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, 100);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, 120);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, 140);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+				Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, 160);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 160);
+			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 161);
 
 //		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
 //		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
 //		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 2.0F, 0.5F);
+		}
 	}
 
 	public static void serverSetup(World world) {

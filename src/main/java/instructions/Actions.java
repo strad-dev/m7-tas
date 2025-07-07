@@ -351,6 +351,17 @@ public class Actions {
 		p.getInventory().getItemInMainHand().setAmount(p.getInventory().getItemInMainHand().getAmount() - 1);
 	}
 
+	public static void simulateRagAxe(Player p) {
+		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F), 20);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F), 40);
+		Utils.scheduleTask(() -> {
+			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_DEATH, 1.0F, 1.0F);
+			p.addScoreboardTag("RagBuff");
+		}, 60);
+		Utils.scheduleTask(() -> p.removeScoreboardTag("RagBuff"), 260);
+	}
+
 	/**
 	 * Simulate a left‐click (attack) in the air.  Your other plugin
 	 * will see a PlayerInteractEvent with Action.LEFT_CLICK_AIR.

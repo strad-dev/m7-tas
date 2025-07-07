@@ -9,28 +9,31 @@ public class Healer {
 	private static Player healer;
 	private static World world;
 
-	public static void healerInstructions(Player p) {
+	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
-		Actions.turnHead(healer, -168.6f, 2.9f);
-		Actions.simulateAOTV(healer, new Location(world, -28.5, 69, -44.5));
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 2, 29), 60);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 2), 61);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 101);
-		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(healer, 1);
-			Actions.move(healer, new Vector(0, 0, 0.8634), 5);
-		}, 102);
-		Utils.scheduleTask(() -> {
-			healer.teleport(new Location(healer.getWorld(), -120.5, 75, -220.5));
-			Actions.swapFakePlayerInventorySlots(healer, 2, 29);
-		}, 141);
-		// Tick 160 (clear tick 0: run begins)
-		// Tick 161 (clear tick 1: teleport back)
-		Utils.scheduleTask(Healer::clear, 162);
+
+		if(section.equals("all") || section.equals("clear")) {
+			Actions.turnHead(healer, -168.6f, 2.9f);
+			Actions.simulateAOTV(healer, new Location(world, -28.5, 69, -44.5));
+			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 2, 29), 60);
+			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 2), 61);
+			Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 101);
+			Utils.scheduleTask(() -> {
+				Actions.setFakePlayerHotbarSlot(healer, 1);
+				Actions.move(healer, new Vector(0, 0, 0.8634), 5);
+			}, 102);
+			Utils.scheduleTask(() -> {
+				healer.teleport(new Location(healer.getWorld(), -120.5, 75, -220.5));
+				Actions.swapFakePlayerInventorySlots(healer, 2, 29);
+			}, 141);
+			// Tick 160 (clear tick 0: run begins)
+			// Tick 161 (clear tick 1: teleport back)
+			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		}
 	}
 
-	private static void clear() {
+	private static void clear(boolean doContinue) {
 		/*
 		 * ██████╗     ██╗    ██╗███████╗██╗██████╗ ██████╗  ██████╗ ███████╗
 		 * ╚════██╗    ██║    ██║██╔════╝██║██╔══██╗██╔══██╗██╔═══██╗██╔════╝

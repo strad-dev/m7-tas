@@ -15,31 +15,34 @@ public class Berserk {
 	private static Player berserk;
 	private static World world;
 
-	public static void berserkInstructions(Player p) {
+	public static void berserkInstructions(Player p, String section) {
 		berserk = p;
 		world = berserk.getWorld();
-		Actions.turnHead(berserk, 90f, 36.5f);
-		Actions.simulateAOTV(berserk, new Location(world, -21.5, 70, -197.5));
-		Utils.scheduleTask(() -> {
-			Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
-		}, 60);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 61);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(berserk), 101);
-		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
-			Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
-		}, 102);
-		Utils.scheduleTask(() -> {
-			berserk.teleport(new Location(world, -120.5, 75, -220.5));
-			Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
-		}, 141);
-		// Tick 160 (clear tick 0: run begins)
-		// Tick 161 (clear tick 1: teleport back)
-		Utils.scheduleTask(Berserk::clear, 162);
+
+		if(section.equals("all") || section.equals("clear")) {
+			Actions.turnHead(berserk, 90f, 36.5f);
+			Actions.simulateAOTV(berserk, new Location(world, -21.5, 70, -197.5));
+			Utils.scheduleTask(() -> {
+				Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
+				Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
+			}, 60);
+			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 61);
+			Utils.scheduleTask(() -> Actions.simulateRightClickAir(berserk), 101);
+			Utils.scheduleTask(() -> {
+				Actions.setFakePlayerHotbarSlot(berserk, 1);
+				Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
+			}, 102);
+			Utils.scheduleTask(() -> {
+				berserk.teleport(new Location(world, -120.5, 75, -220.5));
+				Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
+			}, 141);
+			// Tick 160 (clear tick 0: run begins)
+			// Tick 161 (clear tick 1: teleport back)
+			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		}
 	}
 
-	private static void clear() {
+	private static void clear(boolean doContinue) {
 		/*
 		 * ████████╗██╗ ██████╗    ████████╗ █████╗  ██████╗    ████████╗ ██████╗ ███████╗
 		 * ╚══██╔══╝██║██╔════╝    ╚══██╔══╝██╔══██╗██╔════╝    ╚══██╔══╝██╔═══██╗██╔════╝
@@ -497,7 +500,7 @@ public class Berserk {
 			Actions.simulateLeftClickAir(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Spider 9/9 (Opened Chest)");
 			world.playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-		Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 220 Ticks (11.00 seconds)");
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 220 Ticks (11.00 seconds)");
 		}, 218);
 	}
 
