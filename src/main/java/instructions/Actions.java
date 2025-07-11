@@ -89,26 +89,6 @@ public class Actions {
 						}
 					}
 				}
-
-				/*
-				List<Player> spectators = M7tas.getSpectatingPlayer(p); // p is the fake player
-				for(Player spectator : spectators) {
-					if(spectator instanceof CraftPlayer craftSpectator) {
-						EntityPlayer nmsSpectator = craftSpectator.getHandle();
-
-						// Create teleport packet for the REAL PLAYER using their entity ID
-						PacketPlayOutEntityTeleport spectatorTp = PacketPlayOutEntityTeleport.a(
-								nmsSpectator.ar(), // Real player's entity ID
-								pmr,
-								EnumSet.noneOf(Relative.class),
-								nmsSpectator.aJ()
-						);
-
-						PlayerConnection conn = nmsSpectator.f;
-						conn.b(spectatorTp);
-					}
-				}
-				 */
 			}
 			// schedule at 0 tick delay, repeating every tick
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
@@ -125,26 +105,20 @@ public class Actions {
 		EntityPlayer npc = cp.getHandle();
 
 		if(npc.aJ()) { // onGround check
-			Vec3D motion = npc.dy(); // getDeltaMovement()
+			Vec3D motion = npc.dy();
 			Vec3D newMotion = new Vec3D(motion.d, 0.42D, motion.f);
 
-			// set motion
+			// Apply jump physics
 			npc.j(newMotion);
-
-			// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
 			npc.a(EnumMoveType.a, newMotion);
-
-			// 2) Apply gravity, friction, fall damage checks, etc.
 			npc.h();
 
-			// 3) Package up the new position + rotation
+			// Send packets using unified method
 			PositionMoveRotation pmr = PositionMoveRotation.a(npc);
-
-			// 4) Create teleport packet with NO relative flags
 			PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
 
-			// 5) Broadcast to all online players (including spectators)
 			Utils.broadcastPacket(tp);
+			Utils.updateSpectators(p, pmr); // Use the unified method
 		}
 	}
 
@@ -159,15 +133,15 @@ public class Actions {
 		if(!(p instanceof CraftPlayer cp)) return;
 		EntityPlayer npc = cp.getHandle();
 
-		// 1) Update the NMS held‐slot index
+		// Update the NMS held-slot index
 		npc.gi().j = hotbarIndex;
 
-		// 2) Tell that player’s client “your held slot is now hotbarIndex”
+		// Tell that player's client "your held slot is now hotbarIndex"
 		PacketPlayOutHeldItemSlot heldPkt = new PacketPlayOutHeldItemSlot(hotbarIndex);
 		cp.getHandle().f.b(heldPkt);
 
-		// 3) Broadcast the new main‐hand item to all viewers
-		Utils.syncFakePlayerHand(p);
+		// Broadcast the new main-hand item to all viewers AND sync to spectators
+		Utils.syncFakePlayerHand(p); // This now handles both!
 	}
 
 	/**
@@ -182,18 +156,18 @@ public class Actions {
 		EntityPlayer npc = cp.getHandle();
 		PlayerInventory inv = npc.gi();
 
-		// 1) Swap internally
+		// Swap internally
 		net.minecraft.world.item.ItemStack a = inv.a(slotA);
 		net.minecraft.world.item.ItemStack b = inv.a(slotB);
 		inv.a(slotA, b);
 		inv.a(slotB, a);
 
-		// 2) Re‐send the entire inventory window to that client
-		Utils.forceFullInventorySync(p);
+		// Re-send the entire inventory window to fake player AND spectators
+		Utils.syncInventoryToSpectators(p); // This updates spectators
 
-		// 3) If either swapped slot was in the hotbar, update the hand‐item too
+		// If either swapped slot was in the hotbar, update the hand-item too
 		if(slotA < 9 || slotB < 9) {
-			Utils.syncFakePlayerHand(p);
+			Utils.syncFakePlayerHand(p); // This now handles both viewers and spectators
 		}
 	}
 
@@ -212,14 +186,7 @@ public class Actions {
 		to.setYaw(yaw);
 		to.setPitch(pitch);
 
-		Utils.forceInstantTeleport(p, to);
-
-		for(Player viewer : Bukkit.getOnlinePlayers()) {
-			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
-
-				Utils.forceInstantTeleport(viewer, to);
-			}
-		}
+		Utils.teleportWithSpectators(p, to);
 	}
 
 	/**
@@ -238,14 +205,7 @@ public class Actions {
 		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
-		Utils.forceInstantTeleport(p, to);
-
-		for(Player viewer : Bukkit.getOnlinePlayers()) {
-			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
-
-				Utils.forceInstantTeleport(viewer, to);
-			}
-		}
+		Utils.teleportWithSpectators(p, to);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 	}
@@ -267,14 +227,7 @@ public class Actions {
 		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
-		Utils.forceInstantTeleport(p, to);
-
-		for(Player viewer : Bukkit.getOnlinePlayers()) {
-			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
-
-				Utils.forceInstantTeleport(viewer, to);
-			}
-		}
+		Utils.teleportWithSpectators(p, to);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}
@@ -360,14 +313,9 @@ public class Actions {
 	}
 
 	public static void simulateLeap(Player p, Player target) {
+		Location targetLoc = target.getLocation();
 		p.setVelocity(new Vector(0, 0, 0));
-		Utils.forceInstantTeleport(p, target.getLocation());
-
-		for(Player viewer : Bukkit.getOnlinePlayers()) {
-			if(viewer.getGameMode() == GameMode.SPECTATOR && viewer.getSpectatorTarget() != null && viewer.getSpectatorTarget().equals(p)) {
-				Utils.forceInstantTeleport(viewer, target.getLocation());
-			}
-		}
+		Utils.teleportWithSpectators(p, targetLoc);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}

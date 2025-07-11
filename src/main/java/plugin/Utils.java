@@ -20,6 +20,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 
 public class Utils {
@@ -33,23 +34,77 @@ public class Utils {
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay);
 	}
 
+	public static void teleportWithSpectators(Player p, Location to) {
+		if(!(p instanceof CraftPlayer cp)) return;
+		EntityPlayer npc = cp.getHandle();
+
+		// Update NMS position
+		npc.a_(to.getX(), to.getY(), to.getZ());
+		npc.v(to.getYaw());
+		npc.w(to.getPitch());
+		npc.aZ = to.getYaw();
+		npc.aX = to.getYaw();
+
+		// Send packets
+		PositionMoveRotation pmr = PositionMoveRotation.a(npc);
+		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+
+		broadcastPacket(tp);
+		updateSpectators(p, pmr);
+	}
+
+	public static void updateSpectators(Player fakePlayer, PositionMoveRotation pmr) {
+		List<Player> spectators = M7tas.getSpectatingPlayer(fakePlayer);
+		if (!spectators.isEmpty()) {
+			PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
+
+			for (Player spectator : spectators) {
+				if (spectator instanceof CraftPlayer craftSpectator) {
+					EntityPlayer nmsSpectator = craftSpectator.getHandle();
+					PlayerConnection conn = nmsSpectator.f;
+					conn.b(snapCam);
+				}
+			}
+		}
+	}
+
 	/**
-	 * Force a full resync of the given player's open inventory window.
+	 * Syncs fake player's inventory to spectators using packet-based approach
 	 */
-	public static void forceFullInventorySync(Player player) {
-		CraftPlayer cp = (CraftPlayer) player;
-		var handle = cp.getHandle();                       // NMS EntityPlayer
+	public static void syncInventoryToSpectators(Player fakePlayer) {
+		List<Player> spectators = M7tas.getSpectatingPlayer(fakePlayer);
+		if (!spectators.isEmpty()) {
+			// Method 1: Use packet-based sync (more efficient)
+			forceFullInventorySync(fakePlayer, spectators);
+
+			// Method 2: Also sync held item slot specifically
+			for (Player spectator : spectators) {
+				spectator.getInventory().setHeldItemSlot(fakePlayer.getInventory().getHeldItemSlot());
+			}
+		}
+	}
+
+	/**
+	 * Force a full resync of the given player's inventory to specified targets.
+	 */
+	public static void forceFullInventorySync(Player sourcePlayer, List<Player> targets) {
+		CraftPlayer cp = (CraftPlayer) sourcePlayer;
+		var handle = cp.getHandle();
 		Container menu = handle.cd; // the open window (0 = player inv)
 
 		// Build the packet with the current contents
 		PacketPlayOutWindowItems pkt = new PacketPlayOutWindowItems(menu.l, menu.j(), menu.c(), menu.g());
 
-		// Send it only to this player's connection
-		handle.f.b(pkt);
+		// Send to specified targets
+		for (Player target : targets) {
+			if (target instanceof CraftPlayer craftTarget) {
+				craftTarget.getHandle().f.b(pkt);
+			}
+		}
 	}
 
 	/**
-	 * Updates the held item in an NPC's hand
+	 * Updates the held item in an NPC's hand for all viewers AND spectators
 	 */
 	public static void syncFakePlayerHand(Player fake) {
 		EntityPlayer npc = ((CraftPlayer) fake).getHandle();
@@ -61,67 +116,33 @@ public class Utils {
 
 		// send it to every real viewer
 		broadcastPacket(equipPkt);
+
+		// Also update spectators' held items
+		List<Player> spectators = M7tas.getSpectatingPlayer(fake);
+		for (Player spectator : spectators) {
+			spectator.getInventory().setHeldItemSlot(fake.getInventory().getHeldItemSlot());
+			spectator.getInventory().setItemInMainHand(fake.getInventory().getItemInMainHand());
+			spectator.updateInventory();
+		}
 	}
-
-	/*
-	 * Forces a metadata synchronization for the specified entity player.
-	 * This method ensures that all metadata entries are marked and sent to all online players.
-	 *
-	 * @param nms the server-side player entity for which metadata needs to be synchronized
-	 */
-	/* public static void forceMetadataSync(EntityPlayer nms) {
-		// 1) grab the data-watcher
-		DataWatcher dw = nms.au();
-
-		byte oldFlags = dw.a(SHARED_FLAGS);
-		byte newFlags = nms.cd()
-				? (byte)(oldFlags | 0x02)
-				: (byte)(oldFlags & ~0x02);
-		dw.a(SHARED_FLAGS, newFlags, true);
-
-		// 2) pull only the *dirty* entries via packDirty() -> aks.b()
-		List<DataWatcher.c<?>> entries = dw.b();
-
-		// 3) if nothing changed, bail out
-		assert entries != null;
-		if (entries.isEmpty()) return;
-
-		// 4) build & broadcast the metadata packet
-		PacketPlayOutEntityMetadata pkt =
-				new PacketPlayOutEntityMetadata(nms.ar(), entries);
-		broadcastPacket(pkt);
-
-		// 5) mark these entries as “sent” so they’re no longer dirty -> assignValues() -> aks.a()
-		dw.a(entries);
-	} */
 
 	public static void forceInstantTeleport(Player bukkit, Location to) {
 		CraftPlayer p = (CraftPlayer) bukkit;
 		EntityPlayer nms = p.getHandle();
 		WorldServer world = ((CraftWorld) bukkit.getWorld()).getHandle();
 
-		// 1) Update the server‐side EntityPlayer position & rotation immediately
-		nms.teleportTo(world, to.getX(), to.getY(), to.getZ(), EnumSet.noneOf(Relative.class), to.getYaw(), to.getPitch(), false, PlayerTeleportEvent.TeleportCause.PLUGIN);
+		// Update server-side position
+		nms.teleportTo(world, to.getX(), to.getY(), to.getZ(), EnumSet.noneOf(Relative.class),
+				to.getYaw(), to.getPitch(), false, PlayerTeleportEvent.TeleportCause.PLUGIN);
 		nms.v(to.getYaw());
 		nms.w(to.getPitch());
 		nms.aZ = to.getYaw();
 		nms.aX = to.getYaw();
 
 		PositionMoveRotation pmr = PositionMoveRotation.a(nms);
-
 		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nms.ar(), pmr, EnumSet.noneOf(Relative.class), nms.aJ());
 
 		broadcastPacket(tp);
-
-		PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
-
-		for(Player viewer : Bukkit.getOnlinePlayers()) {
-			if(viewer.getGameMode() == GameMode.SPECTATOR && Objects.equals(viewer.getSpectatorTarget(), bukkit)) {
-				EntityPlayer nmsViewer = ((CraftPlayer) viewer).getHandle();
-				PlayerConnection conn = nmsViewer.f;
-				conn.b(snapCam);
-			}
-		}
 	}
 
 	/**
@@ -151,6 +172,21 @@ public class Utils {
 		meta.setDisplayName(name);
 		item.setItemMeta(meta);
 		return item;
+	}
+
+	public static void backupPlayerInventory(Player player) {
+		M7tas.originalInventories.put(player, new M7tas.PlayerInventoryBackup(player));
+	}
+
+	public static void restorePlayerInventory(Player player) {
+		M7tas.PlayerInventoryBackup backup = M7tas.originalInventories.remove(player);
+		if (backup != null) {
+			backup.restore(player);
+		}
+	}
+
+	public static boolean hasInventoryBackup(Player player) {
+		return M7tas.originalInventories.containsKey(player);
 	}
 
 	/**

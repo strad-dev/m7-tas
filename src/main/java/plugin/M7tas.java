@@ -46,40 +46,36 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.*;
 
 public final class M7tas extends JavaPlugin implements CommandExecutor, Listener {
-	/**
-	 * A map that tracks spectator relationships between players.
-	 * The key represents a player in spectator mode, and the value represents
-	 * the player they are spectating. This structure is used to manage and
-	 * retrieve the spectator-target associations dynamically within the plugin.
-	 */
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
-
-	/**
-	 * A mapping that tracks reverse spectator relationships in the game.
-	 * Each key represents a player being spectated, and the value is a list
-	 * of players who are currently spectating the key player.
-	 * <br>
-	 * The map is used to manage and evaluate the spectator system state,
-	 * ensuring that the relationship between spectating players and their
-	 * spectated target is properly maintained.
-	 */
 	private static final HashMap<Player, List<Player>> reverseSpectatorMap = new HashMap<>();
-
-	/**
-	 * A static map used to store fake player instances associated with their names.
-	 * This map is primarily used for managing NPC-like entities (fake players)
-	 * that are spawned and controlled programmatically within the server.
-	 *<br>
-	 * The keys in the map represent the unique names of the fake players, while
-	 * the values are corresponding Player objects representing their in-game entities.
-	 *<br>
-	 * This map is immutable (final) and thread-safe due to its static nature.
-	 */
 	private static final Map<String, Player> fakePlayers = new HashMap<>();
-
 	private static Plugin plugin;
-
 	private boolean fakeTickerStarted = false;
+	static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
+
+	static class PlayerInventoryBackup {
+		private final ItemStack[] contents;
+		private final ItemStack[] armorContents;
+		private final ItemStack offHand;
+		private final int heldItemSlot;
+
+		public PlayerInventoryBackup(Player player) {
+			PlayerInventory inv = player.getInventory();
+			this.contents = inv.getContents().clone();
+			this.armorContents = inv.getArmorContents().clone();
+			this.offHand = inv.getItemInOffHand().clone();
+			this.heldItemSlot = inv.getHeldItemSlot();
+		}
+
+		public void restore(Player player) {
+			PlayerInventory inv = player.getInventory();
+			inv.setContents(contents);
+			inv.setArmorContents(armorContents);
+			inv.setItemInOffHand(offHand);
+			inv.setHeldItemSlot(heldItemSlot);
+			player.updateInventory();
+		}
+	}
 
 	/*
 	 * Archer - akc0303
@@ -98,6 +94,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	 */
 	public static List<Player> getSpectatingPlayer(Player player) {
 		return reverseSpectatorMap.getOrDefault(player, new ArrayList<>());
+	}
+
+	public static Map<Player, Player> getSpectatorMap() {
+		return spectatorMap;
+	}
+
+	public static Map<Player, List<Player>> getReverseSpectatorMap() {
+		return reverseSpectatorMap;
 	}
 
 	public static List<Player> getFakePlayers() {
@@ -308,6 +312,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			PacketPlayOutEntityEquipment equipmentPacket = new PacketPlayOutEntityEquipment(nmsPlayer.ar(), gear);
 
 			Utils.broadcastPacket(equipmentPacket);
+
+			Utils.syncInventoryToSpectators(p);
+			Utils.syncFakePlayerHand(p);
 		}
 	}
 
@@ -320,10 +327,15 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
+		getServer().getPluginManager().registerEvents(new DisconnectListener(), this);
 	}
 
 	@Override
 	public void onDisable() {
+		for (Player spectator : new ArrayList<>(spectatorMap.keySet())) {
+			Utils.restorePlayerInventory(spectator);
+		}
+
 		kickAllFakes();
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!player,type=!villager]");
 	}
@@ -379,23 +391,32 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					return true;
 				}
 
-				if(spectatorMap.containsValue(p)) {
-					p.sendMessage("You are already spectating a class. Use /unspectate first.");
-					return true;
-				}
-				String role = args[0].toLowerCase();
-				Player fakePlayer = fakePlayers.get(role);
-				if(fakePlayer == null) {
+				String role = args[0];
+				if(!fakePlayers.containsKey(role)) {
 					p.sendMessage("Invalid class specified.");
 					return true;
 				}
+
+				if(spectatorMap.containsKey(p)) {
+					p.sendMessage("You are already spectating a class. Use /unspectate first.");
+					return true;
+				}
+
+				Player fakePlayer = fakePlayers.get(role);
 				spectatorMap.put(p, fakePlayer);
 				reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new ArrayList<>()).add(p);
+
+				// NEW: Backup the player's inventory before spectating
+				Utils.backupPlayerInventory(p);
+
+				// Sync inventory when starting to spectate
+				Utils.syncInventoryToSpectators(fakePlayer);
+
 				p.sendMessage("You are now spectating " + role + ".");
 				return true;
 			}
 			case "unspectate" -> {
-				if(spectatorMap.containsValue(p)) {
+				if(spectatorMap.containsKey(p)) {
 					Player fakePlayer = spectatorMap.remove(p);
 					if (fakePlayer != null) {
 						List<Player> spectators = reverseSpectatorMap.get(fakePlayer);
@@ -406,6 +427,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 							}
 						}
 					}
+
+					// NEW: Restore the player's original inventory
+					Utils.restorePlayerInventory(p);
+
 					p.sendMessage("You are no longer spectating a class.");
 					return true;
 				}
