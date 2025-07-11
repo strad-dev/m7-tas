@@ -391,9 +391,9 @@ public class Tank {
 		}, 210);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 90f), 211);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 7/9 (Opened Chest)");
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 8/9 (Opened Chest)");
 			world.playSound(tank.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 214 Ticks (10.8 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 214 Ticks (10.70 seconds)");
 		}, 212);
 	}
 

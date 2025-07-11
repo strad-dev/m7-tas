@@ -66,6 +66,8 @@ public class Mage {
 			Actions.simulateLeftClickAir(mage);
 			Server.openWitherDoor();
 		}, 9);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 30), 30);
+		Utils.scheduleTask(() -> Actions.jump(mage), 35);
 
 		// pearl 1: /execute in minecraft:overworld run tp @s -119.50 69.00 -127.50 -31 15
 		// lands -114.535 67 -119.218 in 8 ticks

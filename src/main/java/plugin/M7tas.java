@@ -47,60 +47,35 @@ import java.util.*;
 
 public final class M7tas extends JavaPlugin implements CommandExecutor, Listener {
 	/**
-	 * A mapping between unique role identifiers and their associated Player instances.
-	 * This map is used to manage and track Player entities (either real or fake) within the
-	 * context of the plugin's functionality. It facilitates operations such as spawning,
-	 * teleporting, or assigning specific actions to these players based on their role.
-	 * <p>
-	 * Key:
-	 * - String: Represents the role or identifier associated with a specific Player.
-	 * <p>
-	 * Value:
-	 * - Player: The Player instance associated with the given role.
-	 * <p>
-	 * This map is primarily managed through methods within the M7tas class, and it is
-	 * updated dynamically as players (real or fake) are spawned or removed.
+	 * A map that tracks spectator relationships between players.
+	 * The key represents a player in spectator mode, and the value represents
+	 * the player they are spectating. This structure is used to manage and
+	 * retrieve the spectator-target associations dynamically within the plugin.
 	 */
-	private final Map<String, Player> actorMap = new HashMap<>();
+	private static final Map<Player, Player> spectatorMap = new HashMap<>();
 
 	/**
-	 * A map containing associations between classes and their corresponding {@link Player} objects.
-	 * This map is primarily used to manage and track fake players spawned into the world.
-	 * The keys in this map represent the class each fake player is suppose dto play
-	 * while the values are instances of {@link Player} representing the fake players.
-	 * <p>
-	 * The map is cleared and repopulated during the process of spawning all fake players,
-	 * ensuring synchronization with the current set of active NPCs.
+	 * A mapping that tracks reverse spectator relationships in the game.
+	 * Each key represents a player being spectated, and the value is a list
+	 * of players who are currently spectating the key player.
+	 * <br>
+	 * The map is used to manage and evaluate the spectator system state,
+	 * ensuring that the relationship between spectating players and their
+	 * spectated target is properly maintained.
 	 */
-	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-	private final Map<String, Player> npcMap = new HashMap<>();
+	private static final HashMap<Player, List<Player>> reverseSpectatorMap = new HashMap<>();
 
 	/**
-	 * A map that associates a Player instance with their respective role designation in the game.
-	 * The keys represent player entities, while the values represent the assigned role as a string.
-	 * This map is utilized to define and reference the roles of players, particularly in scenarios
-	 * involving the management and behavior customization of fake player entities in the system.
-	 * <p>
-	 * The roles assigned can be used to dictate specific behaviors, tasks, or attributes for each
-	 * player entity in the context of the plugin.
-	 * <p>
-	 * This map is cleared and re-initialized during operations like spawning fake players
-	 * (e.g., {@code spawnAllFakes}) and when disabling the plugin.
-	 * <p>
-	 * This map should <strong>ONLY BE USED WITH REAL PLAYERS</strong>!
+	 * A static map used to store fake player instances associated with their names.
+	 * This map is primarily used for managing NPC-like entities (fake players)
+	 * that are spawned and controlled programmatically within the server.
+	 *<br>
+	 * The keys in the map represent the unique names of the fake players, while
+	 * the values are corresponding Player objects representing their in-game entities.
+	 *<br>
+	 * This map is immutable (final) and thread-safe due to its static nature.
 	 */
-	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-	private final Map<Player, String> playerRoles = new HashMap<>();
-
-	/**
-	 * A list used to store fake player entities created and managed by the plugin.
-	 * <p>
-	 * These players are non-persistent and act as simulated player entities in the world.
-	 * They can be spawned using the {@code spawnFakePlayer} method and are handled during
-	 * plugin enable and disable events. The list is cleared when the plugin is disabled
-	 * and populated when calling {@code spawnAllFakes}.
-	 */
-	private static final List<Player> fakePlayers = new ArrayList<>();
+	private static final Map<String, Player> fakePlayers = new HashMap<>();
 
 	private static Plugin plugin;
 
@@ -115,8 +90,18 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	 */
 	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Healer", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Tank", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
+	/**
+	 * Retrieves the player that the given player is currently spectating.
+	 *
+	 * @param player the player whose spectating target is being retrieved
+	 * @return the player being spectated by the given player, or null if the player is not spectating anyone
+	 */
+	public static List<Player> getSpectatingPlayer(Player player) {
+		return reverseSpectatorMap.getOrDefault(player, new ArrayList<>());
+	}
+
 	public static List<Player> getFakePlayers() {
-		return fakePlayers;
+		return new ArrayList<>(fakePlayers.values());
 	}
 
 	private ItemStack getCustomHead(String displayName, String identifier, String textureValue, String textureSignature) {
@@ -174,25 +159,21 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	private void spawnAllFakes(World world) {
 		// clear any old ones
 		kickAllFakes();
-		npcMap.clear();
-		actorMap.clear();
-		playerRoles.clear();
+		fakePlayers.clear();
 
 		for(var entry : SKIN_DATA.entrySet()) {
 			String role = entry.getKey();
 			String skin = entry.getValue();
 
 			Player fake = spawnFakePlayer(world, role, UUID.fromString(skin));
-			fakePlayers.add(fake);
-			npcMap.put(role, fake);
-			actorMap.put(role, fake);
+			fakePlayers.put(role, fake);
 		}
 		startFakePlayerTicker();
 	}
 
 	private void setInventories() {
-		for(String entry : actorMap.keySet()) {
-			Player p = actorMap.get(entry);
+		for(String entry : fakePlayers.keySet()) {
+			Player p = fakePlayers.get(entry);
 
 			p.getScoreboardTags().clear();
 			Objects.requireNonNull(Objects.requireNonNull(plugin.getServer().getScoreboardManager()).getMainScoreboard().getObjective("Intelligence")).getScore(p.getName()).setScore(2500);
@@ -348,9 +329,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	private void kickAllFakes() {
-		for(Player p : fakePlayers) {
-			p.kickPlayer("");
-		}
+		fakePlayers.values().forEach(p -> p.kickPlayer(""));
 		fakePlayers.clear();
 	}
 
@@ -387,52 +366,55 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				if(args.length >= 1) {
 					section = args[0].toLowerCase();
 					if(!section.equals("all") && !section.equals("clear") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
-						p.sendMessage("Invalid section specified.  Valid sections: clear maxor storm goldor necron witherking");
+						p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear maxor storm goldor necron witherking");
+						return true;
 					}
 				}
 				runTAS(p.getWorld(), section);
 				return true;
 			}
 			case "spectate" -> {
-				/*if(args.length < 1) {
+				if(args.length < 1) {
 					p.sendMessage("Please specify a class to spectate.");
 					return true;
 				}
 
-				String role = args[0];
-				if(!SKIN_DATA.containsKey(role)) {
-					p.sendMessage("Invalid class specified.");
-					return true;
-				}
-
-				if(playerRoles.containsKey(p)) {
+				if(spectatorMap.containsValue(p)) {
 					p.sendMessage("You are already spectating a class. Use /unspectate first.");
 					return true;
 				}
-
-				actorMap.replace(role, p);
-				playerRoles.put(p, role);
-				Objects.requireNonNull(p.getAttribute(Attribute.ATTACK_SPEED)).setBaseValue(100);
-				p.sendMessage("You are now spectating " + role + ".");*/
-				p.sendMessage(ChatColor.RED + "Oops!  Something went wrong.  Give me 3-5 business days to fix!");
+				String role = args[0].toLowerCase();
+				Player fakePlayer = fakePlayers.get(role);
+				if(fakePlayer == null) {
+					p.sendMessage("Invalid class specified.");
+					return true;
+				}
+				spectatorMap.put(p, fakePlayer);
+				reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new ArrayList<>()).add(p);
+				p.sendMessage("You are now spectating " + role + ".");
 				return true;
 			}
 			case "unspectate" -> {
-				/*
-				if(playerRoles.containsKey(p)) {
-					// Replaces the player that ran the command with the original fake NPC
-					actorMap.replace(playerRoles.get(p), npcMap.get(playerRoles.get(p)));
-					playerRoles.remove(p);
+				if(spectatorMap.containsValue(p)) {
+					Player fakePlayer = spectatorMap.remove(p);
+					if (fakePlayer != null) {
+						List<Player> spectators = reverseSpectatorMap.get(fakePlayer);
+						if (spectators != null) {
+							spectators.remove(p);
+							if (spectators.isEmpty()) {
+								reverseSpectatorMap.remove(fakePlayer);
+							}
+						}
+					}
 					p.sendMessage("You are no longer spectating a class.");
 					return true;
 				}
-				p.sendMessage("You are not spectating a class.");*/
-				p.sendMessage(ChatColor.RED + "This command doesn't work.");
+				p.sendMessage("You are not spectating a class.");
 				return true;
 			}
 			case "reset" -> {
 				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
-				actorMap.keySet().forEach(npc -> actorMap.get(npc).teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
+				fakePlayers.values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
 				p.sendMessage("Reset all NPC locations.");
 				return true;
 			}
@@ -541,7 +523,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	private void runTAS(World world, String section) {
-		if(actorMap.isEmpty()) {
+		if(fakePlayers.isEmpty()) {
 			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
 			return;
 		}
@@ -549,11 +531,11 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		setInventories();
 		Server.serverSetup(world);
 
-		Archer.archerInstructions(actorMap.get("Archer"), section);
-		Berserk.berserkInstructions(actorMap.get("Berserk"), section);
-		Healer.healerInstructions(actorMap.get("Healer"), section);
-		Mage.mageInstructions(actorMap.get("Mage"), section);
-		Tank.tankInstructions(actorMap.get("Tank"), section);
+		Archer.archerInstructions(fakePlayers.get("Archer"), section);
+		Berserk.berserkInstructions(fakePlayers.get("Berserk"), section);
+		Healer.healerInstructions(fakePlayers.get("Healer"), section);
+		Mage.mageInstructions(fakePlayers.get("Mage"), section);
+		Tank.tankInstructions(fakePlayers.get("Tank"), section);
 
 		Server.serverInstructions(world, section);
 	}
@@ -563,14 +545,15 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	private void startFakePlayerTicker() {
-		if(fakeTickerStarted) return;
+		if(fakeTickerStarted) {
+			return;
+		}
 		fakeTickerStarted = true;
 
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				// tick() each fake player every server tick
-				for(Player fake : fakePlayers) {
+				for(Player fake : fakePlayers.values()) {
 					if(!(fake instanceof CraftPlayer)) continue;
 					EntityPlayer npc = ((CraftPlayer) fake).getHandle();
 					npc.f(false);

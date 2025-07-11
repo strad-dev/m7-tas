@@ -2,7 +2,9 @@ package instructions;
 
 import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
 import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
+import net.minecraft.network.protocol.game.PacketPlayOutPosition;
 import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.world.entity.EnumMoveType;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
@@ -25,12 +27,14 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class Actions {
 	/**
 	 * Moves a Player in this Direction for t ticks.  The Vector referrs to the number of blocks per tick.
+	 * The Y component of the vector is ignored.  Vertical motion is left to gravity or other methods.
 	 *
 	 * @param p             The Player
 	 * @param perTick       The Distance to be moved per tick
@@ -42,7 +46,7 @@ public class Actions {
 
 		EntityPlayer npc = cp.getHandle();
 		// convert Bukkit Vector to NMS Vec3D
-		Vec3D motion = new Vec3D(perTick.getX(), perTick.getY(), perTick.getZ());
+		Vec3D motion = new Vec3D(perTick.getX(), 0, perTick.getZ());
 
 		new BukkitRunnable() {
 			int ticks = 0;
@@ -54,8 +58,12 @@ public class Actions {
 					return;
 				}
 
+				// Retain current Y motion (from gravity, jump, etc.)
+				Vec3D currentMotion = npc.dy(); // Get current velocity
+				Vec3D combined = new Vec3D(motion.d, currentMotion.e, motion.f);
+
 				// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
-				npc.a(EnumMoveType.a, motion);
+				npc.a(EnumMoveType.a, combined);
 				// 2) Apply gravity, friction, fall damage checks, etc.
 				npc.h();
 
@@ -63,16 +71,82 @@ public class Actions {
 				PositionMoveRotation pmr = PositionMoveRotation.a(npc);
 
 				// 4) Create teleport packet with NO relative flags
-				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ()  // head yaw/pitch
-				);
+				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
 
 				// 5) Broadcast to all online players (including spectators)
 				Utils.broadcastPacket(tp);
+
+				// Send position to all spectators
+				List<Player> spectators = M7tas.getSpectatingPlayer(p); // p is the fake player
+				if(!spectators.isEmpty()) {
+					PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
+
+					for(Player spectator : spectators) {
+						if(spectator instanceof CraftPlayer craftSpectator) {
+							EntityPlayer nmsSpectator = craftSpectator.getHandle();
+							PlayerConnection conn = nmsSpectator.f;
+							conn.b(snapCam);
+						}
+					}
+				}
+
+				/*
+				List<Player> spectators = M7tas.getSpectatingPlayer(p); // p is the fake player
+				for(Player spectator : spectators) {
+					if(spectator instanceof CraftPlayer craftSpectator) {
+						EntityPlayer nmsSpectator = craftSpectator.getHandle();
+
+						// Create teleport packet for the REAL PLAYER using their entity ID
+						PacketPlayOutEntityTeleport spectatorTp = PacketPlayOutEntityTeleport.a(
+								nmsSpectator.ar(), // Real player's entity ID
+								pmr,
+								EnumSet.noneOf(Relative.class),
+								nmsSpectator.aJ()
+						);
+
+						PlayerConnection conn = nmsSpectator.f;
+						conn.b(spectatorTp);
+					}
+				}
+				 */
 			}
 			// schedule at 0 tick delay, repeating every tick
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
+	/**
+	 * Makes a Player entity perform a jump if it is currently on the ground.
+	 *
+	 * @param p The Player entity that is to perform the jump. Requires the player to be on the ground.
+	 */
+	public static void jump(Player p) {
+		if(!(p instanceof CraftPlayer cp)) return;
+
+		EntityPlayer npc = cp.getHandle();
+
+		if(npc.aJ()) { // onGround check
+			Vec3D motion = npc.dy(); // getDeltaMovement()
+			Vec3D newMotion = new Vec3D(motion.d, 0.42D, motion.f);
+
+			// set motion
+			npc.j(newMotion);
+
+			// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
+			npc.a(EnumMoveType.a, newMotion);
+
+			// 2) Apply gravity, friction, fall damage checks, etc.
+			npc.h();
+
+			// 3) Package up the new position + rotation
+			PositionMoveRotation pmr = PositionMoveRotation.a(npc);
+
+			// 4) Create teleport packet with NO relative flags
+			PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+
+			// 5) Broadcast to all online players (including spectators)
+			Utils.broadcastPacket(tp);
+		}
+	}
 
 	/**
 	 * Change which hotbar slot (0–8) the fake player is “holding”,
@@ -205,20 +279,6 @@ public class Actions {
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}
 
-	/* private static void wipeNmsVelocity(Player p) {
-		EntityPlayer ep = ((CraftPlayer) p).getHandle();
-
-		// a) zero server‐side velocity
-		ep.i(Vec3D.c);   // (0,0,0)
-
-		// b) clear fall distance so no “bounce”
-		ep.Z = 0;
-
-		// c) tell all clients to drop their velocity too
-		PacketPlayOutEntityVelocity vel = new PacketPlayOutEntityVelocity(ep);
-		Utils.broadcastPacket(vel);
-	} */
-
 	/**
 	 * Simulates the "stonking" action on a given block. This involves temporarily
 	 * changing the block to an AIR block and then resetting it to its original
@@ -290,7 +350,7 @@ public class Actions {
 		assert zombie.getEquipment() != null;
 		zombie.getEquipment().setItemInMainHand(new org.bukkit.inventory.ItemStack(Material.BONE));
 		Utils.scheduleTask(() -> {
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + (y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + Math.abs(y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
 			try {
 				zombie.remove();
 			} catch(Exception exception) {
