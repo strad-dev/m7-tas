@@ -42,6 +42,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.bukkit.scoreboard.Team;
 
 import java.util.*;
 
@@ -52,6 +55,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	private static Plugin plugin;
 	private boolean fakeTickerStarted = false;
 	static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
+	private static Team noCollisionTeam;
 
 	static class PlayerInventoryBackup {
 		private final ItemStack[] contents;
@@ -92,7 +96,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	 * @param player the player whose spectating target is being retrieved
 	 * @return the player being spectated by the given player, or null if the player is not spectating anyone
 	 */
-	public static List<Player> getSpectatingPlayer(Player player) {
+	public static List<Player> getSpectatingPlayers(Player player) {
 		return reverseSpectatorMap.getOrDefault(player, new ArrayList<>());
 	}
 
@@ -322,22 +326,39 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	public void onEnable() {
 		plugin = this;
 
+		setupNoCollisionTeam();
+
 		// register ALL our commands on the same executor
 		for(var cmd : List.of("spectate", "unspectate", "tas", "reset")) {
 			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
-		getServer().getPluginManager().registerEvents(new DisconnectListener(), this);
+		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
+
+		Utils.startInventorySync();
 	}
 
 	@Override
 	public void onDisable() {
+		Utils.stopInventorySync();
+
+		if (noCollisionTeam != null) {
+			for (String entry : new HashSet<>(noCollisionTeam.getEntries())) {
+				noCollisionTeam.removeEntry(entry);
+			}
+			noCollisionTeam.unregister();
+		}
+
 		for (Player spectator : new ArrayList<>(spectatorMap.keySet())) {
 			Utils.restorePlayerInventory(spectator);
 		}
 
 		kickAllFakes();
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!player,type=!villager]");
+
+		spectatorMap.clear();
+		reverseSpectatorMap.clear();
+		originalInventories.clear();
 	}
 
 	private void kickAllFakes() {
@@ -409,6 +430,12 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				// NEW: Backup the player's inventory before spectating
 				Utils.backupPlayerInventory(p);
 
+				preventPlayerCollision(p, fakePlayer);
+				hideFakePlayerFromSpectator(p, fakePlayer);
+
+				Location fakeLocation = fakePlayer.getLocation();
+				p.teleport(fakeLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
+
 				// Sync inventory when starting to spectate
 				Utils.syncInventoryToSpectators(fakePlayer);
 
@@ -430,6 +457,12 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 					// NEW: Restore the player's original inventory
 					Utils.restorePlayerInventory(p);
+					removeFromNoCollisionTeam(p);
+					p.removePotionEffect(PotionEffectType.INVISIBILITY);
+
+					if (fakePlayer != null) {
+						showFakePlayerToSpectator(p, fakePlayer);
+					}
 
 					p.sendMessage("You are no longer spectating a class.");
 					return true;
@@ -543,8 +576,84 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		Utils.broadcastPacket(spawn);
 		Utils.broadcastPacket(entityMetadataPacket);
 
+		Player bukkitPlayer = nmsPlayer.getBukkitEntity();
+
+		// Add fake player to no collision team
+		addToNoCollisionTeam(bukkitPlayer);
+
 		// 8) Return the Bukkit wrapper
 		return nmsPlayer.getBukkitEntity();
+	}
+
+	private static void setupNoCollisionTeam() {
+		ScoreboardManager manager = Bukkit.getScoreboardManager();
+		if (manager != null) {
+			Scoreboard scoreboard = manager.getMainScoreboard();
+
+			// Remove existing team if it exists
+			Team existingTeam = scoreboard.getTeam("nocollision");
+			if (existingTeam != null) {
+				existingTeam.unregister();
+			}
+
+			// Create new team with no collision
+			noCollisionTeam = scoreboard.registerNewTeam("nocollision");
+			noCollisionTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+			noCollisionTeam.setCanSeeFriendlyInvisibles(false);
+		}
+	}
+
+	private static void addToNoCollisionTeam(Player player) {
+		if (noCollisionTeam != null) {
+			noCollisionTeam.addEntry(player.getName());
+		}
+	}
+
+	static void removeFromNoCollisionTeam(Player player) {
+		if (noCollisionTeam != null) {
+			noCollisionTeam.removeEntry(player.getName());
+		}
+	}
+
+	private void preventPlayerCollision(Player realPlayer, Player fakePlayer) {
+		// Add both players to the no-collision team
+		addToNoCollisionTeam(realPlayer);
+		addToNoCollisionTeam(fakePlayer);
+
+		// Also make the real player unable to be hit by projectiles while spectating
+		realPlayer.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0, true, false));
+	}
+
+
+	private void hideFakePlayerFromSpectator(Player spectator, Player fakePlayer) {
+		if (spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
+			EntityPlayer nmsSpectator = craftSpectator.getHandle();
+			EntityPlayer nmsFake = craftFake.getHandle();
+
+			// Send destroy packet to hide the fake player from this spectator
+			PacketPlayOutEntityDestroy destroyPacket = new PacketPlayOutEntityDestroy(nmsFake.ar());
+			nmsSpectator.f.b(destroyPacket);
+		}
+	}
+
+	private void showFakePlayerToSpectator(Player spectator, Player fakePlayer) {
+		if (spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
+			EntityPlayer nmsSpectator = craftSpectator.getHandle();
+			EntityPlayer nmsFake = craftFake.getHandle();
+
+			// Re-send spawn packet to show the fake player again
+			PlayerChunkMap.EntityTracker wrapper = ((CraftWorld) fakePlayer.getWorld()).getHandle().m().a.K.get(nmsFake.ar());
+			if (wrapper != null) {
+				EntityTrackerEntry entry = wrapper.b;
+				PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsFake, entry);
+				nmsSpectator.f.b(spawn);
+
+				// Also send metadata and equipment
+				DataWatcher synchedEntityData = nmsFake.au();
+				PacketPlayOutEntityMetadata metadataPacket = new PacketPlayOutEntityMetadata(nmsFake.ar(), synchedEntityData.c());
+				nmsSpectator.f.b(metadataPacket);
+			}
+		}
 	}
 
 	private void runTAS(World world, String section) {

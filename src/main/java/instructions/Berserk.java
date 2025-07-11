@@ -21,19 +21,19 @@ public class Berserk {
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.turnHead(berserk, 90f, 36.5f);
-			Actions.simulateAOTV(berserk, new Location(world, -21.5, 70, -197.5));
+			Actions.teleport(berserk, new Location(world, -21.5, 70, -197.5));
 			Utils.scheduleTask(() -> {
 				Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
 				Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
 			}, 60);
 			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 61);
-			Utils.scheduleTask(() -> Actions.simulateRightClickAir(berserk), 101);
+			Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(berserk), 101);
 			Utils.scheduleTask(() -> {
 				Actions.setFakePlayerHotbarSlot(berserk, 1);
 				Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
 			}, 102);
 			Utils.scheduleTask(() -> {
-				berserk.teleport(new Location(world, -120.5, 75, -220.5));
+				Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
 				Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
 			}, 141);
 			// Tick 160 (clear tick 0: run begins)
@@ -103,7 +103,7 @@ public class Berserk {
 			Actions.setFakePlayerHotbarSlot(berserk, 0);
 		}, 22);
 		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(berserk);
+			Actions.simulateWitherImpact(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers 2/5 (Killed Bat)");
 			world.playSound(berserk.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 23);
@@ -360,7 +360,7 @@ public class Berserk {
 			Actions.setFakePlayerHotbarSlot(berserk, 0);
 		}, 158);
 		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(berserk);
+			Actions.simulateWitherImpact(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Dino Dig Site 4/4 (Killed Bat)");
 			world.playSound(berserk.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 159);

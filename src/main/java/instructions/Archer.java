@@ -27,7 +27,7 @@ public class Archer {
 		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 7);
 
 		if(section.equals("all") || section.equals("clear")) {
-			Actions.simulateAOTV(archer, new Location(world, -118.5, 70, -202.5));
+			Actions.teleport(archer, new Location(world, -118.5, 70, -202.5));
 			Actions.setFakePlayerHotbarSlot(archer, 1);
 			Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
@@ -266,7 +266,7 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 0);
 		}, 107);
 		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(archer);
+			Actions.simulateWitherImpact(archer);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
 			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 108);
@@ -404,7 +404,7 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 0);
 		}, 154);
 		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(archer);
+			Actions.simulateWitherImpact(archer);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Market 1/5 (Killed Bat)");
 			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 155);

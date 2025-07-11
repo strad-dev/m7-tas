@@ -2,9 +2,7 @@ package instructions;
 
 import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
 import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
-import net.minecraft.network.protocol.game.PacketPlayOutPosition;
 import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.world.entity.EnumMoveType;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
@@ -15,17 +13,22 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
-import org.bukkit.entity.EnderPearl;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Zombie;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
+import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.M7tas;
 import plugin.Utils;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
@@ -73,22 +76,16 @@ public class Actions {
 				// 4) Create teleport packet with NO relative flags
 				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
 
-				// 5) Broadcast to all online players (including spectators)
-				Utils.broadcastPacket(tp);
-
-				// Send position to all spectators
-				List<Player> spectators = M7tas.getSpectatingPlayer(p); // p is the fake player
-				if(!spectators.isEmpty()) {
-					PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
-
-					for(Player spectator : spectators) {
-						if(spectator instanceof CraftPlayer craftSpectator) {
-							EntityPlayer nmsSpectator = craftSpectator.getHandle();
-							PlayerConnection conn = nmsSpectator.f;
-							conn.b(snapCam);
-						}
+				// 5) Broadcast to all online players (excluding spectators of this fake player)
+				List<Player> spectators = M7tas.getSpectatingPlayers(p);
+				for(Player player : Bukkit.getOnlinePlayers()) {
+					if(!spectators.contains(player)) { // Don't send to spectators
+						((CraftPlayer) player).getHandle().f.b(tp);
 					}
 				}
+
+				// 6) Use enhanced spectator update with physics sync
+				Utils.updateSpectatorsWithPhysics(p, pmr);
 			}
 			// schedule at 0 tick delay, repeating every tick
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
@@ -187,6 +184,86 @@ public class Actions {
 		to.setPitch(pitch);
 
 		Utils.teleportWithSpectators(p, to);
+	}
+
+	public static void simulateWitherImpact(Player p) {
+		Location originalLocation = p.getLocation().clone();
+		Location l = p.getLocation().clone();
+		l.add(0, 1.62, 0);
+		Vector v = l.getDirection();
+		v.setX(v.getX() / 10);
+		v.setY(v.getY() / 10);
+		v.setZ(v.getZ() / 10);
+		for(int i = 0; i < 100; i++) {
+			l.add(v);
+			if(l.getBlock().getType().isSolid()) {
+				l = l.subtract(v).getBlock().getLocation();
+				if(originalLocation.getPitch() > 0) {
+					l.add(0, 1.62, 0);
+				}
+				l.setYaw(originalLocation.getYaw());
+				l.setPitch(originalLocation.getPitch());
+				l.add(0.5, 0, 0.5);
+				break;
+			}
+		}
+		l.subtract(0, 1.62, 0);
+		if(!l.getBlock().isEmpty()) {
+			l.add(0, 1, 0);
+		}
+		p.setFallDistance(0);
+		Utils.teleportWithSpectators(p, l);
+		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+
+		// implosion
+		p.getWorld().spawnParticle(Particle.EXPLOSION, l, 1);
+		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
+		List<EntityType> doNotKill = doNotKill();
+		int damaged = 0;
+
+		for(Entity entity : entities) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
+				EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(p, entity, EntityDamageEvent.DamageCause.MAGIC, DamageSource.builder(DamageType.MAGIC).build(), 1);
+
+				Bukkit.getPluginManager().callEvent(damageEvent);
+				damaged += 1;
+			}
+		}
+		if(damaged > 0) {
+			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + damaged + " damage.");
+		}
+		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
+
+		// wither shield
+		int absorptionLevel = -1;
+		if(p.hasPotionEffect(PotionEffectType.ABSORPTION)) {
+			PotionEffect effect = p.getPotionEffect(PotionEffectType.ABSORPTION);
+			if(effect != null) {
+				absorptionLevel = effect.getAmplifier();
+			}
+		}
+
+		// Apply absorption shield if not already at level 2
+		if(absorptionLevel != 2) {
+			p.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 101, 2));
+			p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0F, 0.65F);
+
+			// Schedule healing conversion after 5 seconds
+			Utils.scheduleTask(() -> {
+				double healAmount = p.getAbsorptionAmount() / 2;
+				double currentHealth = p.getHealth();
+				double maxHealth = Objects.requireNonNull(p.getAttribute(Attribute.MAX_HEALTH)).getValue();
+
+				p.setHealth(Math.min(currentHealth + healAmount, maxHealth));
+				p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 2.0F, 2.0F);
+			}, 101L);
+		}
+
+		// Apply damage reduction tag
+		if(!p.getScoreboardTags().contains("WitherShield")) {
+			p.addScoreboardTag("WitherShield");
+			Utils.scheduleTask(() -> p.removeScoreboardTag("WitherShield"), 101);
+		}
 	}
 
 	/**
@@ -314,8 +391,7 @@ public class Actions {
 
 	public static void simulateLeap(Player p, Player target) {
 		Location targetLoc = target.getLocation();
-		p.setVelocity(new Vector(0, 0, 0));
-		Utils.teleportWithSpectators(p, targetLoc);
+		teleport(p, targetLoc);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}
@@ -359,6 +435,13 @@ public class Actions {
 		p.getInventory().getItemInMainHand().setAmount(p.getInventory().getItemInMainHand().getAmount() - 1);
 	}
 
+	/**
+	 * Simulates the actions performed when using the "Rag Axe" ability, which involves
+	 * playing a series of lever click sounds, applying a temporary "RagBuff" tag to
+	 * the player, and then removing the tag after a specific duration.
+	 *
+	 * @param p The player for whom the "Rag Axe" ability simulation will be performed.
+	 */
 	public static void simulateRagAxe(Player p) {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F), 20);
@@ -368,6 +451,19 @@ public class Actions {
 			p.addScoreboardTag("RagBuff");
 		}, 60);
 		Utils.scheduleTask(() -> p.removeScoreboardTag("RagBuff"), 260);
+	}
+
+	/**
+	 * Sets up the player's initial location by resetting their velocity, teleporting them
+	 * to the specified location, and updating the location of any spectators.
+	 *
+	 * @param player   The player whose initial location is being set.
+	 * @param location The location where the player will be teleported.
+	 */
+	public static void teleport(Player player, Location location) {
+		player.setVelocity(new Vector(0, 0, 0));
+		player.teleport(location, PlayerTeleportEvent.TeleportCause.PLUGIN);
+		Utils.updateSpectators(player, location);
 	}
 
 	/**
@@ -394,5 +490,85 @@ public class Actions {
 	public static void simulateRightClickAir(Player p) {
 		PlayerInteractEvent ev = new PlayerInteractEvent(p, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 		Bukkit.getPluginManager().callEvent(ev);
+	}
+
+	@SuppressWarnings("ConstantConditions")
+	public static void simulateRightClickAirWithSpectators(Player p) {
+		for(Player spectator : M7tas.getSpectatingPlayers(p)) {
+			PlayerInteractEvent ev = new PlayerInteractEvent(spectator, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
+			Bukkit.getPluginManager().callEvent(ev);
+		}
+
+		simulateRightClickAir(p);
+	}
+
+	private static List<EntityType> doNotKill() {
+		List<EntityType> doNotKill = new ArrayList<>();
+		doNotKill.add(EntityType.ACACIA_BOAT);
+		doNotKill.add(EntityType.ACACIA_CHEST_BOAT);
+		doNotKill.add(EntityType.ALLAY);
+		doNotKill.add(EntityType.ARMOR_STAND);
+		doNotKill.add(EntityType.ARROW);
+		doNotKill.add(EntityType.AXOLOTL);
+		doNotKill.add(EntityType.BLOCK_DISPLAY);
+		doNotKill.add(EntityType.BIRCH_BOAT);
+		doNotKill.add(EntityType.BIRCH_CHEST_BOAT);
+		doNotKill.add(EntityType.CAT);
+		doNotKill.add(EntityType.CHERRY_BOAT);
+		doNotKill.add(EntityType.CHERRY_CHEST_BOAT);
+		doNotKill.add(EntityType.CHEST_MINECART);
+		doNotKill.add(EntityType.COMMAND_BLOCK_MINECART);
+		doNotKill.add(EntityType.DARK_OAK_BOAT);
+		doNotKill.add(EntityType.DARK_OAK_CHEST_BOAT);
+		doNotKill.add(EntityType.DONKEY);
+		doNotKill.add(EntityType.DRAGON_FIREBALL);
+		doNotKill.add(EntityType.FIREBALL);
+		doNotKill.add(EntityType.EGG);
+		doNotKill.add(EntityType.ENDER_PEARL);
+		doNotKill.add(EntityType.EXPERIENCE_BOTTLE);
+		doNotKill.add(EntityType.EXPERIENCE_ORB);
+		doNotKill.add(EntityType.FALLING_BLOCK);
+		doNotKill.add(EntityType.FIREWORK_ROCKET);
+		doNotKill.add(EntityType.FISHING_BOBBER);
+		doNotKill.add(EntityType.FURNACE_MINECART);
+		doNotKill.add(EntityType.GLOW_ITEM_FRAME);
+		doNotKill.add(EntityType.HOPPER_MINECART);
+		doNotKill.add(EntityType.HORSE);
+		doNotKill.add(EntityType.ITEM_FRAME);
+		doNotKill.add(EntityType.ITEM_DISPLAY);
+		doNotKill.add(EntityType.INTERACTION);
+		doNotKill.add(EntityType.JUNGLE_BOAT);
+		doNotKill.add(EntityType.JUNGLE_CHEST_BOAT);
+		doNotKill.add(EntityType.LEASH_KNOT);
+		doNotKill.add(EntityType.LIGHTNING_BOLT);
+		doNotKill.add(EntityType.LLAMA);
+		doNotKill.add(EntityType.LLAMA_SPIT);
+		doNotKill.add(EntityType.MANGROVE_BOAT);
+		doNotKill.add(EntityType.MANGROVE_CHEST_BOAT);
+		doNotKill.add(EntityType.MARKER);
+		doNotKill.add(EntityType.MINECART);
+		doNotKill.add(EntityType.MULE);
+		doNotKill.add(EntityType.OAK_BOAT);
+		doNotKill.add(EntityType.OAK_CHEST_BOAT);
+		doNotKill.add(EntityType.OCELOT);
+		doNotKill.add(EntityType.PAINTING);
+		doNotKill.add(EntityType.PARROT);
+		doNotKill.add(EntityType.PLAYER);
+		doNotKill.add(EntityType.SHULKER_BULLET);
+		doNotKill.add(EntityType.SKELETON_HORSE);
+		doNotKill.add(EntityType.SMALL_FIREBALL);
+		doNotKill.add(EntityType.SNOWBALL);
+		doNotKill.add(EntityType.SPAWNER_MINECART);
+		doNotKill.add(EntityType.SPECTRAL_ARROW);
+		doNotKill.add(EntityType.SPRUCE_BOAT);
+		doNotKill.add(EntityType.SPRUCE_CHEST_BOAT);
+		doNotKill.add(EntityType.TEXT_DISPLAY);
+		doNotKill.add(EntityType.TNT);
+		doNotKill.add(EntityType.TRIDENT);
+		doNotKill.add(EntityType.UNKNOWN);
+		doNotKill.add(EntityType.VILLAGER);
+		doNotKill.add(EntityType.WITHER_SKULL);
+		doNotKill.add(EntityType.WOLF);
+		return doNotKill;
 	}
 }

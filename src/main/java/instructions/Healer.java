@@ -15,16 +15,16 @@ public class Healer {
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.turnHead(healer, -168.6f, 2.9f);
-			Actions.simulateAOTV(healer, new Location(world, -28.5, 69, -44.5));
+			Actions.teleport(healer, new Location(world, -28.5, 69, -44.5));
 			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 2, 29), 60);
 			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 2), 61);
-			Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 101);
+			Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(healer), 101);
 			Utils.scheduleTask(() -> {
 				Actions.setFakePlayerHotbarSlot(healer, 1);
 				Actions.move(healer, new Vector(0, 0, 0.8634), 5);
 			}, 102);
 			Utils.scheduleTask(() -> {
-				healer.teleport(new Location(healer.getWorld(), -120.5, 75, -220.5));
+				Actions.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
 				Actions.swapFakePlayerInventorySlots(healer, 2, 29);
 			}, 141);
 			// Tick 160 (clear tick 0: run begins)
@@ -150,7 +150,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.simulateSuperboom(healer, -27, 62, -84, -26, 60, -83), 46);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 0), 47);
 		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(healer);
+			Actions.simulateWitherImpact(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Pirate 3/6 (Killed Bat)");
 			world.playSound(healer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 48);
@@ -331,7 +331,7 @@ public class Healer {
 			Actions.setFakePlayerHotbarSlot(healer, 0);
 		}, 129);
 		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(healer);
+			Actions.simulateWitherImpact(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Melon 4/7 (Killed Bat)");
 			world.playSound(healer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 130);
