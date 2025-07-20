@@ -27,7 +27,7 @@ public class Archer {
 		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 7);
 
 		if(section.equals("all") || section.equals("clear")) {
-			Actions.teleport(archer, new Location(world, -118.5, 70, -202.5));
+			Actions.teleport(archer, new Location(world, -118.5, 70, -202.5, 0f, 0f));
 			Actions.setFakePlayerHotbarSlot(archer, 1);
 			Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
@@ -57,6 +57,7 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 2);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Red Blue Cleared");
 		}, 7);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303 " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!"), 8);
 		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Mage.getMage()), 9);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 0f, 8.6f);
@@ -74,7 +75,10 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 1);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared");
 		}, 34);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 35);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 90f, 0f);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303 " + ChatColor.GREEN + "has obtained " + ChatColor.RED + "Blood Key" + ChatColor.GREEN + "!");
+		}, 35);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -127.5, 69, -120.5)), 36);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 3.5f), 37);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -154.5, 69, -120.5)), 38);
@@ -239,7 +243,7 @@ public class Archer {
 		}, 96);
 		Utils.scheduleTask(() -> {
 			Actions.simulateEtherwarp(archer, new Location(world, -227.5, 69, -92.5));
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 1/5");
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 3/5");
 		}, 97);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.8f, 9.2f), 98);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -219.5, 69, -86.5)), 99);
@@ -266,7 +270,7 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 0);
 		}, 107);
 		Utils.scheduleTask(() -> {
-			Actions.simulateWitherImpact(archer);
+			Actions.simulateWitherImpact(archer, new Location(world, -197.472,89.41224, -87.53));
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
 			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 108);
@@ -404,7 +408,7 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 0);
 		}, 154);
 		Utils.scheduleTask(() -> {
-			Actions.simulateWitherImpact(archer);
+			Actions.simulateWitherImpact(archer, new Location(world, -178.5, 59, -57.5));
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Market 1/5 (Killed Bat)");
 			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 155);
@@ -505,9 +509,24 @@ public class Archer {
 		Utils.scheduleTask(Archer::simulateShoot, 195);
 		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(archer), 196);
 		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -137.3f, 2.9f);
+			Actions.setFakePlayerHotbarSlot(archer, 1);
+		}, 197);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(archer, new Location(world, -209.5, 70, -34.5)), 198);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -135f, 11.4f);
+			Actions.setFakePlayerHotbarSlot(archer, 3);
+		}, 199);
+		Utils.scheduleTask(() -> {
+			Actions.simulateCrypt(archer, -207, 70, -35, -209, 72, -37);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Yellow Cleared");
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear finished in 202 ticks (10.10 seconds)");
 		}, 200);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 6), 201);
+		Utils.scheduleTask(() -> {
+			simulateShoot();
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 5/5");
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear finished in 204 ticks (10.20 seconds)");
+		}, 202);
 	}
 
 	private static void simulateShoot() {

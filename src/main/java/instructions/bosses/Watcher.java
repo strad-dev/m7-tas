@@ -268,7 +268,7 @@ public class Watcher {
 			mob.setHealth(50);
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 24 + "/" + 24);
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 24 + "/" + 24);	
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-12);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(24);
 			mob.setHealth(24);
@@ -277,6 +277,7 @@ public class Watcher {
 			mob.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
 		}
+		Objects.requireNonNull(location.getWorld()).playSound(location, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
 	}
 
 	private static void returnToOriginalPosition() {

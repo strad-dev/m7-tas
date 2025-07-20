@@ -15,8 +15,7 @@ public class Tank {
 		world = Tank.tank.getWorld();
 
 		if(section.equals("all") || section.equals("clear")) {
-			Actions.turnHead(Tank.tank, 0f, 5.6f);
-			Actions.teleport(Tank.tank, new Location(world, -196.5, 68, -222.5));
+			Actions.teleport(Tank.tank, new Location(world, -196.5, 68, -222.5, 0f, 5.6f));
 			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 2, 29), 60);
 			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 61);
 			Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(tank), 101);
@@ -377,7 +376,10 @@ public class Tank {
 			Actions.turnHead(tank, -92.7f, -21.4f);
 			Actions.simulateAOTV(tank, new Location(world, -215.275, 47, -152.695));
 		}, 205);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(tank, new Location(world, -177.5, 64, -154.5)), 206);
+		Utils.scheduleTask(() -> {
+			Actions.simulateEtherwarp(tank, new Location(world, -177.5, 64, -154.5));
+			Actions.simulateStonking(null, world.getBlockAt(-183, 84, -164)); // pass null to avoid hand swinging - this is so that the teleport packet in tick 210 works
+		}, 206);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 149.5f, -61f), 207);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(tank, new Location(world, -182.5, 84, -163.5)), 208);
 		Utils.scheduleTask(() -> {
@@ -385,7 +387,7 @@ public class Tank {
 			Actions.setFakePlayerHotbarSlot(tank, 0);
 		}, 209);
 		Utils.scheduleTask(() -> {
-			Actions.simulateWitherImpact(tank);
+			Actions.simulateWitherImpact(tank, new Location(world, -182.5, 84, -163.5));
 			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Spider 6/9 (Killed Bat)");
 			world.playSound(tank.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 210);

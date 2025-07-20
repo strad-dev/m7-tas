@@ -52,10 +52,6 @@ public class Server {
 			}, 160);
 			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 160);
 			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 161);
-
-//		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
-//		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
-//		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 2.0F, 0.5F);
 		}
 	}
 
@@ -139,6 +135,7 @@ public class Server {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 glass");
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
+		Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_ " + ChatColor.GREEN + "opend a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
 	}
 
 	public static void openBloodDoor() {
@@ -146,6 +143,8 @@ public class Server {
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 1.0F, 0.5F);
+		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
+		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
 	}
 
 	public static void activatePirateDoor() {

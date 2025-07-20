@@ -224,7 +224,7 @@ public class Utils {
 					syncInventoryToSpectators(fakePlayer);
 				}
 			}
-		}, 0L, 5L); // Every 10 ticks (0.5 seconds)
+		}, 0L, 1L);
 	}
 
 	public static void stopInventorySync() {

@@ -282,6 +282,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					inventory.setItem(9, getDiamondHead());
 					inventory.setItem(10, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
 					inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
+					inventory.setItem(31, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
 					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
 					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
 				}
@@ -351,6 +352,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 		for (Player spectator : new ArrayList<>(spectatorMap.keySet())) {
 			Utils.restorePlayerInventory(spectator);
+			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
 		}
 
 		kickAllFakes();
@@ -408,18 +410,24 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			}
 			case "spectate" -> {
 				if(args.length < 1) {
-					p.sendMessage("Please specify a class to spectate.");
+					p.sendMessage(ChatColor.RED + "Please specify a class to spectate");
+					return true;
+				}
+
+				if(fakePlayers.isEmpty()) {
+					p.sendMessage(ChatColor.RED + "No classes to spectate!  Try running /setup first");
 					return true;
 				}
 
 				String role = args[0];
+				role = Character.toUpperCase(role.charAt(0)) + role.substring(1).toLowerCase();
 				if(!fakePlayers.containsKey(role)) {
-					p.sendMessage("Invalid class specified.");
+					p.sendMessage(ChatColor.RED + "Invalid class specified");
 					return true;
 				}
 
 				if(spectatorMap.containsKey(p)) {
-					p.sendMessage("You are already spectating a class. Use /unspectate first.");
+					p.sendMessage(ChatColor.RED + "You are already spectating a class.  Use /unspectate first");
 					return true;
 				}
 
@@ -467,7 +475,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					p.sendMessage("You are no longer spectating a class.");
 					return true;
 				}
-				p.sendMessage("You are not spectating a class.");
+				p.sendMessage(ChatColor.RED + "You are not spectating a class.");
 				return true;
 			}
 			case "reset" -> {
@@ -653,6 +661,29 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				PacketPlayOutEntityMetadata metadataPacket = new PacketPlayOutEntityMetadata(nmsFake.ar(), synchedEntityData.c());
 				nmsSpectator.f.b(metadataPacket);
 			}
+
+			PlayerInventory inventory = fakePlayer.getInventory();
+
+			net.minecraft.world.item.ItemStack helmet = CraftItemStack.asNMSCopy(inventory.getHelmet());
+			net.minecraft.world.item.ItemStack chestplate = CraftItemStack.asNMSCopy(inventory.getChestplate());
+			net.minecraft.world.item.ItemStack leggings = CraftItemStack.asNMSCopy(inventory.getLeggings());
+			net.minecraft.world.item.ItemStack boots = CraftItemStack.asNMSCopy(inventory.getBoots());
+			net.minecraft.world.item.ItemStack mainHand = CraftItemStack.asNMSCopy(inventory.getItemInMainHand());
+			net.minecraft.world.item.ItemStack offHand = CraftItemStack.asNMSCopy(inventory.getItemInOffHand());
+
+			// Create equipment list
+			List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> equipment = List.of(
+					Pair.of(EnumItemSlot.f, helmet),      // HEAD
+					Pair.of(EnumItemSlot.e, chestplate),  // CHEST
+					Pair.of(EnumItemSlot.d, leggings),    // LEGS
+					Pair.of(EnumItemSlot.c, boots),       // FEET
+					Pair.of(EnumItemSlot.a, mainHand),    // MAINHAND
+					Pair.of(EnumItemSlot.b, offHand)      // OFFHAND
+			);
+
+			// Send equipment packet to the specific spectator
+			PacketPlayOutEntityEquipment equipmentPacket = new PacketPlayOutEntityEquipment(nmsFake.ar(), equipment);
+			nmsSpectator.f.b(equipmentPacket);
 		}
 	}
 

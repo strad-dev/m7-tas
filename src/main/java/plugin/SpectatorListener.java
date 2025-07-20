@@ -8,6 +8,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.List;
 
@@ -33,7 +34,9 @@ public class SpectatorListener implements Listener {
 			}
 		}
 
-		// Clean up their inventory backup (no need to restore since they're leaving)
+		Utils.restorePlayerInventory(player);
+		M7tas.removeFromNoCollisionTeam(player);
+		player.removePotionEffect(PotionEffectType.INVISIBILITY);
 		M7tas.originalInventories.remove(player);
 	}
 

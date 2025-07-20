@@ -1,5 +1,6 @@
 package instructions;
 
+import jline.internal.Nullable;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
 import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
 import net.minecraft.server.level.EntityPlayer;
@@ -186,37 +187,25 @@ public class Actions {
 		Utils.teleportWithSpectators(p, to);
 	}
 
-	public static void simulateWitherImpact(Player p) {
-		Location originalLocation = p.getLocation().clone();
-		Location l = p.getLocation().clone();
-		l.add(0, 1.62, 0);
-		Vector v = l.getDirection();
-		v.setX(v.getX() / 10);
-		v.setY(v.getY() / 10);
-		v.setZ(v.getZ() / 10);
-		for(int i = 0; i < 100; i++) {
-			l.add(v);
-			if(l.getBlock().getType().isSolid()) {
-				l = l.subtract(v).getBlock().getLocation();
-				if(originalLocation.getPitch() > 0) {
-					l.add(0, 1.62, 0);
-				}
-				l.setYaw(originalLocation.getYaw());
-				l.setPitch(originalLocation.getPitch());
-				l.add(0.5, 0, 0.5);
-				break;
-			}
-		}
-		l.subtract(0, 1.62, 0);
-		if(!l.getBlock().isEmpty()) {
-			l.add(0, 1, 0);
-		}
+	/**
+	 * Simulates the impact of a wither ability on the player and surrounding entities.
+	 * This involves teleportation, damage dealing to nearby entities, sound effects,
+	 * particle effects, and applying absorption shield mechanics.
+	 *
+	 * @param p  The player who activates the wither impact. This player will be teleported,
+	 *           have sounds and effects applied, and serve as the source of damage to nearby entities.
+	 * @param to The location the player will be teleported to. Use null if this ability is being used in the boss fight.
+	 */
+	public static void simulateWitherImpact(Player p, @Nullable Location to) {
 		p.setFallDistance(0);
-		Utils.teleportWithSpectators(p, l);
-		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 
-		// implosion
-		p.getWorld().spawnParticle(Particle.EXPLOSION, l, 1);
+		Location effectLocation = to != null ? to : p.getLocation();
+		if(to != null) {
+			Utils.teleportWithSpectators(p, to);
+		}
+
+		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+		p.getWorld().spawnParticle(Particle.EXPLOSION, effectLocation, 1);
 		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
 		List<EntityType> doNotKill = doNotKill();
 		int damaged = 0;
@@ -317,8 +306,10 @@ public class Actions {
 	 * @param b The Block to simulate the stonking action on.
 	 */
 	public static void simulateStonking(Player p, Block b) {
-		p.swingMainHand();
-		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
+		if(p != null) {
+			p.swingMainHand();
+			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
+		}
 		Material material = b.getType();
 		BlockData blockdata = b.getBlockData();
 		b.setType(Material.AIR);
@@ -367,7 +358,7 @@ public class Actions {
 		Actions.simulateLeftClickAir(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), Math.min(x1, x2), y1, Math.min(z1, z2)), EntityType.ZOMBIE);
+		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) (x1 + x2) / 2, Math.min(y1, y2), (double) (z1 + z2) / 2), EntityType.ZOMBIE);
 		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 1 + "/" + 1);
 		zombie.setCustomNameVisible(true);
 		zombie.setAI(false);
@@ -443,11 +434,11 @@ public class Actions {
 	 * @param p The player for whom the "Rag Axe" ability simulation will be performed.
 	 */
 	public static void simulateRagAxe(Player p) {
-		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F), 20);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F), 40);
+		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 40);
 		Utils.scheduleTask(() -> {
-			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_DEATH, 1.0F, 1.0F);
+			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_HOWL, 1.0F, 1.5F);
 			p.addScoreboardTag("RagBuff");
 		}, 60);
 		Utils.scheduleTask(() -> p.removeScoreboardTag("RagBuff"), 260);
@@ -475,10 +466,13 @@ public class Actions {
 		// 1) do the swing animation
 		p.swingMainHand();
 
+		List<Player> spectators = M7tas.getSpectatingPlayers(p);
+		for(Player spectator : spectators) {
+			spectator.swingMainHand();
+		}
+
 		// 2) build & fire the same event Bukkit would normally fire
-		PlayerInteractEvent ev = new PlayerInteractEvent(p, Action.LEFT_CLICK_AIR, p.getInventory().getItemInMainHand(),
-				/* no block */ null,
-				/* face unused */ null);
+		PlayerInteractEvent ev = new PlayerInteractEvent(p, Action.LEFT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 		Bukkit.getPluginManager().callEvent(ev);
 	}
 
