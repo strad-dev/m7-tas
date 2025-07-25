@@ -34,6 +34,9 @@ public class Tank {
 			// Tick 160 (clear tick 0: run begins)
 			// Tick 161 (clear tick 1: teleport back
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		} else if(section.equals("maxor")) {
+			Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
+			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
 
@@ -401,6 +404,13 @@ public class Tank {
 			world.playSound(tank.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 214 Ticks (10.70 seconds)");
 		}, 212);
+		if(doContinue) {
+			Utils.scheduleTask(() -> maxor(true), 1028);
+		}
+	}
+
+	public static void maxor(boolean doContinue) {
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.12242), 48), 1);
 	}
 
 	@SuppressWarnings("unused")

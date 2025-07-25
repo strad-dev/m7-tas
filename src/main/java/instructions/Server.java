@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Maxor;
 import instructions.bosses.Watcher;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -24,35 +25,37 @@ public class Server {
 		// Begin with 3 seconds of delay
 		Bukkit.broadcastMessage("TAS starts in 3 seconds.");
 
-		if(section.equals("all") || section.equals("clear")) {
-			// 5-second countdown
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+		Utils.scheduleTask(() -> {
+			if(section.equals("all") || section.equals("clear")) {
+				// 5-second countdown
 				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds.");
 				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, 60);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
-				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, 80);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
-				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, 100);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
-				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, 120);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
-				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, 140);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
-				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, 160);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 160);
-			Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 161);
-		}
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
+					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+				}, 20);
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
+					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+				}, 40);
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
+					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+				}, 60);
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
+					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+				}, 80);
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
+					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+				}, 100);
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
+				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
+			} else if(section.equals("maxor")) {
+				Maxor.maxorInstructions(world, false);
+			}
+		}, 60);
 	}
 
 	public static void serverSetup(World world) {

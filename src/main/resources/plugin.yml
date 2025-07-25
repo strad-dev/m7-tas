@@ -19,3 +19,6 @@ commands:
   reset:
     description: Resets all classes to their spawn locations
     usage: /reset
+
+depend:
+  - SkyBlockInVanilla

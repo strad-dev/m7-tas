@@ -467,6 +467,9 @@ public class Actions {
 		Utils.scheduleTask(() -> p.removeScoreboardTag("RagBuff"), 260);
 	}
 
+	/**
+	 *
+	 */
 	public static void simulateSalvation(Player p) {
 		double powerBonus;
 		try {
@@ -517,6 +520,53 @@ public class Actions {
 			l.add(v);
 		}
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GUARDIAN_DEATH, 1.0F, 2.0F);
+	}
+
+	public static void simulateSpringBoots(Player p) {
+		/*
+		 * Note 1: C / Tick 0
+		 * Note 2: C / Tick 2
+		 * Note 3: Eb / Tick 4
+		 * Note 4: Eb / Tick 6
+		 * Note 5: Eb / Tick 8
+		 * Note 6: Eb / Tick 10
+		 * Note 7: Eb / Tick 12
+		 * Note 8: Eb / Tick 14
+		 * Note 9: E / Tick 16
+		 * Fly 20.5 blocks up - takes 16 ticks to reach ledge
+		 */
+		// tuned to A=441
+		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F), 2);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 4);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 6);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 8);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 10);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 12);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 14);
+		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8929F), 16);
+		Utils.scheduleTask(() -> {
+			if(!(p instanceof CraftPlayer cp)) return;
+
+			EntityPlayer npc = cp.getHandle();
+
+			if(npc.aJ()) { // onGround check
+				Vec3D motion = npc.dy();
+				Vec3D newMotion = new Vec3D(motion.d, 0.42D, motion.f);
+
+				// Apply jump physics
+				npc.j(newMotion);
+				npc.a(EnumMoveType.a, newMotion);
+				npc.h();
+
+				// Send packets using unified method
+				PositionMoveRotation pmr = PositionMoveRotation.a(npc);
+				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+
+				Utils.broadcastPacket(tp);
+				Utils.updateSpectators(p, pmr); // Use the unified method
+			}
+		}, 16);
 	}
 
 	/**

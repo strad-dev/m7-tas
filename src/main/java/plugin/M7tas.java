@@ -327,6 +327,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	public void onEnable() {
 		plugin = this;
 
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "m7tasactivatewitherfight");
+
 		setupNoCollisionTeam();
 
 		// register ALL our commands on the same executor

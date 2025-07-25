@@ -112,7 +112,9 @@ public class Watcher {
 			watcher.remove();
 			world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
 		}, 1029);
-		// start maxor at tick 1029 (clear tick 1030) IF doContinue
+		if(doContinue) {
+			Maxor.maxorInstructions(world, true);
+		}
 	}
 
 	private static void travelToAndSpawnMob(Location l, String mobName) {

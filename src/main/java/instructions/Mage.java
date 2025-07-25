@@ -40,6 +40,9 @@ public class Mage {
 			// Tick 160 (clear tick 0: run begins)
 			// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		} else if(section.equals("maxor")) {
+			Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
+			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
 
@@ -251,7 +254,15 @@ public class Mage {
 			Actions.setFakePlayerHotbarSlot(mage, 1);
 		}, 949);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(mage, new Location(world, -120.5, 69, -74.5)), 950);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1030 Ticks (51.50 seconds)"), 1028);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1030 Ticks (51.50 seconds)");
+			if(doContinue) {
+				maxor(true);
+			}
+		}, 1028);
+	}
+
+	public static void maxor(boolean doContinue) {
 	}
 
 	private static void snapHead(String target) {

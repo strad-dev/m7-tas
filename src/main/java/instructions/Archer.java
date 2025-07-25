@@ -6,7 +6,6 @@ import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -30,6 +29,9 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 1);
 			Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		} else if(section.equals("maxor")) {
+			Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
+			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
 
@@ -291,9 +293,7 @@ public class Archer {
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
 		}, 115);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -158.5, 69, -80.5)), 116);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, -157f, -5f);
-		}, 117);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -157f, -5f), 117);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -149.5, 73, -100.5)), 118);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 50f, 29f);
@@ -433,7 +433,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.simulateStonking(archer, world.getBlockAt(-187, 87, -62)), 163);
 		Utils.scheduleTask(() -> {
 			Actions.simulateStonking(archer, world.getBlockAt(-187, 87, -63));
-			Actions.move(archer, new Vector(0, 0, -0.3), 1);
+			Actions.move(archer, new Vector(0, 0, -0.26), 1);
 		}, 164);
 		Utils.scheduleTask(() -> {
 			Actions.simulateLeftClickAir(archer);
@@ -518,19 +518,19 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 3);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Yellow Cleared");
 		}, 198);
-		Utils.scheduleTask(() -> {
-			Actions.simulateCrypt(archer, -207, 70, -35, -209, 72, -37);
-		}, 199);
+		Utils.scheduleTask(() -> Actions.simulateCrypt(archer, -207, 70, -35, -209, 72, -37), 199);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 200);
 		Utils.scheduleTask(() -> {
 			simulateShoot();
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 5/5");
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear finished in 204 ticks (10.20 seconds)");
 		}, 201);
+		if(doContinue) {
+			Utils.scheduleTask(() -> maxor(true), 1028);
+		}
 	}
 
-	public static void maxor (boolean doContinue) {
-
+	public static void maxor(boolean doContinue) {
 	}
 
 	private static void simulateShoot() {

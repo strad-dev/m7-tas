@@ -33,6 +33,9 @@ public class Healer {
 			// Tick 160 (clear tick 0: run begins)
 			// Tick 161 (clear tick 1: teleport back)
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+		} else if(section.equals("maxor")) {
+			Actions.teleport(healer, new Location(world, 73.5, 221, 13.5));
+			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
 
@@ -492,6 +495,12 @@ public class Healer {
 			world.playSound(healer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 202 Ticks (10.10 seconds)");
 		}, 200);
+		if(doContinue) {
+			Utils.scheduleTask(() -> maxor(true), 1028);
+		}
+	}
+
+	public static void maxor(boolean doContinue) {
 	}
 
 	@SuppressWarnings("unused")
