@@ -18,6 +18,7 @@ public class Berserk {
 	public static void berserkInstructions(Player p, String section) {
 		berserk = p;
 		world = berserk.getWorld();
+		Objects.requireNonNull(berserk.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.teleport(berserk, new Location(world, -21.5, 70, -197.5, 90f, 36.5f));
@@ -540,15 +541,18 @@ public class Berserk {
 		}, 3);
 
 		PotionEffect strength = berserk.getPotionEffect(PotionEffectType.STRENGTH);
-		if(strength == null) {
-			berserk.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, 0));
+		boolean hasRagBuff = berserk.getScoreboardTags().contains("RagBuff");
+		int maxAmplifier = hasRagBuff ? 8 : 7;
+		int baseAmplifier = hasRagBuff ? 1 : 0;
+
+		int newAmplifier;
+		if (strength == null) {
+			newAmplifier = baseAmplifier;
 		} else {
-			if(strength.getAmplifier() < 5) {
-				berserk.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, strength.getAmplifier() + 1));
-			} else {
-				berserk.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, 5));
-			}
+			newAmplifier = Math.min(strength.getAmplifier() + 1, maxAmplifier);
 		}
+
+		berserk.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, newAmplifier));
 	}
 
 	@SuppressWarnings("unused")

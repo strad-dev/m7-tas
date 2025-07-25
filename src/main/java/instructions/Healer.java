@@ -1,9 +1,12 @@
 package instructions;
 
 import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import plugin.Utils;
+
+import java.util.Objects;
 
 public class Healer {
 	private static Player healer;
@@ -12,6 +15,7 @@ public class Healer {
 	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
+		Objects.requireNonNull(healer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.teleport(healer, new Location(world, -28.5, 69, -44.5, -168.6f, 2.9f));
@@ -209,7 +213,7 @@ public class Healer {
 			Actions.setFakePlayerHotbarSlot(healer, 4);
 		}, 70);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 71);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(healer), 75);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(healer), 75);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 76);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 72.5f, 9f);
@@ -247,16 +251,10 @@ public class Healer {
 		 * ╚═╝     ╚═╝╚══════╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝
 		 */
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 4), 89);
-		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(healer);
-			healer.removeScoreboardTag("SalvationCooldown"); // sb in vanilla mc plugin has a 1s cd on salvation, but this does not exist in hypixel
-		}, 90);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(healer), 91);
-		Utils.scheduleTask(() -> {
-			Actions.simulateRightClickAir(healer);
-			healer.removeScoreboardTag("SalvationCooldown"); // sb in vanilla mc plugin has a 1s cd on salvation, but this does not exist in hypixel
-		}, 95);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(healer), 96);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 90);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(healer), 91);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 95);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(healer), 96);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -91f, -10.5f);
 			Actions.setFakePlayerHotbarSlot(healer, 7);
@@ -394,7 +392,7 @@ public class Healer {
 			Actions.setFakePlayerHotbarSlot(healer, 4);
 		}, 151);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 152);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(healer), 156);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(healer), 156);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(healer), 157);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 88.6f, 0.4f);

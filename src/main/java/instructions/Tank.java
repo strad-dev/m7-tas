@@ -1,9 +1,12 @@
 package instructions;
 
 import org.bukkit.*;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import plugin.Utils;
+
+import java.util.Objects;
 
 public class Tank {
 	private static Player tank;
@@ -13,6 +16,7 @@ public class Tank {
 	public static void tankInstructions(Player p, String section) {
 		tank = p;
 		world = Tank.tank.getWorld();
+		Objects.requireNonNull(tank.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.teleport(Tank.tank, new Location(world, -196.5, 68, -222.5, 0f, 5.6f));

@@ -16,6 +16,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -29,10 +30,7 @@ import org.bukkit.util.Vector;
 import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class Actions {
@@ -303,6 +301,7 @@ public class Actions {
 	 * changing the block to an AIR block and then resetting it to its original
 	 * material type after a short delay.
 	 *
+	 * @param p The player that is breaking the block
 	 * @param b The Block to simulate the stonking action on.
 	 */
 	public static void simulateStonking(Player p, Block b) {
@@ -317,6 +316,24 @@ public class Actions {
 			b.setType(material);
 			b.setBlockData(blockdata);
 		}, 5);
+	}
+
+	/**
+	 * Simulates the action of a player using a ghost block pick, which involves
+	 * the player swinging their main hand, playing a sound effect, and replacing
+	 * the targeted block with air.
+	 * WARNING: MUST REPLACE THESE BLOCKS IN server.java
+	 *
+	 * @param p The player performing the ghost pick action. This player will swing their main hand
+	 *          and cause a sound effect to play in their current world at their location.
+	 * @param b The block that will be replaced with air as part of the ghost pick action.
+	 */
+	public static void simulateGhostPick(Player p, Block b) {
+		if(p != null) {
+			p.swingMainHand();
+			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
+		}
+		b.setType(Material.AIR);
 	}
 
 	/**
@@ -440,8 +457,66 @@ public class Actions {
 		Utils.scheduleTask(() -> {
 			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_HOWL, 1.0F, 1.5F);
 			p.addScoreboardTag("RagBuff");
+			if(p.getName().equals("Archer")) {
+				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 1));
+			} else if(p.getName().equals("Berserk")) {
+				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 0));
+			}
+			// mage: contolled by method | healer/tank: never uses rag
 		}, 60);
 		Utils.scheduleTask(() -> p.removeScoreboardTag("RagBuff"), 260);
+	}
+
+	public static void simulateSalvation(Player p) {
+		double powerBonus;
+		try {
+			int power = Objects.requireNonNull(p.getInventory().getItem(p.getInventory().getHeldItemSlot())).getEnchantmentLevel(Enchantment.POWER);
+			powerBonus = power * 0.25;
+			if(power == 7) {
+				powerBonus += 0.25;
+			}
+		} catch(Exception exception) {
+			powerBonus = 0;
+		}
+
+		double strengthBonus;
+		try {
+			strengthBonus = 0.75 + Objects.requireNonNull(p.getPotionEffect(PotionEffectType.STRENGTH)).getAmplifier();
+		} catch(Exception exception) {
+			strengthBonus = 0;
+		}
+
+		// shoot the three arrows
+		double add = powerBonus + strengthBonus;
+		Location l = p.getLocation();
+		l.add(0, 1.62, 0);
+
+		Vector v = l.getDirection();
+		v.setX(v.getX() / 5);
+		v.setY(v.getY() / 5);
+		v.setZ(v.getZ() / 5);
+		World world = l.getWorld();
+		Set<Entity> damagedEntities = new HashSet<>();
+		damagedEntities.add(p);
+		int pierce = 5;
+		for(int i = 0; i < 320 && pierce > 0; i++) {
+			if(l.getBlock().getType().isSolid()) {
+				break;
+			}
+			assert world != null;
+			ArrayList<Entity> entities = (ArrayList<Entity>) world.getNearbyEntities(l, 1, 1, 1);
+			for(Entity entity : entities) {
+				if(entity instanceof LivingEntity temp && !damagedEntities.contains(entity)) {
+					damagedEntities.add(entity);
+					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 2.5 + add));
+					pierce--;
+				}
+			}
+			Particle.DustOptions particle = new Particle.DustOptions(Color.RED, 1.0F);
+			world.spawnParticle(Particle.DUST, l, 1, particle);
+			l.add(v);
+		}
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GUARDIAN_DEATH, 1.0F, 2.0F);
 	}
 
 	/**

@@ -111,7 +111,7 @@ public class Watcher {
 		Utils.scheduleTask(() -> {
 			watcher.remove();
 			world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
-		}, 1028);
+		}, 1029);
 		// start maxor at tick 1029 (clear tick 1030) IF doContinue
 	}
 
@@ -188,8 +188,7 @@ public class Watcher {
 				}
 
 				// Phase-based motion
-				if(tick < accelTicks) {
-					currentSpeed = accel * (tick + 1);
+				if(tick < accelTicks) {currentSpeed = accel * (tick + 1);
 				} else if(tick < accelTicks + cruiseTicks) {
 					currentSpeed = maxSpeed;
 				} else {
@@ -251,10 +250,10 @@ public class Watcher {
 		mob.setPersistent(true);
 		mob.setRemoveWhenFarAway(false);
 		if(mobName.equals("Diamante Giant")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 80 + "/" + 80);
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 40 + "/" + 40);
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
-			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(80);
-			mob.setHealth(80);
+			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
+			mob.setHealth(40);
 			Objects.requireNonNull(mob.getAttribute(Attribute.SCALE)).setBaseValue(6);
 			Objects.requireNonNull(mob.getEquipment()).setHelmet(new ItemStack(Material.DIAMOND_HELMET));
 			mob.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
@@ -262,16 +261,16 @@ public class Watcher {
 			mob.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 50 + "/" + 50);
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 30 + "/" + 30);
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
-			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(50);
-			mob.setHealth(50);
+			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
+			mob.setHealth(30);
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 24 + "/" + 24);	
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 12 + "/" + 12);
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-12);
-			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(24);
-			mob.setHealth(24);
+			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(12);
+			mob.setHealth(12);
 			Objects.requireNonNull(mob.getEquipment()).setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
 			mob.getEquipment().setLeggings(new ItemStack(Material.CHAINMAIL_LEGGINGS));
 			mob.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));

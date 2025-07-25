@@ -221,14 +221,13 @@ public class Mage {
 			simulateBeam();
 			Actions.move(mage, new Vector(0, 0, 1.12242), 10);
 		}, 436);
+		Utils.scheduleTask(() -> snapHead("Bonzo"), 437);
 		Utils.scheduleTask(Mage::simulateBeam, 441);
-		Utils.scheduleTask(() -> snapHead("Bonzo"), 442);
+		Utils.scheduleTask(() -> snapHead("Meepy_"), 442);
 		Utils.scheduleTask(Mage::simulateBeam, 446);
-		Utils.scheduleTask(() -> snapHead("Meepy_"), 447);
+		Utils.scheduleTask(() -> snapHead("Mallyanke"), 447);
 		Utils.scheduleTask(Mage::simulateBeam, 451);
-		Utils.scheduleTask(() -> snapHead("Mallyanke"), 452);
-		Utils.scheduleTask(Mage::simulateBeam, 456);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -35f), 457);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -35f), 452);
 		Utils.scheduleTask(Mage::simulateBeam, 493);
 		Utils.scheduleTask(Mage::simulateBeam, 526);
 		Utils.scheduleTask(Mage::simulateBeam, 567);
@@ -301,7 +300,7 @@ public class Mage {
 		v.setX(v.getX() / 5);
 		v.setY(v.getY() / 5);
 		v.setZ(v.getZ() / 5);
-		for(int i = 0; i < 75; i++) {
+		for(int i = 0; i < 100; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;
 			}
@@ -309,8 +308,8 @@ public class Mage {
 			ArrayList<Entity> entities = (ArrayList<Entity>) world.getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
 				//noinspection DataFlowIssue
-				if(entity instanceof LivingEntity temp && !temp.equals(mage) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && (temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 75 : 55) : (temp instanceof Wither ? 60 : 45);
+				if(entity instanceof LivingEntity temp && !temp.equals(mage) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
+					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 105 : 90) : (temp instanceof Wither ? 70 : 60);
 					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(mage, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
 					if(temp.getHurtSound() != null) {
 						world.playSound(l, temp.getHurtSound(), 1.0F, 1.0F);
@@ -322,6 +321,12 @@ public class Mage {
 			spawnParticle(l);
 			l.add(v);
 			if(shouldBreak) {
+				spawnParticle(l);
+				l.add(v);
+				spawnParticle(l);
+				l.add(v);
+				spawnParticle(l);
+				l.add(v);
 				spawnParticle(l);
 				l.add(v);
 				spawnParticle(l);

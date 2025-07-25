@@ -23,8 +23,7 @@ public class Archer {
 	public static void archerInstructions(Player p, String section) {
 		archer = p;
 		world = archer.getWorld();
-		archer.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, -1, 1));
-		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 7);
+		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 26);
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.teleport(archer, new Location(world, -118.5, 70, -202.5, 0f, 0f));
@@ -216,11 +215,11 @@ public class Archer {
 		 *    ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝
 		 */
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, 35f, 2.3f);
+			Actions.turnHead(archer, 32f, 0f);
 			Actions.setFakePlayerHotbarSlot(archer, 4);
 		}, 90);
 		Utils.scheduleTask(() -> Actions.simulateRightClickAir(archer), 91);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(archer), 92);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 92);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 2.7f, 4.7f);
 			Actions.setFakePlayerHotbarSlot(archer, 1);
@@ -289,11 +288,11 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -87.1f, 4.4f);
 			Actions.setFakePlayerHotbarSlot(archer, 1);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
 		}, 115);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -158.5, 69, -80.5)), 116);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -157f, -5f);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
 		}, 117);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -149.5, 73, -100.5)), 118);
 		Utils.scheduleTask(() -> {
@@ -373,6 +372,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 129.4f, -14.5f);
 			Actions.setFakePlayerHotbarSlot(archer, 1);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Museum Cleared");
 		}, 144);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -149.5, 71, -52.5)), 145);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 103.1f, 7.8f), 146);
@@ -389,7 +389,6 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 80f, 1f);
 			Actions.setFakePlayerHotbarSlot(archer, 7);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Museum Cleared");
 		}, 148);
 		Utils.scheduleTask(() -> Actions.simulatePearlThrow(archer), 149);
 		Utils.scheduleTask(() -> {
@@ -475,7 +474,10 @@ public class Archer {
 			Actions.turnHead(archer, 90f, -52f);
 			Actions.setFakePlayerHotbarSlot(archer, 1);
 		}, 185);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(archer, new Location(world, -212.5, 75, -56.5)), 186);
+		Utils.scheduleTask(() -> {
+			Actions.simulateEtherwarp(archer, new Location(world, -212.5, 75, -56.5));
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Market Cleared");
+		}, 186);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 113f, -55f);
 			Actions.setFakePlayerHotbarSlot(archer, 5);
@@ -486,7 +488,6 @@ public class Archer {
 			Actions.simulateLeftClickAir(archer);
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Market 5/5 (Opened Chest)");
 			world.playSound(archer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Market Cleared");
 		}, 189);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 8.9f, 19f);
@@ -507,26 +508,29 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.simulateAOTV(archer, new Location(world, -216.5, 69, -26.5)), 193);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 194);
 		Utils.scheduleTask(Archer::simulateShoot, 195);
-		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(archer), 196);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -137.3f, 2.9f);
 			Actions.setFakePlayerHotbarSlot(archer, 1);
-		}, 197);
-		Utils.scheduleTask(() -> Actions.simulateAOTV(archer, new Location(world, -209.5, 70, -34.5)), 198);
+		}, 196);
+		Utils.scheduleTask(() -> Actions.simulateAOTV(archer, new Location(world, -209.5, 70, -34.5)), 197);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -135f, 11.4f);
 			Actions.setFakePlayerHotbarSlot(archer, 3);
-		}, 199);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Yellow Cleared");
+		}, 198);
 		Utils.scheduleTask(() -> {
 			Actions.simulateCrypt(archer, -207, 70, -35, -209, 72, -37);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Yellow Cleared");
-		}, 200);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 6), 201);
+		}, 199);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 200);
 		Utils.scheduleTask(() -> {
 			simulateShoot();
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 5/5");
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear finished in 204 ticks (10.20 seconds)");
-		}, 202);
+		}, 201);
+	}
+
+	public static void maxor (boolean doContinue) {
+
 	}
 
 	private static void simulateShoot() {
