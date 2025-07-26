@@ -4,6 +4,7 @@ import jline.internal.Nullable;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
 import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
 import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.world.entity.EntityLiving;
 import net.minecraft.world.entity.EnumMoveType;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
@@ -13,6 +14,7 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_21_R3.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -35,18 +37,18 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class Actions {
 	/**
-	 * Moves a Player in this Direction for t ticks.  The Vector referrs to the number of blocks per tick.
-	 * The Y component of the vector is ignored.  Vertical motion is left to gravity or other methods.
+	 * Moves a LivingEntity in this Direction for t ticks. The Vector refers to the number of blocks per tick.
+	 * The Y component of the vector is ignored. Vertical motion is left to gravity or other methods.
 	 *
-	 * @param p             The Player
+	 * @param entity        The LivingEntity to move
 	 * @param perTick       The Distance to be moved per tick
 	 * @param durationTicks The total number of Ticks to move
 	 */
-	public static void move(Player p, Vector perTick, int durationTicks) {
-		// only handle CraftPlayer/NMS and positive duration
-		if(!(p instanceof CraftPlayer cp) || durationTicks <= 0) return;
+	public static void move(LivingEntity entity, Vector perTick, int durationTicks) {
+		// only handle CraftLivingEntity/NMS and positive duration
+		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
 
-		EntityPlayer npc = cp.getHandle();
+		EntityLiving nmsEntity = cle.getHandle();
 		// convert Bukkit Vector to NMS Vec3D
 		Vec3D motion = new Vec3D(perTick.getX(), 0, perTick.getZ());
 
@@ -61,32 +63,38 @@ public class Actions {
 				}
 
 				// Retain current Y motion (from gravity, jump, etc.)
-				Vec3D currentMotion = npc.dy(); // Get current velocity
+				Vec3D currentMotion = nmsEntity.dy(); // Get current velocity
 				Vec3D combined = new Vec3D(motion.d, currentMotion.e, motion.f);
 
 				// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
-				npc.a(EnumMoveType.a, combined);
+				nmsEntity.a(EnumMoveType.a, combined);
 				// 2) Apply gravity, friction, fall damage checks, etc.
-				npc.h();
+				nmsEntity.h();
 
 				// 3) Package up the new position + rotation
-				PositionMoveRotation pmr = PositionMoveRotation.a(npc);
+				PositionMoveRotation pmr = PositionMoveRotation.a(nmsEntity);
 
 				// 4) Create teleport packet with NO relative flags
-				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nmsEntity.ar(), pmr, EnumSet.noneOf(Relative.class), nmsEntity.aJ());
 
-				// 5) Broadcast to all online players (excluding spectators of this fake player)
-				List<Player> spectators = M7tas.getSpectatingPlayers(p);
-				for(Player player : Bukkit.getOnlinePlayers()) {
-					if(!spectators.contains(player)) { // Don't send to spectators
-						((CraftPlayer) player).getHandle().f.b(tp);
+				// 5) Broadcast to all online players
+				if(entity instanceof Player player) {
+					// For players, exclude spectators
+					List<Player> spectators = M7tas.getSpectatingPlayers(player);
+					for(Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+						if(!spectators.contains(onlinePlayer)) {
+							((CraftPlayer) onlinePlayer).getHandle().f.b(tp);
+						}
+					}
+					// Use enhanced spectator update with physics sync for players
+					Utils.updateSpectatorsWithPhysics(player, pmr);
+				} else {
+					// For non-player entities, broadcast to all players
+					for(Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+						((CraftPlayer) onlinePlayer).getHandle().f.b(tp);
 					}
 				}
-
-				// 6) Use enhanced spectator update with physics sync
-				Utils.updateSpectatorsWithPhysics(p, pmr);
 			}
-			// schedule at 0 tick delay, repeating every tick
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 

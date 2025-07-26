@@ -526,7 +526,10 @@ public class Archer {
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear finished in 204 ticks (10.20 seconds)");
 		}, 201);
 		if(doContinue) {
-			Utils.scheduleTask(() -> maxor(true), 1028);
+			Utils.scheduleTask(() -> {
+				maxor(true);
+				Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
+			}, 1028);
 		}
 	}
 

@@ -496,7 +496,10 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 202 Ticks (10.10 seconds)");
 		}, 200);
 		if(doContinue) {
-			Utils.scheduleTask(() -> maxor(true), 1028);
+			Utils.scheduleTask(() -> {
+				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5));
+				maxor(true);
+			}, 1028);
 		}
 	}
 

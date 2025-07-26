@@ -405,7 +405,10 @@ public class Tank {
 			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 214 Ticks (10.70 seconds)");
 		}, 212);
 		if(doContinue) {
-			Utils.scheduleTask(() -> maxor(true), 1028);
+			Utils.scheduleTask(() -> {
+				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
+				maxor(true);
+			}, 1028);
 		}
 	}
 

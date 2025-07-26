@@ -337,6 +337,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
 		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
+		getServer().getPluginManager().registerEvents(new WithersNotImmuneToArrows(), this);
 
 		Utils.startInventorySync();
 	}

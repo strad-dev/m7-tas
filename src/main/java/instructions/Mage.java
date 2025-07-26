@@ -257,6 +257,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1030 Ticks (51.50 seconds)");
 			if(doContinue) {
+				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
 				maxor(true);
 			}
 		}, 1028);

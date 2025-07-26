@@ -111,10 +111,10 @@ public class Watcher {
 		Utils.scheduleTask(() -> {
 			watcher.remove();
 			world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
+			if(doContinue) {
+				Maxor.maxorInstructions(world, true);
+			}
 		}, 1029);
-		if(doContinue) {
-			Maxor.maxorInstructions(world, true);
-		}
 	}
 
 	private static void travelToAndSpawnMob(Location l, String mobName) {
@@ -190,7 +190,8 @@ public class Watcher {
 				}
 
 				// Phase-based motion
-				if(tick < accelTicks) {currentSpeed = accel * (tick + 1);
+				if(tick < accelTicks) {
+					currentSpeed = accel * (tick + 1);
 				} else if(tick < accelTicks + cruiseTicks) {
 					currentSpeed = maxSpeed;
 				} else {

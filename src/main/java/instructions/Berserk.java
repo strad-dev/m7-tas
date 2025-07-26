@@ -506,11 +506,15 @@ public class Berserk {
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 220 Ticks (11.00 seconds)");
 		}, 218);
 		if(doContinue) {
-			Utils.scheduleTask(() -> maxor(true), 1028);
+			Utils.scheduleTask(() -> {
+				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5));
+				maxor(true);
+			}, 1028);
 		}
 	}
 
 	public static void maxor(boolean doContinue) {
+		// 29 ticks sprint, 16 ticks sneaking
 	}
 
 	private static void simulateShoot() {
