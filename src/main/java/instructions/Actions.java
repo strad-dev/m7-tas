@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import plugin.M7tas;
 import plugin.Utils;
@@ -77,23 +78,7 @@ public class Actions {
 				// 4) Create teleport packet with NO relative flags
 				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nmsEntity.ar(), pmr, EnumSet.noneOf(Relative.class), nmsEntity.aJ());
 
-				// 5) Broadcast to all online players
-				if(entity instanceof Player player) {
-					// For players, exclude spectators
-					List<Player> spectators = M7tas.getSpectatingPlayers(player);
-					for(Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-						if(!spectators.contains(onlinePlayer)) {
-							((CraftPlayer) onlinePlayer).getHandle().f.b(tp);
-						}
-					}
-					// Use enhanced spectator update with physics sync for players
-					Utils.updateSpectatorsWithPhysics(player, pmr);
-				} else {
-					// For non-player entities, broadcast to all players
-					for(Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-						((CraftPlayer) onlinePlayer).getHandle().f.b(tp);
-					}
-				}
+				Utils.broadcastPacket(tp);
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
@@ -122,7 +107,6 @@ public class Actions {
 			PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
 
 			Utils.broadcastPacket(tp);
-			Utils.updateSpectators(p, pmr); // Use the unified method
 		}
 	}
 
@@ -190,7 +174,7 @@ public class Actions {
 		to.setYaw(yaw);
 		to.setPitch(pitch);
 
-		Utils.teleportWithSpectators(p, to);
+		Utils.teleport(p, to);
 	}
 
 	/**
@@ -207,7 +191,7 @@ public class Actions {
 
 		Location effectLocation = to != null ? to : p.getLocation();
 		if(to != null) {
-			Utils.teleportWithSpectators(p, to);
+			Utils.teleport(p, to);
 		}
 
 		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
@@ -277,7 +261,7 @@ public class Actions {
 		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
-		Utils.teleportWithSpectators(p, to);
+		Utils.teleport(p, to);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 	}
@@ -299,7 +283,7 @@ public class Actions {
 		to.setPitch(from.getPitch());
 
 		p.setVelocity(new Vector(0, 0, 0));
-		Utils.teleportWithSpectators(p, to);
+		Utils.teleport(p, to);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 	}
@@ -560,7 +544,7 @@ public class Actions {
 
 			if(npc.aJ()) { // onGround check
 				Vec3D motion = npc.dy();
-				Vec3D newMotion = new Vec3D(motion.d, 0.42D, motion.f);
+				Vec3D newMotion = new Vec3D(motion.d, 2.045D, motion.f);
 
 				// Apply jump physics
 				npc.j(newMotion);
@@ -572,9 +556,34 @@ public class Actions {
 				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
 
 				Utils.broadcastPacket(tp);
-				Utils.updateSpectators(p, pmr); // Use the unified method
 			}
-		}, 16);
+		}, 17);
+	}
+
+	private static BukkitTask armorTask = null;
+
+	public static void setWitherArmor(Wither wither, boolean showArmor) {
+
+		// Cancel any existing task
+		if(armorTask != null && !armorTask.isCancelled()) {
+			armorTask.cancel();
+			armorTask = null;
+		}
+
+		if(showArmor) {
+			// Start the armor maintenance task
+			armorTask = new BukkitRunnable() {
+				@Override
+				public void run() {
+					// Reapply invulnerability ticks
+					wither.setInvulnerabilityTicks(3);
+				}
+			}.runTaskTimer(M7tas.getInstance(), 0L, 1L); // Start immediately, repeat every 20 ticks (1 second)
+
+		} else {
+			// Remove armor immediately
+			wither.setInvulnerabilityTicks(0);
+		}
 	}
 
 	/**
@@ -587,7 +596,6 @@ public class Actions {
 	public static void teleport(Player player, Location location) {
 		player.setVelocity(new Vector(0, 0, 0));
 		player.teleport(location, PlayerTeleportEvent.TeleportCause.PLUGIN);
-		Utils.updateSpectators(player, location);
 	}
 
 	/**

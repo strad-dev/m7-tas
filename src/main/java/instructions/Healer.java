@@ -499,7 +499,7 @@ public class Healer {
 			Utils.scheduleTask(() -> {
 				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5));
 				maxor(true);
-			}, 1028);
+			}, 1025);
 		}
 	}
 

@@ -1,8 +1,6 @@
 package plugin;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -14,29 +12,43 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 @SuppressWarnings("DataFlowIssue")
 public class WithersNotImmuneToArrows implements Listener {
+	private static final Set<UUID> processingArrows = new HashSet<>();
+
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onProjectileHitWither(ProjectileHitEvent event) {
 		// Only handle arrows hitting withers
 		if(!(event.getEntity() instanceof Arrow arrow)) return;
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 
+		// Prevent double processing
+		UUID arrowUUID = arrow.getUniqueId();
+		if(processingArrows.contains(arrowUUID)) {
+			return;
+		}
+
 		// Check if wither would normally be immune (health <= 50%)
 		if(wither.getHealth() > wither.getAttribute(Attribute.MAX_HEALTH).getValue() / 2.0f) {
 			return; // Wither isn't in armor phase, let vanilla handle it
 		}
 
-		// Get the damage directly from the arrow
-		double damage = arrow.getDamage();
+		// Mark arrow as being processed
+		processingArrows.add(arrowUUID);
 
-		// Apply damage manually
-		Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(arrow, wither, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
+		try {
+			// Create and fire the damage event
+			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(arrow, wither, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 0));
 
-		// Add hit effects
-		wither.getWorld().playSound(arrow.getLocation(), Sound.ENTITY_ARROW_HIT, 1.0f, 1.0f);
-
-		// Cancel the event to prevent the bounce
-		event.setCancelled(true);
+			// Cancel the original event to prevent the bounce
+			event.setCancelled(true);
+		} finally {
+			// Clean up tracking
+			processingArrows.remove(arrowUUID);
+		}
 	}
 }

@@ -529,7 +529,7 @@ public class Archer {
 			Utils.scheduleTask(() -> {
 				maxor(true);
 				Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
-			}, 1028);
+			}, 1025);
 		}
 	}
 

@@ -408,7 +408,7 @@ public class Tank {
 			Utils.scheduleTask(() -> {
 				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
 				maxor(true);
-			}, 1028);
+			}, 1025);
 		}
 	}
 

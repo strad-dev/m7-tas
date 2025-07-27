@@ -18,6 +18,8 @@ import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
@@ -56,6 +58,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	private boolean fakeTickerStarted = false;
 	static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
 	private static Team noCollisionTeam;
+	private static BukkitRunnable spectatorSyncTask;
 
 	static class PlayerInventoryBackup {
 		private final ItemStack[] contents;
@@ -340,20 +343,22 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		getServer().getPluginManager().registerEvents(new WithersNotImmuneToArrows(), this);
 
 		Utils.startInventorySync();
+		startSpectatorSync();
 	}
 
 	@Override
 	public void onDisable() {
 		Utils.stopInventorySync();
+		stopSpectatorSync();
 
-		if (noCollisionTeam != null) {
-			for (String entry : new HashSet<>(noCollisionTeam.getEntries())) {
+		if(noCollisionTeam != null) {
+			for(String entry : new HashSet<>(noCollisionTeam.getEntries())) {
 				noCollisionTeam.removeEntry(entry);
 			}
 			noCollisionTeam.unregister();
 		}
 
-		for (Player spectator : new ArrayList<>(spectatorMap.keySet())) {
+		for(Player spectator : new ArrayList<>(spectatorMap.keySet())) {
 			Utils.restorePlayerInventory(spectator);
 			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
 		}
@@ -441,14 +446,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				// NEW: Backup the player's inventory before spectating
 				Utils.backupPlayerInventory(p);
 
-				preventPlayerCollision(p, fakePlayer);
-				hideFakePlayerFromSpectator(p, fakePlayer);
-
 				Location fakeLocation = fakePlayer.getLocation();
 				p.teleport(fakeLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
 
+				preventPlayerCollision(p, fakePlayer);
+
 				// Sync inventory when starting to spectate
 				Utils.syncInventoryToSpectators(fakePlayer);
+				Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
 				p.sendMessage("You are now spectating " + role + ".");
 				return true;
@@ -456,11 +461,11 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			case "unspectate" -> {
 				if(spectatorMap.containsKey(p)) {
 					Player fakePlayer = spectatorMap.remove(p);
-					if (fakePlayer != null) {
+					if(fakePlayer != null) {
 						List<Player> spectators = reverseSpectatorMap.get(fakePlayer);
-						if (spectators != null) {
+						if(spectators != null) {
 							spectators.remove(p);
-							if (spectators.isEmpty()) {
+							if(spectators.isEmpty()) {
 								reverseSpectatorMap.remove(fakePlayer);
 							}
 						}
@@ -471,7 +476,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					removeFromNoCollisionTeam(p);
 					p.removePotionEffect(PotionEffectType.INVISIBILITY);
 
-					if (fakePlayer != null) {
+					if(fakePlayer != null) {
 						showFakePlayerToSpectator(p, fakePlayer);
 					}
 
@@ -511,10 +516,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		}
 
 		GameProfile populated = result.profile();
-		Property tex = populated.getProperties()
-				.get("textures")
-				.iterator()
-				.next();
+		Property tex = populated.getProperties().get("textures").iterator().next();
 
 		// 3) Create your own NPC profile and copy in that Property:
 		GameProfile npcProfile = new GameProfile(fakeUuid, fakeName);
@@ -598,12 +600,12 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 	private static void setupNoCollisionTeam() {
 		ScoreboardManager manager = Bukkit.getScoreboardManager();
-		if (manager != null) {
+		if(manager != null) {
 			Scoreboard scoreboard = manager.getMainScoreboard();
 
 			// Remove existing team if it exists
 			Team existingTeam = scoreboard.getTeam("nocollision");
-			if (existingTeam != null) {
+			if(existingTeam != null) {
 				existingTeam.unregister();
 			}
 
@@ -615,13 +617,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	private static void addToNoCollisionTeam(Player player) {
-		if (noCollisionTeam != null) {
+		if(noCollisionTeam != null) {
 			noCollisionTeam.addEntry(player.getName());
 		}
 	}
 
 	static void removeFromNoCollisionTeam(Player player) {
-		if (noCollisionTeam != null) {
+		if(noCollisionTeam != null) {
 			noCollisionTeam.removeEntry(player.getName());
 		}
 	}
@@ -637,7 +639,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 
 	private void hideFakePlayerFromSpectator(Player spectator, Player fakePlayer) {
-		if (spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
+		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
 			EntityPlayer nmsSpectator = craftSpectator.getHandle();
 			EntityPlayer nmsFake = craftFake.getHandle();
 
@@ -648,13 +650,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	private void showFakePlayerToSpectator(Player spectator, Player fakePlayer) {
-		if (spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
+		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
 			EntityPlayer nmsSpectator = craftSpectator.getHandle();
 			EntityPlayer nmsFake = craftFake.getHandle();
 
 			// Re-send spawn packet to show the fake player again
 			PlayerChunkMap.EntityTracker wrapper = ((CraftWorld) fakePlayer.getWorld()).getHandle().m().a.K.get(nmsFake.ar());
-			if (wrapper != null) {
+			if(wrapper != null) {
 				EntityTrackerEntry entry = wrapper.b;
 				PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsFake, entry);
 				nmsSpectator.f.b(spawn);
@@ -675,8 +677,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			net.minecraft.world.item.ItemStack offHand = CraftItemStack.asNMSCopy(inventory.getItemInOffHand());
 
 			// Create equipment list
-			List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> equipment = List.of(
-					Pair.of(EnumItemSlot.f, helmet),      // HEAD
+			List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> equipment = List.of(Pair.of(EnumItemSlot.f, helmet),      // HEAD
 					Pair.of(EnumItemSlot.e, chestplate),  // CHEST
 					Pair.of(EnumItemSlot.d, leggings),    // LEGS
 					Pair.of(EnumItemSlot.c, boots),       // FEET
@@ -729,5 +730,47 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				}
 			}
 		}.runTaskTimer(this, 0, 1);
+	}
+
+	private void startSpectatorSync() {
+		if(spectatorSyncTask != null) {
+			spectatorSyncTask.cancel();
+		}
+
+		spectatorSyncTask = new BukkitRunnable() {
+			@Override
+			public void run() {
+				// Iterate through all spectator relationships
+				for (Player spectator : spectatorMap.keySet()) {
+					Player fakePlayer = spectatorMap.get(spectator);
+
+					// Get the fake player's current position and update spectators
+					if (fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
+						EntityPlayer nmsFake = craftFake.getHandle();
+						EntityPlayer nmsSpectator = craftSpectator.getHandle();
+						PositionMoveRotation pmr = PositionMoveRotation.a(nmsFake);
+						System.out.println(pmr);
+
+						// Use the existing updateSpectators method which already handles this correctly
+						PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
+						nmsSpectator.f.b(snapCam);
+
+						// Send destroy packet every tick to keep fake player hidden
+						PacketPlayOutEntityDestroy destroyPacket = new PacketPlayOutEntityDestroy(nmsFake.ar());
+						nmsSpectator.f.b(destroyPacket);
+					}
+				}
+			}
+		};
+
+		// Run every tick for smooth camera movement
+		spectatorSyncTask.runTaskTimer(this, 0L, 1L);
+	}
+
+	private void stopSpectatorSync() {
+		if (spectatorSyncTask != null) {
+			spectatorSyncTask.cancel();
+			spectatorSyncTask = null;
+		}
 	}
 }

@@ -27,7 +27,7 @@ public class Watcher {
 	private static World world;
 	private static final Location ORIGINAL_POSITION = new Location(null, -120.5, 72.0, -88.5, -180, 0);
 	private static final List<Location> MOB_SPAWN_LOCATIONS = new ArrayList<>();
-	private static final List<String> MOB_NAMES = List.of("Diamante Giant", "Bonzo", "Meepy_", "Mallyanke", "valej", "Sillygreenj", "a6j3", "Nucleararmadillo", "ItzZeeka", "akc0303", "nil4k", "editqble", "uncheck", "EvilMerlyn", "JennAiel", "Stenoe", "aalatif_", "Deanvm", "Beethoven_");
+	private static final List<String> MOB_NAMES = List.of("Diamante Giant", "Bonzo", "Meepy_", "Mallyanke", "valej", "nograssbro", "a6j3", "Nucleararmadillo", "lfgm7", "akc0303", "nil4k", "editqble", "JennAiel", "Stenoe", "aalatif_", "Deanvm", "uncheck", "EvilMerlyn", "Beethoven_");
 	private static final List<String> SPAWN_LINES = List.of("This guy looks like a fighter.", "Hmmm... this one!", "You'll do.", "Go, fight!", "Go and live again!");
 	private static final List<String> KILLED_LINES = List.of("Not bad.", "That one was weak anyway.", "I'm impressed.", "Very nice.", "Aw, I liked that one.");
 	private static int mobCount = 0;
@@ -69,30 +69,30 @@ public class Watcher {
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -88.5)); // Mallyanke
 		/* -------------------- "Let's see how you can handle this" -------------------- */
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -88.5)); // valej
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -84.5)); // sillygreenj
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -84.5)); // nograssbro
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -77.5)); // a6j3
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -77.5)); // Nucleararmadillo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -77.5)); // TankForM7
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -77.5)); // lfgm7
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -84.5)); // baldkc0303
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -84.5)); // nil4k
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -88.5)); // editqble
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -88.5)); // uncheck
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -92.5)); // EvilMerlyn
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -92.5)); // JennAiel
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -92.5)); // Stenoe
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -99.5)); // aalatif_
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -99.5)); // Deanvm
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -99.5)); // Beethoven_
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -99.5)); // uncheck
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -92.5)); // EvilMerlyn
+		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -88.5)); // Beethoven_
 
 		// tick 0 = clear tick 1
 		sendChatMessage("Things feel a little more roomy now, eh?");
 		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
 		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
 		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 441);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 446);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 451);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 456);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 437);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 442);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 447);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 452);
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 494);
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 527);
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 568);
@@ -100,21 +100,21 @@ public class Watcher {
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 631);
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 660);
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 689);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 717);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 752);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 784);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 813);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 845);
-		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 886);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 718);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 751);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 783);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 824);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 854);
+		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 887);
 		Utils.scheduleTask(() -> sendChatMessage(KILLED_LINES.get(random.nextInt(5))), 916);
-		Utils.scheduleTask(() -> sendChatMessage("You have proven yourself.  You may pass."), 949);
+		Utils.scheduleTask(() -> sendChatMessage("You have proven yourself.  You may pass."), 946);
 		Utils.scheduleTask(() -> {
 			watcher.remove();
 			world.spawnEntity(new Location(world, -120.5, 69, -74.5), EntityType.LIGHTNING_BOLT);
 			if(doContinue) {
 				Maxor.maxorInstructions(world, true);
 			}
-		}, 1029);
+		}, 1026);
 	}
 
 	private static void travelToAndSpawnMob(Location l, String mobName) {

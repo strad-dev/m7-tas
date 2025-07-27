@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Maxor;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
@@ -509,12 +510,23 @@ public class Berserk {
 			Utils.scheduleTask(() -> {
 				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5));
 				maxor(true);
-			}, 1028);
+			}, 1025);
 		}
 	}
 
 	public static void maxor(boolean doContinue) {
-		// 29 ticks sprint, 16 ticks sneaking
+		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, new Vector(-0.051, 0, 0.255), 16);
+			Actions.simulateSpringBoots(berserk);
+		}, 28);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 33f, 0f), 59);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, new Vector(-0.1403, 0, 0.243), 2);
+			Maxor.pickUpCrystal(berserk);
+		}, 60);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 61);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 15), 62);
 	}
 
 	private static void simulateShoot() {

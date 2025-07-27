@@ -238,29 +238,29 @@ public class Mage {
 		Utils.scheduleTask(Mage::simulateBeam, 630);
 		Utils.scheduleTask(Mage::simulateBeam, 659);
 		Utils.scheduleTask(Mage::simulateBeam, 688);
-		Utils.scheduleTask(Mage::simulateBeam, 716);
-		Utils.scheduleTask(Mage::simulateBeam, 751);
-		Utils.scheduleTask(Mage::simulateBeam, 783);
-		Utils.scheduleTask(Mage::simulateBeam, 812);
-		Utils.scheduleTask(Mage::simulateBeam, 844);
-		Utils.scheduleTask(Mage::simulateBeam, 885);
+		Utils.scheduleTask(Mage::simulateBeam, 717);
+		Utils.scheduleTask(Mage::simulateBeam, 750);
+		Utils.scheduleTask(Mage::simulateBeam, 782);
+		Utils.scheduleTask(Mage::simulateBeam, 823);
+		Utils.scheduleTask(Mage::simulateBeam, 853);
+		Utils.scheduleTask(Mage::simulateBeam, 886);
 		Utils.scheduleTask(Mage::simulateBeam, 915);
 		Utils.scheduleTask(() -> {
 			simulateBeam();
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 950 Ticks (47.50 seconds)");
-		}, 948);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 947 Ticks (47.35 seconds)");
+		}, 945);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 4.5f);
 			Actions.setFakePlayerHotbarSlot(mage, 1);
-		}, 949);
-		Utils.scheduleTask(() -> Actions.simulateEtherwarp(mage, new Location(world, -120.5, 69, -74.5)), 950);
+		}, 946);
+		Utils.scheduleTask(() -> Actions.simulateEtherwarp(mage, new Location(world, -120.5, 69, -74.5)), 947);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1030 Ticks (51.50 seconds)");
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1027 Ticks (51.35 seconds)");
 			if(doContinue) {
 				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
 				maxor(true);
 			}
-		}, 1028);
+		}, 1025);
 	}
 
 	public static void maxor(boolean doContinue) {
