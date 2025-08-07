@@ -30,9 +30,12 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("unused")
 public class Actions {
+	private static final Map<LivingEntity, Vec3> entityVelocities = new ConcurrentHashMap<>();
+
 	/**
 	 * Moves a LivingEntity in this Direction for t ticks. The Vector refers to the number of blocks per tick.
 	 * The Y component of the vector is ignored. Vertical motion is left to gravity or other methods.
@@ -46,7 +49,8 @@ public class Actions {
 		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
 
 		net.minecraft.world.entity.LivingEntity nmsEntity = cle.getHandle();
-		// convert Bukkit Vector to NMS Vec3
+
+		// This variable stores the requested motion from the caller.
 		Vec3 motion = new Vec3(perTick.getX(), 0, perTick.getZ());
 
 		new BukkitRunnable() {
@@ -54,19 +58,44 @@ public class Actions {
 
 			@Override
 			public void run() {
-				if(ticks++ >= durationTicks) {
+				if(ticks++ >= durationTicks || nmsEntity.isRemoved()) {
 					cancel();
 					return;
 				}
 
-				// Retain current Y motion (from gravity, jump, etc.)
-				Vec3 combined = new Vec3(motion.x(), 0, motion.z());
+				boolean onGround = nmsEntity.onGround();
 
-				// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
-				nmsEntity.move(MoverType.SELF, combined);
+				// This variable stores the motion that can be manipulated if the entity is not on the ground
+				Vec3 finalMotion = motion;
+
+				if(!onGround) {
+					// This is the current velocity of the entity. Empty entry = no velocity
+					Vec3 currentVelocity = entityVelocities.getOrDefault(entity, new Vec3(0, 0, 0));
+					double current = Math.sqrt(currentVelocity.x() * currentVelocity.x() + currentVelocity.z() * currentVelocity.z());
+					double requested = Math.sqrt(motion.x() * motion.x() + motion.z() * motion.z());
+
+					if(current > requested) {
+						// Apply air friction to current velocity
+						finalMotion = new Vec3(currentVelocity.x() * 0.91, 0, currentVelocity.z() * 0.91);
+						double newSpeed = Math.sqrt(finalMotion.x() * finalMotion.x() + finalMotion.z() * finalMotion.z());
+
+						// If we've decelerated below the requested speed, use the requested speed
+						if(newSpeed < requested) {
+							finalMotion = motion;
+						}
+					}
+				}
+
+				// Update tracked velocity
+				entityVelocities.put(entity, new Vec3(finalMotion.x(), 0, finalMotion.z()));
+
+				// Just move the entity with the calculated motion
+				nmsEntity.move(MoverType.SELF, finalMotion);
+				System.out.println(entity.getName() + " is now Moving!  On Ground?  " + onGround + " | " + finalMotion);
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
+
 
 	/**
 	 * Makes a Player entity perform a jump if it is currently on the ground.

@@ -516,17 +516,25 @@ public class Berserk {
 
 	public static void maxor(boolean doContinue) {
 		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11.31f, 0f), 1);
 		Utils.scheduleTask(() -> {
 			Actions.move(berserk, new Vector(-0.051, 0, 0.255), 16);
 			Actions.simulateSpringBoots(berserk);
 		}, 28);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 33f, 0f), 59);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 33f, 0f), 45);
 		Utils.scheduleTask(() -> {
-			Actions.move(berserk, new Vector(-0.1403, 0, 0.243), 2);
 			Maxor.pickUpCrystal(berserk);
-		}, 60);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 61);
-		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 15), 62);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "AsapIcey" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
+		}, 56);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.1403, 0, 0.243), 2), 57);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 58);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 16), 59);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 126f, 0f), 75);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.908, 0, -0.66), 2), 79);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.226, 0, -0.1646), 18), 81);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.RED + "1" + ChatColor.GREEN + "/2 Energy Crystals are now active!");
+		}, 160);
 	}
 
 	private static void simulateShoot() {
