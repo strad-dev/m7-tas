@@ -1,14 +1,12 @@
 package instructions.bosses;
 
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.world.entity.boss.wither.EntityWither;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftWither;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
@@ -37,15 +35,10 @@ public class CustomBossBar {
 		if(!(wither instanceof CraftWither)) return;
 
 		try {
-			EntityWither nmsWither = ((CraftWither) wither).getHandle();
+			WitherBoss nmsWither = ((CraftWither) wither).getHandle();
 
 			// Remove all players from vanilla bossbar
-			for(Player player : Bukkit.getOnlinePlayers()) {
-				if(player instanceof CraftPlayer craftPlayer) {
-					EntityPlayer nmsPlayer = craftPlayer.getHandle();
-					nmsWither.ch.b(nmsPlayer); // Remove player from vanilla bossbar
-				}
-			}
+			nmsWither.bossEvent.removeAllPlayers(); // Remove player from vanilla bossbar
 		} catch(Exception e) {
 			Bukkit.getLogger().warning("Failed to disable vanilla wither bossbar");
 		}

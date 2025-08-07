@@ -1,7 +1,8 @@
 package instructions;
 
-import net.minecraft.network.protocol.game.PacketPlayOutWorldParticles;
-import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
@@ -350,8 +351,8 @@ public class Mage {
 	}
 
 	private static void spawnParticle(Location l) {
-		PacketPlayOutWorldParticles packet = new PacketPlayOutWorldParticles(
-				net.minecraft.core.particles.Particles.D,  // ParticleParam
+		ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
+				ParticleTypes.FIREWORK,  // ParticleParam
 				false,                   // overrideLimiter
 				false,                   // longDistance
 				l.getX(),        // x position
@@ -366,8 +367,8 @@ public class Mage {
 
 		for (Player player : Objects.requireNonNull(l.getWorld()).getPlayers()) {
 			if (player instanceof CraftPlayer craftPlayer) {
-				EntityPlayer nmsPlayer = craftPlayer.getHandle();
-				nmsPlayer.f.b(packet);
+				ServerPlayer nmsPlayer = craftPlayer.getHandle();
+				nmsPlayer.connection.send(packet);
 			}
 		}
 	}

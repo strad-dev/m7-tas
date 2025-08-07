@@ -1,15 +1,14 @@
 package instructions;
 
 import jline.internal.Nullable;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
-import net.minecraft.network.protocol.game.PacketPlayOutHeldItemSlot;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.entity.EnumMoveType;
+import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
-import net.minecraft.world.entity.player.PlayerInventory;
-import net.minecraft.world.phys.Vec3D;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -49,9 +48,9 @@ public class Actions {
 		// only handle CraftLivingEntity/NMS and positive duration
 		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
 
-		EntityLiving nmsEntity = cle.getHandle();
-		// convert Bukkit Vector to NMS Vec3D
-		Vec3D motion = new Vec3D(perTick.getX(), 0, perTick.getZ());
+		net.minecraft.world.entity.LivingEntity nmsEntity = cle.getHandle();
+		// convert Bukkit Vector to NMS Vec3
+		Vec3 motion = new Vec3(perTick.getX(), 0, perTick.getZ());
 
 		new BukkitRunnable() {
 			int ticks = 0;
@@ -64,19 +63,19 @@ public class Actions {
 				}
 
 				// Retain current Y motion (from gravity, jump, etc.)
-				Vec3D currentMotion = nmsEntity.dy(); // Get current velocity
-				Vec3D combined = new Vec3D(motion.d, currentMotion.e, motion.f);
+				Vec3 currentMotion = nmsEntity.getDeltaMovement(); // Get current velocity
+				Vec3 combined = new Vec3(motion.x(), currentMotion.y(), motion.z());
 
 				// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
-				nmsEntity.a(EnumMoveType.a, combined);
+				nmsEntity.move(MoverType.SELF, combined);
 				// 2) Apply gravity, friction, fall damage checks, etc.
-				nmsEntity.h();
+				nmsEntity.tick();
 
 				// 3) Package up the new position + rotation
-				PositionMoveRotation pmr = PositionMoveRotation.a(nmsEntity);
+				PositionMoveRotation pmr = PositionMoveRotation.of(nmsEntity);
 
 				// 4) Create teleport packet with NO relative flags
-				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(nmsEntity.ar(), pmr, EnumSet.noneOf(Relative.class), nmsEntity.aJ());
+				ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(nmsEntity.getId(), pmr, EnumSet.noneOf(Relative.class), nmsEntity.onGround());
 
 				Utils.broadcastPacket(tp);
 			}
@@ -91,20 +90,20 @@ public class Actions {
 	public static void jump(Player p) {
 		if(!(p instanceof CraftPlayer cp)) return;
 
-		EntityPlayer npc = cp.getHandle();
+		ServerPlayer npc = cp.getHandle();
 
-		if(npc.aJ()) { // onGround check
-			Vec3D motion = npc.dy();
-			Vec3D newMotion = new Vec3D(motion.d, 0.42D, motion.f);
+		if(npc.onGround()) { // onGround check
+			Vec3 motion = npc.getDeltaMovement();
+			Vec3 newMotion = new Vec3(motion.x(), 0.42D, motion.z());
 
 			// Apply jump physics
-			npc.j(newMotion);
-			npc.a(EnumMoveType.a, newMotion);
-			npc.h();
+			npc.setDeltaMovement(newMotion);
+			npc.move(MoverType.SELF, newMotion);
+			npc.tick();
 
 			// Send packets using unified method
-			PositionMoveRotation pmr = PositionMoveRotation.a(npc);
-			PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+			PositionMoveRotation pmr = PositionMoveRotation.of(npc);
+			ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
 
 			Utils.broadcastPacket(tp);
 		}
@@ -119,14 +118,14 @@ public class Actions {
 	 */
 	public static void setFakePlayerHotbarSlot(Player p, int hotbarIndex) {
 		if(!(p instanceof CraftPlayer cp)) return;
-		EntityPlayer npc = cp.getHandle();
+		ServerPlayer npc = cp.getHandle();
 
 		// Update the NMS held-slot index
-		npc.gi().j = hotbarIndex;
+		npc.getInventory().setSelectedHotbarSlot(hotbarIndex);
 
 		// Tell that player's client "your held slot is now hotbarIndex"
-		PacketPlayOutHeldItemSlot heldPkt = new PacketPlayOutHeldItemSlot(hotbarIndex);
-		cp.getHandle().f.b(heldPkt);
+		ClientboundSetHeldSlotPacket heldPkt = new ClientboundSetHeldSlotPacket(hotbarIndex);
+		cp.getHandle().connection.send(heldPkt);
 
 		// Broadcast the new main-hand item to all viewers AND sync to spectators
 		Utils.syncFakePlayerHand(p); // This now handles both!
@@ -141,14 +140,14 @@ public class Actions {
 	 */
 	public static void swapFakePlayerInventorySlots(Player p, int slotA, int slotB) {
 		if(!(p instanceof CraftPlayer cp)) return;
-		EntityPlayer npc = cp.getHandle();
-		PlayerInventory inv = npc.gi();
+		ServerPlayer npc = cp.getHandle();
+		Inventory inv = npc.getInventory();
 
 		// Swap internally
-		net.minecraft.world.item.ItemStack a = inv.a(slotA);
-		net.minecraft.world.item.ItemStack b = inv.a(slotB);
-		inv.a(slotA, b);
-		inv.a(slotB, a);
+		net.minecraft.world.item.ItemStack a = inv.getItem(slotA);
+		net.minecraft.world.item.ItemStack b = inv.getItem(slotB);
+		inv.setItem(slotA, b);
+		inv.setItem(slotB, a);
 
 		// Re-send the entire inventory window to fake player AND spectators
 		Utils.syncInventoryToSpectators(p); // This updates spectators
@@ -515,19 +514,6 @@ public class Actions {
 	}
 
 	public static void simulateSpringBoots(Player p) {
-		/*
-		 * Note 1: C / Tick 0
-		 * Note 2: C / Tick 2
-		 * Note 3: Eb / Tick 4
-		 * Note 4: Eb / Tick 6
-		 * Note 5: Eb / Tick 8
-		 * Note 6: Eb / Tick 10
-		 * Note 7: Eb / Tick 12
-		 * Note 8: Eb / Tick 14
-		 * Note 9: E / Tick 16
-		 * Fly 20.5 blocks up - takes 16 ticks to reach ledge
-		 */
-		// tuned to A=441
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F), 2);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 4);
@@ -540,20 +526,20 @@ public class Actions {
 		Utils.scheduleTask(() -> {
 			if(!(p instanceof CraftPlayer cp)) return;
 
-			EntityPlayer npc = cp.getHandle();
+			ServerPlayer npc = cp.getHandle();
 
-			if(npc.aJ()) { // onGround check
-				Vec3D motion = npc.dy();
-				Vec3D newMotion = new Vec3D(motion.d, 2.045D, motion.f);
+			if(npc.onGround()) { // onGround check
+				Vec3 motion = npc.getDeltaMovement();
+				Vec3 newMotion = new Vec3(motion.x(), 2.045D, motion.z());
 
 				// Apply jump physics
-				npc.j(newMotion);
-				npc.a(EnumMoveType.a, newMotion);
-				npc.h();
+				npc.setDeltaMovement(newMotion);
+				npc.move(MoverType.SELF, newMotion);
+				npc.tick();
 
 				// Send packets using unified method
-				PositionMoveRotation pmr = PositionMoveRotation.a(npc);
-				PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+				PositionMoveRotation pmr = PositionMoveRotation.of(npc);
+				ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
 
 				Utils.broadcastPacket(tp);
 			}

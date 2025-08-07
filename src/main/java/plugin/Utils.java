@@ -2,14 +2,14 @@ package plugin;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityEquipment;
-import net.minecraft.network.protocol.game.PacketPlayOutEntityTeleport;
-import net.minecraft.network.protocol.game.PacketPlayOutWindowItems;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
-import net.minecraft.world.inventory.Container;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -34,18 +34,18 @@ public class Utils {
 
 	public static void teleport(Player p, Location to) {
 		if(!(p instanceof CraftPlayer cp)) return;
-		EntityPlayer npc = cp.getHandle();
+		ServerPlayer npc = cp.getHandle();
 
 		// Update NMS position
-		npc.a_(to.getX(), to.getY(), to.getZ());
-		npc.v(to.getYaw());
-		npc.w(to.getPitch());
-		npc.aZ = to.getYaw();
-		npc.aX = to.getYaw();
+		npc.setPos(to.getX(), to.getY(), to.getZ());
+		npc.setYRot(to.getYaw());
+		npc.setXRot(to.getPitch());
+		npc.yHeadRot = to.getYaw();
+		npc.yBodyRot = to.getYaw();
 
 		// Send packets
-		PositionMoveRotation pmr = PositionMoveRotation.a(npc);
-		PacketPlayOutEntityTeleport tp = PacketPlayOutEntityTeleport.a(npc.ar(), pmr, EnumSet.noneOf(Relative.class), npc.aJ());
+		PositionMoveRotation pmr = PositionMoveRotation.of(npc);
+		ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
 
 		broadcastPacket(tp);
 	}
@@ -71,16 +71,16 @@ public class Utils {
 	 */
 	public static void forceFullInventorySync(Player sourcePlayer, List<Player> targets) {
 		CraftPlayer cp = (CraftPlayer) sourcePlayer;
-		var handle = cp.getHandle();
-		Container menu = handle.cd; // the open window (0 = player inv)
+		ServerPlayer handle = cp.getHandle();
+		AbstractContainerMenu menu = handle.containerMenu; // the open window (0 = player inv)
 
 		// Build the packet with the current contents
-		PacketPlayOutWindowItems pkt = new PacketPlayOutWindowItems(menu.l, menu.j(), menu.c(), menu.g());
+		ClientboundContainerSetContentPacket pkt = new ClientboundContainerSetContentPacket(menu.containerId, menu.incrementStateId(), menu.getItems(), menu.getCarried());
 
 		// Send to specified targets
 		for (Player target : targets) {
 			if (target instanceof CraftPlayer craftTarget) {
-				craftTarget.getHandle().f.b(pkt);
+				craftTarget.getHandle().connection.send(pkt);
 			}
 		}
 	}
@@ -89,12 +89,12 @@ public class Utils {
 	 * Updates the held item in an NPC's hand for all viewers AND spectators
 	 */
 	public static void syncFakePlayerHand(Player fake) {
-		EntityPlayer npc = ((CraftPlayer) fake).getHandle();
+		ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 		// get whatever ItemStack is in their selected slot
-		net.minecraft.world.item.ItemStack handStack = npc.gi().a(npc.gi().j);
+		net.minecraft.world.item.ItemStack handStack = npc.getInventory().getSelected();
 
 		// build an equipment packet for MAIN_HAND
-		PacketPlayOutEntityEquipment equipPkt = new PacketPlayOutEntityEquipment(npc.ar(), Collections.singletonList(Pair.of(EnumItemSlot.a, handStack)));
+		ClientboundSetEquipmentPacket equipPkt = new ClientboundSetEquipmentPacket(npc.getId(), Collections.singletonList(Pair.of(EquipmentSlot.MAINHAND, handStack)));
 
 		// send it to every real viewer
 		broadcastPacket(equipPkt);
@@ -115,7 +115,7 @@ public class Utils {
 	 */
 	public static void broadcastPacket(Packet<?> pkt) {
 		for(Player p : Bukkit.getOnlinePlayers()) {
-			((CraftPlayer) p).getHandle().f.b(pkt);
+			((CraftPlayer) p).getHandle().connection.send(pkt);
 		}
 	}
 

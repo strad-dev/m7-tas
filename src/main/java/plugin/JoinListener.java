@@ -1,13 +1,12 @@
 package plugin;
 
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.a;
-import net.minecraft.network.protocol.game.PacketPlayOutSpawnEntity;
-import net.minecraft.server.level.ChunkProviderServer;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.server.level.EntityTrackerEntry;
-import net.minecraft.server.level.WorldServer;
-import net.minecraft.server.network.PlayerConnection;
+import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -30,33 +29,32 @@ public class JoinListener implements Listener {
 	@EventHandler
 	public void onJoin(PlayerJoinEvent ev) {
 		Utils.scheduleTask(() -> {
-			PlayerConnection conn = ((CraftPlayer) ev.getPlayer()).getHandle()     // EntityPlayer
-					.f;              // PlayerConnection
+			ServerGamePacketListenerImpl conn = ((CraftPlayer) ev.getPlayer()).getHandle().connection;              // PlayerConnection
 
 			// Re-send each fake NPC’s “add + spawn” packets just to this connection:
 			for(Player fake : M7tas.getFakePlayers()) {
 				// 1) NMS handles
-				EntityPlayer npc = ((CraftPlayer) fake).getHandle();
-				WorldServer world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
-				ChunkProviderServer provider = world.m();
+				ServerPlayer npc = ((CraftPlayer) fake).getHandle();
+				ServerLevel world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
+				ChunkMap chunkMap = world.getChunkSource().chunkMap;
 
-				// ensure the chunk-provider is tracking our NPC
-				provider.a.a(npc);
+				// ensure the chunk-chunkMap is tracking our NPC
+				chunkMap.move(npc);
 
 				// fetch the EntityTrackerEntry so we can spawn with all watchers
-				int id = npc.ar();
-				EntityTrackerEntry entry = provider.a.K.get(id).b;
+				int id = npc.getId();
+				ServerEntity entry = chunkMap.entityMap.get(id).serverEntity;
 
 				// 2) Build the “ADD_PLAYER” info packet
-				EnumSet<a> addAction = EnumSet.of(a.a);
+				EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
 				ClientboundPlayerInfoUpdatePacket addPkt = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(npc));
 
 				// 3) Build the spawn packet (uses the same entry you used at creation)
-				PacketPlayOutSpawnEntity spawnPkt = new PacketPlayOutSpawnEntity(npc, entry);
+				ClientboundAddEntityPacket spawnPkt = new ClientboundAddEntityPacket(npc, entry);
 
 				// 4) Send JUST to the joining player
-				conn.b(addPkt);
-				conn.b(spawnPkt);
+				conn.send(addPkt);
+				conn.send(spawnPkt);
 			}
 		}, 1);
 	}

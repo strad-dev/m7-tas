@@ -6,18 +6,17 @@ import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.protocol.EnumProtocolDirection;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.*;
-import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.a;
-import net.minecraft.network.syncher.DataWatcher;
-import net.minecraft.network.syncher.DataWatcherObject;
-import net.minecraft.network.syncher.DataWatcherRegistry;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
-import net.minecraft.server.network.PlayerConnection;
-import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import org.bukkit.*;
@@ -301,7 +300,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			}
 
 			CraftPlayer player = (CraftPlayer) p;
-			EntityPlayer nmsPlayer = player.getHandle();
+			ServerPlayer nmsPlayer = player.getHandle();
 
 			net.minecraft.world.item.ItemStack helmet = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getHelmet());
 			net.minecraft.world.item.ItemStack chestplate = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getChestplate());
@@ -309,16 +308,16 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			net.minecraft.world.item.ItemStack boots = CraftItemStack.asNMSCopy(Objects.requireNonNull(inventory).getBoots());
 			net.minecraft.world.item.ItemStack hand = CraftItemStack.asNMSCopy(inventory.getItemInMainHand());
 
-			nmsPlayer.setItemSlot(EnumItemSlot.f, helmet, false);
-			nmsPlayer.setItemSlot(EnumItemSlot.e, chestplate, false);
-			nmsPlayer.setItemSlot(EnumItemSlot.d, leggings, false);
-			nmsPlayer.setItemSlot(EnumItemSlot.c, boots, false);
-			nmsPlayer.setItemSlot(EnumItemSlot.a, hand, false);
+			nmsPlayer.setItemSlot(EquipmentSlot.HEAD, helmet, false);
+			nmsPlayer.setItemSlot(EquipmentSlot.CHEST, chestplate, false);
+			nmsPlayer.setItemSlot(EquipmentSlot.LEGS, leggings, false);
+			nmsPlayer.setItemSlot(EquipmentSlot.FEET, boots, false);
+			nmsPlayer.setItemSlot(EquipmentSlot.MAINHAND, hand, false);
 
-			List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> gear = List.of(Pair.of(EnumItemSlot.f, helmet), Pair.of(EnumItemSlot.e, chestplate), Pair.of(EnumItemSlot.d, leggings), Pair.of(EnumItemSlot.c, boots), Pair.of(EnumItemSlot.a, hand));
+			List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> gear = List.of(Pair.of(EquipmentSlot.HEAD, helmet), Pair.of(EquipmentSlot.CHEST, chestplate), Pair.of(EquipmentSlot.LEGS, leggings), Pair.of(EquipmentSlot.FEET, boots), Pair.of(EquipmentSlot.MAINHAND, hand));
 
-			PacketPlayOutEntityEquipment equipmentPacket = new PacketPlayOutEntityEquipment(nmsPlayer.ar(), gear);
-
+			ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(nmsPlayer.getId(), gear);
+			
 			Utils.broadcastPacket(equipmentPacket);
 
 			Utils.syncInventoryToSpectators(p);
@@ -509,7 +508,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	public static GameProfile buildFakeProfileWithSkin(UUID fakeUuid, String fakeName, UUID skinOwnerUuid) {
 		// 1) Create a GameProfile only for fetching textures
 		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
-		ProfileResult result = nms.aq().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
+		ProfileResult result = nms.getSessionService().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
 
 		if(result == null) {
 			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
@@ -525,7 +524,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	/**
-	 * Spawns a “real” EntityPlayer into the world (no Citizens, no persistence).
+	 * Spawns a “real” ServerPlayer into the world (no Citizens, no persistence).
 	 *
 	 * @param world          the World
 	 * @param fakePlayerName the fake player’s username
@@ -534,56 +533,55 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	public Player spawnFakePlayer(World world, String fakePlayerName, UUID skinOwner) {
 		// 1) NMS server & world handles
 		MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
-		WorldServer nmsWorld = ((CraftWorld) world).getHandle();
+		ServerLevel nmsWorld = ((CraftWorld) world).getHandle();
 
 		// 2) Build a GameProfile with skin properties
 		GameProfile profile = buildFakeProfileWithSkin(UUID.randomUUID(), fakePlayerName, skinOwner);
 
-		// 3) Create EntityPlayer with a dummy InteractManager
-		ClientInformation clientInfo = ClientInformation.a();
-		EntityPlayer nmsPlayer = new EntityPlayer(nmsServer, nmsWorld, profile, clientInfo);
+		// 3) Create ServerPlayer with a dummy InteractManager
+		ClientInformation clientInfo = ClientInformation.createDefault();
+		ServerPlayer nmsPlayer = new ServerPlayer(nmsServer, nmsWorld, profile, clientInfo);
 
 		// 4) Fake-network channel & connection
-		NetworkManager nm = new NetworkManager(EnumProtocolDirection.b);
-		CommonListenerCookie cookie = CommonListenerCookie.a(profile, false);
-		// EntityPlayer = ServerPlayer
-		// EntityPlayer.f -> EntityPlayer.PlayerConnection
-		nmsPlayer.f = new PlayerConnection(nmsServer, nm, nmsPlayer, cookie);
+		Connection nm = new Connection(PacketFlow.CLIENTBOUND);
+		CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
+		// ServerPlayer = ServerPlayer
+		// ServerPlayer.f -> ServerPlayer.PlayerConnection
+		nmsPlayer.connection = new ServerGamePacketListenerImpl(nmsServer, nm, nmsPlayer, cookie);
 
 		// 5) Position & add to world
 		// Entity.a_(double, double, double) -> Entity.setPos(...)
 		switch(fakePlayerName) {
-			case "Archer" -> nmsPlayer.a_(-120.5, 69, -202.5);
-			case "Berserk" -> nmsPlayer.a_(-21.5, 70, -197.5);
-			case "Healer" -> nmsPlayer.a_(-28.5, 69, -44.5);
-			case "Mage" -> nmsPlayer.a_(-132.5, 69, -76.5);
-			case "Tank" -> nmsPlayer.a_(-196.5, 68, -222.5);
+			case "Archer" -> nmsPlayer.setPos(-120.5, 69, -202.5);
+			case "Berserk" -> nmsPlayer.setPos(-21.5, 70, -197.5);
+			case "Healer" -> nmsPlayer.setPos(-28.5, 69, -44.5);
+			case "Mage" -> nmsPlayer.setPos(-132.5, 69, -76.5);
+			case "Tank" -> nmsPlayer.setPos(-196.5, 68, -222.5);
 		}
 		nmsWorld.addFreshEntity(nmsPlayer, CreatureSpawnEvent.SpawnReason.CUSTOM);
-		nmsPlayer.f(false);
+		nmsPlayer.setNoGravity(false);
 
 		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
 		// MinecraftServer.ag() -> MinecraftServer.getPlayerList()
-		nmsServer.ag().a(nmsPlayer);
+		nmsServer.getPlayerList().load(nmsPlayer);
 
 		// 7) Send packets to Players about the new Entity
-		ChunkProviderServer provider = nmsWorld.m();
-		provider.a.a(nmsPlayer);
+		ChunkMap provider = nmsWorld.getChunkSource().chunkMap;
+		provider.move(nmsPlayer);
 
-		int id = nmsPlayer.ar(); // in your mappings this is nmsEntity.ar()
-		PlayerChunkMap.EntityTracker wrapper = provider.a.K.get(id);
+		int id = nmsPlayer.getId();
+		ChunkMap.TrackedEntity trackedEntity = provider.entityMap.get(id);
+		ServerEntity entry = trackedEntity.serverEntity;
 
-		EntityTrackerEntry entry = wrapper.b;
-
-		EnumSet<a> addAction = EnumSet.of(a.a);
+		EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
 		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
-		PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsPlayer, entry);
+		ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsPlayer, entry);
 
-		DataWatcher synchedEntityData = nmsPlayer.au();
-		DataWatcherObject<Byte> accessor = new DataWatcherObject<>(17, DataWatcherRegistry.a);
-		synchedEntityData.a(accessor, (byte) 127);
+		SynchedEntityData synchedEntityData = nmsPlayer.getEntityData();
+		EntityDataAccessor<Byte> accessor = new EntityDataAccessor<>(17, EntityDataSerializers.BYTE);
+		synchedEntityData.set(accessor, (byte) 127);
 
-		PacketPlayOutEntityMetadata entityMetadataPacket = new PacketPlayOutEntityMetadata(nmsPlayer.ar(), synchedEntityData.c());
+		ClientboundSetEntityDataPacket entityMetadataPacket = new ClientboundSetEntityDataPacket(nmsPlayer.getId(), synchedEntityData.getNonDefaultValues());
 
 		Utils.broadcastPacket(add);
 		Utils.broadcastPacket(spawn);
@@ -640,31 +638,31 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 	private void hideFakePlayerFromSpectator(Player spectator, Player fakePlayer) {
 		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
-			EntityPlayer nmsSpectator = craftSpectator.getHandle();
-			EntityPlayer nmsFake = craftFake.getHandle();
+			ServerPlayer nmsSpectator = craftSpectator.getHandle();
+			ServerPlayer nmsFake = craftFake.getHandle();
 
 			// Send destroy packet to hide the fake player from this spectator
-			PacketPlayOutEntityDestroy destroyPacket = new PacketPlayOutEntityDestroy(nmsFake.ar());
-			nmsSpectator.f.b(destroyPacket);
+			ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
+			nmsSpectator.connection.send(destroyPacket);
 		}
 	}
 
 	private void showFakePlayerToSpectator(Player spectator, Player fakePlayer) {
 		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
-			EntityPlayer nmsSpectator = craftSpectator.getHandle();
-			EntityPlayer nmsFake = craftFake.getHandle();
+			ServerPlayer nmsSpectator = craftSpectator.getHandle();
+			ServerPlayer nmsFake = craftFake.getHandle();
 
 			// Re-send spawn packet to show the fake player again
-			PlayerChunkMap.EntityTracker wrapper = ((CraftWorld) fakePlayer.getWorld()).getHandle().m().a.K.get(nmsFake.ar());
-			if(wrapper != null) {
-				EntityTrackerEntry entry = wrapper.b;
-				PacketPlayOutSpawnEntity spawn = new PacketPlayOutSpawnEntity(nmsFake, entry);
-				nmsSpectator.f.b(spawn);
+			ChunkMap.TrackedEntity trackedEntity = ((CraftWorld) fakePlayer.getWorld()).getHandle().getChunkSource().chunkMap.entityMap.get(nmsFake.getId());
+			if(trackedEntity != null) {
+				ServerEntity entry = trackedEntity.serverEntity;
+				ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
+				nmsSpectator.connection.send(spawn);
 
 				// Also send metadata and equipment
-				DataWatcher synchedEntityData = nmsFake.au();
-				PacketPlayOutEntityMetadata metadataPacket = new PacketPlayOutEntityMetadata(nmsFake.ar(), synchedEntityData.c());
-				nmsSpectator.f.b(metadataPacket);
+				SynchedEntityData synchedEntityData = nmsFake.getEntityData();
+				ClientboundSetEntityDataPacket metadataPacket = new ClientboundSetEntityDataPacket(nmsFake.getId(), synchedEntityData.getNonDefaultValues());
+				nmsSpectator.connection.send(metadataPacket);
 			}
 
 			PlayerInventory inventory = fakePlayer.getInventory();
@@ -677,17 +675,17 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			net.minecraft.world.item.ItemStack offHand = CraftItemStack.asNMSCopy(inventory.getItemInOffHand());
 
 			// Create equipment list
-			List<Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>> equipment = List.of(Pair.of(EnumItemSlot.f, helmet),      // HEAD
-					Pair.of(EnumItemSlot.e, chestplate),  // CHEST
-					Pair.of(EnumItemSlot.d, leggings),    // LEGS
-					Pair.of(EnumItemSlot.c, boots),       // FEET
-					Pair.of(EnumItemSlot.a, mainHand),    // MAINHAND
-					Pair.of(EnumItemSlot.b, offHand)      // OFFHAND
+			List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipment = List.of(Pair.of(EquipmentSlot.HEAD, helmet),      // HEAD
+					Pair.of(EquipmentSlot.CHEST, chestplate),  // CHEST
+					Pair.of(EquipmentSlot.LEGS, leggings),    // LEGS
+					Pair.of(EquipmentSlot.FEET, boots),       // FEET
+					Pair.of(EquipmentSlot.MAINHAND, mainHand),    // MAINHAND
+					Pair.of(EquipmentSlot.OFFHAND, offHand)      // OFFHAND
 			);
 
 			// Send equipment packet to the specific spectator
-			PacketPlayOutEntityEquipment equipmentPacket = new PacketPlayOutEntityEquipment(nmsFake.ar(), equipment);
-			nmsSpectator.f.b(equipmentPacket);
+			ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(nmsFake.getId(), equipment);
+			nmsSpectator.connection.send(equipmentPacket);
 		}
 	}
 
@@ -724,9 +722,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			public void run() {
 				for(Player fake : fakePlayers.values()) {
 					if(!(fake instanceof CraftPlayer)) continue;
-					EntityPlayer npc = ((CraftPlayer) fake).getHandle();
-					npc.f(false);
-					npc.d_();
+					ServerPlayer npc = ((CraftPlayer) fake).getHandle();
+					npc.setNoGravity(false);
+					npc.aiStep();
 				}
 			}
 		}.runTaskTimer(this, 0, 1);
@@ -746,18 +744,18 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 
 					// Get the fake player's current position and update spectators
 					if (fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
-						EntityPlayer nmsFake = craftFake.getHandle();
-						EntityPlayer nmsSpectator = craftSpectator.getHandle();
-						PositionMoveRotation pmr = PositionMoveRotation.a(nmsFake);
+						ServerPlayer nmsFake = craftFake.getHandle();
+						ServerPlayer nmsSpectator = craftSpectator.getHandle();
+						PositionMoveRotation pmr = PositionMoveRotation.of(nmsFake);
 						System.out.println(pmr);
 
 						// Use the existing updateSpectators method which already handles this correctly
-						PacketPlayOutPosition snapCam = new PacketPlayOutPosition(0, pmr, EnumSet.noneOf(Relative.class));
-						nmsSpectator.f.b(snapCam);
+						ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(0, pmr, EnumSet.noneOf(Relative.class));
+						nmsSpectator.connection.send(snapCam);
 
 						// Send destroy packet every tick to keep fake player hidden
-						PacketPlayOutEntityDestroy destroyPacket = new PacketPlayOutEntityDestroy(nmsFake.ar());
-						nmsSpectator.f.b(destroyPacket);
+						ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
+						nmsSpectator.connection.send(destroyPacket);
 					}
 				}
 			}
