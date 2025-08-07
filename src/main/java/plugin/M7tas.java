@@ -13,7 +13,10 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.*;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerEntity;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -317,7 +320,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> gear = List.of(Pair.of(EquipmentSlot.HEAD, helmet), Pair.of(EquipmentSlot.CHEST, chestplate), Pair.of(EquipmentSlot.LEGS, leggings), Pair.of(EquipmentSlot.FEET, boots), Pair.of(EquipmentSlot.MAINHAND, hand));
 
 			ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(nmsPlayer.getId(), gear);
-			
+
 			Utils.broadcastPacket(equipmentPacket);
 
 			Utils.syncInventoryToSpectators(p);
@@ -566,12 +569,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		nmsServer.getPlayerList().load(nmsPlayer);
 
 		// 7) Send packets to Players about the new Entity
-		ChunkMap provider = nmsWorld.getChunkSource().chunkMap;
-		provider.move(nmsPlayer);
-
-		int id = nmsPlayer.getId();
-		ChunkMap.TrackedEntity trackedEntity = provider.entityMap.get(id);
-		ServerEntity entry = trackedEntity.serverEntity;
+		ServerEntity entry = new ServerEntity(nmsWorld, nmsPlayer, 0, false, packet -> {
+		}, new HashSet<>());
 
 		EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
 		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
@@ -653,17 +652,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			ServerPlayer nmsFake = craftFake.getHandle();
 
 			// Re-send spawn packet to show the fake player again
-			ChunkMap.TrackedEntity trackedEntity = ((CraftWorld) fakePlayer.getWorld()).getHandle().getChunkSource().chunkMap.entityMap.get(nmsFake.getId());
-			if(trackedEntity != null) {
-				ServerEntity entry = trackedEntity.serverEntity;
-				ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
-				nmsSpectator.connection.send(spawn);
+			ServerEntity entry = new ServerEntity(nmsFake.serverLevel(), nmsFake, 0, false, packet -> {}, new HashSet<>());
+			ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
+			nmsSpectator.connection.send(spawn);
 
-				// Also send metadata and equipment
-				SynchedEntityData synchedEntityData = nmsFake.getEntityData();
-				ClientboundSetEntityDataPacket metadataPacket = new ClientboundSetEntityDataPacket(nmsFake.getId(), synchedEntityData.getNonDefaultValues());
-				nmsSpectator.connection.send(metadataPacket);
-			}
+			// Also send metadata and equipment
+			SynchedEntityData synchedEntityData = nmsFake.getEntityData();
+			ClientboundSetEntityDataPacket metadataPacket = new ClientboundSetEntityDataPacket(nmsFake.getId(), synchedEntityData.getNonDefaultValues());
+			nmsSpectator.connection.send(metadataPacket);
 
 			PlayerInventory inventory = fakePlayer.getInventory();
 
@@ -739,15 +735,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			@Override
 			public void run() {
 				// Iterate through all spectator relationships
-				for (Player spectator : spectatorMap.keySet()) {
+				for(Player spectator : spectatorMap.keySet()) {
 					Player fakePlayer = spectatorMap.get(spectator);
 
 					// Get the fake player's current position and update spectators
-					if (fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
+					if(fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
 						ServerPlayer nmsFake = craftFake.getHandle();
 						ServerPlayer nmsSpectator = craftSpectator.getHandle();
 						PositionMoveRotation pmr = PositionMoveRotation.of(nmsFake);
-						System.out.println(pmr);
 
 						// Use the existing updateSpectators method which already handles this correctly
 						ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(0, pmr, EnumSet.noneOf(Relative.class));
@@ -766,7 +761,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	private void stopSpectatorSync() {
-		if (spectatorSyncTask != null) {
+		if(spectatorSyncTask != null) {
 			spectatorSyncTask.cancel();
 			spectatorSyncTask = null;
 		}

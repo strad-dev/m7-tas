@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.CustomBossBar;
 import instructions.bosses.Maxor;
 import instructions.bosses.Watcher;
 import org.bukkit.*;
@@ -63,6 +64,8 @@ public class Server {
 		spawn1x1Mobs(world);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 coal_block");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 red_terracotta");
+		CustomBossBar.forceCleanup();
+		Watcher.forceCleanup();
 	}
 
 

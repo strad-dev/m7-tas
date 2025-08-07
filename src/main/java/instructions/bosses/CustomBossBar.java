@@ -13,6 +13,7 @@ import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
+import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
 public class CustomBossBar {
@@ -35,10 +36,11 @@ public class CustomBossBar {
 		if(!(wither instanceof CraftWither)) return;
 
 		try {
-			WitherBoss nmsWither = ((CraftWither) wither).getHandle();
-
-			// Remove all players from vanilla bossbar
-			nmsWither.bossEvent.removeAllPlayers(); // Remove player from vanilla bossbar
+			Utils.scheduleTask(() -> {
+				WitherBoss nmsWither = ((CraftWither) wither).getHandle();
+				// Remove all players from vanilla bossbar
+				nmsWither.bossEvent.removeAllPlayers(); // Remove player from vanilla bossbar
+			}, 1);
 		} catch(Exception e) {
 			Bukkit.getLogger().warning("Failed to disable vanilla wither bossbar");
 		}
@@ -117,5 +119,15 @@ public class CustomBossBar {
 			bossBarUpdateTask = null;
 		}
 		activeWither = null;
+	}
+
+	public static void forceCleanup() {
+		// Remove the wither from the world first
+		if(activeWither != null && !activeWither.isDead()) {
+			activeWither.remove();
+		}
+
+		// Then clean up the boss bar
+		cleanupActiveBossBar();
 	}
 }

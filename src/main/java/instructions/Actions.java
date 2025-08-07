@@ -2,11 +2,8 @@ package instructions;
 
 import jline.internal.Nullable;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
-import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
@@ -63,21 +60,10 @@ public class Actions {
 				}
 
 				// Retain current Y motion (from gravity, jump, etc.)
-				Vec3 currentMotion = nmsEntity.getDeltaMovement(); // Get current velocity
-				Vec3 combined = new Vec3(motion.x(), currentMotion.y(), motion.z());
+				Vec3 combined = new Vec3(motion.x(), 0, motion.z());
 
 				// 1) Apply vanilla movement & collision (handles stairs/slabs, walls, etc.)
 				nmsEntity.move(MoverType.SELF, combined);
-				// 2) Apply gravity, friction, fall damage checks, etc.
-				nmsEntity.tick();
-
-				// 3) Package up the new position + rotation
-				PositionMoveRotation pmr = PositionMoveRotation.of(nmsEntity);
-
-				// 4) Create teleport packet with NO relative flags
-				ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(nmsEntity.getId(), pmr, EnumSet.noneOf(Relative.class), nmsEntity.onGround());
-
-				Utils.broadcastPacket(tp);
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
@@ -94,18 +80,7 @@ public class Actions {
 
 		if(npc.onGround()) { // onGround check
 			Vec3 motion = npc.getDeltaMovement();
-			Vec3 newMotion = new Vec3(motion.x(), 0.42D, motion.z());
-
-			// Apply jump physics
-			npc.setDeltaMovement(newMotion);
-			npc.move(MoverType.SELF, newMotion);
-			npc.tick();
-
-			// Send packets using unified method
-			PositionMoveRotation pmr = PositionMoveRotation.of(npc);
-			ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
-
-			Utils.broadcastPacket(tp);
+			npc.setDeltaMovement(new Vec3(motion.x(), 0.42D, motion.z()));
 		}
 	}
 
@@ -530,18 +505,7 @@ public class Actions {
 
 			if(npc.onGround()) { // onGround check
 				Vec3 motion = npc.getDeltaMovement();
-				Vec3 newMotion = new Vec3(motion.x(), 2.045D, motion.z());
-
-				// Apply jump physics
-				npc.setDeltaMovement(newMotion);
-				npc.move(MoverType.SELF, newMotion);
-				npc.tick();
-
-				// Send packets using unified method
-				PositionMoveRotation pmr = PositionMoveRotation.of(npc);
-				ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
-
-				Utils.broadcastPacket(tp);
+				npc.setDeltaMovement(new Vec3(motion.x(), 2.045D, motion.z()));
 			}
 		}, 17);
 	}

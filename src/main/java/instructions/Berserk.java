@@ -508,7 +508,7 @@ public class Berserk {
 		}, 218);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
-				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5));
+				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5, 11.3f, 0f));
 				maxor(true);
 			}, 1025);
 		}

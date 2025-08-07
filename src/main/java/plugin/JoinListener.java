@@ -2,7 +2,6 @@ package plugin;
 
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +14,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,14 +36,8 @@ public class JoinListener implements Listener {
 				// 1) NMS handles
 				ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 				ServerLevel world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
-				ChunkMap chunkMap = world.getChunkSource().chunkMap;
 
-				// ensure the chunk-chunkMap is tracking our NPC
-				chunkMap.move(npc);
-
-				// fetch the EntityTrackerEntry so we can spawn with all watchers
-				int id = npc.getId();
-				ServerEntity entry = chunkMap.entityMap.get(id).serverEntity;
+				ServerEntity entry = new ServerEntity(world, npc, 0, false, packet -> {}, new HashSet<>());
 
 				// 2) Build the “ADD_PLAYER” info packet
 				EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
