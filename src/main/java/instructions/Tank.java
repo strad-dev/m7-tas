@@ -36,6 +36,11 @@ public class Tank {
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 		} else if(section.equals("maxor")) {
 			Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
+			Actions.swapFakePlayerInventorySlots(tank, 1, 28);
+			Actions.swapFakePlayerInventorySlots(tank, 3, 30);
+			Actions.swapFakePlayerInventorySlots(tank, 4, 31);
+			Actions.swapFakePlayerInventorySlots(tank, 5, 32);
+			Actions.swapFakePlayerInventorySlots(tank, 6, 33);
 			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
@@ -404,6 +409,13 @@ public class Tank {
 			world.playSound(tank.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 214 Ticks (10.70 seconds)");
 		}, 212);
+		Utils.scheduleTask(() -> {
+			Actions.swapFakePlayerInventorySlots(tank, 1, 28);
+			Actions.swapFakePlayerInventorySlots(tank, 3, 30);
+			Actions.swapFakePlayerInventorySlots(tank, 4, 31);
+			Actions.swapFakePlayerInventorySlots(tank, 5, 32);
+			Actions.swapFakePlayerInventorySlots(tank, 6, 33);
+		}, 213);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
 				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
@@ -413,7 +425,48 @@ public class Tank {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.12242), 48), 1);
+		Actions.setFakePlayerHotbarSlot(tank, 4);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.12242), 57), 1);
+		Utils.scheduleTask(() -> Actions.jump(tank), 48);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -180f, -5f);
+		}, 58);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 59);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 71);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 83);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 95);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 107);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 119);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 131);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 143);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 155);
+		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 167);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 6), 168);
+		Utils.scheduleTask(() -> Actions.simulateLB(tank, 29), 169);
+		Utils.scheduleTask(() -> Actions.simulateLB(tank, 4), 198);
+		Utils.scheduleTask(() -> Actions.simulateLB(tank, 4), 202);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 203);
+		Utils.scheduleTask(() -> Actions.simulateIceSpray(tank), 204);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 5), 205);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 206);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 218);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 230);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 242);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 254);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 266);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 278);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 290);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 302);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 314);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 326);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 338);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 350);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 362);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 374);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 386);
+		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 398);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 399);
+		Utils.scheduleTask(() -> Actions.simulateIceSpray(tank), 400);
 	}
 
 	@SuppressWarnings("unused")

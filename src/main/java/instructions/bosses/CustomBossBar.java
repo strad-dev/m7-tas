@@ -3,12 +3,16 @@ package instructions.bosses;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftWither;
+import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -129,5 +133,54 @@ public class CustomBossBar {
 
 		// Then clean up the boss bar
 		cleanupActiveBossBar();
+	}
+
+	public static BossBar getActiveBossBar() {
+		return activeWitherBossBar;
+	}
+
+	public static Wither getActiveWither() {
+		return activeWither;
+	}
+
+	public static TextDisplay spawnAnimatedStunnedIndicator(Wither wither) {
+		Location loc = wither.getLocation().add(0, wither.getHeight() + 0.5, 0);
+		TextDisplay indicator = wither.getWorld().spawn(loc, TextDisplay.class);
+
+		indicator.setBillboard(Display.Billboard.CENTER);
+		indicator.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+		indicator.setSeeThrough(true);
+		indicator.setShadowed(true);
+
+		// Color rotation animation
+		new BukkitRunnable() {
+			int colorOffset = 0;
+
+			@Override
+			public void run() {
+				if (!wither.isValid() || !indicator.isValid()) {
+					indicator.remove();
+					cancel();
+					return;
+				}
+
+				// Update colors
+				ChatColor[] colors = {ChatColor.RED, ChatColor.YELLOW, ChatColor.BLUE};
+
+				// Build the text with rotating colors
+				StringBuilder text = new StringBuilder();
+				for (int i = 0; i < 3; i++) {
+					int colorIndex = (i + colorOffset) % 3;
+					text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
+				}
+
+				indicator.setText(text.toString().trim());
+
+				// Shift colors for next update
+				colorOffset = (colorOffset + 1) % 3;
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 5L); // Run every 5 ticks instead of every tick
+
+		return indicator;
 	}
 }

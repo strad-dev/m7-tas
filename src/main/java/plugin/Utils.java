@@ -12,7 +12,9 @@ import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.scheduler.BukkitTask;
@@ -133,7 +135,9 @@ public class Utils {
 		assert meta != null;
 		meta.setColor(color);
 		meta.setDisplayName(name);
+		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
+		item.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
 		return item;
 	}
 

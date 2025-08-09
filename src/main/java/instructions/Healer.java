@@ -35,6 +35,10 @@ public class Healer {
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 		} else if(section.equals("maxor")) {
 			Actions.teleport(healer, new Location(world, 73.5, 221, 13.5));
+			Actions.swapFakePlayerInventorySlots(healer, 1, 28);
+			Actions.swapFakePlayerInventorySlots(healer, 3, 30);
+			Actions.swapFakePlayerInventorySlots(healer, 6, 33);
+			Actions.swapFakePlayerInventorySlots(healer, 7, 34);
 			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
@@ -142,7 +146,6 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Pirate 2/6 (Obtained Wither Essence)");
 			world.playSound(healer.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		}, 39);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 6, 34), 41);
 		Utils.scheduleTask(() -> Actions.simulateAOTV(healer, new Location(world, -25.539, 60, -79.631)), 42);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90.9f, 6f);
@@ -495,6 +498,12 @@ public class Healer {
 			world.playSound(healer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 202 Ticks (10.10 seconds)");
 		}, 200);
+		Utils.scheduleTask(() -> {
+			Actions.swapFakePlayerInventorySlots(healer, 1, 28);
+			Actions.swapFakePlayerInventorySlots(healer, 3, 30);
+			Actions.swapFakePlayerInventorySlots(healer, 6, 33);
+			Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+		}, 201);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
 				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5));
@@ -504,6 +513,7 @@ public class Healer {
 	}
 
 	public static void maxor(boolean doContinue) {
+		Actions.setFakePlayerHotbarSlot(healer, 5);
 	}
 
 	@SuppressWarnings("unused")

@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Maxor;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,6 +44,12 @@ public class Mage {
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 		} else if(section.equals("maxor")) {
 			Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
+			Actions.swapFakePlayerInventorySlots(mage, 9, 39);
+			Actions.swapFakePlayerInventorySlots(mage, 10, 36);
+			Actions.swapFakePlayerInventorySlots(mage, 1, 28);
+			Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+			Actions.swapFakePlayerInventorySlots(mage, 4, 31);
+			Actions.swapFakePlayerInventorySlots(mage, 5, 32);
 			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
@@ -256,6 +263,13 @@ public class Mage {
 		}, 946);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(mage, new Location(world, -120.5, 69, -74.5)), 947);
 		Utils.scheduleTask(() -> {
+			Actions.swapFakePlayerInventorySlots(mage, 9, 39);
+			Actions.swapFakePlayerInventorySlots(mage, 10, 36);
+			Actions.swapFakePlayerInventorySlots(mage, 1, 28);
+			Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+			Actions.swapFakePlayerInventorySlots(mage, 4, 31);
+		}, 948);
+		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1027 Ticks (51.35 seconds)");
 			if(doContinue) {
 				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
@@ -265,6 +279,49 @@ public class Mage {
 	}
 
 	public static void maxor(boolean doContinue) {
+		Actions.setFakePlayerHotbarSlot(mage, 5);
+		Actions.move(mage, new Vector(0.22, 0, 1.1), 28);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -11.31f, 0f), 1);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, new Vector(0.051, 0, 0.255), 16);
+			Actions.simulateSpringBoots(mage);
+		}, 28);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -33f, 0f), 45);
+		Utils.scheduleTask(() -> {
+			Maxor.pickUpCrystal(mage);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
+		}, 56);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1403, 0, 0.243), 2), 57);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 58);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2806, 0, 0), 16), 59);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -131.2925f, 0f), 75);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 79);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2108, 0, -0.1852), 19), 81);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 100);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1954, 0, -0.1716), 1), 101);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 48.7075f, 0f), 102);
+		Utils.scheduleTask(() -> {
+			Maxor.placeCrystal(mage);
+			Actions.move(mage, new Vector(-0.1954, 0, 0.1716), 16);
+			Actions.simulateSpringBoots(mage);
+		}, 160);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2108, 0, 0.1852), 27), 177);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0488, 0, 0.0429), 1), 206);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 10, 36), 207);
+		Utils.scheduleTask(() -> {
+			Maxor.pickUpCrystal(mage);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
+		}, 239);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -131.2925f, 0f), 240);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 241);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2108, 0, -0.1852), 19), 242);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 261);
+		Utils.scheduleTask(() -> Maxor.placeCrystal(mage), 262);
+		Utils.scheduleTask(() -> Actions.simulateRagAxe(mage), 263);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 324);
+		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Archer.getArcher()), 325);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 326);
+		Utils.scheduleTask(Mage::simulateBeam, 399);
 	}
 
 	private static void snapHead(String target) {
@@ -322,7 +379,7 @@ public class Mage {
 			for(Entity entity : entities) {
 				//noinspection DataFlowIssue
 				if(entity instanceof LivingEntity temp && !temp.equals(mage) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 105 : 90) : (temp instanceof Wither ? 70 : 60);
+					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 120 : 100) : (temp instanceof Wither ? 85 : 70);
 					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(mage, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
 					if(temp.getHurtSound() != null) {
 						world.playSound(l, temp.getHurtSound(), 1.0F, 1.0F);
@@ -351,8 +408,7 @@ public class Mage {
 	}
 
 	private static void spawnParticle(Location l) {
-		ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(
-				ParticleTypes.FIREWORK,  // ParticleParam
+		ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.FIREWORK,  // ParticleParam
 				false,                   // overrideLimiter
 				false,                   // longDistance
 				l.getX(),        // x position
@@ -365,8 +421,8 @@ public class Mage {
 				1                       // count (single particle)
 		);
 
-		for (Player player : Objects.requireNonNull(l.getWorld()).getPlayers()) {
-			if (player instanceof CraftPlayer craftPlayer) {
+		for(Player player : Objects.requireNonNull(l.getWorld()).getPlayers()) {
+			if(player instanceof CraftPlayer craftPlayer) {
 				ServerPlayer nmsPlayer = craftPlayer.getHandle();
 				nmsPlayer.connection.send(packet);
 			}

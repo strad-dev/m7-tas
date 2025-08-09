@@ -22,7 +22,7 @@ public class Archer {
 	public static void archerInstructions(Player p, String section) {
 		archer = p;
 		world = archer.getWorld();
-		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 26);
+		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 24);
 
 		if(section.equals("all") || section.equals("clear")) {
 			Actions.teleport(archer, new Location(world, -118.5, 70, -202.5, 0f, 0f));
@@ -31,6 +31,8 @@ public class Archer {
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 		} else if(section.equals("maxor")) {
 			Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
+			Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+			Actions.swapFakePlayerInventorySlots(archer, 7, 35);
 			Utils.scheduleTask(() -> maxor(false), 60);
 		}
 	}
@@ -220,7 +222,7 @@ public class Archer {
 			Actions.turnHead(archer, 32f, 0f);
 			Actions.setFakePlayerHotbarSlot(archer, 4);
 		}, 90);
-		Utils.scheduleTask(() -> Actions.simulateRightClickAir(archer), 91);
+		Utils.scheduleTask(Archer::simulateShoot, 91);
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 92);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 2.7f, 4.7f);
@@ -525,6 +527,11 @@ public class Archer {
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 5/5");
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear finished in 204 ticks (10.20 seconds)");
 		}, 201);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 45f, 11.4f), 202);
+		Utils.scheduleTask(() -> {
+			Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+			Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+		}, 203);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
 				maxor(true);
@@ -534,6 +541,33 @@ public class Archer {
 	}
 
 	public static void maxor(boolean doContinue) {
+		Actions.setFakePlayerHotbarSlot(archer, 6);
+		Actions.move(archer, new Vector(-0.0611, 0, 1.1208), 49);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 3.1f, 0f), 1);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.01416, 0, 0.2596), 1), 2);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 51);
+		Utils.scheduleTask(() -> {
+			Actions.jump(archer);
+			Actions.move(archer, new Vector(-1.12242, 0, 0), 4);
+		}, 52);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -57.3f, 10.2f), 56);
+		Utils.scheduleTask(() -> Actions.simulateGyro(archer, new Location(world, 73.5, 225, 73.5)), 161);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 162);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -63.2f, -11f), 163);
+		Utils.scheduleTask(Archer::simulateShoot, 163);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 164);
+		Utils.scheduleTask(Archer::simulateShoot, 168);
+		Utils.scheduleTask(Archer::simulateShoot, 198); // maxor is damageable here | tank's "DPS" will get it down to 382/400 | 337.8
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 199); // 329.3
+		Utils.scheduleTask(Archer::simulateShoot, 203); // 285.1
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 204); // 276.6
+		Utils.scheduleTask(Archer::simulateShoot, 208); // 232.4
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 209); // 223.9
+		Utils.scheduleTask(Archer::simulateShoot, 213); // 179.7
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 214); // 171.2
+		Utils.scheduleTask(Archer::simulateShoot, 218); // 127
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 219); // 118.5
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.7f, -8.3f), 220);
 	}
 
 	private static void simulateShoot() {

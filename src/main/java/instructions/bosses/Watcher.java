@@ -64,6 +64,11 @@ public class Watcher {
 		helmet.setItemMeta(meta);
 
 		Objects.requireNonNull(watcher.getEquipment()).setHelmet(helmet);
+		watcher.getEquipment().setChestplate(new ItemStack(Material.AIR));
+		watcher.getEquipment().setLeggings(new ItemStack(Material.AIR));
+		watcher.getEquipment().setBoots(new ItemStack(Material.AIR));
+		watcher.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
+		watcher.getEquipment().setItemInOffHand(new ItemStack(Material.AIR));
 		watcher.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255, false, false));
 		watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 255, false, false));
 		Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
@@ -128,7 +133,7 @@ public class Watcher {
 	}
 
 	private static void createWatcherBossBar() {
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 19 + "/" + 19;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 19 + "/" + 19;
 
 		watcherBossBar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SOLID);
 		watcherBossBar.setProgress(1.0);
@@ -145,7 +150,7 @@ public class Watcher {
 		int mobsRemaining = 19 - mobsKilled;
 		double progress = mobsRemaining / 19.0;
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + mobsRemaining + "/" + 19;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + mobsRemaining + "/" + 19;
 
 		watcherBossBar.setTitle(title);
 		watcherBossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
@@ -348,5 +353,9 @@ public class Watcher {
 	// Force cleanup for /tas command
 	public static void forceCleanup() {
 		cleanup();
+	}
+
+	public static BossBar getActiveBossBar() {
+		return watcherBossBar;
 	}
 }

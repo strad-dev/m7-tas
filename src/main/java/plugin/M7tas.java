@@ -37,6 +37,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -129,6 +130,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		meta.setDisplayName(displayName);
 		meta.setOwnerProfile(profile);
 		helmet.setItemMeta(meta);
+		helmet.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
 		return helmet;
 	}
 
@@ -145,16 +147,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 	}
 
 	public ItemStack getSpiritMask() {
-		ItemStack helmet = getCustomHead(ChatColor.LIGHT_PURPLE + "Ancient Spirit Mask", "spiritMask", "ewogICJ0aW1lc3RhbXAiIDogMTcwODQ5MDg0MTAzMywKICAicHJvZmlsZUlkIiA6ICJmZWY5ZDJmY2NkODE0MzJhYjA3NWRhMzBkNWZlMjdmMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJKb2VuVE5UIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2M3Yzc1YzQ3MDI2YzI3YjlkY2Y5MTQyNzY2NmFiMWRhZTdjNDgzNTVlZDJkNGI5MTgyZWRmMjg0YzIzMmM1YzAiCiAgICB9CiAgfQp9", "TetuPlRZ+JwBiWh7uOqE0/394o1M5duQUMhdMDxf2MX5wCMW1nnRrMZpUG7dXiE6RXUt/pZNepD/JxKpwcWBVRXfcaaQWlT44oX6XRFuDhJsyrmbEjIXSmVM46CelVlI0oyyo0a2uEve7bkYyl20Cax/5tQ1zzRWOTSRzZVkR3X8BLlWhmmgCNKNVsrS3B1TSs4OTKL3Z4t1/OhmyXdCGBp8DLfNbBqhgpVAEkTvzNdGV3e6+/dwbRSs/DjOK/ZXBug589JPY4eiNU8GsmtURVvBa88gr7ug67MYtqY4d4If6147QK6oPoWzp4blRNxVWJHRJSWo+XTSwa4yp21jaPNBQHYyX4zy2MnyYHV7Yhyc64hrV/uO1+t6CA4W07vOqth5zFxan5SUmV/lE+mh2q2uGr3ipAZSkkk7vOoWZvPCG6bo3ZdCsjEx8cQxpw/BXDkpuanySt71oFk3C/NSJCvsifZB52WQkJMK2M+LQCwRhCiN1a5QFWjxAdNINXC87qJAzIOgNkyq69OPPASGC9Hau9lED8iawkRO+rAeCfhczxtCBNLQPN/Gs7zE0MMzChUyK1uWO8MK+Vd+98RmA3vb3VHeShAzQriNJMIDFarNKWt9U+S3DkevXn8lMUEpyKpVH+sQy3DZ3z952JNk8ByPEPd2Lxfc8g1QbkNyLBo=");
-		SkullMeta meta = (SkullMeta) helmet.getItemMeta();
-		assert meta != null;
-
-		List<String> lore = new ArrayList<>();
-		lore.add("I couldn't find the actual Spirit Mask skin");
-		lore.add("online so this is the next best thing.");
-		meta.setLore(lore);
-		helmet.setItemMeta(meta);
-		return helmet;
+		return getCustomHead(ChatColor.LIGHT_PURPLE + "Ancient Spirit Mask", "spiritMask", "eyJ0aW1lc3RhbXAiOjE1MDUyMjI5OTg3MzQsInByb2ZpbGVJZCI6IjBiZTU2MmUxNzIyODQ3YmQ5MDY3MWYxNzNjNjA5NmNhIiwicHJvZmlsZU5hbWUiOiJ4Y29vbHgzIiwic2lnbmF0dXJlUmVxdWlyZWQiOnRydWUsInRleHR1cmVzIjp7IlNLSU4iOnsibWV0YWRhdGEiOnsibW9kZWwiOiJzbGltIn0sInVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvOWJiZTcyMWQ3YWQ4YWI5NjVmMDhjYmVjMGI4MzRmNzc5YjUxOTdmNzlkYTRhZWEzZDEzZDI1M2VjZTlkZWMyIn19fQ==", "BvTwl3pF3ab7hGRXD46RBSPXS0ue/I4F4mWOq40BUVZJGAplUlZWnXSm9WZhEiTlxSbza8xrwAawofgoCdRVEzLsNYdejYztdktGgqjOusAexXR2V85g4PXIPeoTtqvDlG97EVL0IJcRQsrlJ8WipdbUfeWHSzqy9Ibo689CblgGEgjQ8rNynwC+ncsRzQZ7t3uNviBpGNq1YllVLROt79uTmeI8EkwmkYOawXswIdFfMr5FXLZhWAaQ1c6zxPxTvPhkY9S5VxnSA0tFfyoqV6MD2SHkWvdQLT1VB3KCtsJi3hHXzgTH/24BrlkWUygmaG+Q89l7aG1v4bYoJMF9uUQe4e47JZKeWkLVSoadf+OUQv7K2h6aNJKYRmrdWd+Z9h3gfKFTTiIKF4VQ4kF5mDnlH8+FICRK6KcatQeEoC89WWHUcaHPmhQoih2X01mGUh+lusPc/l/v+ZjNKUuK+WDAu6HYZA3MGh60duLNrAHnoDcLaWbVJ8a4cyXQHVqHM43KJV8ljm9Zq1yElbAdExKW7F9WZ1jlPae6JJj9qJlFH+PZnMhlU9mxPMHttFz9jRmd5Bg//3g5jPb5PMZ/Y3mQ/YURJ2j5bYAO1+F4rYa6FE33UKLWbIZ8wY10HiK7d0hfr7DTy1NscQOOwQFeyxj4wfewMRoSmLa8uu9T7pc=");
 	}
 
 	public ItemStack getSkyBlockItem(Material material, String name, String id) {
@@ -165,6 +158,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		List<String> lore = new ArrayList<>();
 		lore.add(id);
 		meta.setLore(lore);
+		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
 		return item;
 	}
@@ -194,10 +188,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, -1, 255, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 3, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, -1, 255, true, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, -1, 2, true, false));
+			Objects.requireNonNull(p.getAttribute(Attribute.ARMOR)).setBaseValue(20.0);
+			Objects.requireNonNull(p.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(20.0);
 			Objects.requireNonNull(p.getAttribute(Attribute.KNOCKBACK_RESISTANCE)).setBaseValue(1);
 			Objects.requireNonNull(p.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			p.setHealth(40);
-			p.addPotionEffect(new PotionEffect(PotionEffectType.HASTE, -1, 2, true, false));
+			p.addScoreboardTag("WitherShield");
+			p.addScoreboardTag("HolyIce");
 
 			// Set Inventory
 			ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
@@ -282,7 +280,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				}
 				case "Mage" -> {
 					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
-					inventory.setItem(3, getSkyBlockItem(Material.GOLDEN_SWORD, ChatColor.LIGHT_PURPLE + "Gilded Midas Sword", ""));
+					inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", ""));
 					inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
 					inventory.setItem(9, getDiamondHead());
 					inventory.setItem(10, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
@@ -592,7 +590,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		addToNoCollisionTeam(bukkitPlayer);
 
 		// 8) Return the Bukkit wrapper
-		return nmsPlayer.getBukkitEntity();
+		return bukkitPlayer;
 	}
 
 	private static void setupNoCollisionTeam() {
