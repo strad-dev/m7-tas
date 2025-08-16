@@ -37,7 +37,9 @@ public class CustomBossBar {
 	}
 
 	private static void disableVanillaWitherBossBar(Wither wither) {
-		if(!(wither instanceof CraftWither)) return;
+		if(!(wither instanceof CraftWither)) {
+			return;
+		}
 
 		try {
 			Utils.scheduleTask(() -> {
@@ -51,7 +53,9 @@ public class CustomBossBar {
 	}
 
 	private static void createWitherBossBar(String witherName) {
-		if(activeWither == null) return;
+		if(activeWither == null) {
+			return;
+		}
 
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
 
@@ -90,7 +94,9 @@ public class CustomBossBar {
 	}
 
 	private static void updateWitherBossBar(String witherName) {
-		if(activeWitherBossBar == null || activeWither == null) return;
+		if(activeWitherBossBar == null || activeWither == null) {
+			return;
+		}
 
 		double currentHealth = activeWither.getHealth();
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();

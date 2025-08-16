@@ -35,7 +35,9 @@ public class Utils {
 	}
 
 	public static void teleport(Player p, Location to) {
-		if(!(p instanceof CraftPlayer cp)) return;
+		if(!(p instanceof CraftPlayer cp)) {
+			return;
+		}
 		ServerPlayer npc = cp.getHandle();
 
 		// Update NMS position

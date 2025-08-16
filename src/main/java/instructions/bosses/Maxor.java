@@ -121,7 +121,12 @@ public class Maxor {
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
 		}, 438);
 		Utils.scheduleTask(() -> sendChatMessage("I’LL MAKE YOU REMEMBER MY DEATH!"), 459);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in 499 ticks (24.95 seconds) | Overall: 1 526 ticks (76.30 seconds)"), 499);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in 499 ticks (24.95 seconds) | Overall: 1 526 ticks (76.30 seconds)");
+			if(doContinue) {
+				Storm.stormInstructions(world, true);
+			}
+		}, 499);
 	}
 
 	private static void spawnCrystals() {

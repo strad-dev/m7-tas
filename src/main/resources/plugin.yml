@@ -12,13 +12,16 @@ commands:
     usage: /spectate <Archer|Berserk|Healer|Mage|Tank>
   unspectate:
     description: Stop spectating a class
-    usage: /unspectate [role]
+    usage: /unspectate
   tas:
     description: Begin TAS
     usage: /tas
   reset:
     description: Resets all classes to their spawn locations
     usage: /reset
+  simulate:
+    description: Simulates movement (either walking or bonzo staff)
+    usage: /simulate <move|bonzo> <x> <y> <z> <duration>
 
 depend:
   - SkyBlockInVanilla

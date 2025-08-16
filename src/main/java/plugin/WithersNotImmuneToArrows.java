@@ -23,8 +23,12 @@ public class WithersNotImmuneToArrows implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onProjectileHitWither(ProjectileHitEvent event) {
 		// Only handle arrows hitting withers
-		if(!(event.getEntity() instanceof Arrow arrow)) return;
-		if(!(event.getHitEntity() instanceof Wither wither)) return;
+		if(!(event.getEntity() instanceof Arrow arrow)) {
+			return;
+		}
+		if(!(event.getHitEntity() instanceof Wither wither)) {
+			return;
+		}
 
 		// Prevent double processing
 		UUID arrowUUID = arrow.getUniqueId();

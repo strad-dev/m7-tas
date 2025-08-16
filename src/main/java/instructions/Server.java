@@ -1,8 +1,6 @@
 package instructions;
 
-import instructions.bosses.CustomBossBar;
-import instructions.bosses.Maxor;
-import instructions.bosses.Watcher;
+import instructions.bosses.*;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
@@ -28,34 +26,39 @@ public class Server {
 		Bukkit.broadcastMessage("TAS starts in 3 seconds.");
 
 		Utils.scheduleTask(() -> {
-			if(section.equals("all") || section.equals("clear")) {
-				// 5-second countdown
-				Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds.");
-				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
+			switch(section) {
+				case "all", "clear" -> {
+					// 5-second countdown
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds.");
 					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-				}, 20);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
-					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-				}, 40);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
-					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-				}, 60);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
-					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-				}, 80);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
-					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-				}, 100);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
-				Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
-			} else if(section.equals("maxor")) {
-				Maxor.maxorInstructions(world, false);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 20);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 40);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 60);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 80);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 100);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
+				}
+				case "maxor" -> Maxor.maxorInstructions(world, false);
+				case "storm" -> Storm.stormInstructions(world, false);
+//				case "goldor" -> Goldor.goldorInstructions(world, false);
+//				case "necron" -> Necron.necronInstructions(world, false);
+//				case "witherking" -> WitherKing.witherKingInstructions(world, false);
 			}
 		}, 60);
 	}
@@ -65,7 +68,11 @@ public class Server {
 		spawn1x1Mobs(world);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 coal_block");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 red_terracotta");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 167 40 91 165 41 minecraft:coal_block");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 92 167 40 95 165 41 stone_bricks");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 lever[face=wall,facing=north,powered=false]");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 redstone_lamp[lit=false]");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
 	}

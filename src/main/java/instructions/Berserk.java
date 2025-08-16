@@ -556,7 +556,24 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 128f, 0f), 240);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.8844, 0, -0.691), 1), 241);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2211, 0, -0.1728), 20), 242);
-		Utils.scheduleTask(() -> Maxor.placeCrystal(berserk), 262);
+		Utils.scheduleTask(() -> {
+			Maxor.placeCrystal(berserk);
+			Actions.turnHead(berserk, -90f, 0f);
+		}, 262);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12242, 0, 0), 10), 263);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -34.5f, 0f), 273);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.636, 0, 0.925), 7), 274);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.489, 0, 0.7116), 1), 281);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 90f), 282);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, new Vector(0.26, 0, 0), 1);
+			Actions.simulateStonking(berserk, world.getBlockAt(69, 220, 49));
+		}, 283);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -180f, 70f), 284);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, world.getBlockAt(69, 220, 48)), 285);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 88.8f, 0f), 286);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2805, 0, 0.000588), 40), 287);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.12217, 0, 0.0235), 5), 327);
 	}
 
 	private static void simulateShoot() {

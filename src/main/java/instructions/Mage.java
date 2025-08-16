@@ -379,7 +379,7 @@ public class Mage {
 			for(Entity entity : entities) {
 				//noinspection DataFlowIssue
 				if(entity instanceof LivingEntity temp && !temp.equals(mage) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 120 : 100) : (temp instanceof Wither ? 85 : 70);
+					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 145 : 85) : (temp instanceof Wither ? 120 : 70);
 					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(mage, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
 					if(temp.getHurtSound() != null) {
 						world.playSound(l, temp.getHurtSound(), 1.0F, 1.0F);

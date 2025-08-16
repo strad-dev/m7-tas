@@ -145,7 +145,9 @@ public class Watcher {
 	}
 
 	private static void updateWatcherBossBar() {
-		if(watcherBossBar == null) return;
+		if(watcherBossBar == null) {
+			return;
+		}
 
 		int mobsRemaining = 19 - mobsKilled;
 		double progress = mobsRemaining / 19.0;

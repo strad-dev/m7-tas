@@ -1,12 +1,18 @@
 package instructions;
 
 import jline.internal.Nullable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -59,6 +65,7 @@ public class Actions {
 
 		// This variable stores the requested motion from the caller.
 		Vec3 motion = new Vec3(perTick.getX(), perTick.getY(), perTick.getZ());
+		Vec3 storedVelocity = entityVelocities.get(entity);
 
 		new BukkitRunnable() {
 			int ticks = 0;
@@ -83,13 +90,33 @@ public class Actions {
 
 					if(current > requested) {
 						// Apply air friction to current velocity
-						finalMotion = new Vec3(currentVelocity.x() * 0.91, perTick.getY(), currentVelocity.z() * 0.91);
-						double newSpeed = Math.sqrt(finalMotion.x() * finalMotion.x() + finalMotion.z() * finalMotion.z());
+						double frictionX = currentVelocity.x() * 0.91;
+						double frictionZ = currentVelocity.z() * 0.91;
 
-						// If we've decelerated below the requested speed, use the requested speed
-						if(newSpeed < requested) {
-							finalMotion = motion;
+						double finalX = frictionX;
+						double finalZ = frictionZ;
+
+						// For X axis: check if same direction
+						boolean sameDirectionX = Math.signum(frictionX) == Math.signum(motion.x()) || motion.x() == 0;
+						if(sameDirectionX && Math.abs(frictionX) < Math.abs(motion.x())) {
+							finalX = motion.x();
+						} else if(!sameDirectionX) {
+							// Opposite direction - allow some deceleration/acceleration towards requested
+							double decelFactor = 0.02; // Vanilla-like air control
+							finalX = frictionX + (motion.x() - frictionX) * decelFactor;
 						}
+
+						// For Z axis: check if same direction
+						boolean sameDirectionZ = Math.signum(frictionZ) == Math.signum(motion.z()) || motion.z() == 0;
+						if(sameDirectionZ && Math.abs(frictionZ) < Math.abs(motion.z())) {
+							finalZ = motion.z();
+						} else if(!sameDirectionZ) {
+							// Opposite direction - allow some deceleration/acceleration towards requested
+							double decelFactor = 0.02; // Vanilla-like air control
+							finalZ = frictionZ + (motion.z() - frictionZ) * decelFactor;
+						}
+
+						finalMotion = new Vec3(finalX, perTick.getY(), finalZ);
 					}
 				}
 
@@ -109,7 +136,9 @@ public class Actions {
 	 * @param p The Player entity that is to perform the jump. Requires the player to be on the ground.
 	 */
 	public static void jump(Player p) {
-		if(!(p instanceof CraftPlayer cp)) return;
+		if(!(p instanceof CraftPlayer cp)) {
+			return;
+		}
 
 		ServerPlayer npc = cp.getHandle();
 
@@ -127,7 +156,9 @@ public class Actions {
 	 * @param hotbarIndex The index of the new hotbar slot (0–8).
 	 */
 	public static void setFakePlayerHotbarSlot(Player p, int hotbarIndex) {
-		if(!(p instanceof CraftPlayer cp)) return;
+		if(!(p instanceof CraftPlayer cp)) {
+			return;
+		}
 		ServerPlayer npc = cp.getHandle();
 
 		// Update the NMS held-slot index
@@ -149,7 +180,9 @@ public class Actions {
 	 * @param slotB same range
 	 */
 	public static void swapFakePlayerInventorySlots(Player p, int slotA, int slotB) {
-		if(!(p instanceof CraftPlayer cp)) return;
+		if(!(p instanceof CraftPlayer cp)) {
+			return;
+		}
 		ServerPlayer npc = cp.getHandle();
 		Inventory inv = npc.getInventory();
 
@@ -313,7 +346,7 @@ public class Actions {
 	 */
 	public static void simulateStonking(Player p, Block b) {
 		if(p != null) {
-			p.swingMainHand();
+			simulateLeftClickAir(p);
 			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		}
 		Material material = b.getType();
@@ -337,7 +370,7 @@ public class Actions {
 	 */
 	public static void simulateGhostPick(Player p, Block b) {
 		if(p != null) {
-			p.swingMainHand();
+			simulateLeftClickAir(p);
 			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		}
 		b.setType(Material.AIR);
@@ -541,7 +574,9 @@ public class Actions {
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 14);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8929F), 16);
 		Utils.scheduleTask(() -> {
-			if(!(p instanceof CraftPlayer cp)) return;
+			if(!(p instanceof CraftPlayer cp)) {
+				return;
+			}
 
 			ServerPlayer npc = cp.getHandle();
 
@@ -601,17 +636,10 @@ public class Actions {
 				spinRotation += 18; // 360 / 20 = 18 degrees per tick
 
 				// Create rotation using axis-angle rotation around the spin axis
-				Quaternionf rotation = new Quaternionf().rotateAxis(
-						(float) Math.toRadians(spinRotation),
-						(float) spinAxis.getX(),
-						(float) spinAxis.getY(),
-						(float) spinAxis.getZ()
-				);
+				Quaternionf rotation = new Quaternionf().rotateAxis((float) Math.toRadians(spinRotation), (float) spinAxis.getX(), (float) spinAxis.getY(), (float) spinAxis.getZ());
 
-				axe.setTransformation(new Transformation(
-						new Vector3f(0, 0, 0), // No translation offset
-						rotation,
-						new Vector3f(1, 1, 1), // Normal scale
+				axe.setTransformation(new Transformation(new Vector3f(0, 0, 0), // No translation offset
+						rotation, new Vector3f(1, 1, 1), // Normal scale
 						new Quaternionf() // No right rotation
 				));
 
@@ -642,10 +670,7 @@ public class Actions {
 			serverPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 
 			// Send the animation packet to all players
-			ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
-					serverPlayer.getId(),
-					serverPlayer.getEntityData().getNonDefaultValues()
-			);
+			ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(serverPlayer.getId(), serverPlayer.getEntityData().getNonDefaultValues());
 
 			for(Player viewer : p.getWorld().getPlayers()) {
 				((CraftPlayer) viewer).getHandle().connection.send(dataPacket);
@@ -662,10 +687,7 @@ public class Actions {
 				serverSpectator.startUsingItem(InteractionHand.MAIN_HAND);
 
 				// Send their animation to all viewers (including themselves in F5)
-				ClientboundSetEntityDataPacket spectatorDataPacket = new ClientboundSetEntityDataPacket(
-						serverSpectator.getId(),
-						serverSpectator.getEntityData().getNonDefaultValues()
-				);
+				ClientboundSetEntityDataPacket spectatorDataPacket = new ClientboundSetEntityDataPacket(serverSpectator.getId(), serverSpectator.getEntityData().getNonDefaultValues());
 
 				// Send to all players who can see the spectator
 				for(Player viewer : spectator.getWorld().getPlayers()) {
@@ -688,10 +710,7 @@ public class Actions {
 						serverPlayer.stopUsingItem();
 
 						// Send updated entity data
-						ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
-								serverPlayer.getId(),
-								serverPlayer.getEntityData().getNonDefaultValues()
-						);
+						ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(serverPlayer.getId(), serverPlayer.getEntityData().getNonDefaultValues());
 
 						for(Player viewer : p.getWorld().getPlayers()) {
 							((CraftPlayer) viewer).getHandle().connection.send(dataPacket);
@@ -705,10 +724,7 @@ public class Actions {
 							serverSpectator.stopUsingItem();
 
 							// Send updated entity data
-							ClientboundSetEntityDataPacket spectatorDataPacket = new ClientboundSetEntityDataPacket(
-									serverSpectator.getId(),
-									serverSpectator.getEntityData().getNonDefaultValues()
-							);
+							ClientboundSetEntityDataPacket spectatorDataPacket = new ClientboundSetEntityDataPacket(serverSpectator.getId(), serverSpectator.getEntityData().getNonDefaultValues());
 
 							for(Player viewer : spectator.getWorld().getPlayers()) {
 								((CraftPlayer) viewer).getHandle().connection.send(spectatorDataPacket);
@@ -772,6 +788,7 @@ public class Actions {
 	 * @param p The player originating.
 	 */
 	public static void simulateFlay(Player p) {
+		simulateLeftClickAir(p);
 		Location startLoc = p.getEyeLocation();
 
 		// Angle up by 5 degrees from player's look direction
@@ -810,9 +827,7 @@ public class Actions {
 				// Spawn particles along the path
 				for(int i = 0; i < particleCount; i++) {
 					double t = (double) i / particleCount;
-					Location particleLoc = previousLoc.clone().add(
-							currentVelocity.clone().multiply(t)
-					);
+					Location particleLoc = previousLoc.clone().add(currentVelocity.clone().multiply(t));
 
 					// Cycle through colors: Red, Yellow, Green
 					Particle.DustOptions dust = switch(colorIndex % 3) {
@@ -846,8 +861,9 @@ public class Actions {
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
-	
+
 	public static void simulateGyro(Player p, Location l) {
+		simulateLeftClickAir(p);
 		p.getWorld().spawnParticle(Particle.PORTAL, l, 1000);
 		l.setY(l.getY() + 1);
 		new BukkitRunnable() {
@@ -875,7 +891,7 @@ public class Actions {
 
 			// Find the next air block going upwards from the requested location
 			double y = l.getY();
-			while (!Objects.requireNonNull(l.getWorld()).getBlockAt((int) x, (int) y, (int) z).getType().isAir() && y < l.getWorld().getMaxHeight()) {
+			while(!Objects.requireNonNull(l.getWorld()).getBlockAt((int) x, (int) y, (int) z).getType().isAir() && y < l.getWorld().getMaxHeight()) {
 				y++;
 			}
 			y += 0.05; // Place falling block 0.05 above the air block
@@ -972,8 +988,7 @@ public class Actions {
 					FallingBlock block = fallingBlocks.get(i);
 					if(!block.isValid()) continue; // Skip invalid blocks
 
-					Location startLoc = i < initialPositions.size() ?
-							initialPositions.get(i) : block.getLocation();
+					Location startLoc = i < initialPositions.size() ? initialPositions.get(i) : block.getLocation();
 
 					// Linear interpolation between start and rift
 					Vector direction = l.toVector().subtract(startLoc.toVector());
@@ -981,20 +996,12 @@ public class Actions {
 
 					if(progress < 1.0) {
 						// Add constant wobble effect 
-						Vector wobble = new Vector(
-								(Math.random() - 0.5) * 4,
-								(Math.random() - 0.5) * 4,
-								(Math.random() - 0.5) * 4
-						);
+						Vector wobble = new Vector((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
 
 						currentPos.add(wobble);
 					} else {
 						// Keep blocks at center with slight wobble
-						Vector wobble = new Vector(
-								(Math.random() - 0.5) * 2,
-								(Math.random() - 0.5) * 2,
-								(Math.random() - 0.5) * 2
-						);
+						Vector wobble = new Vector((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2, (Math.random() - 0.5) * 2);
 						currentPos = l.toVector().add(wobble);
 					}
 
@@ -1003,7 +1010,7 @@ public class Actions {
 					// Ensure minimum height above ground
 					// Find the next air block going upwards from the requested location
 					double minY = l.getY();
-					while (!Objects.requireNonNull(l.getWorld()).getBlockAt(targetLoc.getBlockX(), (int) minY, targetLoc.getBlockY()).getType().isAir() && minY < l.getWorld().getMaxHeight()) {
+					while(!Objects.requireNonNull(l.getWorld()).getBlockAt(targetLoc.getBlockX(), (int) minY, targetLoc.getBlockY()).getType().isAir() && minY < l.getWorld().getMaxHeight()) {
 						minY++;
 					}
 					minY += 0.05; // Place falling block 0.05 above the air block
@@ -1047,6 +1054,82 @@ public class Actions {
 				}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 			}
 		}
+	}
+
+	/**
+	 * Simulates the Bonzo effect on the provided player with the given vector.
+	 *
+	 * @param p the Player instance on which the Bonzo simulation will be applied
+	 * @param v the Vector representing the direction and magnitude for the simulation
+	 */
+	public static void simulateBonzo(Player p, Vector v) {
+		if(!(p instanceof CraftPlayer cp)) {
+			return;
+		}
+		net.minecraft.world.entity.LivingEntity nmsEntity = cp.getHandle();
+
+		// Set initial Y velocity
+		Vec3 currentMovement = nmsEntity.getDeltaMovement();
+		nmsEntity.setDeltaMovement(0, 0.5, 0);
+		v.setY(0);
+
+		Location location = p.getLocation();
+		World world = p.getWorld();
+		Random random = new Random();
+
+		// Spawn 20 critical particles with random directions
+		world.spawnParticle(Particle.TOTEM_OF_UNDYING, location, 350, 0, 0, 0, 0.75);
+
+		// Add critical particles for texture variety
+		world.spawnParticle(Particle.CRIT, location, 150, 0, 0, 0, 2);
+
+		double magnitude = Math.sqrt(v.getX() * v.getX() + v.getZ() * v.getZ());
+		Vector impulseVector = v.clone().normalize().multiply(0.2806);
+
+		// Apply horizontal movement
+		new BukkitRunnable() {
+			boolean firstTick = true;
+			int tickCount = 0;
+
+			@Override
+			public void run() {
+				tickCount++;
+
+				if(firstTick) {
+					move(p, v, 1);
+					System.out.println("Tick " + tickCount + ": Moved " + v.getX() + "," + nmsEntity.getDeltaMovement().y() + "," + v.getZ());
+					firstTick = false;
+				} else {
+					if(nmsEntity.onGround()) {
+						cancel();
+						entityVelocities.remove(p);
+
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Bonzo launch duration: " + tickCount + " ticks");
+						return;
+					}
+					move(p, impulseVector, 1);
+					System.out.println("Tick " + tickCount + ": Moved " + entityVelocities.get(p).x() + "," + nmsEntity.getDeltaMovement().y() + "," + entityVelocities.get(p).z());
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	public static void lavaJump(Player p, boolean big) {
+		p.teleport(p.getLocation().add(0, 3.5, 0));
+		Utils.scheduleTask(() -> {
+			if(!(p instanceof CraftPlayer cp)) {
+				return;
+			}
+
+			ServerPlayer npc = cp.getHandle();
+
+			Vec3 motion = npc.getDeltaMovement();
+			if(big) {
+				npc.setDeltaMovement(new Vec3(motion.x(), 3.4D, motion.z()));
+			} else {
+				npc.setDeltaMovement(new Vec3(motion.x(), 1.7D, motion.z()));
+			}
+		}, 1);
 	}
 
 	private static BukkitTask armorTask = null;
@@ -1120,6 +1203,76 @@ public class Actions {
 		}
 
 		simulateRightClickAir(p);
+	}
+
+	public static void simulateRightClickLever(Player p) {
+		// Get the NMS player
+		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
+
+		// Perform ray trace
+		RayTraceResult rayTrace = p.rayTraceBlocks(10);
+		if(rayTrace == null || rayTrace.getHitBlock() == null) {
+			System.out.println("No block found in ray trace");
+			return;
+		}
+
+		// Get block position
+		BlockPos blockPos = new BlockPos(rayTrace.getHitBlock().getX(), rayTrace.getHitBlock().getY(), rayTrace.getHitBlock().getZ());
+
+		// Get the block state
+		BlockState blockState = nmsPlayer.serverLevel().getBlockState(blockPos);
+
+		// Check if it's actually a lever
+		if(!(blockState.getBlock() instanceof LeverBlock)) {
+			System.out.println("Block is not a lever: " + blockState.getBlock());
+			return;
+		}
+
+		// Convert Bukkit BlockFace to NMS Direction
+		assert rayTrace.getHitBlockFace() != null;
+		Direction direction = convertBlockFace(rayTrace.getHitBlockFace());
+
+		// Get the exact hit location
+		Vec3 hitVec = new Vec3(rayTrace.getHitPosition().getX(), rayTrace.getHitPosition().getY(), rayTrace.getHitPosition().getZ());
+
+		// Create BlockHitResult for the interaction
+		BlockHitResult hitResult = new BlockHitResult(hitVec, direction, blockPos, false);
+
+		// Get the item in hand (might be empty)
+		net.minecraft.world.item.ItemStack itemInHand = nmsPlayer.getItemInHand(InteractionHand.MAIN_HAND);
+
+		// Perform the interaction directly through the block's use method
+		// For levers, we use useWithoutItem since they don't require an item
+		InteractionResult result = blockState.useWithoutItem(nmsPlayer.serverLevel(), nmsPlayer, hitResult);
+
+		// Check if interaction was successful
+		if(result.consumesAction()) {
+			System.out.println("Successfully interacted with lever at " + blockPos);
+
+			// Swing arm for visual feedback
+			nmsPlayer.swing(InteractionHand.MAIN_HAND, true);
+		} else {
+			System.out.println("Interaction failed, result: " + result);
+
+			// Try alternative approach with item
+			result = blockState.useItemOn(itemInHand, nmsPlayer.serverLevel(), nmsPlayer, InteractionHand.MAIN_HAND, hitResult);
+
+			if(result.consumesAction()) {
+				System.out.println("Successfully interacted with lever using item approach");
+				nmsPlayer.swing(InteractionHand.MAIN_HAND, true);
+			}
+		}
+	}
+
+	private static Direction convertBlockFace(org.bukkit.block.BlockFace face) {
+		return switch(face) {
+			case DOWN -> Direction.DOWN;
+			case NORTH -> Direction.NORTH;
+			case SOUTH -> Direction.SOUTH;
+			case WEST -> Direction.WEST;
+			case EAST -> Direction.EAST;
+			default -> Direction.UP;
+		};
 	}
 
 	private static List<EntityType> doNotKill() {

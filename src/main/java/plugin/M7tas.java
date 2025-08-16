@@ -50,6 +50,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
@@ -335,7 +336,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		setupNoCollisionTeam();
 
 		// register ALL our commands on the same executor
-		for(var cmd : List.of("spectate", "unspectate", "tas", "reset")) {
+		for(var cmd : List.of("spectate", "unspectate", "tas", "simulate", "reset")) {
 			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
@@ -364,7 +365,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		}
 
 		kickAllFakes();
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!player,type=!villager]");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!item_frame,type=!player,type=!villager]");
 
 		spectatorMap.clear();
 		reverseSpectatorMap.clear();
@@ -486,6 +487,54 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				p.sendMessage(ChatColor.RED + "You are not spectating a class.");
 				return true;
 			}
+			case "simulate" -> {
+				if(args.length < 1) {
+					p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
+					return true;
+				}
+				if(args.length < 2) {
+					p.sendMessage(ChatColor.RED + "Please specify a movement to simulate");
+					return true;
+				}
+				if(args.length < 5) {
+					p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
+					return true;
+				}
+				Player applyTo = fakePlayers.get(Character.toUpperCase(args[0].charAt(0)) + args[0].substring(1).toLowerCase());
+				double x;
+				double y;
+				double z;
+				try {
+					x = Double.parseDouble(args[2]);
+					y = Double.parseDouble(args[3]);
+					z = Double.parseDouble(args[4]);
+				} catch(Exception exception) {
+					p.sendMessage(ChatColor.RED + "Movement must be an double");
+					return true;
+				}
+				switch(args[1]) {
+					case "bonzo" -> {
+						Actions.simulateBonzo(applyTo, new Vector(x, y, z));
+						return true;
+					}
+					case "move" -> {
+						if(args.length < 6) {
+							p.sendMessage(ChatColor.RED + "Must provide a valid duration.");
+							return true;
+						}
+						int duration;
+						try {
+							duration = Integer.parseInt(args[5]);
+						} catch(Exception exception) {
+							p.sendMessage(ChatColor.RED + "Duration must be an integer.");
+							return true;
+						}
+						Actions.move(applyTo, new Vector(x, y, z), duration);
+						return true;
+					}
+				}
+				return false;
+			}
 			case "reset" -> {
 				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
 				fakePlayers.values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
@@ -493,7 +542,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				return true;
 			}
 		}
-
 		return false;
 	}
 
