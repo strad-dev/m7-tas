@@ -365,6 +365,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		}
 
 		kickAllFakes();
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tag @e remove TASWither");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!item_frame,type=!player,type=!villager]");
 
 		spectatorMap.clear();
@@ -376,6 +377,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		fakePlayers.values().forEach(p -> p.kickPlayer(""));
 		fakePlayers.clear();
 	}
+
+	private static Player lastSimulated;
+	private static Location lastSimulatedLocation;
 
 	@SuppressWarnings("NullableProblems")
 	@Override
@@ -409,8 +413,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 				String section = "all";
 				if(args.length >= 1) {
 					section = args[0].toLowerCase();
-					if(!section.equals("all") && !section.equals("clear") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
-						p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear maxor storm goldor necron witherking");
+					if(!section.equals("all") && !section.equals("clear") && !section.equals("boss") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
+						p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear boss maxor storm goldor necron witherking");
 						return true;
 					}
 				}
@@ -496,28 +500,58 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					p.sendMessage(ChatColor.RED + "Please specify a movement to simulate");
 					return true;
 				}
-				if(args.length < 5) {
-					p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
-					return true;
-				}
-				Player applyTo = fakePlayers.get(Character.toUpperCase(args[0].charAt(0)) + args[0].substring(1).toLowerCase());
-				double x;
-				double y;
-				double z;
-				try {
-					x = Double.parseDouble(args[2]);
-					y = Double.parseDouble(args[3]);
-					z = Double.parseDouble(args[4]);
-				} catch(Exception exception) {
-					p.sendMessage(ChatColor.RED + "Movement must be an double");
-					return true;
-				}
 				switch(args[1]) {
+					case "undo" -> {
+						if(lastSimulated == null || lastSimulatedLocation == null) {
+							p.sendMessage(ChatColor.RED + "No previous movement to undo!");
+							return true;
+						}
+						lastSimulated.teleport(lastSimulatedLocation);
+						lastSimulated = null;
+						lastSimulatedLocation = null;
+						p.sendMessage(ChatColor.GREEN + "Undid previous simulation instruction.");
+						return true;
+					}
 					case "bonzo" -> {
+						if(args.length < 5) {
+							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
+							return true;
+						}
+						Player applyTo = fakePlayers.get(Character.toUpperCase(args[0].charAt(0)) + args[0].substring(1).toLowerCase());
+						double x;
+						double y;
+						double z;
+						try {
+							x = Double.parseDouble(args[2]);
+							y = Double.parseDouble(args[3]);
+							z = Double.parseDouble(args[4]);
+						} catch(Exception exception) {
+							p.sendMessage(ChatColor.RED + "Movement must be an double");
+							return true;
+						}
+						lastSimulated = applyTo;
+						lastSimulatedLocation = applyTo.getLocation();
 						Actions.simulateBonzo(applyTo, new Vector(x, y, z));
+						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
 						return true;
 					}
 					case "move" -> {
+						if(args.length < 5) {
+							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
+							return true;
+						}
+						Player applyTo = fakePlayers.get(Character.toUpperCase(args[0].charAt(0)) + args[0].substring(1).toLowerCase());
+						double x;
+						double y;
+						double z;
+						try {
+							x = Double.parseDouble(args[2]);
+							y = Double.parseDouble(args[3]);
+							z = Double.parseDouble(args[4]);
+						} catch(Exception exception) {
+							p.sendMessage(ChatColor.RED + "Movement must be an double");
+							return true;
+						}
 						if(args.length < 6) {
 							p.sendMessage(ChatColor.RED + "Must provide a valid duration.");
 							return true;
@@ -529,7 +563,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 							p.sendMessage(ChatColor.RED + "Duration must be an integer.");
 							return true;
 						}
+						lastSimulated = applyTo;
+						lastSimulatedLocation = applyTo.getLocation();
 						Actions.move(applyTo, new Vector(x, y, z), duration);
+						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks.");
 						return true;
 					}
 				}

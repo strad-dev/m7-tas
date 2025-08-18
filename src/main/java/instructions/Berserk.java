@@ -40,12 +40,16 @@ public class Berserk {
 			// Tick 160 (clear tick 0: run begins)
 			// Tick 161 (clear tick 1: teleport back)
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor")) {
+		} else if(section.equals("maxor") || section.equals("boss")) {
 			Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5));
 			Actions.swapFakePlayerInventorySlots(berserk, 11, 36);
 			Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
 			Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
-			Utils.scheduleTask(() -> maxor(false), 60);
+			if(section.equals("maxor")) {
+				Utils.scheduleTask(() -> maxor(false), 60);
+			} else {
+				Utils.scheduleTask(() -> maxor(true), 60);
+			}
 		}
 	}
 
@@ -574,6 +578,69 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 88.8f, 0f), 286);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2805, 0, 0.000588), 40), 287);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.12217, 0, 0.0235), 5), 327);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -77f, 0f), 334);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 384);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -105f, 0f), 401);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.0842, 0, -0.2905), 29), 402);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 431);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, new Vector(1.12242, 0, 0), 1);
+			Actions.simulateGhostPick(berserk, world.getBlockAt(91, 166, 41));
+		}, 432);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(92, 166, 41)), 433);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(93, 166, 41)), 434);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(94, 166, 41)), 435);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(95, 166, 41)), 436);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -93.6f, 0f), 437);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 166, 40)), 438);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(92, 166, 40)), 439);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(93, 166, 40)), 440);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(94, 166, 40)), 441);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(95, 166, 40)), 442);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -93.6f, -16.5f), 443);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 167, 40)), 444);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(92, 167, 40)), 445);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(93, 167, 40)), 446);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(94, 167, 40)), 447);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(95, 167, 40)), 448);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, -16.5f), 449);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 167, 41)), 450);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(92, 167, 41)), 451);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(93, 167, 41)), 452);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(94, 167, 41)), 453);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(95, 167, 41)), 454);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -93.3f, 25.7f), 455);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 165, 41)), 456);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(92, 165, 41)), 457);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(92, 165, 40)), 458);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(93, 165, 40)), 459);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(94, 165, 40)), 460);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -91, 10.9f), 461);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(93, 165, 41)), 462);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(94, 165, 41)), 463);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(95, 165, 41)), 464);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(95, 165, 40)), 465);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -94.3f, 27f), 466);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 165, 40)), 467);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 77.5f, 0f);
+			Actions.setFakePlayerHotbarSlot(berserk, 6);
+		}, 468);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.096, 0, 0.243), 6), 469);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 475);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 1.12242), 6), 476);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -89f, 0f), 482);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12225, 0, 0.0196), 18), 483);
+		if(doContinue) {
+			Utils.scheduleTask(() -> storm(true), 499);
+		}
+	}
+
+	public static void storm(boolean doContinue) {
+		// move continues for 2 more ticks from previous instruction
+		// if starting directly from storm, TP to 100.422 169 49.624
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -1f, 23f), 2);
+		Utils.scheduleTask(() -> Actions.simulateGyro(berserk, new Location(world, 100.5, 169, 53.5)), 3);
 	}
 
 	private static void simulateShoot() {

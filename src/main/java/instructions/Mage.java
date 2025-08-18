@@ -42,15 +42,18 @@ public class Mage {
 			// Tick 160 (clear tick 0: run begins)
 			// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor")) {
+		} else if(section.equals("maxor") || section.equals("boss")) {
 			Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
 			Actions.swapFakePlayerInventorySlots(mage, 9, 39);
 			Actions.swapFakePlayerInventorySlots(mage, 10, 36);
 			Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 			Actions.swapFakePlayerInventorySlots(mage, 3, 30);
-			Actions.swapFakePlayerInventorySlots(mage, 4, 31);
 			Actions.swapFakePlayerInventorySlots(mage, 5, 32);
-			Utils.scheduleTask(() -> maxor(false), 60);
+			if(section.equals("maxor")) {
+				Utils.scheduleTask(() -> maxor(false), 60);
+			} else {
+				Utils.scheduleTask(() -> maxor(true), 60);
+			}
 		}
 	}
 
@@ -322,6 +325,15 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Archer.getArcher()), 325);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 326);
 		Utils.scheduleTask(Mage::simulateBeam, 399);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 400);
+		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Berserk.getBerserk()), 401);
+		if(doContinue) {
+			Utils.scheduleTask(() -> storm(true), 499);
+		}
+	}
+
+	public static void storm(boolean doContinue) {
+
 	}
 
 	private static void snapHead(String target) {

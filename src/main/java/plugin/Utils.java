@@ -179,6 +179,10 @@ public class Utils {
 		}
 	}
 
+	public static void broadcastTitle(String title) {
+
+	}
+
 	/**
 	 * Plays a sound for every player on the server
 	 *

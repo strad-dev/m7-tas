@@ -1,6 +1,9 @@
 package instructions;
 
-import instructions.bosses.*;
+import instructions.bosses.CustomBossBar;
+import instructions.bosses.Maxor;
+import instructions.bosses.Storm;
+import instructions.bosses.Watcher;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
@@ -54,6 +57,7 @@ public class Server {
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
 				}
+				case "boss" -> Maxor.maxorInstructions(world, true);
 				case "maxor" -> Maxor.maxorInstructions(world, false);
 				case "storm" -> Storm.stormInstructions(world, false);
 //				case "goldor" -> Goldor.goldorInstructions(world, false);
@@ -66,17 +70,23 @@ public class Server {
 	public static void serverSetup(World world) {
 		spawnMinibosses(world);
 		spawn1x1Mobs(world);
+		resetGoldorCheese();
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -136 -122 72 -138 coal_block");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -106 -120 72 -104 red_terracotta");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 167 40 91 165 41 minecraft:coal_block");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 92 167 40 95 165 41 stone_bricks");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 lever[face=wall,facing=north,powered=false]");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 redstone_lamp[lit=false]");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 43 175 62");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 97 175 62");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
+		Storm.cleanupMobs();
 	}
 
+	public static void resetGoldorCheese() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 167 40 91 165 41 minecraft:coal_block");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 92 167 40 95 165 41 stone_bricks");
+	}
 
 	private static void spawnMinibosses(World world) {
 		for(Zombie zombie : archaeologists) {
@@ -85,8 +95,7 @@ public class Server {
 			}
 		}
 
-		Location[] locations = {
-				new Location(world, -120.5, 69, -184.5, 90, 0), // Red Blue (I)
+		Location[] locations = { new Location(world, -120.5, 69, -184.5, 90, 0), // Red Blue (I)
 				new Location(world, -216.5, 69, -184.5, 0, 0), // Spider (II)
 				new Location(world, -120.5, 67, -120.5, -90, 0), // Deathmite (II)
 				new Location(world, -35.5, 69, -152.5, 90, 0), // Dino Dig Site (III)

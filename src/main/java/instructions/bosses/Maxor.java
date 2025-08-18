@@ -179,9 +179,6 @@ public class Maxor {
 			}
 		}
 
-		// Spawn 10 new Wither Skeletons
-		Random random = new Random();
-
 		for(int i = 0; i < 10; i++) {
 			// Random location within 3 blocks of center (73.5, 225, 73.5)
 			double x = 73.5 + (random.nextDouble() * 6 - 3); // -3 to +3
@@ -193,6 +190,7 @@ public class Maxor {
 			// Set health to 3 HP
 			miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(3.0);
 			miner.setHealth(3.0);
+			miner.setAI(false);
 
 			// Give stone pickaxe
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));

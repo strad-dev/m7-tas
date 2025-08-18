@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Storm;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -34,14 +35,19 @@ public class Tank {
 			// Tick 160 (clear tick 0: run begins)
 			// Tick 161 (clear tick 1: teleport back
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor")) {
+		} else if(section.equals("maxor") || section.equals("boss")) {
 			Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
 			Actions.swapFakePlayerInventorySlots(tank, 1, 28);
 			Actions.swapFakePlayerInventorySlots(tank, 3, 30);
 			Actions.swapFakePlayerInventorySlots(tank, 4, 31);
 			Actions.swapFakePlayerInventorySlots(tank, 5, 32);
 			Actions.swapFakePlayerInventorySlots(tank, 6, 33);
-			Utils.scheduleTask(() -> maxor(false), 60);
+			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
+			if(section.equals("maxor")) {
+				Utils.scheduleTask(() -> maxor(false), 60);
+			} else {
+				Utils.scheduleTask(() -> maxor(true), 60);
+			}
 		}
 	}
 
@@ -415,6 +421,7 @@ public class Tank {
 			Actions.swapFakePlayerInventorySlots(tank, 4, 31);
 			Actions.swapFakePlayerInventorySlots(tank, 5, 32);
 			Actions.swapFakePlayerInventorySlots(tank, 6, 33);
+			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
 		}, 213);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
@@ -465,8 +472,26 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 374);
 		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 386);
 		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 398);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 399);
-		Utils.scheduleTask(() -> Actions.simulateIceSpray(tank), 400);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 399);
+		Utils.scheduleTask(() -> Actions.simulateLeap(tank, Berserk.getBerserk()), 400);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 28.7f, 0f), 401);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.539, 0, 0.9845), 28), 402);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 28.7f, 82f), 429);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(tank, new Vector(-0.7326, 0.5, 1.338)), 430);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.539, 0, 0.9845), 6), 441);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 46.9f, 25f), 448);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(tank, 7);
+			Actions.swapFakePlayerInventorySlots(tank, 4, 31);
+		}, 449);
+		if(doContinue) {
+			Utils.scheduleTask(() -> storm(true), 499);
+		}
+	}
+
+	public static void storm(boolean doContinue) {
+		Storm.prepadYellow();
+		Utils.scheduleTask(() -> Actions.simulateGyro(tank, new Location(world, 32.5, 170, 94.5)), 1);
 	}
 
 	@SuppressWarnings("unused")

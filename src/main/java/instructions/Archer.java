@@ -29,11 +29,15 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 1);
 			Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
 			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor")) {
+		} else if(section.equals("maxor") || section.equals("boss")) {
 			Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
 			Actions.swapFakePlayerInventorySlots(archer, 1, 28);
 			Actions.swapFakePlayerInventorySlots(archer, 7, 35);
-			Utils.scheduleTask(() -> maxor(false), 60);
+			if(section.equals("maxor")) {
+				Utils.scheduleTask(() -> maxor(false), 60);
+			} else {
+				Utils.scheduleTask(() -> maxor(true), 60);
+			}
 		}
 	}
 
@@ -273,7 +277,7 @@ public class Archer {
 			Actions.setFakePlayerHotbarSlot(archer, 0);
 		}, 107);
 		Utils.scheduleTask(() -> {
-			Actions.simulateWitherImpact(archer, new Location(world, -197.472,89.41224, -87.53));
+			Actions.simulateWitherImpact(archer, new Location(world, -197.472, 89.41224, -87.53));
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
 			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
 		}, 108);
@@ -568,6 +572,15 @@ public class Archer {
 		Utils.scheduleTask(Archer::simulateShoot, 218); // 127
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 219); // 118.5
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.7f, -8.3f), 220);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 221);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Berserk.getBerserk()), 332);
+		if(doContinue) {
+			Utils.scheduleTask(() -> storm(true), 499);
+		}
+	}
+
+	public static void storm(boolean doContinue) {
+
 	}
 
 	private static void simulateShoot() {
