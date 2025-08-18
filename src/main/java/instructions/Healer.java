@@ -583,9 +583,7 @@ public class Healer {
 			Actions.move(healer, new Vector(0.1144, 0, 1.1166), 1);
 			Actions.setFakePlayerHotbarSlot(healer, 5);
 		}, 201);
-		Utils.scheduleTask(() -> {
-			Actions.move(healer, new Vector(0.0286, 0, 0.279), 8);
-		}, 202);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0286, 0, 0.279), 8), 202);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 24.6f, 64.9f), 209);
 		Utils.scheduleTask(() -> Actions.simulateStonking(healer, world.getBlockAt(96, 120, 121)), 218);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 0f), 219);
