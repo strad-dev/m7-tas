@@ -273,7 +273,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 					inventory.setItem(9, getBonzoMask());
 					inventory.setItem(10, getSpiritMask());
-					inventory.setItem(30, getSkyBlockItem(Material.BOW, ChatColor.GOLD + "Rapid Death Bow", ""));
+					inventory.setItem(30, getSkyBlockItem(Material.BONE, ChatColor.LIGHT_PURPLE + "Rapid Bonemerang", ""));
 					inventory.setItem(32, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
 					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
 					inventory.setItem(34, getSkyBlockItem(Material.HOPPER, ChatColor.GOLD + "Weirder Tuba", ""));
@@ -307,8 +307,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
 					inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", ""));
 					inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
-					inventory.setItem(9, getDiamondHead());
-					inventory.setItem(10, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
+					inventory.setItem(9, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
 					inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
 					inventory.setItem(31, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
 					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
@@ -517,14 +516,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			}
 			case "simulate" -> {
 				if(args.length < 1) {
-					p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
-					return true;
-				}
-				if(args.length < 2) {
 					p.sendMessage(ChatColor.RED + "Please specify a movement to simulate");
 					return true;
 				}
-				switch(args[1]) {
+				switch(args[0]) {
 					case "undo" -> {
 						if(lastSimulated == null || lastSimulatedLocation == null) {
 							p.sendMessage(ChatColor.RED + "No previous movement to undo!");
@@ -537,11 +532,15 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 						return true;
 					}
 					case "bonzo" -> {
+						if(args.length < 2) {
+							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
+							return true;
+						}
+						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
 						if(args.length < 5) {
 							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
 							return true;
 						}
-						Player applyTo = fakePlayers.get(Character.toUpperCase(args[0].charAt(0)) + args[0].substring(1).toLowerCase());
 						double x;
 						double y;
 						double z;
@@ -560,11 +559,15 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 						return true;
 					}
 					case "move" -> {
+						if(args.length < 2) {
+							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
+							return true;
+						}
+						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
 						if(args.length < 5) {
 							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
 							return true;
 						}
-						Player applyTo = fakePlayers.get(Character.toUpperCase(args[0].charAt(0)) + args[0].substring(1).toLowerCase());
 						double x;
 						double y;
 						double z;
@@ -759,7 +762,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			ServerPlayer nmsFake = craftFake.getHandle();
 
 			// Re-send spawn packet to show the fake player again
-			ServerEntity entry = new ServerEntity(nmsFake.serverLevel(), nmsFake, 0, false, packet -> {}, new HashSet<>());
+			ServerEntity entry = new ServerEntity(nmsFake.serverLevel(), nmsFake, 0, false, packet -> {
+			}, new HashSet<>());
 			ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
 			nmsSpectator.connection.send(spawn);
 

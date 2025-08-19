@@ -8,16 +8,14 @@ import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Wither;
+import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Mage {
@@ -28,31 +26,40 @@ public class Mage {
 		mage = p;
 		world = Mage.mage.getWorld();
 
-		if(section.equals("all") || section.equals("clear")) {
-			Actions.teleport(Mage.mage, new Location(world, -132.5, 69, -76.5, -180f, 0f));
-			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 2, 29), 60);
-			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 2), 61);
-			Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(mage), 101);
-			Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
-			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 121);
-			Utils.scheduleTask(() -> {
-				Actions.teleport(mage, new Location(mage.getWorld(), -120.5, 75, -220.5));
-				Actions.swapFakePlayerInventorySlots(mage, 2, 29);
-			}, 141);
-			// Tick 160 (clear tick 0: run begins)
-			// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
-			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor") || section.equals("boss")) {
-			Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
-			Actions.swapFakePlayerInventorySlots(mage, 9, 39);
-			Actions.swapFakePlayerInventorySlots(mage, 10, 36);
-			Actions.swapFakePlayerInventorySlots(mage, 1, 28);
-			Actions.swapFakePlayerInventorySlots(mage, 3, 30);
-			Actions.swapFakePlayerInventorySlots(mage, 5, 32);
-			if(section.equals("maxor")) {
-				Utils.scheduleTask(() -> maxor(false), 60);
-			} else {
-				Utils.scheduleTask(() -> maxor(true), 60);
+		switch(section) {
+			case "all", "clear" -> {
+				Actions.teleport(Mage.mage, new Location(world, -132.5, 69, -76.5, -180f, 0f));
+				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 2, 29), 60);
+				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 2), 61);
+				Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(mage), 101);
+				Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
+				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 121);
+				Utils.scheduleTask(() -> {
+					Actions.teleport(mage, new Location(mage.getWorld(), -120.5, 75, -220.5));
+					Actions.swapFakePlayerInventorySlots(mage, 2, 29);
+				}, 141);
+				// Tick 160 (clear tick 0: run begins)
+				// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
+				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+			}
+			case "maxor", "boss" -> {
+				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+				Actions.swapFakePlayerInventorySlots(mage, 9, 36);
+				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
+				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
+			case "storm" -> {
+				Actions.teleport(mage, new Location(world, 46.576, 169, 49.503, 1.4f, 22.4f));
+				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
+				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
+				Utils.scheduleTask(() -> storm(false), 60);
 			}
 		}
 	}
@@ -266,8 +273,7 @@ public class Mage {
 		}, 946);
 		Utils.scheduleTask(() -> Actions.simulateEtherwarp(mage, new Location(world, -120.5, 69, -74.5)), 947);
 		Utils.scheduleTask(() -> {
-			Actions.swapFakePlayerInventorySlots(mage, 9, 39);
-			Actions.swapFakePlayerInventorySlots(mage, 10, 36);
+			Actions.swapFakePlayerInventorySlots(mage, 9, 36);
 			Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 			Actions.swapFakePlayerInventorySlots(mage, 3, 30);
 			Actions.swapFakePlayerInventorySlots(mage, 4, 31);
@@ -310,7 +316,7 @@ public class Mage {
 		}, 160);
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2108, 0, 0.1852), 27), 177);
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0488, 0, 0.0429), 1), 206);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 10, 36), 207);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 9, 36), 207);
 		Utils.scheduleTask(() -> {
 			Maxor.pickUpCrystal(mage);
 			Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
@@ -327,13 +333,89 @@ public class Mage {
 		Utils.scheduleTask(Mage::simulateBeam, 399);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 400);
 		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Berserk.getBerserk()), 401);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 402);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.12242, 0, 0), 11), 403);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 1.4f, 22.4f);
+			Actions.setFakePlayerHotbarSlot(mage, 6);
+		}, 414);
 		if(doContinue) {
 			Utils.scheduleTask(() -> storm(true), 499);
 		}
 	}
 
 	public static void storm(boolean doContinue) {
+		Actions.setFakePlayerHotbarSlot(mage, 6);
+		Utils.scheduleTask(() -> Actions.simulateGyro(mage, new Location(world, 46.5, 169, 53.5)), 1); // gyro will be up in 7.5 seconds (150 ticks)
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -105.7f, -19.8f);
+			Actions.setFakePlayerHotbarSlot(mage, 3);
+		},2);
+		Utils.scheduleTask(Mage::simulateBeam, 8);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -135.4f, -18.2f), 9);
+		Utils.scheduleTask(Mage::simulateBeam, 13);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 135f, -18.5f), 14);
+		Utils.scheduleTask(Mage::simulateBeam, 18);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 106.3f, -20.8f), 19);
+		Utils.scheduleTask(Mage::simulateBeam, 23);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 50f, -17.2f), 24);
+		Utils.scheduleTask(Mage::simulateBeam, 28);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 32.5f, -14.2f), 29);
+		Utils.scheduleTask(Mage::simulateBeam, 33);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -32.1f, -14.2f), 34);
+		Utils.scheduleTask(Mage::simulateBeam, 38);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -49.2f, -17.8f), 39);
+		Utils.scheduleTask(Mage::simulateBeam, 43);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 44);
+		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Berserk.getBerserk()), 45);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -106.4f, -21.8f);
+			Actions.setFakePlayerHotbarSlot(mage, 3);
+		}, 46);
+		Utils.scheduleTask(Mage::simulateBeam, 48);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -135.1f, -18.2f), 49);
+		Utils.scheduleTask(Mage::simulateBeam, 53);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 135.6f, -18.2f), 54);
+		Utils.scheduleTask(Mage::simulateBeam, 58);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 106.3f, -19.5f), 59);
+		Utils.scheduleTask(Mage::simulateBeam, 63);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 50f, -17.8f), 64);
+		Utils.scheduleTask(Mage::simulateBeam, 68);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 32.4f, -14.2f), 69);
+		Utils.scheduleTask(Mage::simulateBeam, 73);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -32.5f, -13.9f), 74);
+		Utils.scheduleTask(Mage::simulateBeam, 78);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -49.9f, -17.5f), 79);
+		Utils.scheduleTask(Mage::simulateBeam, 83);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 5), 84);
+		for(int tick = 85; tick <= 200; tick += 5) {
+			Utils.scheduleTask(() -> {
+				List<Entity> nearbyEntities = mage.getNearbyEntities(6, 6, 6);
 
+				for(Entity entity : nearbyEntities) {
+					if(entity instanceof WitherSkeleton) {
+						Location healerLoc = mage.getLocation();
+						Location witherLoc = entity.getLocation();
+
+						double deltaX = witherLoc.getX() - healerLoc.getX();
+						double deltaY = witherLoc.getY() - healerLoc.getY();
+						double deltaZ = witherLoc.getZ() - healerLoc.getZ();
+
+						float yaw = (float) (Math.atan2(deltaZ, deltaX) * 180.0 / Math.PI) - 90.0f;
+						float pitch = (float) -(Math.atan2(deltaY, Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)) * 180.0 / Math.PI);
+
+						Actions.turnHead(mage, yaw, pitch);
+
+						Utils.scheduleTask(Mage::simulateBeam, 1);
+
+						break;
+					}
+				}
+			}, tick);
+		}
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 202);
+		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Healer.getHealer()), 203);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 5), 204);
 	}
 
 	private static void snapHead(String target) {
@@ -382,7 +464,7 @@ public class Mage {
 		v.setX(v.getX() / 5);
 		v.setY(v.getY() / 5);
 		v.setZ(v.getZ() / 5);
-		for(int i = 0; i < 100; i++) {
+		for(int i = 0; i < 175; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;
 			}

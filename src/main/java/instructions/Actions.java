@@ -1,13 +1,17 @@
 package instructions;
 
+import com.mojang.datafixers.util.Pair;
+import com.mysql.cj.xdevapi.Client;
 import jline.internal.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
+import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.LeverBlock;
@@ -198,6 +202,16 @@ public class Actions {
 		// If either swapped slot was in the hotbar, update the hand-item too
 		if(slotA < 9 || slotB < 9) {
 			Utils.syncFakePlayerHand(p); // This now handles both viewers and spectators
+		}
+
+		if(slotA >= 36 || slotB >= 36) {
+			List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipmentList = new ArrayList<>();
+			equipmentList.add(new Pair<>(EquipmentSlot.HEAD, inv.getItem(39)));
+			equipmentList.add(new Pair<>(EquipmentSlot.CHEST, inv.getItem(38)));
+			equipmentList.add(new Pair<>(EquipmentSlot.LEGS, inv.getItem(37)));
+			equipmentList.add(new Pair<>(EquipmentSlot.FEET, inv.getItem(36)));
+			ClientboundSetEquipmentPacket equipmentPkt = new ClientboundSetEquipmentPacket(npc.getId(), equipmentList);
+			Utils.broadcastPacket(equipmentPkt);
 		}
 	}
 
@@ -1083,6 +1097,8 @@ public class Actions {
 		// Add critical particles for texture variety
 		world.spawnParticle(Particle.CRIT, location, 150, 0, 0, 0, 2);
 
+		p.getWorld().playSound(location, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
+
 		double magnitude = Math.sqrt(v.getX() * v.getX() + v.getZ() * v.getZ());
 		Vector impulseVector = v.clone().normalize().multiply(0.2806);
 
@@ -1116,6 +1132,7 @@ public class Actions {
 
 	public static void lavaJump(Player p, boolean big) {
 		p.teleport(p.getLocation().add(0, 3.5, 0));
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0F, 1.0F);
 		Utils.scheduleTask(() -> {
 			if(!(p instanceof CraftPlayer cp)) {
 				return;

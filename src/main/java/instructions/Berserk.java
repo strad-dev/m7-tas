@@ -4,12 +4,15 @@ import instructions.bosses.Maxor;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Berserk {
@@ -21,34 +24,42 @@ public class Berserk {
 		world = berserk.getWorld();
 		Objects.requireNonNull(berserk.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
-		if(section.equals("all") || section.equals("clear")) {
-			Actions.teleport(berserk, new Location(world, -21.5, 70, -197.5, 90f, 36.5f));
-			Utils.scheduleTask(() -> {
-				Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
-				Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
-			}, 60);
-			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 61);
-			Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(berserk), 101);
-			Utils.scheduleTask(() -> {
-				Actions.setFakePlayerHotbarSlot(berserk, 1);
-				Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
-			}, 102);
-			Utils.scheduleTask(() -> {
-				Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
-				Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
-			}, 141);
-			// Tick 160 (clear tick 0: run begins)
-			// Tick 161 (clear tick 1: teleport back)
-			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor") || section.equals("boss")) {
-			Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5));
-			Actions.swapFakePlayerInventorySlots(berserk, 11, 36);
-			Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-			Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
-			if(section.equals("maxor")) {
-				Utils.scheduleTask(() -> maxor(false), 60);
-			} else {
-				Utils.scheduleTask(() -> maxor(true), 60);
+		switch(section) {
+			case "all", "clear" -> {
+				Actions.teleport(berserk, new Location(world, -21.5, 70, -197.5, 90f, 36.5f));
+				Utils.scheduleTask(() -> {
+					Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
+					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
+				}, 60);
+				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 61);
+				Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(berserk), 101);
+				Utils.scheduleTask(() -> {
+					Actions.setFakePlayerHotbarSlot(berserk, 1);
+					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
+				}, 102);
+				Utils.scheduleTask(() -> {
+					Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
+					Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
+				}, 141);
+				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+			}
+			case "maxor", "boss" -> {
+				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+				Actions.swapFakePlayerInventorySlots(berserk, 11, 36);
+				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
+				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
+			case "storm" -> {
+				Actions.teleport(berserk, new Location(world, 100.422, 169, 49.624, -1f, 23f));
+				Actions.swapFakePlayerInventorySlots(berserk, 11, 36);
+				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
+				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Utils.scheduleTask(() -> storm(false), 60);
 			}
 		}
 	}
@@ -578,6 +589,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 88.8f, 0f), 286);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2805, 0, 0.000588), 40), 287);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.12217, 0, 0.0235), 5), 327);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 55.6f, 0f), 332);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -77f, 0f), 334);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 384);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -105f, 0f), 401);
@@ -638,9 +650,102 @@ public class Berserk {
 
 	public static void storm(boolean doContinue) {
 		// move continues for 2 more ticks from previous instruction
-		// if starting directly from storm, TP to 100.422 169 49.624
+		Actions.setFakePlayerHotbarSlot(berserk, 6);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -1f, 23f), 2);
 		Utils.scheduleTask(() -> Actions.simulateGyro(berserk, new Location(world, 100.5, 169, 53.5)), 3);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -1f, 0f);
+			Actions.setFakePlayerHotbarSlot(berserk, 4);
+		}, 4);
+		Utils.scheduleTask(Berserk::simulateShoot, 5);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 6);
+		Utils.scheduleTask(Berserk::simulateShoot, 10);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 11);
+		Utils.scheduleTask(Berserk::simulateShoot, 15);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 16);
+		Utils.scheduleTask(Berserk::simulateShoot, 20);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 21);
+		Utils.scheduleTask(Berserk::simulateShoot, 25);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 26);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -163.5f, -4f), 27);
+		Utils.scheduleTask(Berserk::simulateShoot, 30);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 31);
+		Utils.scheduleTask(Berserk::simulateShoot, 35);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 36);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -155.2f, -4f), 37);
+		Utils.scheduleTask(Berserk::simulateShoot, 40);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 41);
+		Utils.scheduleTask(Berserk::simulateShoot, 45);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 46);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -149f, -4f), 47);
+		Utils.scheduleTask(Berserk::simulateShoot, 50);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 51);
+		Utils.scheduleTask(Berserk::simulateShoot, 55);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 56);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90.6f, -10f), 57);
+		Utils.scheduleTask(Berserk::simulateShoot, 60);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -81.4f, -10f), 62);
+		Utils.scheduleTask(Berserk::simulateShoot, 65);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 66);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -70.9f, -10f), 67);
+		Utils.scheduleTask(Berserk::simulateShoot, 70);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 71);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 151.5f, -5f), 72);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.4991, 0, -1.0054), 17), 73);
+		Utils.scheduleTask(Berserk::simulateShoot, 75);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 76);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 151.5f, 6f), 79);
+		Utils.scheduleTask(Berserk::simulateShoot, 80);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 81);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 151.5f, 9f), 84);
+		Utils.scheduleTask(Berserk::simulateShoot, 85);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 86);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 167f, 11f), 89);
+		Utils.scheduleTask(Berserk::simulateShoot, 90);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 91);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 148f, -5.2f), 92);
+		Utils.scheduleTask(Berserk::simulateShoot, 95);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 96);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 143f, -5.2f), 97);
+		Utils.scheduleTask(Berserk::simulateShoot, 100);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 101);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 135f, 8f), 102);
+		Utils.scheduleTask(Berserk::simulateShoot, 105);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 106);
+		Utils.scheduleTask(Berserk::simulateShoot, 110);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 111);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 112);
+		Utils.scheduleTask(() -> Actions.simulateLeap(berserk, Archer.getArcher()), 113);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 114);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 120f, 0f), 115);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.972, 0, -0.5612), 12), 116);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 128);
+		for(int tick = 130; tick <= 545; tick += 5) {
+			Utils.scheduleTask(() -> {
+				List<Entity> nearbyEntities = berserk.getNearbyEntities(6, 6, 6);
+
+				for(Entity entity : nearbyEntities) {
+					if(entity instanceof WitherSkeleton) {
+						Location healerLoc = berserk.getLocation();
+						Location witherLoc = entity.getLocation();
+
+						double deltaX = witherLoc.getX() - healerLoc.getX();
+						double deltaY = witherLoc.getY() - healerLoc.getY();
+						double deltaZ = witherLoc.getZ() - healerLoc.getZ();
+
+						float yaw = (float) (Math.atan2(deltaZ, deltaX) * 180.0 / Math.PI) - 90.0f;
+						float pitch = (float) -(Math.atan2(deltaY, Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)) * 180.0 / Math.PI);
+
+						Actions.turnHead(berserk, yaw, pitch);
+
+						Utils.scheduleTask(() -> Actions.simulateRightClickAir(berserk), 1);
+
+						break;
+					}
+				}
+			}, tick);
+		}
 	}
 
 	private static void simulateShoot() {

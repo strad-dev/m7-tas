@@ -228,6 +228,9 @@ public class Storm {
 			ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
 			assert shadowAssassin.getEquipment() != null;
 			shadowAssassin.getEquipment().setBoots(boots);
+			shadowAssassin.getEquipment().setLeggings(new ItemStack(Material.AIR));
+			shadowAssassin.getEquipment().setChestplate(new ItemStack(Material.AIR));
+			shadowAssassin.getEquipment().setHelmet(new ItemStack(Material.AIR));
 			shadowAssassin.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SWORD));
 
 			shadowAssassins[i] = shadowAssassin;

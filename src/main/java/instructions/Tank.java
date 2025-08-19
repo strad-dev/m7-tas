@@ -3,10 +3,13 @@ package instructions;
 import instructions.bosses.Storm;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Tank {
@@ -19,34 +22,44 @@ public class Tank {
 		world = Tank.tank.getWorld();
 		Objects.requireNonNull(tank.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
-		if(section.equals("all") || section.equals("clear")) {
-			Actions.teleport(Tank.tank, new Location(world, -196.5, 68, -222.5, 0f, 5.6f));
-			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 2, 29), 60);
-			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 61);
-			Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(tank), 101);
-			Utils.scheduleTask(() -> {
-				Actions.setFakePlayerHotbarSlot(Tank.tank, 1);
-				Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
-			}, 102);
-			Utils.scheduleTask(() -> {
-				Actions.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
-				Actions.swapFakePlayerInventorySlots(Tank.tank, 2, 29);
-			}, 141);
-			// Tick 160 (clear tick 0: run begins)
-			// Tick 161 (clear tick 1: teleport back
-			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor") || section.equals("boss")) {
-			Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
-			Actions.swapFakePlayerInventorySlots(tank, 1, 28);
-			Actions.swapFakePlayerInventorySlots(tank, 3, 30);
-			Actions.swapFakePlayerInventorySlots(tank, 4, 31);
-			Actions.swapFakePlayerInventorySlots(tank, 5, 32);
-			Actions.swapFakePlayerInventorySlots(tank, 6, 33);
-			Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
-			if(section.equals("maxor")) {
-				Utils.scheduleTask(() -> maxor(false), 60);
-			} else {
-				Utils.scheduleTask(() -> maxor(true), 60);
+		switch(section) {
+			case "all", "clear" -> {
+				Actions.teleport(Tank.tank, new Location(world, -196.5, 68, -222.5, 0f, 5.6f));
+				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 2, 29), 60);
+				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 61);
+				Utils.scheduleTask(() -> Actions.simulateRightClickAirWithSpectators(tank), 101);
+				Utils.scheduleTask(() -> {
+					Actions.setFakePlayerHotbarSlot(Tank.tank, 1);
+					Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
+				}, 102);
+				Utils.scheduleTask(() -> {
+					Actions.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
+					Actions.swapFakePlayerInventorySlots(Tank.tank, 2, 29);
+				}, 141);
+				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+			}
+			case "maxor", "boss" -> {
+				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+				Actions.swapFakePlayerInventorySlots(tank, 1, 28);
+				Actions.swapFakePlayerInventorySlots(tank, 3, 30);
+				Actions.swapFakePlayerInventorySlots(tank, 4, 31);
+				Actions.swapFakePlayerInventorySlots(tank, 5, 32);
+				Actions.swapFakePlayerInventorySlots(tank, 6, 33);
+				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
+			case "storm" -> {
+				Actions.teleport(tank, new Location(world, 35.043, 170, 92.054, 46.9f, 25f));
+				Actions.swapFakePlayerInventorySlots(tank, 1, 28);
+				Actions.swapFakePlayerInventorySlots(tank, 3, 30);
+				Actions.swapFakePlayerInventorySlots(tank, 5, 32);
+				Actions.swapFakePlayerInventorySlots(tank, 6, 33);
+				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
+				Utils.scheduleTask(() -> storm(false), 60);
 			}
 		}
 	}
@@ -435,9 +448,7 @@ public class Tank {
 		Actions.setFakePlayerHotbarSlot(tank, 4);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.12242), 57), 1);
 		Utils.scheduleTask(() -> Actions.jump(tank), 48);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, -180f, -5f);
-		}, 58);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, -5f), 58);
 		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 59);
 		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 71);
 		Utils.scheduleTask(() -> Actions.simulateAOTS(tank), 83);
@@ -491,7 +502,99 @@ public class Tank {
 
 	public static void storm(boolean doContinue) {
 		Storm.prepadYellow();
+		Actions.setFakePlayerHotbarSlot(tank, 6);
 		Utils.scheduleTask(() -> Actions.simulateGyro(tank, new Location(world, 32.5, 170, 94.5)), 1);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 46.9f, 0f);
+			Actions.setFakePlayerHotbarSlot(tank, 4);
+		}, 2);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 3);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 4);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 8);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 9);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 13);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 14);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 18);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 19);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 23);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 24);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 28);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 29);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 30);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 5), 31);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, 9f), 36);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 37);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 38);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 42);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 43);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 47);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 48);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, 6f), 49);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 52);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 53);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 57);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 58);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 62);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 63);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, 3f), 64);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 67);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 68);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 72);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 73);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 77);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 78);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 79);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.12242, 0, 0), 5), 80);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -73f, -2f), 85);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 86);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 87);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 91);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 92);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -80f, 9f), 93);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 96);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 97);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 101);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 102);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -88f, 9f), 103);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 106);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 107);
+		Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 111);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(tank), 112);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -156.7f, 0f), 173);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(tank, 1);
+			Actions.move(tank, new Vector(0.444, 0, -1.031), 6);
+		}, 174);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -156.7f, 82f), 179);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(tank, new Vector(0.6034, 0.5, -1.401)), 180);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 156.7f, 0f), 181);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.444, 0, -1.031), 9), 195);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 4), 201);
+		for(int tick = 205; tick <= 545; tick += 5) {
+			Utils.scheduleTask(() -> {
+				List<Entity> nearbyEntities = tank.getNearbyEntities(6, 6, 6);
+
+				for(Entity entity : nearbyEntities) {
+					if(entity instanceof WitherSkeleton) {
+						Location healerLoc = tank.getLocation();
+						Location witherLoc = entity.getLocation();
+
+						double deltaX = witherLoc.getX() - healerLoc.getX();
+						double deltaY = witherLoc.getY() - healerLoc.getY();
+						double deltaZ = witherLoc.getZ() - healerLoc.getZ();
+
+						float yaw = (float) (Math.atan2(deltaZ, deltaX) * 180.0 / Math.PI) - 90.0f;
+						float pitch = (float) -(Math.atan2(deltaY, Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)) * 180.0 / Math.PI);
+
+						Actions.turnHead(tank, yaw, pitch);
+
+						Utils.scheduleTask(() -> Actions.simulateRightClickAir(tank), 1);
+
+						break;
+					}
+				}
+			}, tick);
+		}
 	}
 
 	@SuppressWarnings("unused")

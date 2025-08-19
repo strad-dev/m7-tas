@@ -24,19 +24,28 @@ public class Archer {
 		world = archer.getWorld();
 		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 24);
 
-		if(section.equals("all") || section.equals("clear")) {
-			Actions.teleport(archer, new Location(world, -118.5, 70, -202.5, 0f, 0f));
-			Actions.setFakePlayerHotbarSlot(archer, 1);
-			Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
-			Utils.scheduleTask(() -> clear(section.equals("all")), 162);
-		} else if(section.equals("maxor") || section.equals("boss")) {
-			Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
-			Actions.swapFakePlayerInventorySlots(archer, 1, 28);
-			Actions.swapFakePlayerInventorySlots(archer, 7, 35);
-			if(section.equals("maxor")) {
-				Utils.scheduleTask(() -> maxor(false), 60);
-			} else {
-				Utils.scheduleTask(() -> maxor(true), 60);
+		switch(section) {
+			case "all", "clear" -> {
+				Actions.teleport(archer, new Location(world, -118.5, 70, -202.5, 0f, 0f));
+				Actions.setFakePlayerHotbarSlot(archer, 1);
+				Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
+				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+			}
+			case "maxor", "boss" -> {
+				Actions.teleport(archer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
+			case "storm" -> {
+				Actions.teleport(archer, new Location(world, 46.687, 169, 57.747, 177.8f, 0f));
+				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+				Utils.scheduleTask(() -> storm(false), 60);
 			}
 		}
 	}
@@ -555,7 +564,7 @@ public class Archer {
 			Actions.move(archer, new Vector(-1.12242, 0, 0), 4);
 		}, 52);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -57.3f, 10.2f), 56);
-		Utils.scheduleTask(() -> Actions.simulateGyro(archer, new Location(world, 73.5, 225, 73.5)), 161);
+		Utils.scheduleTask(() -> Actions.simulateGyro(archer, new Location(world, 73.5, 225, 73.5)), 161); // gyro comes up in 30 seconds (600 ticks) | tick 761 | storm tick 262
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 162);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -63.2f, -11f), 163);
 		Utils.scheduleTask(Archer::simulateShoot, 163);
@@ -574,13 +583,136 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.7f, -8.3f), 220);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 221);
 		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Berserk.getBerserk()), 332);
+		Utils.scheduleTask(() -> {
+			Actions.move(archer, new Vector(-0.9261, 0, 0.6341), 13);
+			Actions.setFakePlayerHotbarSlot(archer, 4);
+		}, 333);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 177.8f, 0f), 346);
 		if(doContinue) {
 			Utils.scheduleTask(() -> storm(true), 499);
 		}
 	}
 
 	public static void storm(boolean doContinue) {
-
+		Actions.setFakePlayerHotbarSlot(archer, 4);
+		Utils.scheduleTask(Archer::simulateShoot, 1);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 2);
+		Utils.scheduleTask(Archer::simulateShoot, 6);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 7);
+		Utils.scheduleTask(Archer::simulateShoot, 11);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 12);
+		Utils.scheduleTask(Archer::simulateShoot,16);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 17);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90.9f, -9f), 18);
+		Utils.scheduleTask(Archer::simulateShoot, 21);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 22);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 100.8f, -8.2f), 23);
+		Utils.scheduleTask(Archer::simulateShoot, 26);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 27);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 110f, -7.5f), 28);
+		Utils.scheduleTask(Archer::simulateShoot, 31);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 32);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 0f), 33);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -1.12242), 8), 34);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 163.6f, -4f), 41);
+		Utils.scheduleTask(Archer::simulateShoot, 44);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 45);
+		Utils.scheduleTask(Archer::simulateShoot, 49);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 50);
+		Utils.scheduleTask(Archer::simulateShoot, 54);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 55);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 159f, -4f), 51);
+		Utils.scheduleTask(Archer::simulateShoot, 54);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 55);
+		Utils.scheduleTask(Archer::simulateShoot, 59);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 60);
+		Utils.scheduleTask(Archer::simulateShoot, 64);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 65);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 154f, -4f), 66);
+		Utils.scheduleTask(Archer::simulateShoot, 69);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 70);
+		Utils.scheduleTask(Archer::simulateShoot, 74);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 75);
+		Utils.scheduleTask(Archer::simulateShoot, 79);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 80);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 0f), 81);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(1.112242, 0, 0), 11), 82);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -120.9f, 22.7f), 93);
+		Utils.scheduleTask(Archer::simulateShoot, 94);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 95);
+		Utils.scheduleTask(Archer::simulateShoot, 99);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 100);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -104.3f, 14.5f), 101);
+		Utils.scheduleTask(Archer::simulateShoot, 104);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 105);
+		Utils.scheduleTask(Archer::simulateShoot, 109);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 110);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -94.8f, 9.9f), 111);
+		Utils.scheduleTask(Archer::simulateShoot, 114);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 115);
+		Utils.scheduleTask(Archer::simulateShoot, 119);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 120);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -85.7f, 30.4f), 121);
+		Utils.scheduleTask(Archer::simulateShoot, 124);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 125);
+		Utils.scheduleTask(Archer::simulateShoot, 129);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 130);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -87.7f, 16.2f), 131);
+		Utils.scheduleTask(Archer::simulateShoot, 134);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 135);
+		Utils.scheduleTask(Archer::simulateShoot, 139);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 140);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -87.7f, 3.7f), 141);
+		Utils.scheduleTask(Archer::simulateShoot, 144);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 145);
+		Utils.scheduleTask(Archer::simulateShoot, 149);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 150);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -55.1f, 24.7f), 151);
+		Utils.scheduleTask(Archer::simulateShoot, 154);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 155);
+		Utils.scheduleTask(Archer::simulateShoot, 159);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 160);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -66.9f, 14.6f), 161);
+		Utils.scheduleTask(Archer::simulateShoot, 164);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 165);
+		Utils.scheduleTask(Archer::simulateShoot, 169);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 170);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -67.3f, 6.3f), 171);
+		Utils.scheduleTask(Archer::simulateShoot, 174);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 175);
+		Utils.scheduleTask(Archer::simulateShoot, 179);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 180);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -27.4f, 18.2f), 181);
+		Utils.scheduleTask(Archer::simulateShoot, 184);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 185);
+		Utils.scheduleTask(Archer::simulateShoot, 189);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 190);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -43.9f, 11.2f), 191);
+		Utils.scheduleTask(Archer::simulateShoot, 194);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 195);
+		Utils.scheduleTask(Archer::simulateShoot, 199);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 200);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -56.7f, 6f), 201);
+		Utils.scheduleTask(Archer::simulateShoot, 204);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 205);
+		Utils.scheduleTask(Archer::simulateShoot, 209);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 210);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -89f, -3f), 211);
+		Utils.scheduleTask(Archer::simulateShoot, 214);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 215);
+		Utils.scheduleTask(Archer::simulateShoot, 219);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 220);
+		Utils.scheduleTask(Archer::simulateShoot, 224);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 225);
+		Utils.scheduleTask(Archer::simulateShoot, 229);
+		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 230);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 231);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Healer.getHealer()), 232);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 6), 233);
+		Utils.scheduleTask(() -> {
+			Actions.swapFakePlayerInventorySlots(archer, 5, 32);
+			Actions.swapFakePlayerInventorySlots(archer, 6, 33);
+		}, 234);
 	}
 
 	private static void simulateShoot() {

@@ -152,6 +152,9 @@ public class Server {
 		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
 		assert yellowShadowAssassin.getEquipment() != null;
 		yellowShadowAssassin.getEquipment().setBoots(boots);
+		yellowShadowAssassin.getEquipment().setLeggings(new ItemStack(Material.AIR));
+		yellowShadowAssassin.getEquipment().setChestplate(new ItemStack(Material.AIR));
+		yellowShadowAssassin.getEquipment().setHelmet(new ItemStack(Material.AIR));
 		yellowShadowAssassin.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SWORD));
 	}
 
