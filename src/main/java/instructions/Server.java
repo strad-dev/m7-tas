@@ -59,7 +59,10 @@ public class Server {
 				}
 				case "boss" -> Maxor.maxorInstructions(world, true);
 				case "maxor" -> Maxor.maxorInstructions(world, false);
-				case "storm" -> Storm.stormInstructions(world, false);
+				case "storm" -> {
+					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 air");
+					Storm.stormInstructions(world, false);
+				}
 //				case "goldor" -> Goldor.goldorInstructions(world, false);
 //				case "necron" -> Necron.necronInstructions(world, false);
 //				case "witherking" -> WitherKing.witherKingInstructions(world, false);
@@ -78,6 +81,7 @@ public class Server {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 redstone_lamp[lit=false]");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 43 175 62");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 97 175 62");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 91 -2 45 89 -1 46 89 131 45");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
 		Storm.cleanupMobs();

@@ -643,7 +643,7 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 320 Ticks (16.00 seconds) | Overall: 1 347 ticks (67.35 seconds)");
 		}, 320); // 61 tick time save | 34 ticks this section
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 334);
-		Utils.scheduleTask(() -> Actions.simulateLeap(healer, Berserk.getBerserk()), 335);
+		Utils.scheduleTask(() -> Actions.simulateLeap(healer, Berserk.get()), 335);
 		Utils.scheduleTask(() -> {
 			Actions.setFakePlayerHotbarSlot(healer, 1);
 			Actions.move(healer, new Vector(1.0936, 0, 0.2525), 33);
@@ -758,10 +758,24 @@ public class Healer {
 				}
 			}, tick);
 		}
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -22.2f, 0f);
+			Actions.setFakePlayerHotbarSlot(healer, 1);
+		}, 546);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.4241, 0, 1.0392), 11), 547);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -22.2f, 82f), 557);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(healer, new Vector(0.5764, 0.5, 1.4124)), 558);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -22.2f, 0f), 559);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.4241, 0, 1.0392), 4), 575);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 587);
+		Utils.scheduleTask(() -> Actions.move(healer,  new Vector(0.4241, 0, 1.0392), 2), 653);
+		Utils.scheduleTask(Storm::crushPurple, 655);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 656);
+		Utils.scheduleTask(() -> Actions.simulateLeap(healer, Berserk.get()), 665);
 	}
 
 	@SuppressWarnings("unused")
-	public static Player getHealer() {
+	public static Player get() {
 		return healer;
 	}
 }

@@ -1,18 +1,19 @@
 package instructions;
 
 import com.mojang.datafixers.util.Pair;
-import com.mysql.cj.xdevapi.Client;
 import jline.internal.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -133,6 +134,74 @@ public class Actions {
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
+	public static void forceMove(LivingEntity entity, Vector perTick, int durationTicks) {
+		// only handle CraftLivingEntity/NMS and positive duration
+		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
+
+		net.minecraft.world.entity.LivingEntity nmsEntity = cle.getHandle();
+
+		// This variable stores the requested motion from the caller.
+		Vec3 motion = new Vec3(perTick.getX(), perTick.getY(), perTick.getZ());
+
+		new BukkitRunnable() {
+			int ticks = 0;
+
+			@Override
+			public void run() {
+				if(ticks++ >= durationTicks || nmsEntity.isRemoved()) {
+					cancel();
+					return;
+				}
+
+				// Get current position
+				Vec3 currentPos = nmsEntity.position();
+
+				// Calculate new position by adding the per-tick motion
+				Vec3 newPos = currentPos.add(motion);
+
+				// Force teleport to the new position
+				nmsEntity.teleportTo(newPos.x(), newPos.y(), newPos.z());
+
+				// Update the bounding box to the new position
+				nmsEntity.setBoundingBox(nmsEntity.getBoundingBox().move(
+						newPos.x() - currentPos.x(),
+						newPos.y() - currentPos.y(),
+						newPos.z() - currentPos.z()
+				));
+
+				// Set the delta movement to maintain client-side interpolation
+				nmsEntity.setDeltaMovement(motion);
+
+				// Mark position as changed
+				nmsEntity.hasImpulse = true;
+
+				// Send position update to all nearby players
+				if(nmsEntity instanceof ServerPlayer serverPlayer) {
+					// For players, use the connection teleport
+					serverPlayer.connection.teleport(newPos.x(), newPos.y(), newPos.z(),
+							nmsEntity.getYRot(), nmsEntity.getXRot());
+				} else {
+					// For non-player entities, send teleport packet to all tracking players
+					PositionMoveRotation posRotation = new PositionMoveRotation(
+							newPos, // position
+							Vec3.ZERO, // delta movement (we handle this separately)
+							nmsEntity.getYRot(), // yaw
+							nmsEntity.getXRot()  // pitch
+					);
+
+					ClientboundTeleportEntityPacket teleportPacket = ClientboundTeleportEntityPacket.teleport(
+							nmsEntity.getId(), // entity ID
+							posRotation, // position and rotation
+							Set.of(), // no relative flags - all values are absolute
+							nmsEntity.onGround() // on ground status
+					);
+
+					Utils.broadcastPacket(teleportPacket);
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
 
 	/**
 	 * Makes a Player entity perform a jump if it is currently on the ground.
@@ -149,6 +218,8 @@ public class Actions {
 		if(npc.onGround()) { // onGround check
 			Vec3 motion = npc.getDeltaMovement();
 			npc.setDeltaMovement(new Vec3(motion.x(), 0.42D, motion.z()));
+		} else {
+			Bukkit.getLogger().warning("Failed jump due to not being on ground!");
 		}
 	}
 
@@ -264,7 +335,7 @@ public class Actions {
 
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
-				EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(p, entity, EntityDamageEvent.DamageCause.MAGIC, DamageSource.builder(DamageType.MAGIC).build(), 1);
+				EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(p, entity, EntityDamageEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 1);
 
 				Bukkit.getPluginManager().callEvent(damageEvent);
 				damaged += 1;
@@ -369,7 +440,7 @@ public class Actions {
 		Utils.scheduleTask(() -> {
 			b.setType(material);
 			b.setBlockData(blockdata);
-		}, 5);
+		}, 6);
 	}
 
 	/**
@@ -566,7 +637,7 @@ public class Actions {
 			for(Entity entity : entities) {
 				if(!damagedEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 					damagedEntities.add(entity);
-					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, entity1, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), (2.5 + add) / 2));
+					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, entity1, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 2.5 + add));
 					pierce--;
 				}
 			}
@@ -771,6 +842,34 @@ public class Actions {
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 3);
 
+					if(p.getName().contains("Archer")) {
+						Utils.scheduleTask(() -> {
+							// Fire third arrow
+							Arrow arrow2 = p.launchProjectile(Arrow.class);
+							arrow2.setVelocity(p.getLocation().getDirection().multiply(velocity));
+							arrow2.setDamage(0.2);
+							arrow2.setShooter(p);
+							arrow2.addScoreboardTag("TerminatorArrow");
+							arrow2.setWeapon(p.getInventory().getItemInMainHand());
+
+							// Play bow shoot sound again
+							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
+						}, 5);
+
+						Utils.scheduleTask(() -> {
+							// Fire fourth arrow
+							Arrow arrow2 = p.launchProjectile(Arrow.class);
+							arrow2.setVelocity(p.getLocation().getDirection().multiply(velocity));
+							arrow2.setDamage(0.2);
+							arrow2.setShooter(p);
+							arrow2.addScoreboardTag("TerminatorArrow");
+							arrow2.setWeapon(p.getInventory().getItemInMainHand());
+
+							// Play bow shoot sound again
+							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
+						}, 10);
+					}
+
 					// Cancel the runnable after firing first arrow
 					cancel();
 				}
@@ -789,7 +888,7 @@ public class Actions {
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
-				Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, entity1, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 0.5));
+				Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, entity1, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 1));
 			}
 		}
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
@@ -859,7 +958,7 @@ public class Actions {
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
 					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 						// Deal 1 damage using Bukkit damage event
-						Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, entity, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 0.5));
+						Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, entity, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 1));
 						hitEntities.add(entity);
 					}
 				}
@@ -1168,7 +1267,6 @@ public class Actions {
 					wither.setInvulnerabilityTicks(3);
 				}
 			}.runTaskTimer(M7tas.getInstance(), 0L, 1L); // Start immediately, repeat every 20 ticks (1 second)
-
 		} else {
 			// Remove armor immediately
 			wither.setInvulnerabilityTicks(0);

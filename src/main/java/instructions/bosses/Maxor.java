@@ -76,12 +76,7 @@ public class Maxor {
 		Utils.scheduleTask(() -> {
 			sendChatMessage(laserMessage[random.nextInt(2)]);
 			Actions.setWitherArmor(maxor, false);
-			TextDisplay stunnedIndicator = CustomBossBar.spawnAnimatedStunnedIndicator(maxor);
-			Utils.scheduleTask(() -> {
-				if(stunnedIndicator.isValid()) {
-					stunnedIndicator.remove();
-				}
-			}, 160);
+			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160);
 		}, 198);
 		Utils.scheduleTask(() -> {
 			Maxor.spawnCrystals();
@@ -104,12 +99,7 @@ public class Maxor {
 		Utils.scheduleTask(() -> {
 			sendChatMessage(laserMessage[random.nextInt(2)]);
 			Actions.setWitherArmor(maxor, false);
-			TextDisplay stunnedIndicator = CustomBossBar.spawnAnimatedStunnedIndicator(maxor);
-			Utils.scheduleTask(() -> {
-				if(stunnedIndicator.isValid()) {
-					stunnedIndicator.remove();
-				}
-			}, 2);
+			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 2);
 		}, 398);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I’M TOO YOUNG TO DIE AGAIN!");

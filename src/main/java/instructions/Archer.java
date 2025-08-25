@@ -74,7 +74,7 @@ public class Archer {
 			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Red Blue Cleared");
 		}, 7);
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303 " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!"), 8);
-		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Mage.getMage()), 9);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Mage.get()), 9);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 0f, 8.6f);
 			Actions.setFakePlayerHotbarSlot(archer, 1);
@@ -582,7 +582,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 219); // 118.5
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.7f, -8.3f), 220);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 221);
-		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Berserk.getBerserk()), 332);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Berserk.get()), 332);
 		Utils.scheduleTask(() -> {
 			Actions.move(archer, new Vector(-0.9261, 0, 0.6341), 13);
 			Actions.setFakePlayerHotbarSlot(archer, 4);
@@ -707,12 +707,16 @@ public class Archer {
 		Utils.scheduleTask(Archer::simulateShoot, 229);
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 230);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 231);
-		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Healer.getHealer()), 232);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 6), 233);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Healer.get()), 232);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 5), 233);
 		Utils.scheduleTask(() -> {
 			Actions.swapFakePlayerInventorySlots(archer, 5, 32);
 			Actions.swapFakePlayerInventorySlots(archer, 6, 33);
 		}, 234);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -108.4f, -83.4f), 654);
+		Utils.scheduleTask(() -> Actions.simulateLB(archer, 30), 654);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 684);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Tank.get()), 685);
 	}
 
 	private static void simulateShoot() {
@@ -825,7 +829,7 @@ public class Archer {
 		}
 	}
 
-	public static Player getArcher() {
+	public static Player get() {
 		return archer;
 	}
 }

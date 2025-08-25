@@ -418,7 +418,7 @@ public class Berserk {
 			world.playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 		}, 171);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 172);
-		Utils.scheduleTask(() -> Actions.simulateLeap(berserk, Tank.getTank()), 173);
+		Utils.scheduleTask(() -> Actions.simulateLeap(berserk, Tank.get()), 173);
 
 		/*
 		 * ███████╗██████╗ ██╗██████╗ ███████╗██████╗
@@ -716,7 +716,7 @@ public class Berserk {
 		Utils.scheduleTask(Berserk::simulateShoot, 110);
 		Utils.scheduleTask(() -> Actions.simulateSalvation(berserk), 111);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 112);
-		Utils.scheduleTask(() -> Actions.simulateLeap(berserk, Archer.getArcher()), 113);
+		Utils.scheduleTask(() -> Actions.simulateLeap(berserk, Archer.get()), 113);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 114);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 120f, 0f), 115);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.972, 0, -0.5612), 12), 116);
@@ -746,6 +746,61 @@ public class Berserk {
 				}
 			}, tick);
 		}
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -91.5f, 0f);
+			Actions.setFakePlayerHotbarSlot(berserk, 1);
+		}, 544);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12204, 0, -0.0294), 11), 545);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.2805, 0, -0.00735), 8), 556);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12204, 0, -0.0294), 20), 564);
+		Utils.scheduleTask(() -> {
+			Actions.jump(berserk);
+			Actions.turnHead(berserk, -85f, 0f);
+		}, 583);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.118, 0, 0.0978), 8), 584);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.28, 0, -0.0245), 17), 592);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -101f, 0f), 608);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(berserk, new Vector(-1.4975, 0.5, 0.2911)), 609);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 79f, 0f);
+			Actions.setFakePlayerHotbarSlot(berserk, 5);
+		}, 610);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 65f), 643);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -0.8634), 1), 644);
+		Utils.scheduleTask(() -> Actions.simulateStonking(berserk, world.getBlockAt(92, 131, 45)), 645);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 45f, 0f), 646);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.7937, 0, 0.7937), 2), 646);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -74.6f, 6.9f), 648);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 132, 45)), 649);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 132, 46)), 650);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(90, 132, 46)), 651);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(89, 132, 46)), 652);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 76.6f, 26.7f), 653);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 131, 45)), 654);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(91, 131, 46)), 655);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(90, 131, 46)), 656);
+		Utils.scheduleTask(() -> Actions.simulateGhostPick(berserk, world.getBlockAt(89, 131, 46)), 657);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 658);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 70f, 0f), 666);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.055, 0, 0.384), 2), 667);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 668);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.12242, 0, 0), 3), 669);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 8), 672);
+		Utils.scheduleTask(() -> {
+			Actions.jump(berserk);
+			Actions.move(berserk, new Vector(-1.12242, 0, 0), 1);
+		}, 682);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 3), 683);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 138f, 82f), 693);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.751, 0, -0.834), 1), 694);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(berserk, new Vector(-1.0201, 0.5, -1.1337)), 695);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 138f, 0f), 696);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 97.6f, 0f), 709);
+		Utils.scheduleTask(() -> {
+			Actions.jump(berserk);
+			Actions.move(berserk, new Vector(-1.1126, 0, -0.1485), 1);
+		}, 710);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.278, 0, -0.037), 12), 711);
 	}
 
 	private static void simulateShoot() {
@@ -800,7 +855,7 @@ public class Berserk {
 	}
 
 	@SuppressWarnings("unused")
-	public static Player getBerserk() {
+	public static Player get() {
 		return berserk;
 	}
 }

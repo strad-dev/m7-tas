@@ -484,7 +484,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 386);
 		Utils.scheduleTask(() -> Actions.simulateFlay(tank), 398);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 399);
-		Utils.scheduleTask(() -> Actions.simulateLeap(tank, Berserk.getBerserk()), 400);
+		Utils.scheduleTask(() -> Actions.simulateLeap(tank, Berserk.get()), 400);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 28.7f, 0f), 401);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.539, 0, 0.9845), 28), 402);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 28.7f, 82f), 429);
@@ -595,10 +595,22 @@ public class Tank {
 				}
 			}, tick);
 		}
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 686);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 0f), 687);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 12), 688);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 82f), 699);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(tank, new Vector(-0.6034, 0.5, 1.401)), 700);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 0f), 701);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 3), 711);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 712);
+		Utils.scheduleTask(() -> Actions.move(tank,  new Vector(-0.444, 0, 1.031), 2), 758);
+		Utils.scheduleTask(Storm::crushYellow, 760);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 156.7f, 0f), 761);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.444, 0, -1.031), 2), 770);
 	}
 
 	@SuppressWarnings("unused")
-	public static Player getTank() {
+	public static Player get() {
 		return tank;
 	}
 }

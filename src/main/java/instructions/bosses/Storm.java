@@ -1,11 +1,16 @@
 package instructions.bosses;
 
 import instructions.Actions;
+import instructions.Mage;
+import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftWitherSkeleton;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -104,6 +109,42 @@ public class Storm {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 2.0F);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 0.6F);
 		}, 545);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(storm, 7.1f, 35.6f);
+			Actions.forceMove(storm, new Vector(-0.0735, -0.375, 0.59), 19);
+		}, 665);
+		Utils.scheduleTask(() -> {
+			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+			Actions.setWitherArmor(storm, false);
+			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 8);
+			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
+		}, 685);
+		Utils.scheduleTask(() -> {
+			sendChatMessage(enrageMessage[random.nextInt(enrageMessage.length)]);
+			Actions.setWitherArmor(storm, true);
+			storm.setHealth(225);
+			Bukkit.broadcastMessage(ChatColor.RED + "⚠ Storm is enraged! ⚠");
+			for(Player player : Bukkit.getOnlinePlayers()) {
+				player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
+			}
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
+			Actions.forceMove(storm, new Vector(-0.6, -0.01, 0), 92);
+		}, 694);
+		Utils.scheduleTask(() -> {
+			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+			Actions.setWitherArmor(storm, false);
+			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 6);
+			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
+		}, 786);
+		Utils.scheduleTask(() -> {
+			sendChatMessage("I should have known that I stand no chance.");
+			Server.playWitherDeathSound(storm);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 792 ticks (39.60 seconds) | Overall: 2 218 ticks (110.90 seconds)");
+		}, 792);
+		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 852);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in 892 ticks (44.60 seconds) | Overall: 2 318 ticks (115.90 seconds)"), 892);
 	}
 
 	private static void sendChatMessage(String message) {

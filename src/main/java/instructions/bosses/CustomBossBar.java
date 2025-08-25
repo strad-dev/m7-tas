@@ -149,7 +149,7 @@ public class CustomBossBar {
 		return activeWither;
 	}
 
-	public static TextDisplay spawnAnimatedStunnedIndicator(Wither wither) {
+	public static TextDisplay spawnAnimatedStunnedIndicator(Wither wither, int duration) {
 		Location loc = wither.getLocation().add(0, wither.getHeight() + 0.5, 0);
 		TextDisplay indicator = wither.getWorld().spawn(loc, TextDisplay.class);
 
@@ -186,6 +186,8 @@ public class CustomBossBar {
 				colorOffset = (colorOffset + 1) % 3;
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 5L); // Run every 5 ticks instead of every tick
+
+		Utils.scheduleTask(indicator::remove, duration);
 
 		return indicator;
 	}
