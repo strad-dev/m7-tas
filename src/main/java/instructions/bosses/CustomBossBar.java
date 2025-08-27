@@ -84,11 +84,7 @@ public class CustomBossBar {
 				}
 
 				updateWitherBossBar(witherName);
-
-				// Re-disable vanilla boss bar every second to ensure it stays hidden
-				if(this.getTaskId() % 20 == 0) {
-					disableVanillaWitherBossBar(activeWither);
-				}
+				disableVanillaWitherBossBar(activeWither);
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
@@ -149,7 +145,7 @@ public class CustomBossBar {
 		return activeWither;
 	}
 
-	public static TextDisplay spawnAnimatedStunnedIndicator(Wither wither, int duration) {
+	public static void spawnAnimatedStunnedIndicator(Wither wither, int duration) {
 		Location loc = wither.getLocation().add(0, wither.getHeight() + 0.5, 0);
 		TextDisplay indicator = wither.getWorld().spawn(loc, TextDisplay.class);
 
@@ -164,7 +160,7 @@ public class CustomBossBar {
 
 			@Override
 			public void run() {
-				if (!wither.isValid() || !indicator.isValid()) {
+				if(!wither.isValid() || !indicator.isValid()) {
 					indicator.remove();
 					cancel();
 					return;
@@ -175,7 +171,7 @@ public class CustomBossBar {
 
 				// Build the text with rotating colors
 				StringBuilder text = new StringBuilder();
-				for (int i = 0; i < 3; i++) {
+				for(int i = 0; i < 3; i++) {
 					int colorIndex = (i + colorOffset) % 3;
 					text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
 				}
@@ -189,6 +185,5 @@ public class CustomBossBar {
 
 		Utils.scheduleTask(indicator::remove, duration);
 
-		return indicator;
 	}
 }

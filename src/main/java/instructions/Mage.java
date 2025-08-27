@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Goldor;
 import instructions.bosses.Maxor;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
@@ -60,6 +61,13 @@ public class Mage {
 				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
 				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
 				Utils.scheduleTask(() -> storm(false), 60);
+			}
+			case "goldor" -> {
+				Actions.teleport(mage, new Location(world, 106.697, 120, 90.213, -71.7f, 1.9f));
+				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
+				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
+				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 		}
 	}
@@ -350,7 +358,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -105.7f, -19.8f);
 			Actions.setFakePlayerHotbarSlot(mage, 3);
-		},2);
+		}, 2);
 		Utils.scheduleTask(Mage::simulateBeam, 8);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -135.4f, -18.2f), 9);
 		Utils.scheduleTask(Mage::simulateBeam, 13);
@@ -377,7 +385,7 @@ public class Mage {
 		Utils.scheduleTask(Mage::simulateBeam, 53);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 135.6f, -18.2f), 54);
 		Utils.scheduleTask(Mage::simulateBeam, 58);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 106.3f, -19.5f), 59);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 106f, -22f), 59);
 		Utils.scheduleTask(Mage::simulateBeam, 63);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 50f, -17.8f), 64);
 		Utils.scheduleTask(Mage::simulateBeam, 68);
@@ -454,15 +462,144 @@ public class Mage {
 		Utils.scheduleTask(Mage::simulateBeam, 693);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 694);
 		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Archer.get()), 695);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 696);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 91.8f, -78.1f);
+			Actions.move(mage, new Vector(-0.8634, 0, 0), 6);
+			Actions.setFakePlayerHotbarSlot(mage, 3);
+			simulateBeam();
+		}, 696);
+		Utils.scheduleTask(Mage::simulateBeam, 701);
+		Utils.scheduleTask(() -> Actions.jump(mage), 702);
+		Utils.scheduleTask(Mage::simulateBeam, 706);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -7f), 707);
+		Utils.scheduleTask(Mage::simulateBeam, 711);
+		Utils.scheduleTask(() -> Actions.jump(mage), 714);
+		Utils.scheduleTask(Mage::simulateBeam, 716);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -8f), 717);
+		Utils.scheduleTask(Mage::simulateBeam, 721);
+		Utils.scheduleTask(() -> {
+			simulateBeam();
+			Actions.jump(mage);
+		}, 726);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -9f), 727);
+		Utils.scheduleTask(Mage::simulateBeam, 731);
+		Utils.scheduleTask(Mage::simulateBeam, 736);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -11f), 737);
+		Utils.scheduleTask(() -> Actions.jump(mage), 738);
+		Utils.scheduleTask(Mage::simulateBeam, 741);
+		Utils.scheduleTask(Mage::simulateBeam, 746);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -13f), 747);
+		Utils.scheduleTask(() -> Actions.jump(mage), 750);
+		Utils.scheduleTask(Mage::simulateBeam, 751);
+		Utils.scheduleTask(Mage::simulateBeam, 756);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -15f), 757);
+		Utils.scheduleTask(Mage::simulateBeam, 761);
+		Utils.scheduleTask(() -> Actions.jump(mage), 762);
+		Utils.scheduleTask(Mage::simulateBeam, 766);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -18f), 767);
+		Utils.scheduleTask(Mage::simulateBeam, 771);
+		Utils.scheduleTask(() -> Actions.jump(mage), 774);
+		Utils.scheduleTask(Mage::simulateBeam, 776);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, -21f), 777);
+		Utils.scheduleTask(Mage::simulateBeam, 781);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -90f, -24f);
 			Actions.setFakePlayerHotbarSlot(mage, 2);
-		}, 785);
-		Utils.scheduleTask(() -> Actions.simulateIceSpray(mage), 786);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 787);
-		Utils.scheduleTask(Mage::simulateBeam, 788);
-		Utils.scheduleTask(Mage::simulateBeam, 793);
+		}, 783);
+		Utils.scheduleTask(() -> {
+			Actions.simulateIceSpray(mage);
+			Actions.jump(mage);
+		}, 784);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 785);
+		Utils.scheduleTask(Mage::simulateBeam, 786);
+		Utils.scheduleTask(Mage::simulateBeam, 791);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 794);
+		Utils.scheduleTask(() -> Actions.simulateLeap(mage, Healer.get()), 795);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 796);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 1), 797);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -143.3f, 1.7f), 798);
+//		Utils.scheduleTask(() -> {
+//			Actions.move(mage, new Vector(-0.3839, 0, -1.0547), 1);
+//			Actions.jump(mage);
+//			Actions.setFakePlayerHotbarSlot(mage, 5);
+//		}, 797);
+//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.096, 0, -0.2637), 3), 798);
+//		Utils.scheduleTask(() -> Actions.turnHead(mage, -71.7f, 1.9f), 801);
+		if(doContinue) {
+			Utils.scheduleTask(() -> goldor(true), 890);
+		}
+	}
+
+	private static void goldor(boolean doContinue) {
+		/*
+		 *  ██╗
+		 * ███║
+		 * ╚██║
+		 *  ██║
+		 *  ██║
+		 *  ╚═╝
+		 */
+		Actions.setFakePlayerHotbarSlot(mage, 5);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 1);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 2);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 3);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 4);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 5);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 6);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 7);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 8);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 9);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 10);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 11);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 12);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 13);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 14);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 15);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 45f, 0f), 16);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.7937, 0, 0.7937), 2), 17);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 45f, 82f);
+			Actions.setFakePlayerHotbarSlot(mage, 1);
+		}, 18);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(mage, new Vector(-1.0787, 0.5, 1.0787)), 19);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 45f, 0f), 20);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 32);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.12242, 0, 0), 4), 33);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 65.8f, 15.8f), 36);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 37);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(mage, "terminal", 4, 7), 38);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 39);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.12242), 1), 40);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -0.2806), 9), 41);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 17.1f), 50);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(mage), 57);
+		Utils.scheduleTask(() -> {
+			Goldor.broadcastTerminalComplete(mage, "terminal", 7, 7);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "1 finished in 58 ticks (2.90 seconds) | Overall: 2 374 ticks (118.70 seconds)");
+		}, 58);
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		/*
+		 *  ██████╗ ██████╗ ██████╗ ███████╗
+		 * ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+		 * ██║     ██║   ██║██████╔╝█████╗
+		 * ██║     ██║   ██║██╔══██╗██╔══╝
+		 * ╚██████╗╚██████╔╝██║  ██║███████╗
+		 *  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+		 */
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
 	}
 
 	private static void snapHead(String target) {
@@ -506,11 +643,36 @@ public class Mage {
 		Actions.simulateLeftClickAir(mage);
 
 		Location l = mage.getLocation();
-		l.add(0, 1.62, 0);
-		Vector v = l.getDirection();
-		v.setX(v.getX() / 5);
-		v.setY(v.getY() / 5);
-		v.setZ(v.getZ() / 5);
+
+		// Get player's yaw in radians
+		double yaw = Math.toRadians(l.getYaw());
+
+		// Calculate perpendicular vector (90 degrees to the right)
+		// Adding 90 degrees to get the right-hand direction
+		double rightYaw = yaw + Math.toRadians(90);
+
+		// Calculate offsets (16 pixels = 1 block)
+		double offsetX = -Math.sin(rightYaw) * (5.0 / 16.0);   // 5 pixels = 0.3125 blocks to the right
+		double offsetZ = Math.cos(rightYaw) * (5.0 / 16.0);    // 5 pixels = 0.3125 blocks to the right
+		double offsetY = 1.62 - (13.0 / 16.0);                 // 13 pixels down from eye level = 0.8125 blocks down
+
+		// Apply offsets
+		l.add(offsetX, offsetY, offsetZ);
+
+		// Get the eye location and direction
+		Location eyeLocation = mage.getEyeLocation();
+		Vector eyeDirection = eyeLocation.getDirection();
+
+		// Calculate where the eye is looking at 35 blocks away
+		Vector targetPoint = eyeLocation.toVector().add(eyeDirection.multiply(35));
+
+		// Calculate the direction from hand to the target point
+		Vector handToTarget = targetPoint.subtract(l.toVector());
+		handToTarget.normalize();
+
+		// Scale down the vector for per-iteration movement
+		Vector v = handToTarget.multiply(0.2); // Equivalent to dividing by 5
+
 		for(int i = 0; i < 175; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;

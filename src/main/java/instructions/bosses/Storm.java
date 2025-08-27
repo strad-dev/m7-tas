@@ -24,7 +24,6 @@ import java.util.Random;
 @SuppressWarnings("DataFlowIssue")
 public class Storm {
 	private static Wither storm;
-	@SuppressWarnings("FieldCanBeLocal")
 	private static World world;
 	private static BossBar stormBossBar;
 	private static BukkitTask bossBarUpdateTask;
@@ -104,6 +103,7 @@ public class Storm {
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 2.0F);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 0.6F);
+			spamLightning();
 		}, 535);
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 2.0F);
@@ -129,7 +129,7 @@ public class Storm {
 				player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
 			}
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
-			Actions.forceMove(storm, new Vector(-0.6, -0.01, 0), 92);
+			Actions.forceMove(storm, new Vector(-0.6, -0.02, 0), 90);
 		}, 694);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
@@ -137,14 +137,19 @@ public class Storm {
 			Actions.setWitherArmor(storm, false);
 			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 6);
 			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
-		}, 786);
+		}, 784);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I should have known that I stand no chance.");
 			Server.playWitherDeathSound(storm);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 792 ticks (39.60 seconds) | Overall: 2 218 ticks (110.90 seconds)");
-		}, 792);
-		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 852);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in 892 ticks (44.60 seconds) | Overall: 2 318 ticks (115.90 seconds)"), 892);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 790 ticks (39.50 seconds) | Overall: 2 216 ticks (110.80 seconds)");
+		}, 790);
+		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 850);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in 890 ticks (44.50 seconds) | Overall: 2 316 ticks (115.80 seconds)");
+			if(doContinue) {
+				Goldor.goldorInstructions(world, true);
+			}
+		}, 890);
 	}
 
 	private static void sendChatMessage(String message) {
@@ -176,9 +181,9 @@ public class Storm {
 
 		cleanupMobs();
 
+		int index = 0;
 		for(Location l : minerCenters) {
-			int index = 0;
-			for(int i = 0; i < 10; i ++) {
+			for(int i = 0; i < 10; i++) {
 				// Random location within 3 blocks of center (73.5, 225, 73.5)
 				double x = l.getX() + (random.nextDouble() * 10 - 5); // -3 to +3
 				double z = l.getZ() + (random.nextDouble() * 10 - 5); // -3 to +3
@@ -214,7 +219,7 @@ public class Storm {
 
 				// Store in array
 				witherMiners[index] = miner;
-				index ++;
+				index++;
 			}
 		}
 
@@ -234,11 +239,11 @@ public class Storm {
 			sentry.setCustomNameVisible(true);
 
 			Location targetLoc = new Location(world, 73.5, sentryLocations[i].getY(), 53.5);
-			Vector direction = targetLoc.toVector().subtract( sentryLocations[i].toVector()).normalize();
+			Vector direction = targetLoc.toVector().subtract(sentryLocations[i].toVector()).normalize();
 			float yaw = (float) (Math.atan2(-direction.getX(), direction.getZ()) * 180.0 / Math.PI);
 			float pitch = (float) (Math.asin(-direction.getY()) * 180.0 / Math.PI);
 
-			Location facingLoc =  sentryLocations[i].clone();
+			Location facingLoc = sentryLocations[i].clone();
 			facingLoc.setYaw(yaw);
 			facingLoc.setPitch(pitch);
 			sentry.teleport(facingLoc);
@@ -252,7 +257,7 @@ public class Storm {
 			witherGuards[i] = sentry;
 		}
 
-		for(int i = 0; i < shadowAssassinLocations.length; i ++) {
+		for(int i = 0; i < shadowAssassinLocations.length; i++) {
 			Zombie shadowAssassin = (Zombie) world.spawnEntity(shadowAssassinLocations[i], EntityType.ZOMBIE);
 			shadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 15 + "/" + 15);
 			shadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
@@ -291,7 +296,7 @@ public class Storm {
 			}
 		}
 
-		for(Zombie zombie: shadowAssassins) {
+		for(Zombie zombie : shadowAssassins) {
 			if(zombie != null && zombie.isValid()) {
 				zombie.remove();
 			}
@@ -328,7 +333,7 @@ public class Storm {
 
 	private static void prepadSequence(PadConfig pad) {
 		// Phase 1: Clone downwards (175 -> 170)
-		for (int i = 0; i < 6; i++) {
+		for(int i = 0; i < 6; i++) {
 			final int sourceY = 175 - i;
 			final int targetY = 174 - i;
 			scheduleCommand(i * CLONE_DELAY,
@@ -340,7 +345,7 @@ public class Storm {
 
 		// Phase 2: Clear with air (169 -> 188)
 		int tick = AIR_START_TICK;
-		for (int y = 169; y <= 188; y++) {
+		for(int y = 169; y <= 188; y++) {
 			scheduleCommand(tick,
 					String.format("fill %d %d %d %d %d %d minecraft:air",
 							pad.x1, y, pad.z1,
@@ -350,7 +355,7 @@ public class Storm {
 
 		// Phase 3: Clone downwards (189 -> 182)
 		tick = CLONE_RESUME_TICK;
-		for (int i = 0; i < 8; i++) {
+		for(int i = 0; i < 8; i++) {
 			final int sourceY = 189 - i;
 			final int targetY = 188 - i;
 			scheduleCommand(tick,
@@ -364,7 +369,7 @@ public class Storm {
 
 	private static void crushSequence(PadConfig pad) {
 		// Clone downwards (181 -> 176)
-		for (int i = 0; i < 5; i++) {
+		for(int i = 0; i < 5; i++) {
 			final int sourceY = 181 - i;
 			final int targetY = 180 - i;
 			scheduleCommand(i * CLONE_DELAY,
@@ -384,5 +389,18 @@ public class Storm {
 
 	private static void playPistonSound() {
 		Utils.playGlobalSound(Sound.BLOCK_PISTON_CONTRACT, 2.0f, 1.0f);
+	}
+
+	private static void spamLightning() {
+		for(WitherSkeleton skeleton : witherMiners) {
+			Location l = skeleton.getLocation();
+			world.strikeLightning(l);
+			Utils.scheduleTask(() -> world.strikeLightning(l), 10);
+		}
+		for(WitherSkeleton skeleton : witherGuards) {
+			Location l = skeleton.getLocation();
+			world.strikeLightning(l);
+			Utils.scheduleTask(() -> world.strikeLightning(l), 10);
+		}
 	}
 }

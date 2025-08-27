@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Goldor;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
@@ -46,6 +47,12 @@ public class Archer {
 				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
 				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
 				Utils.scheduleTask(() -> storm(false), 60);
+			}
+			case "goldor" -> {
+				Actions.teleport(archer, new Location(world, 96.268, 123.0625, 114.125, 110.3f, 16.1f));
+				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 		}
 	}
@@ -697,7 +704,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 205);
 		Utils.scheduleTask(Archer::simulateShoot, 209);
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 210);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -89f, -3f), 211);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -89f, 12f), 211);
 		Utils.scheduleTask(Archer::simulateShoot, 214);
 		Utils.scheduleTask(() -> Actions.simulateSalvation(archer), 215);
 		Utils.scheduleTask(Archer::simulateShoot, 219);
@@ -715,8 +722,125 @@ public class Archer {
 		}, 234);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -108.4f, -83.4f), 654);
 		Utils.scheduleTask(() -> Actions.simulateLB(archer, 30), 654);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 684);
+		Utils.scheduleTask(() -> {
+			Actions.setFakePlayerHotbarSlot(archer, 2);
+			Actions.swapFakePlayerInventorySlots(archer, 5, 32);
+		}, 684);
 		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Tank.get()), 685);
+		Utils.scheduleTask(() -> Actions.simulateLeap(archer, Healer.get()), 728);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, 0f);
+			Actions.setFakePlayerHotbarSlot(archer, 1);
+		}, 729);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 730);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 8f, 82f), 734);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(archer, new Vector(0.2123, 0.5, 1.5107)), 735);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 8f, 0f), 736);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 747);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.7937, 0, 0.7937), 3), 748);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -6f, 82f), 750);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.1173, 0, 1.1163), 1), 751);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(archer, new Vector(0.1595, 0.5, 1.5172)), 752);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -6f, 0f), 753);
+		if(doContinue) {
+			Utils.scheduleTask(() -> goldor(true), 890);
+		}
+	}
+
+	private static void goldor(boolean doContinue) {
+		/*
+		 *  ██╗
+		 * ███║
+		 * ╚██║
+		 *  ██║
+		 *  ██║
+		 *  ╚═╝
+		 */
+		Actions.setFakePlayerHotbarSlot(archer, 5);
+		Utils.scheduleTask(() -> {
+			Actions.simulateRightClickLever(archer);
+			Goldor.broadcastTerminalComplete(archer, "lever", 1, 7);
+		}, 1);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -5.8f, 0f), 2);
+		Utils.scheduleTask(() -> {
+			Actions.jump(archer);
+			Actions.move(archer, new Vector(0.1144, 0, 1.1166), 1);
+			Actions.setFakePlayerHotbarSlot(archer, 5);
+		}, 3);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.0286, 0, 0.279), 8), 4);
+		Utils.scheduleTask(() -> {
+			explosiveShot();
+			Goldor.broadcastTerminalComplete(archer, "gate", 2, 8);
+		}, 18);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 24.6f, 64.9f), 19);
+		Utils.scheduleTask(() -> Actions.simulateStonking(archer, world.getBlockAt(96, 120, 121)), 20);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 21);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.8634, 0, 0), 1), 22);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 26.1f), 23);
+		Utils.scheduleTask(() -> {
+			Actions.simulateStonking(archer, world.getBlockAt(96, 121, 122));
+			Actions.move(archer, new Vector(0, 0, 1.12242), 5);
+		}, 24);
+		Utils.scheduleTask(() -> Actions.simulateStonking(archer, world.getBlockAt(96, 120, 122)), 25);
+		Utils.scheduleTask(() -> Actions.simulateStonking(archer, world.getBlockAt(96, 121, 123)), 26);
+		Utils.scheduleTask(() -> Actions.simulateStonking(archer, world.getBlockAt(96, 120, 123)), 27);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 0.2806), 11), 29);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 1), 30);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 39);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 7), 40);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2806, 0, 0), 13), 47);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 7), 48);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(archer), 49); // equip phoenix
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 1), 50);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 59);
+		Utils.scheduleTask(() -> {
+			Actions.move(archer, new Vector(-1.0958, 0, 0.2429), 4);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Phoenix Procced!");
+			world.playSound(archer.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
+		}, 60);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 82f), 64);
+		Utils.scheduleTask(() -> Actions.simulateBonzo(archer, new Vector(-1.4894, 0.5, 0.3302)), 64);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 7), 65);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(archer), 66); // equip greg
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 1), 67);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 76);
+//		Utils.scheduleTask(() -> {
+//			Actions.jump(archer);
+//			Actions.move(archer, new Vector(-0.8634, 0, 0), 1);
+//		}, 78);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2806, 0, 0), 5), 79);
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 *  ╚═══██╗
+		 * ██████╔╝
+		 * ╚═════╝
+		 */
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
 	}
 
 	private static void simulateShoot() {

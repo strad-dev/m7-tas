@@ -1171,6 +1171,8 @@ public class Actions {
 
 	/**
 	 * Simulates the Bonzo effect on the provided player with the given vector.
+	 * <br>
+	 * Note: The y-value of the Vector is ignored.  It will always be set to 0.5 upwards.
 	 *
 	 * @param p the Player instance on which the Bonzo simulation will be applied
 	 * @param v the Vector representing the direction and magnitude for the simulation
@@ -1231,6 +1233,7 @@ public class Actions {
 
 	public static void lavaJump(Player p, boolean big) {
 		p.teleport(p.getLocation().add(0, 3.5, 0));
+		entityVelocities.remove(p); // lava jumps reset player velicities on hypixel
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0F, 1.0F);
 		Utils.scheduleTask(() -> {
 			if(!(p instanceof CraftPlayer cp)) {

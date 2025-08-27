@@ -1,5 +1,6 @@
 package instructions;
 
+import instructions.bosses.Goldor;
 import instructions.bosses.Storm;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
@@ -60,6 +61,15 @@ public class Tank {
 				Actions.swapFakePlayerInventorySlots(tank, 6, 33);
 				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
 				Utils.scheduleTask(() -> storm(false), 60);
+			}
+			case "goldor" -> {
+				Actions.teleport(tank, new Location(world, 107.736, 120, 89.242, -54.5f, 2f));
+				Actions.swapFakePlayerInventorySlots(tank, 1, 28);
+				Actions.swapFakePlayerInventorySlots(tank, 3, 30);
+				Actions.swapFakePlayerInventorySlots(tank, 5, 32);
+				Actions.swapFakePlayerInventorySlots(tank, 6, 33);
+				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
+				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 		}
 	}
@@ -595,7 +605,7 @@ public class Tank {
 				}
 			}, tick);
 		}
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 686);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, -5.2f), 546);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 0f), 687);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 12), 688);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 82f), 699);
@@ -605,8 +615,91 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 712);
 		Utils.scheduleTask(() -> Actions.move(tank,  new Vector(-0.444, 0, 1.031), 2), 758);
 		Utils.scheduleTask(Storm::crushYellow, 760);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 156.7f, 0f), 761);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.444, 0, -1.031), 2), 770);
+		Utils.scheduleTask(() -> Actions.simulateLeap(tank, Healer.get()), 770);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 173f, 0f), 771);
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, new Vector(-0.1368, 0, -1.114), 1);
+			Actions.jump(tank);
+			Actions.setFakePlayerHotbarSlot(tank, 5);
+		}, 772);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0342, 0, -0.2785), 4), 773);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -54.5f, 2f), 777);
+		if(doContinue) {
+			Utils.scheduleTask(() -> goldor(true), 890);
+		}
+	}
+
+	private static void goldor(boolean doContinue) {
+		/*
+		 *  ██╗
+		 * ███║
+		 * ╚██║
+		 *  ██║
+		 *  ██║
+		 *  ╚═╝
+		 */
+		Actions.setFakePlayerHotbarSlot(tank, 5);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 1);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 2);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 3);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 4);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 5);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 6);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 7);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 8);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 9);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 10);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 11);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 12);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 13);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 14);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 15);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 179f, 0f), 16);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0196, 0, -1.12255), 7), 17);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0049, 0, -0.2805), 3), 24);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -97f, 17.2f), 26);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 27);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 3, 7), 28);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -160f, 0f), 29);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.3839, 0, -1.0547), 1), 36);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.096, 0, -0.2637), 6), 37);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -118.5f, 67.6f), 43);
+		Utils.scheduleTask(() -> Actions.simulateLeftClickAir(tank), 44);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 6, 7), 45);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 46);
+		Utils.scheduleTask(() -> Actions.simulateLeap(tank, Archer.get()), 62);
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 *  ╚═══██╗
+		 * ██████╔╝
+		 * ╚═════╝
+		 */
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
 	}
 
 	@SuppressWarnings("unused")

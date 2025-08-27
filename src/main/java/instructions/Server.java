@@ -1,21 +1,17 @@
 package instructions;
 
-import instructions.bosses.CustomBossBar;
-import instructions.bosses.Maxor;
-import instructions.bosses.Storm;
-import instructions.bosses.Watcher;
+import instructions.bosses.*;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Wither;
-import org.bukkit.entity.Zombie;
+import org.bukkit.block.Block;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import plugin.M7tas;
 import plugin.Utils;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
 
@@ -63,7 +59,11 @@ public class Server {
 					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 air");
 					Storm.stormInstructions(world, false);
 				}
-//				case "goldor" -> Goldor.goldorInstructions(world, false);
+				case "goldor" -> {
+					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 lever[face=wall,facing=north,powered=true]");
+					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 redstone_lamp[lit=true]");
+					Goldor.goldorInstructions(world, false);
+				}
 //				case "necron" -> Necron.necronInstructions(world, false);
 //				case "witherking" -> WitherKing.witherKingInstructions(world, false);
 			}
@@ -85,6 +85,7 @@ public class Server {
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
 		Storm.cleanupMobs();
+		turnArrow(world, false);
 	}
 
 	public static void resetGoldorCheese() {
@@ -369,6 +370,28 @@ public class Server {
 			for(int i = 0; i < 6; i++) {
 				Location spawnLoc = getRandomLocation(center);
 				trashMobs[index++] = spawnTrashMob(spawnLoc);
+			}
+		}
+	}
+
+	public static void turnArrow(World world, boolean isCompleting) {
+		Block block = world.getBlockAt(-2, 120, 77);
+		Collection<Entity> entities = world.getNearbyEntities(block.getLocation().add(0.5, 0.5, 0.5), 1, 1, 1);
+
+		for (Entity entity : entities) {
+			if (entity instanceof ItemFrame itemFrame) {
+				// Check if this item frame is actually at the block we want
+				if (entity.getLocation().getBlockX() == -2 &&
+						entity.getLocation().getBlockY() == 120 &&
+						entity.getLocation().getBlockZ() == 77) {
+
+					if(isCompleting) {
+						itemFrame.setRotation(Rotation.CLOCKWISE_45);
+					} else {
+						itemFrame.setRotation(Rotation.NONE);
+					}
+					break;
+				}
 			}
 		}
 	}
