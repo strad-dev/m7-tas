@@ -319,7 +319,7 @@ public class Actions {
 	 *           have sounds and effects applied, and serve as the source of damage to nearby entities.
 	 * @param to The location the player will be teleported to. Use null if this ability is being used in the boss fight.
 	 */
-	public static void simulateWitherImpact(Player p, @Nullable Location to) {
+	public static void witherImpact(Player p, @Nullable Location to) {
 		p.setFallDistance(0);
 
 		Location effectLocation = to != null ? to : p.getLocation();
@@ -388,7 +388,7 @@ public class Actions {
 	 * @param p  The player to be teleported and simulated.
 	 * @param to The target location to which the player will be teleported.
 	 */
-	public static void simulateEtherwarp(Player p, Location to) {
+	public static void etherwarp(Player p, Location to) {
 		Location from = p.getLocation();
 		to.setYaw(from.getYaw());
 		to.setPitch(from.getPitch());
@@ -410,7 +410,7 @@ public class Actions {
 	 * @param p  The player to be teleported and simulated.
 	 * @param to The target location to which the player will be teleported.
 	 */
-	public static void simulateAOTV(Player p, Location to) {
+	public static void AOTV(Player p, Location to) {
 		Location from = p.getLocation();
 		to.setYaw(from.getYaw());
 		to.setPitch(from.getPitch());
@@ -429,9 +429,9 @@ public class Actions {
 	 * @param p The player that is breaking the block
 	 * @param b The Block to simulate the stonking action on.
 	 */
-	public static void simulateStonking(Player p, Block b) {
+	public static void stonk(Player p, Block b) {
 		if(p != null) {
-			simulateLeftClickAir(p);
+			swingHand(p);
 			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		}
 		Material material = b.getType();
@@ -453,9 +453,9 @@ public class Actions {
 	 *          and cause a sound effect to play in their current world at their location.
 	 * @param b The block that will be replaced with air as part of the ghost pick action.
 	 */
-	public static void simulateGhostPick(Player p, Block b) {
+	public static void ghostPick(Player p, Block b) {
 		if(p != null) {
-			simulateLeftClickAir(p);
+			swingHand(p);
 			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		}
 		b.setType(Material.AIR);
@@ -475,8 +475,8 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
-	public static void simulateSuperboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Actions.simulateLeftClickAir(p);
+	public static void superboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
+		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 21);
@@ -496,8 +496,8 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
-	public static void simulateCrypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Actions.simulateLeftClickAir(p);
+	public static void crypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
+		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) (x1 + x2) / 2, Math.min(y1, y2), (double) (z1 + z2) / 2), EntityType.ZOMBIE);
@@ -522,7 +522,7 @@ public class Actions {
 		}, 21);
 	}
 
-	public static void simulateLeap(Player p, Player target) {
+	public static void leap(Player p, Player target) {
 		Location targetLoc = target.getLocation();
 		teleport(p, targetLoc);
 
@@ -530,7 +530,7 @@ public class Actions {
 	}
 
 	public static void mimicChest(Player p, Block b) {
-		simulateStonking(p, b);
+		stonk(p, b);
 
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
 		zombie.setCustomName("Mimic " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 2 + "/" + 2);
@@ -558,13 +558,13 @@ public class Actions {
 	 *
 	 * @param p The player for whom the pearl throw is being simulated.
 	 */
-	public static void simulatePearlThrow(Player p) {
+	public static void throwPearl(Player p) {
 		EnderPearl pearl = (EnderPearl) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ENDER_PEARL);
 		pearl.setGravity(true);
 		pearl.setShooter(null);
 		pearl.setVelocity(p.getLocation().getDirection().normalize().multiply(3)); // Normal pearl speed is ~3.0
 
-		Actions.simulateLeftClickAir(p);
+		Actions.swingHand(p);
 		p.getInventory().getItemInMainHand().setAmount(p.getInventory().getItemInMainHand().getAmount() - 1);
 	}
 
@@ -572,10 +572,12 @@ public class Actions {
 	 * Simulates the actions performed when using the "Rag Axe" ability, which involves
 	 * playing a series of lever click sounds, applying a temporary "RagBuff" tag to
 	 * the player, and then removing the tag after a specific duration.
+	 * <br>
+	 * Does NOT have anything to do with Retrieval Augmented Generation.
 	 *
 	 * @param p The player for whom the "Rag Axe" ability simulation will be performed.
 	 */
-	public static void simulateRagAxe(Player p) {
+	public static void rag(Player p) {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 40);
@@ -595,7 +597,7 @@ public class Actions {
 	/**
 	 *
 	 */
-	public static void simulateSalvation(Player p) {
+	public static void salvation(Player p) {
 		double powerBonus;
 		try {
 			int power = Objects.requireNonNull(p.getInventory().getItem(p.getInventory().getHeldItemSlot())).getEnchantmentLevel(Enchantment.POWER);
@@ -648,7 +650,7 @@ public class Actions {
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GUARDIAN_DEATH, 1.0F, 2.0F);
 	}
 
-	public static void simulateSpringBoots(Player p) {
+	public static void springBoots(Player p) {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F), 2);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 4);
@@ -677,7 +679,7 @@ public class Actions {
 	 *
 	 * @param p Where the axe originates from
 	 */
-	public static void simulateAOTS(Player p) {
+	public static void AOTS(Player p) {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
 
 		// Create the axe item display
@@ -744,7 +746,7 @@ public class Actions {
 	 * @param p     The player firing the arrow.
 	 * @param ticks How long the player should draw the bow back for.
 	 */
-	public static void simulateLB(Player p, int ticks) {
+	public static void lastBreath(Player p, int ticks) {
 		// Calculate arrow velocity based on draw time
 		float charge = Math.min((float) ticks / 20.0F, 1.0F); // 20 ticks = full charge
 		float velocity = charge * 3.0F;
@@ -882,7 +884,7 @@ public class Actions {
 	 *
 	 * @param p The player using the ability
 	 */
-	public static void simulateIceSpray(Player p) {
+	public static void iceSpray(Player p) {
 		p.getWorld().spawnParticle(Particle.SNOWFLAKE, p.getLocation(), 1000);
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(p.getEyeLocation(), 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
@@ -900,8 +902,8 @@ public class Actions {
 	 *
 	 * @param p The player originating.
 	 */
-	public static void simulateFlay(Player p) {
-		simulateLeftClickAir(p);
+	public static void flamingFlay(Player p) {
+		swingHand(p);
 		Location startLoc = p.getEyeLocation();
 
 		// Angle up by 5 degrees from player's look direction
@@ -975,8 +977,8 @@ public class Actions {
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
-	public static void simulateGyro(Player p, Location l) {
-		simulateLeftClickAir(p);
+	public static void gyro(Player p, Location l) {
+		swingHand(p);
 		p.getWorld().spawnParticle(Particle.PORTAL, l, 1000);
 		l.setY(l.getY() + 1);
 		new BukkitRunnable() {
@@ -1176,10 +1178,12 @@ public class Actions {
 	 *
 	 * @param p the Player instance on which the Bonzo simulation will be applied
 	 * @param v the Vector representing the direction and magnitude for the simulation
+	 *
+	 * @return Returns the BukkitRunnable that can be cancelled.
 	 */
-	public static void simulateBonzo(Player p, Vector v) {
+	public static BukkitRunnable bonzo(Player p, Vector v) {
 		if(!(p instanceof CraftPlayer cp)) {
-			return;
+			return null;
 		}
 		net.minecraft.world.entity.LivingEntity nmsEntity = cp.getHandle();
 
@@ -1204,7 +1208,7 @@ public class Actions {
 		Vector impulseVector = v.clone().normalize().multiply(0.2806);
 
 		// Apply horizontal movement
-		new BukkitRunnable() {
+		BukkitRunnable runnalbe = new BukkitRunnable() {
 			boolean firstTick = true;
 			int tickCount = 0;
 
@@ -1221,14 +1225,16 @@ public class Actions {
 						cancel();
 						entityVelocities.remove(p);
 
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Bonzo launch duration: " + tickCount + " ticks");
+						Bukkit.broadcastMessage(ChatColor.GREEN + p.getName() + " Bonzo launch duration: " + tickCount + " ticks");
 						return;
 					}
 					move(p, impulseVector, 1);
 					System.out.println("Tick " + tickCount + ": Moved " + entityVelocities.get(p).x() + "," + nmsEntity.getDeltaMovement().y() + "," + entityVelocities.get(p).z());
 				}
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		};
+		runnalbe.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		return runnalbe;
 	}
 
 	public static void lavaJump(Player p, boolean big) {
@@ -1249,6 +1255,22 @@ public class Actions {
 				npc.setDeltaMovement(new Vec3(motion.x(), 1.7D, motion.z()));
 			}
 		}, 1);
+
+		new BukkitRunnable() {
+			int tickCount = 0;
+
+			@Override
+			public void run() {
+				tickCount++;
+
+				if(tickCount >= 3) {
+					if(((LivingEntity) p).isOnGround()) {
+						cancel();
+						Bukkit.broadcastMessage(ChatColor.GREEN + p.getName() + " Lava launch duration: " + tickCount + " ticks");
+					}
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
 	private static BukkitTask armorTask = null;
@@ -1293,7 +1315,7 @@ public class Actions {
 	 * will see a PlayerInteractEvent with Action.LEFT_CLICK_AIR.
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public static void simulateLeftClickAir(Player p) {
+	public static void swingHand(Player p) {
 		// 1) do the swing animation
 		p.swingMainHand();
 
@@ -1308,22 +1330,22 @@ public class Actions {
 	 * will see a PlayerInteractEvent with Action.RIGHT_CLICK_AIR.
 	 */
 	@SuppressWarnings("ConstantConditions")
-	public static void simulateRightClickAir(Player p) {
+	public static void rightClick(Player p) {
 		PlayerInteractEvent ev = new PlayerInteractEvent(p, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 		Bukkit.getPluginManager().callEvent(ev);
 	}
 
 	@SuppressWarnings("ConstantConditions")
-	public static void simulateRightClickAirWithSpectators(Player p) {
+	public static void rightClickWithSpectators(Player p) {
 		for(Player spectator : M7tas.getSpectatingPlayers(p)) {
 			PlayerInteractEvent ev = new PlayerInteractEvent(spectator, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 			Bukkit.getPluginManager().callEvent(ev);
 		}
 
-		simulateRightClickAir(p);
+		rightClick(p);
 	}
 
-	public static void simulateRightClickLever(Player p) {
+	public static void rightClickLever(Player p) {
 		// Get the NMS player
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
 

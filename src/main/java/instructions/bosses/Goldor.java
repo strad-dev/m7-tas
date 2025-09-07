@@ -6,6 +6,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 import plugin.Utils;
 
 import java.util.Random;
@@ -51,6 +52,7 @@ public class Goldor {
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(goldor, "Goldor"), 1);
 
 		sendChatMessage("Who dares trespass into my domain?");
+		Actions.forceMove(goldor, new Vector(0.1, 0, 0), 55);
 		Utils.scheduleTask(() -> sendChatMessage("Little ants, plotting and scheming, thinking they are invincibile..."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I won't let you break the factory core, I gave my life to my Master."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("No one matches me in close quarters."), 180);

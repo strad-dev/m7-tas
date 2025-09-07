@@ -48,9 +48,7 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
+import org.bukkit.command.*;
 import org.bukkit.craftbukkit.v1_21_R3.CraftServer;
 import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
@@ -78,7 +76,7 @@ import org.bukkit.util.Vector;
 
 import java.util.*;
 
-public final class M7tas extends JavaPlugin implements CommandExecutor, Listener {
+public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompleter, Listener {
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
 	private static final HashMap<Player, List<Player>> reverseSpectatorMap = new HashMap<>();
 	private static final Map<String, Player> fakePlayers = new HashMap<>();
@@ -359,8 +357,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 		setupNoCollisionTeam();
 
 		// register ALL our commands on the same executor
-		for(var cmd : List.of("spectate", "unspectate", "tas", "simulate", "reset")) {
-			Objects.requireNonNull(getCommand(cmd)).setExecutor(this);
+		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset")) {
+			PluginCommand command = getCommand(cmd);
+			Objects.requireNonNull(command).setExecutor(this);
+			command.setTabCompleter(this);
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
 		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
@@ -554,7 +554,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 						}
 						lastSimulated = applyTo;
 						lastSimulatedLocation = applyTo.getLocation();
-						Actions.simulateBonzo(applyTo, new Vector(x, y, z));
+						Actions.bonzo(applyTo, new Vector(x, y, z));
 						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
 						return true;
 					}
@@ -607,6 +607,74 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, Listener
 			}
 		}
 		return false;
+	}
+
+	@SuppressWarnings("NullableProblems")
+	@Override
+	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+		if (!(sender instanceof Player)) {
+			return new ArrayList<>();
+		}
+
+		List<String> completions = new ArrayList<>();
+		String cmdName = command.getName().toLowerCase();
+
+		switch (cmdName) {
+			case "tas" -> {
+				if (args.length == 1) {
+					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking"};
+					String input = args[0].toLowerCase();
+
+					for (String section : sections) {
+						// Check if the section starts with the input
+						if (section.toLowerCase().startsWith(input)) {
+							completions.add(section);
+						}
+					}
+				} else if (args.length > 1) {
+					// TAS command only accepts one argument, return empty list for any additional arguments
+					return completions;
+				}
+			}
+
+			case "spectate" -> {
+				if (args.length == 1) {
+					// Get available classes from fakePlayers map
+					for (String role : fakePlayers.keySet()) {
+						if (role.toLowerCase().startsWith(args[0].toLowerCase())) {
+							completions.add(role);
+						}
+					}
+				} else if (args.length > 1) {
+					// Spectate only accepts one argument
+					return completions;
+				}
+			}
+
+			case "simulate" -> {
+				if (args.length == 1) {
+					String[] simCommands = {"undo", "bonzo", "move"};
+					for (String cmd : simCommands) {
+						if (cmd.startsWith(args[0].toLowerCase())) {
+							completions.add(cmd);
+						}
+					}
+				} else if (args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move"))) {
+					// Player selection for bonzo/move
+					for (String role : fakePlayers.keySet()) {
+						if (role.toLowerCase().startsWith(args[1].toLowerCase())) {
+							completions.add(role);
+						}
+					}
+				} else if ((args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move")) && args.length <= 6) {
+					// For bonzo/move, we don't provide completions for x,y,z,duration
+					// but we also don't want to show completions after the expected number of args
+					return completions;
+				}
+			}
+		}
+
+		return completions;
 	}
 
 	/**
