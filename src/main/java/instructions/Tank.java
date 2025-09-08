@@ -667,7 +667,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.swingHand(tank), 44);
 		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 7), 45);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 46);
-		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 50);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 47);
 		/*
 		 * ██████╗
 		 * ╚════██╗
@@ -679,26 +679,39 @@ public class Tank {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, -126.6f, 82f);
 			Actions.setFakePlayerHotbarSlot(tank, 1);
-		}, 51);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.9011, 0, -0.67), 1), 52);
-		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.2247, 0.5, -0.91)), 53);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -126.6f, 0f), 54);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -168.9f, 43.9f), 66);
-		Utils.scheduleTask(() -> Actions.swingHand(tank), 67);
-		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 1, 8), 68);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 69);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9023, 0, 0.6676), 2), 70);
-		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 72);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 73);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9023, 0, 0.6676), 2), 86);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 87);
-		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 88);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 89);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 101);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 5), 102);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 10.7f, 28.7f), 107);
-		Utils.scheduleTask(() -> Actions.swingHand(tank), 108);
-		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 8), 109);
+		}, 48);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.9011, 0, -0.67), 1), 49);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.2247, 0.5, -0.91)), 50);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -126.6f, 0f), 51);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -168.9f, 43.9f), 63);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 64);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 1, 8), 65);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 66);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9023, 0, 0.6676), 2), 67);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 69);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 70);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9023, 0, 0.6676), 2), 83);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 84);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 85);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 86);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 94f, 0f), 98);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.1197, 0, -0.0783), 5), 99);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 6f, 28.7f), 104);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 105);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 8), 106);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 107);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 2), 108);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 6), 110);
+		Utils.scheduleTask(() -> Actions.lavaJump(tank, false), 116);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -21.5f, 0f), 117);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.5591, 0.5, -1.4194)), 128);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 158.5f, 35f), 129);
+		Utils.scheduleTask(() -> {
+			Actions.rightClickLever(tank);
+			Goldor.broadcastTerminalComplete(tank, "lever", 8, 8);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S2 finished in 88 ticks (4.40 seconds) | Overall: 2 459 ticks (122.95 seconds)");
+		}, 143);
+
 		/*
 		 * ██████╗1
 		 * ╚════██╗
@@ -707,6 +720,9 @@ public class Tank {
 		 * ██████╔╝
 		 * ╚═════╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 144);
+
+
 		/*
 		 * ██╗  ██╗
 		 * ██║  ██║

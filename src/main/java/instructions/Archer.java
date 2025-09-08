@@ -49,7 +49,7 @@ public class Archer {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Actions.teleport(archer, new Location(world, 96.3, 115.0625, 132.272, -150f, -28.6f));
+				Actions.teleport(archer, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
 				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
 				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
 				Utils.scheduleTask(Archer::explosiveShot, 57);
@@ -57,7 +57,7 @@ public class Archer {
 					Actions.setFakePlayerHotbarSlot(archer, 1);
 					Actions.turnHead(archer, 90f, 0f);
 				}, 58);
-				Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 7), 59);
+				Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 1), 59);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 		}
@@ -769,14 +769,16 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.stonk(archer, world.getBlockAt(96, 120, 123)), 788);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 0.2806), 11), 790);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 1), 791);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -150f, -28.6f), 800);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 800);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 6), 801);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -128f, -19f), 808);
 		if(doContinue) {
 			Utils.scheduleTask(Archer::explosiveShot, 887);
 			Utils.scheduleTask(() -> {
 				Actions.setFakePlayerHotbarSlot(archer, 1);
 				Actions.turnHead(archer, 90f, 0f);
 			}, 888);
-			Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 7), 889);
+			Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 1), 889);
 			Utils.scheduleTask(() -> goldor(true), 890);
 		}
 	}
@@ -790,21 +792,20 @@ public class Archer {
 		 *  ██║
 		 *  ╚═╝
 		 */
-		Goldor.broadcastTerminalComplete(archer, "gate", 0, 7);
-		// ticks 0-6: continue move instruction from previous
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2806, 0, 0), 13), 7);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 19);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.0958, 0, 0.2429), 4), 20);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 82f), 23);
-		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(-1.4894, 0.5, 0.3302)), 24);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 25);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 126.6f, 0f), 37);
+		Goldor.broadcastTerminalComplete(archer, "gate", 1, 3);
+		Actions.move(archer, new Vector(-0.2806, 0, 0), 13);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 12);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.0958, 0, 0.2429), 4), 13);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 82f), 16);
+		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(-1.4894, 0.5, 0.3302)), 17);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 18);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 126.6f, 0f), 30);
 		Utils.scheduleTask(() -> {
 			Actions.jump(archer);
 			Actions.move(archer, new Vector(-0.9011, 0, -0.6692), 1);
-		}, 38);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2253, 0, -0.1673), 11), 39);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 50);
+		}, 31);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2253, 0, -0.1673), 11), 32);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 43);
 		/*
 		 * ██████╗
 		 * ╚════██╗
@@ -819,16 +820,24 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 0f), 78);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -0.2806), 10), 82);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0.001, -1.12242), 4), 95);
-		Utils.scheduleTask(() -> Actions.swingHand(archer), 99);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GREEN + "Melody 1/4"), 100);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GREEN + "Melody 2/4"), 101);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GREEN + "Melody 3/4"), 102);
+		Utils.scheduleTask(() -> {
+			Actions.swingHand(archer);
+			Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME");
+		}, 99);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 1/4"), 100);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 2/4"), 101);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 3/4"), 102);
 		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 4, 8), 103);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 0f), 104);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 27.7f), 104);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.2806, 0, 0), 15), 105);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(1.12242, 0, 0), 1), 120);
+		Utils.scheduleTask(() -> {
+			Actions.move(archer, new Vector(1.12242, 0, 0), 1);
+			Actions.setFakePlayerHotbarSlot(archer, 2);
+		}, 120);
 		Utils.scheduleTask(() -> Actions.swingHand(archer), 121);
 		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 6, 8), 122);
+		Utils.scheduleTask(() -> Actions.leap(archer, Berserk.get()), 123);
+
 		/*
 		 * ██████╗
 		 * ╚════██╗
@@ -837,6 +846,8 @@ public class Archer {
 		 * ██████╔╝
 		 * ╚═════╝
 		 */
+
+
 		/*
 		 * ██╗  ██╗
 		 * ██║  ██║

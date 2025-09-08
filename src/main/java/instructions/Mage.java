@@ -66,7 +66,6 @@ public class Mage {
 				Actions.teleport(mage, new Location(world, 108.308, 120, 95.018, -143.3f, 1.7f));
 				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
-				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
 				Actions.swapFakePlayerInventorySlots(mage, 6, 33);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
@@ -518,6 +517,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 796);
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 1), 797);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -143.3f, 1.7f), 798);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 5, 32), 799);
 		if(doContinue) {
 			Utils.scheduleTask(() -> goldor(true), 890);
 		}
@@ -568,7 +568,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.swingHand(mage), 54);
 		Utils.scheduleTask(() -> {
 			Goldor.broadcastTerminalComplete(mage, "terminal", 7, 7);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "1 finished in 55 ticks (2.75 seconds) | Overall: 2 371 ticks (118.55 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S1 finished in 55 ticks (2.75 seconds) | Overall: 2 371 ticks (118.55 seconds)");
 		}, 55);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 56);
 		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 57);
@@ -580,6 +580,17 @@ public class Mage {
 		 * ███████╗
 		 * ╚══════╝
 		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -174f, 0f);
+			Actions.setFakePlayerHotbarSlot(mage, 5);
+		}, 58);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0881, 0, -1.119), 1), 59);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 15), 60);
+		Utils.scheduleTask(() -> Actions.lavaJump(mage, false), 68);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -142f, 0f), 75);
+		Utils.scheduleTask(() -> Actions.swingHand(mage), 76);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(mage, "terminal", 2, 8), 77);
+
 		/*
 		 *  ██████╗ ██████╗ ██████╗ ███████╗
 		 * ██╔════╝██╔═══██╗██╔══██╗██╔════╝
@@ -588,6 +599,43 @@ public class Mage {
 		 * ╚██████╗╚██████╔╝██║  ██║███████╗
 		 *  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -174f, 0f), 78);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 9), 79);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 90f), 93);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 122)), 94);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -180f, 35f);
+			Actions.move(mage, new Vector(0, 0, -1.12242), 5);
+		}, 95);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 121)), 96);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 121)), 97);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 120)), 98);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 120)), 99);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 135f, 40f);
+			Actions.stonk(mage, world.getBlockAt(58, 124, 119));
+		}, 100);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(mage, world.getBlockAt(58, 123, 119));
+			Actions.move(mage, new Vector(-0.7937, 0, -0.7937), 1);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(57, 124, 119)), 102);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(mage, world.getBlockAt(57, 123, 119));
+			Actions.move(mage, new Vector(-0.7937, 0, -0.7937), 1);
+		}, 103);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 177.3f, 35f);
+			Actions.stonk(mage, world.getBlockAt(57, 124, 118));
+		}, 104);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(mage, world.getBlockAt(57, 123, 118));
+			Actions.move(mage, new Vector(-0.0529, 0, -1.1212), 2);
+		}, 105);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.3f, 0f), 106);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0132, 0, -0.2803), 16), 107);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0529, 0, -1.1212), 44), 123);
+
 		/*
 		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
 		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝

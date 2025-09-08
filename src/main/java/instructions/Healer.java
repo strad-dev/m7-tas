@@ -913,10 +913,41 @@ public class Healer {
 		 * ███████╗
 		 * ╚══════╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 54);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 0f);
+			Actions.setFakePlayerHotbarSlot(healer, 1);
+		}, 54);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.12242), 6), 55);
 		Utils.scheduleTask(() -> Actions.lavaJump(healer, true), 68);
-		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 2), 76);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 5), 90);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -10f, 2f), 95);
+		Utils.scheduleTask(() -> {
+			Actions.swingHand(healer);
+			Goldor.broadcastTerminalComplete(healer, "device", 3, 8);
+		}, 102);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 82f), 103);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-1.12242,  0, 0), 2), 104);
+		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-1.52552, 0.5, 0)), 105);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 0f), 106);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 82f);
+			Actions.move(healer, new Vector(-1.12242, 0, 0), 1);
+		}, 123);
+		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-1.52552, 0.5, 0)), 124);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 36.6f), 125);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-1.12242, 0, 0), 2), 135);
+		Utils.scheduleTask(() -> Actions.jump(healer), 136);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.2806, 0, 0), 6), 137);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 3, 30), 138);
+		Utils.scheduleTask(() -> {
+			Actions.rightClickLever(healer);
+			Goldor.broadcastTerminalComplete(healer, "lever", 7, 8);
+		}, 139);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 140);
+		Utils.scheduleTask(() -> {
+			Actions.swingHand(healer);
+			Goldor.broadcastTerminalComplete(healer, "gate", 2, 3);
+		}, 141);
 		/*
 		 * ██████╗
 		 * ╚════██╗
