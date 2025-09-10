@@ -43,6 +43,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
@@ -85,6 +86,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
 	private static Team noCollisionTeam;
 	private static BukkitRunnable spectatorSyncTask;
+	private static final Map<Player, Set<Player>> hiddenFakePlayers = new HashMap<>();
+	private static final double HIDE_DISTANCE = 0.5;
 
 	static class PlayerInventoryBackup {
 		private final ItemStack[] contents;
@@ -394,6 +397,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		spectatorMap.clear();
 		reverseSpectatorMap.clear();
 		originalInventories.clear();
+		hiddenFakePlayers.clear();
 	}
 
 	private void kickAllFakes() {
@@ -506,6 +510,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 					if(fakePlayer != null) {
 						showFakePlayerToSpectator(p, fakePlayer);
+					}
+
+					Set<Player> hidden = hiddenFakePlayers.remove(p);
+					if (hidden != null) {
+						for (Player hiddenFake : hidden) {
+							showFakePlayerToSpectator(p, hiddenFake);
+						}
 					}
 
 					p.sendMessage("You are no longer spectating a class.");
@@ -930,6 +941,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						// Send destroy packet every tick to keep fake player hidden
 						ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
 						nmsSpectator.connection.send(destroyPacket);
+						updateFakePlayerVisibility();
 					}
 				}
 			}
@@ -937,6 +949,39 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 		// Run every tick for smooth camera movement
 		spectatorSyncTask.runTaskTimer(this, 0L, 1L);
+	}
+
+	private void updateFakePlayerVisibility() {
+		for (Player spectator : spectatorMap.keySet()) {
+			Player spectatedFake = spectatorMap.get(spectator);
+			Location spectatorLocation = spectatedFake.getLocation(); // Use fake player's location
+
+			Set<Player> currentlyHidden = hiddenFakePlayers.getOrDefault(spectator, new HashSet<>());
+			Set<Player> shouldBeHidden = new HashSet<>();
+
+			// Check all other fake players
+			for (Player otherFake : fakePlayers.values()) {
+				if (otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
+
+				double distance = spectatorLocation.distance(otherFake.getLocation());
+
+				if (distance <= HIDE_DISTANCE) {
+					shouldBeHidden.add(otherFake);
+
+					// Hide if not already hidden
+					if (!currentlyHidden.contains(otherFake)) {
+						hideFakePlayerFromSpectator(spectator, otherFake);
+					}
+				} else {
+					// Show if currently hidden
+					if (currentlyHidden.contains(otherFake)) {
+						showFakePlayerToSpectator(spectator, otherFake);
+					}
+				}
+			}
+
+			hiddenFakePlayers.put(spectator, shouldBeHidden);
+		}
 	}
 
 	private void stopSpectatorSync() {

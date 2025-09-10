@@ -783,6 +783,8 @@ public class Actions {
 			}
 		}
 
+		Location l = p.getLocation();
+
 		new BukkitRunnable() {
 			int currentTick = 0;
 
@@ -821,7 +823,7 @@ public class Actions {
 
 					// Fire first arrow
 					Arrow arrow1 = p.launchProjectile(Arrow.class);
-					arrow1.setVelocity(p.getLocation().getDirection().multiply(velocity));
+					arrow1.setVelocity(l.clone().getDirection().multiply(velocity));
 					arrow1.setDamage(1.0);
 					arrow1.setShooter(p);
 					arrow1.addScoreboardTag("TerminatorArrow");
@@ -834,7 +836,7 @@ public class Actions {
 					Utils.scheduleTask(() -> {
 						// Fire second arrow
 						Arrow arrow2 = p.launchProjectile(Arrow.class);
-						arrow2.setVelocity(p.getLocation().getDirection().multiply(velocity));
+						arrow2.setVelocity(l.clone().getDirection().multiply(velocity));
 						arrow2.setDamage(0.2);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
@@ -848,8 +850,8 @@ public class Actions {
 						Utils.scheduleTask(() -> {
 							// Fire third arrow
 							Arrow arrow2 = p.launchProjectile(Arrow.class);
-							arrow2.setVelocity(p.getLocation().getDirection().multiply(velocity));
-							arrow2.setDamage(0.2);
+							arrow2.setVelocity(l.clone().getDirection().multiply(velocity));
+							arrow2.setDamage(1.0);
 							arrow2.setShooter(p);
 							arrow2.addScoreboardTag("TerminatorArrow");
 							arrow2.setWeapon(p.getInventory().getItemInMainHand());
@@ -861,8 +863,8 @@ public class Actions {
 						Utils.scheduleTask(() -> {
 							// Fire fourth arrow
 							Arrow arrow2 = p.launchProjectile(Arrow.class);
-							arrow2.setVelocity(p.getLocation().getDirection().multiply(velocity));
-							arrow2.setDamage(0.2);
+							arrow2.setVelocity(l.clone().getDirection().multiply(velocity));
+							arrow2.setDamage(1.0);
 							arrow2.setShooter(p);
 							arrow2.addScoreboardTag("TerminatorArrow");
 							arrow2.setWeapon(p.getInventory().getItemInMainHand());
@@ -1110,7 +1112,7 @@ public class Actions {
 					Vector currentPos = startLoc.toVector().add(direction.multiply(progress));
 
 					if(progress < 1.0) {
-						// Add constant wobble effect 
+						// Add constant wobble effect
 						Vector wobble = new Vector((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4, (Math.random() - 0.5) * 4);
 
 						currentPos.add(wobble);
@@ -1218,7 +1220,6 @@ public class Actions {
 
 				if(firstTick) {
 					move(p, v, 1);
-					System.out.println("Tick " + tickCount + ": Moved " + v.getX() + "," + nmsEntity.getDeltaMovement().y() + "," + v.getZ());
 					firstTick = false;
 				} else {
 					if(nmsEntity.onGround()) {
@@ -1229,7 +1230,6 @@ public class Actions {
 						return;
 					}
 					move(p, impulseVector, 1);
-					System.out.println("Tick " + tickCount + ": Moved " + entityVelocities.get(p).x() + "," + nmsEntity.getDeltaMovement().y() + "," + entityVelocities.get(p).z());
 				}
 			}
 		};
@@ -1352,7 +1352,6 @@ public class Actions {
 		// Perform ray trace
 		RayTraceResult rayTrace = p.rayTraceBlocks(10);
 		if(rayTrace == null || rayTrace.getHitBlock() == null) {
-			System.out.println("No block found in ray trace");
 			return;
 		}
 
@@ -1364,7 +1363,6 @@ public class Actions {
 
 		// Check if it's actually a lever
 		if(!(blockState.getBlock() instanceof LeverBlock)) {
-			System.out.println("Block is not a lever: " + blockState.getBlock());
 			return;
 		}
 
@@ -1387,18 +1385,15 @@ public class Actions {
 
 		// Check if interaction was successful
 		if(result.consumesAction()) {
-			System.out.println("Successfully interacted with lever at " + blockPos);
 
 			// Swing arm for visual feedback
 			nmsPlayer.swing(InteractionHand.MAIN_HAND, true);
 		} else {
-			System.out.println("Interaction failed, result: " + result);
 
 			// Try alternative approach with item
 			result = blockState.useItemOn(itemInHand, nmsPlayer.serverLevel(), nmsPlayer, InteractionHand.MAIN_HAND, hitResult);
 
 			if(result.consumesAction()) {
-				System.out.println("Successfully interacted with lever using item approach");
 				nmsPlayer.swing(InteractionHand.MAIN_HAND, true);
 			}
 		}

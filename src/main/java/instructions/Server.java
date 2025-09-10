@@ -196,6 +196,12 @@ public class Server {
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 19 -21 128 16 -1 136 16 115 128"), 100);
 	}
 
+	public static void openCore() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:glass");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:air"), 20);
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:gold_block"), 200);
+	}
+
 	private static Location getRandomLocation(Location center) {
 		double x = center.getX() + (Math.random() * 2 - 1) * 1.25;
 		double z = center.getZ() + (Math.random() * 2 - 1) * 1.25;
@@ -381,14 +387,14 @@ public class Server {
 	}
 
 	public static void turnArrow(World world, boolean isCompleting) {
-		Block block = world.getBlockAt(-2, 120, 77);
+		Block block = world.getBlockAt(-2, 122, 77);
 		Collection<Entity> entities = world.getNearbyEntities(block.getLocation().add(0.5, 0.5, 0.5), 1, 1, 1);
 
 		for (Entity entity : entities) {
 			if (entity instanceof ItemFrame itemFrame) {
 				// Check if this item frame is actually at the block we want
 				if (entity.getLocation().getBlockX() == -2 &&
-						entity.getLocation().getBlockY() == 120 &&
+						entity.getLocation().getBlockY() == 122 &&
 						entity.getLocation().getBlockZ() == 77) {
 
 					if(isCompleting) {

@@ -36,7 +36,7 @@ public class Goldor {
 			bossBarUpdateTask = null;
 		}
 
-		goldor = (Wither) world.spawnEntity(new Location(world, 80.5, 120, 40.5, -90f, 0f), EntityType.WITHER);
+		goldor = (Wither) world.spawnEntity(new Location(world, 80.5, 116, 40.5, -90f, 0f), EntityType.WITHER);
 		goldor.setAI(false);
 		goldor.setSilent(true);
 		goldor.setPersistent(true);
@@ -52,12 +52,29 @@ public class Goldor {
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(goldor, "Goldor"), 1);
 
 		sendChatMessage("Who dares trespass into my domain?");
-		Actions.forceMove(goldor, new Vector(0.2, 0, 0), 100);
+		Actions.forceMove(goldor, new Vector(0.1, 0, 0), 200);
 		Utils.scheduleTask(() -> sendChatMessage("Little ants, plotting and scheming, thinking they are invincibile..."), 60);
-		Utils.scheduleTask(() -> Actions.turnHead(goldor, 0f, 0f), 99);
-		Utils.scheduleTask(() -> Actions.forceMove(goldor, new Vector(0, 0, 0.2), 460), 100);
 		Utils.scheduleTask(() -> sendChatMessage("I won't let you break the factory core, I gave my life to my Master."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("No one matches me in close quarters."), 180);
+		Utils.scheduleTask(() -> Actions.turnHead(goldor, 0f, 0f), 199);
+		Utils.scheduleTask(() -> Actions.forceMove(goldor, new Vector(0, 0, 0.1), 58), 200);
+		Utils.scheduleTask(() -> {
+			sendChatMessage("You have done it, you destroyed the factory...");
+			Actions.turnHead(goldor, 97.186f, 0f);
+			Actions.forceMove(goldor, new Vector(-0.7937, 0, -0.1), 52);
+			Actions.setWitherArmor(goldor, false);
+		}, 258);
+		Utils.scheduleTask(() -> {
+			sendChatMessage("...");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor killed in 54 ticks (2.70 seconds) | Goldor: 310 ticks (15.50 seconds) | Overall: 2 626 ticks (131.30 seconds)");
+		}, 310);
+		Utils.scheduleTask(() -> sendChatMessage("But you have nowhere to hide anymore!"), 318);
+		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 370);
+		Utils.scheduleTask(() -> sendChatMessage("YOU ARE FACE TO FACE WITH GOLDOR!"), 378);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor finished in 410 ticks (20.50 seconds) | Overall: 2 726 ticks (136.30 seconds)");
+		}, 410);
+		Utils.scheduleTask(goldor::remove, 470);
 	}
 
 	private static void sendChatMessage(String message) {

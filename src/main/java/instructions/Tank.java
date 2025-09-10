@@ -7,6 +7,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WitherSkeleton;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
@@ -709,7 +710,8 @@ public class Tank {
 		Utils.scheduleTask(() -> {
 			Actions.rightClickLever(tank);
 			Goldor.broadcastTerminalComplete(tank, "lever", 8, 8);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "S2 finished in 88 ticks (4.40 seconds) | Overall: 2 459 ticks (122.95 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S2 finished in 88 ticks (4.40 seconds) | Goldor: 143 ticks (7.15 seconds) | Overall: 2 459 ticks (122.95 seconds)");
+			Server.removeS3Gate();
 		}, 143);
 
 		/*
@@ -721,7 +723,21 @@ public class Tank {
 		 * ╚═════╝
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 144);
-
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 3), 145);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 15), 151);
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, new Vector(-1.12242, 0, 0), 1);
+			Actions.turnHead(tank, 140f, 0f);
+		}, 166);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.7215, 0, -0.8598), 6), 167);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 82f), 172);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.9806, 0.5, -1.169)), 173);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 174);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 84.3f, 16.2f), 196);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 197);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 7), 198);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 199);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 204);
 
 		/*
 		 * ██╗  ██╗
@@ -731,6 +747,36 @@ public class Tank {
 		 *      ██║
 		 *      ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 165f, 82f), 205);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2905, 0, -1.0842), 1), 206);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.3948, 0.5, -1.4735)), 207);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 165f, 0f), 208);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, 20f), 228);
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, new Vector(0, 0, 0.8634), 1);
+			Actions.swingHand(tank);
+		}, 229);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 3, 7), 230);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 0.8634), 1), 231);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 82f), 232);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.12242, 0, 0), 1), 233);
+		final BukkitRunnable[] temp = new BukkitRunnable[1];
+		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(tank, new Vector(1.52552, 0, 0)), 234);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 235);
+		Utils.scheduleTask(() -> {
+			temp[0].cancel();
+			Actions.lavaJump(tank, false);
+		}, 248);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -74.8f, -4.9f), 249);
+		Utils.scheduleTask(() -> {
+			Actions.rightClickLever(tank);
+			Goldor.broadcastTerminalComplete(tank, "lever", 7, 7);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 55 ticks (2.75 seconds) | Goldor: 256 ticks (12.80 seconds) | Overall: 2 572 ticks (128.60 seconds)");
+			Server.openCore();
+		}, 256);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank,  3), 257);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 258);
+
 		/*
 		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
 		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
@@ -739,6 +785,10 @@ public class Tank {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 6), 259);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.12242), 14), 276);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -82.5f, -10f), 290);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 13), 291);
 	}
 
 	@SuppressWarnings("unused")

@@ -948,6 +948,9 @@ public class Healer {
 			Actions.swingHand(healer);
 			Goldor.broadcastTerminalComplete(healer, "gate", 2, 3);
 		}, 141);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 3, 30), 142);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 143);
+
 		/*
 		 * ██████╗
 		 * ╚════██╗
@@ -956,6 +959,33 @@ public class Healer {
 		 * ██████╔╝
 		 * ╚═════╝
 		 */
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, new Vector(0, 0, 1.12242), 1);
+			Actions.setFakePlayerHotbarSlot(healer, 1);
+		}, 145);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 3), 146);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 81.1f, 18.5f), 148);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.8634, 0, 0), 1), 149);
+		Utils.scheduleTask(() -> Actions.swingHand(healer), 150);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(healer, "terminal", 1, 7), 151);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -40f, 82f), 152);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.8598, 0, 0.7215), 1), 153);
+		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(1.1686, 0.5, 0.9806)), 154);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -40f, 0f), 155);
+		Utils.scheduleTask(() -> {
+			Actions.lavaJump(healer, false);
+			Actions.turnHead(healer, -22f, 0f);
+		}, 172);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.1051, 0, 0.2602), 27), 173);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 9.2f), 199);
+		Utils.scheduleTask(() -> Actions.swingHand(healer), 200);
+		Utils.scheduleTask(() -> {
+			Goldor.broadcastTerminalComplete(healer, "terminal", 7, 7);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 58 ticks (2.90 seconds) | Goldor: 201 ticks (10.05 seconds) | Overall: 2 517 ticks (125.85 seconds)");
+		}, 201);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 202);
+		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 203);
+
 		/*
 		 * ██╗  ██╗
 		 * ██║  ██║
@@ -964,6 +994,21 @@ public class Healer {
 		 *      ██║
 		 *      ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 145f, 82f), 204);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.6438, 0, -0.9194), 1), 205);
+		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-0.875, 0.5, -1.25)), 206);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 145f, 0f), 207);
+		Utils.scheduleTask(() -> {
+			Actions.jump(healer);
+			Actions.move(healer, new Vector(-0.6438, 0, -0.9194), 1);
+		}, 224);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.161, 0, -0.23), 9), 225);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 21.4f), 233);
+		Utils.scheduleTask(() -> Actions.swingHand(healer), 234);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(healer, "terminal", 4, 7), 235);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 236);
+		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 237);
+
 		/*
 		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
 		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
@@ -972,6 +1017,17 @@ public class Healer {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -1.9f, 0f), 238);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0372, 0, 1.1218), 3), 239);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0093, 0, 0.2805), 5), 242);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0372, 0, 1.1218), 42), 247);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00862, 0, 0.2599), 3), 289);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -1.9f, 85.1f), 291);
+		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(56, 113, 110)), 292);
+		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(56, 113, 111)), 293);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 294);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.8634), 1), 295);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 296);
 	}
 
 	@SuppressWarnings("unused")
