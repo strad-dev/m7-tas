@@ -64,6 +64,13 @@ public class Healer {
 				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
+			case "necron" -> {
+				Actions.teleport(healer, new Location(world, 56.429, 64, 111.669, -180f, 0f));
+				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
+				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 		}
 	}
 
@@ -886,7 +893,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.jump(healer), 41);
 		Utils.scheduleTask(() -> {
 			Actions.rightClickLever(healer);
-			Goldor.broadcastTerminalComplete(healer, "lever", 4, 7);
+			Goldor.broadcastTerminalComplete(healer, "lever", 5, 7);
 		}, 42);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, 45f);
@@ -947,6 +954,8 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.swingHand(healer);
 			Goldor.broadcastTerminalComplete(healer, "gate", 2, 3);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S2 finished in 86 ticks (4.30 seconds) | Terminals: 141 ticks (7.05 seconds) | Overall: 2 457 ticks (122.85 seconds)");
+			Server.removeS3Gate();
 		}, 141);
 		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 3, 30), 142);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 143);
@@ -981,7 +990,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 200);
 		Utils.scheduleTask(() -> {
 			Goldor.broadcastTerminalComplete(healer, "terminal", 7, 7);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 58 ticks (2.90 seconds) | Goldor: 201 ticks (10.05 seconds) | Overall: 2 517 ticks (125.85 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 60 ticks (3.00 seconds) | Terminals: 201 ticks (10.05 seconds) | Overall: 2 517 ticks (125.85 seconds)");
 		}, 201);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 202);
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 203);
@@ -998,10 +1007,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.6438, 0, -0.9194), 1), 205);
 		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-0.875, 0.5, -1.25)), 206);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 145f, 0f), 207);
-		Utils.scheduleTask(() -> {
-			Actions.jump(healer);
-			Actions.move(healer, new Vector(-0.6438, 0, -0.9194), 1);
-		}, 224);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.6438, 0, -0.9194), 1), 224);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.161, 0, -0.23), 9), 225);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 21.4f), 233);
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 234);
@@ -1028,6 +1034,13 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 294);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.8634), 1), 295);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 296);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 360);
+		}
+	}
+
+	private static void necron(boolean doContinue) {
+
 	}
 
 	@SuppressWarnings("unused")

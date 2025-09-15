@@ -4,7 +4,9 @@ import instructions.Actions;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
-import org.bukkit.entity.*;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import plugin.Utils;
@@ -14,14 +16,10 @@ import java.util.Random;
 @SuppressWarnings("DataFlowIssue")
 public class Goldor {
 	private static Wither goldor;
-	private static World world;
 	private static BossBar goldorBossBar;
 	private static BukkitTask bossBarUpdateTask;
-	private static final Random random = new Random();
 
 	public static void goldorInstructions(World temp, boolean doContinue) {
-		world = temp;
-
 		if(goldor != null) {
 			goldor.remove();
 		}
@@ -36,7 +34,7 @@ public class Goldor {
 			bossBarUpdateTask = null;
 		}
 
-		goldor = (Wither) world.spawnEntity(new Location(world, 80.5, 116, 40.5, -90f, 0f), EntityType.WITHER);
+		goldor = (Wither) temp.spawnEntity(new Location(temp, 80.5, 116, 40.5, -90f, 0f), EntityType.WITHER);
 		goldor.setAI(false);
 		goldor.setSilent(true);
 		goldor.setPersistent(true);
@@ -63,18 +61,21 @@ public class Goldor {
 			Actions.turnHead(goldor, 97.186f, 0f);
 			Actions.forceMove(goldor, new Vector(-0.7937, 0, -0.1), 52);
 			Actions.setWitherArmor(goldor, false);
-		}, 258);
+		}, 248);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("...");
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor killed in 54 ticks (2.70 seconds) | Goldor: 310 ticks (15.50 seconds) | Overall: 2 626 ticks (131.30 seconds)");
-		}, 310);
-		Utils.scheduleTask(() -> sendChatMessage("But you have nowhere to hide anymore!"), 318);
-		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 370);
-		Utils.scheduleTask(() -> sendChatMessage("YOU ARE FACE TO FACE WITH GOLDOR!"), 378);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor killed in 54 ticks (2.70 seconds) | Terminals + Goldor: 300 ticks (15.00 seconds) | Overall: 2 616 ticks (130.80 seconds)");
+		}, 300);
+		Utils.scheduleTask(() -> sendChatMessage("But you have nowhere to hide anymore!"), 308);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor finished in 410 ticks (20.50 seconds) | Overall: 2 726 ticks (136.30 seconds)");
-		}, 410);
-		Utils.scheduleTask(goldor::remove, 470);
+			sendChatMessage("Necron, forgive me.");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Terminals + Goldor finished in 360 ticks (18.00 seconds) | Overall: 2 686 ticks (133.80 seconds)");
+			if(doContinue) {
+				Necron.necronInstructions(temp, true);
+			}
+		}, 360);
+		Utils.scheduleTask(() -> sendChatMessage("YOU ARE FACE TO FACE WITH GOLDOR!"), 368);
+		Utils.scheduleTask(goldor::remove, 460);
 	}
 
 	private static void sendChatMessage(String message) {

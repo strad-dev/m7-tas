@@ -71,6 +71,12 @@ public class Berserk {
 				Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 58);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
+			case "necron" -> {
+				Actions.teleport(berserk, new Location(world, 56.429, 64, 111.669, -180f, 0f));
+				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
+				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 		}
 	}
 
@@ -1022,18 +1028,27 @@ public class Berserk {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 249);
-		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.12242), 14), 276);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -82.5f, -5f), 289);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 239);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.12242), 14), 266);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -82f, -5f), 279);
+		Utils.scheduleTask(Berserk::shoot, 280);
+		Utils.scheduleTask(() -> Actions.salvation(berserk), 284);
+		Utils.scheduleTask(Berserk::shoot, 285);
+		Utils.scheduleTask(() -> Actions.salvation(berserk), 289);
 		Utils.scheduleTask(Berserk::shoot, 290);
 		Utils.scheduleTask(() -> Actions.salvation(berserk), 294);
 		Utils.scheduleTask(Berserk::shoot, 295);
 		Utils.scheduleTask(() -> Actions.salvation(berserk), 299);
 		Utils.scheduleTask(Berserk::shoot, 300);
-		Utils.scheduleTask(() -> Actions.salvation(berserk), 304);
-		Utils.scheduleTask(Berserk::shoot, 305);
-		Utils.scheduleTask(() -> Actions.salvation(berserk), 309);
-		Utils.scheduleTask(Berserk::shoot, 310);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 301);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 302);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 360);
+		}
+	}
+
+	private static void necron(boolean doContinue) {
+
 	}
 
 	private static void shoot() {

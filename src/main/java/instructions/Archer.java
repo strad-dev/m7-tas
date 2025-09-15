@@ -60,6 +60,12 @@ public class Archer {
 				Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.12242, 0, 0), 1), 59);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
+			case "necron" -> {
+				Actions.teleport(archer, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
+				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 		}
 	}
 
@@ -827,7 +833,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 1/4"), 100);
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 2/4"), 101);
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 3/4"), 102);
-		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 4, 8), 103);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 5, 8), 103);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 27.7f), 104);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.2806, 0, 0), 15), 105);
 		Utils.scheduleTask(() -> {
@@ -924,15 +930,24 @@ public class Archer {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(archer, 5, 32), 247);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 5), 248);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -1.12242), 14), 276);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, -10f), 290);
-		Utils.scheduleTask(() -> Actions.lastBreath(archer, 13), 291);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 304);
-		Utils.scheduleTask(Archer::shoot, 305);
-		Utils.scheduleTask(() -> Actions.salvation(archer), 309);
-		Utils.scheduleTask(Archer::shoot, 310);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(archer, 5, 32), 237);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 5), 238);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -1.12242), 14), 266);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, -10f), 280);
+		Utils.scheduleTask(() -> Actions.lastBreath(archer, 13), 281);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 4), 294);
+		Utils.scheduleTask(Archer::shoot, 295);
+		Utils.scheduleTask(() -> Actions.salvation(archer), 299);
+		Utils.scheduleTask(Archer::shoot, 300);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 301);
+		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 302);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 360);
+		}
+	}
+
+	private static void necron(boolean doContinue) {
+
 	}
 
 	private static void shoot() {

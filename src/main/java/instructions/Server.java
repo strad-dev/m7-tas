@@ -83,6 +83,7 @@ public class Server {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 97 175 62");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 91 -2 45 89 -1 46 89 131 45");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 96 -2 121 96 -1 123 96 120 121");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -5 120 38 -1 99 38 59 99");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
 		Storm.cleanupMobs();

@@ -69,6 +69,13 @@ public class Mage {
 				Actions.swapFakePlayerInventorySlots(mage, 6, 33);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
+			case "necron" -> {
+				Actions.teleport(mage, new Location(world, 56.429, 64, 111.669, -180f, 0f));
+				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
+				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+				Actions.swapFakePlayerInventorySlots(mage, 6, 33);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 		}
 	}
 
@@ -690,12 +697,21 @@ public class Mage {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.12242), 14), 276);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 277);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -82.5f, -5f), 290);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.12242), 14), 266);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 267);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -82f, -5f), 280);
+		Utils.scheduleTask(Mage::mageBeam, 290);
+		Utils.scheduleTask(Mage::mageBeam, 295);
 		Utils.scheduleTask(Mage::mageBeam, 300);
-		Utils.scheduleTask(Mage::mageBeam, 305);
-		Utils.scheduleTask(Mage::mageBeam, 310);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 301);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 302);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 360);
+		}
+	}
+
+	private static void necron(boolean doContinue) {
+
 	}
 
 	private static void snapHead(String target) {
