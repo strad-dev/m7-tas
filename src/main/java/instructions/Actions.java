@@ -647,7 +647,7 @@ public class Actions {
 			world.spawnParticle(Particle.DUST, l, 1, particle);
 			l.add(v);
 		}
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GUARDIAN_DEATH, 1.0F, 2.0F);
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GUARDIAN_DEATH, 0.5f, 2.0F);
 	}
 
 	public static void springBoots(Player p) {

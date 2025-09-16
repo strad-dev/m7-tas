@@ -69,7 +69,7 @@ public class Goldor {
 		Utils.scheduleTask(() -> sendChatMessage("But you have nowhere to hide anymore!"), 308);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("Necron, forgive me.");
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Terminals + Goldor finished in 360 ticks (18.00 seconds) | Overall: 2 686 ticks (133.80 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Terminals + Goldor finished in 360 ticks (18.00 seconds) | Overall: 2 676 ticks (133.80 seconds)");
 			if(doContinue) {
 				Necron.necronInstructions(temp, true);
 			}
