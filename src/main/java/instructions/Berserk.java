@@ -878,173 +878,176 @@ public class Berserk {
 			Goldor.broadcastTerminalComplete(berserk, "device", 2, 7);
 		}, 26);
 
-//		/*
-//		 * ███████╗███████╗██████╗
-//		 * ██╔════╝██╔════╝╚════██╗
-//		 * █████╗  █████╗   █████╔╝
-//		 * ██╔══╝  ██╔══╝   ╚═══██╗
-//		 * ███████╗███████╗██████╔╝
-//		 * ╚══════╝╚══════╝╚═════╝
-//		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, 79f, 82f);
-//			Actions.move(berserk, new Vector(-0.8475, 0, 0.1674), 1);
-//		}, 27);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.4975, 0.5, 0.2911)), 28);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 79f, 0f), 29);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 63.5f, 82f), 42);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.0045, 0, 0.501), 1), 43);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.365, 0.5, 0.5809)), 44);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 63.5f, 0f), 45);
-//		Utils.scheduleTask(() -> {
-//			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Bonzo Procced!");
-//			world.playSound(berserk.getLocation(), Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 2f);
-//		}, 60);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 89f, 0f), 65);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.8633, 0, 0.0151), 2), 66);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 89f, 82f), 67);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.52529, 0.5, 0.0266)), 68);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 89f, 0f), 69);
-//		Utils.scheduleTask(() -> world.playSound(berserk.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f), 80);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, 90f, 60f);
-//			Actions.setFakePlayerHotbarSlot(berserk, 5);
-//		}, 87);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 44)), 89);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 35f), 90);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 45)), 91);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(berserk, new Vector(-0.6105, 0, 0.6105), 1);
-//			Actions.stonk(berserk, world.getBlockAt(18, 114, 45));
-//		}, 92);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(berserk, new Vector(0, 0, 0.8634), 13);
-//			Actions.stonk(berserk, world.getBlockAt(18, 115, 46));
-//		}, 93);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 46)), 94);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 47)), 95);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 47)), 96);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 48)), 97);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 48)), 98);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 49)), 99);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(berserk, world.getBlockAt(18, 114, 49));
-//			world.playSound(berserk.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
-//		}, 100);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 50)), 101);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 50)), 102);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 51)), 103);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 51)), 104);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, -135f, 0f);
-//			Actions.setFakePlayerHotbarSlot(berserk, 1);
-//		}, 109);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.0787, 0.5, 1.0787)), 110);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 45f, 0f), 111);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 7), 112);
-//		Utils.scheduleTask(() -> Actions.swingHand(berserk), 113); // equip phoenix
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 114);
-//		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 9, 39), 115);
-//		Utils.scheduleTask(() -> {
-//			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Phoenix Procced!");
-//			world.playSound(berserk.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
-//			Actions.setFakePlayerHotbarSlot(berserk, 7);
-//		}, 120);
-//		Utils.scheduleTask(() -> Actions.swingHand(berserk), 121); // equip greg
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 122);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 30f, 82f), 124);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.5612, 0, 0.972), 1), 125);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-0.763, 0.5, 1.3211)), 126);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 30f, 0f), 127);
-//
-//		/*
-//		 * ██████╗
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 *  ╚═══██╗
-//		 * ██████╔╝
-//		 * ╚═════╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 141);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 1.12242), 1), 145);
-//		Utils.scheduleTask(() -> Actions.lavaJump(berserk, false), 153);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 0.2806), 11), 160);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -10.2f), 171);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 4), 172);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(berserk);
-//			Server.turnArrow(world, true);
-//			Goldor.broadcastTerminalComplete(berserk, "device", 4, 7);
-//		}, 176);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -18f, 0f), 177);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.3469, 0, 1.0675), 2), 178);
-//		Utils.scheduleTask(() -> {
-//			Actions.jump(berserk);
-//		}, 179);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.0867, 0, 0.2669), 5), 180);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 12f, 0f), 184);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.1795, 0, 0.8445), 3), 185);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.0583, 0, 0.2745), 5), 188);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2334, 0, 1.098), 1), 193);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.0583, 0, 0.2745), 5), 194);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 82.5f, 20.8f), 198);
-//		Utils.scheduleTask(() -> Actions.swingHand(berserk), 199);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(berserk, "terminal", 6, 7), 200);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 201);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 202);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, 153f, 0f);
-//			Actions.setFakePlayerHotbarSlot(berserk, 1);
-//		}, 203);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.5096, 0, -1), 3), 204);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 82f), 206);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-0.6926, 0.5, -1.359)), 207);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 0f), 208);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 0f), 228);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.12242), 1), 229);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -0.2806), 7), 230);
-//		Utils.scheduleTask(() -> Actions.lavaJump(berserk, false), 237);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 238);
-//		Utils.scheduleTask(() -> Actions.swingHand(berserk), 245);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(berserk, "terminal", 6, 7), 246);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 247);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 248);
-//
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 249);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.12242), 14), 266);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -82f, -5f), 279);
-//		Utils.scheduleTask(Berserk::shoot, 280);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 284);
-//		Utils.scheduleTask(Berserk::shoot, 285);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 289);
-//		Utils.scheduleTask(Berserk::shoot, 290);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 294);
-//		Utils.scheduleTask(Berserk::shoot, 295);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 299);
-//		Utils.scheduleTask(Berserk::shoot, 300);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 301);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 302);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> necron(true), 360);
-//		}
+		/*
+		 * ███████╗███████╗██████╗
+		 * ██╔════╝██╔════╝╚════██╗
+		 * █████╗  █████╗   █████╔╝
+		 * ██╔══╝  ██╔══╝   ╚═══██╗
+		 * ███████╗███████╗██████╔╝
+		 * ╚══════╝╚══════╝╚═════╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 79f, 82f);
+			Actions.move(berserk, new Vector(-0.8475, 0, 0.1674), 1);
+		}, 27);
+		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.4975, 0.5, 0.2911)), 28);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 79f, 0f), 29);
+		// swap pet to black cat
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 63.5f, 82f), 42);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.256, 0, 0.626), 1), 43);
+		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.365, 0.5, 0.5809)), 44);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 63.5f, 0f), 45);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Bonzo Procced!");
+			world.playSound(berserk.getLocation(), Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 2f);
+		}, 60);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 89f, 82f), 65);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.4028, 0, 0.0245), 1), 66);
+		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.5253, 0.5, 0.0266)), 67);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 89f, 0f), 68);
+		Utils.scheduleTask(() -> world.playSound(berserk.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f), 80);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 90f, 60f);
+			Actions.setFakePlayerHotbarSlot(berserk, 5);
+		}, 87);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 44)), 88);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 35f), 89);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 45)), 90);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, new Vector(-0.7637, 0, 0.7637), 1);
+			Actions.stonk(berserk, world.getBlockAt(18, 114, 45));
+		}, 91);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, new Vector(0, 0, 1.08), 13);
+			Actions.stonk(berserk, world.getBlockAt(18, 115, 46));
+		}, 92);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 46)), 93);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 47)), 94);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 47)), 95);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 48)), 96);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 48)), 97);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 49)), 98);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(berserk, world.getBlockAt(18, 114, 49));
+			world.playSound(berserk.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
+		}, 99);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 50)), 100);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 50)), 101);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 115, 51)), 102);
+		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 51)), 103);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -135f, 0f);
+			Actions.setFakePlayerHotbarSlot(berserk, 1);
+		}, 108);
+		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.0787, 0.5, 1.0787)), 109);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 45f, 0f), 110);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 7), 111);
+		Utils.scheduleTask(() -> Actions.swingHand(berserk), 112); // equip phoenix
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 113);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 9, 39), 114);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Phoenix Procced!");
+			world.playSound(berserk.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
+			Actions.setFakePlayerHotbarSlot(berserk, 7);
+		}, 120);
+		Utils.scheduleTask(() -> Actions.swingHand(berserk), 121); // equip black cat
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 122);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 30f, 0f), 123);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.7015, 0, 1.215), 2), 124);
+		Utils.scheduleTask(() -> Actions.jump(berserk), 125);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.1403, 0, 0.243), 12), 126);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11f, 0f), 137);
+
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 *  ╚═══██╗
+		 * ██████╔╝
+		 * ╚═════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 140);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 1.403), 1), 141);
+		Utils.scheduleTask(() -> Actions.lavaJump(berserk, false), 148);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 0.2806), 14), 150);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -10.2f), 163);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 6), 164);
+		Utils.scheduleTask(() -> {
+			Actions.swingHand(berserk);
+			Server.turnArrow(world, true);
+			Goldor.broadcastTerminalComplete(berserk, "device", 4, 7);
+			Actions.move(berserk, new Vector(1.08, 0, 0), 1);
+		}, 170);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -5f, 0f), 171);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.1223, 0, 1.3977), 2), 172);
+		Utils.scheduleTask(() -> Actions.jump(berserk), 173);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.02446, 0, -0.2795), 12), 174);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 22f, 0f), 185);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.5256, 0, 1.301), 2), 186);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.1051, 0, 0.2602), 2), 188);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 66.5f, 29f), 189);
+		Utils.scheduleTask(() -> Actions.swingHand(berserk), 190);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(berserk, "terminal", 6, 7), 191);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 192);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 193);
+
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 153f, 0f);
+			Actions.setFakePlayerHotbarSlot(berserk, 1);
+		}, 194);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.637, 0, -1.25), 3), 195);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 82f), 197);
+		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-0.6926, 0.5, -1.359)), 198);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 0f), 199);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 0f), 219);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.403), 1), 220);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -0.2806), 3), 221);
+		Utils.scheduleTask(() -> Actions.lavaJump(berserk, false), 227);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 228);
+		Utils.scheduleTask(() -> Actions.swingHand(berserk), 235);
+		Utils.scheduleTask(() -> {
+			Goldor.broadcastTerminalComplete(berserk, "terminal", 7, 7);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 41 ticks (2.05 seconds) | Terminals: 236 ticks (11.80 seconds) | Overall: 2 552 ticks (127.60 seconds)");
+			Server.openCore();
+		}, 236);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 237);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 238);
+
+
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 239);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.403), 11), 256);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -82.5f, -5f), 266);
+		// tick 267: swap to gdrag
+		Utils.scheduleTask(Berserk::shoot, 268);
+		Utils.scheduleTask(() -> Actions.salvation(berserk), 272);
+		Utils.scheduleTask(Berserk::shoot, 273);
+		Utils.scheduleTask(() -> Actions.salvation(berserk), 277);
+		Utils.scheduleTask(Berserk::shoot, 278);
+		Utils.scheduleTask(() -> Actions.salvation(berserk), 282);
+		Utils.scheduleTask(Berserk::shoot, 283);
+		Utils.scheduleTask(() -> Actions.salvation(berserk), 287);
+		Utils.scheduleTask(Berserk::shoot, 288);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 289);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 290);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 350);
+		}
 	}
 
 	private static void necron(boolean doContinue) {

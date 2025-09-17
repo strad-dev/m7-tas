@@ -63,7 +63,7 @@ public class Mage {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Actions.teleport(mage, new Location(world, 108.308, 120, 95.018, -143.3f, 1.7f));
+				Actions.teleport(mage, new Location(world, 108.308, 120, 94.675, -139.3f, 1.6f));
 				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
 				Actions.swapFakePlayerInventorySlots(mage, 6, 33);
@@ -516,9 +516,9 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 791);
 		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 792);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 793);
-		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 1), 794);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -143.3f, 1.7f), 795);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 5, 32), 796);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.26), 3), 794);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -139.3f, 1.6f), 797);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 5, 32), 798);
 		if(doContinue) {
 			Utils.scheduleTask(() -> goldor(true), 890);
 		}
@@ -550,158 +550,168 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.swingHand(mage), 14);
 		Utils.scheduleTask(() -> Actions.swingHand(mage), 15);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 67.5f, 0f), 16);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.037, 0, 0.4295), 2), 17);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 67.5f, 82f);
-//			Actions.setFakePlayerHotbarSlot(mage, 1);
-//		}, 18);
-//		Utils.scheduleTask(() -> Actions.bonzo(mage, new Vector(-1.4094, 0.5, 0.5838)), 19);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 67.5f, 0f), 20);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 29);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.12242, 0, 0), 3), 30);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 65.8f, 15.8f), 33);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 34);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(mage, "terminal", 3, 7), 35);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 36);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.12242), 1), 37);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -0.2806), 9), 38);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 17.1f), 47);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 54);
-//		Utils.scheduleTask(() -> {
-//			Goldor.broadcastTerminalComplete(mage, "terminal", 7, 7);
-//			Bukkit.broadcastMessage(ChatColor.GREEN + "S1 finished in 55 ticks (2.75 seconds) | Overall: 2 371 ticks (118.55 seconds)");
-//		}, 55);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 56);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 57);
-//		/*
-//		 * ██████╗
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 * ██╔═══╝
-//		 * ███████╗
-//		 * ╚══════╝
-//		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -174f, 0f);
-//			Actions.setFakePlayerHotbarSlot(mage, 5);
-//		}, 58);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0881, 0, -1.119), 1), 59);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 15), 60);
-//		Utils.scheduleTask(() -> Actions.lavaJump(mage, false), 68);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -142f, 0f), 75);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 76);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(mage, "terminal", 2, 8), 77);
-//
-//		/*
-//		 *  ██████╗ ██████╗ ██████╗ ███████╗
-//		 * ██╔════╝██╔═══██╗██╔══██╗██╔════╝
-//		 * ██║     ██║   ██║██████╔╝█████╗
-//		 * ██║     ██║   ██║██╔══██╗██╔══╝
-//		 * ╚██████╗╚██████╔╝██║  ██║███████╗
-//		 *  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -174f, 0f), 78);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 9), 79);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 90f), 93);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 122)), 94);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -180f, 35f);
-//			Actions.move(mage, new Vector(0, 0, -1.12242), 5);
-//		}, 95);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 121)), 96);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 121)), 97);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 120)), 98);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 120)), 99);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 135f, 40f);
-//			Actions.stonk(mage, world.getBlockAt(58, 124, 119));
-//		}, 100);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(mage, world.getBlockAt(58, 123, 119));
-//			Actions.move(mage, new Vector(-0.7937, 0, -0.7937), 1);
-//		}, 101);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(57, 124, 119)), 102);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(mage, world.getBlockAt(57, 123, 119));
-//			Actions.move(mage, new Vector(-0.7937, 0, -0.7937), 1);
-//		}, 103);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 177.3f, 35f);
-//			Actions.stonk(mage, world.getBlockAt(57, 124, 118));
-//		}, 104);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(mage, world.getBlockAt(57, 123, 118));
-//			Actions.move(mage, new Vector(-0.0548, 0, -1.1211), 2);
-//		}, 105);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.3f, 0f), 106);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0137, 0, -0.2803), 16), 107);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0548, 0, -1.1211), 44), 123);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 58f), 167);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 58)), 168);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(mage, new Vector(0, 0, -1.12242), 8);
-//			Actions.stonk(mage, world.getBlockAt(54, 114, 57));
-//		}, 169);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 56)), 170);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 55)), 171);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 115, 54)), 172);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 54)), 173);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 53)), 174);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 52)), 175);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 51)), 176);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 180f, 0f);
-//			Actions.jump(mage);
-//		}, 177);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 66.5f, 0f), 204);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.0293, 0, 0.4476), 2), 205);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 60f), 206);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 52)), 207);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(mage, new Vector(0, 0, 1.12242), 5);
-//			Actions.stonk(mage, world.getBlockAt(52, 114, 53));
-//		}, 208);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 115, 54)), 209);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 54)), 210);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 55)), 211);
-//		Utils.scheduleTask(() -> {
-//			Actions.jump(mage);
-//			Actions.turnHead(mage, -90f, 0f);
-//		}, 213);
-//		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 5, 32), 214);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 5), 215);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 216);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.12242, 0, 0), 2), 219);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 221);
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.12242), 14), 266);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 267);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -82f, -5f), 280);
-//		Utils.scheduleTask(Mage::mageBeam, 290);
-//		Utils.scheduleTask(Mage::mageBeam, 295);
-//		Utils.scheduleTask(Mage::mageBeam, 300);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 301);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 302);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> necron(true), 360);
-//		}
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.282, 0, 0.5707), 2), 17);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 67.5f, 82f);
+			Actions.setFakePlayerHotbarSlot(mage, 1);
+		}, 18);
+		Utils.scheduleTask(() -> Actions.bonzo(mage, new Vector(-1.3936, 0.5, 0.6205)), 19);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 67.5f, 0f), 20);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 29);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.08, 0, 0), 3), 30);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 65.8f, 15.8f), 33);
+		Utils.scheduleTask(() -> {
+			Actions.swingHand(mage);
+			Actions.move(mage, new Vector(0, 0, -1.08), 1);
+		}, 34);
+		Utils.scheduleTask(() -> {
+			Goldor.broadcastTerminalComplete(mage, "terminal", 3, 7);
+			// note: in real hypixel, momentum carries over even after a terminal is opened; as such this is a valid move sequence
+			Actions.move(mage, new Vector(0, 0, -0.2806), 9);
+		}, 35);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 180f, 0f);
+		}, 36);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 17.1f), 45);
+		Utils.scheduleTask(() -> Actions.swingHand(mage), 50);
+		Utils.scheduleTask(() -> {
+			Goldor.broadcastTerminalComplete(mage, "terminal", 7, 7);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S1 finished in 51 ticks (2.55 seconds) | Overall: 2 367 ticks (118.35 seconds)");
+		}, 51);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 52);
+		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 53);
+
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -174f, 0f);
+			Actions.setFakePlayerHotbarSlot(mage, 5);
+		}, 58);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1467, 0, -1.395), 1), 59);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 4), 60);
+		Utils.scheduleTask(() -> Actions.lavaJump(mage, false), 67);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 6), 68);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -160f, -10.5f), 73);
+		Utils.scheduleTask(() -> Actions.swingHand(mage), 74);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(mage, "terminal", 2, 8), 75);
+
+		/*
+		 *  ██████╗ ██████╗ ██████╗ ███████╗
+		 * ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+		 * ██║     ██║   ██║██████╔╝█████╗
+		 * ██║     ██║   ██║██╔══██╗██╔══╝
+		 * ╚██████╗╚██████╔╝██║  ██║███████╗
+		 *  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -174f, 0f), 76);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 9), 77);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 90f), 93);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 122)), 94);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -180f, 35f);
+			Actions.move(mage, new Vector(0, 0, -1.12242), 5);
+		}, 95);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 121)), 96);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 121)), 97);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 120)), 98);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 120)), 99);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 134.99f, 55.7f); // 135f gets the wrong blockface
+			Actions.stonk(mage, world.getBlockAt(58, 124, 119));
+		}, 100);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(mage, world.getBlockAt(58, 123, 119));
+			Actions.move(mage, new Vector(-0.9921, 0, -0.9921), 1);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(57, 124, 119)), 102);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(mage, world.getBlockAt(57, 123, 119));
+			Actions.move(mage, new Vector(-0.9921, 0, -0.9921), 1);
+		}, 103);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 177.4f, 35f);
+			Actions.stonk(mage, world.getBlockAt(57, 124, 118));
+		}, 104);
+		Utils.scheduleTask(() -> {
+			Actions.stonk(mage, world.getBlockAt(57, 123, 118));
+			Actions.move(mage, new Vector(-0.0636, 0, -1.4016), 2);
+		}, 105);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.4f, 0f), 106);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.01273, 0, -0.2803), 16), 107);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0636, 0, -1.4016), 33), 123);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 58f), 156);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 58)), 157);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, new Vector(0, 0, -1.08), 8);
+			Actions.stonk(mage, world.getBlockAt(54, 114, 57));
+		}, 158);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 56)), 159);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 55)), 160);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 115, 54)), 161);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 54)), 162);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 53)), 163);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 52)), 164);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 51)), 165);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 180f, 0f);
+			Actions.jump(mage);
+		}, 166);
+
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 66.5f, 0f), 198);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.99, 0, 0.4307), 2), 199);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 60f), 200);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 52)), 201);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, new Vector(0, 0, 1.08), 5);
+			Actions.stonk(mage, world.getBlockAt(52, 114, 53));
+		}, 202);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 115, 54)), 203);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 54)), 204);
+		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 55)), 205);
+		Utils.scheduleTask(() -> {
+			Actions.jump(mage);
+			Actions.turnHead(mage, -90f, 0f);
+		}, 207);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 5, 32), 208);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 5), 209);
+		Utils.scheduleTask(() -> Actions.rag(mage), 210);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.08, 0, 0), 2), 213);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 215);
+		// swap to gdrag
+
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.403), 11), 256);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 3), 261);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -82.5f, -5f), 262);
+		Utils.scheduleTask(Mage::mageBeam, 280); // wait for debuff
+		Utils.scheduleTask(Mage::mageBeam, 285);
+		Utils.scheduleTask(Mage::mageBeam, 290);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 291);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 292);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 350);
+		}
 	}
 
 	private static void necron(boolean doContinue) {

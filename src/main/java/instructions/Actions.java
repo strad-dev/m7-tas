@@ -202,6 +202,9 @@ public class Actions {
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
+	public static void clearVelocity(LivingEntity entity) {
+		entityVelocities.remove(entity);
+	}
 
 	/**
 	 * Makes a Player entity perform a jump if it is currently on the ground.

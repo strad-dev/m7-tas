@@ -93,14 +93,24 @@ public class Necron {
 		Utils.scheduleTask(() -> {
 			sendChatMessage("All this, for nothing...");
 			Server.playWitherDeathSound(necron);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron killed in 509 ticks (25.45 seconds) | Overall: 3 185 ticks (159.25 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron killed in 509 ticks (25.45 seconds) | Overall: 3 175 ticks (158.75 seconds)");
 		}, 509);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 569);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 285 ticks (164.25 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 275 ticks (163.75 seconds)");
 		}, 609);
 		Utils.scheduleTask(() -> sendChatMessage("The Catacombs... are no more."), 629);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in 3 325 ticks (168.25 seconds | 2:48.25)"), 649);
+
+		/*
+		 * note: in normal floor 7, Wither EHP is ridiculously low to the point that true one-tick is possible for all partitions
+		 * in addition to negating the need to debuff, given this information, the following timesaves will occur in normal floor 7
+		 * maxor: none
+		 * storm: 13 ticks (8 ticks from first crush, 5 ticks from second crush)
+		 * goldor: approx. 35-40 ticks, due to not needing to debuff, as well as being able to be one-tapped the moment he is not obstructed by blocks
+		 * necron: 5 ticks (between first frenzy and platform destroy)
+		 * thus, a solution of ~3 260 ticks will be the perfect F7 (163.00 seconds | 2:43.00)
+		 */
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in 3 315 ticks (167.75 seconds | 2:47.75)"), 649);
 	}
 
 	private static void destroyPlatform() {

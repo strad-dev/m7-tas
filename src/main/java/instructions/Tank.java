@@ -7,7 +7,6 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.WitherSkeleton;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
@@ -75,7 +74,7 @@ public class Tank {
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
-				Actions.teleport(tank, new Location(world, 54.47, 65, 83.657, 180f, -5f));
+				Actions.teleport(tank, new Location(world, 54.529, 65, 83.688, 180f, -5f));
 				Actions.swapFakePlayerInventorySlots(tank, 1, 28);
 				Actions.swapFakePlayerInventorySlots(tank, 3, 30);
 				Actions.swapFakePlayerInventorySlots(tank, 5, 32);
@@ -670,168 +669,165 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.swingHand(tank), 14);
 		Utils.scheduleTask(() -> Actions.swingHand(tank), 15);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 179f, 0f), 16);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0196, 0, -1.12255), 7), 17);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0049, 0, -0.2805), 3), 24);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -97f, 17.2f), 26);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 27);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 2, 7), 28);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -160f, 0f), 29);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.3839, 0, -1.0547), 1), 30);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.096, 0, -0.2637), 6), 31);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -118.5f, 67.6f), 37);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 38);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 4, 7), 39);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 40);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 43);
-//		/*
-//		 * ██████╗
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 * ██╔═══╝
-//		 * ███████╗
-//		 * ╚══════╝
-//		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(tank, -126.6f, 82f);
-//			Actions.setFakePlayerHotbarSlot(tank, 1);
-//		}, 44);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.9011, 0, -0.67), 1), 45);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.2247, 0.5, -0.91)), 46);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -126.6f, 0f), 47);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -168.9f, 43.9f), 59);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 60);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 1, 8), 61);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 62);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9023, 0, 0.6676), 2), 63);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 65);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 66);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9023, 0, 0.6676), 2), 79);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 80);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 81);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 82);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 94f, 0f), 94);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.1197, 0, -0.0783), 5), 95);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 6f, 28.7f), 100);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 101);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 4, 8), 102);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 103);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 2), 104);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 6), 106);
-//		Utils.scheduleTask(() -> Actions.lavaJump(tank, false), 112);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -21.5f, 0f), 113);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.5591, 0.5, -1.4194)), 124);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 158.5f, 35f), 125);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(tank);
-//			Goldor.broadcastTerminalComplete(tank, "lever", 8, 8);
-//		}, 139);
-//
-//		/*
-//		 * ██████╗1
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 *  ╚═══██╗
-//		 * ██████╔╝
-//		 * ╚═════╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 140);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 3), 141);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 12), 144);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.12242, 0, 0), 1), 156);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(tank, new Vector(-1.12242, 0, 0), 1);
-//			Actions.turnHead(tank, 140f, 0f);
-//		}, 157);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.7215, 0, -0.8598), 6), 158);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 82f), 163);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.9806, 0.5, -1.169)), 164);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 165);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 70f, 16.2f), 186);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 187);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 7), 188);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 189);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 190);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(tank, -148f, 82f);
-//			Actions.setFakePlayerHotbarSlot(tank, 1);
-//		}, 191);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6597, 0, -0.9081), 2), 192);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(0.8967, 0.5, -1.2342)), 194);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -148f, 0f), 195);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6597, 0, -0.9081), 1), 210);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.1649, 0, -0.227), 9), 211);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, 20f), 219);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(tank);
-//			Actions.move(tank, new Vector(0, 0, 0.8634), 1);
-//		}, 220);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 3, 7), 221);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 82f), 222);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.12242, 0, 0), 1), 223);
-//		final BukkitRunnable[] temp = new BukkitRunnable[1];
-//		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(tank, new Vector(1.52552, 0, 0)), 224);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 225);
-//		Utils.scheduleTask(() -> {
-//			temp[0].cancel();
-//			Actions.lavaJump(tank, false);
-//		}, 238);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -87.5f, -4.9f), 239);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(tank);
-//			Goldor.broadcastTerminalComplete(tank, "lever", 7, 7);
-//			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 45 ticks (2.25 seconds) | Terminals: 246 ticks (12.30 seconds) | Overall: 2 562 ticks (128.10 seconds)");
-//			Server.openCore();
-//		}, 246);
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 247);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 248);
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 6), 249);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.12242), 14), 266);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -82f, -10f), 280);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 13), 281);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 26.6f, 0f), 294);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.5026, 0, 1.004), 4), 295);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.1256, 0, 0.251), 15), 299);
-//		Utils.scheduleTask(() -> Actions.lavaJump(tank, true), 314);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> {
-//				Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2f, 0.5f);
-//				Bukkit.broadcastMessage(ChatColor.RED + " ☠ " + ChatColor.GOLD + "cookiethebald" + ChatColor.GRAY + " burned to death and became a ghost.");
-//				tank.setGameMode(GameMode.SPECTATOR);
-//				tank.setFlying(true);
-//			}, 330);
-//			Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 331);
-//			Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 332);
-//			Utils.scheduleTask(() -> {
-//				Actions.turnHead(tank, 176f, 0f);
-//				Actions.move(tank, new Vector(0, 0.42, 0), 4);
-//			}, 333);
-//			Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.07534, 0.001, -1.0774), 26), 337);
-//			Utils.scheduleTask(() -> necron(true), 360);
-//			Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, -10f), 363);
-//			Utils.scheduleTask(() -> {
-//				Bukkit.broadcastMessage(ChatColor.GREEN + " ❣ " + ChatColor.GOLD + "cookiethebald" + ChatColor.GREEN + " was revived by " + ChatColor.GOLD + "cookiethebald" + ChatColor.GREEN + "!");
-//				tank.setGameMode(GameMode.SURVIVAL);
-//				tank.setFlying(false);
-//			}, 430);
-//		}
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0245, 0, -1.4028), 6), 17);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0049, 0, -0.2805), 2), 23);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -101f, 17.2f), 24);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 25);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 2, 7), 26);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -160f, 0f), 27);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.48, 0, -1.3184), 1), 28);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.096, 0, -0.2637), 4), 29);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -125f, 67.6f), 33);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 38);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 4, 7), 39);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 40);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 41);
+
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -126.6f, 82f);
+			Actions.setFakePlayerHotbarSlot(tank, 1);
+		}, 42);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.1264, 0, -0.837), 1), 43);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.2247, 0.5, -0.91)), 44);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -126.6f, 0f), 45);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, 90f), 57);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 58);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 1, 8), 59);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 60);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.1278, 0, 0.8345), 1), 61);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 62);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 63);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.1278, 0, 0.8345), 2), 76);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 77);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 78);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 79);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 89f, 0f), 91);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.4028, 0, 0.0245), 4), 92);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, 27f), 95);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 96);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 4, 8), 97);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 98);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.403, 0, 0), 2), 99);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 6), 101);
+		Utils.scheduleTask(() -> Actions.lavaJump(tank, false), 108);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -15.5f, 0f), 109);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.4077, 0.5, -1.47)), 120);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 164.5f, 35f), 121);
+		Utils.scheduleTask(() -> {
+			Actions.rightClickLever(tank);
+			Goldor.broadcastTerminalComplete(tank, "lever", 7, 8);
+		}, 131);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 133);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.403, 0, 0), 2), 134);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 15), 136);
+		Utils.scheduleTask(() -> {
+			for(int i = 0; i < 21; i += 5) {
+				Utils.scheduleTask(() -> {
+					world.playSound(tank.getLocation(), Sound.BLOCK_CROP_BREAK, 2.0f, 1.0f);
+					world.playSound(tank.getLocation(), Sound.BLOCK_GRASS_BREAK, 2.0f, 1.0f);
+				}, i);
+			}
+			Goldor.broadcastTerminalComplete(tank, "gate", 2, 3);
+		}, 137);
+
+		/*
+		 * ██████╗1
+		 * ╚════██╗
+		 *  █████╔╝
+		 *  ╚═══██╗
+		 * ██████╔╝
+		 * ╚═════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 150);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9018, 0, -1.0748), 5), 151);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 82f), 155);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.9806, 0.5, -1.169)), 156);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 157);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 70f, 16.2f), 178);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 179);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 7), 180);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 181);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 182);
+
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.forceMove(tank, new Vector(0, 0, -1.403), 3), 183); // forceMove to get over the carpet
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, 0f);
+			Actions.setFakePlayerHotbarSlot(tank, 1);
+		}, 185);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.403, 0, 0), 3), 186);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 82f), 188);
+		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.52552, 0.5, 0)), 189);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 190);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -56.1f, 19.8f), 203);
+		Utils.scheduleTask(() -> Actions.swingHand(tank), 204);
+		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 3, 7), 205);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 206);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.403, 0, 0), 2), 207);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.2806, 0, 0), 15), 209);
+		Utils.scheduleTask(() -> Actions.lavaJump(tank, true), 223);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -108.2f, -32.3f), 224);
+		Utils.scheduleTask(() -> {
+			Actions.rightClickLever(tank);
+			Goldor.broadcastTerminalComplete(tank, "lever", 5, 7);
+		}, 229);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 230);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 231);
+
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 6), 232);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 11), 256);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -82.5f, -10f), 266);
+		// tick 267: switch to baby yeti
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 268);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 26.6f, 0f), 278);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.5026, 0, 1.004), 4), 279);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.1256, 0, 0.251), 15), 283);
+		Utils.scheduleTask(() -> Actions.lavaJump(tank, true), 298);
+		Utils.scheduleTask(() -> {
+			Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2f, 0.5f);
+			Bukkit.broadcastMessage(ChatColor.RED + " ☠ " + ChatColor.GOLD + "cookiethebald" + ChatColor.GRAY + " burned to death and became a ghost.");
+			tank.setGameMode(GameMode.SPECTATOR);
+			tank.setFlying(true);
+		}, 314);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 3), 315);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 316);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 176f, 0f);
+			Actions.move(tank, new Vector(0, 0.42, 0), 4);
+		}, 317);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.07534, 0.001, -1.0774), 26), 321);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, -10f), 347);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GREEN + " ❣ " + ChatColor.GOLD + "cookiethebald" + ChatColor.GREEN + " was revived by " + ChatColor.GOLD + "cookiethebald" + ChatColor.GREEN + "!");
+			tank.setGameMode(GameMode.SURVIVAL);
+			tank.setFlying(false);
+		}, 414);
+		if(doContinue) {
+			Utils.scheduleTask(() -> necron(true), 350);
+		}
 	}
 
 	private static void necron(boolean doContinue) {
