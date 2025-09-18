@@ -66,17 +66,17 @@ public class Necron {
 		// first frenzy
 		Utils.scheduleTask(() -> {
 			Actions.setWitherArmor(necron, true);
-			necron.setHealth(560);
 			frenzy();
 		}, 161);
+		Utils.scheduleTask(() -> necron.setHealth(560), 162);
 		Utils.scheduleTask(() -> sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself."), 180);
 		// damageable on tick 302
 		// blow up platform
 		Utils.scheduleTask(() -> {
 			Actions.setWitherArmor(necron, true);
-			necron.setHealth(175);
 			destroyPlatform();
 		}, 307);
+		Utils.scheduleTask(() -> necron.setHealth(175), 308);
 		// damagable on tick 368 (mage one beam)
 		Utils.scheduleTask(() -> {
 			Actions.setWitherArmor(necron, false);
@@ -85,9 +85,9 @@ public class Necron {
 		// second frenzy
 		Utils.scheduleTask(() -> {
 			Actions.setWitherArmor(necron, true);
-			necron.setHealth(35);
 			frenzy();
 		}, 368);
+		Utils.scheduleTask(() -> necron.setHealth(35), 369);
 		// damageable on tick 508
 		// die on tick 509
 		Utils.scheduleTask(() -> {

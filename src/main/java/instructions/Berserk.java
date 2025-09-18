@@ -72,7 +72,7 @@ public class Berserk {
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
-				Actions.teleport(berserk, new Location(world, 56.429, 64, 111.669, -180f, 0f));
+				Actions.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
 				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
 				Utils.scheduleTask(() -> necron(false), 60);
@@ -606,7 +606,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 88.8f, 0f), 286);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2805, 0, 0.000588), 40), 287);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.12217, 0, 0.0235), 5), 327);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 55.6f, 0f), 332);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 55.6f, 0f), 331);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -77f, 0f), 334);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 384);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -105f, 0f), 401);
@@ -1054,10 +1054,19 @@ public class Berserk {
 		Actions.setFakePlayerHotbarSlot(berserk, 2);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Tank.get()), 121);
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 122);
-		for(int i = 161; i < 505; i += 5) {
+		for(int i = 161; i < 510; i += 5) {
 			Utils.scheduleTask(Berserk::shoot, i);
 			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 4);
 		}
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 507);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 508);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -122f, 0f), 509);
+		// tick 510: equip black cat
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.1898, 0, -0.7435), 20), 511);
+		Utils.scheduleTask(() -> Actions.jump(berserk), 530);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.238, 0, -0.1487), 9), 531);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.1898, 0, -0.7435), 5), 540);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -79.7f, 19.1f), 544);
 	}
 
 	private static void shoot() {

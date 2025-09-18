@@ -879,6 +879,14 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 476);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 488);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 500);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 501);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 502);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 65f, 0f), 503);
+		// tick 504: equip black cat
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.2716, 0, 0.5929), 16), 505);
+		Utils.scheduleTask(() -> Actions.jump(tank), 530);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2543, 0, 0.1186), 9), 531);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.2716, 0, 0.5929), 4), 540);
 	}
 
 	@SuppressWarnings("unused")

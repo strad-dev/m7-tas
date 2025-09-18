@@ -65,7 +65,7 @@ public class Healer {
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
-				Actions.teleport(healer, new Location(world, 56.429, 64, 111.669, -180f, 0f));
+				Actions.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
 				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
 				Actions.swapFakePlayerInventorySlots(healer, 6, 33);
@@ -1023,7 +1023,10 @@ public class Healer {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -1.9f, 0f), 229);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -1.9f, 0f);
+			Actions.setFakePlayerHotbarSlot(healer, 5);
+		}, 229);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.04652, 0, 1.4022), 3), 230);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0093, 0, 0.2805), 5), 233);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.04652, 0, 1.4022), 32), 238);
@@ -1059,6 +1062,19 @@ public class Healer {
 		}, 165);
 		Utils.scheduleTask(() -> Actions.ghostPick(healer, world.getBlockAt(54, 63, 79)), 166);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 167);
+		// tick 168: equip black cat
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -2f, 0f), 512);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 11), 513);
+		Utils.scheduleTask(() -> Actions.jump(healer), 523);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 524);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 3), 533);
+		Utils.scheduleTask(() -> Actions.jump(healer), 535);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 536);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 2), 545);
+		Utils.scheduleTask(() -> Actions.jump(healer), 546);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 547);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 4), 556);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -16.2f, 18.8f), 559);
 	}
 
 	@SuppressWarnings("unused")

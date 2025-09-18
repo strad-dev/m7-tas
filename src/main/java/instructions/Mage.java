@@ -70,7 +70,7 @@ public class Mage {
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
-				Actions.teleport(mage, new Location(world, 56.429, 64, 111.669, -180f, 0f));
+				Actions.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
 				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
@@ -735,6 +735,15 @@ public class Mage {
 			Utils.scheduleTask(Mage::mageBeam, i);
 		}
 		Utils.scheduleTask(Mage::mageBeam, 509);
+		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(mage, 4), 510);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 511);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -67f, 0f), 512);
+		// tick 513: equip black cat
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.2915, 0, 0.5482), 19), 514);
+		Utils.scheduleTask(() -> Actions.jump(mage), 532);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2583, 0, 0.1096), 9), 533);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.2915, 0, 0.5482), 3), 542);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -75.6f, 18.8f), 544);
 	}
 
 	private static void snapHead(String target) {

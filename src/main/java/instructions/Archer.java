@@ -61,9 +61,8 @@ public class Archer {
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
-				Actions.teleport(archer, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
+				Actions.teleport(archer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
-				Actions.swapFakePlayerInventorySlots(archer, 5, 33);
 				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
@@ -857,7 +856,7 @@ public class Archer {
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -146.3f, 8.6f), 118);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Phoenix Procced!");
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Phoenix Procced!");
 			world.playSound(archer.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
 		}, 120);
 		Utils.scheduleTask(() -> Actions.lavaJump(archer, false), 131);
@@ -911,7 +910,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(0.8967, 0.5, -1.2342)), 174);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -148f, 0f), 175);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Bonzo Procced!");
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Bonzo Procced!");
 			world.playSound(archer.getLocation(), Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 2f);
 		}, 180);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7435, 0, -1.19), 2), 188);
@@ -990,7 +989,13 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(archer, 2), 507);
 		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 508);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 121.3f, 0f), 509);
-
+		// tick 510: equip black cat
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.198, 0, -0.729), 20), 511);
+		Utils.scheduleTask(() -> Actions.jump(archer), 530);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2398, 0, -0.1458), 9), 531);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.198, 0, -0.729), 2), 540);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 65.6f, 29.3f), 541);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(archer, 11, 39), 542);
 	}
 
 	private static void shoot() {
