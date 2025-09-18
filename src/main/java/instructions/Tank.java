@@ -2,6 +2,7 @@ package instructions;
 
 import instructions.bosses.Goldor;
 import instructions.bosses.Storm;
+import instructions.bosses.WitherKing;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
@@ -75,6 +76,15 @@ public class Tank {
 			}
 			case "necron" -> {
 				Actions.teleport(tank, new Location(world, 54.529, 65, 83.688, 180f, -5f));
+				Actions.swapFakePlayerInventorySlots(tank, 1, 28);
+				Actions.swapFakePlayerInventorySlots(tank, 3, 30);
+				Actions.swapFakePlayerInventorySlots(tank, 5, 32);
+				Actions.swapFakePlayerInventorySlots(tank, 6, 33);
+				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(tank, 7, 33), 1);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
+			case "witherking" -> {
+				Actions.teleport(tank, new Location(world, 22.3, 6, 94.452, 67.3f, 29.7f));
 				Actions.swapFakePlayerInventorySlots(tank, 1, 28);
 				Actions.swapFakePlayerInventorySlots(tank, 3, 30);
 				Actions.swapFakePlayerInventorySlots(tank, 5, 32);
@@ -839,9 +849,6 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 163);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 183);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 203);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 223);
-		Utils.scheduleTask(() -> Actions.iceSpray(tank), 224);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 5), 225);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 226);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 238);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 250);
@@ -855,9 +862,6 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 310);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 322);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 334);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 337);
-		Utils.scheduleTask(() -> Actions.iceSpray(tank), 338);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 5), 339);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 346);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 358);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 370);
@@ -873,9 +877,6 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 440);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 452);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 464);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 2), 467);
-		Utils.scheduleTask(() -> Actions.iceSpray(tank), 468);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(tank, 5), 469);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 476);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 488);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 500);
@@ -887,6 +888,14 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.jump(tank), 530);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2543, 0, 0.1186), 9), 531);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.2716, 0, 0.5929), 4), 540);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 67.3f, 29.7f), 543);
+		if(doContinue) {
+			Utils.scheduleTask(Tank::witherKing, 609);
+		}
+	}
+
+	private static void witherKing() {
+		Utils.scheduleTask(() -> WitherKing.pickUpRelic(tank), 1);
 	}
 
 	@SuppressWarnings("unused")

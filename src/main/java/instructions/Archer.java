@@ -1,6 +1,7 @@
 package instructions;
 
 import instructions.bosses.Goldor;
+import instructions.bosses.WitherKing;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
@@ -64,6 +65,14 @@ public class Archer {
 				Actions.teleport(archer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
 				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
+			case "witherking" -> {
+				Actions.teleport(archer, new Location(world, 22.3, 6, 59.408, 65.6f, 29.3f));
+				Actions.swapFakePlayerInventorySlots(archer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(archer, 3, 30);
+				Actions.swapFakePlayerInventorySlots(archer, 7, 35);
+				Actions.swapFakePlayerInventorySlots(archer, 11, 39);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 		}
@@ -996,6 +1005,13 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.198, 0, -0.729), 2), 540);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 65.6f, 29.3f), 541);
 		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(archer, 11, 39), 542);
+		if(doContinue) {
+			Utils.scheduleTask(Archer::witherKing, 609);
+		}
+	}
+
+	private static void witherKing() {
+		Utils.scheduleTask(() -> WitherKing.pickUpRelic(archer), 1);
 	}
 
 	private static void shoot() {

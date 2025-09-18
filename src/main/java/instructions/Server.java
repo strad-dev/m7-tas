@@ -65,7 +65,7 @@ public class Server {
 					Goldor.goldorInstructions(world, false);
 				}
 				case "necron" -> Necron.necronInstructions(world, false);
-//				case "witherking" -> WitherKing.witherKingInstructions(world, false);
+				case "witherking" -> WitherKing.witherKingInstructions(world);
 			}
 		}, 60);
 	}

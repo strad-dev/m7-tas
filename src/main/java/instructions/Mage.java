@@ -2,6 +2,7 @@ package instructions;
 
 import instructions.bosses.Goldor;
 import instructions.bosses.Maxor;
+import instructions.bosses.WitherKing;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -73,6 +74,13 @@ public class Mage {
 				Actions.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 				Actions.swapFakePlayerInventorySlots(mage, 3, 30);
+				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
+				Actions.swapFakePlayerInventorySlots(mage, 6, 33);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
+			case "witherking" -> {
+				Actions.teleport(mage, new Location(world, 89.7, 6, 94.406, -75.6f, 18.8f));
+				Actions.swapFakePlayerInventorySlots(mage, 1, 28);
 				Actions.swapFakePlayerInventorySlots(mage, 5, 32);
 				Actions.swapFakePlayerInventorySlots(mage, 6, 33);
 				Utils.scheduleTask(() -> necron(false), 60);
@@ -744,6 +752,14 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2583, 0, 0.1096), 9), 533);
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.2915, 0, 0.5482), 3), 542);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -75.6f, 18.8f), 544);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(mage, 3, 30), 545);
+		if(doContinue) {
+			Utils.scheduleTask(Mage::witherKing, 609);
+		}
+	}
+
+	private static void witherKing() {
+		Utils.scheduleTask(() -> WitherKing.pickUpRelic(mage), 1);
 	}
 
 	private static void snapHead(String target) {

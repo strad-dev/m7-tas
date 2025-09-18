@@ -98,6 +98,9 @@ public class Necron {
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 569);
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 275 ticks (163.75 seconds)");
+			if(doContinue) {
+				WitherKing.witherKingInstructions(world);
+			}
 		}, 609);
 		Utils.scheduleTask(() -> sendChatMessage("The Catacombs... are no more."), 629);
 

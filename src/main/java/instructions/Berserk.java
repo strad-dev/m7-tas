@@ -2,6 +2,7 @@ package instructions;
 
 import instructions.bosses.Goldor;
 import instructions.bosses.Maxor;
+import instructions.bosses.WitherKing;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
@@ -75,6 +76,13 @@ public class Berserk {
 				Actions.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
 				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
+			case "witherKing" -> {
+				Actions.teleport(berserk, new Location(world, 90.7, 6, 56.581, -79.7f, 19.1f));
+				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
+				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Actions.swapFakePlayerInventorySlots(berserk, 12, 39);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 		}
@@ -1067,6 +1075,14 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.238, 0, -0.1487), 9), 531);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.1898, 0, -0.7435), 5), 540);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -79.7f, 19.1f), 544);
+		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 12, 39), 545);
+		if(doContinue) {
+			Utils.scheduleTask(Berserk::witherKing, 609);
+		}
+	}
+
+	private static void witherKing() {
+		Utils.scheduleTask(() -> WitherKing.pickUpRelic(berserk), 1);
 	}
 
 	private static void shoot() {

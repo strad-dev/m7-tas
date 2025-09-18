@@ -2,6 +2,7 @@ package instructions;
 
 import instructions.bosses.Goldor;
 import instructions.bosses.Storm;
+import instructions.bosses.WitherKing;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
@@ -66,6 +67,14 @@ public class Healer {
 			}
 			case "necron" -> {
 				Actions.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
+				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
+				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
+				Actions.swapFakePlayerInventorySlots(healer, 6, 33);
+				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
+			case "witherking" -> {
+				Actions.teleport(healer, new Location(world, 56.326, 8, 130.7, -16.2f, 18.8f));
 				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
 				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
 				Actions.swapFakePlayerInventorySlots(healer, 6, 33);
@@ -1075,6 +1084,13 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 547);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 4), 556);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -16.2f, 18.8f), 559);
+		if(doContinue) {
+			Utils.scheduleTask(Healer::witherKing, 609);
+		}
+	}
+
+	private static void witherKing() {
+		Utils.scheduleTask(() -> WitherKing.pickUpRelic(healer), 1);
 	}
 
 	@SuppressWarnings("unused")

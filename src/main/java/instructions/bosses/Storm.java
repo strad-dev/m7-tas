@@ -141,6 +141,9 @@ public class Storm {
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I should have known that I stand no chance.");
 			Server.playWitherDeathSound(storm);
+			for(int i = 790; i < 1091; i += 20) {
+				Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F), i);
+			}
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 790 ticks (39.50 seconds) | Overall: 2 216 ticks (110.80 seconds)");
 		}, 790);
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 850);
