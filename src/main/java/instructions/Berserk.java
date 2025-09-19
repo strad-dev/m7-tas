@@ -5,10 +5,7 @@ import instructions.bosses.Maxor;
 import instructions.bosses.WitherKing;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.WitherSkeleton;
+import org.bukkit.entity.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -30,26 +27,26 @@ public class Berserk {
 			case "all", "clear" -> {
 				Actions.teleport(berserk, new Location(world, -21.5, 70, -197.5, 90f, 36.5f));
 				Utils.scheduleTask(() -> {
-					Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
+					Actions.swapItems(berserk, 2, 29);
 					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
 				}, 60);
-				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 61);
+				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 61);
 				Utils.scheduleTask(() -> Actions.rightClickWithSpectators(berserk), 101);
 				Utils.scheduleTask(() -> {
-					Actions.setFakePlayerHotbarSlot(berserk, 1);
+					Actions.setHotbarSlot(berserk, 1);
 					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
 				}, 102);
 				Utils.scheduleTask(() -> {
 					Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
-					Actions.swapFakePlayerInventorySlots(berserk, 2, 29);
+					Actions.swapItems(berserk, 2, 29);
 				}, 141);
 				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 			case "maxor", "boss" -> {
 				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));
-				Actions.swapFakePlayerInventorySlots(berserk, 11, 36);
-				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Actions.swapItems(berserk, 11, 36);
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 7, 35);
 				if(section.equals("maxor")) {
 					Utils.scheduleTask(() -> maxor(false), 60);
 				} else {
@@ -58,32 +55,32 @@ public class Berserk {
 			}
 			case "storm" -> {
 				Actions.teleport(berserk, new Location(world, 100.422, 169, 49.624, -1f, 23f));
-				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 7, 35);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
 				Actions.teleport(berserk, new Location(world, 63.343, 127, 35.246, -15.4f, -7.6f));
-				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
-				Actions.swapFakePlayerInventorySlots(berserk, 9, 39);
-				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 56);
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 7, 35);
+				Actions.swapItems(berserk, 9, 39);
+				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 56);
 				Utils.scheduleTask(Berserk::shoot, 57);
 				Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 58);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Actions.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));
-				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 7, 35);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
-			case "witherKing" -> {
+			case "witherking" -> {
 				Actions.teleport(berserk, new Location(world, 90.7, 6, 56.581, -79.7f, 19.1f));
-				Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-				Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
-				Actions.swapFakePlayerInventorySlots(berserk, 12, 39);
-				Utils.scheduleTask(() -> necron(false), 60);
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 7, 35);
+				Actions.swapItems(berserk, 12, 39);
+				Utils.scheduleTask(Berserk::witherKing, 60);
 			}
 		}
 	}
@@ -104,7 +101,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -22.5, 69, -223.5)), 2);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -126.9f, 12.2f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 		}, 3);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-22, 70, -224)), 4);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-22, 70, -225)), 5);
@@ -116,7 +113,7 @@ public class Berserk {
 		}, 7);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 3.1f, 2.4f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 8);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -24.5, 69, -184.5)), 9);
 
@@ -146,7 +143,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -31.5, 82, -176.5)), 21);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 60.1f, 38.9f);
-			Actions.setFakePlayerHotbarSlot(berserk, 0);
+			Actions.setHotbarSlot(berserk, 0);
 		}, 22);
 		Utils.scheduleTask(() -> {
 			Actions.witherImpact(berserk, new Location(world, -35.5, 80, -174.5));
@@ -155,7 +152,7 @@ public class Berserk {
 		}, 23);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 161.0f, 9.5f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 24);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -38.5, 80, -183.5)), 25);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 108.8f, 5.1f), 26);
@@ -166,10 +163,10 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -44.5, 81, -213.5)), 31);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 146.5f, -2.3f);
-			Actions.setFakePlayerHotbarSlot(berserk, 3);
+			Actions.setHotbarSlot(berserk, 3);
 		}, 32);
 		Utils.scheduleTask(() -> Actions.superboom(berserk, -47, 81, -217, -46, 84, -216), 33);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 34);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 34);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -54.5, 83.5, -228.5)), 35);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 116.2f, 38.9f), 36);
 		Utils.scheduleTask(() -> {
@@ -181,7 +178,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -54.5, 86, -219.5)), 39);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 0f, 45f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 		}, 40);
 		Utils.scheduleTask(() -> {
 			Actions.stonk(berserk, world.getBlockAt(-55, 87, -219));
@@ -190,12 +187,12 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-55, 86, -219)), 42);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 14.8f, 45f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 43);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -59.5, 69, -198.5)), 44);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 36f, 16f), 45);
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -62.5, 69, -194.5)), 46);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 5), 47);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 5), 47);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-64, 70, -194)), 48);
 		Utils.scheduleTask(() -> {
 			Actions.swingHand(berserk);
@@ -204,17 +201,17 @@ public class Berserk {
 		}, 49);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90f, 14.9f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 50);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -56.5, 69, -194.5)), 51);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 9.3f, 5.2f), 52);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -58.5, 69, -176.5)), 53);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 75f, 15.9f);
-			Actions.setFakePlayerHotbarSlot(berserk, 3);
+			Actions.setHotbarSlot(berserk, 3);
 		}, 54);
 		Utils.scheduleTask(() -> Actions.superboom(berserk, -61, 69, -177, -62, 73, -174), 55);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 56);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 56);
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -64.5, 69.0625, -175.5)), 57);
 		Utils.scheduleTask(() -> {
 			Actions.swingHand(berserk);
@@ -223,7 +220,7 @@ public class Berserk {
 		}, 58);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -95.4f, -3.2f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 59);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -54.5, 71.5, -176.5)), 60);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 165.2f, 6.8f), 61);
@@ -239,12 +236,12 @@ public class Berserk {
 		 * ╚██████╗██║  ██║   ██║   ╚███╔███╔╝██║  ██║███████╗██║  ██╗
 		 *  ╚═════╝╚═╝  ╚═╝   ╚═╝    ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 65);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 65);
 		Utils.scheduleTask(Berserk::shoot, 66);
 		Utils.scheduleTask(Berserk::shoot, 71);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 53.4f, 2.2f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Catwalk Cleared");
 		}, 72);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -93.5, 70.5, -210.5)), 73);
@@ -262,10 +259,10 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -96.5, 50, -206.5)), 81);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -96.4f, 17.5f);
-			Actions.setFakePlayerHotbarSlot(berserk, 3);
+			Actions.setHotbarSlot(berserk, 3);
 		}, 82);
 		Utils.scheduleTask(() -> Actions.superboom(berserk, -94, 50, -207, -93, 53, -209), 83);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 84);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 84);
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -90.5, 50, -207.5)), 85);
 		Utils.scheduleTask(() -> {
 			Actions.swingHand(berserk);
@@ -304,15 +301,15 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -91.5, 50, -149.5)), 108);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 3);
+			Actions.setHotbarSlot(berserk, 3);
 			Actions.move(berserk, new Vector(1.12242, 0, 0), 5);
 		}, 109);
 		Utils.scheduleTask(() -> Actions.crypt(berserk, -86, 49, -150, -84, 51, -149), 110);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 111);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 111);
 		Utils.scheduleTask(Berserk::shoot, 112);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -106f, 12.6f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Crypt 4/5");
 		}, 113);
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -80.5, 49, -150.5)), 114);
@@ -344,14 +341,14 @@ public class Berserk {
 		 * ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═════╝ ╚═╝ ╚═════╝     ╚══════╝╚═╝   ╚═╝   ╚══════╝
 		 */
 		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(berserk, 4);
+			Actions.setHotbarSlot(berserk, 4);
 			Actions.turnHead(berserk, -62.8f, 1.4f);
 		}, 125);
 		Utils.scheduleTask(Berserk::shoot, 126);
 		Utils.scheduleTask(Berserk::shoot, 131);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 85.0f, 7.0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 7);
+			Actions.setHotbarSlot(berserk, 7);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Dino Dig Site Cleared");
 		}, 132);
 		Utils.scheduleTask(() -> Actions.throwPearl(berserk), 133);
@@ -359,10 +356,10 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -33.5, 91, -142.5)), 135);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 0f, 10f);
-			Actions.setFakePlayerHotbarSlot(berserk, 3);
+			Actions.setHotbarSlot(berserk, 3);
 		}, 136);
 		Utils.scheduleTask(() -> Actions.superboom(berserk, -35, 92, -141, -33, 96, -140), 137);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 138);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 138);
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -33.5, 92, -136.5)), 139);
 		Utils.scheduleTask(() -> {
 			Actions.swingHand(berserk);
@@ -384,7 +381,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -63.5, 50, -151.5)), 148);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 180.0f, -6.1f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 		}, 149);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-64, 51, -156)), 150);
 		Utils.scheduleTask(() -> {
@@ -394,7 +391,7 @@ public class Berserk {
 		}, 151);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -70.5f, -23.5f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 152);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -50.5, 58, -146.5)), 153);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -111.1f, 19.6f), 154);
@@ -403,7 +400,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -16.5, 48, -147.5)), 157);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 0f, 34f);
-			Actions.setFakePlayerHotbarSlot(berserk, 0);
+			Actions.setHotbarSlot(berserk, 0);
 		}, 158);
 		Utils.scheduleTask(() -> {
 			Actions.witherImpact(berserk, new Location(world, -16.5, 47, -143.5));
@@ -412,7 +409,7 @@ public class Berserk {
 		}, 159);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 175.6f, 3.2f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 160);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -17.5, 48, -157.5)), 161);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 26.5f, -64.1f), 162);
@@ -432,7 +429,7 @@ public class Berserk {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 90f, 13.8f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 		}, 168);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-52, 70, -121)), 169);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-53, 70, -121)), 170);
@@ -441,7 +438,7 @@ public class Berserk {
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Deathmite 6/6 (Opened Chest)");
 			world.playSound(berserk.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
 		}, 171);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 172);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 172);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Tank.get()), 173);
 
 		/*
@@ -454,7 +451,7 @@ public class Berserk {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 18.5f, -5.3f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 174);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -218.5, 73, -163.5)), 175);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -62.9f, 6.5f), 176);
@@ -465,12 +462,12 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -199.5, 83, -144.5)), 181);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 90f, 23.5f);
-			Actions.setFakePlayerHotbarSlot(berserk, 3);
+			Actions.setHotbarSlot(berserk, 3);
 		}, 182);
 		Utils.scheduleTask(() -> Actions.superboom(berserk, -206, 83, -146, -205, 86, -144), 183);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 92.6f, 4.4f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 184);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -220.5, 83, -145.5)), 185);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 26.7f, 27.8f), 186);
@@ -483,7 +480,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -219.5, 84, -146.5)), 189);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 180f, 35f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 			Actions.move(berserk, new Vector(0, 0, -1.12242), 5);
 		}, 190);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-220, 85, -148)), 191);
@@ -492,12 +489,12 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-220, 84, -149)), 194);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -135f, -38.3f);
-			Actions.setFakePlayerHotbarSlot(berserk, 7);
+			Actions.setHotbarSlot(berserk, 7);
 		}, 195);
 		Utils.scheduleTask(() -> Actions.throwPearl(berserk), 196);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -164.3f, -28.6f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 197);
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -216.5, 91.5, -161.5)), 198);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 156.1f, 0.4f), 199);
@@ -512,14 +509,14 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.etherwarp(berserk, new Location(world, -212.5, 92, -165.5)), 204);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -90f, 35f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 			Actions.move(berserk, new Vector(1.12242, 0, 0), 3);
 		}, 205);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-212, 93, -166)), 206);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(-212, 92, -166)), 207);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -107.9f, 6.4f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 208);
 		Utils.scheduleTask(() -> Actions.AOTV(berserk, new Location(world, -204.5, 92, -167.5)), 209);
 		Utils.scheduleTask(() -> {
@@ -549,9 +546,9 @@ public class Berserk {
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 220 Ticks (11.00 seconds)");
 		}, 218);
 		Utils.scheduleTask(() -> {
-			Actions.swapFakePlayerInventorySlots(berserk, 11, 36);
-			Actions.swapFakePlayerInventorySlots(berserk, 1, 28);
-			Actions.swapFakePlayerInventorySlots(berserk, 7, 35);
+			Actions.swapItems(berserk, 11, 36);
+			Actions.swapItems(berserk, 1, 28);
+			Actions.swapItems(berserk, 7, 35);
 		}, 219);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
@@ -562,7 +559,7 @@ public class Berserk {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Actions.setFakePlayerHotbarSlot(berserk, 5);
+		Actions.setHotbarSlot(berserk, 5);
 		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11.31f, 0f), 1);
 		Utils.scheduleTask(() -> {
@@ -588,7 +585,7 @@ public class Berserk {
 		}, 160);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.2211, 0, 0.1728), 24), 177);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.0512, 0, 0.04), 1), 206);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 11, 36), 207);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 11, 36), 207);
 		Utils.scheduleTask(() -> {
 			Maxor.pickUpCrystal(berserk);
 			Bukkit.broadcastMessage(ChatColor.GOLD + "AsapIcey" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
@@ -661,7 +658,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.ghostPick(berserk, world.getBlockAt(91, 165, 40)), 467);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 77.5f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 6);
+			Actions.setHotbarSlot(berserk, 6);
 		}, 468);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.096, 0, 0.243), 6), 469);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 475);
@@ -675,12 +672,12 @@ public class Berserk {
 
 	public static void storm(boolean doContinue) {
 		// move continues for 2 more ticks from previous instruction
-		Actions.setFakePlayerHotbarSlot(berserk, 6);
+		Actions.setHotbarSlot(berserk, 6);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -1f, 23f), 2);
 		Utils.scheduleTask(() -> Actions.gyro(berserk, new Location(world, 100.5, 169, 53.5)), 3);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -1f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 4);
+			Actions.setHotbarSlot(berserk, 4);
 		}, 4);
 		Utils.scheduleTask(Berserk::shoot, 5);
 		Utils.scheduleTask(() -> Actions.salvation(berserk), 6);
@@ -740,15 +737,15 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.salvation(berserk), 106);
 		Utils.scheduleTask(Berserk::shoot, 110);
 		Utils.scheduleTask(() -> Actions.salvation(berserk), 111);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 112);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 112);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 113);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 114);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 114);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 120f, 0f), 115);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.972, 0, -0.5612), 12), 116);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 128);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 128);
 		for(int tick = 130; tick <= 545; tick += 5) {
 			Utils.scheduleTask(() -> {
-				List<Entity> nearbyEntities = berserk.getNearbyEntities(6, 6, 6);
+				List<Entity> nearbyEntities = berserk.getNearbyEntities(10, 10, 10);
 
 				for(Entity entity : nearbyEntities) {
 					if(entity instanceof WitherSkeleton) {
@@ -764,7 +761,7 @@ public class Berserk {
 
 						Actions.turnHead(berserk, yaw, pitch);
 
-						Utils.scheduleTask(() -> Actions.rightClick(berserk), 1);
+						Utils.scheduleTask(Berserk::shoot, 1);
 
 						break;
 					}
@@ -773,7 +770,7 @@ public class Berserk {
 		}
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -91.5f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 544);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12204, 0, -0.0294), 11), 545);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.2805, 0, -0.00735), 8), 556);
@@ -788,7 +785,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.4975, 0.5, 0.2911)), 609);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 79f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 		}, 610);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 65f), 643);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -0.8634), 1), 644);
@@ -828,9 +825,9 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.278, 0, -0.037), 12), 711);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -15.4f, -7.6f);
-			Actions.setFakePlayerHotbarSlot(berserk, 4);
+			Actions.setHotbarSlot(berserk, 4);
 		}, 723);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 9, 39), 724);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 9, 39), 724);
 		if(doContinue) {
 			Utils.scheduleTask(Berserk::shoot, 887);
 			Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 888);
@@ -879,7 +876,7 @@ public class Berserk {
 		Utils.scheduleTask(Berserk::shoot, 22);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 79f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 23);
 		Utils.scheduleTask(() -> {
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 64 126 50 blue_terracotta");
@@ -916,7 +913,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> world.playSound(berserk.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f), 80);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 90f, 60f);
-			Actions.setFakePlayerHotbarSlot(berserk, 5);
+			Actions.setHotbarSlot(berserk, 5);
 		}, 87);
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 44)), 88);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 35f), 89);
@@ -945,21 +942,21 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(18, 114, 51)), 103);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -135f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 108);
 		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.0787, 0.5, 1.0787)), 109);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 45f, 0f), 110);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 7), 111);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 7), 111);
 		Utils.scheduleTask(() -> Actions.swingHand(berserk), 112); // equip phoenix
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 113);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 9, 39), 114);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 113);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 9, 39), 114);
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Phoenix Procced!");
 			world.playSound(berserk.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
-			Actions.setFakePlayerHotbarSlot(berserk, 7);
+			Actions.setHotbarSlot(berserk, 7);
 		}, 120);
 		Utils.scheduleTask(() -> Actions.swingHand(berserk), 121); // equip black cat
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 1), 122);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 122);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 30f, 0f), 123);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.7015, 0, 1.215), 2), 124);
 		Utils.scheduleTask(() -> Actions.jump(berserk), 125);
@@ -996,7 +993,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 66.5f, 29f), 189);
 		Utils.scheduleTask(() -> Actions.swingHand(berserk), 190);
 		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(berserk, "terminal", 6, 7), 191);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 192);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 192);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 193);
 
 		/*
@@ -1009,7 +1006,7 @@ public class Berserk {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 153f, 0f);
-			Actions.setFakePlayerHotbarSlot(berserk, 1);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 194);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.637, 0, -1.25), 3), 195);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 82f), 197);
@@ -1026,7 +1023,7 @@ public class Berserk {
 			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 41 ticks (2.05 seconds) | Terminals: 236 ticks (11.80 seconds) | Overall: 2 552 ticks (127.60 seconds)");
 			Server.openCore();
 		}, 236);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 237);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 237);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 238);
 
 
@@ -1038,7 +1035,7 @@ public class Berserk {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 239);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 239);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.403), 11), 256);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -82.5f, -5f), 266);
 		// tick 267: swap to gdrag
@@ -1051,7 +1048,7 @@ public class Berserk {
 		Utils.scheduleTask(Berserk::shoot, 283);
 		Utils.scheduleTask(() -> Actions.salvation(berserk), 287);
 		Utils.scheduleTask(Berserk::shoot, 288);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 289);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 289);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 290);
 		if(doContinue) {
 			Utils.scheduleTask(() -> necron(true), 350);
@@ -1059,14 +1056,14 @@ public class Berserk {
 	}
 
 	private static void necron(boolean doContinue) {
-		Actions.setFakePlayerHotbarSlot(berserk, 2);
+		Actions.setHotbarSlot(berserk, 2);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Tank.get()), 121);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 4), 122);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 122);
 		for(int i = 161; i < 510; i += 5) {
 			Utils.scheduleTask(Berserk::shoot, i);
 			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 4);
 		}
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(berserk, 2), 507);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 507);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 508);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -122f, 0f), 509);
 		// tick 510: equip black cat
@@ -1075,7 +1072,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.238, 0, -0.1487), 9), 531);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.1898, 0, -0.7435), 5), 540);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -79.7f, 19.1f), 544);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(berserk, 12, 39), 545);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 12, 39), 545);
 		if(doContinue) {
 			Utils.scheduleTask(Berserk::witherKing, 609);
 		}
@@ -1083,6 +1080,48 @@ public class Berserk {
 
 	private static void witherKing() {
 		Utils.scheduleTask(() -> WitherKing.pickUpRelic(berserk), 1);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 115f, 0f), 2);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.2716, 0, -0.5929), 23), 3);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 25);
+		Utils.scheduleTask(() -> WitherKing.placeRelic(berserk), 26);
+		// tick 27: equip greg
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(berserk, 6, 33);
+			Actions.swapItems(berserk, 12, 39);
+		}, 28);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 18.9f, 0f);
+			Actions.setHotbarSlot(berserk, 6);
+		}, 29);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.3636, 0, 1.062), 4), 30);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.0909, 0, 0.2655), 5), 34);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.3636, 0, 1.062), 40), 39);
+		Utils.scheduleTask(() -> Actions.jump(berserk), 78);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.0909, 0, 0.2655), 9), 79);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.3636, 0, 1.062), 13), 88);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -14f), 100);
+		Utils.scheduleTask(() -> Actions.rag(berserk), 150);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 211);
+		// arrows take 12 ticks to reach the Dragon
+		// rag on tick 150
+		// rag is activated on tick 210
+		// start shooting tick 369
+		// begin moving tick 389
+		// Dragon spawns tick 401
+		// last arrow fired tick 409
+		// rag wears off tick 410
+		// rag is back tick 550
+		for(int i = 389; i < 410; i += 5) {
+			Utils.scheduleTask(Berserk::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.0593, 0, -0.371), 20), 389);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -16f), 395);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -19f), 405);
+		Utils.scheduleTask(() -> {
+			WitherKing.playDragonDeathSound();
+			Bukkit.broadcastMessage(ChatColor.BLUE + "Ice Dragon " + ChatColor.GREEN + "killed in 9 ticks (0.45 seconds) | Wither King: 410 ticks (20.50 seconds) | Overall: 3 685 ticks (184.25 seconds)");
+		}, 410);
 	}
 
 	private static void shoot() {
@@ -1123,14 +1162,14 @@ public class Berserk {
 
 		PotionEffect strength = berserk.getPotionEffect(PotionEffectType.STRENGTH);
 		boolean hasRagBuff = berserk.getScoreboardTags().contains("RagBuff");
-		int maxAmplifier = hasRagBuff ? 8 : 7;
-		int baseAmplifier = hasRagBuff ? 1 : 0;
+		int maxAmplifier = hasRagBuff ? 14 : 12;
+		int baseAmplifier = hasRagBuff ? 2 : 0;
 
 		int newAmplifier;
 		if(strength == null) {
 			newAmplifier = baseAmplifier;
 		} else {
-			newAmplifier = Math.min(strength.getAmplifier() + 1, maxAmplifier);
+			newAmplifier = Math.min(strength.getAmplifier() + 2, maxAmplifier);
 		}
 
 		berserk.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, newAmplifier));

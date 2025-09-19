@@ -183,6 +183,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		ItemStack item = new ItemStack(material);
 		ItemMeta meta = item.getItemMeta();
 		assert meta != null;
+		meta.setItemName(null);
 		meta.setDisplayName(name);
 		List<String> lore = new ArrayList<>();
 		lore.add(id);
@@ -351,8 +352,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 			Utils.broadcastPacket(equipmentPacket);
 
-			Utils.syncInventoryToSpectators(p);
-			Utils.syncFakePlayerHand(p);
+			Utils.syncInventory(p);
+			Utils.syncHand(p);
 		}
 	}
 
@@ -391,7 +392,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}
 
 		for(Player spectator : new ArrayList<>(spectatorMap.keySet())) {
-			Utils.restorePlayerInventory(spectator);
+			Utils.restoreInventory(spectator);
 			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
 		}
 
@@ -481,7 +482,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new ArrayList<>()).add(p);
 
 				// NEW: Backup the player's inventory before spectating
-				Utils.backupPlayerInventory(p);
+				Utils.backupInventory(p);
 
 				Location fakeLocation = fakePlayer.getLocation();
 				p.teleport(fakeLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
@@ -489,7 +490,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				preventPlayerCollision(p, fakePlayer);
 
 				// Sync inventory when starting to spectate
-				Utils.syncInventoryToSpectators(fakePlayer);
+				Utils.syncInventory(fakePlayer);
 				Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
 				p.sendMessage("You are now spectating " + role + ".");
@@ -509,7 +510,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					}
 
 					// NEW: Restore the player's original inventory
-					Utils.restorePlayerInventory(p);
+					Utils.restoreInventory(p);
 					removeFromNoCollisionTeam(p);
 					p.removePotionEffect(PotionEffectType.INVISIBILITY);
 

@@ -27,24 +27,24 @@ public class Healer {
 		switch(section) {
 			case "all", "clear" -> {
 				Actions.teleport(healer, new Location(world, -28.5, 69, -44.5, -168.6f, 2.9f));
-				Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 2, 29), 60);
-				Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 2), 61);
+				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
+				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
 				Utils.scheduleTask(() -> Actions.rightClickWithSpectators(healer), 101);
 				Utils.scheduleTask(() -> {
-					Actions.setFakePlayerHotbarSlot(healer, 1);
+					Actions.setHotbarSlot(healer, 1);
 					Actions.move(healer, new Vector(0, 0, 0.8634), 5);
 				}, 102);
 				Utils.scheduleTask(() -> {
 					Actions.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
-					Actions.swapFakePlayerInventorySlots(healer, 2, 29);
+					Actions.swapItems(healer, 2, 29);
 				}, 141);
 				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 			case "maxor", "boss" -> {
 				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
-				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
-				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
-				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 7, 34);
 				if(section.equals("maxor")) {
 					Utils.scheduleTask(() -> maxor(false), 60);
 				} else {
@@ -53,33 +53,33 @@ public class Healer {
 			}
 			case "storm" -> {
 				Actions.teleport(healer, new Location(world, 111.719, 170, 92.386, -53.2f, 24.7f));
-				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
-				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
-				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 7, 34);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
 				Actions.teleport(healer, new Location(world, 108.308, 120, 93.895, -132.4f, 2.3f));
-				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
-				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
-				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 7, 34);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Actions.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
-				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
-				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
-				Actions.swapFakePlayerInventorySlots(healer, 6, 33);
-				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 			case "witherking" -> {
 				Actions.teleport(healer, new Location(world, 56.326, 8, 130.7, -16.2f, 18.8f));
-				Actions.swapFakePlayerInventorySlots(healer, 1, 28);
-				Actions.swapFakePlayerInventorySlots(healer, 3, 30);
-				Actions.swapFakePlayerInventorySlots(healer, 6, 33);
-				Actions.swapFakePlayerInventorySlots(healer, 7, 34);
-				Utils.scheduleTask(() -> necron(false), 60);
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 34);
+				Utils.scheduleTask(Healer::witherKing, 60);
 			}
 		}
 	}
@@ -100,7 +100,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -24.5, 81, -62.5)), 2);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 11.8f);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 3);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
@@ -109,7 +109,7 @@ public class Healer {
 		}, 4);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, 72.4f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 5);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -24.5, 69.5, -66.5)), 6);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 1.5f, 3.6f), 7);
@@ -118,7 +118,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -24.5, 69, -16.5)), 10);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -62.7f, 6.9f);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 11);
 		Utils.scheduleTask(() -> {
 			Actions.swingHand(healer);
@@ -142,7 +142,7 @@ public class Healer {
 		}, 18);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 175.6f, 6.7f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 19);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -25.5, 69, -30.5)), 20);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -175f, -1.3f), 21);
@@ -171,12 +171,12 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -16.5, 60, -72.5)), 31);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 129f, -2f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 		}, 32);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 33);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -4.4f, -0.7f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 34);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -14.5, 61.5, -47.5)), 35);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 85.4f, 12.7f), 36);
@@ -190,15 +190,15 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -25.539, 60, -79.631)), 42);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90.9f, 6f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 		}, 43);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 44);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, 14.6f);
-			Actions.setFakePlayerHotbarSlot(healer, 3);
+			Actions.setHotbarSlot(healer, 3);
 		}, 45);
 		Utils.scheduleTask(() -> Actions.superboom(healer, -27, 62, -84, -26, 60, -83), 46);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 0), 47);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 0), 47);
 		Utils.scheduleTask(() -> {
 			Actions.witherImpact(healer, new Location(world, -25.5, 60, -85.5));
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Pirate 3/6 (Killed Bat)");
@@ -213,7 +213,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -16.657, 60, -80.053)), 51);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -173.3f, 4.5f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 52);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -15.5, 60, -97.5)), 53);
 		Utils.scheduleTask(() -> {
@@ -224,12 +224,12 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -67.5f, 64, -96.5f)), 55);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, 27f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 		}, 56);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 57);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -128.9f, -75.3f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 58);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -63.5, 84, -99.5)), 59);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -82.1f, 16f), 60);
@@ -257,20 +257,20 @@ public class Healer {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 109f, 11.7f);
-			Actions.setFakePlayerHotbarSlot(healer, 4);
+			Actions.setHotbarSlot(healer, 4);
 		}, 70);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 71);
 		Utils.scheduleTask(() -> Actions.salvation(healer), 75);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 76);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 72.5f, 9f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Zodd Cleared");
 		}, 77);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 78);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 86.8f, 5.2f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 79);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -97.5, 69.5, -86.5)), 80);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 12.5f), 81);
@@ -297,14 +297,14 @@ public class Healer {
 		 * ██║ ╚═╝ ██║███████╗███████╗╚██████╔╝██║ ╚████║
 		 * ╚═╝     ╚═╝╚══════╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝
 		 */
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 4), 89);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 89);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 90);
 		Utils.scheduleTask(() -> Actions.salvation(healer), 91);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 95);
 		Utils.scheduleTask(() -> Actions.salvation(healer), 96);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -91f, -10.5f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Melon Cleared");
 		}, 97);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 98);
@@ -314,7 +314,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 102);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -70.9f, -19.3f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 103);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -74.5, 76, -53.5)), 104);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -166.8f, -32.3f), 105);
@@ -331,7 +331,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -96.5, 69, -68.5)), 112);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 80.2f, 16.3f);
-			Actions.setFakePlayerHotbarSlot(healer, 6);
+			Actions.setHotbarSlot(healer, 6);
 		}, 113);
 		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(-100, 69, -69)), 114);
 		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(-100, 69, -68)), 115);
@@ -342,7 +342,7 @@ public class Healer {
 		}, 116);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -81f, 12.8f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 			Actions.AOTV(healer, new Location(world, -87.339, 84.5, -70.463));
 		}, 117);
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -82.5, 85, -69.5)), 118);
@@ -355,24 +355,24 @@ public class Healer {
 		}, 120);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 25.9f, -5f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 		}, 121);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 122);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -69.2f, 4.9f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 123);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -43.5, 69, -52.5)), 124);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 5f);
-			Actions.setFakePlayerHotbarSlot(healer, 3);
+			Actions.setHotbarSlot(healer, 3);
 		}, 125);
 		Utils.scheduleTask(() -> Actions.superboom(healer, -44, 69, -51, -46, 74, -50), 126);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 1), 127);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 127);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -43.5, 69.5, -35.5)), 128);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 97.5f, -9.5f);
-			Actions.setFakePlayerHotbarSlot(healer, 0);
+			Actions.setHotbarSlot(healer, 0);
 		}, 129);
 		Utils.scheduleTask(() -> {
 			Actions.witherImpact(healer, new Location(world, -53.278, 71, -36.787));
@@ -381,7 +381,7 @@ public class Healer {
 		}, 130);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 124.6f, 16f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 131);
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -57.5, 69.5, -40.5)), 132);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -166.2f, 22.6f), 133);
@@ -395,14 +395,14 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -67.5, 69, -25.5)), 136);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -18f, -69f);
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 		}, 137);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 138);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 85.7f, 0f), 139);
 		Utils.scheduleTask(() -> Actions.throwPearl(healer), 140);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -45.3f, -32.8f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 141);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -62.5, 74.6875, -20.5)), 142);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -55f, -26.5f), 143);
@@ -436,14 +436,14 @@ public class Healer {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 91f, 2f);
-			Actions.setFakePlayerHotbarSlot(healer, 4);
+			Actions.setHotbarSlot(healer, 4);
 		}, 151);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 152);
 		Utils.scheduleTask(() -> Actions.salvation(healer), 156);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 157);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 88.6f, 0.4f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Admin Cleared");
 		}, 158);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -120.5, 71, -23.5)), 159);
@@ -462,7 +462,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -136.5, 69, -15.5)), 163);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 3);
+			Actions.setHotbarSlot(healer, 3);
 		}, 164);
 		Utils.scheduleTask(() -> Actions.superboom(healer, -138, 69, -15, -136, 74, -14), 165);
 		Utils.scheduleTask(() -> {
@@ -472,7 +472,7 @@ public class Healer {
 		}, 166);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -130.4f, -44.3f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 167);
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -128.5, 82, -22.5)), 168);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -64.5f, -61.9f), 169);
@@ -507,7 +507,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -135.5, 70, -61.5)), 187);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 135f, 50f);
-			Actions.setFakePlayerHotbarSlot(healer, 4);
+			Actions.setHotbarSlot(healer, 4);
 		}, 188);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
@@ -516,7 +516,7 @@ public class Healer {
 		}, 189);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -89.1f, 7.6f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 190);
 		Utils.scheduleTask(() -> {
 			Actions.etherwarp(healer, new Location(world, -128.5, 71, -61.5));
@@ -528,7 +528,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -125.5, 69, -65.5)), 195);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, 90f);
-			Actions.setFakePlayerHotbarSlot(healer, 3);
+			Actions.setHotbarSlot(healer, 3);
 		}, 196);
 		Utils.scheduleTask(() -> Actions.superboom(healer, -123, 68, -63, -126, 67, -70), 197);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 60f), 198);
@@ -540,9 +540,9 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 202 Ticks (10.10 seconds)");
 		}, 200);
 		Utils.scheduleTask(() -> {
-			Actions.swapFakePlayerInventorySlots(healer, 1, 28);
-			Actions.swapFakePlayerInventorySlots(healer, 3, 30);
-			Actions.swapFakePlayerInventorySlots(healer, 7, 34);
+			Actions.swapItems(healer, 1, 28);
+			Actions.swapItems(healer, 3, 30);
+			Actions.swapItems(healer, 7, 34);
 		}, 201);
 		if(doContinue) {
 			Utils.scheduleTask(() -> {
@@ -554,7 +554,7 @@ public class Healer {
 
 	public static void maxor(boolean doContinue) {
 		// TODO predev with 500 speed
-		Actions.setFakePlayerHotbarSlot(healer, 5);
+		Actions.setHotbarSlot(healer, 5);
 		Actions.move(healer, new Vector(0.214, 0, 1.102), 17);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -11f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0496, 0, 0.255), 4), 17);
@@ -595,7 +595,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(95, 165, 41)), 90);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 92); // 27-tick timesave!!!
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.1984, 0, 0.1984), 30), 93);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 9), 129);
@@ -622,7 +622,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.jump(healer);
 			Actions.move(healer, new Vector(0.1144, 0, 1.1166), 1);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 198);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0286, 0, 0.279), 7), 199);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 24.6f, 64.9f), 214);
@@ -638,7 +638,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(96, 121, 123)), 221);
 		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(96, 120, 123)), 222);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 10), 224);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 1), 225);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 225);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 83f, 0f), 234);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-1.114, 0, 0.1368), 8), 235);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 83f, 82f), 242);
@@ -657,7 +657,7 @@ public class Healer {
 		}, 305);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -49.8f, -52.1f);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 306);
 		Utils.scheduleTask(() -> Actions.rightClickLever(healer), 307);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 61.9f, -45.8f), 308);
@@ -673,10 +673,10 @@ public class Healer {
 			Actions.rightClickLever(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 317 Ticks (15.85 seconds) | Overall: 1 344 ticks (67.20 seconds)");
 		}, 317);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 334);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 334);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 335);
 		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, new Vector(1.0936, 0, 0.2525), 33);
 		}, 336);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -31.8f, 0f), 368);
@@ -685,7 +685,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(0.804, 0.5, 1.296)), 389);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -31.8f, 0f), 390);
 		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(healer, 6);
+			Actions.setHotbarSlot(healer, 6);
 			Actions.move(healer, new Vector(0.5915, 0, 0.954), 7);
 		}, 400);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -53.2f, 24.7f), 407);
@@ -696,11 +696,11 @@ public class Healer {
 
 	public static void storm(boolean doContinue) {
 		Storm.prepadPurple();
-		Actions.setFakePlayerHotbarSlot(healer, 6);
+		Actions.setHotbarSlot(healer, 6);
 		Utils.scheduleTask(() -> Actions.gyro(healer, new Location(world, 114, 169, 94)), 1);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -53.2f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 4);
+			Actions.setHotbarSlot(healer, 4);
 		}, 2);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 3);
 		Utils.scheduleTask(() -> Actions.salvation(healer), 4);
@@ -756,17 +756,17 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.salvation(healer), 112);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 157.8f, 2.7f), 173);
 		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, new Vector(-0.4241, 0, -1.0392), 6);
 		}, 174);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 157.8f, 82f), 179);
 		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-0.5764, 0.5, -1.4124)), 180);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 157.8f, 0f), 181);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.4241, 0, -1.0392), 9), 195);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 4), 201);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 201);
 		for(int tick = 205; tick <= 545; tick += 5) {
 			Utils.scheduleTask(() -> {
-				List<Entity> nearbyEntities = healer.getNearbyEntities(6, 6, 6);
+				List<Entity> nearbyEntities = healer.getNearbyEntities(10, 10, 10);
 
 				for(Entity entity : nearbyEntities) {
 					if(entity instanceof WitherSkeleton) {
@@ -791,19 +791,19 @@ public class Healer {
 		}
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -22.2f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 546);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.4241, 0, 1.0392), 12), 547);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -22.2f, 82f), 557);
 		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(0.5764, 0.5, 1.4124)), 559);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -22.2f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 3);
+			Actions.setHotbarSlot(healer, 3);
 		}, 560);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.4241, 0, 1.0392), 4), 570);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.4241, 0, 1.0392), 2), 653);
 		Utils.scheduleTask(Storm::crushPurple, 655);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 656);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 656);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 665);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.8634, 0, 0), 2), 666);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.2806, 0, 0), 5), 668);
@@ -827,7 +827,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(1.271, 0.5, 0.8442)), 734);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -56.4f, 2.3f);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 735);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 0f), 747);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -132.4f, 2.3f), 796);
@@ -845,7 +845,7 @@ public class Healer {
 		 *  ██║
 		 *  ╚═╝
 		 */
-		Actions.setFakePlayerHotbarSlot(healer, 5);
+		Actions.setHotbarSlot(healer, 5);
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 1);
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 2);
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 3);
@@ -888,7 +888,7 @@ public class Healer {
 		}, 15);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 5.4f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 16);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.132, 0, 1.397), 3), 17);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 5.4f, 82f), 19);
@@ -897,7 +897,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.jump(healer);
 			Actions.move(healer, new Vector(-0.132, 0, 1.397), 1);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 31);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.0264, 0, 0.2794), 3), 32);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 35);
@@ -908,7 +908,7 @@ public class Healer {
 		}, 41);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, 45f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 42);
 		final BukkitRunnable[] temp = new BukkitRunnable[1];
 		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(healer, new Vector(-1.52552, 0, 0)), 43);
@@ -918,7 +918,7 @@ public class Healer {
 			Actions.rightClickLever(healer);
 			Goldor.broadcastTerminalComplete(healer, "lever", 6, 7);
 		}, 50);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 51);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 51);
 		Utils.scheduleTask(() -> {
 			temp[0].cancel();
 			Actions.leap(healer, Archer.get());
@@ -934,7 +934,7 @@ public class Healer {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 53);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.405), 5), 54);
 		Utils.scheduleTask(() -> Actions.lavaJump(healer, true), 66);
@@ -978,7 +978,7 @@ public class Healer {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, new Vector(-0.2677, 0, 1.377), 1);
-			Actions.setFakePlayerHotbarSlot(healer, 1);
+			Actions.setHotbarSlot(healer, 1);
 		}, 140);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.05354, 0, 0.2754), 2), 141);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 81.1f, 11.2f), 142);
@@ -1001,7 +1001,7 @@ public class Healer {
 			Goldor.broadcastTerminalComplete(healer, "terminal", 7, 7);
 			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 57 ticks (2.85 seconds) | Terminals: 195 ticks (9.75 seconds) | Overall: 2 511 ticks (125.55 seconds)");
 		}, 195);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 196);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 196);
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 197);
 
 		/*
@@ -1021,7 +1021,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 42.2f), 224);
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 225);
 		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(healer, "terminal", 4, 7), 226);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 3), 227);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 227);
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 228);
 
 		/*
@@ -1034,7 +1034,7 @@ public class Healer {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -1.9f, 0f);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 229);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.04652, 0, 1.4022), 3), 230);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0093, 0, 0.2805), 5), 233);
@@ -1046,19 +1046,19 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 274);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.08), 1), 275);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 276);
-		Utils.scheduleTask(() -> Actions.swapFakePlayerInventorySlots(healer, 6, 33), 277);
+		Utils.scheduleTask(() -> Actions.swapItems(healer, 6, 33), 277);
 		if(doContinue) {
 			Utils.scheduleTask(() -> necron(true), 350);
 		}
 	}
 
 	private static void necron(boolean doContinue) {
-		Actions.setFakePlayerHotbarSlot(healer, 3);
+		Actions.setHotbarSlot(healer, 3);
 		Utils.scheduleTask(() -> Actions.leap(healer, Tank.get()), 121);
-		Utils.scheduleTask(() -> Actions.setFakePlayerHotbarSlot(healer, 6), 122);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 122);
 		Utils.scheduleTask(() -> Actions.lastBreath(healer, 36), 123);
 		Utils.scheduleTask(() -> {
-			Actions.setFakePlayerHotbarSlot(healer, 7);
+			Actions.setHotbarSlot(healer, 7);
 			Actions.move(healer, new Vector(0, 0, -1.12242), 2);
 		}, 160);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 40f), 161);
@@ -1067,7 +1067,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, -1.12242), 2), 164);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, 90f);
-			Actions.setFakePlayerHotbarSlot(healer, 5);
+			Actions.setHotbarSlot(healer, 5);
 		}, 165);
 		Utils.scheduleTask(() -> Actions.ghostPick(healer, world.getBlockAt(54, 63, 79)), 166);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 167);
@@ -1091,6 +1091,38 @@ public class Healer {
 
 	private static void witherKing() {
 		Utils.scheduleTask(() -> WitherKing.pickUpRelic(healer), 1);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 2);
+		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 29);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -165.4f, 0f);
+			Actions.setHotbarSlot(healer, 8);
+		}, 30);
+		Utils.scheduleTask(() -> {
+			WitherKing.placeRelic(healer);
+//			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: 3 306 ticks (165.30 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: ? ??? ticks (???.?? seconds)");
+		}, 31);
+		Utils.scheduleTask(() -> Actions.swapItems(healer, 5, 32), 32);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -30.5f, 0f);
+			Actions.setHotbarSlot(healer, 6);
+		}, 33);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.7121, 0, 1.209), 1), 34);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.1424, 0, 0.2418), 5), 35);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.7121, 0, 1.209), 31), 40);
+		Utils.scheduleTask(() -> Actions.jump(healer), 70);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.1424, 0, 0.2418), 9), 71);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.7121, 0, 1.209), 2), 80);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -90f), 81);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 370);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 380);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 390);
+		Utils.scheduleTask(() -> Actions.jump(healer), 396);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 401);
+		Utils.scheduleTask(() -> Actions.iceSpray(healer), 402);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 403);
+		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 404);
+		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 416);
 	}
 
 	@SuppressWarnings("unused")

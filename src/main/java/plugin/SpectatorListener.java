@@ -34,7 +34,7 @@ public class SpectatorListener implements Listener {
 			}
 		}
 
-		Utils.restorePlayerInventory(player);
+		Utils.restoreInventory(player);
 		M7tas.removeFromNoCollisionTeam(player);
 		player.removePotionEffect(PotionEffectType.INVISIBILITY);
 		M7tas.originalInventories.remove(player);
@@ -50,7 +50,7 @@ public class SpectatorListener implements Listener {
 				// Re-sync inventory to make sure it stays correct
 				Player fakePlayer = M7tas.getSpectatorMap().get(player);
 				if (fakePlayer != null) {
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.syncInventoryToSpectators(fakePlayer), 1L);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.syncInventory(fakePlayer), 1L);
 				}
 			}
 		}

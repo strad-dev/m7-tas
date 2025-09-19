@@ -108,6 +108,8 @@ public class Storm {
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 2.0F);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 0.6F);
+			spamLightning();
+			cleanupMobs();
 		}, 545);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(storm, 7.1f, 35.6f);
@@ -141,7 +143,7 @@ public class Storm {
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I should have known that I stand no chance.");
 			Server.playWitherDeathSound(storm);
-			for(int i = 790; i < 1091; i += 20) {
+			for(int i = 0; i < 301; i += 10) {
 				Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F), i);
 			}
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 790 ticks (39.50 seconds) | Overall: 2 216 ticks (110.80 seconds)");

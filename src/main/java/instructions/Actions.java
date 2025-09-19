@@ -227,13 +227,13 @@ public class Actions {
 	}
 
 	/**
-	 * Change which hotbar slot (0–8) the fake player is “holding”,
+	 * Change which hotbar slot (0–8) the player is “holding”,
 	 * and broadcast that slot change.
 	 *
 	 * @param p           The player whose hotbar slot is to be changed.
 	 * @param hotbarIndex The index of the new hotbar slot (0–8).
 	 */
-	public static void setFakePlayerHotbarSlot(Player p, int hotbarIndex) {
+	public static void setHotbarSlot(Player p, int hotbarIndex) {
 		if(!(p instanceof CraftPlayer cp)) {
 			return;
 		}
@@ -247,17 +247,17 @@ public class Actions {
 		cp.getHandle().connection.send(heldPkt);
 
 		// Broadcast the new main-hand item to all viewers AND sync to spectators
-		Utils.syncFakePlayerHand(p); // This now handles both!
+		Utils.syncHand(p); // This now handles both!
 	}
 
 	/**
-	 * Swap two inventory slots in the fake player’s inventory and
+	 * Swap two items in the inventory and
 	 * immediately broadcast both slot changes.
 	 *
 	 * @param slotA any slot index (0–8 hotbar, 9–35 main inv, 36–39 armor, 40 offhand)
 	 * @param slotB same range
 	 */
-	public static void swapFakePlayerInventorySlots(Player p, int slotA, int slotB) {
+	public static void swapItems(Player p, int slotA, int slotB) {
 		if(!(p instanceof CraftPlayer cp)) {
 			return;
 		}
@@ -270,12 +270,12 @@ public class Actions {
 		inv.setItem(slotA, b);
 		inv.setItem(slotB, a);
 
-		// Re-send the entire inventory window to fake player AND spectators
-		Utils.syncInventoryToSpectators(p); // This updates spectators
+		// Re-send the entire inventory window to player AND spectators
+		Utils.syncInventory(p); // This updates spectators
 
 		// If either swapped slot was in the hotbar, update the hand-item too
 		if(slotA < 9 || slotB < 9) {
-			Utils.syncFakePlayerHand(p); // This now handles both viewers and spectators
+			Utils.syncHand(p); // This now handles both viewers and spectators
 		}
 
 		if(slotA >= 36 || slotB >= 36) {
@@ -890,8 +890,9 @@ public class Actions {
 	 * @param p The player using the ability
 	 */
 	public static void iceSpray(Player p) {
-		p.getWorld().spawnParticle(Particle.SNOWFLAKE, p.getLocation(), 1000);
-		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(p.getEyeLocation(), 8, 8, 8);
+		Location l = p.getEyeLocation();
+		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 1000);
+		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {

@@ -57,7 +57,7 @@ public class Utils {
 	/**
 	 * Syncs fake player's inventory to spectators using packet-based approach
 	 */
-	public static void syncInventoryToSpectators(Player fakePlayer) {
+	public static void syncInventory(Player fakePlayer) {
 		List<Player> spectators = M7tas.getSpectatingPlayers(fakePlayer);
 		if (!spectators.isEmpty()) {
 			// Method 1: Use packet-based sync (more efficient)
@@ -92,7 +92,7 @@ public class Utils {
 	/**
 	 * Updates the held item in an NPC's hand for all viewers AND spectators
 	 */
-	public static void syncFakePlayerHand(Player fake) {
+	public static void syncHand(Player fake) {
 		ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 		// get whatever ItemStack is in their selected slot
 		net.minecraft.world.item.ItemStack handStack = npc.getInventory().getSelected();
@@ -143,11 +143,11 @@ public class Utils {
 		return item;
 	}
 
-	public static void backupPlayerInventory(Player player) {
+	public static void backupInventory(Player player) {
 		M7tas.originalInventories.put(player, new M7tas.PlayerInventoryBackup(player));
 	}
 
-	public static void restorePlayerInventory(Player player) {
+	public static void restoreInventory(Player player) {
 		M7tas.PlayerInventoryBackup backup = M7tas.originalInventories.remove(player);
 		if (backup != null) {
 			backup.restore(player);
@@ -166,7 +166,7 @@ public class Utils {
 			for (Player spectator : M7tas.getSpectatorMap().keySet()) {
 				Player fakePlayer = M7tas.getSpectatorMap().get(spectator);
 				if (fakePlayer != null) {
-					syncInventoryToSpectators(fakePlayer);
+					syncInventory(fakePlayer);
 				}
 			}
 		}, 0L, 1L);
