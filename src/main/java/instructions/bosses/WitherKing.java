@@ -25,7 +25,7 @@ public class WitherKing {
 	private static BukkitTask bossBarUpdateTask;
 	private static final EnderDragon[] dragons = new EnderDragon[5];
 	private static final Random random = new Random();
-	private static final String[] dragonDieMessage = {"Oh, this one hurts!", "I have more of those.", "My sould is disposable."};
+	private static final String[] dragonDieMessage = {"Oh, this one hurts!", "I have more of those.", "My soul is disposable."};
 
 	public static void witherKingInstructions(World temp) {
 		world = temp;
@@ -86,11 +86,13 @@ public class WitherKing {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f), i);
 		}
 		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), 220);
+		// non-deterministic piece of shit
+		// will take the lowest time seen across all testing (30/9/6/6/6)
 		Utils.scheduleTask(() -> spawnDragon("purple"), 260); // tick after start: 301; dragon spawns 401
 		Utils.scheduleTask(() -> spawnDragon("blue"), 260); // tick after start: 301; dragon spawns 401
 		Utils.scheduleTask(() -> spawnDragon("orange"), 600); // tick after start: 641; dragon spawns 741
-		Utils.scheduleTask(() -> spawnDragon("red"), 710);
-		Utils.scheduleTask(() -> spawnDragon("green"), 820);
+		Utils.scheduleTask(() -> spawnDragon("red"), 706); // tick after start: 747; dragon spawns: 847
+		Utils.scheduleTask(() -> spawnDragon("green"), 812); // tick after start: 853; dragon spawns: 953
 		// end happens 70 ticks after last dragon dies
 	}
 
@@ -153,28 +155,22 @@ public class WitherKing {
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0f, 1.0f);
-
-			new BukkitRunnable() {
-				int tick = 0;
-				@Override
-				public void run() {
-					if(dragon.isDead()) {
-						System.out.println(dragonName + " alive for " + tick);
-						this.cancel();
-					}
-					tick ++;
-				}
-			}.runTaskTimer(M7tas.getInstance(), 0, 1);
 		}, 100);
 	}
 
-	public static void playDragonDeathSound() {
+	public static void playDragonDeathSound(boolean sendMessage) {
 		for(int i = 0; i < 181; i += 10) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f), i);
 		}
 		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 1.0f, 1.0f), 190);
-		witherKing.setHealth(witherKing.getHealth() - 1);
-		sendChatMessage(dragonDieMessage[random.nextInt(dragonDieMessage.length)]);
+		if(witherKing.getHealth() == 1) {
+			witherKing.setHealth(0.001);
+		} else {
+			witherKing.setHealth(witherKing.getHealth() - 1);
+		}
+		if(sendMessage) {
+			sendChatMessage(dragonDieMessage[random.nextInt(dragonDieMessage.length)]);
+		}
 	}
 
 	public static void pickUpRelic(Player player) {
@@ -241,6 +237,35 @@ public class WitherKing {
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 		player.getInventory().setItem(8, M7tas.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
 		Actions.setHotbarSlot(player, 8);
+	}
+
+	public static void deathSequence() {
+		sendChatMessage("Incredible.  You did what I couldn't do myself.");
+		Utils.scheduleTask(() -> sendChatMessage("In a way, I should thank you.  I lost all hope centuries ago that it would ever end."), 60);
+		Utils.scheduleTask(() -> sendChatMessage("I hope you'll become the Heroes I could never be."), 120);
+		Utils.scheduleTask(() -> sendChatMessage("So long champions of this mad world!"), 180);
+		Utils.scheduleTask(() -> sendChatMessage("My strengths are depleting.  This... this is it."), 240);
+		Utils.scheduleTask(() -> witherKing.remove(), 300);
+
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+			Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
+			Bukkit.broadcastMessage("");
+			Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "306 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
+			Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4 304 ticks");
+			Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "215.20 seconds | 3:35.20");
+			Bukkit.broadcastMessage("");
+			Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
+			Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
+			Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1 027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
+			Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
+			Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1 029 ticks");
+			Bukkit.broadcastMessage("");
+			Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
+			Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
+			Bukkit.broadcastMessage("               " + ChatColor.BLUE + ChatColor.BOLD + "DISCORD" + ChatColor.AQUA + ": https://discord.gg/gNfPwa8");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+		}, 70);
 	}
 
 	private static void sendChatMessage(String message) {

@@ -97,6 +97,7 @@ public class Necron {
 		}, 509);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 569);
 		Utils.scheduleTask(() -> {
+			// note: in skytils, the Necron timer ends 2 seconds too early, thus making Wither King start 2 seconds too early.  The timing in this TAS fixes this.  To compare to Skytils time, subtract 2 seconds here and add 2 seconds to Wither King time.
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 275 ticks (163.75 seconds)");
 			if(doContinue) {
 				WitherKing.witherKingInstructions(world);

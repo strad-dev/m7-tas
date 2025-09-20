@@ -52,6 +52,7 @@ public class Archer {
 			case "goldor" -> {
 				Actions.teleport(archer, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
 				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 6, 33);
 				Actions.swapItems(archer, 7, 35);
 				Utils.scheduleTask(Archer::explosiveShot, 57);
 				Utils.scheduleTask(() -> {
@@ -64,6 +65,8 @@ public class Archer {
 			case "necron" -> {
 				Actions.teleport(archer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 5, 32);
+				Actions.swapItems(archer, 6, 33);
 				Actions.swapItems(archer, 7, 35);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
@@ -71,6 +74,8 @@ public class Archer {
 				Actions.teleport(archer, new Location(world, 22.3, 6, 59.408, 65.6f, 29.3f));
 				Actions.swapItems(archer, 1, 28);
 				Actions.swapItems(archer, 3, 30);
+				Actions.swapItems(archer, 5, 32);
+				Actions.swapItems(archer, 6, 33);
 				Actions.swapItems(archer, 7, 35);
 				Actions.swapItems(archer, 11, 39);
 				Utils.scheduleTask(Archer::witherKing, 60);
@@ -944,7 +949,7 @@ public class Archer {
 		}, 220);
 		Utils.scheduleTask(() -> {
 			Actions.rightClickLever(archer);
-			Goldor.broadcastTerminalComplete(archer, "lever", 6, 7);
+			Goldor.broadcastTerminalComplete(archer, "lever", 5, 7);
 		}, 227);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 3), 228);
 		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 229);
@@ -1004,7 +1009,10 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2398, 0, -0.1458), 9), 531);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.198, 0, -0.729), 2), 540);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 65.6f, 29.3f), 541);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 542);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(archer, 5, 32);
+			Actions.swapItems(archer, 11, 39);
+		}, 542);
 		if(doContinue) {
 			Utils.scheduleTask(Archer::witherKing, 609);
 		}
@@ -1019,10 +1027,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 146.1f, 0f), 28);
 		Utils.scheduleTask(() -> WitherKing.placeRelic(archer), 29);
 		// tick 30: equip greg
-		Utils.scheduleTask(() -> {
-			Actions.swapItems(archer, 6, 33);
-			Actions.swapItems(archer, 11, 39);
-		}, 31);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 31);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 36f, 0f);
 			Actions.setHotbarSlot(archer, 6);
@@ -1050,25 +1055,75 @@ public class Archer {
 			Utils.scheduleTask(() -> Actions.salvation(archer), i + 1);
 		}
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7033, 0, 0.8747), 27), 388);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -37.5f, -18f), 395);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -37.5f, -21f), 405);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -37.5f, -18.5f), 395);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -37.5f, -22f), 405);
 		Utils.scheduleTask(() -> Actions.jump(archer), 414);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, -37.5f, -26f);
+			Actions.turnHead(archer, -37.5f, -28f);
 			Actions.move(archer, new Vector(0.1758, 0, 0.2187), 9);
 		}, 415);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7033, 0, 0.8747), 6), 424);
 		Utils.scheduleTask(() -> {
-			WitherKing.playDragonDeathSound();
-			Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "Soul Dragon " + ChatColor.GREEN + "killed in 28 ticks (1.40 seconds) | Wither King: 429 ticks (21.45 seconds) | Overall: 3 704 ticks (185.20 seconds)");
-		}, 431);
+			Actions.turnHead(archer, 177.6f, 0f);
+			WitherKing.playDragonDeathSound(true);
+			Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "Soul Dragon " + ChatColor.GREEN + "killed in 30 ticks (1.50 seconds) | Wither King: 431 ticks (21.55 seconds) | Overall: 3 706 ticks (185.30 seconds)");
+		}, 433);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.047, 0, -1.121), 8), 434);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.0118, 0, -0.2804), 5), 442);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.047, 0, -1.121), 9), 447);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.0118, 0, -0.2804), 5), 456);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -134.6f, -17f), 461);
+		// arrows take 13 ticks to reach the Dragon
+		// start shooting tick 718
+		// begin moving tick 728
+		// last arrow fired tick 738
+		// Dragon spawns tick 741
+		for(int i = 718; i < 740; i += 5) {
+			Utils.scheduleTask(Archer::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(archer), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7992, 0, -0.788), 10), 728);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -134.6f, -20f), 735);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -151.4f, 0f);
+			Actions.setHotbarSlot(archer, 6);
+		}, 739);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.5373, 0, -0.9855), 35), 740);
+		Utils.scheduleTask(() -> Actions.rag(archer), 750);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 80.7f, -17f), 775);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 811);
+		// arrows take 13 ticks to reach the Dragon
+		// start shooting tick 814
+		// begin moving tick 834
+		// last arrow fired tick 844
+		// Dragon spawns tick 847
+		Utils.scheduleTask(Archer::rapidFire, 814);
+		for(int i = 814; i < 850; i += 5) {
+			Utils.scheduleTask(Archer::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(archer), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.1077, 0, 0.1814), 10), 834);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 80.7f, -20f), 840);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -18f, 0f), 851);
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.3469, 0, 1.0675), 23), 852);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 70.6f, -17f), 875);
+		// arrows take 13 ticks to reach the Dragon
+		// start shooting tick 920
+		// begin moving tick 940
+		// last arrow fired tick 950
+		// Dragon spawns tick 953
+		for(int i = 920; i < 955; i += 5) {
+			Utils.scheduleTask(Archer::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(archer), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.0587, 0, 0.373), 10), 940);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 70.6f, -20f), 950);
 	}
 
 	private static void shoot() {
 		Actions.rightClick(archer);
-		Location l = archer.getLocation();
+		Location l = archer.getEyeLocation();
 		l.add(l.getDirection());
-		l.setY(l.getY() + 1.62);
 		int power = archer.getInventory().getItemInMainHand().getEnchantmentLevel(Enchantment.POWER);
 		int strength;
 		try {
@@ -1098,7 +1153,7 @@ public class Archer {
 		// Duplex Arrow
 		double finalAdd = add;
 		Utils.scheduleTask(() -> {
-			Arrow arrow = world.spawnArrow(l, l.getDirection(), 3, 0.1F);
+			Arrow arrow = world.spawnArrow(l, l.getDirection(), 4, 0);
 			arrow.setDamage(0.5 + finalAdd);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(archer);
@@ -1111,7 +1166,7 @@ public class Archer {
 
 		double finalAdd1 = add;
 		Utils.scheduleTask(() -> {
-			Arrow arrow = world.spawnArrow(l, l.getDirection(), 3, 0.1F);
+			Arrow arrow = world.spawnArrow(l, l.getDirection(), 4, 0);
 			arrow.setDamage(2.5 + finalAdd1);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(archer);
@@ -1121,7 +1176,7 @@ public class Archer {
 
 		double finalAdd2 = add;
 		Utils.scheduleTask(() -> {
-			Arrow arrow = world.spawnArrow(l, l.getDirection(), 3, 0.1F);
+			Arrow arrow = world.spawnArrow(l, l.getDirection(), 4, 0);
 			arrow.setDamage(2.5 + finalAdd2);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(archer);
@@ -1174,14 +1229,16 @@ public class Archer {
 		}
 	}
 
-	@SuppressWarnings("unused")
 	private static void rapidFire() {
 		for(int i = 0; i < 201; i += 4) {
-			Arrow arrow = world.spawnArrow(archer.getLocation(), archer.getLocation().getDirection(), 4, 0.1F);
-			arrow.setDamage(15);
-			arrow.setPierceLevel(1);
-			arrow.setShooter(archer);
-			arrow.setWeapon(archer.getInventory().getItemInMainHand());
+			Utils.scheduleTask(() -> {
+				Arrow arrow = world.spawnArrow(archer.getEyeLocation().add(archer.getEyeLocation()), archer.getEyeLocation().getDirection(), 4, 0);
+				arrow.setDamage(15);
+				arrow.setPierceLevel(4);
+				arrow.setShooter(archer);
+				arrow.setWeapon(archer.getInventory().getItemInMainHand());
+				arrow.addScoreboardTag("TerminatorArrow");
+			}, i);
 		}
 	}
 

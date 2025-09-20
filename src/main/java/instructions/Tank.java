@@ -794,7 +794,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -108.2f, -32.3f), 224);
 		Utils.scheduleTask(() -> {
 			Actions.rightClickLever(tank);
-			Goldor.broadcastTerminalComplete(tank, "lever", 5, 7);
+			Goldor.broadcastTerminalComplete(tank, "lever", 6, 7);
 		}, 229);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 230);
 		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 231);
@@ -919,6 +919,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.jump(tank), 90);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.00832, 0, 0.2805), 8), 91);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, -90f), 98);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 8), 360);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 8), 368);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 8), 376);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 8), 384);
@@ -929,6 +930,63 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 404);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 416);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 428);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -154.7f, 0f);
+			Actions.setHotbarSlot(tank, 6);
+		}, 429);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 3), 430);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 5), 433);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 4), 438);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 5), 442);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 9), 447);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 5), 456);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 17), 461);
+		Utils.scheduleTask(() -> Actions.jump(tank), 467);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 9), 468);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 1), 477);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, -90f), 478);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 690);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 700);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 710);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 720);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 730);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 740);
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 741);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 91f, 0f);
+			Actions.setHotbarSlot(tank, 6);
+		}, 742);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.4028, 0, -0.0245), 5), 743);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2805, 0, -0.0049), 5), 748);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.4028, 0, -0.0245), 28), 753);
+		Utils.scheduleTask(() -> Actions.jump(tank), 780);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2805, 0, -0.0049), 6), 781);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -135f, -90f), 787);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 796);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 806);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 816);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 826);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 836);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 846);
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 847);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 0f, 0f);
+			Actions.setHotbarSlot(tank, 6);
+		}, 848);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.403), 4), 849);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 0.2806), 5), 853);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.403), 7), 858);
+		Utils.scheduleTask(() -> Actions.jump(tank), 864);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 0.2806), 9), 865);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.403), 4), 874);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, -90f), 878);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 902);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 912);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 922);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 932);
+		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 942);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 952);
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 953);
 	}
 
 	@SuppressWarnings("unused")

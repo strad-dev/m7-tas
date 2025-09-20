@@ -1102,26 +1102,75 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -14f), 100);
 		Utils.scheduleTask(() -> Actions.rag(berserk), 150);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 211);
-		// arrows take 12 ticks to reach the Dragon
+		// arrows take 13 ticks to reach the Dragon
 		// rag on tick 150
 		// rag is activated on tick 210
-		// start shooting tick 369
-		// begin moving tick 389
+		// start shooting tick 388
+		// begin moving tick 388
 		// Dragon spawns tick 401
-		// last arrow fired tick 409
+		// last arrow fired tick 408
 		// rag wears off tick 410
 		// rag is back tick 550
-		for(int i = 389; i < 410; i += 5) {
+		for(int i = 383; i < 410; i += 5) {
 			Utils.scheduleTask(Berserk::shoot, i);
 			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 1);
 		}
-		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.0593, 0, -0.371), 20), 389);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -16f), 395);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -19f), 405);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.0593, 0, -0.371), 20), 388);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -17f), 395);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -109.3f, -20f), 405);
 		Utils.scheduleTask(() -> {
-			WitherKing.playDragonDeathSound();
+			Actions.turnHead(berserk, 146.5f, 0f);
+			WitherKing.playDragonDeathSound(true);
 			Bukkit.broadcastMessage(ChatColor.BLUE + "Ice Dragon " + ChatColor.GREEN + "killed in 9 ticks (0.45 seconds) | Wither King: 410 ticks (20.50 seconds) | Overall: 3 685 ticks (184.25 seconds)");
 		}, 410);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.6195, 0, -0.936), 9), 411);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.155, 0, -0.234), 5), 420);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.6195, 0, -0.936), 2), 425);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -134.1f, -17f), 426);
+		// arrows take 13 ticks to reach the Dragon
+		// start shooting tick 728
+		// begin moving tick 728
+		// last arrow fired tick 738
+		// Dragon spawns tick 741
+		for(int i = 723; i < 740; i += 5) {
+			Utils.scheduleTask(Berserk::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.806, 0, -0.781), 10), 728);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -134.1f, -20f), 735);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -151f, 0f);
+			Actions.setHotbarSlot(berserk, 6);
+		}, 739);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.5442, 0, -0.9817), 35), 740);
+		Utils.scheduleTask(() -> Actions.rag(berserk), 750);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 79.6f, -17f), 775);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 811);
+		// arrows take 13 ticks to reach the Dragon
+		// start shooting tick 834
+		// begin moving tick 834
+		// last arrow fired tick 844
+		// Dragon spawns tick 847
+		for(int i = 829; i < 850; i += 5) {
+			Utils.scheduleTask(Berserk::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.104, 0, 0.2026), 10), 834);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 79.6f, -20f), 840);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -17.2f, 0f), 851);
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.3319, 0, 1.072), 23), 852);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 70.6f, -17f), 875);
+		// arrows take 13 ticks to reach the Dragon
+		// start shooting tick 940
+		// begin moving tick 940
+		// last arrow fired tick 950
+		// Dragon spawns tick 953
+		for(int i = 935; i < 955; i += 5) {
+			Utils.scheduleTask(Berserk::shoot, i);
+			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 1);
+		}
+		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.0587, 0, 0.373), 10), 940);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 70.6f, -20f), 950);
 	}
 
 	private static void shoot() {
@@ -1152,7 +1201,7 @@ public class Berserk {
 			}
 
 			double add = powerBonus + strengthBonus;
-			Arrow arrow = world.spawnArrow(l, l.getDirection(), 3, 0.1F);
+			Arrow arrow = world.spawnArrow(l, l.getDirection(), 4, 0);
 			arrow.setDamage(0.5 + add);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(berserk);
@@ -1162,16 +1211,16 @@ public class Berserk {
 
 		PotionEffect strength = berserk.getPotionEffect(PotionEffectType.STRENGTH);
 		boolean hasRagBuff = berserk.getScoreboardTags().contains("RagBuff");
-		int maxAmplifier = hasRagBuff ? 14 : 12;
+		int maxAmplifier = hasRagBuff ? 12 : 10;
 		int baseAmplifier = hasRagBuff ? 2 : 0;
 
 		int newAmplifier;
 		if(strength == null) {
 			newAmplifier = baseAmplifier;
 		} else {
-			newAmplifier = Math.min(strength.getAmplifier() + 2, maxAmplifier);
+			newAmplifier = Math.min(strength.getAmplifier() + 1, maxAmplifier);
 		}
-
+		berserk.removePotionEffect(PotionEffectType.STRENGTH);
 		berserk.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, newAmplifier));
 	}
 

@@ -1229,8 +1229,6 @@ public class Actions {
 					if(nmsEntity.onGround()) {
 						cancel();
 						entityVelocities.remove(p);
-
-						Bukkit.broadcastMessage(ChatColor.GREEN + p.getName() + " Bonzo launch duration: " + tickCount + " ticks");
 						return;
 					}
 					move(p, impulseVector, 1);
@@ -1270,7 +1268,6 @@ public class Actions {
 				if(tickCount >= 3) {
 					if(((LivingEntity) p).isOnGround()) {
 						cancel();
-						Bukkit.broadcastMessage(ChatColor.GREEN + p.getName() + " Lava launch duration: " + tickCount + " ticks");
 					}
 				}
 			}

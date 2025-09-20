@@ -779,8 +779,10 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1015, 0, 0.2616), 9), 75);
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.406, 0, 1.0465), 3), 84);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -90f), 81);
-		Utils.scheduleTask(() -> Actions.rag(mage), 150);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 211);
+		Utils.scheduleTask(() -> Actions.rag(mage), 160);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 221);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 350);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 360);
 		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 370);
 		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 380);
 		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 390);
@@ -789,7 +791,63 @@ public class Mage {
 		Utils.scheduleTask(Mage::mageBeam, 407);
 		Utils.scheduleTask(Mage::mageBeam, 412);
 		Utils.scheduleTask(Mage::mageBeam, 417);
-		Utils.scheduleTask(Mage::mageBeam, 422);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(mage, 5);
+			Actions.turnHead(mage, -176.5f, 0f);
+		}, 418);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0685, 0, -1.12), 15), 419);
+		Utils.scheduleTask(() -> Actions.jump(mage), 433);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0171, 0, -0.2801), 11), 434);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0685, 0, -1.12), 12), 445);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -90f), 457);
+		Utils.scheduleTask(() -> Actions.rag(mage), 495);
+		// wears off tick 755
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 556);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 690);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 700);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 710);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 720);
+		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 730);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 741);
+		Utils.scheduleTask(Mage::mageBeam, 742);
+		Utils.scheduleTask(() -> {
+			Mage.mageBeam();
+			WitherKing.playDragonDeathSound(true);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "Flame Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 747 ticks (37.35 seconds) | Overall: 4 022 ticks (201.10 seconds)");
+		}, 747);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 91f, 0f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 748);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.1223, 0, -0.0196), 6), 749);
+		Utils.scheduleTask(() -> Actions.rag(mage), 750);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2805, 0, -0.049), 5), 755);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.1223, 0, -0.0196), 38), 760);
+		Utils.scheduleTask(() -> Actions.jump(mage), 797);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2805, 0, -0.049), 5), 798);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -135f, -90f), 803);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 811);
+		Utils.scheduleTask(Mage::mageBeam, 848);
+		Utils.scheduleTask(() -> {
+			Mage.mageBeam();
+			WitherKing.playDragonDeathSound(true);
+			Bukkit.broadcastMessage(ChatColor.RED + "Power Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 853 ticks (42.65 seconds) | Overall: 4 128 ticks (206.40 seconds)");
+		}, 853);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 854);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 5), 855);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.2806), 5), 860);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 10), 865);
+		Utils.scheduleTask(() -> Actions.jump(mage), 874);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.2806), 9), 875);
+		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 7), 884);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, -90f), 891);
+		Utils.scheduleTask(Mage::mageBeam, 954);
+		Utils.scheduleTask(() -> {
+			Mage.mageBeam();
+			WitherKing.playDragonDeathSound(false);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Apex Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 959 ticks (47.95 seconds) | Overall: 4 234 ticks (211.70 seconds)");
+			WitherKing.deathSequence();
+		}, 959);
 	}
 
 	private static void snapHead(String target) {
@@ -874,9 +932,6 @@ public class Mage {
 				if(entity instanceof LivingEntity temp && !temp.equals(mage) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
 					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 145 : 85) : (temp instanceof Wither ? 120 : 70);
 					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(mage, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
-					if(temp.getHurtSound() != null) {
-						world.playSound(l, temp.getHurtSound(), 1.0F, 1.0F);
-					}
 					shouldBreak = true;
 					break;
 				}

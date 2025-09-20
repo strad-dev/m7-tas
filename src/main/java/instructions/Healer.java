@@ -1099,8 +1099,7 @@ public class Healer {
 		}, 30);
 		Utils.scheduleTask(() -> {
 			WitherKing.placeRelic(healer);
-//			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: 3 306 ticks (165.30 seconds)");
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: ? ??? ticks (???.?? seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: 3 306 ticks (165.30 seconds)");
 		}, 31);
 		Utils.scheduleTask(() -> Actions.swapItems(healer, 5, 32), 32);
 		Utils.scheduleTask(() -> {
@@ -1114,6 +1113,8 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.1424, 0, 0.2418), 9), 71);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.7121, 0, 1.209), 2), 80);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -90f), 81);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 350);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 360);
 		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 370);
 		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 380);
 		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 390);
@@ -1123,6 +1124,66 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 403);
 		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 404);
 		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 416);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -177.5f, 0f);
+			Actions.setHotbarSlot(healer, 6);
+		}, 417);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0612, 0, -1.402), 13), 418);
+		Utils.scheduleTask(() -> Actions.jump(healer), 430);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0122, 0, -0.2803), 11), 431);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0612, 0, -1.402), 8), 442);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -90f), 450);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 690);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 700);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 710);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 720);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 730);
+		Utils.scheduleTask(() -> Actions.jump(healer), 736);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 741);
+		Utils.scheduleTask(() -> Actions.iceSpray(healer), 742);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 743);
+		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 744);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 91f, 0f);
+			Actions.setHotbarSlot(healer, 6);
+		}, 745);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-1.4028, 0, -0.0245), 5), 748);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.2805, 0, -0.0049), 5), 753);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-1.4028, 0, -0.0245), 28), 758);
+		Utils.scheduleTask(() -> Actions.jump(healer), 785);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.2805, 0, -0.0049), 6), 786);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -135f, -90f), 792);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 796);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 806);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 816);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 826);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 836);
+		Utils.scheduleTask(() -> Actions.jump(healer), 842);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 847);
+		Utils.scheduleTask(() -> Actions.iceSpray(healer), 848);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 849);
+		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 850);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 0f);
+			Actions.setHotbarSlot(healer, 6);
+		}, 851);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.403), 3), 854);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 5), 857);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.403), 9), 862);
+		Utils.scheduleTask(() -> Actions.jump(healer), 870);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 0.2806), 9), 871);
+		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.403), 4), 880);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -180f, -90f), 884);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 902);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 912);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 922);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 923);
+		Utils.scheduleTask(() -> Actions.lastBreath(healer, 10), 942);
+		Utils.scheduleTask(() -> Actions.jump(healer), 948);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 953);
+		Utils.scheduleTask(() -> Actions.iceSpray(healer), 954);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 955);
+		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 956);
 	}
 
 	@SuppressWarnings("unused")
