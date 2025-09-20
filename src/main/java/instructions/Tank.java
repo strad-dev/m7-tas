@@ -630,11 +630,11 @@ public class Tank {
 			}, tick);
 		}
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, -5.2f), 546);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 0f), 687);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 23.3f, 0f), 687);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 12), 688);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 82f), 699);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 23.3f, 82f), 699);
 		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.6034, 0.5, 1.401)), 700);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -23.3f, 0f), 701);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 23.3f, 0f), 701);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 3), 711);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 712);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 2), 758);
