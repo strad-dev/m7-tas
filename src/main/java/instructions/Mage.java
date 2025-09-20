@@ -584,7 +584,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.swingHand(mage), 50);
 		Utils.scheduleTask(() -> {
 			Goldor.broadcastTerminalComplete(mage, "terminal", 7, 7);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "S1 finished in 51 ticks (2.55 seconds) | Overall: 2 367 ticks (118.35 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S1 finished in 51 ticks (2.55 seconds) | Overall: 2 467 ticks (123.35 seconds)");
 		}, 51);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 52);
 		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 53);
@@ -813,7 +813,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Mage.mageBeam();
 			WitherKing.playDragonDeathSound(true);
-			Bukkit.broadcastMessage(ChatColor.GOLD + "Flame Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 747 ticks (37.35 seconds) | Overall: 4 022 ticks (201.10 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GOLD + "Flame Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 747 ticks (37.35 seconds) | Overall: 4 122 ticks (206.10 seconds)");
 		}, 747);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 91f, 0f);
@@ -831,7 +831,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Mage.mageBeam();
 			WitherKing.playDragonDeathSound(true);
-			Bukkit.broadcastMessage(ChatColor.RED + "Power Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 853 ticks (42.65 seconds) | Overall: 4 128 ticks (206.40 seconds)");
+			Bukkit.broadcastMessage(ChatColor.RED + "Power Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 853 ticks (42.65 seconds) | Overall: 4 228 ticks (211.40 seconds)");
 		}, 853);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 854);
 		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 5), 855);
@@ -845,7 +845,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Mage.mageBeam();
 			WitherKing.playDragonDeathSound(false);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Apex Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 959 ticks (47.95 seconds) | Overall: 4 234 ticks (211.70 seconds)");
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Apex Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 959 ticks (47.95 seconds) | Overall: 4 334 ticks (216.70 seconds)");
 			WitherKing.deathSequence();
 		}, 959);
 	}

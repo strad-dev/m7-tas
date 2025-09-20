@@ -93,12 +93,12 @@ public class Necron {
 		Utils.scheduleTask(() -> {
 			sendChatMessage("All this, for nothing...");
 			Server.playWitherDeathSound(necron);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron killed in 509 ticks (25.45 seconds) | Overall: 3 175 ticks (158.75 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron killed in 509 ticks (25.45 seconds) | Overall: 3 275 ticks (163.75 seconds)");
 		}, 509);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 569);
 		Utils.scheduleTask(() -> {
 			// note: in skytils, the Necron timer ends 2 seconds too early, thus making Wither King start 2 seconds too early.  The timing in this TAS fixes this.  To compare to Skytils time, subtract 2 seconds here and add 2 seconds to Wither King time.
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 275 ticks (163.75 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 375 ticks (168.75 seconds)");
 			if(doContinue) {
 				WitherKing.witherKingInstructions(world);
 			}
@@ -112,9 +112,9 @@ public class Necron {
 		 * storm: 13 ticks (8 ticks from first crush, 5 ticks from second crush)
 		 * goldor: approx. 35-40 ticks, due to not needing to debuff, as well as being able to be one-tapped the moment he is not obstructed by blocks
 		 * necron: 5 ticks (between first frenzy and platform destroy)
-		 * thus, a solution of ~3 260 ticks will be the perfect F7 (163.00 seconds | 2:43.00)
+		 * thus, a solution of ~3 260 ticks will be the perfect F7 (168.00 seconds | 2:48.00)
 		 */
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in 3 315 ticks (167.75 seconds | 2:47.75)"), 649);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in 3 315 ticks (172.75 seconds | 2:52.75)"), 649);
 	}
 
 	private static void destroyPlatform() {

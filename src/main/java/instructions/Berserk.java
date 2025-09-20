@@ -1020,7 +1020,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.swingHand(berserk), 235);
 		Utils.scheduleTask(() -> {
 			Goldor.broadcastTerminalComplete(berserk, "terminal", 7, 7);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 41 ticks (2.05 seconds) | Terminals: 236 ticks (11.80 seconds) | Overall: 2 552 ticks (127.60 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 41 ticks (2.05 seconds) | Terminals: 236 ticks (11.80 seconds) | Overall: 2 652 ticks (132.60 seconds)");
 			Server.openCore();
 		}, 236);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 237);
@@ -1121,7 +1121,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 146.5f, 0f);
 			WitherKing.playDragonDeathSound(true);
-			Bukkit.broadcastMessage(ChatColor.BLUE + "Ice Dragon " + ChatColor.GREEN + "killed in 9 ticks (0.45 seconds) | Wither King: 410 ticks (20.50 seconds) | Overall: 3 685 ticks (184.25 seconds)");
+			Bukkit.broadcastMessage(ChatColor.BLUE + "Ice Dragon " + ChatColor.GREEN + "killed in 9 ticks (0.45 seconds) | Wither King: 410 ticks (20.50 seconds) | Overall: 3 785 ticks (189.25 seconds)");
 		}, 410);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.6195, 0, -0.936), 9), 411);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.155, 0, -0.234), 5), 420);

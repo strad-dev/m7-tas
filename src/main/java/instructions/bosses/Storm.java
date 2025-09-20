@@ -146,11 +146,11 @@ public class Storm {
 			for(int i = 0; i < 301; i += 10) {
 				Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F), i);
 			}
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 790 ticks (39.50 seconds) | Overall: 2 216 ticks (110.80 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 790 ticks (39.50 seconds) | Overall: 2 316 ticks (115.80 seconds)");
 		}, 790);
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 850);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in 890 ticks (44.50 seconds) | Overall: 2 316 ticks (115.80 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in 890 ticks (44.50 seconds) | Overall: 2 416 ticks (120.80 seconds)");
 			if(doContinue) {
 				Goldor.goldorInstructions(world, true);
 			}

@@ -66,12 +66,12 @@ public class Goldor {
 		}, 238);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("...");
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor killed in 54 ticks (2.70 seconds) | Terminals + Goldor: 290 ticks (14.50 seconds) | Overall: 2 606 ticks (130.30 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor killed in 54 ticks (2.70 seconds) | Terminals + Goldor: 290 ticks (14.50 seconds) | Overall: 2 706 ticks (135.30 seconds)");
 		}, 290);
 		Utils.scheduleTask(() -> sendChatMessage("But you have nowhere to hide anymore!"), 298);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("Necron, forgive me.");
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Terminals + Goldor finished in 350 ticks (17.50 seconds) | Overall: 2 666 ticks (133.30 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Terminals + Goldor finished in 350 ticks (17.50 seconds) | Overall: 2 766 ticks (135.30 seconds)");
 			if(doContinue) {
 				Necron.necronInstructions(temp, true);
 			}

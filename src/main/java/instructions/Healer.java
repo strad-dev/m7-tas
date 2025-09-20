@@ -964,7 +964,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.rightClickLever(healer);
 			Goldor.broadcastTerminalComplete(healer, "lever", 8, 8);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "S2 finished in 87 ticks (4.35 seconds) | Terminals: 138 ticks (6.90 seconds) | Overall: 2 454 ticks (122.70 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S2 finished in 87 ticks (4.35 seconds) | Terminals: 138 ticks (6.90 seconds) | Overall: 2 554 ticks (127.70 seconds)");
 			Server.removeS3Gate();
 		}, 138);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 139);
@@ -1000,7 +1000,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.swingHand(healer), 194);
 		Utils.scheduleTask(() -> {
 			Goldor.broadcastTerminalComplete(healer, "terminal", 7, 7);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 57 ticks (2.85 seconds) | Terminals: 195 ticks (9.75 seconds) | Overall: 2 511 ticks (125.55 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 57 ticks (2.85 seconds) | Terminals: 195 ticks (9.75 seconds) | Overall: 2 611 ticks (130.55 seconds)");
 		}, 195);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 196);
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 197);
@@ -1100,7 +1100,7 @@ public class Healer {
 		}, 30);
 		Utils.scheduleTask(() -> {
 			WitherKing.placeRelic(healer);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: 3 306 ticks (165.30 seconds)");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Relics placed in 31 ticks (1.55 seconds) | Overall: 3 406 ticks (170.30 seconds)");
 		}, 31);
 		Utils.scheduleTask(() -> Actions.swapItems(healer, 5, 32), 32);
 		Utils.scheduleTask(() -> {

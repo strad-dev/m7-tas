@@ -251,8 +251,8 @@ public class WitherKing {
 			Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
 			Bukkit.broadcastMessage("");
 			Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "306 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
-			Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4 304 ticks");
-			Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "215.20 seconds | 3:35.20");
+			Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4 404 ticks");
+			Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "220.20 seconds | 3:40.20");
 			Bukkit.broadcastMessage("");
 			Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 			Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");

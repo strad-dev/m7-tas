@@ -1066,7 +1066,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 177.6f, 0f);
 			WitherKing.playDragonDeathSound(true);
-			Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "Soul Dragon " + ChatColor.GREEN + "killed in 30 ticks (1.50 seconds) | Wither King: 431 ticks (21.55 seconds) | Overall: 3 706 ticks (185.30 seconds)");
+			Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "Soul Dragon " + ChatColor.GREEN + "killed in 30 ticks (1.50 seconds) | Wither King: 431 ticks (21.55 seconds) | Overall: 3 806 ticks (190.30 seconds)");
 		}, 433);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.047, 0, -1.121), 8), 434);
 		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.0118, 0, -0.2804), 5), 442);
