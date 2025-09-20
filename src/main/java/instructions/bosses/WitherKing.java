@@ -266,7 +266,7 @@ public class WitherKing {
 			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
 			Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
-			Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE);
+			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f,1f), 1);
 		}, 70);
 	}
 

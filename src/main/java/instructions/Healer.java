@@ -620,6 +620,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -7f, 0f), 188);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -5.8f, 0f), 197);
 		Utils.scheduleTask(() -> {
+			Server.resetGoldorCheese();
 			Actions.jump(healer);
 			Actions.move(healer, new Vector(0.1144, 0, 1.1166), 1);
 			Actions.setHotbarSlot(healer, 5);
