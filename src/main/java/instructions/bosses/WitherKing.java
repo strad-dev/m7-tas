@@ -10,7 +10,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
 import plugin.Utils;
@@ -265,6 +264,9 @@ public class WitherKing {
 			Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
 			Bukkit.broadcastMessage("               " + ChatColor.BLUE + ChatColor.BOLD + "DISCORD" + ChatColor.AQUA + ": https://discord.gg/gNfPwa8");
 			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+
+			Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
+			Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE);
 		}, 70);
 	}
 
