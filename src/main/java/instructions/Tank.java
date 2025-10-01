@@ -630,7 +630,10 @@ public class Tank {
 			}, tick);
 		}
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, -5.2f), 546);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 23.3f, 0f), 687);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 23.3f, 0f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 687);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.444, 0, 1.031), 12), 688);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 23.3f, 82f), 699);
 		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.6034, 0.5, 1.401)), 700);
@@ -941,10 +944,10 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 9), 447);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 5), 456);
 		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 17), 461);
-		Utils.scheduleTask(() -> Actions.jump(tank), 467);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 9), 468);
-		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 1), 477);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, -90f), 478);
+		Utils.scheduleTask(() -> Actions.jump(tank), 477);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.12, 0, -0.2537), 9), 478);
+		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.6, 0, -1.268), 3), 487);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, -90f), 488);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 690);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 700);
 		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 710);
