@@ -499,17 +499,17 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 205);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 206);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 218);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 230);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 242);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 254);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 266);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 278);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 290);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 302);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 314);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 326);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 338);
-		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 350);
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 230); // 124
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 242); // 123
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 254); // 122
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 266); // 121
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 278); // 120
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 290); // 119
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 302); // 118
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 314); // 117
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 326); // 116
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 338); // 115
+		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 350); // 114
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 362);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 374);
 		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 386);

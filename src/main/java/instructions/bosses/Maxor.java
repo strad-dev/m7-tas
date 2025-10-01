@@ -78,6 +78,7 @@ public class Maxor {
 			Actions.setWitherArmor(maxor, false);
 			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160);
 		}, 198);
+		Utils.scheduleTask(() -> maxor.setHealth(124), 230);
 		Utils.scheduleTask(() -> {
 			Maxor.spawnCrystals();
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
