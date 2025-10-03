@@ -808,7 +808,10 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 665);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.8634, 0, 0), 2), 666);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.2806, 0, 0), 5), 668);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 673);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 0f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 673);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.1984, 0, 0.1984), 15), 674);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 15f, 0f), 689);
 		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.12242), 3), 690);

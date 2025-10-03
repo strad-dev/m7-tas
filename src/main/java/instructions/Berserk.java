@@ -5,7 +5,10 @@ import instructions.bosses.Maxor;
 import instructions.bosses.WitherKing;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -813,7 +816,10 @@ public class Berserk {
 			Actions.move(berserk, new Vector(-1.12242, 0, 0), 1);
 		}, 682);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 3), 683);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 138f, 82f), 693);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 138f, 82f);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 693);
 		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.751, 0, -0.834), 1), 694);
 		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-1.0201, 0.5, -1.1337)), 695);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 138f, 0f), 696);
