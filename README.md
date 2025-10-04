@@ -8,3 +8,4 @@ This is a Minecraft 1.21.4 server plugin that simulates a perfect run of Master 
 ### Contributing
 - If you found a time save or an error, open an issue and describe the error/timesave you found, or make a PR if you can understand my spaghetti code.
 - If you want to make a better version of Actions.java and Utils.java, feel free to PR.
+- If you REALLY want to, try to make it so that this plugin does not rely on SB in Vanilla for damage.
