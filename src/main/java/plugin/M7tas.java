@@ -374,6 +374,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
 		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
 		getServer().getPluginManager().registerEvents(new WithersNotImmuneToArrows(), this);
+		getServer().getPluginManager().registerEvents(new PearlHelper(), this);
 
 		Utils.startInventorySync();
 		startSpectatorSync();
@@ -613,6 +614,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks.");
 						return true;
 					}
+					case "explosiveshot" -> Archer.explosiveShot();
 				}
 				return false;
 			}

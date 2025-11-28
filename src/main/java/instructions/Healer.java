@@ -63,7 +63,7 @@ public class Healer {
 				Actions.swapItems(healer, 1, 28);
 				Actions.swapItems(healer, 3, 30);
 				Actions.swapItems(healer, 7, 34);
-				Utils.scheduleTask(() -> goldor(false), 60);
+//				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Actions.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));

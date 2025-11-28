@@ -72,7 +72,7 @@ public class Tank {
 				Actions.swapItems(tank, 5, 32);
 				Actions.swapItems(tank, 6, 33);
 				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
-				Utils.scheduleTask(() -> goldor(false), 60);
+//				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Actions.teleport(tank, new Location(world, 54.529, 65, 83.688, 180f, -5f));
@@ -374,7 +374,7 @@ public class Tank {
 		 * ╚══════╝╚═╝     ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝
 		 */
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 173);
-		Utils.scheduleTask(() -> Actions.swingHand(tank), 177);
+		Utils.scheduleTask(() -> Actions.salvation(tank), 177);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 178);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, -31.6f, 16.6f);

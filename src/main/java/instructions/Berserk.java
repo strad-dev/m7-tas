@@ -63,14 +63,14 @@ public class Berserk {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Actions.teleport(berserk, new Location(world, 63.343, 127, 35.246, -15.4f, -7.6f));
+				Actions.teleport(berserk, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
 				Actions.swapItems(berserk, 1, 28);
 				Actions.swapItems(berserk, 7, 35);
 				Actions.swapItems(berserk, 9, 39);
 				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 56);
 				Utils.scheduleTask(Berserk::shoot, 57);
 				Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 58);
-				Utils.scheduleTask(() -> goldor(false), 60);
+//				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Actions.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));

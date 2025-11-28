@@ -49,17 +49,35 @@ public class Archer {
 				Actions.swapItems(archer, 7, 35);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
+			// lb: -73.1 -46.8, take 36 ticks to hit
+			// term: 5 ticks
+			// -15.4, -7.6 face here
 			case "goldor" -> {
-				Actions.teleport(archer, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
+				Actions.teleport(archer, new Location(world, 63.343, 127, 35.246, -73.1f, -46.8f));
 				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 5, 32);
 				Actions.swapItems(archer, 6, 33);
 				Actions.swapItems(archer, 7, 35);
-				Utils.scheduleTask(Archer::explosiveShot, 57);
+				Actions.setHotbarSlot(archer, 5);
+				rapidFire(61);
+				Utils.scheduleTask(() -> Actions.lastBreath(archer, 6), 24);
+				Utils.scheduleTask(() -> Actions.lastBreath(archer, 6), 30);
+				Utils.scheduleTask(() -> Actions.lastBreath(archer, 6), 36);
 				Utils.scheduleTask(() -> {
-					Actions.setHotbarSlot(archer, 1);
-					Actions.turnHead(archer, 90f, 0f);
-				}, 58);
-				Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.403, 0, 0), 1), 59);
+					Actions.setHotbarSlot(archer, 4);
+					Actions.turnHead(archer, -12f, -8.9f);
+				}, 42);
+				Utils.scheduleTask(Archer::explosiveShot, 54);
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -19.2f, -2f), 55);
+				// rapid fire arrow fires
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -8f, -0.7f), 57);
+				Utils.scheduleTask(Archer::shoot, 58);
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -18.9f, 5.3f), 59);
+//				Utils.scheduleTask(() -> {
+//					Actions.setHotbarSlot(archer, 1);
+//					Actions.turnHead(archer, 90f, 0f);
+//				}, 58);
+//				Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.403, 0, 0), 1), 59);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
@@ -804,182 +822,208 @@ public class Archer {
 	}
 
 	private static void goldor(boolean doContinue) {
-		/*
-		 *  ██╗
-		 * ███║
-		 * ╚██║
-		 *  ██║
-		 *  ██║
-		 *  ╚═╝
-		 */
-		Goldor.broadcastTerminalComplete(archer, "gate", 1, 3);
-		Actions.move(archer, new Vector(-0.2806, 0, 0), 13);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 75f, 82f), 12);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.355, 0, 0.363), 1), 13);
-		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(-1.4735, 0.5, 0.3948)), 14);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 15);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 126.6f, 0f), 27);
+		// rapid fire arrow fires
+		// explosve shot reaches
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 68 128 50 emerald_block");
 		Utils.scheduleTask(() -> {
-			Actions.jump(archer);
-			Actions.move(archer, new Vector(-1.1264, 0, -0.837), 1);
-		}, 28);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2253, 0, -0.1673), 8), 29);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 37);
-		// jump ends on tick 41
+			Actions.turnHead(archer, -8.0f, 7.2f);
+			// first rapid fire arrow reaches
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 68 128 50 blue_terracotta");
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 66 128 50 emerald_block");
+		}, 1);
+		Utils.scheduleTask(() -> {
+			// first terminator arrows reach
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 66 128 50 blue_terracotta");
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 68 126 50 emerald_block");
+		}, 2);
+		Utils.scheduleTask(Archer::shoot, 3);
+		Utils.scheduleTask(() -> {
+			// second rapid fire arrow reaches
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 68 126 50 blue_terracotta");
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 66 126 50 emerald_block");
+		}, 5);
+		Utils.scheduleTask(() -> {
+			// second terminator arrows reach
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 66 126 50 blue_terracotta");
+			Goldor.broadcastTerminalComplete(archer, "device", 1, 7);
+		}, 7);
 
-		/*
-		 * ██████╗
-		 * ╚════██╗
-		 *  █████╔╝
-		 * ██╔═══╝
-		 * ███████╗
-		 * ╚══════╝
-		 */
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.403, 0, 0), 7), 54);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2806, 0, 0), 10), 61);
-		Utils.scheduleTask(() -> Actions.lavaJump(archer, false), 68);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 30f), 69);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -0.2806), 10), 76);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0.001, -1.403), 3), 89);
-		Utils.scheduleTask(() -> {
-			Actions.swingHand(archer);
-			Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME");
-		}, 92);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 1/4"), 93);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 2/4"), 94);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 3/4"), 95);
-		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 3, 8), 96);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 25f), 97);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.2806, 0, 0), 15), 98);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 7), 99);
-		Utils.scheduleTask(() -> Actions.swingHand(archer), 100); // equip phoenix
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 101);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(1.12242, 0, 0), 1), 113);
-		Utils.scheduleTask(() -> Actions.swingHand(archer), 114);
-		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 6, 8), 115);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 116);
-		Utils.scheduleTask(() -> Actions.leap(archer, Berserk.get()), 117);
-
-		/*
-		 * ██████╗
-		 * ╚════██╗
-		 *  █████╔╝
-		 *  ╚═══██╗
-		 * ██████╔╝
-		 * ╚═════╝
-		 */
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -146.3f, 8.6f), 118);
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Phoenix Procced!");
-			world.playSound(archer.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
-		}, 120);
-		Utils.scheduleTask(() -> Actions.lavaJump(archer, false), 131);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.1557, 0, -0.2335), 7), 132);
-		Utils.scheduleTask(() -> {
-			Actions.rightClickLever(archer);
-			Goldor.broadcastTerminalComplete(archer, "lever", 1, 7);
-		}, 140);
-		Utils.scheduleTask(() -> {
-			Actions.setHotbarSlot(archer, 3);
-			Actions.turnHead(archer, 180f, 0f);
-			Actions.clearVelocity(archer);
-		}, 141);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -0.2806), 10), 142);
-		Utils.scheduleTask(() -> {
-			Actions.swingHand(archer);
-			Goldor.broadcastTerminalComplete(archer, "gate", 3, 3);
-		}, 152);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 7), 153);
-		Utils.scheduleTask(() -> Actions.swingHand(archer), 154); // equip black cat
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 1), 155);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 39), 156);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 85f, 82f), 162);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.3977, 0, 0.1223), 1), 163);
-		final BukkitRunnable[] temp = new BukkitRunnable[1];
-		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(archer, new Vector(-1.5197, 0.5, 0.133)), 164);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 85f, 33f), 165);
-		Utils.scheduleTask(() -> {
-			Actions.rightClickLever(archer);
-			Goldor.broadcastTerminalComplete(archer, "lever", 3, 7);
-		}, 169);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 170);
-		Utils.scheduleTask(() -> {
-			temp[0].cancel();
-			Actions.leap(archer, Mage.get());
-		}, 171);
-
-		/*
-		 * ██╗  ██╗
-		 * ██║  ██║
-		 * ███████║
-		 * ╚════██║
-		 *      ██║
-		 *      ╚═╝
-		 */
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, -148f, 82f);
-			Actions.setHotbarSlot(archer, 1);
-		}, 172);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7435, 0, -1.19), 1), 173);
-		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(0.8967, 0.5, -1.2342)), 174);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -148f, 0f), 175);
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Bonzo Procced!");
-			world.playSound(archer.getLocation(), Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 2f);
-		}, 180);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7435, 0, -1.19), 2), 188);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.1649, 0, -0.227), 6), 190);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 45f), 196);
-		Utils.scheduleTask(() -> Actions.swingHand(archer), 197);
-		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 2, 7), 198);
-		Utils.scheduleTask(() -> world.playSound(archer.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f), 200);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.08), 1), 202);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 82f), 203);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(1.403, 0, 0), 1), 204);
-		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(archer, new Vector(1.52552, 0, 0)), 205);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 0f), 206);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 39), 207);
-		Utils.scheduleTask(() -> {
-			temp[0].cancel();
-			Actions.lavaJump(archer, false);
-		}, 219);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, -76.5f, -4.9f);
-			world.playSound(archer.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
-		}, 220);
-		Utils.scheduleTask(() -> {
-			Actions.rightClickLever(archer);
-			Goldor.broadcastTerminalComplete(archer, "lever", 5, 7);
-		}, 227);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 3), 228);
-		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 229);
-		
-
-		/*
-		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-		 * █████╗  ██║██║  ███╗███████║   ██║
-		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-		 */
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 5, 32), 230);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 231);
-		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -1.403), 11), 256);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, -10f), 266);
-		// tick 267: swap to gdrag
-		Utils.scheduleTask(() -> Actions.lastBreath(archer, 10), 268);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 279);
-		Utils.scheduleTask(Archer::shoot, 280);
-		Utils.scheduleTask(() -> Actions.salvation(archer), 284);
-		Utils.scheduleTask(Archer::shoot, 285);
-		Utils.scheduleTask(() -> Actions.salvation(archer), 289);
-		Utils.scheduleTask(Archer::shoot, 290);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 291);
-		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 292);
-		if(doContinue) {
-			Utils.scheduleTask(() -> necron(true), 350);
-		}
+//		/*
+//		 *  ██╗
+//		 * ███║
+//		 * ╚██║
+//		 *  ██║
+//		 *  ██║
+//		 *  ╚═╝
+//		 */
+//		Goldor.broadcastTerminalComplete(archer, "gate", 1, 3);
+//		Actions.move(archer, new Vector(-0.2806, 0, 0), 13);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 75f, 82f), 12);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.355, 0, 0.363), 1), 13);
+//		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(-1.4735, 0.5, 0.3948)), 14);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 77.5f, 0f), 15);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 126.6f, 0f), 27);
+//		Utils.scheduleTask(() -> {
+//			Actions.jump(archer);
+//			Actions.move(archer, new Vector(-1.1264, 0, -0.837), 1);
+//		}, 28);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2253, 0, -0.1673), 8), 29);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 37);
+//		// jump ends on tick 41
+//
+//		/*
+//		 * ██████╗
+//		 * ╚════██╗
+//		 *  █████╔╝
+//		 * ██╔═══╝
+//		 * ███████╗
+//		 * ╚══════╝
+//		 */
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.403, 0, 0), 7), 54);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2806, 0, 0), 10), 61);
+//		Utils.scheduleTask(() -> Actions.lavaJump(archer, false), 68);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 30f), 69);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -0.2806), 10), 76);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0.001, -1.403), 3), 89);
+//		Utils.scheduleTask(() -> {
+//			Actions.swingHand(archer);
+//			Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME");
+//		}, 92);
+//		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 1/4"), 93);
+//		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 2/4"), 94);
+//		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.BLUE + "Party " + ChatColor.DARK_GRAY + "> " + ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303" + ChatColor.WHITE + ": THIS TERMINAL IS BALDER THAN ME 3/4"), 95);
+//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 3, 8), 96);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 25f), 97);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.2806, 0, 0), 15), 98);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 7), 99);
+//		Utils.scheduleTask(() -> Actions.swingHand(archer), 100); // equip phoenix
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 101);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(1.12242, 0, 0), 1), 113);
+//		Utils.scheduleTask(() -> Actions.swingHand(archer), 114);
+//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 6, 8), 115);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 116);
+//		Utils.scheduleTask(() -> Actions.leap(archer, Berserk.get()), 117);
+//
+//		/*
+//		 * ██████╗
+//		 * ╚════██╗
+//		 *  █████╔╝
+//		 *  ╚═══██╗
+//		 * ██████╔╝
+//		 * ╚═════╝
+//		 */
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -146.3f, 8.6f), 118);
+//		Utils.scheduleTask(() -> {
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Phoenix Procced!");
+//			world.playSound(archer.getLocation(), Sound.ENTITY_GHAST_SCREAM, 1f, 1.6f);
+//		}, 120);
+//		Utils.scheduleTask(() -> Actions.lavaJump(archer, false), 131);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.1557, 0, -0.2335), 7), 132);
+//		Utils.scheduleTask(() -> {
+//			Actions.rightClickLever(archer);
+//			Goldor.broadcastTerminalComplete(archer, "lever", 1, 7);
+//		}, 140);
+//		Utils.scheduleTask(() -> {
+//			Actions.setHotbarSlot(archer, 3);
+//			Actions.turnHead(archer, 180f, 0f);
+//			Actions.clearVelocity(archer);
+//		}, 141);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -0.2806), 10), 142);
+//		Utils.scheduleTask(() -> {
+//			Actions.swingHand(archer);
+//			Goldor.broadcastTerminalComplete(archer, "gate", 3, 3);
+//		}, 152);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 7), 153);
+//		Utils.scheduleTask(() -> Actions.swingHand(archer), 154); // equip black cat
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 1), 155);
+//		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 39), 156);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 85f, 82f), 162);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.3977, 0, 0.1223), 1), 163);
+//		final BukkitRunnable[] temp = new BukkitRunnable[1];
+//		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(archer, new Vector(-1.5197, 0.5, 0.133)), 164);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 85f, 33f), 165);
+//		Utils.scheduleTask(() -> {
+//			Actions.rightClickLever(archer);
+//			Goldor.broadcastTerminalComplete(archer, "lever", 3, 7);
+//		}, 169);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 170);
+//		Utils.scheduleTask(() -> {
+//			temp[0].cancel();
+//			Actions.leap(archer, Mage.get());
+//		}, 171);
+//
+//		/*
+//		 * ██╗  ██╗
+//		 * ██║  ██║
+//		 * ███████║
+//		 * ╚════██║
+//		 *      ██║
+//		 *      ╚═╝
+//		 */
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -148f, 82f);
+//			Actions.setHotbarSlot(archer, 1);
+//		}, 172);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7435, 0, -1.19), 1), 173);
+//		Utils.scheduleTask(() -> Actions.bonzo(archer, new Vector(0.8967, 0.5, -1.2342)), 174);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -148f, 0f), 175);
+//		Utils.scheduleTask(() -> {
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Bonzo Procced!");
+//			world.playSound(archer.getLocation(), Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 2f);
+//		}, 180);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.7435, 0, -1.19), 2), 188);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0.1649, 0, -0.227), 6), 190);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 45f), 196);
+//		Utils.scheduleTask(() -> Actions.swingHand(archer), 197);
+//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(archer, "terminal", 2, 7), 198);
+//		Utils.scheduleTask(() -> world.playSound(archer.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f), 200);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.08), 1), 202);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 82f), 203);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(1.403, 0, 0), 1), 204);
+//		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(archer, new Vector(1.52552, 0, 0)), 205);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 0f), 206);
+//		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 39), 207);
+//		Utils.scheduleTask(() -> {
+//			temp[0].cancel();
+//			Actions.lavaJump(archer, false);
+//		}, 219);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -76.5f, -4.9f);
+//			world.playSound(archer.getLocation(), Sound.ENTITY_GENERIC_EAT, 1f, 1f);
+//		}, 220);
+//		Utils.scheduleTask(() -> {
+//			Actions.rightClickLever(archer);
+//			Goldor.broadcastTerminalComplete(archer, "lever", 5, 7);
+//		}, 227);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 3), 228);
+//		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 229);
+//
+//
+//		/*
+//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+//		 * █████╗  ██║██║  ███╗███████║   ██║
+//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+//		 */
+//		Utils.scheduleTask(() -> Actions.swapItems(archer, 5, 32), 230);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 231);
+//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, -1.403), 11), 256);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, -10f), 266);
+//		// tick 267: swap to gdrag
+//		Utils.scheduleTask(() -> Actions.lastBreath(archer, 10), 268);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 279);
+//		Utils.scheduleTask(Archer::shoot, 280);
+//		Utils.scheduleTask(() -> Actions.salvation(archer), 284);
+//		Utils.scheduleTask(Archer::shoot, 285);
+//		Utils.scheduleTask(() -> Actions.salvation(archer), 289);
+//		Utils.scheduleTask(Archer::shoot, 290);
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 291);
+//		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 292);
+//		if(doContinue) {
+//			Utils.scheduleTask(() -> necron(true), 350);
+//		}
 	}
 
 	private static void necron(boolean doContinue) {
@@ -1097,7 +1141,7 @@ public class Archer {
 		// begin moving tick 834
 		// last arrow fired tick 844
 		// Dragon spawns tick 847
-		Utils.scheduleTask(Archer::rapidFire, 814);
+		Utils.scheduleTask(() -> rapidFire(201), 814);
 		for(int i = 814; i < 850; i += 5) {
 			Utils.scheduleTask(Archer::shoot, i);
 			Utils.scheduleTask(() -> Actions.salvation(archer), i + 1);
@@ -1185,7 +1229,7 @@ public class Archer {
 		}, 10);
 	}
 
-	private static void explosiveShot() {
+	public static void explosiveShot() {
 		Vector v = archer.getLocation().getDirection();
 		Location lLeft = archer.getLocation().clone().add(v);
 		lLeft.setYaw(lLeft.getYaw() - 6);
@@ -1199,7 +1243,7 @@ public class Archer {
 		lRight.setY(lRight.getY() + 1.62);
 
 		for(Location shootLoc : List.of(lLeft, l, lRight)) {
-			Arrow arrow = world.spawnArrow(l, shootLoc.getDirection(), 4, 0.1F);
+			Arrow arrow = world.spawnArrow(l, shootLoc.getDirection(), 2.5f, 0);
 			arrow.setDamage(0);
 			arrow.setPierceLevel(1);
 			arrow.setShooter(archer);
@@ -1229,10 +1273,10 @@ public class Archer {
 		}
 	}
 
-	private static void rapidFire() {
-		for(int i = 0; i < 201; i += 4) {
+	private static void rapidFire(int ticks) {
+		for(int i = 0; i < ticks; i += 4) {
 			Utils.scheduleTask(() -> {
-				Arrow arrow = world.spawnArrow(archer.getEyeLocation().add(archer.getEyeLocation()), archer.getEyeLocation().getDirection(), 4, 0);
+				Arrow arrow = world.spawnArrow(archer.getEyeLocation().add(archer.getEyeLocation().getDirection()), archer.getEyeLocation().getDirection(), 3, 0);
 				arrow.setDamage(15);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(archer);

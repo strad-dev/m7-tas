@@ -68,7 +68,7 @@ public class Mage {
 				Actions.swapItems(mage, 1, 28);
 				Actions.swapItems(mage, 3, 30);
 				Actions.swapItems(mage, 6, 33);
-				Utils.scheduleTask(() -> goldor(false), 60);
+//				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Actions.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
