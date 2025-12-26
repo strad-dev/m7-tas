@@ -2,6 +2,8 @@ package plugin;
 
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.level.ServerEntity;
@@ -11,9 +13,9 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftWither;
+import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
@@ -24,6 +26,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public class JoinListener implements Listener {
 	/**
@@ -45,8 +48,30 @@ public class JoinListener implements Listener {
 				ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 				ServerLevel world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
 
-				ServerEntity entry = new ServerEntity(world, npc, 0, false, packet -> {
-				}, new HashSet<>());
+				ServerEntity entry = new ServerEntity(world, npc, 0, false,
+						new ServerEntity.Synchronizer() {
+							@Override
+							public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
+								// No-op for fake players
+							}
+
+							@Override
+							public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
+								// No-op for fake players
+							}
+
+							@Override
+							public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet,
+																	  Predicate<ServerPlayer> filter) {
+								// No-op for fake players
+							}
+
+							@Override
+							public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet,
+																			 Predicate<ServerPlayer> filter) {
+								// No-op for fake players
+							}
+						}, new HashSet<>());
 
 				// 2) Build the “ADD_PLAYER” info packet
 				EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);

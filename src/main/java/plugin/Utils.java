@@ -11,7 +11,7 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -95,7 +95,7 @@ public class Utils {
 	public static void syncHand(Player fake) {
 		ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 		// get whatever ItemStack is in their selected slot
-		net.minecraft.world.item.ItemStack handStack = npc.getInventory().getSelected();
+		net.minecraft.world.item.ItemStack handStack = npc.getInventory().getSelectedItem();
 
 		// build an equipment packet for MAIN_HAND
 		ClientboundSetEquipmentPacket equipPkt = new ClientboundSetEquipmentPacket(npc.getId(), Collections.singletonList(Pair.of(EquipmentSlot.MAINHAND, handStack)));
@@ -177,10 +177,6 @@ public class Utils {
 			inventorySyncTask.cancel();
 			inventorySyncTask = null;
 		}
-	}
-
-	public static void broadcastTitle(String title) {
-
 	}
 
 	/**

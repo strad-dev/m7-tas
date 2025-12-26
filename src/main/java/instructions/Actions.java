@@ -1,7 +1,6 @@
 package instructions;
 
 import com.mojang.datafixers.util.Pair;
-import jline.internal.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
@@ -23,8 +22,8 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
@@ -47,6 +46,7 @@ import org.joml.Vector3f;
 import plugin.M7tas;
 import plugin.Utils;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -172,9 +172,6 @@ public class Actions {
 				// Set the delta movement to maintain client-side interpolation
 				nmsEntity.setDeltaMovement(motion);
 
-				// Mark position as changed
-				nmsEntity.hasImpulse = true;
-
 				// Send position update to all nearby players
 				if(nmsEntity instanceof ServerPlayer serverPlayer) {
 					// For players, use the connection teleport
@@ -240,7 +237,7 @@ public class Actions {
 		ServerPlayer npc = cp.getHandle();
 
 		// Update the NMS held-slot index
-		npc.getInventory().setSelectedHotbarSlot(hotbarIndex);
+		npc.getInventory().setSelectedSlot(hotbarIndex);
 
 		// Tell that player's client "your held slot is now hotbarIndex"
 		ClientboundSetHeldSlotPacket heldPkt = new ClientboundSetHeldSlotPacket(hotbarIndex);
@@ -585,7 +582,7 @@ public class Actions {
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 40);
 		Utils.scheduleTask(() -> {
-			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_HOWL, 1.0F, 1.5F);
+			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
 			p.addScoreboardTag("RagBuff");
 			if(p.getName().equals("Archer")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 1));
@@ -1360,7 +1357,7 @@ public class Actions {
 		BlockPos blockPos = new BlockPos(rayTrace.getHitBlock().getX(), rayTrace.getHitBlock().getY(), rayTrace.getHitBlock().getZ());
 
 		// Get the block state
-		BlockState blockState = nmsPlayer.serverLevel().getBlockState(blockPos);
+		BlockState blockState = nmsPlayer.level().getBlockState(blockPos);
 
 		// Check if it's actually a lever
 		if(!(blockState.getBlock() instanceof LeverBlock)) {
@@ -1382,7 +1379,7 @@ public class Actions {
 
 		// Perform the interaction directly through the block's use method
 		// For levers, we use useWithoutItem since they don't require an item
-		InteractionResult result = blockState.useWithoutItem(nmsPlayer.serverLevel(), nmsPlayer, hitResult);
+		InteractionResult result = blockState.useWithoutItem(nmsPlayer.level(), nmsPlayer, hitResult);
 
 		// Check if interaction was successful
 		if(result.consumesAction()) {
@@ -1392,7 +1389,7 @@ public class Actions {
 		} else {
 
 			// Try alternative approach with item
-			result = blockState.useItemOn(itemInHand, nmsPlayer.serverLevel(), nmsPlayer, InteractionHand.MAIN_HAND, hitResult);
+			result = blockState.useItemOn(itemInHand, nmsPlayer.level(), nmsPlayer, InteractionHand.MAIN_HAND, hitResult);
 
 			if(result.consumesAction()) {
 				nmsPlayer.swing(InteractionHand.MAIN_HAND, true);

@@ -6,7 +6,7 @@ import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftWitherSkeleton;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
@@ -217,7 +217,7 @@ public class Storm {
 				facingLoc.setPitch(pitch);
 				miner.teleport(facingLoc);
 
-				net.minecraft.world.entity.monster.WitherSkeleton nmsWitherSkeleton = (net.minecraft.world.entity.monster.WitherSkeleton) ((CraftWitherSkeleton) miner).getHandle();
+				net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWitherSkeleton = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((CraftWitherSkeleton) miner).getHandle();
 
 				// This single line makes the skeleton raise its arms
 				nmsWitherSkeleton.setAggressive(true);
@@ -253,7 +253,7 @@ public class Storm {
 			facingLoc.setPitch(pitch);
 			sentry.teleport(facingLoc);
 
-			net.minecraft.world.entity.monster.WitherSkeleton nmsWitherSkeleton = (net.minecraft.world.entity.monster.WitherSkeleton) ((CraftWitherSkeleton) sentry).getHandle();
+			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWitherSkeleton = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((CraftWitherSkeleton) sentry).getHandle();
 
 			// This single line makes the skeleton raise its arms
 			nmsWitherSkeleton.setAggressive(true);

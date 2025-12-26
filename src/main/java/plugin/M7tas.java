@@ -31,29 +31,29 @@ import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
 import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ClientInformation;
-import net.minecraft.server.level.ServerEntity;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.*;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
+import net.minecraft.world.level.GameType;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.*;
-import org.bukkit.craftbukkit.v1_21_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R3.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_21_R3.profile.CraftPlayerProfile;
+import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -75,6 +75,7 @@ import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompleter, Listener {
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
@@ -112,13 +113,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}
 	}
 
-	/*
-	 * Archer - akc0303
-	 * Berserk - AsapIcey
-	 * Healer - Meepy_
-	 * Mage - Beethoven_
-	 * Tank - cookiethebald
-	 */
 	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Healer", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Tank", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
 	/**
@@ -145,7 +139,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 	private static ItemStack getCustomHead(String displayName, String identifier, String textureValue, String textureSignature) {
 		GameProfile gp = new GameProfile(UUID.randomUUID(), identifier);
-		gp.getProperties().put("textures", new Property("textures", textureValue, textureSignature));
+		gp.properties().put("textures", new Property("textures", textureValue, textureSignature));
 
 		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
 
@@ -520,8 +514,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					}
 
 					Set<Player> hidden = hiddenFakePlayers.remove(p);
-					if (hidden != null) {
-						for (Player hiddenFake : hidden) {
+					if(hidden != null) {
+						for(Player hiddenFake : hidden) {
 							showFakePlayerToSpectator(p, hiddenFake);
 						}
 					}
@@ -631,61 +625,61 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	@SuppressWarnings("NullableProblems")
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-		if (!(sender instanceof Player)) {
+		if(!(sender instanceof Player)) {
 			return new ArrayList<>();
 		}
 
 		List<String> completions = new ArrayList<>();
 		String cmdName = command.getName().toLowerCase();
 
-		switch (cmdName) {
+		switch(cmdName) {
 			case "tas" -> {
-				if (args.length == 1) {
+				if(args.length == 1) {
 					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking"};
 					String input = args[0].toLowerCase();
 
-					for (String section : sections) {
+					for(String section : sections) {
 						// Check if the section starts with the input
-						if (section.toLowerCase().startsWith(input)) {
+						if(section.toLowerCase().startsWith(input)) {
 							completions.add(section);
 						}
 					}
-				} else if (args.length > 1) {
+				} else if(args.length > 1) {
 					// TAS command only accepts one argument, return empty list for any additional arguments
 					return completions;
 				}
 			}
 
 			case "spectate" -> {
-				if (args.length == 1) {
+				if(args.length == 1) {
 					// Get available classes from fakePlayers map
-					for (String role : fakePlayers.keySet()) {
-						if (role.toLowerCase().startsWith(args[0].toLowerCase())) {
+					for(String role : fakePlayers.keySet()) {
+						if(role.toLowerCase().startsWith(args[0].toLowerCase())) {
 							completions.add(role);
 						}
 					}
-				} else if (args.length > 1) {
+				} else if(args.length > 1) {
 					// Spectate only accepts one argument
 					return completions;
 				}
 			}
 
 			case "simulate" -> {
-				if (args.length == 1) {
+				if(args.length == 1) {
 					String[] simCommands = {"undo", "bonzo", "move"};
-					for (String cmd : simCommands) {
-						if (cmd.startsWith(args[0].toLowerCase())) {
+					for(String cmd : simCommands) {
+						if(cmd.startsWith(args[0].toLowerCase())) {
 							completions.add(cmd);
 						}
 					}
-				} else if (args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move"))) {
+				} else if(args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move"))) {
 					// Player selection for bonzo/move
-					for (String role : fakePlayers.keySet()) {
-						if (role.toLowerCase().startsWith(args[1].toLowerCase())) {
+					for(String role : fakePlayers.keySet()) {
+						if(role.toLowerCase().startsWith(args[1].toLowerCase())) {
 							completions.add(role);
 						}
 					}
-				} else if ((args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move")) && args.length <= 6) {
+				} else if((args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move")) && args.length <= 6) {
 					// For bonzo/move, we don't provide completions for x,y,z,duration
 					// but we also don't want to show completions after the expected number of args
 					return completions;
@@ -708,18 +702,18 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	public static GameProfile buildFakeProfileWithSkin(UUID fakeUuid, String fakeName, UUID skinOwnerUuid) {
 		// 1) Create a GameProfile only for fetching textures
 		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
-		ProfileResult result = nms.getSessionService().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
+		ProfileResult result = nms.services().sessionService().fetchProfile(skinOwnerUuid, /* requireSecure= */ true);
 
 		if(result == null) {
 			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
 		}
 
 		GameProfile populated = result.profile();
-		Property tex = populated.getProperties().get("textures").iterator().next();
+		Property tex = populated.properties().get("textures").iterator().next();
 
 		// 3) Create your own NPC profile and copy in that Property:
 		GameProfile npcProfile = new GameProfile(fakeUuid, fakeName);
-		npcProfile.getProperties().put("textures", tex);
+		npcProfile.properties().put("textures", tex);
 		return npcProfile;
 	}
 
@@ -758,16 +752,39 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			case "Mage" -> nmsPlayer.setPos(-132.5, 69, -76.5);
 			case "Tank" -> nmsPlayer.setPos(-196.5, 68, -222.5);
 		}
-		nmsWorld.addFreshEntity(nmsPlayer, CreatureSpawnEvent.SpawnReason.CUSTOM);
+		nmsWorld.addNewPlayer(nmsPlayer);
 		nmsPlayer.setNoGravity(false);
 
 		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
-		// MinecraftServer.ag() -> MinecraftServer.getPlayerList()
-		nmsServer.getPlayerList().load(nmsPlayer);
+		PlayerList playerList = nmsServer.getPlayerList();
+		playerList.players.add(nmsPlayer);
+		nmsPlayer.setGameMode(GameType.DEFAULT_MODE);
 
 		// 7) Send packets to Players about the new Entity
-		ServerEntity entry = new ServerEntity(nmsWorld, nmsPlayer, 0, false, packet -> {
-		}, new HashSet<>());
+		ServerEntity entry = new ServerEntity(nmsWorld, nmsPlayer, 0, false,
+				new ServerEntity.Synchronizer() {
+					@Override
+					public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
+						// No-op for fake players
+					}
+
+					@Override
+					public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
+						// No-op for fake players
+					}
+
+					@Override
+					public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet,
+															  Predicate<ServerPlayer> filter) {
+						// No-op for fake players
+					}
+
+					@Override
+					public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet,
+																	 Predicate<ServerPlayer> filter) {
+						// No-op for fake players
+					}
+				}, new HashSet<>());
 
 		EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
 		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
@@ -849,8 +866,30 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			ServerPlayer nmsFake = craftFake.getHandle();
 
 			// Re-send spawn packet to show the fake player again
-			ServerEntity entry = new ServerEntity(nmsFake.serverLevel(), nmsFake, 0, false, packet -> {
-			}, new HashSet<>());
+			ServerEntity entry = new ServerEntity(nmsFake.level(), nmsFake, 0, false,
+					new ServerEntity.Synchronizer() {
+						@Override
+						public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
+							// No-op for fake players
+						}
+
+						@Override
+						public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
+							// No-op for fake players
+						}
+
+						@Override
+						public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet,
+																  Predicate<ServerPlayer> filter) {
+							// No-op for fake players
+						}
+
+						@Override
+						public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet,
+																		 Predicate<ServerPlayer> filter) {
+							// No-op for fake players
+						}
+					}, new HashSet<>());
 			ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
 			nmsSpectator.connection.send(spawn);
 
@@ -960,7 +999,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	}
 
 	private void updateFakePlayerVisibility() {
-		for (Player spectator : spectatorMap.keySet()) {
+		for(Player spectator : spectatorMap.keySet()) {
 			Player spectatedFake = spectatorMap.get(spectator);
 			Location spectatorLocation = spectatedFake.getLocation(); // Use fake player's location
 
@@ -968,21 +1007,21 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			Set<Player> shouldBeHidden = new HashSet<>();
 
 			// Check all other fake players
-			for (Player otherFake : fakePlayers.values()) {
-				if (otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
+			for(Player otherFake : fakePlayers.values()) {
+				if(otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
 
 				double distance = spectatorLocation.distance(otherFake.getLocation());
 
-				if (distance <= HIDE_DISTANCE) {
+				if(distance <= HIDE_DISTANCE) {
 					shouldBeHidden.add(otherFake);
 
 					// Hide if not already hidden
-					if (!currentlyHidden.contains(otherFake)) {
+					if(!currentlyHidden.contains(otherFake)) {
 						hideFakePlayerFromSpectator(spectator, otherFake);
 					}
 				} else {
 					// Show if currently hidden
-					if (currentlyHidden.contains(otherFake)) {
+					if(currentlyHidden.contains(otherFake)) {
 						showFakePlayerToSpectator(spectator, otherFake);
 					}
 				}
