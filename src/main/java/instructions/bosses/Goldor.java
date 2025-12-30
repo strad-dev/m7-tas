@@ -7,13 +7,9 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
-import plugin.M7tas;
 import plugin.Utils;
-
-import java.util.Random;
 
 @SuppressWarnings("DataFlowIssue")
 public class Goldor {
@@ -52,16 +48,16 @@ public class Goldor {
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(goldor, "Goldor"), 1);
 
 		sendChatMessage("Who dares trespass into my domain?");
-		Actions.forceMove(goldor, new Vector(0.1, 0, 0), 200);
+		Actions.move(goldor, new Vector(0.1, 0, 0), 200);
 		Utils.scheduleTask(() -> sendChatMessage("Little ants, plotting and scheming, thinking they are invincibile..."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I won't let you break the factory core, I gave my life to my Master."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("No one matches me in close quarters."), 180);
 		Utils.scheduleTask(() -> Actions.turnHead(goldor, 0f, 0f), 199);
-		Utils.scheduleTask(() -> Actions.forceMove(goldor, new Vector(0, 0, 0.1), 38), 200);
+		Utils.scheduleTask(() -> Actions.move(goldor, new Vector(0, 0, 0.1), 38), 200);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("You have done it, you destroyed the factory...");
 			Actions.turnHead(goldor, 94.722f, 0f);
-			Actions.forceMove(goldor, new Vector(-0.7931, 0, -0.0655), 52);
+			Actions.move(goldor, new Vector(-0.7931, 0, -0.0655), 52);
 			Actions.setWitherArmor(goldor, false);
 		}, 238);
 		Utils.scheduleTask(() -> {

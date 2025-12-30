@@ -6,6 +6,7 @@ import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
@@ -59,12 +60,12 @@ public class Utils {
 	 */
 	public static void syncInventory(Player fakePlayer) {
 		List<Player> spectators = M7tas.getSpectatingPlayers(fakePlayer);
-		if (!spectators.isEmpty()) {
+		if(!spectators.isEmpty()) {
 			// Method 1: Use packet-based sync (more efficient)
 			forceFullInventorySync(fakePlayer, spectators);
 
 			// Method 2: Also sync held item slot specifically
-			for (Player spectator : spectators) {
+			for(Player spectator : spectators) {
 				spectator.getInventory().setHeldItemSlot(fakePlayer.getInventory().getHeldItemSlot());
 			}
 		}
@@ -82,8 +83,8 @@ public class Utils {
 		ClientboundContainerSetContentPacket pkt = new ClientboundContainerSetContentPacket(menu.containerId, menu.incrementStateId(), menu.getItems(), menu.getCarried());
 
 		// Send to specified targets
-		for (Player target : targets) {
-			if (target instanceof CraftPlayer craftTarget) {
+		for(Player target : targets) {
+			if(target instanceof CraftPlayer craftTarget) {
 				craftTarget.getHandle().connection.send(pkt);
 			}
 		}
@@ -105,11 +106,25 @@ public class Utils {
 
 		// Also update spectators' held items
 		List<Player> spectators = M7tas.getSpectatingPlayers(fake);
-		for (Player spectator : spectators) {
+		for(Player spectator : spectators) {
 			spectator.getInventory().setHeldItemSlot(fake.getInventory().getHeldItemSlot());
 			spectator.getInventory().setItemInMainHand(fake.getInventory().getItemInMainHand());
 			spectator.updateInventory();
 		}
+	}
+
+	/**
+	 * Simulates a packet sent from a Player to the server.
+	 *
+	 * @param player The player who sent the packet
+	 * @param packet The packet to simulate
+	 */
+	@SuppressWarnings({"unchecked", "rawtypes"})
+	public static void simulatePacket(Player player, Packet<?> packet) {
+		if(!(player instanceof CraftPlayer craftPlayer)) return;
+
+		ServerPlayer serverPlayer = craftPlayer.getHandle();
+		((Packet) packet).handle(serverPlayer.connection);
 	}
 
 	/**
@@ -149,7 +164,7 @@ public class Utils {
 
 	public static void restoreInventory(Player player) {
 		M7tas.PlayerInventoryBackup backup = M7tas.originalInventories.remove(player);
-		if (backup != null) {
+		if(backup != null) {
 			backup.restore(player);
 		}
 	}
@@ -157,15 +172,15 @@ public class Utils {
 	private static BukkitTask inventorySyncTask;
 
 	public static void startInventorySync() {
-		if (inventorySyncTask != null) {
+		if(inventorySyncTask != null) {
 			inventorySyncTask.cancel();
 		}
 
 		inventorySyncTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
 			// Re-sync all spectators' inventories every 10 ticks
-			for (Player spectator : M7tas.getSpectatorMap().keySet()) {
+			for(Player spectator : M7tas.getSpectatorMap().keySet()) {
 				Player fakePlayer = M7tas.getSpectatorMap().get(spectator);
-				if (fakePlayer != null) {
+				if(fakePlayer != null) {
 					syncInventory(fakePlayer);
 				}
 			}
@@ -173,7 +188,7 @@ public class Utils {
 	}
 
 	public static void stopInventorySync() {
-		if (inventorySyncTask != null) {
+		if(inventorySyncTask != null) {
 			inventorySyncTask.cancel();
 			inventorySyncTask = null;
 		}

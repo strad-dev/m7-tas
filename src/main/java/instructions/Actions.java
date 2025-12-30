@@ -3,16 +3,13 @@ package instructions;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
-import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
-import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
-import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,6 +19,8 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_21_R7.block.CraftBlock;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.damage.DamageSource;
@@ -48,93 +47,45 @@ import plugin.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @SuppressWarnings("unused")
 public class Actions {
-	private static final Map<LivingEntity, Vec3> entityVelocities = new ConcurrentHashMap<>();
 
 	/**
-	 * Moves a LivingEntity in this Direction for t ticks. The Vector refers to the number of blocks per tick.
-	 * The Y component of the vector is ignored if it is 0. Vertical motion is left to gravity or other methods.
+	 * Simulates a Player pressing movement input keys.
 	 *
-	 * @param entity        The LivingEntity to move
-	 * @param perTick       The Distance to be moved per tick
-	 * @param durationTicks The total number of Ticks to move
+	 * @param player        The Player sending movement packets
+	 * @param input         The input keys being held down<br>Valid Input includes WASD, jump, shift, and sprint.
+	 * @param durationTicks How long the keys are held down for
 	 */
-	public static void move(LivingEntity entity, Vector perTick, int durationTicks) {
+	public static void move(Player player, Input input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
-		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
-
-		net.minecraft.world.entity.LivingEntity nmsEntity = cle.getHandle();
-
-		// This variable stores the requested motion from the caller.
-		Vec3 motion = new Vec3(perTick.getX(), perTick.getY(), perTick.getZ());
-		Vec3 storedVelocity = entityVelocities.get(entity);
+		if(!(player instanceof CraftPlayer craftPlayer) || durationTicks <= 0) return;
 
 		new BukkitRunnable() {
 			int ticks = 0;
 
 			@Override
 			public void run() {
-				if(ticks++ >= durationTicks || nmsEntity.isRemoved()) {
+				if(ticks++ >= durationTicks || !player.isValid()) {
 					cancel();
 					return;
 				}
 
-				boolean onGround = nmsEntity.onGround();
-
-				// This variable stores the motion that can be manipulated if the entity is not on the ground
-				Vec3 finalMotion = motion;
-
-				if(!onGround) {
-					// This is the current velocity of the entity. Empty entry = no velocity
-					Vec3 currentVelocity = entityVelocities.getOrDefault(entity, new Vec3(0, 0, 0));
-					double current = Math.sqrt(currentVelocity.x() * currentVelocity.x() + currentVelocity.z() * currentVelocity.z());
-					double requested = Math.sqrt(motion.x() * motion.x() + motion.z() * motion.z());
-
-					if(current > requested) {
-						// Apply air friction to current velocity
-						double frictionX = currentVelocity.x() * 0.91;
-						double frictionZ = currentVelocity.z() * 0.91;
-
-						double finalX = frictionX;
-						double finalZ = frictionZ;
-
-						// For X axis: check if same direction
-						boolean sameDirectionX = Math.signum(frictionX) == Math.signum(motion.x()) || motion.x() == 0;
-						if(sameDirectionX && Math.abs(frictionX) < Math.abs(motion.x())) {
-							finalX = motion.x();
-						} else if(!sameDirectionX) {
-							// Opposite direction - allow some deceleration/acceleration towards requested
-							double decelFactor = 0.02; // Vanilla-like air control
-							finalX = frictionX + (motion.x() - frictionX) * decelFactor;
-						}
-
-						// For Z axis: check if same direction
-						boolean sameDirectionZ = Math.signum(frictionZ) == Math.signum(motion.z()) || motion.z() == 0;
-						if(sameDirectionZ && Math.abs(frictionZ) < Math.abs(motion.z())) {
-							finalZ = motion.z();
-						} else if(!sameDirectionZ) {
-							// Opposite direction - allow some deceleration/acceleration towards requested
-							double decelFactor = 0.02; // Vanilla-like air control
-							finalZ = frictionZ + (motion.z() - frictionZ) * decelFactor;
-						}
-
-						finalMotion = new Vec3(finalX, perTick.getY(), finalZ);
-					}
-				}
-
-				// Update tracked velocity
-				entityVelocities.put(entity, new Vec3(finalMotion.x(), perTick.getY(), finalMotion.z()));
-
-				// Just move the entity with the calculated motion
-				nmsEntity.move(MoverType.SELF, finalMotion);
+				ServerboundPlayerInputPacket packet = new ServerboundPlayerInputPacket(input);
+				Utils.simulatePacket(player, packet);
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
-	public static void forceMove(LivingEntity entity, Vector perTick, int durationTicks) {
+	/**
+	 * Forces a LivingEntity to move in a given direction regardless of physics
+	 *
+	 * @param entity        The Entity being moved
+	 * @param perTick       The distance to move per tick
+	 * @param durationTicks Number of ticks to move
+	 */
+	public static void move(LivingEntity entity, Vector perTick, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
 		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
 
@@ -160,47 +111,25 @@ public class Actions {
 				Vec3 newPos = currentPos.add(motion);
 
 				// Force teleport to the new position
-				nmsEntity.teleportTo(newPos.x(), newPos.y(), newPos.z());
-
-				// Update the bounding box to the new position
-				nmsEntity.setBoundingBox(nmsEntity.getBoundingBox().move(
-						newPos.x() - currentPos.x(),
-						newPos.y() - currentPos.y(),
-						newPos.z() - currentPos.z()
-				));
+				nmsEntity.absSnapTo(newPos.x(), newPos.y(), newPos.z(), nmsEntity.getYRot(), nmsEntity.getXRot());
 
 				// Set the delta movement to maintain client-side interpolation
 				nmsEntity.setDeltaMovement(motion);
 
+				nmsEntity.hurtMarked = true;
+
 				// Send position update to all nearby players
 				if(nmsEntity instanceof ServerPlayer serverPlayer) {
 					// For players, use the connection teleport
-					serverPlayer.connection.teleport(newPos.x(), newPos.y(), newPos.z(),
-							nmsEntity.getYRot(), nmsEntity.getXRot());
+					serverPlayer.connection.teleport(newPos.x(), newPos.y(), newPos.z(), nmsEntity.getYRot(), nmsEntity.getXRot());
 				} else {
 					// For non-player entities, send teleport packet to all tracking players
-					PositionMoveRotation posRotation = new PositionMoveRotation(
-							newPos, // position
-							Vec3.ZERO, // delta movement (we handle this separately)
-							nmsEntity.getYRot(), // yaw
-							nmsEntity.getXRot()  // pitch
-					);
-
-					ClientboundTeleportEntityPacket teleportPacket = ClientboundTeleportEntityPacket.teleport(
-							nmsEntity.getId(), // entity ID
-							posRotation, // position and rotation
-							Set.of(), // no relative flags - all values are absolute
-							nmsEntity.onGround() // on ground status
-					);
-
+					PositionMoveRotation posRotation = new PositionMoveRotation(newPos, Vec3.ZERO, nmsEntity.getYRot(), nmsEntity.getXRot());
+					ClientboundTeleportEntityPacket teleportPacket = ClientboundTeleportEntityPacket.teleport(nmsEntity.getId(), posRotation, Set.of(), nmsEntity.onGround());
 					Utils.broadcastPacket(teleportPacket);
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
-	}
-
-	public static void clearVelocity(LivingEntity entity) {
-		entityVelocities.remove(entity);
 	}
 
 	/**
@@ -208,6 +137,7 @@ public class Actions {
 	 *
 	 * @param p The Player entity that is to perform the jump. Requires the player to be on the ground.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new move() with jump input being set to true")
 	public static void jump(Player p) {
 		if(!(p instanceof CraftPlayer cp)) {
 			return;
@@ -297,17 +227,108 @@ public class Actions {
 	 * @param pitch  look pitch, in degrees (–90 = straight up, +90 = straight down)
 	 */
 	public static void turnHead(Entity entity, float yaw, float pitch) {
-		Location to = entity.getLocation();
-		to.setYaw(yaw);
-		to.setPitch(pitch);
-
-		if(entity instanceof Player) {
-			// Use Utils.teleport for players
-			Utils.teleport((Player) entity, to);
-		} else {
+		if(!(entity instanceof Player player)) {
 			// For non-player entities, use regular teleport
+			Location to = entity.getLocation();
+			to.setYaw(yaw);
+			to.setPitch(pitch);
 			entity.teleport(to);
+			return;
 		}
+
+		// For fake players, use rotation packet
+		ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+
+		// Create rotation-only packet (no position change)
+		ServerboundMovePlayerPacket.Rot rotationPacket = new ServerboundMovePlayerPacket.Rot(yaw, pitch, serverPlayer.onGround(), serverPlayer.horizontalCollision);
+
+		// Simulate the packet - server will handle rotation and broadcasting
+		Utils.simulatePacket(player, rotationPacket);
+	}
+
+	/**
+	 * Simulates a fake player performing a left click.
+	 *
+	 * @param p The fake player performing the left click
+	 */
+	public static void leftClick(Player p) {
+		if(!(p instanceof CraftPlayer cp)) return;
+
+		ServerPlayer serverPlayer = cp.getHandle();
+
+		// Always send swing packet for left click
+		ServerboundSwingPacket swingPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
+		Utils.simulatePacket(p, swingPacket);
+
+		// Check for entity target
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity);
+
+		if(entityRay != null && entityRay.getHitEntity() != null) {
+			// Attack the entity
+			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
+
+			ServerboundInteractPacket attackPacket = ServerboundInteractPacket.createAttackPacket(nmsEntity, serverPlayer.isShiftKeyDown());
+			Utils.simulatePacket(p, attackPacket);
+			return;
+		}
+
+		// Check for block target
+		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
+
+		if(blockRay != null && blockRay.getHitBlock() != null) {
+			// Start breaking the block
+			Block block = blockRay.getHitBlock();
+			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
+			Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
+
+			ServerboundPlayerActionPacket breakPacket = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, pos, direction, 0);
+			Utils.simulatePacket(p, breakPacket);
+		}
+	}
+
+	/**
+	 * Simulates a fake player performing a right click.
+	 *
+	 * @param p The fake player performing the right click
+	 */
+	public static void rightClick(Player p) {
+		if(!(p instanceof CraftPlayer cp)) return;
+
+		ServerPlayer serverPlayer = cp.getHandle();
+
+		// Check for entity target
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p);
+
+		if(entityRay != null && entityRay.getHitEntity() != null) {
+			// Interact with the entity
+			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
+
+			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
+			Utils.simulatePacket(p, interactPacket);
+			return;
+		}
+
+		// Check for block target
+		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
+
+		if(blockRay != null && blockRay.getHitBlock() != null) {
+			// Use item on block
+			Block block = blockRay.getHitBlock();
+			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
+			Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
+
+			Vec3 hitVec = new Vec3(blockRay.getHitPosition().getX(), blockRay.getHitPosition().getY(), blockRay.getHitPosition().getZ());
+
+			BlockHitResult blockHit = new BlockHitResult(hitVec, direction, pos, false);
+
+			ServerboundUseItemOnPacket useOnBlockPacket = new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND, blockHit, 0);
+			Utils.simulatePacket(p, useOnBlockPacket);
+			return;
+		}
+
+		// Right click air (eat food, throw pearl, use item ability)
+		ServerboundUseItemPacket useItemPacket = new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, serverPlayer.getYRot(), serverPlayer.getXRot());
+		Utils.simulatePacket(p, useItemPacket);
 	}
 
 	/**
@@ -319,6 +340,7 @@ public class Actions {
 	 *           have sounds and effects applied, and serve as the source of damage to nearby entities.
 	 * @param to The location the player will be teleported to. Use null if this ability is being used in the boss fight.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void witherImpact(Player p, @Nullable Location to) {
 		p.setFallDistance(0);
 
@@ -388,6 +410,7 @@ public class Actions {
 	 * @param p  The player to be teleported and simulated.
 	 * @param to The target location to which the player will be teleported.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void etherwarp(Player p, Location to) {
 		Location from = p.getLocation();
 		to.setYaw(from.getYaw());
@@ -410,6 +433,7 @@ public class Actions {
 	 * @param p  The player to be teleported and simulated.
 	 * @param to The target location to which the player will be teleported.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void AOTV(Player p, Location to) {
 		Location from = p.getLocation();
 		to.setYaw(from.getYaw());
@@ -429,6 +453,7 @@ public class Actions {
 	 * @param p The player that is breaking the block
 	 * @param b The Block to simulate the stonking action on.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void stonk(Player p, Block b) {
 		if(p != null) {
 			swingHand(p);
@@ -453,6 +478,7 @@ public class Actions {
 	 *          and cause a sound effect to play in their current world at their location.
 	 * @param b The block that will be replaced with air as part of the ghost pick action.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Removed functionality.")
 	public static void ghostPick(Player p, Block b) {
 		if(p != null) {
 			swingHand(p);
@@ -475,6 +501,7 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void superboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
@@ -496,6 +523,7 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void crypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
@@ -558,6 +586,7 @@ public class Actions {
 	 *
 	 * @param p The player for whom the pearl throw is being simulated.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void throwPearl(Player p) {
 		EnderPearl pearl = (EnderPearl) p.getWorld().spawnEntity(p.getEyeLocation(), EntityType.ENDER_PEARL);
 		pearl.setGravity(true);
@@ -577,6 +606,7 @@ public class Actions {
 	 *
 	 * @param p The player for whom the "Rag Axe" ability simulation will be performed.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void rag(Player p) {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
 		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
@@ -597,6 +627,7 @@ public class Actions {
 	/**
 	 *
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	public static void salvation(Player p) {
 		double powerBonus;
 		try {
@@ -679,6 +710,7 @@ public class Actions {
 	 *
 	 * @param p Where the axe originates from
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void AOTS(Player p) {
 		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
 
@@ -746,6 +778,7 @@ public class Actions {
 	 * @param p     The player firing the arrow.
 	 * @param ticks How long the player should draw the bow back for.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void lastBreath(Player p, int ticks) {
 		// Calculate arrow velocity based on draw time
 		float charge = Math.min((float) ticks / 20.0F, 1.0F); // 20 ticks = full charge
@@ -886,6 +919,7 @@ public class Actions {
 	 *
 	 * @param p The player using the ability
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void iceSpray(Player p) {
 		Location l = p.getEyeLocation();
 		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 1000);
@@ -905,6 +939,7 @@ public class Actions {
 	 *
 	 * @param p The player originating.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	public static void flamingFlay(Player p) {
 		swingHand(p);
 		Location startLoc = p.getEyeLocation();
@@ -980,6 +1015,7 @@ public class Actions {
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	public static void gyro(Player p, Location l) {
 		swingHand(p);
 		p.getWorld().spawnParticle(Particle.PORTAL, l, 1000);
@@ -1181,9 +1217,9 @@ public class Actions {
 	 *
 	 * @param p the Player instance on which the Bonzo simulation will be applied
 	 * @param v the Vector representing the direction and magnitude for the simulation
-	 *
 	 * @return Returns the BukkitRunnable that can be cancelled.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static BukkitRunnable bonzo(Player p, Vector v) {
 		if(!(p instanceof CraftPlayer cp)) {
 			return null;
@@ -1225,7 +1261,6 @@ public class Actions {
 				} else {
 					if(nmsEntity.onGround()) {
 						cancel();
-						entityVelocities.remove(p);
 						return;
 					}
 					move(p, impulseVector, 1);
@@ -1238,7 +1273,6 @@ public class Actions {
 
 	public static void lavaJump(Player p, boolean big) {
 		p.teleport(p.getLocation().add(0, 3.5, 0));
-		entityVelocities.remove(p); // lava jumps reset player velicities on hypixel
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0F, 1.0F);
 		Utils.scheduleTask(() -> {
 			if(!(p instanceof CraftPlayer cp)) {
@@ -1312,6 +1346,7 @@ public class Actions {
 	 * Simulate a left‐click (attack) in the air.  Your other plugin
 	 * will see a PlayerInteractEvent with Action.LEFT_CLICK_AIR.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	@SuppressWarnings("ConstantConditions")
 	public static void swingHand(Player p) {
 		// 1) do the swing animation
@@ -1327,22 +1362,25 @@ public class Actions {
 	 * Simulate a right‐click (use) in the air.  Your other plugin
 	 * will see a PlayerInteractEvent with Action.RIGHT_CLICK_AIR.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	@SuppressWarnings("ConstantConditions")
-	public static void rightClick(Player p) {
+	public static void rightClickOld(Player p) {
 		PlayerInteractEvent ev = new PlayerInteractEvent(p, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 		Bukkit.getPluginManager().callEvent(ev);
 	}
 
 	@SuppressWarnings("ConstantConditions")
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void rightClickWithSpectators(Player p) {
 		for(Player spectator : M7tas.getSpectatingPlayers(p)) {
 			PlayerInteractEvent ev = new PlayerInteractEvent(spectator, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 			Bukkit.getPluginManager().callEvent(ev);
 		}
 
-		rightClick(p);
+		rightClickOld(p);
 	}
 
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void rightClickLever(Player p) {
 		// Get the NMS player
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();

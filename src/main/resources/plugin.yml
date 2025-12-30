@@ -24,4 +24,4 @@ commands:
     usage: /simulate <move|bonzo|undo> <x> <y> <z> <duration>
 
 depend:
-  - SkyBlockInVanilla
+  - SkyBlock

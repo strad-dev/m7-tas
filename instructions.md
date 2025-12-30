@@ -174,6 +174,8 @@ If the item is a custom player head, include the name of the player: `minecraft:
 
 Custom SkyBlock items will utilize the following format: `[String id],[String customname]`, where the id is the item ID in the SkyBlock in Vanilla plugin.
 
+Note: The hard dependency on the plugin is removed, but the format is still the same.
+
 Here is an example of a Mage's inventory:
 ```
 Beethoven_

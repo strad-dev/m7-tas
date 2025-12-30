@@ -113,7 +113,7 @@ public class Storm {
 		}, 545);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(storm, 7.1f, 35.6f);
-			Actions.forceMove(storm, new Vector(-0.0735, -0.375, 0.59), 19);
+			Actions.move(storm, new Vector(-0.0735, -0.375, 0.59), 19);
 		}, 665);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
@@ -131,7 +131,7 @@ public class Storm {
 				player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
 			}
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
-			Actions.forceMove(storm, new Vector(-0.6, -0.02, 0), 90);
+			Actions.move(storm, new Vector(-0.6, -0.02, 0), 90);
 		}, 694);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
