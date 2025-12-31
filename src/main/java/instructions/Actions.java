@@ -331,6 +331,12 @@ public class Actions {
 		Utils.simulatePacket(p, useItemPacket);
 	}
 
+	public static void stopRightClick(Player p) {
+		ServerPlayer sp = ((CraftPlayer) p).getHandle();
+		ServerboundPlayerActionPacket packet = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, sp.blockPosition(), Direction.DOWN, 0);
+		Utils.simulatePacket(p, packet);
+	}
+
 	/**
 	 * Simulates the impact of a wither ability on the player and surrounding entities.
 	 * This involves teleportation, damage dealing to nearby entities, sound effects,
@@ -501,7 +507,6 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
-	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void superboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
@@ -523,7 +528,6 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
-	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void crypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");

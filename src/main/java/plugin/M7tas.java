@@ -24,21 +24,26 @@
 
 package plugin;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
+import io.netty.channel.embedded.EmbeddedChannel;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.*;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.*;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerEntity;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.server.players.PlayerList;
@@ -47,6 +52,7 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.level.GameType;
 import org.bukkit.*;
+import org.bukkit.Color;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.*;
 import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
@@ -57,7 +63,6 @@ import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -74,7 +79,11 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 
+import java.awt.*;
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.List;
 import java.util.function.Predicate;
 
 public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompleter, Listener {
@@ -138,8 +147,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	}
 
 	private static ItemStack getCustomHead(String displayName, String identifier, String textureValue, String textureSignature) {
-		GameProfile gp = new GameProfile(UUID.randomUUID(), identifier);
-		gp.properties().put("textures", new Property("textures", textureValue, textureSignature));
+		Multimap<String, Property> props = HashMultimap.create();
+		props.put("textures", new Property("textures", textureValue, textureSignature));
+		PropertyMap propertyMap = new PropertyMap(props);
+		GameProfile gp = new GameProfile(UUID.randomUUID(), identifier, propertyMap);
 
 		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
 
@@ -355,8 +366,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	public void onEnable() {
 		plugin = this;
 
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "m7tasactivatewitherfight");
-
 		setupNoCollisionTeam();
 
 		// register ALL our commands on the same executor
@@ -566,7 +575,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						}
 						lastSimulated = applyTo;
 						lastSimulatedLocation = applyTo.getLocation();
-						Actions.bonzo(applyTo, new Vector(x, y, z));
+//						Actions.bonzo(applyTo, new Vector(x, y, z));
 						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
 						return true;
 					}
@@ -608,7 +617,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks.");
 						return true;
 					}
-					case "explosiveshot" -> Archer.explosiveShot();
+//					case "explosiveshot" -> Archer.explosiveShot();
 				}
 				return false;
 			}
@@ -709,12 +718,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}
 
 		GameProfile populated = result.profile();
-		Property tex = populated.properties().get("textures").iterator().next();
+		Multimap<String, Property> properties = HashMultimap.create();
+		for(Property tex : populated.properties().get("textures")) {
+			properties.put("textures", tex);
+		}
 
-		// 3) Create your own NPC profile and copy in that Property:
-		GameProfile npcProfile = new GameProfile(fakeUuid, fakeName);
-		npcProfile.properties().put("textures", tex);
-		return npcProfile;
+		PropertyMap propertyMap = new PropertyMap(properties);
+		return new GameProfile(fakeUuid, fakeName, propertyMap);
 	}
 
 	/**
@@ -737,7 +747,22 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		ServerPlayer nmsPlayer = new ServerPlayer(nmsServer, nmsWorld, profile, clientInfo);
 
 		// 4) Fake-network channel & connection
-		Connection nm = new Connection(PacketFlow.CLIENTBOUND);
+		Connection nm = new Connection(PacketFlow.SERVERBOUND) {
+			{
+				this.channel = new EmbeddedChannel();
+				this.address = new InetSocketAddress("127.0.0.1", 0);
+			}
+
+			@Override
+			public void send(Packet<?> packet) {
+
+			}
+
+			@Override
+			public boolean isConnected() {
+				return true;
+			}
+		};
 		CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
 		// ServerPlayer = ServerPlayer
 		// ServerPlayer.f -> ServerPlayer.PlayerConnection
@@ -752,52 +777,17 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			case "Mage" -> nmsPlayer.setPos(-132.5, 69, -76.5);
 			case "Tank" -> nmsPlayer.setPos(-196.5, 68, -222.5);
 		}
-		nmsWorld.addNewPlayer(nmsPlayer);
 		nmsPlayer.setNoGravity(false);
 
 		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
-		PlayerList playerList = nmsServer.getPlayerList();
-		playerList.players.add(nmsPlayer);
-		nmsPlayer.setGameMode(GameType.DEFAULT_MODE);
+		nmsServer.getPlayerList().placeNewPlayer(nm, nmsPlayer, cookie);
 
 		// 7) Send packets to Players about the new Entity
-		ServerEntity entry = new ServerEntity(nmsWorld, nmsPlayer, 0, false,
-				new ServerEntity.Synchronizer() {
-					@Override
-					public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
-						// No-op for fake players
-					}
 
-					@Override
-					public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
-						// No-op for fake players
-					}
+		nmsPlayer.getEntityData().set(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION, (byte) 0x7F);
 
-					@Override
-					public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet,
-															  Predicate<ServerPlayer> filter) {
-						// No-op for fake players
-					}
+		ClientboundSetEntityDataPacket entityMetadataPacket = new ClientboundSetEntityDataPacket(nmsPlayer.getId(), nmsPlayer.getEntityData().getNonDefaultValues());
 
-					@Override
-					public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet,
-																	 Predicate<ServerPlayer> filter) {
-						// No-op for fake players
-					}
-				}, new HashSet<>());
-
-		EnumSet<ClientboundPlayerInfoUpdatePacket.Action> addAction = EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER);
-		ClientboundPlayerInfoUpdatePacket add = new ClientboundPlayerInfoUpdatePacket(addAction, List.of(nmsPlayer));
-		ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsPlayer, entry);
-
-		SynchedEntityData synchedEntityData = nmsPlayer.getEntityData();
-		EntityDataAccessor<Byte> accessor = new EntityDataAccessor<>(17, EntityDataSerializers.BYTE);
-		synchedEntityData.set(accessor, (byte) 127);
-
-		ClientboundSetEntityDataPacket entityMetadataPacket = new ClientboundSetEntityDataPacket(nmsPlayer.getId(), synchedEntityData.getNonDefaultValues());
-
-		Utils.broadcastPacket(add);
-		Utils.broadcastPacket(spawn);
 		Utils.broadcastPacket(entityMetadataPacket);
 
 		Player bukkitPlayer = nmsPlayer.getBukkitEntity();
@@ -866,30 +856,27 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			ServerPlayer nmsFake = craftFake.getHandle();
 
 			// Re-send spawn packet to show the fake player again
-			ServerEntity entry = new ServerEntity(nmsFake.level(), nmsFake, 0, false,
-					new ServerEntity.Synchronizer() {
-						@Override
-						public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
-							// No-op for fake players
-						}
+			ServerEntity entry = new ServerEntity(nmsFake.level(), nmsFake, 0, false, new ServerEntity.Synchronizer() {
+				@Override
+				public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
+					// No-op for fake players
+				}
 
-						@Override
-						public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
-							// No-op for fake players
-						}
+				@Override
+				public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
+					// No-op for fake players
+				}
 
-						@Override
-						public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet,
-																  Predicate<ServerPlayer> filter) {
-							// No-op for fake players
-						}
+				@Override
+				public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {
+					// No-op for fake players
+				}
 
-						@Override
-						public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet,
-																		 Predicate<ServerPlayer> filter) {
-							// No-op for fake players
-						}
-					}, new HashSet<>());
+				@Override
+				public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {
+					// No-op for fake players
+				}
+			}, new HashSet<>());
 			ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
 			nmsSpectator.connection.send(spawn);
 

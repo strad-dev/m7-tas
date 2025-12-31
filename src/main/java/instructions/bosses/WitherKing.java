@@ -232,7 +232,7 @@ public class WitherKing {
 	}
 
 	public static void placeRelic(Player player) {
-		Actions.swingHand(player);
+		Actions.leftClick(player);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 		player.getInventory().setItem(8, M7tas.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
 		Actions.setHotbarSlot(player, 8);

@@ -29,7 +29,7 @@ public class Healer {
 				Actions.teleport(healer, new Location(world, -28.5, 69, -44.5, -168.6f, 2.9f));
 				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
 				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
-				Utils.scheduleTask(() -> Actions.rightClickWithSpectators(healer), 101);
+				Utils.scheduleTask(() -> Actions.rightClick(healer), 101);
 				Utils.scheduleTask(() -> {
 					Actions.setHotbarSlot(healer, 1);
 					Actions.move(healer, new Vector(0, 0, 0.8634), 5);
