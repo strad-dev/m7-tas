@@ -19,6 +19,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -136,6 +137,13 @@ public class CustomItems implements Listener {
 	}
 
 	@EventHandler
+	public void onBlockBreak(BlockBreakEvent e) {
+		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
+			stonk(e.getBlock());
+		}
+	}
+
+	@EventHandler
 	public void onEntityShootBow(EntityShootBowEvent e) {
 		if(e.getEntity() instanceof Player p) {
 			String id = getID(p.getInventory().getItemInMainHand());
@@ -200,12 +208,6 @@ public class CustomItems implements Listener {
 			if(id != null) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					switch(id) {
-						case "skyblock/combat/stonk" -> {
-							e.setCancelled(true);
-							if(e instanceof PlayerInteractEvent && action.equals(Action.LEFT_CLICK_BLOCK)) {
-								stonk((PlayerInteractEvent) e);
-							}
-						}
 						case "skyblock/combat/terminator" -> {
 							e.setCancelled(true);
 							salvation(p);
@@ -623,15 +625,10 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	public static void stonk(PlayerInteractEvent e) {
-		Block b = e.getClickedBlock();
-
+	public static void stonk(Block b) {
 		// Capture block data
 		Material m = b.getType();
 		BlockData data = b.getBlockData().clone();
-
-		// Remove block
-		b.setType(Material.AIR);
 
 		// Schedule restoration with Java's scheduler
 		Utils.scheduleTask(() -> {
