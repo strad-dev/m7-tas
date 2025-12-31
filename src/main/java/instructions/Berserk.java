@@ -1,20 +1,14 @@
 package instructions;
 
-import instructions.bosses.Goldor;
-import instructions.bosses.Maxor;
-import instructions.bosses.WitherKing;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.WitherSkeleton;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
-import java.util.List;
 import java.util.Objects;
 
 public class Berserk {
@@ -34,7 +28,7 @@ public class Berserk {
 					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
 				}, 60);
 				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 61);
-				Utils.scheduleTask(() -> Actions.rightClickWithSpectators(berserk), 101);
+				Utils.scheduleTask(() -> Actions.rightClick(berserk), 101);
 				Utils.scheduleTask(() -> {
 					Actions.setHotbarSlot(berserk, 1);
 					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);

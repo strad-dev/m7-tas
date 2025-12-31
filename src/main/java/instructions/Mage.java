@@ -1,24 +1,10 @@
 package instructions;
 
-import instructions.bosses.Goldor;
-import instructions.bosses.Maxor;
-import instructions.bosses.WitherKing;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
-import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
-import org.bukkit.entity.*;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.potion.PotionEffectType;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import plugin.Utils;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 public class Mage {
 	private static Player mage;

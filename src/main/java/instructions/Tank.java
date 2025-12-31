@@ -1,17 +1,13 @@
 package instructions;
 
-import instructions.bosses.Goldor;
-import instructions.bosses.Storm;
-import instructions.bosses.WitherKing;
-import org.bukkit.*;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
-import java.util.List;
 import java.util.Objects;
 
 public class Tank {

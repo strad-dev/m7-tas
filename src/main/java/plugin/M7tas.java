@@ -46,13 +46,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
-import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
-import net.minecraft.world.level.GameType;
 import org.bukkit.*;
-import org.bukkit.Color;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.*;
 import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
@@ -79,11 +76,8 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 import org.bukkit.util.Vector;
 
-import java.awt.*;
-import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.List;
 import java.util.function.Predicate;
 
 public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompleter, Listener {
@@ -378,6 +372,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
 		getServer().getPluginManager().registerEvents(new WithersNotImmuneToArrows(), this);
 		getServer().getPluginManager().registerEvents(new PearlHelper(), this);
+		getServer().getPluginManager().registerEvents(new MiscListener(), this);
+		getServer().getPluginManager().registerEvents(new CustomItems(), this);
 
 		Utils.startInventorySync();
 		startSpectatorSync();
@@ -630,30 +626,92 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			case "getcustomitems" -> {
 				ItemStack stonk = new ItemStack(Material.DIAMOND_PICKAXE);
 				stonk.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
-				stonk.getItemMeta().getLore().add("skyblock/combat/stonk");
-				ItemStack term = new ItemStack(Material.BOW);
-				term.getItemMeta().getLore().add("skyblock/combat/terminator");
-				ItemStack gyro = new ItemStack(Material.BLAZE_ROD);
-				gyro.getItemMeta().getLore().add("skyblock/combat/gyro");
-				ItemStack scylla = new ItemStack(Material.IRON_SWORD);
-				scylla.getItemMeta().getLore().add("skyblock/combat/scylla");
-				ItemStack aotv = new ItemStack(Material.DIAMOND_SHOVEL);
-				aotv.getItemMeta().getLore().add("skyblock/combat/aotv");
-				ItemStack rag = new ItemStack(Material.GOLDEN_AXE);
-				rag.getItemMeta().getLore().add("skyblock/combat/rag");
-				ItemStack aots = new ItemStack(Material.DIAMOND_AXE);
-				aots.getItemMeta().getLore().add("skyblock/combat/aots");
-				ItemStack iceSpray = new ItemStack(Material.STICK);
-				iceSpray.getItemMeta().getLore().add("skyblock/combat/ice_spray");
-				ItemStack flamingFlay = new ItemStack(Material.FISHING_ROD);
-				flamingFlay.getItemMeta().getLore().add("skyblock/combat/flaming_flay");
-				ItemStack bonzo = new ItemStack(Material.BREEZE_ROD);
-				bonzo.getItemMeta().getLore().add("skyblock/combat/bonzo");
-				ItemStack lb = new ItemStack(Material.BOW);
-				lb.getItemMeta().getLore().add("skyblock/combat/last_breath");
+				ItemMeta meta = stonk.getItemMeta();
+				List<String> lore = new ArrayList<>();
+				lore.add("skyblock/combat/stonk");
+				meta.setLore(lore);
+				stonk.setItemMeta(meta);
 
-				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots);
+				ItemStack term = new ItemStack(Material.BOW);
+				meta = term.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/terminator");
+				meta.setLore(lore);
+				term.setItemMeta(meta);
+
+				ItemStack gyro = new ItemStack(Material.BLAZE_ROD);
+				meta = gyro.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/gyro");
+				meta.setLore(lore);
+				gyro.setItemMeta(meta);
+
+				ItemStack scylla = new ItemStack(Material.IRON_SWORD);
+				meta = scylla.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/scylla");
+				meta.setLore(lore);
+				scylla.setItemMeta(meta);
+
+				ItemStack aotv = new ItemStack(Material.DIAMOND_SHOVEL);
+				meta = aotv.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/aotv");
+				meta.setLore(lore);
+				aotv.setItemMeta(meta);
+
+				ItemStack rag = new ItemStack(Material.GOLDEN_AXE);
+				meta = rag.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/rag");
+				meta.setLore(lore);
+				rag.setItemMeta(meta);
+
+				ItemStack aots = new ItemStack(Material.DIAMOND_AXE);
+				meta = aots.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/aots");
+				meta.setLore(lore);
+				aots.setItemMeta(meta);
+
+				ItemStack iceSpray = new ItemStack(Material.STICK);
+				meta = iceSpray.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/ice_spray");
+				meta.setLore(lore);
+				iceSpray.setItemMeta(meta);
+
+				ItemStack flamingFlay = new ItemStack(Material.FISHING_ROD);
+				meta = flamingFlay.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/flaming_flay");
+				meta.setLore(lore);
+				flamingFlay.setItemMeta(meta);
+
+				ItemStack bonzo = new ItemStack(Material.BREEZE_ROD);
+				meta = bonzo.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/bonzo");
+				meta.setLore(lore);
+				bonzo.setItemMeta(meta);
+
+				ItemStack lb = new ItemStack(Material.BOW);
+				meta = lb.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/last_breath");
+				meta.setLore(lore);
+				lb.setItemMeta(meta);
+
+				ItemStack tac = new ItemStack(Material.BLAZE_ROD);
+				meta = tac.getItemMeta();
+				lore = new ArrayList<>();
+				lore.add("skyblock/combat/tac");
+				meta.setLore(lore);
+				tac.setItemMeta(meta);
+
+				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, tac, gyro, aots, tac);
 				p.sendMessage(ChatColor.GREEN + "Here you go!");
+				return true;
 			}
 		}
 		return false;

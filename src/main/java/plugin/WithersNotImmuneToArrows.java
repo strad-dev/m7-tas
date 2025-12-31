@@ -7,7 +7,6 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -20,8 +19,8 @@ import java.util.UUID;
 public class WithersNotImmuneToArrows implements Listener {
 	private static final Set<UUID> processingArrows = new HashSet<>();
 
-	@EventHandler(priority = EventPriority.HIGHEST)
-	public void onProjectileHitWither(ProjectileHitEvent event) {
+	@EventHandler
+	public void onProjectileHit(ProjectileHitEvent event) {
 		// Only handle arrows hitting withers
 		if(!(event.getEntity() instanceof Arrow arrow)) {
 			return;

@@ -16,17 +16,13 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -247,6 +243,10 @@ public class CustomItems implements Listener {
 						case "skyblock/combat/terminator" -> {
 							e.setCancelled(true);
 							terminator(p);
+						}
+						case "skyblock/combat/tac" -> {
+							e.setCancelled(true);
+							tac(p);
 						}
 					}
 				}
@@ -975,6 +975,25 @@ public class CustomItems implements Listener {
 				arrow.addScoreboardTag("TerminatorArrow");
 			}, 10);
 		}
+	}
+
+	public static void tac(Player p) {
+		Location l = p.getLocation();
+		p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);
+		p.playSound(p, Sound.ITEM_FLINTANDSTEEL_USE, 1.0F, 1.0F);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.793701F), 10);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.890899F), 20);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.943874F), 30);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1F), 40);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1.059463F), 50);
+		Utils.scheduleTask(() -> {
+			p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
+			p.teleport(l);
+			p.setVelocity(new Vector(0, 0, 0));
+			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
+		}, 60);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 63);
+		Utils.scheduleTask(() -> p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 66);
 	}
 
 	public static void mageBeam(Player p) {
