@@ -6,7 +6,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -198,13 +197,14 @@ public class CustomItems implements Listener {
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if(id != null && System.currentTimeMillis() >= cooldowns.getOrDefault(p.getUniqueId(), 0L)) {
-				cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 50);
+			if(id != null) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					switch(id) {
 						case "skyblock/combat/stonk" -> {
 							e.setCancelled(true);
-							stonk(p);
+							if(e instanceof PlayerInteractEvent && action.equals(Action.LEFT_CLICK_BLOCK)) {
+								stonk((PlayerInteractEvent) e);
+							}
 						}
 						case "skyblock/combat/terminator" -> {
 							e.setCancelled(true);
@@ -217,42 +217,45 @@ public class CustomItems implements Listener {
 					}
 				}
 				if(action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK)) {
-					switch(id) {
-						case "skyblock/combat/scylla" -> {
-							e.setCancelled(true);
-							witherImpact(p);
-						}
-						case "skyblock/combat/aotv" -> {
-							e.setCancelled(true);
-							aotv(p);
-						}
-						case "skyblock/combat/rag" -> {
-							e.setCancelled(true);
-							rag(p);
-						}
-						case "skyblock/combat/aots" -> {
-							e.setCancelled(true);
-							aots(p);
-						}
-						case "skyblock/combat/ice_spray" -> {
-							e.setCancelled(true);
-							iceSpray(p);
-						}
-						case "skyblock/combat/flaming_flay" -> {
-							e.setCancelled(true);
-							flamingFlay(p);
-						}
-						case "skyblock/combat/bonzo" -> {
-							e.setCancelled(true);
-							bonzo(p);
-						}
-						case "skyblock/combat/terminator" -> {
-							e.setCancelled(true);
-							terminator(p);
-						}
-						case "skyblock/combat/tac" -> {
-							e.setCancelled(true);
-							tac(p);
+					if(System.currentTimeMillis() >= cooldowns.getOrDefault(p.getUniqueId(), 0L)) {
+						cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 50);
+						switch(id) {
+							case "skyblock/combat/scylla" -> {
+								e.setCancelled(true);
+								witherImpact(p);
+							}
+							case "skyblock/combat/aotv" -> {
+								e.setCancelled(true);
+								aotv(p);
+							}
+							case "skyblock/combat/rag" -> {
+								e.setCancelled(true);
+								rag(p);
+							}
+							case "skyblock/combat/aots" -> {
+								e.setCancelled(true);
+								aots(p);
+							}
+							case "skyblock/combat/ice_spray" -> {
+								e.setCancelled(true);
+								iceSpray(p);
+							}
+							case "skyblock/combat/flaming_flay" -> {
+								e.setCancelled(true);
+								flamingFlay(p);
+							}
+							case "skyblock/combat/bonzo" -> {
+								e.setCancelled(true);
+								bonzo(p);
+							}
+							case "skyblock/combat/terminator" -> {
+								e.setCancelled(true);
+								terminator(p);
+							}
+							case "skyblock/combat/tac" -> {
+								e.setCancelled(true);
+								tac(p);
+							}
 						}
 					}
 				}
@@ -289,24 +292,24 @@ public class CustomItems implements Listener {
 			Block headBlock = feetBlock.getRelative(BlockFace.UP);
 
 			// If either block is solid, we need to adjust
-			if (!feetBlock.isPassable() || !headBlock.isPassable()) {
+			if(!feetBlock.isPassable() || !headBlock.isPassable()) {
 				// Try to move up until we find a safe spot or reach original height
 				double originalY = p.getLocation().getY();
 				Location checkLoc = targetLoc.clone();
 				boolean foundSafe = false;
 
 				// Check up to 10 blocks up or until at original height
-				for (int i = 0; i < 10; i++) {
+				for(int i = 0; i < 10; i++) {
 					checkLoc.add(0, 1, 0);
 					Block checkFeet = checkLoc.getBlock();
 					Block checkHead = checkFeet.getRelative(BlockFace.UP);
 
 					// Check if this position is safe (2 blocks of air)
-					if (checkFeet.isPassable() && checkHead.isPassable()) {
+					if(checkFeet.isPassable() && checkHead.isPassable()) {
 						// Also check we're not in a 1-block gap if above original height
-						if (checkLoc.getY() >= originalY) {
+						if(checkLoc.getY() >= originalY) {
 							Block aboveHead = checkHead.getRelative(BlockFace.UP);
-							if (!aboveHead.isPassable()) {
+							if(!aboveHead.isPassable()) {
 								// This is a 1-block gap at or above original height - skip it
 								continue;
 							}
@@ -318,31 +321,31 @@ public class CustomItems implements Listener {
 					}
 
 					// Stop if we've reached or passed original height and no safe spot
-					if (checkLoc.getY() >= originalY) {
+					if(checkLoc.getY() >= originalY) {
 						break;
 					}
 				}
 
 				// If no safe spot found, don't teleport
-				if (!foundSafe) {
+				if(!foundSafe) {
 					p.sendMessage("§cNo safe teleport location found!");
 					return;
 				}
 			}
 
 			// Additional check for 1-block tall spaces when below original height
-			if (targetLoc.getY() < p.getLocation().getY()) {
+			if(targetLoc.getY() < p.getLocation().getY()) {
 				Block aboveHead = targetLoc.getBlock().getRelative(BlockFace.UP, 2);
-				if (!aboveHead.isPassable()) {
+				if(!aboveHead.isPassable()) {
 					// This would put player in crawl mode below their starting position
 					// Try to find a better spot
-					for (int i = 1; i <= 3; i++) {
+					for(int i = 1; i <= 3; i++) {
 						Location upLoc = targetLoc.clone().add(0, i, 0);
 						Block upFeet = upLoc.getBlock();
 						Block upHead = upFeet.getRelative(BlockFace.UP);
 						Block upAbove = upHead.getRelative(BlockFace.UP);
 
-						if (upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
+						if(upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
 							targetLoc = upLoc;
 							break;
 						}
@@ -405,12 +408,7 @@ public class CustomItems implements Listener {
 							// Check if we've backtracked enough (at least 0.5 blocks from wall)
 							if(checkLoc.distance(hitLocation) >= 0.5) {
 								// Center on the block we're in
-								Location l = new Location(
-										checkLoc.getWorld(),
-										Math.floor(checkLoc.getX()) + 0.5,
-										Math.floor(checkLoc.getY()),
-										Math.floor(checkLoc.getZ()) + 0.5
-								);
+								Location l = new Location(checkLoc.getWorld(), Math.floor(checkLoc.getX()) + 0.5, Math.floor(checkLoc.getY()), Math.floor(checkLoc.getZ()) + 0.5);
 								l.setYaw(origin.getYaw());
 								l.setPitch(origin.getPitch());
 								p.teleport(l);
@@ -421,12 +419,7 @@ public class CustomItems implements Listener {
 
 					// If we found a safe spot but didn't teleport yet
 					if(lastSafe != null) {
-						Location l = new Location(
-								lastSafe.getWorld(),
-								Math.floor(lastSafe.getX()) + 0.5,
-								Math.floor(lastSafe.getY()),
-								Math.floor(lastSafe.getZ()) + 0.5
-						);
+						Location l = new Location(lastSafe.getWorld(), Math.floor(lastSafe.getX()) + 0.5, Math.floor(lastSafe.getY()), Math.floor(lastSafe.getZ()) + 0.5);
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
@@ -490,24 +483,24 @@ public class CustomItems implements Listener {
 				Block headBlock = feetBlock.getRelative(BlockFace.UP);
 
 				// If either block is solid, we need to adjust
-				if (!feetBlock.isPassable() || !headBlock.isPassable()) {
+				if(!feetBlock.isPassable() || !headBlock.isPassable()) {
 					// Try to move up until we find a safe spot or reach original height
 					double originalY = p.getLocation().getY();
 					Location checkLoc = targetLoc.clone();
 					boolean foundSafe = false;
 
 					// Check up to 10 blocks up or until at original height
-					for (int i = 0; i < 10; i++) {
+					for(int i = 0; i < 10; i++) {
 						checkLoc.add(0, 1, 0);
 						Block checkFeet = checkLoc.getBlock();
 						Block checkHead = checkFeet.getRelative(BlockFace.UP);
 
 						// Check if this position is safe (2 blocks of air)
-						if (checkFeet.isPassable() && checkHead.isPassable()) {
+						if(checkFeet.isPassable() && checkHead.isPassable()) {
 							// Also check we're not in a 1-block gap if above original height
-							if (checkLoc.getY() >= originalY) {
+							if(checkLoc.getY() >= originalY) {
 								Block aboveHead = checkHead.getRelative(BlockFace.UP);
-								if (!aboveHead.isPassable()) {
+								if(!aboveHead.isPassable()) {
 									// This is a 1-block gap at or above original height - skip it
 									continue;
 								}
@@ -519,31 +512,31 @@ public class CustomItems implements Listener {
 						}
 
 						// Stop if we've reached or passed original height and no safe spot
-						if (checkLoc.getY() >= originalY) {
+						if(checkLoc.getY() >= originalY) {
 							break;
 						}
 					}
 
 					// If no safe spot found, don't teleport
-					if (!foundSafe) {
+					if(!foundSafe) {
 						p.sendMessage("§cNo safe teleport location found!");
 						return;
 					}
 				}
 
 				// Additional check for 1-block tall spaces when below original height
-				if (targetLoc.getY() < p.getLocation().getY()) {
+				if(targetLoc.getY() < p.getLocation().getY()) {
 					Block aboveHead = targetLoc.getBlock().getRelative(BlockFace.UP, 2);
-					if (!aboveHead.isPassable()) {
+					if(!aboveHead.isPassable()) {
 						// This would put player in crawl mode below their starting position
 						// Try to find a better spot
-						for (int i = 1; i <= 3; i++) {
+						for(int i = 1; i <= 3; i++) {
 							Location upLoc = targetLoc.clone().add(0, i, 0);
 							Block upFeet = upLoc.getBlock();
 							Block upHead = upFeet.getRelative(BlockFace.UP);
 							Block upAbove = upHead.getRelative(BlockFace.UP);
 
-							if (upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
+							if(upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
 								targetLoc = upLoc;
 								break;
 							}
@@ -606,12 +599,7 @@ public class CustomItems implements Listener {
 								// Check if we've backtracked enough (at least 0.5 blocks from wall)
 								if(checkLoc.distance(hitLocation) >= 0.5) {
 									// Center on the block we're in
-									Location l = new Location(
-											checkLoc.getWorld(),
-											Math.floor(checkLoc.getX()) + 0.5,
-											Math.floor(checkLoc.getY()),
-											Math.floor(checkLoc.getZ()) + 0.5
-									);
+									Location l = new Location(checkLoc.getWorld(), Math.floor(checkLoc.getX()) + 0.5, Math.floor(checkLoc.getY()), Math.floor(checkLoc.getZ()) + 0.5);
 									l.setYaw(origin.getYaw());
 									l.setPitch(origin.getPitch());
 									p.teleport(l);
@@ -622,12 +610,7 @@ public class CustomItems implements Listener {
 
 						// If we found a safe spot but didn't teleport yet
 						if(lastSafe != null) {
-							Location l = new Location(
-									lastSafe.getWorld(),
-									Math.floor(lastSafe.getX()) + 0.5,
-									Math.floor(lastSafe.getY()),
-									Math.floor(lastSafe.getZ()) + 0.5
-							);
+							Location l = new Location(lastSafe.getWorld(), Math.floor(lastSafe.getX()) + 0.5, Math.floor(lastSafe.getY()), Math.floor(lastSafe.getZ()) + 0.5);
 							l.setYaw(origin.getYaw());
 							l.setPitch(origin.getPitch());
 							p.teleport(l);
@@ -640,60 +623,21 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	private static class StonkRestore {
-		final Location location;
-		final Material material;
-		final BlockData blockData;
-		final long restoreTime;
+	public static void stonk(PlayerInteractEvent e) {
+		Block b = e.getClickedBlock();
 
-		StonkRestore(Location loc, Material mat, BlockData data) {
-			this.location = loc.clone();
-			this.material = mat;
-			this.blockData = data.clone();
-			this.restoreTime = System.currentTimeMillis() + 10000; // 10 seconds
-		}
-	}
+		// Capture block data
+		Material m = b.getType();
+		BlockData data = b.getBlockData().clone();
 
-	private static final List<StonkRestore> pendingRestores = new ArrayList<>();
+		// Remove block
+		b.setType(Material.AIR);
 
-	public static void stonk(Player p) {
-		RayTraceResult result = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
-		if(result != null) {
-			Block b = result.getHitBlock();
-
-			// Store restoration data
-			pendingRestores.add(new StonkRestore(
-					b.getLocation(),
-					b.getType(),
-					b.getBlockData()
-			));
-
-			// Remove block
-			b.setType(Material.AIR);
-		}
-	}
-
-	// Run this task continuously
-	static {
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				long now = System.currentTimeMillis();
-				Iterator<StonkRestore> it = pendingRestores.iterator();
-
-				while (it.hasNext()) {
-					StonkRestore restore = it.next();
-					if (now >= restore.restoreTime) {
-						Block block = restore.location.getBlock();
-						if (block.getType() == Material.AIR) {
-							block.setType(restore.material);
-							block.setBlockData(restore.blockData);
-						}
-						it.remove();
-					}
-				}
-			}
-		}.runTaskTimer(M7tas.getInstance(), 20, 20); // Check every second
+		// Schedule restoration with Java's scheduler
+		Utils.scheduleTask(() -> {
+			b.setType(m);
+			b.setBlockData(data);
+		}, 200);
 	}
 
 	public static void rag(Player p) {
@@ -783,11 +727,7 @@ public class CustomItems implements Listener {
 		// If looking straight up/down (no horizontal component), use player yaw
 		if(Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) {
 			float yaw = startLoc.getYaw();
-			spinAxis = new Vector(
-					-Math.cos(Math.toRadians(yaw)),
-					0,
-					-Math.sin(Math.toRadians(yaw))
-			);
+			spinAxis = new Vector(-Math.cos(Math.toRadians(yaw)), 0, -Math.sin(Math.toRadians(yaw)));
 		}
 
 		// Spawn an ItemDisplay entity
@@ -824,17 +764,10 @@ public class CustomItems implements Listener {
 				spinRotation += 36; // Positive for forward spin
 
 				// Create rotation using axis-angle rotation around the spin axis
-				Quaternionf rotation = new Quaternionf().rotateAxis(
-						(float) Math.toRadians(spinRotation),
-						(float) finalSpinAxis.getX(),
-						(float) finalSpinAxis.getY(),
-						(float) finalSpinAxis.getZ()
-				);
+				Quaternionf rotation = new Quaternionf().rotateAxis((float) Math.toRadians(spinRotation), (float) finalSpinAxis.getX(), (float) finalSpinAxis.getY(), (float) finalSpinAxis.getZ());
 
-				axe.setTransformation(new Transformation(
-						new Vector3f(0, 0, 0), // No translation offset
-						rotation,
-						new Vector3f(1, 1, 1), // Normal scale
+				axe.setTransformation(new Transformation(new Vector3f(0, 0, 0), // No translation offset
+						rotation, new Vector3f(1, 1, 1), // Normal scale
 						new Quaternionf() // No right rotation
 				));
 
