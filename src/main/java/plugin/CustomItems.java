@@ -8,6 +8,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
@@ -37,6 +38,8 @@ import org.joml.Vector3f;
 import java.util.*;
 
 public class CustomItems implements Listener {
+	private static final Map<UUID, Long> cooldowns = new HashMap<>();
+
 	public static String getID(ItemStack item) {
 		if(item == null || !item.hasItemMeta()) {
 			return "";
@@ -128,6 +131,8 @@ public class CustomItems implements Listener {
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
 		if(e.getDamager() instanceof Player p) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
+		} else if(e.getDamager() instanceof Projectile && e.getEntity() instanceof LivingEntity entity) {
+			entity.setNoDamageTicks(0);
 		}
 	}
 
@@ -193,7 +198,8 @@ public class CustomItems implements Listener {
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if(id != null) {
+			if(id != null && System.currentTimeMillis() >= cooldowns.getOrDefault(p.getUniqueId(), 0L)) {
+				cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 50);
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					switch(id) {
 						case "skyblock/combat/stonk" -> {
@@ -260,64 +266,188 @@ public class CustomItems implements Listener {
 	}
 
 	public static void witherImpact(Player p) {
-		Location originalLocation = p.getLocation().clone();
-		Location l = p.getEyeLocation();
-		Vector v = l.getDirection();
-		v.setX(v.getX() / 10);
-		v.setY(v.getY() / 10);
-		v.setZ(v.getZ() / 10);
-		for(int i = 0; i < 100; i++) {
-			l.add(v);
-			if(l.getBlock().getType().isSolid()) {
-				l = l.subtract(v).getBlock().getLocation();
-				if(originalLocation.getPitch() > 0) {
-					l.add(0, 1.62, 0);
+		// raytrace???
+		// 1-block tall gap is ok because crawling i guess??
+		// hit block, determine via blockface
+		//		hit bottom
+		//			check if 2 blocks below is possible, otherwise tp to 1 block below
+		//		hit sides
+		//			teleport to the block before the hit block in the raytrace
+		//		hit top
+		//			teleport to the block above
+		// otherwise just move X blocks
+		Location origin = p.getLocation().clone();
+		RayTraceResult result = p.rayTraceBlocks(11.65);
+		if(result == null) {
+			Location targetLoc = p.getLocation().add(p.getLocation().getDirection().multiply(10));
+			targetLoc.setX(Math.floor(targetLoc.getX()) + 0.5);
+			targetLoc.setY(Math.floor(targetLoc.getY()));
+			targetLoc.setZ(Math.floor(targetLoc.getZ()) + 0.5);
+
+			// Check if the target location is safe
+			Block feetBlock = targetLoc.getBlock();
+			Block headBlock = feetBlock.getRelative(BlockFace.UP);
+
+			// If either block is solid, we need to adjust
+			if (!feetBlock.isPassable() || !headBlock.isPassable()) {
+				// Try to move up until we find a safe spot or reach original height
+				double originalY = p.getLocation().getY();
+				Location checkLoc = targetLoc.clone();
+				boolean foundSafe = false;
+
+				// Check up to 10 blocks up or until at original height
+				for (int i = 0; i < 10; i++) {
+					checkLoc.add(0, 1, 0);
+					Block checkFeet = checkLoc.getBlock();
+					Block checkHead = checkFeet.getRelative(BlockFace.UP);
+
+					// Check if this position is safe (2 blocks of air)
+					if (checkFeet.isPassable() && checkHead.isPassable()) {
+						// Also check we're not in a 1-block gap if above original height
+						if (checkLoc.getY() >= originalY) {
+							Block aboveHead = checkHead.getRelative(BlockFace.UP);
+							if (!aboveHead.isPassable()) {
+								// This is a 1-block gap at or above original height - skip it
+								continue;
+							}
+						}
+
+						targetLoc = checkLoc.clone();
+						foundSafe = true;
+						break;
+					}
+
+					// Stop if we've reached or passed original height and no safe spot
+					if (checkLoc.getY() >= originalY) {
+						break;
+					}
 				}
-				l.setYaw(originalLocation.getYaw());
-				l.setPitch(originalLocation.getPitch());
-				l.add(0.5, 0, 0.5);
-				break;
+
+				// If no safe spot found, don't teleport
+				if (!foundSafe) {
+					p.sendMessage("§cNo safe teleport location found!");
+					return;
+				}
+			}
+
+			// Additional check for 1-block tall spaces when below original height
+			if (targetLoc.getY() < p.getLocation().getY()) {
+				Block aboveHead = targetLoc.getBlock().getRelative(BlockFace.UP, 2);
+				if (!aboveHead.isPassable()) {
+					// This would put player in crawl mode below their starting position
+					// Try to find a better spot
+					for (int i = 1; i <= 3; i++) {
+						Location upLoc = targetLoc.clone().add(0, i, 0);
+						Block upFeet = upLoc.getBlock();
+						Block upHead = upFeet.getRelative(BlockFace.UP);
+						Block upAbove = upHead.getRelative(BlockFace.UP);
+
+						if (upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
+							targetLoc = upLoc;
+							break;
+						}
+					}
+				}
+			}
+
+			targetLoc.setYaw(origin.getYaw());
+			targetLoc.setPitch(origin.getPitch());
+			p.teleport(targetLoc);
+		} else {
+			switch(result.getHitBlockFace()) {
+				case SELF -> {
+					// empty case
+				}
+				case UP -> {
+					Location l = result.getHitBlock().getLocation().add(0.5, 1, 0.5);
+					l.setYaw(origin.getYaw());
+					l.setPitch(origin.getPitch());
+					p.teleport(l);
+				}
+				case DOWN -> {
+					Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
+					l.setYaw(origin.getYaw());
+					l.setPitch(origin.getPitch());
+					p.teleport(l);
+				}
+				default -> {
+					// Hit a side face - backtrack until we find a safe spot
+					Location hitLocation = result.getHitPosition().toLocation(p.getWorld());
+					Vector direction = origin.getDirection().normalize();
+
+					// Calculate max backtrack distance (don't go past player's origin)
+					double maxBacktrack = origin.distance(hitLocation);
+
+					// Backtrack from the exact hit point
+					Location checkLoc = hitLocation.clone();
+					Location lastSafe = null;
+					double totalBacktracked = 0;
+
+					// Backtrack in smaller increments for more precision
+					for(int i = 0; i < 100; i++) { // 120 * 0.1 = 12 blocks
+						// Backtrack by 0.1 blocks for precision
+						checkLoc.subtract(direction.clone().multiply(0.1));
+						totalBacktracked += 0.1;
+
+						// Don't go past the player's starting position
+						if(totalBacktracked > maxBacktrack) {
+							break;
+						}
+
+						// Check current block
+						Block feetBlock = checkLoc.getBlock();
+						Block headBlock = feetBlock.getRelative(BlockFace.UP);
+
+						if(feetBlock.isPassable() && headBlock.isPassable()) {
+							// This spot is safe, but keep checking for the optimal position
+							lastSafe = checkLoc.clone();
+
+							// Check if we've backtracked enough (at least 0.5 blocks from wall)
+							if(checkLoc.distance(hitLocation) >= 0.5) {
+								// Center on the block we're in
+								Location l = new Location(
+										checkLoc.getWorld(),
+										Math.floor(checkLoc.getX()) + 0.5,
+										Math.floor(checkLoc.getY()),
+										Math.floor(checkLoc.getZ()) + 0.5
+								);
+								l.setYaw(origin.getYaw());
+								l.setPitch(origin.getPitch());
+								p.teleport(l);
+								break;
+							}
+						}
+					}
+
+					// If we found a safe spot but didn't teleport yet
+					if(lastSafe != null) {
+						Location l = new Location(
+								lastSafe.getWorld(),
+								Math.floor(lastSafe.getX()) + 0.5,
+								Math.floor(lastSafe.getY()),
+								Math.floor(lastSafe.getZ()) + 0.5
+						);
+						l.setYaw(origin.getYaw());
+						l.setPitch(origin.getPitch());
+						p.teleport(l);
+					}
+				}
 			}
 		}
-		l.subtract(0, 1.62, 0);
-		if(!l.getBlock().isEmpty()) {
-			l.add(0, 1, 0);
-		}
 		p.setFallDistance(0);
-		p.teleport(l);
 		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 
 		// implosion
-		p.getWorld().spawnParticle(Particle.EXPLOSION, l, 20);
+		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 20);
 		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
 		List<EntityType> doNotKill = CustomItems.doNotKill();
-		double targetDamage = Objects.requireNonNull(p.getAttribute(Attribute.ATTACK_DAMAGE)).getValue();
 		int damaged = 0;
 		double damage = 0;
-		int smite = 0;
-		int bane = 0;
-		if(p.getInventory().getItemInMainHand().containsEnchantment(Enchantment.SHARPNESS)) {
-			int sharpness = p.getInventory().getItemInMainHand().getEnchantmentLevel(Enchantment.SHARPNESS);
-			targetDamage += sharpness;
-		} else if(p.getInventory().getItemInMainHand().containsEnchantment(Enchantment.SMITE)) {
-			smite = p.getInventory().getItemInMainHand().getEnchantmentLevel(Enchantment.SMITE);
-		} else if(p.getInventory().getItemInMainHand().containsEnchantment(Enchantment.BANE_OF_ARTHROPODS)) {
-			bane = p.getInventory().getItemInMainHand().getEnchantmentLevel(Enchantment.BANE_OF_ARTHROPODS);
-		}
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
-				double tempDamage = targetDamage;
-				if(entity1 instanceof Wither) {
-					tempDamage += 4 + smite * 2.5;
-				} else if(entity1 instanceof Zombie || entity1 instanceof AbstractSkeleton || entity1 instanceof SkeletonHorse || entity1 instanceof ZombieHorse || entity1 instanceof Phantom || entity1 instanceof Zoglin) {
-					tempDamage += smite * 2.5;
-				} else if(entity1 instanceof Spider || entity1 instanceof Bee || entity1 instanceof Silverfish || entity1 instanceof Endermite) {
-					tempDamage += bane * 2.5;
-				}
-				tempDamage = Math.ceil(tempDamage * 0.51);
-				entity1.damage(1, DamageSource.builder(DamageType.MAGIC).build());
+				entity1.damage(1);
 				damaged += 1;
-				damage += tempDamage;
+				damage += 1;
 			}
 		}
 		if(damaged > 0) {
@@ -347,47 +477,223 @@ public class CustomItems implements Listener {
 				p.teleport(l);
 			}
 		} else {
-			Location originalLocation = p.getLocation().clone();
-			Location l = p.getEyeLocation().clone();
-			Vector v = l.getDirection();
-			v.setX(v.getX() / 10);
-			v.setY(v.getY() / 10);
-			v.setZ(v.getZ() / 10);
-			for(int i = 0; i < 120; i++) {
-				l.add(v);
-				if(l.getBlock().getType().isSolid()) {
-					l = l.subtract(v).getBlock().getLocation();
-					if(originalLocation.getPitch() > 0) {
-						l.add(0, 1.62, 0);
+			Location origin = p.getLocation().clone();
+			RayTraceResult result = p.rayTraceBlocks(13.65);
+			if(result == null) {
+				Location targetLoc = p.getLocation().add(p.getLocation().getDirection().multiply(12));
+				targetLoc.setX(Math.floor(targetLoc.getX()) + 0.5);
+				targetLoc.setY(Math.floor(targetLoc.getY()));
+				targetLoc.setZ(Math.floor(targetLoc.getZ()) + 0.5);
+
+				// Check if the target location is safe
+				Block feetBlock = targetLoc.getBlock();
+				Block headBlock = feetBlock.getRelative(BlockFace.UP);
+
+				// If either block is solid, we need to adjust
+				if (!feetBlock.isPassable() || !headBlock.isPassable()) {
+					// Try to move up until we find a safe spot or reach original height
+					double originalY = p.getLocation().getY();
+					Location checkLoc = targetLoc.clone();
+					boolean foundSafe = false;
+
+					// Check up to 10 blocks up or until at original height
+					for (int i = 0; i < 10; i++) {
+						checkLoc.add(0, 1, 0);
+						Block checkFeet = checkLoc.getBlock();
+						Block checkHead = checkFeet.getRelative(BlockFace.UP);
+
+						// Check if this position is safe (2 blocks of air)
+						if (checkFeet.isPassable() && checkHead.isPassable()) {
+							// Also check we're not in a 1-block gap if above original height
+							if (checkLoc.getY() >= originalY) {
+								Block aboveHead = checkHead.getRelative(BlockFace.UP);
+								if (!aboveHead.isPassable()) {
+									// This is a 1-block gap at or above original height - skip it
+									continue;
+								}
+							}
+
+							targetLoc = checkLoc.clone();
+							foundSafe = true;
+							break;
+						}
+
+						// Stop if we've reached or passed original height and no safe spot
+						if (checkLoc.getY() >= originalY) {
+							break;
+						}
 					}
-					l.setYaw(originalLocation.getYaw());
-					l.setPitch(originalLocation.getPitch());
-					l.add(0.5, 0, 0.5);
-					break;
+
+					// If no safe spot found, don't teleport
+					if (!foundSafe) {
+						p.sendMessage("§cNo safe teleport location found!");
+						return;
+					}
+				}
+
+				// Additional check for 1-block tall spaces when below original height
+				if (targetLoc.getY() < p.getLocation().getY()) {
+					Block aboveHead = targetLoc.getBlock().getRelative(BlockFace.UP, 2);
+					if (!aboveHead.isPassable()) {
+						// This would put player in crawl mode below their starting position
+						// Try to find a better spot
+						for (int i = 1; i <= 3; i++) {
+							Location upLoc = targetLoc.clone().add(0, i, 0);
+							Block upFeet = upLoc.getBlock();
+							Block upHead = upFeet.getRelative(BlockFace.UP);
+							Block upAbove = upHead.getRelative(BlockFace.UP);
+
+							if (upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
+								targetLoc = upLoc;
+								break;
+							}
+						}
+					}
+				}
+
+				targetLoc.setYaw(origin.getYaw());
+				targetLoc.setPitch(origin.getPitch());
+				p.teleport(targetLoc);
+			} else {
+				switch(result.getHitBlockFace()) {
+					case SELF -> {
+						// empty case
+					}
+					case UP -> {
+						Location l = result.getHitBlock().getLocation().add(0.5, 1, 0.5);
+						l.setYaw(origin.getYaw());
+						l.setPitch(origin.getPitch());
+						p.teleport(l);
+					}
+					case DOWN -> {
+						Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
+						l.setYaw(origin.getYaw());
+						l.setPitch(origin.getPitch());
+						p.teleport(l);
+					}
+					default -> {
+						// Hit a side face - backtrack until we find a safe spot
+						Location hitLocation = result.getHitPosition().toLocation(p.getWorld());
+						Vector direction = origin.getDirection().normalize();
+
+						// Calculate max backtrack distance (don't go past player's origin)
+						double maxBacktrack = origin.distance(hitLocation);
+
+						// Backtrack from the exact hit point
+						Location checkLoc = hitLocation.clone();
+						Location lastSafe = null;
+						double totalBacktracked = 0;
+
+						// Backtrack in smaller increments for more precision
+						for(int i = 0; i < 120; i++) { // 120 * 0.1 = 12 blocks
+							// Backtrack by 0.1 blocks for precision
+							checkLoc.subtract(direction.clone().multiply(0.1));
+							totalBacktracked += 0.1;
+
+							// Don't go past the player's starting position
+							if(totalBacktracked > maxBacktrack) {
+								break;
+							}
+
+							// Check current block
+							Block feetBlock = checkLoc.getBlock();
+							Block headBlock = feetBlock.getRelative(BlockFace.UP);
+
+							if(feetBlock.isPassable() && headBlock.isPassable()) {
+								// This spot is safe, but keep checking for the optimal position
+								lastSafe = checkLoc.clone();
+
+								// Check if we've backtracked enough (at least 0.5 blocks from wall)
+								if(checkLoc.distance(hitLocation) >= 0.5) {
+									// Center on the block we're in
+									Location l = new Location(
+											checkLoc.getWorld(),
+											Math.floor(checkLoc.getX()) + 0.5,
+											Math.floor(checkLoc.getY()),
+											Math.floor(checkLoc.getZ()) + 0.5
+									);
+									l.setYaw(origin.getYaw());
+									l.setPitch(origin.getPitch());
+									p.teleport(l);
+									break;
+								}
+							}
+						}
+
+						// If we found a safe spot but didn't teleport yet
+						if(lastSafe != null) {
+							Location l = new Location(
+									lastSafe.getWorld(),
+									Math.floor(lastSafe.getX()) + 0.5,
+									Math.floor(lastSafe.getY()),
+									Math.floor(lastSafe.getZ()) + 0.5
+							);
+							l.setYaw(origin.getYaw());
+							l.setPitch(origin.getPitch());
+							p.teleport(l);
+						}
+					}
 				}
 			}
-			l.subtract(0, 1.62, 0);
-			if(!l.getBlock().isEmpty()) {
-				l.add(0, 1, 0);
-			}
 			p.setFallDistance(0);
-			p.teleport(l);
 			p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 		}
 	}
+
+	private static class StonkRestore {
+		final Location location;
+		final Material material;
+		final BlockData blockData;
+		final long restoreTime;
+
+		StonkRestore(Location loc, Material mat, BlockData data) {
+			this.location = loc.clone();
+			this.material = mat;
+			this.blockData = data.clone();
+			this.restoreTime = System.currentTimeMillis() + 10000; // 10 seconds
+		}
+	}
+
+	private static final List<StonkRestore> pendingRestores = new ArrayList<>();
 
 	public static void stonk(Player p) {
 		RayTraceResult result = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
 		if(result != null) {
 			Block b = result.getHitBlock();
-			Material material = b.getType();
-			BlockData blockdata = b.getBlockData();
+
+			// Store restoration data
+			pendingRestores.add(new StonkRestore(
+					b.getLocation(),
+					b.getType(),
+					b.getBlockData()
+			));
+
+			// Remove block
 			b.setType(Material.AIR);
-			Utils.scheduleTask(() -> {
-				b.setType(material);
-				b.setBlockData(blockdata);
-			}, 200);
 		}
+	}
+
+	// Run this task continuously
+	static {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				long now = System.currentTimeMillis();
+				Iterator<StonkRestore> it = pendingRestores.iterator();
+
+				while (it.hasNext()) {
+					StonkRestore restore = it.next();
+					if (now >= restore.restoreTime) {
+						Block block = restore.location.getBlock();
+						if (block.getType() == Material.AIR) {
+							block.setType(restore.material);
+							block.setBlockData(restore.blockData);
+						}
+						it.remove();
+					}
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 20, 20); // Check every second
 	}
 
 	public static void rag(Player p) {
@@ -475,7 +781,7 @@ public class CustomItems implements Listener {
 		Vector spinAxis = new Vector(-dz, 0, dx).normalize();
 
 		// If looking straight up/down (no horizontal component), use player yaw
-		if (Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) {
+		if(Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) {
 			float yaw = startLoc.getYaw();
 			spinAxis = new Vector(
 					-Math.cos(Math.toRadians(yaw)),
@@ -1069,44 +1375,27 @@ public class CustomItems implements Listener {
 					break;
 				}
 			}
-			spawnParticle(l);
+			spawnFireworkParticle(l);
 			l.add(v);
 			if(shouldBreak) {
-				spawnParticle(l);
+				spawnFireworkParticle(l);
 				l.add(v);
-				spawnParticle(l);
+				spawnFireworkParticle(l);
 				l.add(v);
-				spawnParticle(l);
+				spawnFireworkParticle(l);
 				l.add(v);
-				spawnParticle(l);
+				spawnFireworkParticle(l);
 				l.add(v);
-				spawnParticle(l);
+				spawnFireworkParticle(l);
 				l.add(v);
-				spawnParticle(l);
+				spawnFireworkParticle(l);
 				break;
 			}
 		}
 	}
 
-	public static void spawnParticle(Location l) {
-		ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.FIREWORK,  // ParticleParam
-				false,                   // overrideLimiter
-				false,                   // longDistance
-				l.getX(),        // x position
-				l.getY(),        // y position
-				l.getZ(),        // z position
-				0.0f,                   // xDist (no spread)
-				0.0f,                   // yDist (no spread)
-				0.0f,                   // zDist (no spread)
-				0.0f,                   // speed (no velocity)
-				1                       // count (single particle)
-		);
-
-		for(Player player : Objects.requireNonNull(l.getWorld()).getPlayers()) {
-			if(player instanceof CraftPlayer craftPlayer) {
-				ServerPlayer nmsPlayer = craftPlayer.getHandle();
-				nmsPlayer.connection.send(packet);
-			}
-		}
+	public static void spawnFireworkParticle(Location l) {
+		ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.FIREWORK, false, false, l.getX(), l.getY(), l.getZ(), 0.0f, 0.0f, 0.0f, 0.0f, 1);
+		Utils.broadcastPacket(packet);
 	}
 }

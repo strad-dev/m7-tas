@@ -683,7 +683,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack iceSpray = new ItemStack(Material.STICK);
 				meta = iceSpray.getItemMeta();
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Heroic Ice Spray Wand");
+				meta.setDisplayName(ChatColor.GOLD + "Heroic Ice Spray Wand");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/ice_spray");
 				meta.setLore(lore);
