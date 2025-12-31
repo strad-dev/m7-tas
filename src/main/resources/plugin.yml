@@ -22,6 +22,3 @@ commands:
   simulate:
     description: Simulates movement (either walking or bonzo staff)
     usage: /simulate <move|bonzo|undo> <x> <y> <z> <duration>
-
-depend:
-  - SkyBlock

@@ -193,14 +193,6 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	@EventHandler
-	public void onPlayerDropItem(PlayerDropItemEvent e) {
-		switch(e.getPlayer().getName()) {
-			case "Archer" -> e.setCancelled(true);
-			case "Berserk" -> e.setCancelled(true);
-		}
-	}
-
 	@SuppressWarnings({"DuplicateExpressions", "RedundantSuppression"})
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
@@ -228,7 +220,7 @@ public class CustomItems implements Listener {
 							e.setCancelled(true);
 							witherImpact(p);
 						}
-						case "skyblock/combat/aspect_of_the_void" -> {
+						case "skyblock/combat/aotv" -> {
 							e.setCancelled(true);
 							aotv(p);
 						}
@@ -240,7 +232,7 @@ public class CustomItems implements Listener {
 							e.setCancelled(true);
 							aots(p);
 						}
-						case "skyblock/combat/ice_spray_wand" -> {
+						case "skyblock/combat/ice_spray" -> {
 							e.setCancelled(true);
 							iceSpray(p);
 						}
@@ -248,7 +240,7 @@ public class CustomItems implements Listener {
 							e.setCancelled(true);
 							flamingFlay(p);
 						}
-						case "skyblock/combat/bonzo_staff" -> {
+						case "skyblock/combat/bonzo" -> {
 							e.setCancelled(true);
 							bonzo(p);
 						}

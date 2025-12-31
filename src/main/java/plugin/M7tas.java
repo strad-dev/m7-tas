@@ -369,7 +369,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		setupNoCollisionTeam();
 
 		// register ALL our commands on the same executor
-		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset")) {
+		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset", "getcustomitems")) {
 			PluginCommand command = getCommand(cmd);
 			Objects.requireNonNull(command).setExecutor(this);
 			command.setTabCompleter(this);
@@ -626,6 +626,34 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				fakePlayers.values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
 				p.sendMessage("Reset all NPC locations.");
 				return true;
+			}
+			case "getcustomitems" -> {
+				ItemStack stonk = new ItemStack(Material.DIAMOND_PICKAXE);
+				stonk.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
+				stonk.getItemMeta().getLore().add("skyblock/combat/stonk");
+				ItemStack term = new ItemStack(Material.BOW);
+				term.getItemMeta().getLore().add("skyblock/combat/terminator");
+				ItemStack gyro = new ItemStack(Material.BLAZE_ROD);
+				gyro.getItemMeta().getLore().add("skyblock/combat/gyro");
+				ItemStack scylla = new ItemStack(Material.IRON_SWORD);
+				scylla.getItemMeta().getLore().add("skyblock/combat/scylla");
+				ItemStack aotv = new ItemStack(Material.DIAMOND_SHOVEL);
+				aotv.getItemMeta().getLore().add("skyblock/combat/aotv");
+				ItemStack rag = new ItemStack(Material.GOLDEN_AXE);
+				rag.getItemMeta().getLore().add("skyblock/combat/rag");
+				ItemStack aots = new ItemStack(Material.DIAMOND_AXE);
+				aots.getItemMeta().getLore().add("skyblock/combat/aots");
+				ItemStack iceSpray = new ItemStack(Material.STICK);
+				iceSpray.getItemMeta().getLore().add("skyblock/combat/ice_spray");
+				ItemStack flamingFlay = new ItemStack(Material.FISHING_ROD);
+				flamingFlay.getItemMeta().getLore().add("skyblock/combat/flaming_flay");
+				ItemStack bonzo = new ItemStack(Material.BREEZE_ROD);
+				bonzo.getItemMeta().getLore().add("skyblock/combat/bonzo");
+				ItemStack lb = new ItemStack(Material.BOW);
+				lb.getItemMeta().getLore().add("skyblock/combat/last_breath");
+
+				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots);
+				p.sendMessage(ChatColor.GREEN + "Here you go!");
 			}
 		}
 		return false;
