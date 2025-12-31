@@ -627,6 +627,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				ItemStack stonk = new ItemStack(Material.DIAMOND_PICKAXE);
 				stonk.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
 				ItemMeta meta = stonk.getItemMeta();
+				meta.setDisplayName(ChatColor.RED + "Dungeonbreaker");
 				List<String> lore = new ArrayList<>();
 				lore.add("skyblock/combat/stonk");
 				meta.setLore(lore);
@@ -634,6 +635,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack term = new ItemStack(Material.BOW);
 				meta = term.getItemMeta();
+				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Terminator");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/terminator");
 				meta.setLore(lore);
@@ -641,6 +643,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack gyro = new ItemStack(Material.BLAZE_ROD);
 				meta = gyro.getItemMeta();
+				meta.setDisplayName(ChatColor.GOLD + "Gyrokinetic Wand");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/gyro");
 				meta.setLore(lore);
@@ -648,6 +651,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack scylla = new ItemStack(Material.IRON_SWORD);
 				meta = scylla.getItemMeta();
+				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Hyperion");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/scylla");
 				meta.setLore(lore);
@@ -655,6 +659,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack aotv = new ItemStack(Material.DIAMOND_SHOVEL);
 				meta = aotv.getItemMeta();
+				meta.setDisplayName(ChatColor.GOLD + "Warped Aspect of the Void");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/aotv");
 				meta.setLore(lore);
@@ -662,6 +667,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack rag = new ItemStack(Material.GOLDEN_AXE);
 				meta = rag.getItemMeta();
+				meta.setDisplayName(ChatColor.DARK_PURPLE + "Withered Ragnarok Axe");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/rag");
 				meta.setLore(lore);
@@ -669,6 +675,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack aots = new ItemStack(Material.DIAMOND_AXE);
 				meta = aots.getItemMeta();
+				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/aots");
 				meta.setLore(lore);
@@ -676,6 +683,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack iceSpray = new ItemStack(Material.STICK);
 				meta = iceSpray.getItemMeta();
+				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Heroic Ice Spray Wand");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/ice_spray");
 				meta.setLore(lore);
@@ -683,6 +691,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack flamingFlay = new ItemStack(Material.FISHING_ROD);
 				meta = flamingFlay.getItemMeta();
+				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Flaming Flay");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/flaming_flay");
 				meta.setLore(lore);
@@ -690,6 +699,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack bonzo = new ItemStack(Material.BREEZE_ROD);
 				meta = bonzo.getItemMeta();
+				meta.setDisplayName(ChatColor.DARK_PURPLE + "Heroic Bonzo Staff");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/bonzo");
 				meta.setLore(lore);
@@ -697,6 +707,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack lb = new ItemStack(Material.BOW);
 				meta = lb.getItemMeta();
+				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Last Breath");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/last_breath");
 				meta.setLore(lore);
@@ -704,12 +715,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 				ItemStack tac = new ItemStack(Material.BLAZE_ROD);
 				meta = tac.getItemMeta();
+				meta.setDisplayName(ChatColor.GOLD + "Tactical Insertion");
 				lore = new ArrayList<>();
 				lore.add("skyblock/combat/tac");
 				meta.setLore(lore);
 				tac.setItemMeta(meta);
 
-				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, tac, gyro, aots, tac);
+				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac);
 				p.sendMessage(ChatColor.GREEN + "Here you go!");
 				return true;
 			}

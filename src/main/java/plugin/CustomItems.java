@@ -155,7 +155,7 @@ public class CustomItems implements Listener {
 					arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
 					// Play bow shoot sound again
-					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
+					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 				}, 3);
 
 				if(p.getName().contains("Archer")) {
@@ -323,10 +323,11 @@ public class CustomItems implements Listener {
 		if(damaged > 0) {
 			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage.");
 		}
-		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
+		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
 		// wither shield
 		// does not affect anything
+		p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.5f);
 	}
 
 	// TODO find better teleport algorithm
@@ -465,15 +466,30 @@ public class CustomItems implements Listener {
 		Location startLoc = p.getEyeLocation();
 		Vector direction = startLoc.getDirection().normalize();
 
-		// Calculate the horizontal perpendicular axis (cross product with up vector)
-		Vector up = new Vector(0, 1, 0);
-		Vector spinAxis = direction.clone().crossProduct(up).normalize();
+		// Calculate the horizontal perpendicular to the direction of travel
+		// Project direction onto the XZ plane and get perpendicular
+		double dx = direction.getX();
+		double dz = direction.getZ();
+
+		// The perpendicular in the XZ plane (rotate 90 degrees clockwise when viewed from above)
+		Vector spinAxis = new Vector(-dz, 0, dx).normalize();
+
+		// If looking straight up/down (no horizontal component), use player yaw
+		if (Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) {
+			float yaw = startLoc.getYaw();
+			spinAxis = new Vector(
+					-Math.cos(Math.toRadians(yaw)),
+					0,
+					-Math.sin(Math.toRadians(yaw))
+			);
+		}
 
 		// Spawn an ItemDisplay entity
 		ItemDisplay axe = p.getWorld().spawn(startLoc, ItemDisplay.class);
 		axe.setItemStack(new ItemStack(Material.DIAMOND_AXE));
 		axe.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_RIGHTHAND);
 
+		Vector finalSpinAxis = spinAxis;
 		new BukkitRunnable() {
 			int distance = 0;
 			Location currentLoc = startLoc.clone();
@@ -499,13 +515,20 @@ public class CustomItems implements Listener {
 				currentLoc = nextLoc;
 
 				// Update spin rotation
-				spinRotation += 18; // 360 / 20 = 18 degrees per tick
+				spinRotation += 36; // Positive for forward spin
 
 				// Create rotation using axis-angle rotation around the spin axis
-				Quaternionf rotation = new Quaternionf().rotateAxis((float) Math.toRadians(spinRotation), (float) spinAxis.getX(), (float) spinAxis.getY(), (float) spinAxis.getZ());
+				Quaternionf rotation = new Quaternionf().rotateAxis(
+						(float) Math.toRadians(spinRotation),
+						(float) finalSpinAxis.getX(),
+						(float) finalSpinAxis.getY(),
+						(float) finalSpinAxis.getZ()
+				);
 
-				axe.setTransformation(new Transformation(new Vector3f(0, 0, 0), // No translation offset
-						rotation, new Vector3f(1, 1, 1), // Normal scale
+				axe.setTransformation(new Transformation(
+						new Vector3f(0, 0, 0), // No translation offset
+						rotation,
+						new Vector3f(1, 1, 1), // Normal scale
 						new Quaternionf() // No right rotation
 				));
 
@@ -944,7 +967,7 @@ public class CustomItems implements Listener {
 			arrow.addScoreboardTag("TerminatorArrow");
 		}
 
-		p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 2.0F);
+		p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 
 		// Duplex Arrow
 		Utils.scheduleTask(() -> {
@@ -954,6 +977,7 @@ public class CustomItems implements Listener {
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
 			arrow.addScoreboardTag("TerminatorArrow");
+			p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 		}, 3);
 
 		if(p.getName().equals("Archer")) {
@@ -964,6 +988,7 @@ public class CustomItems implements Listener {
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
+				p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 			}, 5);
 
 			Utils.scheduleTask(() -> {
@@ -973,6 +998,7 @@ public class CustomItems implements Listener {
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
+				p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 			}, 10);
 		}
 	}
