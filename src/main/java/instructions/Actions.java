@@ -52,30 +52,22 @@ import java.util.*;
 public class Actions {
 
 	/**
-	 * Simulates a Player pressing movement input keys.
+	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
 	 *
 	 * @param player        The Player sending movement packets
 	 * @param input         The input keys being held down<br>Valid Input includes WASD, jump, shift, and sprint.
-	 * @param durationTicks How long the keys are held down for
+	 * @param durationTicks How long the keys are held down for, or 0 for manual override
 	 */
 	public static void move(Player player, Input input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
-		if(!(player instanceof CraftPlayer craftPlayer) || durationTicks <= 0) return;
+		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		new BukkitRunnable() {
-			int ticks = 0;
-
-			@Override
-			public void run() {
-				if(ticks++ >= durationTicks || !player.isValid()) {
-					cancel();
-					return;
-				}
-
-				ServerboundPlayerInputPacket packet = new ServerboundPlayerInputPacket(input);
-				Utils.simulatePacket(player, packet);
-			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		ServerboundPlayerInputPacket packet = new ServerboundPlayerInputPacket(input);
+		Utils.simulatePacket(player, packet);
+		if(durationTicks > 0) {
+			ServerboundPlayerInputPacket stopPacket = new ServerboundPlayerInputPacket(new Input(false, false, false, false, false, false, false));
+			Utils.scheduleTask(() -> Utils.simulatePacket(player, stopPacket), durationTicks);
+		}
 	}
 
 	/**

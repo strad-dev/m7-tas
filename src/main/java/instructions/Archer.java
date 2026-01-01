@@ -20,10 +20,10 @@ public class Archer {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(archer, new Location(world, -118.5, 70, -202.5, 0f, 0f));
-				Actions.setHotbarSlot(archer, 1);
-				Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
-				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+				Actions.teleport(archer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+//				Actions.setHotbarSlot(archer, 1);
+//				Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
+//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Actions.teleport(archer, new Location(world, 73.5, 221, 13.5, 0f, 0f));

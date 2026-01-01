@@ -13,6 +13,7 @@ public class Healer {
 	private static Player healer;
 	private static World world;
 
+	// Healer --> Mage3
 	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
@@ -20,19 +21,19 @@ public class Healer {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(healer, new Location(world, -28.5, 69, -44.5, -168.6f, 2.9f));
-				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
-				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
-				Utils.scheduleTask(() -> Actions.rightClick(healer), 101);
-				Utils.scheduleTask(() -> {
-					Actions.setHotbarSlot(healer, 1);
-					Actions.move(healer, new Vector(0, 0, 0.8634), 5);
-				}, 102);
-				Utils.scheduleTask(() -> {
-					Actions.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
-					Actions.swapItems(healer, 2, 29);
-				}, 141);
-				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+				Actions.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+//				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
+//				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
+//				Utils.scheduleTask(() -> Actions.rightClick(healer), 101);
+//				Utils.scheduleTask(() -> {
+//					Actions.setHotbarSlot(healer, 1);
+//					Actions.move(healer, new Vector(0, 0, 0.8634), 5);
+//				}, 102);
+//				Utils.scheduleTask(() -> {
+//					Actions.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
+//					Actions.swapItems(healer, 2, 29);
+//				}, 141);
+//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));

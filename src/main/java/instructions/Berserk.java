@@ -22,22 +22,22 @@ public class Berserk {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(berserk, new Location(world, -21.5, 70, -197.5, 90f, 36.5f));
-				Utils.scheduleTask(() -> {
-					Actions.swapItems(berserk, 2, 29);
-					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
-				}, 60);
-				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 61);
-				Utils.scheduleTask(() -> Actions.rightClick(berserk), 101);
-				Utils.scheduleTask(() -> {
-					Actions.setHotbarSlot(berserk, 1);
-					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
-				}, 102);
-				Utils.scheduleTask(() -> {
-					Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
-					Actions.swapItems(berserk, 2, 29);
-				}, 141);
-				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+				Actions.teleport(berserk, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+//				Utils.scheduleTask(() -> {
+//					Actions.swapItems(berserk, 2, 29);
+//					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
+//				}, 60);
+//				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 61);
+//				Utils.scheduleTask(() -> Actions.rightClick(berserk), 101);
+//				Utils.scheduleTask(() -> {
+//					Actions.setHotbarSlot(berserk, 1);
+//					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
+//				}, 102);
+//				Utils.scheduleTask(() -> {
+//					Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
+//					Actions.swapItems(berserk, 2, 29);
+//				}, 141);
+//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));

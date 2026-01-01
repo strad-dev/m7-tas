@@ -16,19 +16,19 @@ public class Mage {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(Mage.mage, new Location(world, -132.5, 69, -76.5, -180f, 0f));
-				Utils.scheduleTask(() -> Actions.swapItems(mage, 2, 29), 60);
-				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 61);
-				Utils.scheduleTask(() -> Actions.rightClick(mage), 101);
-				Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
-				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 121);
-				Utils.scheduleTask(() -> {
-					Actions.teleport(mage, new Location(mage.getWorld(), -120.5, 75, -220.5));
-					Actions.swapItems(mage, 2, 29);
-				}, 141);
-				// Tick 160 (clear tick 0: run begins)
-				// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
-				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+				Actions.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+//				Utils.scheduleTask(() -> Actions.swapItems(mage, 2, 29), 60);
+//				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 61);
+//				Utils.scheduleTask(() -> Actions.rightClick(mage), 101);
+//				Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
+//				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 121);
+//				Utils.scheduleTask(() -> {
+//					Actions.teleport(mage, new Location(mage.getWorld(), -120.5, 75, -220.5));
+//					Actions.swapItems(mage, 2, 29);
+//				}, 141);
+//				// Tick 160 (clear tick 0: run begins)
+//				// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
+//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5, 0f, 0f));

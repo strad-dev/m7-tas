@@ -34,6 +34,7 @@ import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
 import io.netty.channel.embedded.EmbeddedChannel;
+import net.minecraft.core.Holder;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -49,8 +50,10 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
+import net.minecraft.world.entity.player.Input;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.*;
 import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
@@ -61,6 +64,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -116,7 +120,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}
 	}
 
-	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Healer", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Tank", "5d142c3a-bdf1-418b-b907-797bbaaed188");
+	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Mage3", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
 	/**
 	 * Retrieves the player that the given player is currently spectating.
@@ -211,8 +215,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		for(String entry : fakePlayers.keySet()) {
 			Player p = fakePlayers.get(entry);
 
-			p.getScoreboardTags().clear();
-			Objects.requireNonNull(Objects.requireNonNull(plugin.getServer().getScoreboardManager()).getMainScoreboard().getObjective("Intelligence")).getScore(p.getName()).setScore(2500);
 			p.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, -1, 255, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, -1, 255, true, false));
 			p.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 3, true, false));
@@ -223,16 +225,12 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			Objects.requireNonNull(p.getAttribute(Attribute.KNOCKBACK_RESISTANCE)).setBaseValue(1);
 			Objects.requireNonNull(p.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			p.setHealth(40);
-			p.addScoreboardTag("WitherShield");
-			p.addScoreboardTag("HolyIce");
 
 			// Set Inventory
 			ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
 			pearls.setAmount(16);
-			ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.BLUE + "Scraped Diamond Pickaxe", "");
+			ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.RED + "Dungeonbreaker", "skyblock/combat/stonk");
 			pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 10);
-			ItemStack treecap = getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.LIGHT_PURPLE + "Toil Treecapitator", "");
-			treecap.addUnsafeEnchantment(Enchantment.EFFICIENCY, 5);
 			PlayerInventory inventory = p.getInventory();
 			inventory.clear();
 
@@ -247,7 +245,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					inventory.setLeggings(leggings);
 					inventory.setBoots(boots);
 				}
-				case "Mage" -> {
+				case "Mage", "Mage1", "Mage2", "Mage3" -> {
 					ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Chestplate");
 					ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Leggings");
 					ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Ancient Storm's Boots");
@@ -261,13 +259,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 			// Common items for all roles
 			inventory.setItem(0, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Heroic Hyperion", "skyblock/combat/scylla"));
-			inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, ChatColor.GOLD + "Warped Aspect of the Void", "skyblock/combat/aspect_of_the_void"));
+			inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, ChatColor.GOLD + "Warped Aspect of the Void", "skyblock/combat/aotv"));
 			inventory.setItem(5, pickaxe);
 			inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.GOLD + "Gyrokinetic Wand", "skyblock/combat/gyro"));
 			inventory.setItem(7, pearls);
 			inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
-			inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, ChatColor.DARK_PURPLE + "Bonzo Staff", "skyblock/combat/bonzo_staff"));
-			inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.DARK_PURPLE + "Tactical Insertion", "skyblock/combat/tactical_insertion"));
+			inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, ChatColor.DARK_PURPLE + "Bonzo Staff", "skyblock/combat/bonzo"));
+			inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.DARK_PURPLE + "Tactical Insertion", "skyblock/combat/tac"));
 
 			switch(entry) {
 				case "Archer" -> {
@@ -279,9 +277,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					inventory.setItem(10, getSpiritMask());
 					inventory.setItem(11, getCowHat());
 					inventory.setItem(30, getSkyBlockItem(Material.BONE, ChatColor.LIGHT_PURPLE + "Rapid Bonemerang", ""));
-					inventory.setItem(32, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
-					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
-					inventory.setItem(34, getSkyBlockItem(Material.HOPPER, ChatColor.GOLD + "Weirder Tuba", ""));
+					inventory.setItem(32, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
+					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
 					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
 				}
 				case "Berserk" -> {
@@ -293,40 +290,38 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					inventory.setItem(10, getSpiritMask());
 					inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
 					inventory.setItem(12, getCowHat());
-					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
-					inventory.setItem(34, getSkyBlockItem(Material.HOPPER, ChatColor.GOLD + "Weirder Tuba", ""));
+					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
 					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
 				}
 				case "Healer" -> {
-					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
+					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
 					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
 					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 					inventory.setItem(9, getBonzoMask());
 					inventory.setItem(10, getSpiritMask());
 					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
 					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
-					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
-					inventory.setItem(34, treecap);
+					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
 					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
 				}
-				case "Mage" -> {
-					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
-					inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", ""));
+				case "Mage", "Mage1", "Mage2", "Mage3" -> {
+					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
+					inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", "skyblock/combat/claymore"));
 					inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
 					inventory.setItem(9, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", ""));
 					inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
 					inventory.setItem(31, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
-					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", ""));
-					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
+					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
 				}
 				case "Tank" -> {
-					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray_wand"));
+					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
 					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", ""));
 					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", ""));
-					inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded", "skyblock/combat/axe_of_the_shredded"));
+					inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded", "skyblock/combat/aots"));
 					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
-					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", ""));
+					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
 				}
 			}
 
@@ -549,67 +544,71 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						return true;
 					}
 					case "bonzo" -> {
-						if(args.length < 2) {
-							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
-							return true;
-						}
-						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
-						if(args.length < 5) {
-							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
-							return true;
-						}
-						double x;
-						double y;
-						double z;
-						try {
-							x = Double.parseDouble(args[2]);
-							y = Double.parseDouble(args[3]);
-							z = Double.parseDouble(args[4]);
-						} catch(Exception exception) {
-							p.sendMessage(ChatColor.RED + "Movement must be an double");
-							return true;
-						}
-						lastSimulated = applyTo;
-						lastSimulatedLocation = applyTo.getLocation();
-//						Actions.bonzo(applyTo, new Vector(x, y, z));
-						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
+						p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days.");
+//						if(args.length < 2) {
+//							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
+//							return true;
+//						}
+//						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+//						if(args.length < 5) {
+//							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
+//							return true;
+//						}
+//						double x;
+//						double y;
+//						double z;
+//						try {
+//							x = Double.parseDouble(args[2]);
+//							y = Double.parseDouble(args[3]);
+//							z = Double.parseDouble(args[4]);
+//						} catch(Exception exception) {
+//							p.sendMessage(ChatColor.RED + "Movement must be an double");
+//							return true;
+//						}
+//						lastSimulated = applyTo;
+//						lastSimulatedLocation = applyTo.getLocation();
+////						Actions.bonzo(applyTo, new Vector(x, y, z));
+//						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
 						return true;
 					}
+					// Syntax: /simulate move [player] [set from: {W, A, S, D, J, P, N}] [ticks]
+					// WASD - self explainatory
+					// J - jump
+					// P - sprint
+					// N - sneak
+					// ticks - number of ticks to hold down, must be greater than zero
+					// Example: /simulate move WDP 5
+					// Moves the plaer forward and to the right while sprinting for 5 ticks
 					case "move" -> {
 						if(args.length < 2) {
 							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
 							return true;
 						}
 						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
-						if(args.length < 5) {
-							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
+						if(args.length < 3) {
+							p.sendMessage(ChatColor.RED + "Please specify which keys are held down");
 							return true;
 						}
-						double x;
-						double y;
-						double z;
-						try {
-							x = Double.parseDouble(args[2]);
-							y = Double.parseDouble(args[3]);
-							z = Double.parseDouble(args[4]);
-						} catch(Exception exception) {
-							p.sendMessage(ChatColor.RED + "Movement must be an double");
-							return true;
-						}
-						if(args.length < 6) {
-							p.sendMessage(ChatColor.RED + "Must provide a valid duration.");
+						String inputString = args[2];
+						Input input = new Input(inputString.contains("W"), inputString.contains("S"), inputString.contains("A"), inputString.contains("D"), inputString.contains("J"), inputString.contains("N"), inputString.contains("P"));
+						if(args.length < 4) {
+							p.sendMessage(ChatColor.RED + "Must provide a valid duration");
 							return true;
 						}
 						int duration;
 						try {
-							duration = Integer.parseInt(args[5]);
+							duration = Integer.parseInt(args[3]);
 						} catch(Exception exception) {
-							p.sendMessage(ChatColor.RED + "Duration must be an integer.");
+							p.sendMessage(ChatColor.RED + "Duration must be an integer");
+							return true;
+						}
+						if(duration <= 0) {
+							p.sendMessage(ChatColor.RED + "Duration must be one or higher");
 							return true;
 						}
 						lastSimulated = applyTo;
 						lastSimulatedLocation = applyTo.getLocation();
-						Actions.move(applyTo, new Vector(x, y, z), duration);
+						Actions.move(applyTo, input, duration);
 						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks.");
 						return true;
 					}
@@ -880,13 +879,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 		// 5) Position & add to world
 		// Entity.a_(double, double, double) -> Entity.setPos(...)
-		switch(fakePlayerName) {
-			case "Archer" -> nmsPlayer.setPos(-120.5, 69, -202.5);
-			case "Berserk" -> nmsPlayer.setPos(-21.5, 70, -197.5);
-			case "Healer" -> nmsPlayer.setPos(-28.5, 69, -44.5);
-			case "Mage" -> nmsPlayer.setPos(-132.5, 69, -76.5);
-			case "Tank" -> nmsPlayer.setPos(-196.5, 68, -222.5);
-		}
+		nmsPlayer.setPos(-120.5, 71, -183.5);
 		nmsPlayer.setNoGravity(false);
 
 		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
@@ -904,6 +897,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 		// Add fake player to no collision team
 		addToNoCollisionTeam(bukkitPlayer);
+		bukkitPlayer.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "speed"), 3, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
 
 		// 8) Return the Bukkit wrapper
 		return bukkitPlayer;
@@ -1030,9 +1024,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 		Archer.archerInstructions(fakePlayers.get("Archer"), section);
 		Berserk.berserkInstructions(fakePlayers.get("Berserk"), section);
-		Healer.healerInstructions(fakePlayers.get("Healer"), section);
-		Mage.mageInstructions(fakePlayers.get("Mage"), section);
-		Tank.tankInstructions(fakePlayers.get("Tank"), section);
+		Healer.healerInstructions(fakePlayers.get("Mage3"), section);
+		Mage.mageInstructions(fakePlayers.get("Mage1"), section);
+		Tank.tankInstructions(fakePlayers.get("Mage2"), section);
 
 		Server.serverInstructions(world, section);
 	}

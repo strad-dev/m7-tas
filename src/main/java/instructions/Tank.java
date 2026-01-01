@@ -15,6 +15,7 @@ public class Tank {
 	@SuppressWarnings("FieldCanBeLocal")
 	private static World world;
 
+	// Tank --> Mage2
 	public static void tankInstructions(Player p, String section) {
 		tank = p;
 		world = Tank.tank.getWorld();
@@ -24,19 +25,19 @@ public class Tank {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(Tank.tank, new Location(world, -196.5, 68, -222.5, 0f, 5.6f));
-				Utils.scheduleTask(() -> Actions.swapItems(tank, 2, 29), 60);
-				Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 61);
-				Utils.scheduleTask(() -> Actions.rightClick(tank), 101);
-				Utils.scheduleTask(() -> {
-					Actions.setHotbarSlot(Tank.tank, 1);
-					Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
-				}, 102);
-				Utils.scheduleTask(() -> {
-					Actions.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
-					Actions.swapItems(Tank.tank, 2, 29);
-				}, 141);
-				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+				Actions.teleport(tank, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+//				Utils.scheduleTask(() -> Actions.swapItems(tank, 2, 29), 60);
+//				Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 61);
+//				Utils.scheduleTask(() -> Actions.rightClick(tank), 101);
+//				Utils.scheduleTask(() -> {
+//					Actions.setHotbarSlot(Tank.tank, 1);
+//					Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
+//				}, 102);
+//				Utils.scheduleTask(() -> {
+//					Actions.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
+//					Actions.swapItems(Tank.tank, 2, 29);
+//				}, 141);
+//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5, 0f, 0f));
