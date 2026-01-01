@@ -16,8 +16,8 @@ public class Mage {
 		switch(section) {
 			case "all", "clear" -> {
 				Actions.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
-				Utils.scheduleTask(() -> Actions.move(mage, "S", 38), 60);
-//				Utils.scheduleTask(() -> Actions.swapItems(mage, 2, 29), 60);
+				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
+				// tick 140: get teleported back
 //				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 61);
 //				Utils.scheduleTask(() -> Actions.rightClick(mage), 101);
 //				Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
@@ -72,6 +72,28 @@ public class Mage {
 //				Utils.scheduleTask(Mage::witherKing, 60);
 //			}
 		}
+	}
+
+	private static void preClear(boolean doContinue) {
+		Actions.turnHead(mage, 180f, -90f);
+		Actions.swapItems(mage, 2, 29);
+		Actions.setHotbarSlot(mage, 7);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 38), 1); // move to pearl spot
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 39); // lands in 10 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(mage, 1);
+			Actions.move(mage, "N", 0);
+		}, 40);
+		// dodge tick 40 teleport
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 49); // etherwarp to top
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0.254f), 50);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 51); // etherwarp forward
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 1.3f, 0.6f), 52);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 53); // etherwarp onto first checkmark
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -25.9f, 3.55f), 54);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 55); // etherwarp to edge of blood
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 1), 56); // fall into void to facilitate pearls
+		// tick 80: get teleported back
 	}
 
 	private static void clear(boolean doContinue) {
@@ -871,96 +893,6 @@ public class Mage {
 //
 //			// Turn the player's head
 //			Actions.turnHead(mage, yaw, pitch);
-//		}
-//	}
-//
-//	private static void mageBeam() {
-//		Actions.swingHand(mage);
-//
-//		Location l = mage.getLocation();
-//
-//		// Get player's yaw in radians
-//		double yaw = Math.toRadians(l.getYaw());
-//
-//		// Calculate perpendicular vector (90 degrees to the right)
-//		// Adding 90 degrees to get the right-hand direction
-//		double rightYaw = yaw + Math.toRadians(90);
-//
-//		// Calculate offsets (16 pixels = 1 block)
-//		double offsetX = -Math.sin(rightYaw) * (5.0 / 16.0);   // 5 pixels = 0.3125 blocks to the right
-//		double offsetZ = Math.cos(rightYaw) * (5.0 / 16.0);    // 5 pixels = 0.3125 blocks to the right
-//		double offsetY = 1.62 - (13.0 / 16.0);                 // 13 pixels down from eye level = 0.8125 blocks down
-//
-//		// Apply offsets
-//		l.add(offsetX, offsetY, offsetZ);
-//
-//		// Get the eye location and direction
-//		Location eyeLocation = mage.getEyeLocation();
-//		Vector eyeDirection = eyeLocation.getDirection();
-//
-//		// Calculate where the eye is looking at 35 blocks away
-//		Vector targetPoint = eyeLocation.toVector().add(eyeDirection.multiply(35));
-//
-//		// Calculate the direction from hand to the target point
-//		Vector handToTarget = targetPoint.subtract(l.toVector());
-//		handToTarget.normalize();
-//
-//		// Scale down the vector for per-iteration movement
-//		Vector v = handToTarget.multiply(0.2); // Equivalent to dividing by 5
-//
-//		for(int i = 0; i < 175; i++) {
-//			if(l.getBlock().getType().isSolid()) {
-//				break;
-//			}
-//			boolean shouldBreak = false;
-//			ArrayList<Entity> entities = (ArrayList<Entity>) world.getNearbyEntities(l, 1, 1, 1);
-//			for(Entity entity : entities) {
-//				//noinspection DataFlowIssue
-//				if(entity instanceof LivingEntity temp && !temp.equals(mage) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-//					double damage = mage.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 145 : 85) : (temp instanceof Wither ? 120 : 70);
-//					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(mage, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
-//					shouldBreak = true;
-//					break;
-//				}
-//			}
-//			spawnParticle(l);
-//			l.add(v);
-//			if(shouldBreak) {
-//				spawnParticle(l);
-//				l.add(v);
-//				spawnParticle(l);
-//				l.add(v);
-//				spawnParticle(l);
-//				l.add(v);
-//				spawnParticle(l);
-//				l.add(v);
-//				spawnParticle(l);
-//				l.add(v);
-//				spawnParticle(l);
-//				break;
-//			}
-//		}
-//	}
-//
-//	private static void spawnParticle(Location l) {
-//		ClientboundLevelParticlesPacket packet = new ClientboundLevelParticlesPacket(ParticleTypes.FIREWORK,  // ParticleParam
-//				false,                   // overrideLimiter
-//				false,                   // longDistance
-//				l.getX(),        // x position
-//				l.getY(),        // y position
-//				l.getZ(),        // z position
-//				0.0f,                   // xDist (no spread)
-//				0.0f,                   // yDist (no spread)
-//				0.0f,                   // zDist (no spread)
-//				0.0f,                   // speed (no velocity)
-//				1                       // count (single particle)
-//		);
-//
-//		for(Player player : Objects.requireNonNull(l.getWorld()).getPlayers()) {
-//			if(player instanceof CraftPlayer craftPlayer) {
-//				ServerPlayer nmsPlayer = craftPlayer.getHandle();
-//				nmsPlayer.connection.send(packet);
-//			}
 //		}
 //	}
 

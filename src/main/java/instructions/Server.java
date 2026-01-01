@@ -27,45 +27,53 @@ public class Server {
 		Utils.scheduleTask(() -> {
 			switch(section) {
 				case "all", "clear" -> {
+					Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"); // 60
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 40); // 100
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 80); // 140
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 120); // 180
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 160); // 220
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 200); // 260
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 240); // 300
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 280); // 340
 					// 5-second countdown
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
-					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 20);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 40);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 60);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 80);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 100);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
+//					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
+//					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
+//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+//					}, 20);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
+//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+//					}, 40);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
+//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+//					}, 60);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
+//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+//					}, 80);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+//						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
+//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+//					}, 100);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
+//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
 				}
-				case "boss" -> Maxor.maxorInstructions(world, true);
-				case "maxor" -> Maxor.maxorInstructions(world, false);
-				case "storm" -> {
-					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 minecraft:air");
-					Storm.stormInstructions(world, false);
-				}
-				case "goldor" -> {
-					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
-					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
-					Goldor.goldorInstructions(world, false);
-				}
-				case "necron" -> Necron.necronInstructions(world, false);
-				case "witherking" -> WitherKing.witherKingInstructions(world);
+//				case "boss" -> Maxor.maxorInstructions(world, true);
+//				case "maxor" -> Maxor.maxorInstructions(world, false);
+//				case "storm" -> {
+//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 minecraft:air");
+//					Storm.stormInstructions(world, false);
+//				}
+//				case "goldor" -> {
+//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
+//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
+//					Goldor.goldorInstructions(world, false);
+//				}
+//				case "necron" -> Necron.necronInstructions(world, false);
+//				case "witherking" -> WitherKing.witherKingInstructions(world);
 			}
 		}, 60);
 	}

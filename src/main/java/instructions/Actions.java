@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -45,6 +46,7 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.util.*;
 
 @SuppressWarnings("unused")
@@ -74,7 +76,11 @@ public class Actions {
 			serverPlayer.zza = input.contains("W") ? 1.0F : (input.contains("S") ? -1.0F : 0.0F);
 		}
 
-		serverPlayer.setSprinting(input.contains("P"));
+		if(input.contains("W") && !input.contains("S") && !input.contains("N")) {
+			serverPlayer.setSprinting(input.contains("P"));
+		} else {
+			serverPlayer.setSprinting(false);
+		}
 		serverPlayer.setShiftKeyDown(input.contains("N"));
 		if(input.contains("J")) {
 			new BukkitRunnable() {
@@ -323,20 +329,16 @@ public class Actions {
 
 		ServerPlayer serverPlayer = cp.getHandle();
 
-		// Check for entity target
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p);
-
-		if(entityRay != null && entityRay.getHitEntity() != null) {
-			// Interact with the entity
-			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
-
-			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
-			Utils.simulatePacket(p, interactPacket);
-			return;
+		try {
+			Field awaitingField = ServerGamePacketListenerImpl.class.getDeclaredField("awaitingPositionFromClient");
+			awaitingField.setAccessible(true);
+			awaitingField.set(serverPlayer.connection, null);
+		} catch(Exception e) {
+			// Only log once
 		}
 
-		// Check for block target
-		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
+		// Check for block target FIRST (before entity)
+		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
 			// Use item on block
@@ -353,7 +355,30 @@ public class Actions {
 			return;
 		}
 
-		// Right click air (eat food, throw pearl, use item ability)
+		// Check for entity target - EXCLUDE fake players and invisible entities
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
+			if(entity == p) return false;
+
+			if(entity instanceof Player player) {
+				// Exclude: fake players, spectators of this player, and players this player is spectating
+				if(M7tas.getFakePlayers().contains(player)) return false;
+				if(M7tas.getSpectatingPlayers(p).contains(player)) return false;
+				if(M7tas.getSpectatorMap().get(p) == player) return false;
+			}
+
+			return entity.isVisibleByDefault();
+		});
+
+		if(entityRay != null && entityRay.getHitEntity() != null) {
+			// Interact with the entity
+			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
+
+			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
+			Utils.simulatePacket(p, interactPacket);
+			return;
+		}
+
+		// Right click air (eat food, throw pearl, use item ability) - THIS IS WHAT YOU WANT FOR ETHERWARP
 		ServerboundUseItemPacket useItemPacket = new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, serverPlayer.getYRot(), serverPlayer.getXRot());
 		Utils.simulatePacket(p, useItemPacket);
 	}

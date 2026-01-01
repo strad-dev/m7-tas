@@ -122,6 +122,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
+		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Sending Packet " + packet.getClass().getSimpleName());
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		((Packet) packet).handle(serverPlayer.connection);
 	}
