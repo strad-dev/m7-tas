@@ -261,7 +261,7 @@ public class CustomItems implements Listener {
 						}
 					}
 				}
-			} else if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && p.getName().equals("Mage")) {
+			} else if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && p.getName().startsWith("Mage")) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					e.setCancelled(true);
 					mageBeam(p);
@@ -452,10 +452,9 @@ public class CustomItems implements Listener {
 
 		// wither shield
 		// does not affect anything
-		p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.5f);
+		p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
 	}
 
-	// TODO find better teleport algorithm
 	public static void aotv(Player p) {
 		if(p.isSneaking()) {
 			RayTraceResult result = p.rayTraceBlocks(61);
@@ -1060,55 +1059,58 @@ public class CustomItems implements Listener {
 	}
 
 	public static void bonzo(Player p) {
-		// TODO find better method
-//		if(!(p instanceof CraftPlayer cp)) {
-//			return null;
-//		}
-//		net.minecraft.world.entity.LivingEntity nmsEntity = cp.getHandle();
-//
-//		// Set initial Y velocity
-//		Vec3 currentMovement = nmsEntity.getDeltaMovement();
-//		nmsEntity.setDeltaMovement(0, 0.5, 0);
-//		v.setY(0);
-//
-//		Location location = p.getLocation();
-//		World world = p.getWorld();
-//		Random random = new Random();
-//
-//		// Spawn 20 critical particles with random directions
-//		world.spawnParticle(Particle.TOTEM_OF_UNDYING, location, 350, 0, 0, 0, 0.75);
-//
-//		// Add critical particles for texture variety
-//		world.spawnParticle(Particle.CRIT, location, 150, 0, 0, 0, 2);
-//
-//		p.getWorld().playSound(location, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
-//
-//		double magnitude = Math.sqrt(v.getX() * v.getX() + v.getZ() * v.getZ());
-//		Vector impulseVector = v.clone().normalize().multiply(0.2806);
-//
-//		// Apply horizontal movement
-//		BukkitRunnable runnable = new BukkitRunnable() {
-//			boolean firstTick = true;
-//			int tickCount = 0;
-//
-//			@Override
-//			public void run() {
-//				tickCount++;
-//
-//				if(firstTick) {
-//					move(p, v, 1);
-//					firstTick = false;
-//				} else {
-//					if(nmsEntity.onGround()) {
-//						cancel();
-//						return;
-//					}
-//					move(p, impulseVector, 1);
-//				}
-//			}
-//		};
-//		runnable.runTaskTimer(M7tas.getInstance(), 0L, 1L);
-//		return runnable;
+		// depends on blockface i guess?
+		// if looking at side blockface, and that blockface is within 2 blocks, bonzo backwards
+		// if looking at top blockface OR looking downwards (<75 degrees) and fall speed is not too large (<0.33333 downward vertical movement speed), bonzo forward
+		// otherwise fire windcharge projectile in a direction
+		Location l = p.getLocation();
+		Vector v = l.getDirection();
+		RayTraceResult result = p.rayTraceBlocks(2.5);
+		double dY = p.getVelocity().getY();
+		float pitch = l.getPitch();
+		Vector bonzoDirection = null;
+
+		if(result != null) {
+			switch(result.getHitBlockFace()) {
+				case BlockFace.UP -> bonzoDirection = new Vector(v.getX(), 0, v.getZ()).normalize();
+				case BlockFace.DOWN, BlockFace.SELF -> fireWindCharge(p);
+				default -> bonzoDirection = new Vector(-v.getX(), 0, -v.getZ()).normalize();
+			}
+		} else {
+			if(pitch > 60 && (dY < 0 && dY > -0.3333)) {
+				bonzoDirection = new Vector(v.getX(), 0, v.getZ()).normalize();
+			}
+		}
+
+		if(bonzoDirection != null) {
+			if(!(p instanceof CraftPlayer cp)) {
+				return;
+			}
+			net.minecraft.world.entity.LivingEntity nmsEntity = cp.getHandle();
+
+			// Calculate velocity: 1.52552 blocks/tick horizontal, 0.5 blocks/tick vertical
+			Vector velocity = bonzoDirection.multiply(1.52552);
+			velocity.setY(0.5);
+
+			// Set the velocity directly through NMS for precise control
+			nmsEntity.setDeltaMovement(velocity.getX(), velocity.getY(), velocity.getZ());
+			nmsEntity.hurtMarked = true;
+
+			p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, l, 350, 0, 0, 0, 0.75);
+			p.getWorld().spawnParticle(Particle.CRIT, l, 150, 0, 0, 0, 2);
+			p.playSound(l, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
+		} else {
+			fireWindCharge(p);
+		}
+	}
+
+	private static void fireWindCharge(Player p) {
+		Location l = p.getEyeLocation();
+		l.add(l.getDirection().setY(0).normalize().multiply(0.5));
+		Utils.scheduleTask(() -> {
+			l.getWorld().spawnEntity(l, EntityType.WIND_CHARGE);
+			l.getWorld().spawnEntity(l, EntityType.WIND_CHARGE);
+		}, 1);
 	}
 
 	public static void terminator(Player p) {
