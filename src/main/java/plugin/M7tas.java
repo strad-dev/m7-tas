@@ -732,7 +732,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				meta.setLore(lore);
 				tac.setItemMeta(meta);
 
-				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac);
+				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay);
 				p.sendMessage(ChatColor.GREEN + "Here you go!");
 				return true;
 			}

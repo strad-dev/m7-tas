@@ -56,17 +56,53 @@ public class Actions {
 	 *
 	 * @param player        The Player sending movement packets
 	 * @param input         The input keys being held down<br>Valid Input includes WASD, jump, shift, and sprint.
-	 * @param durationTicks How long the keys are held down for, or 0 for manual override
+	 * @param durationTicks How long the keys are held down for, or 0 for manual override<br>NOTE: Jumping will NOT be held down if duration is 0
 	 */
 	public static void move(Player player, Input input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		ServerboundPlayerInputPacket packet = new ServerboundPlayerInputPacket(input);
-		Utils.simulatePacket(player, packet);
+		ServerPlayer serverPlayer = craftPlayer.getHandle();
+		if(input.forward() && input.backward()) {
+			serverPlayer.xxa = 0.0F;
+		} else {
+			serverPlayer.xxa = input.left() ? 1.0F : (input.right() ? -1.0F : 0.0F);
+		}
+
+		if(input.left() && input.right()) {
+			serverPlayer.zza = 0.0F;
+		} else {
+			serverPlayer.zza = input.forward() ? 1.0F : (input.backward() ? -1.0F : 0.0F);
+		}
+
+		serverPlayer.setSprinting(input.sprint());
+		serverPlayer.setShiftKeyDown(input.shift());
+		if(input.jump()) {
+			new BukkitRunnable() {
+				int ticks = 0;
+
+				@Override
+				public void run() {
+					if(ticks++ >= durationTicks || serverPlayer.isRemoved()) {
+						cancel();
+						return;
+					}
+					if(serverPlayer.onGround()) {
+						serverPlayer.setJumping(true);
+					}
+				}
+			}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		}
 		if(durationTicks > 0) {
-			ServerboundPlayerInputPacket stopPacket = new ServerboundPlayerInputPacket(new Input(false, false, false, false, false, false, false));
-			Utils.scheduleTask(() -> Utils.simulatePacket(player, stopPacket), durationTicks);
+			Utils.scheduleTask(() -> {
+				if(player.isValid()) {
+					serverPlayer.xxa = 0.0F;
+					serverPlayer.zza = 0.0F;
+					serverPlayer.setSprinting(false);
+					serverPlayer.setShiftKeyDown(false);
+					serverPlayer.setJumping(false);
+				}
+			}, durationTicks);
 		}
 	}
 

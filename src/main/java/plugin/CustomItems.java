@@ -118,11 +118,6 @@ public class CustomItems implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
-		handleCustomItems(e, e.getHand(), e.getPlayer().getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, e.getPlayer());
-	}
-
-	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
 		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer());
 	}
@@ -131,8 +126,10 @@ public class CustomItems implements Listener {
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
 		if(e.getDamager() instanceof Player p) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
-		} else if(e.getDamager() instanceof Projectile && e.getEntity() instanceof LivingEntity entity) {
+		} else if(e.getDamager() instanceof Arrow arrow && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
+			e.setCancelled(true);
 			entity.setNoDamageTicks(0);
+			entity.damage(arrow.getDamage());
 		}
 	}
 
