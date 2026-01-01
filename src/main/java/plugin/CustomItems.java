@@ -446,7 +446,7 @@ public class CustomItems implements Listener {
 			}
 		}
 		if(damaged > 0) {
-			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage.");
+			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage");
 		}
 		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 

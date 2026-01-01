@@ -413,7 +413,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this.");
+			sender.sendMessage("Only players can run this");
 			return true;
 		}
 
@@ -427,7 +427,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			case "setup" -> {
 				spawnAllFakes(p.getWorld());
 				Server.serverSetup(p.getWorld());
-				p.sendMessage("Cleared all NPCs and spawned new ones.");
+				p.sendMessage("Cleared all NPCs and spawned new ones");
 				return true;
 			}
 			/*
@@ -488,7 +488,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				Utils.syncInventory(fakePlayer);
 				Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
-				p.sendMessage("You are now spectating " + role + ".");
+				p.sendMessage("You are now spectating " + role);
 				return true;
 			}
 			case "unspectate" -> {
@@ -520,10 +520,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						}
 					}
 
-					p.sendMessage("You are no longer spectating a class.");
+					p.sendMessage("You are no longer spectating a class");
 					return true;
 				}
-				p.sendMessage(ChatColor.RED + "You are not spectating a class.");
+				p.sendMessage(ChatColor.RED + "You are not spectating a class");
 				return true;
 			}
 			case "simulate" -> {
@@ -540,18 +540,18 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						lastSimulated.teleport(lastSimulatedLocation);
 						lastSimulated = null;
 						lastSimulatedLocation = null;
-						p.sendMessage(ChatColor.GREEN + "Undid previous simulation instruction.");
+						p.sendMessage(ChatColor.GREEN + "Undid previous simulation instruction");
 						return true;
 					}
 					case "bonzo" -> {
-						p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days.");
+						p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days");
 //						if(args.length < 2) {
 //							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
 //							return true;
 //						}
 //						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
 //						if(args.length < 5) {
-//							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement.");
+//							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement");
 //							return true;
 //						}
 //						double x;
@@ -609,7 +609,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						lastSimulated = applyTo;
 						lastSimulatedLocation = applyTo.getLocation();
 						Actions.move(applyTo, input, duration);
-						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks.");
+						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks");
 						return true;
 					}
 //					case "explosiveshot" -> Archer.explosiveShot();
@@ -619,7 +619,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			case "reset" -> {
 				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
 				fakePlayers.values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
-				p.sendMessage("Reset all NPC locations.");
+				p.sendMessage("Reset all NPC locations");
 				return true;
 			}
 			case "getcustomitems" -> {

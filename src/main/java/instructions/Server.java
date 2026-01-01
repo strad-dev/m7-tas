@@ -22,32 +22,32 @@ public class Server {
 
 	public static void serverInstructions(World world, String section) {
 		// Begin with 3 seconds of delay
-		Bukkit.broadcastMessage("TAS starts in 3 seconds.");
+		Bukkit.broadcastMessage("TAS starts in 3 seconds");
 
 		Utils.scheduleTask(() -> {
 			switch(section) {
 				case "all", "clear" -> {
 					// 5-second countdown
-					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds.");
+					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
 					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds.");
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 20);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds.");
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 40);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds.");
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 60);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds.");
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 80);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started.");
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 100);
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
