@@ -2,7 +2,6 @@ package plugin;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Sound;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -24,18 +23,6 @@ public class MiscListener implements Listener {
 		sentMessage += player + ChatColor.WHITE + ": " + message;
 		Bukkit.broadcastMessage(sentMessage);
 		e.setCancelled(true);
-	}
-
-	@EventHandler
-	public void onArrowHitEntity(EntityDamageByEntityEvent e) {
-		if(e.getDamager() instanceof AbstractArrow a && !(a instanceof Trident)) {
-			if(a.getShooter() instanceof Player p) {
-				p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
-				if(e.getEntity() instanceof LivingEntity entity) {
-					entity.setNoDamageTicks(0);
-				}
-			}
-		}
 	}
 
 	@EventHandler

@@ -9,7 +9,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -55,29 +54,29 @@ public class Actions {
 	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
 	 *
 	 * @param player        The Player sending movement packets
-	 * @param input         The input keys being held down<br>Valid Input includes WASD, jump, shift, and sprint.
+	 * @param input         The input keys being held down<br>Valid Input contains the following characters: W, A, S, D, J, P, N<br>WASD: movement<br>J: Jump<br>P: sPrint<br>N: sNeak
 	 * @param durationTicks How long the keys are held down for, or 0 for manual override<br>NOTE: Jumping will NOT be held down if duration is 0
 	 */
-	public static void move(Player player, Input input, int durationTicks) {
+	public static void move(Player player, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
-		if(input.forward() && input.backward()) {
+		if(input.contains("A") && input.contains("D")) {
 			serverPlayer.xxa = 0.0F;
 		} else {
-			serverPlayer.xxa = input.left() ? 1.0F : (input.right() ? -1.0F : 0.0F);
+			serverPlayer.xxa = input.contains("A") ? 1.0F : (input.contains("D") ? -1.0F : 0.0F);
 		}
 
-		if(input.left() && input.right()) {
+		if(input.contains("W") && input.contains("S")) {
 			serverPlayer.zza = 0.0F;
 		} else {
-			serverPlayer.zza = input.forward() ? 1.0F : (input.backward() ? -1.0F : 0.0F);
+			serverPlayer.zza = input.contains("W") ? 1.0F : (input.contains("S") ? -1.0F : 0.0F);
 		}
 
-		serverPlayer.setSprinting(input.sprint());
-		serverPlayer.setShiftKeyDown(input.shift());
-		if(input.jump()) {
+		serverPlayer.setSprinting(input.contains("P"));
+		serverPlayer.setShiftKeyDown(input.contains("N"));
+		if(input.contains("J")) {
 			new BukkitRunnable() {
 				int ticks = 0;
 

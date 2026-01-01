@@ -4,8 +4,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
-import plugin.Utils;
 
 import java.util.Objects;
 

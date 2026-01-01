@@ -3,7 +3,6 @@ package instructions;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Mage {
@@ -17,6 +16,7 @@ public class Mage {
 		switch(section) {
 			case "all", "clear" -> {
 				Actions.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.scheduleTask(() -> Actions.move(mage, "S", 38), 60);
 //				Utils.scheduleTask(() -> Actions.swapItems(mage, 2, 29), 60);
 //				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 61);
 //				Utils.scheduleTask(() -> Actions.rightClick(mage), 101);

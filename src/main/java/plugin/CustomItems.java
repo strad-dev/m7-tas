@@ -22,7 +22,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -126,10 +125,11 @@ public class CustomItems implements Listener {
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
 		if(e.getDamager() instanceof Player p) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
-		} else if(e.getDamager() instanceof Arrow arrow && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
+		} else if(e.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player p && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
 			e.setCancelled(true);
 			entity.setNoDamageTicks(0);
 			entity.damage(arrow.getDamage());
+			p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		}
 	}
 

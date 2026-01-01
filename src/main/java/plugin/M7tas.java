@@ -34,7 +34,6 @@ import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
 import io.netty.channel.embedded.EmbeddedChannel;
-import net.minecraft.core.Holder;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -50,7 +49,6 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
-import net.minecraft.world.entity.player.Input;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -78,7 +76,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
-import org.bukkit.util.Vector;
 
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -589,8 +586,11 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 							p.sendMessage(ChatColor.RED + "Please specify which keys are held down");
 							return true;
 						}
-						String inputString = args[2];
-						Input input = new Input(inputString.contains("W"), inputString.contains("S"), inputString.contains("A"), inputString.contains("D"), inputString.contains("J"), inputString.contains("N"), inputString.contains("P"));
+						String inputString = args[2].toUpperCase();
+						if(!inputString.matches("[WASDJPN]*")) {
+							p.sendMessage(ChatColor.RED + "Bad characters detected!  Accepted characters: WASDJPN");
+							return true;
+						}
 						if(args.length < 4) {
 							p.sendMessage(ChatColor.RED + "Must provide a valid duration");
 							return true;
@@ -608,7 +608,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						}
 						lastSimulated = applyTo;
 						lastSimulatedLocation = applyTo.getLocation();
-						Actions.move(applyTo, input, duration);
+						Actions.move(applyTo, inputString, duration);
 						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks");
 						return true;
 					}
@@ -880,6 +880,8 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		// 5) Position & add to world
 		// Entity.a_(double, double, double) -> Entity.setPos(...)
 		nmsPlayer.setPos(-120.5, 71, -183.5);
+		nmsPlayer.setYRot(0.0f);
+		nmsPlayer.setXRot(0.0f);
 		nmsPlayer.setNoGravity(false);
 
 		// 6) Register with the server’s player list (so Bukkit sees it as a Player)
