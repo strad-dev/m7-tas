@@ -49,92 +49,170 @@ public class Watcher {
 		world = temp;
 		ORIGINAL_POSITION.setWorld(world);
 
-		watcher = (Zombie) world.spawnEntity(ORIGINAL_POSITION, EntityType.ZOMBIE);
-		watcher.setAI(false);
-		watcher.setSilent(true);
-		watcher.setPersistent(true);
-		watcher.setRemoveWhenFarAway(false);
-
-		Multimap<String, Property> props = HashMultimap.create();
-		props.put("textures", new Property("textures", "ewogICJ0aW1lc3RhbXAiIDogMTc0Njg0OTQ1NjQxOSwKICAicHJvZmlsZUlkIiA6ICIxZjk0OTQzN2RlYmQ0ODgyYTlhYzZhZmZmN2RhNDcxMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaWlra2FLYSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS83YjBkNTI3OGNkZWUwNGM1MjBhOWY1ZDE1M2E1MmI0ZWZjNzBmMzAzMjM5MjY2OGQyMTExNjJkNWFkYzAxYjExIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=", "awvIfqy7f12hqzBY/BZrhqCpC3xl0zeb0xTOVERZlzXsmk+ZivSyC8ZAlsR1Kmam0aLNDlvO3Nrl8ZGg5n77H+aUkZsoGz4DsuV2GoFv71UxXpPgAVkiCw0kPmNr9O17JChNU2HrO2hd1X3kqPX9gbA/JZ4+kCpcmbEtr7+VAl7xScOEWvKZPimdijG6hkNrBnkcttk+TYdIenrKNrZf346l2nD9nRif+1istHv9ouxZ7GguZPFFTTqtuljhdjsDQ5lQnFN/Q0b4cENMErlAkzam4n2jwTBJPWz9BeIUdgpOr4qyp4bTOLrD3mVfdSEJ+Q4hMjQLZZeYLxMZLSCqm56ns+rzm7O0aj7/+sjxngWZuT8z4U+g2J5QOOA3n8R3Z+QvEHitb1RZdM8DccYb9VwSbGG2jZ8acInxSoIT5bFWWfp0Bh+rwfuNe+v2hFReyUz35BwKrYUOxqL4+A7/McSpik/C+9BVMYL5n78FMD+1+SlJniMwAoPlRpz87yGYivEH9aAlEnTLE+7Tpp6wsiFCaQp5WJ8vfJnV9HVxDYjFs7xB29Cw+FIQnYSsT5U7Uv6znjBMWRmHI9zeU7GzQ0eNQkThSbzX+dE/c1WyPXVuL/wTfefbgh6jm1i6rNGz/a3RdnWk8ItXu/pYQjSmKnc2FJH+x28VXkYl3qQr0gw="));
-		PropertyMap propertyMap = new PropertyMap(props);
-		GameProfile gp = new GameProfile(UUID.randomUUID(), "watcher", propertyMap);
-
-		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
-
-		ItemStack helmet = new ItemStack(Material.PLAYER_HEAD);
-		SkullMeta meta = (SkullMeta) helmet.getItemMeta();
-		assert meta != null;
-		meta.setOwnerProfile(profile);
-		helmet.setItemMeta(meta);
-
-		Objects.requireNonNull(watcher.getEquipment()).setHelmet(helmet);
-		watcher.getEquipment().setChestplate(new ItemStack(Material.AIR));
-		watcher.getEquipment().setLeggings(new ItemStack(Material.AIR));
-		watcher.getEquipment().setBoots(new ItemStack(Material.AIR));
-		watcher.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
-		watcher.getEquipment().setItemInOffHand(new ItemStack(Material.AIR));
-		watcher.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255, false, false));
-		watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 255, false, false));
-		Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
-
-		// Create the boss bar
-		createWatcherBossBar();
-
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -56.5)); // Diamante Giant
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -60.5)); // Bonzo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -60.5)); // Meepy_
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -56.5)); // Mallyanke
-		/* -------------------- "Let's see how you can handle this" -------------------- */
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -56.5)); // valej
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -52.5)); // nograssbro
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -45.5)); // a6j3
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -45.5)); // Nucleararmadillo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -45.5)); // lfgm7
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -52.5)); // baldkc0303
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -52.5)); // nil4k
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -56.5)); // editqble
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -60.5)); // JennAiel
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -60.5)); // Stenoe
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -67.5)); // aalatif_
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -67.5)); // Deanvm
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -67.5)); // uncheck
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -60.5)); // EvilMerlyn
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -56.5)); // Beethoven_
-
-		// tick 0 = clear tick 1
-		sendChatMessage("Things feel a little more roomy now, eh?");
-		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
-		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
-		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
-
-		// Schedule kill messages and boss bar updates
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 437);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 442);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 447);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 452);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 494);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 527);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 568);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 598);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 631);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 660);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 689);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 718);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 751);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 783);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 824);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 854);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 887);
-		Utils.scheduleTask(() -> { sendChatMessage(KILLED_LINES.get(random.nextInt(5))); mobsKilled++; updateWatcherBossBar(); }, 916);
-		Utils.scheduleTask(() -> { mobsKilled++; updateWatcherBossBar(); sendChatMessage("You have proven yourself.  You may pass."); }, 946);
 		Utils.scheduleTask(() -> {
-			cleanup();
-			world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
-			if(doContinue) {
-				Maxor.maxorInstructions(world, true);
-			}
-		}, 1026);
+			watcher = (Zombie) world.spawnEntity(ORIGINAL_POSITION, EntityType.ZOMBIE);
+			watcher.setAI(false);
+			watcher.setSilent(true);
+			watcher.setPersistent(true);
+			watcher.setRemoveWhenFarAway(false);
+
+			Multimap<String, Property> props = HashMultimap.create();
+			props.put("textures", new Property("textures", "ewogICJ0aW1lc3RhbXAiIDogMTc0Njg0OTQ1NjQxOSwKICAicHJvZmlsZUlkIiA6ICIxZjk0OTQzN2RlYmQ0ODgyYTlhYzZhZmZmN2RhNDcxMSIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaWlra2FLYSIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS83YjBkNTI3OGNkZWUwNGM1MjBhOWY1ZDE1M2E1MmI0ZWZjNzBmMzAzMjM5MjY2OGQyMTExNjJkNWFkYzAxYjExIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=", "awvIfqy7f12hqzBY/BZrhqCpC3xl0zeb0xTOVERZlzXsmk+ZivSyC8ZAlsR1Kmam0aLNDlvO3Nrl8ZGg5n77H+aUkZsoGz4DsuV2GoFv71UxXpPgAVkiCw0kPmNr9O17JChNU2HrO2hd1X3kqPX9gbA/JZ4+kCpcmbEtr7+VAl7xScOEWvKZPimdijG6hkNrBnkcttk+TYdIenrKNrZf346l2nD9nRif+1istHv9ouxZ7GguZPFFTTqtuljhdjsDQ5lQnFN/Q0b4cENMErlAkzam4n2jwTBJPWz9BeIUdgpOr4qyp4bTOLrD3mVfdSEJ+Q4hMjQLZZeYLxMZLSCqm56ns+rzm7O0aj7/+sjxngWZuT8z4U+g2J5QOOA3n8R3Z+QvEHitb1RZdM8DccYb9VwSbGG2jZ8acInxSoIT5bFWWfp0Bh+rwfuNe+v2hFReyUz35BwKrYUOxqL4+A7/McSpik/C+9BVMYL5n78FMD+1+SlJniMwAoPlRpz87yGYivEH9aAlEnTLE+7Tpp6wsiFCaQp5WJ8vfJnV9HVxDYjFs7xB29Cw+FIQnYSsT5U7Uv6znjBMWRmHI9zeU7GzQ0eNQkThSbzX+dE/c1WyPXVuL/wTfefbgh6jm1i6rNGz/a3RdnWk8ItXu/pYQjSmKnc2FJH+x28VXkYl3qQr0gw="));
+			PropertyMap propertyMap = new PropertyMap(props);
+			GameProfile gp = new GameProfile(UUID.randomUUID(), "watcher", propertyMap);
+
+			CraftPlayerProfile profile = new CraftPlayerProfile(gp);
+
+			ItemStack helmet = new ItemStack(Material.PLAYER_HEAD);
+			SkullMeta meta = (SkullMeta) helmet.getItemMeta();
+			assert meta != null;
+			meta.setOwnerProfile(profile);
+			helmet.setItemMeta(meta);
+
+			Objects.requireNonNull(watcher.getEquipment()).setHelmet(helmet);
+			watcher.getEquipment().setChestplate(new ItemStack(Material.AIR));
+			watcher.getEquipment().setLeggings(new ItemStack(Material.AIR));
+			watcher.getEquipment().setBoots(new ItemStack(Material.AIR));
+			watcher.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
+			watcher.getEquipment().setItemInOffHand(new ItemStack(Material.AIR));
+			watcher.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255, false, false));
+			watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 255, false, false));
+			Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
+
+			// Create the boss bar
+			createWatcherBossBar();
+
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -56.5)); // Diamante Giant
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -60.5)); // Bonzo
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -60.5)); // Meepy_
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -56.5)); // Mallyanke
+			/* -------------------- "Let's see how you can handle this" -------------------- */
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -56.5)); // valej
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -52.5)); // nograssbro
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -45.5)); // a6j3
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -45.5)); // Nucleararmadillo
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -45.5)); // lfgm7
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -52.5)); // baldkc0303
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -52.5)); // nil4k
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -56.5)); // editqble
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -60.5)); // JennAiel
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -60.5)); // Stenoe
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -67.5)); // aalatif_
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -67.5)); // Deanvm
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -67.5)); // uncheck
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -60.5)); // EvilMerlyn
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -56.5)); // Beethoven_
+
+			// tick 0 = clear tick 1
+			sendChatMessage("Things feel a little more roomy now, eh?");
+			Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
+			Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
+//			Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
+
+			// Schedule kill messages and boss bar updates
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 437);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 442);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 447);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 452);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 494);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 527);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 568);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 598);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 631);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 660);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 689);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 718);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 751);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 783);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 824);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 854);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 887);
+//			Utils.scheduleTask(() -> {
+//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//			}, 916);
+//			Utils.scheduleTask(() -> {
+//				mobsKilled++;
+//				updateWatcherBossBar();
+//				sendChatMessage("You have proven yourself.  You may pass.");
+//			}, 946);
+//			Utils.scheduleTask(() -> {
+//				cleanup();
+//				world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
+//				if(doContinue) {
+//					Maxor.maxorInstructions(world, true);
+//				}
+//			}, 1026);
+		}, 3);
 	}
 
 	private static void createWatcherBossBar() {

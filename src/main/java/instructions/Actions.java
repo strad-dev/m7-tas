@@ -59,7 +59,7 @@ public class Actions {
 	 */
 	public static void move(Player player, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
-		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Simulating Player Movement");
+		Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] Simulating Player Movement");
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
@@ -274,7 +274,7 @@ public class Actions {
 		serverPlayer.setYBodyRot(yaw);
 		serverPlayer.setXRot(pitch);
 		serverPlayer.refreshDimensions();
-		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Simulating Head Turn");
+		Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] Simulating Head Turn");
 	}
 
 	/**
@@ -345,16 +345,9 @@ public class Actions {
 			return;
 		}
 
-		// Check for entity target - EXCLUDE fake players and invisible entities
+		// Check for entity target - EXCLUDE all players
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
-			if(entity == p) return false;
-
-			if(entity instanceof Player player) {
-				// Exclude: fake players, spectators of this player, and players this player is spectating
-				if(M7tas.getFakePlayers().contains(player)) return false;
-				if(M7tas.getSpectatingPlayers(p).contains(player)) return false;
-				if(M7tas.getSpectatorMap().get(p) == player) return false;
-			}
+			if(entity instanceof Player player) return false;
 
 			return entity.isVisibleByDefault();
 		});

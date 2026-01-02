@@ -355,7 +355,7 @@ public class CustomItems implements Listener {
 			l.setYaw(origin.getYaw());
 			l.setPitch(origin.getPitch());
 			p.teleport(l);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 		} else {
 			switch(result.getHitBlockFace()) {
 				case SELF -> {
@@ -366,14 +366,14 @@ public class CustomItems implements Listener {
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
-					Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				}
 				case DOWN -> {
 					Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
-					Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				}
 				default -> {
 					// Hit a side face - backtrack until we find a safe spot
@@ -414,7 +414,7 @@ public class CustomItems implements Listener {
 								l.setYaw(origin.getYaw());
 								l.setPitch(origin.getPitch());
 								p.teleport(l);
-								Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+								Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 								break;
 							}
 						}
@@ -426,13 +426,13 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 				}
 			}
 		}
 		p.setFallDistance(0);
-		p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+		Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 
 		// implosion
 		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 20);
@@ -450,11 +450,11 @@ public class CustomItems implements Listener {
 		if(damaged > 0) {
 			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage");
 		}
-		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
+		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
 		// wither shield
 		// does not affect anything
-		p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
+		Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
 	}
 
 	public static void aotv(Player p) {
@@ -469,8 +469,8 @@ public class CustomItems implements Listener {
 				l.setYaw(p.getEyeLocation().getYaw());
 				l.setPitch(p.getEyeLocation().getPitch());
 				p.setFallDistance(0);
-				p.playSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
-				Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Etherwarping " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+				Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
+				Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Etherwarping " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				p.teleport(l);
 			}
 		} else {
@@ -551,7 +551,7 @@ public class CustomItems implements Listener {
 				l.setYaw(origin.getYaw());
 				l.setPitch(origin.getPitch());
 				p.teleport(l);
-				Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+				Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 			} else {
 				switch(result.getHitBlockFace()) {
 					case SELF -> {
@@ -562,14 +562,14 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 					case DOWN -> {
 						Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 					default -> {
 						// Hit a side face - backtrack until we find a safe spot
@@ -610,7 +610,7 @@ public class CustomItems implements Listener {
 									l.setYaw(origin.getYaw());
 									l.setPitch(origin.getPitch());
 									p.teleport(l);
-									Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+									Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 									break;
 								}
 							}
@@ -622,13 +622,13 @@ public class CustomItems implements Listener {
 							l.setYaw(origin.getYaw());
 							l.setPitch(origin.getPitch());
 							p.teleport(l);
-							Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+							Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 						}
 					}
 				}
 			}
 			p.setFallDistance(0);
-			p.playSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+			Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 		}
 	}
 
@@ -636,7 +636,7 @@ public class CustomItems implements Listener {
 		// Capture block data
 		Material m = b.getType();
 		BlockData data = b.getBlockData().clone();
-		Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
+		Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
 
 		// Schedule restoration with Java's scheduler
 		Utils.scheduleTask(() -> {
@@ -646,11 +646,11 @@ public class CustomItems implements Listener {
 	}
 
 	public static void rag(Player p) {
-		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 40);
+		Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 40);
 		Utils.scheduleTask(() -> {
-			p.getWorld().playSound(p.getLocation(), Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
+			Utils.playLocalSound(p, Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
 			p.addScoreboardTag("RagBuff");
 			if(p.getName().equals("Archer")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 1));
@@ -711,11 +711,11 @@ public class CustomItems implements Listener {
 			world.spawnParticle(Particle.DUST, l, 1, particle);
 			l.add(v);
 		}
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GUARDIAN_DEATH, 0.5f, 2.0F);
+		Utils.playLocalSound(p, Sound.ENTITY_GUARDIAN_DEATH, 0.5f, 2.0F);
 	}
 
 	public static void aots(Player p) {
-		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
+		Utils.playLocalSound(p, Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
 
 		// Create the axe item display
 		Location startLoc = p.getEyeLocation();
@@ -794,7 +794,7 @@ public class CustomItems implements Listener {
 				entity1.damage(1);
 			}
 		}
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
+		Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
 	}
 
 	public static void flamingFlay(Player p) {
@@ -888,7 +888,7 @@ public class CustomItems implements Listener {
 					cancel();
 					return;
 				}
-				p.getWorld().playSound(l, Sound.ENTITY_ENDERMAN_TELEPORT, 2.0f, pitch);
+				Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 2.0f, pitch);
 				pitch += 0.025f;
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
@@ -1107,7 +1107,7 @@ public class CustomItems implements Listener {
 
 			p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, l, 350, 0, 0, 0, 0.75);
 			p.getWorld().spawnParticle(Particle.CRIT, l, 150, 0, 0, 0, 2);
-			p.playSound(l, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
+			Utils.playLocalSound(p, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
 		} else {
 			fireWindCharge(p);
 		}
@@ -1214,7 +1214,7 @@ public class CustomItems implements Listener {
 			arrow.addScoreboardTag("TerminatorArrow");
 		}
 
-		p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+		Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 
 		// Duplex Arrow
 		Utils.scheduleTask(() -> {
@@ -1224,7 +1224,7 @@ public class CustomItems implements Listener {
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
 			arrow.addScoreboardTag("TerminatorArrow");
-			p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+			Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 		}, 3);
 
 		if(p.getName().equals("Archer")) {
@@ -1235,7 +1235,7 @@ public class CustomItems implements Listener {
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
-				p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+				Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 			}, 5);
 
 			Utils.scheduleTask(() -> {
@@ -1245,30 +1245,30 @@ public class CustomItems implements Listener {
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
-				p.playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+				p.playSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 			}, 10);
 		}
 	}
 
 	public static void tac(Player p) {
 		Location l = p.getLocation();
-		Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Activating Tactical Insertion at " + l.getX() + " " + l.getY() + " " + l.getZ());
-		p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);
-		p.playSound(p, Sound.ITEM_FLINTANDSTEEL_USE, 1.0F, 1.0F);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.793701F), 10);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.890899F), 20);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.943874F), 30);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1F), 40);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1.059463F), 50);
+		Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Activating Tactical Insertion at " + l.getX() + " " + l.getY() + " " + l.getZ());
+		Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);
+		Utils.playLocalSound(p, Sound.ITEM_FLINTANDSTEEL_USE, 1.0F, 1.0F);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.793701F), 10);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.890899F), 20);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.943874F), 30);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1F), 40);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 1.059463F), 50);
 		Utils.scheduleTask(() -> {
-			p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
+			Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
 			p.teleport(l);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Returning " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Returning " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 			p.setVelocity(new Vector(0, 0, 0));
 			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
 		}, 60);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 63);
-		Utils.scheduleTask(() -> p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 66);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 63);
+		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 66);
 	}
 
 	public static void mageBeam(Player p) {

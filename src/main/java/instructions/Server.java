@@ -28,35 +28,36 @@ public class Server {
 		Utils.scheduleTask(() -> {
 			switch(section) {
 				case "all", "clear" -> {
-					Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"); // 60
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 40); // 100
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 80); // 140
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 120); // 180
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] Out of Bounds Check Triggered!"), 40);
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] Out of Bounds Check Triggered!"), 80);
+					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] Out of Bounds Check Triggered!"), 120);
+
 					// 5-second countdown
-//					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
-//					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
-//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-//					}, 20);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
-//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-//					}, 40);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
-//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-//					}, 60);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-//						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
-//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-//					}, 80);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-//						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
-//						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-//					}, 100);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F), 100);
-//					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Watcher.watcherInstructions(world, section.equals("all")), 101);
+					Utils.scheduleTask(() -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 28);
+					Utils.scheduleTask(() -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 48);
+					Utils.scheduleTask(() -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 68);
+					Utils.scheduleTask(() -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 88);
+					Utils.scheduleTask(() -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
+						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+					}, 108);
+					Utils.scheduleTask(() -> {
+						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
+						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
+						Watcher.watcherInstructions(world, section.equals("all"));
+					}, 128);
 				}
 //				case "boss" -> Maxor.maxorInstructions(world, true);
 //				case "maxor" -> Maxor.maxorInstructions(world, false);
@@ -110,7 +111,7 @@ public class Server {
 			}
 		}
 
-		Location[] locations = { new Location(world, -120.5, 69, -184.5, 90, 0), // Red Blue (I)
+		Location[] locations = {new Location(world, -120.5, 69, -184.5, 90, 0), // Red Blue (I)
 				new Location(world, -216.5, 69, -184.5, 0, 0), // Spider (II)
 				new Location(world, -120.5, 67, -120.5, -90, 0), // Deathmite (II)
 				new Location(world, -35.5, 69, -152.5, 90, 0), // Dino Dig Site (III)
@@ -399,10 +400,10 @@ public class Server {
 		Block block = world.getBlockAt(-2, 122, 77);
 		Collection<Entity> entities = world.getNearbyEntities(block.getLocation().add(0.5, 0.5, 0.5), 1, 1, 1);
 
-		for (Entity entity : entities) {
-			if (entity instanceof ItemFrame itemFrame) {
+		for(Entity entity : entities) {
+			if(entity instanceof ItemFrame itemFrame) {
 				// Check if this item frame is actually at the block we want
-				if (entity.getLocation().getBlockX() == -2 &&
+				if(entity.getLocation().getBlockX() == -2 &&
 						entity.getLocation().getBlockY() == 122 &&
 						entity.getLocation().getBlockZ() == 77) {
 

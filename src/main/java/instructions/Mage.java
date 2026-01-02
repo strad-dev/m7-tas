@@ -101,10 +101,14 @@ public class Mage {
 		// tick 80: get teleported back
 		Utils.scheduleTask(() -> Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
 		// tick 120: dodged
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 130);
+		// tick 128: run starts
+		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
 
 	private static void clear(boolean doContinue) {
+		// tick 1: tac TP back
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 2);
+		// tick 3: blood opens
 	}
 //		/*
 //		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗

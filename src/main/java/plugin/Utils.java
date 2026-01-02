@@ -123,7 +123,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Sending Packet " + packet.getClass().getSimpleName());
+		Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] Sending Packet " + packet.getClass().getSimpleName());
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
 			((Packet) packet).handle(customConnection);
@@ -218,5 +218,23 @@ public class Utils {
 	 */
 	public static void playGlobalSound(Sound s, float volume, float pitch) {
 		Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player, s, volume, pitch));
+	}
+
+	/**
+	 * Plays a sound for all players spectating this player if applicable
+	 *
+	 * @param p      The player causing the sound
+	 * @param s      The sound to play
+	 * @param volume Volume
+	 * @param pitch  Pitch
+	 */
+	public static void playLocalSound(Player p, Sound s, float volume, float pitch) {
+		if(M7tas.getFakePlayers().contains(p)) {
+			for(Player spectator : M7tas.getReverseSpectatorMap().get(p)) {
+				spectator.playSound(spectator, s, volume, pitch);
+			}
+		} else {
+			p.playSound(p, s, volume, pitch);
+		}
 	}
 }

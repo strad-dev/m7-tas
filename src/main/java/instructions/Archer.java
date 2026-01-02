@@ -20,6 +20,7 @@ public class Archer {
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.teleport(archer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 //				Actions.setHotbarSlot(archer, 1);
 //				Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
 //				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
@@ -92,7 +93,11 @@ public class Archer {
 		}
 	}
 
-	public static void clear(boolean doContinue) {
+	private static void preClear(boolean doContinue) {
+		Actions.move(archer, "WPJ", 12);
+	}
+
+	private static void clear(boolean doContinue) {
 		/*
 		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗
 		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔══██╗██║   ██║██╔════╝██║  ██║

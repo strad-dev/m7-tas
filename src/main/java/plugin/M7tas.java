@@ -45,6 +45,7 @@ import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -196,6 +197,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 	private void spawnAllFakes(World world) {
 		// clear any old ones
+		stopCustomConnection();
 		kickAllFakes();
 		fakePlayers.clear();
 
@@ -390,7 +392,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
 		}
 
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tag @e remove TASWither");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tag @e[type=wither] remove TASWither");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!item_frame,type=!player,type=!villager]");
 
 		spectatorMap.clear();
@@ -622,9 +624,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 				return false;
 			}
 			case "reset" -> {
-				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 100, -220.5);
+				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 71, -183.5);
 				fakePlayers.values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
-				p.sendMessage("Reset all NPC locations");
+				Server.serverSetup(Bukkit.getWorld("world"));
+				p.sendMessage("Reset server and all NPC locations");
 				return true;
 			}
 			case "getcustomitems" -> {
@@ -1084,6 +1087,25 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	private void stopCustomConnection() {
 		for(ServerPlayer serverPlayer : customConnectionTask.keySet()) {
 			customConnectionTask.get(serverPlayer).cancel();
+			MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
+			Connection nm = new Connection(PacketFlow.SERVERBOUND) {
+				{
+					this.channel = new EmbeddedChannel();
+					this.address = new InetSocketAddress("127.0.0.1", 0);
+				}
+
+				@Override
+				public void send(Packet<?> packet) {
+
+				}
+
+				@Override
+				public boolean isConnected() {
+					return true;
+				}
+			};
+			CommonListenerCookie cookie = CommonListenerCookie.createInitial(serverPlayer.getGameProfile(), false);
+			serverPlayer.connection = new ServerGamePacketListenerImpl(nmsServer, nm, serverPlayer, cookie);
 		}
 	}
 
@@ -1106,13 +1128,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						PositionMoveRotation pmr = PositionMoveRotation.of(nmsFake);
 
 						// Use the existing updateSpectators method which already handles this correctly
-						double distance = spectator.getLocation().distanceSquared(fakePlayer.getLocation());
-						if(distance < 1024) {
-							ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(craftSpectator.getEntityId(), pmr, EnumSet.noneOf(Relative.class));
-							nmsSpectator.connection.send(snapCam);
-						} else {
+//						double distance = spectator.getLocation().distanceSquared(fakePlayer.getLocation());
+//						if(distance < 1024) {
+//							ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(craftSpectator.getEntityId(), pmr, EnumSet.noneOf(Relative.class));
+//							nmsSpectator.connection.send(snapCam);
+//						} else {
 							spectator.teleport(fakePlayer);
-						}
+//						}
 
 						// Send destroy packet every tick to keep fake player hidden
 						ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
