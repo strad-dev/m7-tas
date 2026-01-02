@@ -31,6 +31,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.v1_21_R7.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.event.Event;
@@ -40,6 +42,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.util.Vector;
 import org.slf4j.Logger;
+import plugin.Utils;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -250,16 +253,21 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 					if(blockposition.getY() <= i) {
 						this.player.stopUsingItem();
 						InteractionResult enuminteractionresult = this.player.gameMode.useItemOn(this.player, worldserver, itemstack, enumhand, movingobjectpositionblock);
-						if(enuminteractionresult.consumesAction()) {
-							CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, movingobjectpositionblock.getBlockPos(), itemstack.copy());
-						}
+						if(enuminteractionresult == InteractionResult.PASS) {
+							ServerboundUseItemPacket packet = new ServerboundUseItemPacket(enumhand, 0, this.player.getYRot(), this.player.getXRot());
+							this.handleUseItem(packet);
+						} else {
+							if(enuminteractionresult.consumesAction()) {
+								CriteriaTriggers.ANY_BLOCK_USE.trigger(this.player, movingobjectpositionblock.getBlockPos(), itemstack.copy());
+							}
 
-						if(enumdirection == Direction.UP && !enuminteractionresult.consumesAction() && blockposition.getY() >= i && wasBlockPlacementAttempt(this.player, itemstack)) {
-							Component ichatbasecomponent = Component.translatable("build.tooHigh", i).withStyle(ChatFormatting.RED);
-							this.player.sendSystemMessage(ichatbasecomponent, true);
-						} else if(enuminteractionresult instanceof InteractionResult.Success enuminteractionresult_d) {
-							if(enuminteractionresult_d.swingSource() == InteractionResult.SwingSource.SERVER) {
-								this.player.swing(enumhand, true);
+							if(enumdirection == Direction.UP && !enuminteractionresult.consumesAction() && blockposition.getY() >= i && wasBlockPlacementAttempt(this.player, itemstack)) {
+								Component ichatbasecomponent = Component.translatable("build.tooHigh", i).withStyle(ChatFormatting.RED);
+								this.player.sendSystemMessage(ichatbasecomponent, true);
+							} else if(enuminteractionresult instanceof InteractionResult.Success enuminteractionresult_d) {
+								if(enuminteractionresult_d.swingSource() == InteractionResult.SwingSource.SERVER) {
+									this.player.swing(enumhand, true);
+								}
 							}
 						}
 					} else {

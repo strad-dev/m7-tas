@@ -877,7 +877,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
 		// ServerPlayer = ServerPlayer
 		// ServerPlayer.f -> ServerPlayer.PlayerConnection
-		nmsPlayer.connection = new TASGamePacketListenerImpl(nmsServer, nm, nmsPlayer, cookie);
+		TASGamePacketListenerImpl connection = new TASGamePacketListenerImpl(nmsServer, nm, nmsPlayer, cookie);
+		nmsPlayer.connection = connection;
+		forceCustomConnection(nmsPlayer, connection);
 
 		// 5) Position & add to world
 		// Entity.a_(double, double, double) -> Entity.setPos(...)
@@ -1060,6 +1062,15 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					}
 					npc.aiStep();
 				}
+			}
+		}.runTaskTimer(this, 0, 1);
+	}
+
+	private void forceCustomConnection(ServerPlayer serverPlayer, TASGamePacketListenerImpl connection) {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				serverPlayer.connection = connection;
 			}
 		}.runTaskTimer(this, 0, 1);
 	}

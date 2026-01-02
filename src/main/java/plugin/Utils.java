@@ -10,6 +10,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
@@ -124,7 +125,11 @@ public class Utils {
 
 		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Sending Packet " + packet.getClass().getSimpleName());
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
-		((Packet) packet).handle(serverPlayer.connection);
+		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
+			((Packet) packet).handle(customConnection);
+		} else {
+			((Packet) packet).handle(serverPlayer.connection);
+		}
 	}
 
 	/**

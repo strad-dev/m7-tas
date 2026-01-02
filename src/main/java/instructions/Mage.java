@@ -88,7 +88,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 58);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 59);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 60); // tp down fast
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 35.1f, 16.4f), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 35.1f, 20f), 61);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 62); // reposition
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, -90f);

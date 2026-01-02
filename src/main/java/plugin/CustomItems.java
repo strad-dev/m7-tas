@@ -118,7 +118,6 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
-		Bukkit.broadcastMessage(ChatColor.GOLD + "[debug] Interact Event Detected");
 		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer());
 	}
 
@@ -217,10 +216,8 @@ public class CustomItems implements Listener {
 					}
 				}
 				if(action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK)) {
-					Bukkit.broadcastMessage(ChatColor.GOLD + "[debug] Detected Right Click");
 					if(System.currentTimeMillis() >= cooldowns.getOrDefault(p.getUniqueId(), 0L)) {
 						cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 40);
-						Bukkit.broadcastMessage(ChatColor.GOLD + "[debug] Executing Right Click");
 						switch(id) {
 							case "skyblock/combat/scylla" -> {
 								e.setCancelled(true);
