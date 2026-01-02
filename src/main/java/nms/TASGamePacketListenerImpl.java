@@ -31,8 +31,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.v1_21_R7.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.event.Event;
@@ -42,7 +40,6 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.util.Vector;
 import org.slf4j.Logger;
-import plugin.Utils;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;

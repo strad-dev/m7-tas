@@ -49,7 +49,6 @@ import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.Relative;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
