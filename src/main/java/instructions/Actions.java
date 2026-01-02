@@ -5,7 +5,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -46,7 +45,6 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Field;
 import java.util.*;
 
 @SuppressWarnings("unused")
@@ -61,6 +59,7 @@ public class Actions {
 	 */
 	public static void move(Player player, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
+		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Simulating Player Movement");
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
@@ -269,14 +268,13 @@ public class Actions {
 			return;
 		}
 
-		// For fake players, use rotation packet
+		// For fake players, set rotation directly
 		ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-
-		// Create rotation-only packet (no position change)
-		ServerboundMovePlayerPacket.Rot rotationPacket = new ServerboundMovePlayerPacket.Rot(yaw, pitch, serverPlayer.onGround(), serverPlayer.horizontalCollision);
-
-		// Simulate the packet - server will handle rotation and broadcasting
-		Utils.simulatePacket(player, rotationPacket);
+		serverPlayer.setYRot(yaw);
+		serverPlayer.setYBodyRot(yaw);
+		serverPlayer.setXRot(pitch);
+		serverPlayer.refreshDimensions();
+		Bukkit.broadcastMessage(ChatColor.AQUA + "[client] Simulating Head Turn");
 	}
 
 	/**
@@ -328,14 +326,6 @@ public class Actions {
 		if(!(p instanceof CraftPlayer cp)) return;
 
 		ServerPlayer serverPlayer = cp.getHandle();
-
-		try {
-			Field awaitingField = ServerGamePacketListenerImpl.class.getDeclaredField("awaitingPositionFromClient");
-			awaitingField.setAccessible(true);
-			awaitingField.set(serverPlayer.connection, null);
-		} catch(Exception e) {
-			// Only log once
-		}
 
 		// Check for block target FIRST (before entity)
 		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());

@@ -118,6 +118,7 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
+		Bukkit.broadcastMessage(ChatColor.GOLD + "[debug] Interact Event Detected");
 		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer());
 	}
 
@@ -216,8 +217,10 @@ public class CustomItems implements Listener {
 					}
 				}
 				if(action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK)) {
+					Bukkit.broadcastMessage(ChatColor.GOLD + "[debug] Detected Right Click");
 					if(System.currentTimeMillis() >= cooldowns.getOrDefault(p.getUniqueId(), 0L)) {
-						cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 50);
+						cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 40);
+						Bukkit.broadcastMessage(ChatColor.GOLD + "[debug] Executing Right Click");
 						switch(id) {
 							case "skyblock/combat/scylla" -> {
 								e.setCancelled(true);
@@ -281,20 +284,20 @@ public class CustomItems implements Listener {
 		Location origin = p.getLocation().clone();
 		RayTraceResult result = p.rayTraceBlocks(11.65);
 		if(result == null) {
-			Location targetLoc = p.getLocation().add(p.getLocation().getDirection().multiply(10));
-			targetLoc.setX(Math.floor(targetLoc.getX()) + 0.5);
-			targetLoc.setY(Math.floor(targetLoc.getY()));
-			targetLoc.setZ(Math.floor(targetLoc.getZ()) + 0.5);
+			Location l = p.getLocation().add(p.getLocation().getDirection().multiply(10));
+			l.setX(Math.floor(l.getX()) + 0.5);
+			l.setY(Math.floor(l.getY()));
+			l.setZ(Math.floor(l.getZ()) + 0.5);
 
 			// Check if the target location is safe
-			Block feetBlock = targetLoc.getBlock();
+			Block feetBlock = l.getBlock();
 			Block headBlock = feetBlock.getRelative(BlockFace.UP);
 
 			// If either block is solid, we need to adjust
 			if(!feetBlock.isPassable() || !headBlock.isPassable()) {
 				// Try to move up until we find a safe spot or reach original height
 				double originalY = p.getLocation().getY();
-				Location checkLoc = targetLoc.clone();
+				Location checkLoc = l.clone();
 				boolean foundSafe = false;
 
 				// Check up to 10 blocks up or until at original height
@@ -314,7 +317,7 @@ public class CustomItems implements Listener {
 							}
 						}
 
-						targetLoc = checkLoc.clone();
+						l = checkLoc.clone();
 						foundSafe = true;
 						break;
 					}
@@ -333,28 +336,29 @@ public class CustomItems implements Listener {
 			}
 
 			// Additional check for 1-block tall spaces when below original height
-			if(targetLoc.getY() < p.getLocation().getY()) {
-				Block aboveHead = targetLoc.getBlock().getRelative(BlockFace.UP, 2);
+			if(l.getY() < p.getLocation().getY()) {
+				Block aboveHead = l.getBlock().getRelative(BlockFace.UP, 2);
 				if(!aboveHead.isPassable()) {
 					// This would put player in crawl mode below their starting position
 					// Try to find a better spot
 					for(int i = 1; i <= 3; i++) {
-						Location upLoc = targetLoc.clone().add(0, i, 0);
+						Location upLoc = l.clone().add(0, i, 0);
 						Block upFeet = upLoc.getBlock();
 						Block upHead = upFeet.getRelative(BlockFace.UP);
 						Block upAbove = upHead.getRelative(BlockFace.UP);
 
 						if(upFeet.isPassable() && upHead.isPassable() && upAbove.isPassable()) {
-							targetLoc = upLoc;
+							l = upLoc;
 							break;
 						}
 					}
 				}
 			}
 
-			targetLoc.setYaw(origin.getYaw());
-			targetLoc.setPitch(origin.getPitch());
-			p.teleport(targetLoc);
+			l.setYaw(origin.getYaw());
+			l.setPitch(origin.getPitch());
+			p.teleport(l);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 		} else {
 			switch(result.getHitBlockFace()) {
 				case SELF -> {
@@ -365,12 +369,14 @@ public class CustomItems implements Listener {
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
+					Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				}
 				case DOWN -> {
 					Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
+					Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				}
 				default -> {
 					// Hit a side face - backtrack until we find a safe spot
@@ -411,6 +417,7 @@ public class CustomItems implements Listener {
 								l.setYaw(origin.getYaw());
 								l.setPitch(origin.getPitch());
 								p.teleport(l);
+								Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 								break;
 							}
 						}
@@ -422,6 +429,7 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
+						Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 				}
 			}
@@ -631,6 +639,7 @@ public class CustomItems implements Listener {
 		// Capture block data
 		Material m = b.getType();
 		BlockData data = b.getBlockData().clone();
+		Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
 
 		// Schedule restoration with Java's scheduler
 		Utils.scheduleTask(() -> {
@@ -1246,6 +1255,7 @@ public class CustomItems implements Listener {
 
 	public static void tac(Player p) {
 		Location l = p.getLocation();
+		Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Activating Tactical Insertion at " + l.getX() + " " + l.getY() + " " + l.getZ());
 		p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);
 		p.playSound(p, Sound.ITEM_FLINTANDSTEEL_USE, 1.0F, 1.0F);
 		Utils.scheduleTask(() -> p.playSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.793701F), 10);
@@ -1256,6 +1266,7 @@ public class CustomItems implements Listener {
 		Utils.scheduleTask(() -> {
 			p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
 			p.teleport(l);
+			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 			p.setVelocity(new Vector(0, 0, 0));
 			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
 		}, 60);

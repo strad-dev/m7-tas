@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import plugin.Utils;
 
 import java.util.Objects;
 
@@ -23,7 +24,7 @@ public class Tank {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(tank, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.teleport(tank, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 //				Utils.scheduleTask(() -> Actions.swapItems(tank, 2, 29), 60);
 //				Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 61);
 //				Utils.scheduleTask(() -> Actions.rightClick(tank), 101);
@@ -32,13 +33,13 @@ public class Tank {
 //					Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
 //				}, 102);
 //				Utils.scheduleTask(() -> {
-//					Actions.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
+//					Utils.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
 //					Actions.swapItems(Tank.tank, 2, 29);
 //				}, 141);
 //				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
-//				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(tank, new Location(world, 73.5, 221, 13.5, 0f, 0f));
 //				Actions.swapItems(tank, 1, 28);
 //				Actions.swapItems(tank, 3, 30);
 //				Actions.swapItems(tank, 4, 31);
@@ -52,7 +53,7 @@ public class Tank {
 //				}
 //			}
 //			case "storm" -> {
-//				Actions.teleport(tank, new Location(world, 35.043, 170, 92.054, 46.9f, 25f));
+//				Utils.teleport(tank, new Location(world, 35.043, 170, 92.054, 46.9f, 25f));
 //				Actions.swapItems(tank, 1, 28);
 //				Actions.swapItems(tank, 3, 30);
 //				Actions.swapItems(tank, 5, 32);
@@ -61,7 +62,7 @@ public class Tank {
 //				Utils.scheduleTask(() -> storm(false), 60);
 //			}
 //			case "goldor" -> {
-//				Actions.teleport(tank, new Location(world, 107.736, 120, 89.242, -54.5f, 2f));
+//				Utils.teleport(tank, new Location(world, 107.736, 120, 89.242, -54.5f, 2f));
 //				Actions.swapItems(tank, 1, 28);
 //				Actions.swapItems(tank, 3, 30);
 //				Actions.swapItems(tank, 5, 32);
@@ -70,7 +71,7 @@ public class Tank {
 ////				Utils.scheduleTask(() -> goldor(false), 60);
 //			}
 //			case "necron" -> {
-//				Actions.teleport(tank, new Location(world, 54.529, 65, 83.688, 180f, -5f));
+//				Utils.teleport(tank, new Location(world, 54.529, 65, 83.688, 180f, -5f));
 //				Actions.swapItems(tank, 1, 28);
 //				Actions.swapItems(tank, 3, 30);
 //				Actions.swapItems(tank, 5, 32);
@@ -79,7 +80,7 @@ public class Tank {
 //				Utils.scheduleTask(() -> necron(false), 60);
 //			}
 //			case "witherking" -> {
-//				Actions.teleport(tank, new Location(world, 22.3, 6, 94.452, 67.3f, 29.7f));
+//				Utils.teleport(tank, new Location(world, 22.3, 6, 94.452, 67.3f, 29.7f));
 //				Actions.swapItems(tank, 1, 28);
 //				Actions.swapItems(tank, 3, 30);
 //				Actions.swapItems(tank, 5, 32);
@@ -465,7 +466,7 @@ public class Tank {
 //		}, 213);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> {
-//				Actions.teleport(tank, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(tank, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 //			}, 1025);
 //		}

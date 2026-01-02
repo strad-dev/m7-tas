@@ -1,6 +1,8 @@
 package instructions;
 
-import instructions.bosses.*;
+import instructions.bosses.CustomBossBar;
+import instructions.bosses.Storm;
+import instructions.bosses.Watcher;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -8,7 +10,6 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.Collection;
@@ -31,10 +32,6 @@ public class Server {
 					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 40); // 100
 					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 80); // 140
 					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 120); // 180
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 160); // 220
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 200); // 260
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 240); // 300
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[server] Anti-Cheese TP triggered!"), 280); // 340
 					// 5-second countdown
 //					Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
 //					Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);

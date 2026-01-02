@@ -50,6 +50,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
+import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -78,7 +79,6 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
-import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.function.Predicate;
@@ -877,7 +877,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		CommonListenerCookie cookie = CommonListenerCookie.createInitial(profile, false);
 		// ServerPlayer = ServerPlayer
 		// ServerPlayer.f -> ServerPlayer.PlayerConnection
-		nmsPlayer.connection = new ServerGamePacketListenerImpl(nmsServer, nm, nmsPlayer, cookie);
+		nmsPlayer.connection = new TASGamePacketListenerImpl(nmsServer, nm, nmsPlayer, cookie);
 
 		// 5) Position & add to world
 		// Entity.a_(double, double, double) -> Entity.setPos(...)
@@ -1052,13 +1052,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					if(!(fake instanceof CraftPlayer)) continue;
 					ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 					npc.setNoGravity(false);
-					try {
-						Field awaitingField = ServerGamePacketListenerImpl.class.getDeclaredField("awaitingPositionFromClient");
-						awaitingField.setAccessible(true);
-						awaitingField.set(npc.connection, null);
-					} catch (Exception e) {
-						// Only log once
-					}
 
 					if(npc.isShiftKeyDown() && npc.getPose() != Pose.CROUCHING) {
 						npc.setPose(Pose.CROUCHING);

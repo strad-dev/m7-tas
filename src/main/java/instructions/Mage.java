@@ -15,23 +15,11 @@ public class Mage {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
-				// tick 140: get teleported back
-//				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 61);
-//				Utils.scheduleTask(() -> Actions.rightClick(mage), 101);
-//				Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.8634), 5), 102);
-//				Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 121);
-//				Utils.scheduleTask(() -> {
-//					Actions.teleport(mage, new Location(mage.getWorld(), -120.5, 75, -220.5));
-//					Actions.swapItems(mage, 2, 29);
-//				}, 141);
-//				// Tick 160 (clear tick 0: run begins)
-//				// Tick 161 (clear tick 1: teleport back) - watcher sequence begins
-//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
-//				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5, 0f, 0f));
 //				Actions.swapItems(mage, 9, 36);
 //				Actions.swapItems(mage, 1, 28);
 //				Actions.swapItems(mage, 3, 30);
@@ -43,21 +31,21 @@ public class Mage {
 //				}
 //			}
 //			case "storm" -> {
-//				Actions.teleport(mage, new Location(world, 46.576, 169, 49.503, 1.4f, 22.4f));
+//				Utils.teleport(mage, new Location(world, 46.576, 169, 49.503, 1.4f, 22.4f));
 //				Actions.swapItems(mage, 1, 28);
 //				Actions.swapItems(mage, 3, 30);
 //				Actions.swapItems(mage, 5, 32);
 //				Utils.scheduleTask(() -> storm(false), 60);
 //			}
 //			case "goldor" -> {
-//				Actions.teleport(mage, new Location(world, 108.308, 120, 94.675, -139.3f, 1.6f));
+//				Utils.teleport(mage, new Location(world, 108.308, 120, 94.675, -139.3f, 1.6f));
 //				Actions.swapItems(mage, 1, 28);
 //				Actions.swapItems(mage, 3, 30);
 //				Actions.swapItems(mage, 6, 33);
 ////				Utils.scheduleTask(() -> goldor(false), 60);
 //			}
 //			case "necron" -> {
-//				Actions.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
+//				Utils.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(mage, 1, 28);
 //				Actions.swapItems(mage, 3, 30);
 //				Actions.swapItems(mage, 5, 32);
@@ -65,7 +53,7 @@ public class Mage {
 //				Utils.scheduleTask(() -> necron(false), 60);
 //			}
 //			case "witherking" -> {
-//				Actions.teleport(mage, new Location(world, 89.7, 6, 94.406, -75.6f, 18.8f));
+//				Utils.teleport(mage, new Location(world, 89.7, 6, 94.406, -75.6f, 18.8f));
 //				Actions.swapItems(mage, 1, 28);
 //				Actions.swapItems(mage, 5, 32);
 //				Actions.swapItems(mage, 6, 33);
@@ -92,8 +80,27 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 53); // etherwarp onto first checkmark
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -25.9f, 3.55f), 54);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 55); // etherwarp to edge of blood
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 1), 56); // fall into void to facilitate pearls
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 56); // fall into void to facilitate pearls
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, "", 0);
+			Actions.turnHead(mage, 45f, 90f);
+		}, 57);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 58);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 59);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 60); // tp down fast
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 35.1f, 16.4f), 61);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 62); // reposition
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 0f, -90f);
+			Actions.setHotbarSlot(mage, 7);
+		}, 63);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 64); // throw pearl to enter bedrock, lands in 4 ticks
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 65);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 68); // activate tac, procs in 60 ticks (128)
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 7), 69);
 		// tick 80: get teleported back
+		Utils.scheduleTask(() -> Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 128);
 	}
 
 	private static void clear(boolean doContinue) {
@@ -314,7 +321,7 @@ public class Mage {
 //		Utils.scheduleTask(() -> {
 //			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1027 Ticks (51.35 seconds)");
 //			if(doContinue) {
-//				Actions.teleport(mage, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 //			}
 //		}, 1025);

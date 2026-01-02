@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import plugin.Utils;
 
 import java.util.Objects;
 
@@ -18,7 +19,7 @@ public class Berserk {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(berserk, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.teleport(berserk, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 //				Utils.scheduleTask(() -> {
 //					Actions.swapItems(berserk, 2, 29);
 //					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
@@ -30,13 +31,13 @@ public class Berserk {
 //					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
 //				}, 102);
 //				Utils.scheduleTask(() -> {
-//					Actions.teleport(berserk, new Location(world, -120.5, 75, -220.5));
+//					Utils.teleport(berserk, new Location(world, -120.5, 75, -220.5));
 //					Actions.swapItems(berserk, 2, 29);
 //				}, 141);
 //				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
-//				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));
 //				Actions.swapItems(berserk, 11, 36);
 //				Actions.swapItems(berserk, 1, 28);
 //				Actions.swapItems(berserk, 7, 35);
@@ -47,13 +48,13 @@ public class Berserk {
 //				}
 //			}
 //			case "storm" -> {
-//				Actions.teleport(berserk, new Location(world, 100.422, 169, 49.624, -1f, 23f));
+//				Utils.teleport(berserk, new Location(world, 100.422, 169, 49.624, -1f, 23f));
 //				Actions.swapItems(berserk, 1, 28);
 //				Actions.swapItems(berserk, 7, 35);
 //				Utils.scheduleTask(() -> storm(false), 60);
 //			}
 //			case "goldor" -> {
-//				Actions.teleport(berserk, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
+//				Utils.teleport(berserk, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
 //				Actions.swapItems(berserk, 1, 28);
 //				Actions.swapItems(berserk, 7, 35);
 //				Actions.swapItems(berserk, 9, 39);
@@ -63,13 +64,13 @@ public class Berserk {
 //				Utils.scheduleTask(() -> goldor(false), 60);
 //			}
 //			case "necron" -> {
-//				Actions.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));
+//				Utils.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(berserk, 1, 28);
 //				Actions.swapItems(berserk, 7, 35);
 //				Utils.scheduleTask(() -> necron(false), 60);
 //			}
 //			case "witherking" -> {
-//				Actions.teleport(berserk, new Location(world, 90.7, 6, 56.581, -79.7f, 19.1f));
+//				Utils.teleport(berserk, new Location(world, 90.7, 6, 56.581, -79.7f, 19.1f));
 //				Actions.swapItems(berserk, 1, 28);
 //				Actions.swapItems(berserk, 7, 35);
 //				Actions.swapItems(berserk, 12, 39);
@@ -539,7 +540,7 @@ public class Berserk {
 //		}, 219);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> {
-//				Actions.teleport(berserk, new Location(world, 73.5, 221, 13.5, 11.3f, 0f));
+//				Utils.teleport(berserk, new Location(world, 73.5, 221, 13.5, 11.3f, 0f));
 //				maxor(true);
 //			}, 1025);
 //		}

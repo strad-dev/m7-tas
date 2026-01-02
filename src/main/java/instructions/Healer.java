@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import plugin.Utils;
 
 import java.util.Objects;
 
@@ -19,7 +20,7 @@ public class Healer {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 //				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
 //				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
 //				Utils.scheduleTask(() -> Actions.rightClick(healer), 101);
@@ -28,13 +29,13 @@ public class Healer {
 //					Actions.move(healer, new Vector(0, 0, 0.8634), 5);
 //				}, 102);
 //				Utils.scheduleTask(() -> {
-//					Actions.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
+//					Utils.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
 //					Actions.swapItems(healer, 2, 29);
 //				}, 141);
 //				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
-//				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
 //				Actions.swapItems(healer, 1, 28);
 //				Actions.swapItems(healer, 3, 30);
 //				Actions.swapItems(healer, 7, 34);
@@ -45,21 +46,21 @@ public class Healer {
 //				}
 //			}
 //			case "storm" -> {
-//				Actions.teleport(healer, new Location(world, 111.719, 170, 92.386, -53.2f, 24.7f));
+//				Utils.teleport(healer, new Location(world, 111.719, 170, 92.386, -53.2f, 24.7f));
 //				Actions.swapItems(healer, 1, 28);
 //				Actions.swapItems(healer, 3, 30);
 //				Actions.swapItems(healer, 7, 34);
 //				Utils.scheduleTask(() -> storm(false), 60);
 //			}
 //			case "goldor" -> {
-//				Actions.teleport(healer, new Location(world, 108.308, 120, 93.895, -132.4f, 2.3f));
+//				Utils.teleport(healer, new Location(world, 108.308, 120, 93.895, -132.4f, 2.3f));
 //				Actions.swapItems(healer, 1, 28);
 //				Actions.swapItems(healer, 3, 30);
 //				Actions.swapItems(healer, 7, 34);
 ////				Utils.scheduleTask(() -> goldor(false), 60);
 //			}
 //			case "necron" -> {
-//				Actions.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
+//				Utils.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(healer, 1, 28);
 //				Actions.swapItems(healer, 3, 30);
 //				Actions.swapItems(healer, 6, 33);
@@ -67,7 +68,7 @@ public class Healer {
 //				Utils.scheduleTask(() -> necron(false), 60);
 //			}
 //			case "witherking" -> {
-//				Actions.teleport(healer, new Location(world, 56.326, 8, 130.7, -16.2f, 18.8f));
+//				Utils.teleport(healer, new Location(world, 56.326, 8, 130.7, -16.2f, 18.8f));
 //				Actions.swapItems(healer, 1, 28);
 //				Actions.swapItems(healer, 3, 30);
 //				Actions.swapItems(healer, 6, 33);
@@ -540,7 +541,7 @@ public class Healer {
 //		}, 201);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> {
-//				Actions.teleport(healer, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(healer, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 //			}, 1025);
 //		}

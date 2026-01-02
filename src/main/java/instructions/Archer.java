@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import plugin.Utils;
 
 import java.util.Objects;
 
@@ -18,13 +19,13 @@ public class Archer {
 
 		switch(section) {
 			case "all", "clear" -> {
-				Actions.teleport(archer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.teleport(archer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 //				Actions.setHotbarSlot(archer, 1);
 //				Utils.scheduleTask(() -> Actions.move(archer, new Vector(0, 0, 1.12242), 5), 160);
 //				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
-//				Actions.teleport(archer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(archer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
 //				Actions.swapItems(archer, 1, 28);
 //				Actions.swapItems(archer, 7, 35);
 //				if(section.equals("maxor")) {
@@ -34,7 +35,7 @@ public class Archer {
 //				}
 //			}
 //			case "storm" -> {
-//				Actions.teleport(archer, new Location(world, 46.687, 169, 57.747, 177.8f, 0f));
+//				Utils.teleport(archer, new Location(world, 46.687, 169, 57.747, 177.8f, 0f));
 //				Actions.swapItems(archer, 1, 28);
 //				Actions.swapItems(archer, 7, 35);
 //				Utils.scheduleTask(() -> storm(false), 60);
@@ -43,7 +44,7 @@ public class Archer {
 //			// term: 5 ticks
 //			// -15.4, -7.6 face here
 //			case "goldor" -> {
-//				Actions.teleport(archer, new Location(world, 63.343, 127, 35.246, -73.1f, -46.8f));
+//				Utils.teleport(archer, new Location(world, 63.343, 127, 35.246, -73.1f, -46.8f));
 //				Actions.swapItems(archer, 1, 28);
 //				Actions.swapItems(archer, 5, 32);
 //				Actions.swapItems(archer, 6, 33);
@@ -71,7 +72,7 @@ public class Archer {
 //				Utils.scheduleTask(() -> goldor(false), 60);
 //			}
 //			case "necron" -> {
-//				Actions.teleport(archer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
+//				Utils.teleport(archer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(archer, 1, 28);
 //				Actions.swapItems(archer, 5, 32);
 //				Actions.swapItems(archer, 6, 33);
@@ -79,7 +80,7 @@ public class Archer {
 //				Utils.scheduleTask(() -> necron(false), 60);
 //			}
 //			case "witherking" -> {
-//				Actions.teleport(archer, new Location(world, 22.3, 6, 59.408, 65.6f, 29.3f));
+//				Utils.teleport(archer, new Location(world, 22.3, 6, 59.408, 65.6f, 29.3f));
 //				Actions.swapItems(archer, 1, 28);
 //				Actions.swapItems(archer, 3, 30);
 //				Actions.swapItems(archer, 5, 32);
@@ -589,7 +590,7 @@ public class Archer {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> {
 //				maxor(true);
-//				Actions.teleport(archer, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(archer, new Location(world, 73.5, 221, 13.5));
 //			}, 1025);
 //		}
 	}
