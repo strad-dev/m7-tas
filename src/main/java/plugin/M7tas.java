@@ -45,7 +45,6 @@ import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
-import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -377,6 +376,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	public void onDisable() {
 		Utils.stopInventorySync();
 		stopSpectatorSync();
+		stopCustomConnection();
 
 		if(noCollisionTeam != null) {
 			for(String entry : new HashSet<>(noCollisionTeam.getEntries())) {
@@ -390,7 +390,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
 		}
 
-		kickAllFakes();
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tag @e remove TASWither");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!item_frame,type=!player,type=!villager]");
 
@@ -401,7 +400,11 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	}
 
 	private void kickAllFakes() {
-		fakePlayers.values().forEach(p -> p.kickPlayer(""));
+		fakePlayers.values().forEach(p -> {
+			if(p.isOnline()) {
+				p.kickPlayer("");
+			}
+		});
 		fakePlayers.clear();
 	}
 
@@ -1066,13 +1069,22 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}.runTaskTimer(this, 0, 1);
 	}
 
+	private static final Map<ServerPlayer, BukkitRunnable> customConnectionTask = new HashMap<>();
+
 	private void forceCustomConnection(ServerPlayer serverPlayer, TASGamePacketListenerImpl connection) {
-		new BukkitRunnable() {
+		customConnectionTask.put(serverPlayer, new BukkitRunnable() {
 			@Override
 			public void run() {
 				serverPlayer.connection = connection;
 			}
-		}.runTaskTimer(this, 0, 1);
+		});
+		customConnectionTask.get(serverPlayer).runTaskTimer(this, 0, 1);
+	}
+
+	private void stopCustomConnection() {
+		for(ServerPlayer serverPlayer : customConnectionTask.keySet()) {
+			customConnectionTask.get(serverPlayer).cancel();
+		}
 	}
 
 	private void startSpectatorSync() {
@@ -1094,8 +1106,13 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 						PositionMoveRotation pmr = PositionMoveRotation.of(nmsFake);
 
 						// Use the existing updateSpectators method which already handles this correctly
-						ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(0, pmr, EnumSet.noneOf(Relative.class));
-						nmsSpectator.connection.send(snapCam);
+						double distance = spectator.getLocation().distanceSquared(fakePlayer.getLocation());
+						if(distance < 1024) {
+							ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(craftSpectator.getEntityId(), pmr, EnumSet.noneOf(Relative.class));
+							nmsSpectator.connection.send(snapCam);
+						} else {
+							spectator.teleport(fakePlayer);
+						}
 
 						// Send destroy packet every tick to keep fake player hidden
 						ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());

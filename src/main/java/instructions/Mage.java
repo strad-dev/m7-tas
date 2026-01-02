@@ -94,13 +94,14 @@ public class Mage {
 			Actions.turnHead(mage, 0f, -90f);
 			Actions.setHotbarSlot(mage, 7);
 		}, 63);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 64); // throw pearl to enter bedrock, lands in 4 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 64); // throw pearl to enter bedrock, lands in 5 ticks
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 65);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 68); // activate tac, procs in 60 ticks (128)
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 7), 69);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 69); // activate tac, procs in 60 ticks (129)
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 7), 70);
 		// tick 80: get teleported back
 		Utils.scheduleTask(() -> Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 128);
+		// tick 120: dodged
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 130);
 	}
 
 	private static void clear(boolean doContinue) {

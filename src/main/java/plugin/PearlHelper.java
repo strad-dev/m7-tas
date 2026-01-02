@@ -21,6 +21,7 @@ public class PearlHelper implements Listener {
 		Vector direction = p.getLocation().getDirection();
 		pearl.setVelocity(direction.multiply(1.5));
 
+		Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown");
 		Utils.scheduleTask(() -> p.setCooldown(Material.ENDER_PEARL, 0), 1);
 	}
 
@@ -34,7 +35,7 @@ public class PearlHelper implements Listener {
 			l.setZ(Math.floor(l.getZ()) + 0.5);
 			l.setYaw(p.getLocation().getYaw());
 			l.setPitch(p.getLocation().getPitch());
-			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Ender Pearl from " + p.getName() + " landed in " + pearl.getTicksLived() + " ticks.");
+			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " landed in " + pearl.getTicksLived() + " ticks");
 			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Landed at " + l.getX() + " " + l.getY() + " " + l.getZ());
 			pearl.remove();
 			p.teleport(l);

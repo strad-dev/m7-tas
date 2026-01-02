@@ -1263,7 +1263,7 @@ public class CustomItems implements Listener {
 		Utils.scheduleTask(() -> {
 			p.playSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
 			p.teleport(l);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Bukkit.broadcastMessage(ChatColor.GREEN + "[sim] Returning " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 			p.setVelocity(new Vector(0, 0, 0));
 			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
 		}, 60);

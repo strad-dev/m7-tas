@@ -412,7 +412,7 @@ public class Actions {
 			}
 		}
 		if(damaged > 0) {
-			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + damaged + " damage.");
+			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + damaged + " damage");
 		}
 		p.playSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1, 1);
 
