@@ -1,4 +1,4 @@
-package plugin;
+package listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -9,6 +9,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.potion.PotionEffectType;
+import plugin.M7tas;
+import plugin.Utils;
 
 import java.util.List;
 
@@ -37,7 +39,7 @@ public class SpectatorListener implements Listener {
 		Utils.restoreInventory(player);
 		M7tas.removeFromNoCollisionTeam(player);
 		player.removePotionEffect(PotionEffectType.INVISIBILITY);
-		M7tas.originalInventories.remove(player);
+		M7tas.removePlayerInventoryBackup(player);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)

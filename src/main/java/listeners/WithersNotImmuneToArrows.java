@@ -1,4 +1,4 @@
-package plugin;
+package listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;

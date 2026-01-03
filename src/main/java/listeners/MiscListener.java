@@ -1,4 +1,4 @@
-package plugin;
+package listeners;
 
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;

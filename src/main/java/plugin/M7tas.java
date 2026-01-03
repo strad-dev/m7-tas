@@ -33,7 +33,9 @@ import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.datafixers.util.Pair;
 import instructions.*;
 import instructions.Server;
+import instructions.players.*;
 import io.netty.channel.embedded.EmbeddedChannel;
+import listeners.*;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -88,13 +90,21 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	private static final Map<String, Player> fakePlayers = new HashMap<>();
 	private static Plugin plugin;
 	private boolean fakeTickerStarted = false;
-	static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
+	private static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
 	private static Team noCollisionTeam;
 	private static BukkitRunnable spectatorSyncTask;
 	private static final Map<Player, Set<Player>> hiddenFakePlayers = new HashMap<>();
 	private static final double HIDE_DISTANCE = 1;
 
-	static class PlayerInventoryBackup {
+	public static void addPlayerInventoryBackup(Player player) {
+		originalInventories.put(player, new PlayerInventoryBackup(player));
+	}
+
+	public static PlayerInventoryBackup removePlayerInventoryBackup(Player player) {
+		return originalInventories.remove(player);
+	}
+
+	public static class PlayerInventoryBackup {
 		private final ItemStack[] contents;
 		private final ItemStack[] armorContents;
 		private final ItemStack offHand;

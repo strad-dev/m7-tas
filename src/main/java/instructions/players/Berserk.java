@@ -1,4 +1,4 @@
-package instructions;
+package instructions.players;
 
 import org.bukkit.Location;
 import org.bukkit.World;

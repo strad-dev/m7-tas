@@ -1,4 +1,4 @@
-package plugin;
+package listeners;
 
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
@@ -21,6 +21,8 @@ import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import plugin.M7tas;
+import plugin.Utils;
 
 import java.util.EnumSet;
 import java.util.HashSet;

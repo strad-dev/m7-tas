@@ -164,11 +164,11 @@ public class Utils {
 	}
 
 	public static void backupInventory(Player player) {
-		M7tas.originalInventories.put(player, new M7tas.PlayerInventoryBackup(player));
+		M7tas.addPlayerInventoryBackup(player);
 	}
 
 	public static void restoreInventory(Player player) {
-		M7tas.PlayerInventoryBackup backup = M7tas.originalInventories.remove(player);
+		M7tas.PlayerInventoryBackup backup = M7tas.removePlayerInventoryBackup(player);
 		if(backup != null) {
 			backup.restore(player);
 		}

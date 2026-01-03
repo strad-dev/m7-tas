@@ -1,4 +1,4 @@
-package plugin;
+package listeners;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.util.Vector;
+import plugin.Utils;
 
 public class PearlHelper implements Listener {
 	@EventHandler

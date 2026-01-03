@@ -1,7 +1,7 @@
 package instructions.bosses;
 
 import instructions.Actions;
-import instructions.Mage;
+import instructions.players.Mage;
 import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
