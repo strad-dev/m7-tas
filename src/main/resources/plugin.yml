@@ -9,13 +9,13 @@ commands:
     usage: /setup
   spectate:
     description: Spectate a class
-    usage: /spectate <Archer|Berserk|Healer|Mage|Tank>
+    usage: /spectate <class>
   unspectate:
     description: Stop spectating a class
     usage: /unspectate
   tas:
     description: Begin TAS
-    usage: /tas
+    usage: /tas <section>
   reset:
     description: Resets all classes to their spawn locations
     usage: /reset
@@ -25,3 +25,6 @@ commands:
   getcustomitems:
     description: Get custom items
     usage: /getcustomitems
+  terminal:
+    description: Helper command to facilitate terminals phase
+    usage: /terminal <section> <terminal>

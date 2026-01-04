@@ -31,7 +31,7 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.authlib.yggdrasil.ProfileResult;
 import com.mojang.datafixers.util.Pair;
-import instructions.*;
+import commands.*;
 import instructions.Server;
 import instructions.players.*;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -40,17 +40,14 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.*;
-import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
-import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.PositionMoveRotation;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -63,8 +60,6 @@ import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -82,19 +77,13 @@ import org.bukkit.scoreboard.Team;
 
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.function.Predicate;
 
-public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompleter, Listener {
-	private static final Map<Player, Player> spectatorMap = new HashMap<>();
-	private static final HashMap<Player, List<Player>> reverseSpectatorMap = new HashMap<>();
+public final class M7tas extends JavaPlugin {
 	private static final Map<String, Player> fakePlayers = new HashMap<>();
 	private static Plugin plugin;
-	private boolean fakeTickerStarted = false;
+	private static boolean fakeTickerStarted = false;
 	private static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();
 	private static Team noCollisionTeam;
-	private static BukkitRunnable spectatorSyncTask;
-	private static final Map<Player, Set<Player>> hiddenFakePlayers = new HashMap<>();
-	private static final double HIDE_DISTANCE = 1;
 
 	public static void addPlayerInventoryBackup(Player player) {
 		originalInventories.put(player, new PlayerInventoryBackup(player));
@@ -130,26 +119,10 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Mage3", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
-	/**
-	 * Retrieves the player that the given player is currently spectating.
-	 *
-	 * @param player the player whose spectating target is being retrieved
-	 * @return the player being spectated by the given player, or null if the player is not spectating anyone
-	 */
-	public static List<Player> getSpectatingPlayers(Player player) {
-		return reverseSpectatorMap.getOrDefault(player, new ArrayList<>());
-	}
 
-	public static Map<Player, Player> getSpectatorMap() {
-		return spectatorMap;
-	}
 
-	public static Map<Player, List<Player>> getReverseSpectatorMap() {
-		return reverseSpectatorMap;
-	}
-
-	public static List<Player> getFakePlayers() {
-		return new ArrayList<>(fakePlayers.values());
+	public static Map<String, Player> getFakePlayers() {
+		return fakePlayers;
 	}
 
 	private static ItemStack getCustomHead(String displayName, String identifier, String textureValue, String textureSignature) {
@@ -204,7 +177,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		return item;
 	}
 
-	private void spawnAllFakes(World world) {
+	public static void spawnAllFakes(World world) {
 		// clear any old ones
 		stopCustomConnection();
 		kickAllFakes();
@@ -366,11 +339,18 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 
 		setupNoCollisionTeam();
 
-		// register ALL our commands on the same executor
-		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset", "getcustomitems")) {
+		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset", "getcustomitems", "terminal")) {
 			PluginCommand command = getCommand(cmd);
-			Objects.requireNonNull(command).setExecutor(this);
-			command.setTabCompleter(this);
+			switch(cmd) {
+				case "setup" -> command.setExecutor(new Setup());
+				case "spectate", "unspectate" -> command.setExecutor(new Spectate());
+				case "tas" -> command.setExecutor(new TAS());
+				case "simulate" -> command.setExecutor(new Simulate());
+				case "reset" -> command.setExecutor(new Reset());
+				case "getcustomitems" -> command.setExecutor(new GetCustomItems());
+				case "terminal" -> command.setExecutor(new Terminal());
+			}
+			command.setTabCompleter(new TabCompletor());
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
 		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
@@ -380,14 +360,14 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		getServer().getPluginManager().registerEvents(new CustomItems(), this);
 
 		Utils.startInventorySync();
-		startSpectatorSync();
+		Spectate.startSpectatorSync();
 	}
 
 	@Override
 	public void onDisable() {
 		Utils.stopInventorySync();
-		stopSpectatorSync();
 		stopCustomConnection();
+		Spectate.stopSpectatorSync();
 
 		if(noCollisionTeam != null) {
 			for(String entry : new HashSet<>(noCollisionTeam.getEntries())) {
@@ -396,433 +376,19 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			noCollisionTeam.unregister();
 		}
 
-		for(Player spectator : new ArrayList<>(spectatorMap.keySet())) {
-			Utils.restoreInventory(spectator);
-			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
-		}
-
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tag @e[type=wither] remove TASWither");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!item_frame,type=!player,type=!villager]");
 
-		spectatorMap.clear();
-		reverseSpectatorMap.clear();
 		originalInventories.clear();
-		hiddenFakePlayers.clear();
 	}
 
-	private void kickAllFakes() {
+	private static void kickAllFakes() {
 		fakePlayers.values().forEach(p -> {
 			if(p.isOnline()) {
 				p.kickPlayer("");
 			}
 		});
 		fakePlayers.clear();
-	}
-
-	private static Player lastSimulated;
-	private static Location lastSimulatedLocation;
-
-	@SuppressWarnings("NullableProblems")
-	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
-			return true;
-		}
-
-		switch(cmd.getName().toLowerCase()) {
-			/*
-			 * Setup
-			 * - Clears all NPCs and spawns new ones
-			 * - Teleports all NPCs to their initial locations
-			 * - Does an initial mob spawning (to test without running the full TAS)
-			 */
-			case "setup" -> {
-				spawnAllFakes(p.getWorld());
-				Server.serverSetup(p.getWorld());
-				p.sendMessage("Cleared all NPCs and spawned new ones");
-				return true;
-			}
-			/*
-			 * TAS
-			 * - Gives all NPCs the appropriate inventory
-			 * - Re-teleports all NPCs to their initial locations
-			 * - Re-spawns all mobs
-			 * - Runs the TAS script
-			 */
-			case "tas" -> {
-				String section = "all";
-				if(args.length >= 1) {
-					section = args[0].toLowerCase();
-					if(!section.equals("all") && !section.equals("clear") && !section.equals("boss") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
-						p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear boss maxor storm goldor necron witherking");
-						return true;
-					}
-				}
-				runTAS(p.getWorld(), section);
-				return true;
-			}
-			case "spectate" -> {
-				if(args.length < 1) {
-					p.sendMessage(ChatColor.RED + "Please specify a class to spectate");
-					return true;
-				}
-
-				if(fakePlayers.isEmpty()) {
-					p.sendMessage(ChatColor.RED + "No classes to spectate!  Try running /setup first");
-					return true;
-				}
-
-				String role = args[0];
-				role = Character.toUpperCase(role.charAt(0)) + role.substring(1).toLowerCase();
-				if(!fakePlayers.containsKey(role)) {
-					p.sendMessage(ChatColor.RED + "Invalid class specified");
-					return true;
-				}
-
-				if(spectatorMap.containsKey(p)) {
-					p.sendMessage(ChatColor.RED + "You are already spectating a class.  Use /unspectate first");
-					return true;
-				}
-
-				Player fakePlayer = fakePlayers.get(role);
-				spectatorMap.put(p, fakePlayer);
-				reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new ArrayList<>()).add(p);
-
-				// NEW: Backup the player's inventory before spectating
-				Utils.backupInventory(p);
-
-				Location fakeLocation = fakePlayer.getLocation();
-				p.teleport(fakeLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
-
-				preventPlayerCollision(p, fakePlayer);
-
-				// Sync inventory when starting to spectate
-				Utils.syncInventory(fakePlayer);
-				Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
-
-				p.sendMessage("You are now spectating " + role);
-				return true;
-			}
-			case "unspectate" -> {
-				if(spectatorMap.containsKey(p)) {
-					Player fakePlayer = spectatorMap.remove(p);
-					if(fakePlayer != null) {
-						List<Player> spectators = reverseSpectatorMap.get(fakePlayer);
-						if(spectators != null) {
-							spectators.remove(p);
-							if(spectators.isEmpty()) {
-								reverseSpectatorMap.remove(fakePlayer);
-							}
-						}
-					}
-
-					// NEW: Restore the player's original inventory
-					Utils.restoreInventory(p);
-					removeFromNoCollisionTeam(p);
-					p.removePotionEffect(PotionEffectType.INVISIBILITY);
-
-					if(fakePlayer != null) {
-						showFakePlayerToSpectator(p, fakePlayer);
-					}
-
-					Set<Player> hidden = hiddenFakePlayers.remove(p);
-					if(hidden != null) {
-						for(Player hiddenFake : hidden) {
-							showFakePlayerToSpectator(p, hiddenFake);
-						}
-					}
-
-					p.sendMessage("You are no longer spectating a class");
-					return true;
-				}
-				p.sendMessage(ChatColor.RED + "You are not spectating a class");
-				return true;
-			}
-			case "simulate" -> {
-				if(args.length < 1) {
-					p.sendMessage(ChatColor.RED + "Please specify a movement to simulate");
-					return true;
-				}
-				switch(args[0]) {
-					case "undo" -> {
-						if(lastSimulated == null || lastSimulatedLocation == null) {
-							p.sendMessage(ChatColor.RED + "No previous movement to undo!");
-							return true;
-						}
-						lastSimulated.teleport(lastSimulatedLocation);
-						lastSimulated = null;
-						lastSimulatedLocation = null;
-						p.sendMessage(ChatColor.GREEN + "Undid previous simulation instruction");
-						return true;
-					}
-					case "bonzo" -> {
-						p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days");
-//						if(args.length < 2) {
-//							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
-//							return true;
-//						}
-//						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
-//						if(args.length < 5) {
-//							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement");
-//							return true;
-//						}
-//						double x;
-//						double y;
-//						double z;
-//						try {
-//							x = Double.parseDouble(args[2]);
-//							y = Double.parseDouble(args[3]);
-//							z = Double.parseDouble(args[4]);
-//						} catch(Exception exception) {
-//							p.sendMessage(ChatColor.RED + "Movement must be an double");
-//							return true;
-//						}
-//						lastSimulated = applyTo;
-//						lastSimulatedLocation = applyTo.getLocation();
-////						Actions.bonzo(applyTo, new Vector(x, y, z));
-//						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
-						return true;
-					}
-					// Syntax: /simulate move [player] [set from: {W, A, S, D, J, P, N}] [ticks]
-					// WASD - self explainatory
-					// J - jump
-					// P - sprint
-					// N - sneak
-					// ticks - number of ticks to hold down, must be greater than zero
-					// Example: /simulate move WDP 5
-					// Moves the plaer forward and to the right while sprinting for 5 ticks
-					case "move" -> {
-						if(args.length < 2) {
-							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
-							return true;
-						}
-						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
-						if(args.length < 3) {
-							p.sendMessage(ChatColor.RED + "Please specify which keys are held down");
-							return true;
-						}
-						String inputString = args[2].toUpperCase();
-						if(!inputString.matches("[WASDJPN]*")) {
-							p.sendMessage(ChatColor.RED + "Bad characters detected!  Accepted characters: WASDJPN");
-							return true;
-						}
-						if(args.length < 4) {
-							p.sendMessage(ChatColor.RED + "Must provide a valid duration");
-							return true;
-						}
-						int duration;
-						try {
-							duration = Integer.parseInt(args[3]);
-						} catch(Exception exception) {
-							p.sendMessage(ChatColor.RED + "Duration must be an integer");
-							return true;
-						}
-						if(duration <= 0) {
-							p.sendMessage(ChatColor.RED + "Duration must be one or higher");
-							return true;
-						}
-						lastSimulated = applyTo;
-						lastSimulatedLocation = applyTo.getLocation();
-						Actions.move(applyTo, inputString, duration);
-						p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks");
-						return true;
-					}
-//					case "explosiveshot" -> Archer.explosiveShot();
-				}
-				return false;
-			}
-			case "reset" -> {
-				Location hide = new Location(Bukkit.getWorld("world"), -120.5, 71, -183.5);
-				fakePlayers.values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
-				Server.serverSetup(Bukkit.getWorld("world"));
-				p.sendMessage("Reset server and all NPC locations");
-				return true;
-			}
-			case "getcustomitems" -> {
-				ItemStack stonk = new ItemStack(Material.DIAMOND_PICKAXE);
-				stonk.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
-				ItemMeta meta = stonk.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.RED + "Dungeonbreaker");
-				List<String> lore = new ArrayList<>();
-				lore.add("skyblock/combat/stonk");
-				meta.setLore(lore);
-				stonk.setItemMeta(meta);
-
-				ItemStack term = new ItemStack(Material.BOW);
-				meta = term.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Terminator");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/terminator");
-				meta.setLore(lore);
-				term.setItemMeta(meta);
-
-				ItemStack gyro = new ItemStack(Material.BLAZE_ROD);
-				meta = gyro.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.GOLD + "Gyrokinetic Wand");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/gyro");
-				meta.setLore(lore);
-				gyro.setItemMeta(meta);
-
-				ItemStack scylla = new ItemStack(Material.IRON_SWORD);
-				meta = scylla.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Hyperion");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/scylla");
-				meta.setLore(lore);
-				scylla.setItemMeta(meta);
-
-				ItemStack aotv = new ItemStack(Material.DIAMOND_SHOVEL);
-				meta = aotv.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.GOLD + "Warped Aspect of the Void");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/aotv");
-				meta.setLore(lore);
-				aotv.setItemMeta(meta);
-
-				ItemStack rag = new ItemStack(Material.GOLDEN_AXE);
-				meta = rag.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.DARK_PURPLE + "Withered Ragnarok Axe");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/rag");
-				meta.setLore(lore);
-				rag.setItemMeta(meta);
-
-				ItemStack aots = new ItemStack(Material.DIAMOND_AXE);
-				meta = aots.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/aots");
-				meta.setLore(lore);
-				aots.setItemMeta(meta);
-
-				ItemStack iceSpray = new ItemStack(Material.STICK);
-				meta = iceSpray.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.GOLD + "Heroic Ice Spray Wand");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/ice_spray");
-				meta.setLore(lore);
-				iceSpray.setItemMeta(meta);
-
-				ItemStack flamingFlay = new ItemStack(Material.FISHING_ROD);
-				meta = flamingFlay.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Flaming Flay");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/flaming_flay");
-				meta.setLore(lore);
-				flamingFlay.setItemMeta(meta);
-
-				ItemStack bonzo = new ItemStack(Material.BREEZE_ROD);
-				meta = bonzo.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.DARK_PURPLE + "Heroic Bonzo Staff");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/bonzo");
-				meta.setLore(lore);
-				bonzo.setItemMeta(meta);
-
-				ItemStack lb = new ItemStack(Material.BOW);
-				meta = lb.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Last Breath");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/last_breath");
-				meta.setLore(lore);
-				lb.setItemMeta(meta);
-
-				ItemStack tac = new ItemStack(Material.BLAZE_ROD);
-				meta = tac.getItemMeta();
-				meta.setUnbreakable(true);
-				meta.setDisplayName(ChatColor.GOLD + "Tactical Insertion");
-				lore = new ArrayList<>();
-				lore.add("skyblock/combat/tac");
-				meta.setLore(lore);
-				tac.setItemMeta(meta);
-
-				p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay);
-				p.sendMessage(ChatColor.GREEN + "Here you go!");
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@SuppressWarnings("NullableProblems")
-	@Override
-	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-		if(!(sender instanceof Player)) {
-			return new ArrayList<>();
-		}
-
-		List<String> completions = new ArrayList<>();
-		String cmdName = command.getName().toLowerCase();
-
-		switch(cmdName) {
-			case "tas" -> {
-				if(args.length == 1) {
-					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking"};
-					String input = args[0].toLowerCase();
-
-					for(String section : sections) {
-						// Check if the section starts with the input
-						if(section.toLowerCase().startsWith(input)) {
-							completions.add(section);
-						}
-					}
-				} else if(args.length > 1) {
-					// TAS command only accepts one argument, return empty list for any additional arguments
-					return completions;
-				}
-			}
-
-			case "spectate" -> {
-				if(args.length == 1) {
-					// Get available classes from fakePlayers map
-					for(String role : fakePlayers.keySet()) {
-						if(role.toLowerCase().startsWith(args[0].toLowerCase())) {
-							completions.add(role);
-						}
-					}
-				} else if(args.length > 1) {
-					// Spectate only accepts one argument
-					return completions;
-				}
-			}
-
-			case "simulate" -> {
-				if(args.length == 1) {
-					String[] simCommands = {"undo", "bonzo", "move"};
-					for(String cmd : simCommands) {
-						if(cmd.startsWith(args[0].toLowerCase())) {
-							completions.add(cmd);
-						}
-					}
-				} else if(args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move"))) {
-					// Player selection for bonzo/move
-					for(String role : fakePlayers.keySet()) {
-						if(role.toLowerCase().startsWith(args[1].toLowerCase())) {
-							completions.add(role);
-						}
-					}
-				} else if((args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move")) && args.length <= 6) {
-					// For bonzo/move, we don't provide completions for x,y,z,duration
-					// but we also don't want to show completions after the expected number of args
-					return completions;
-				}
-			}
-		}
-
-		return completions;
 	}
 
 	/**
@@ -860,9 +426,9 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 	 * @param fakePlayerName the fake player’s username
 	 * @param skinOwner      the owner of the skin being used
 	 */
-	public Player spawnFakePlayer(World world, String fakePlayerName, UUID skinOwner) {
+	public static Player spawnFakePlayer(World world, String fakePlayerName, UUID skinOwner) {
 		// 1) NMS server & world handles
-		MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
+		MinecraftServer nmsServer = ((CraftServer) getInstance().getServer()).getServer();
 		ServerLevel nmsWorld = ((CraftWorld) world).getHandle();
 
 		// 2) Build a GameProfile with skin properties
@@ -942,7 +508,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}
 	}
 
-	private static void addToNoCollisionTeam(Player player) {
+	public static void addToNoCollisionTeam(Player player) {
 		if(noCollisionTeam != null) {
 			noCollisionTeam.addEntry(player.getName());
 		}
@@ -954,7 +520,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		}
 	}
 
-	private static void preventPlayerCollision(Player realPlayer, Player fakePlayer) {
+	public static void preventPlayerCollision(Player realPlayer, Player fakePlayer) {
 		// Add both players to the no-collision team
 		addToNoCollisionTeam(realPlayer);
 		addToNoCollisionTeam(fakePlayer);
@@ -963,78 +529,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		realPlayer.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0, true, false));
 	}
 
-
-	private static void hideFakePlayerFromSpectator(Player spectator, Player fakePlayer) {
-		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
-			ServerPlayer nmsSpectator = craftSpectator.getHandle();
-			ServerPlayer nmsFake = craftFake.getHandle();
-
-			// Send destroy packet to hide the fake player from this spectator
-			ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
-			nmsSpectator.connection.send(destroyPacket);
-		}
-	}
-
-	private static void showFakePlayerToSpectator(Player spectator, Player fakePlayer) {
-		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
-			ServerPlayer nmsSpectator = craftSpectator.getHandle();
-			ServerPlayer nmsFake = craftFake.getHandle();
-
-			// Re-send spawn packet to show the fake player again
-			ServerEntity entry = new ServerEntity(nmsFake.level(), nmsFake, 0, false, new ServerEntity.Synchronizer() {
-				@Override
-				public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
-					// No-op for fake players
-				}
-
-				@Override
-				public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
-					// No-op for fake players
-				}
-
-				@Override
-				public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {
-					// No-op for fake players
-				}
-
-				@Override
-				public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {
-					// No-op for fake players
-				}
-			}, new HashSet<>());
-			ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
-			nmsSpectator.connection.send(spawn);
-
-			// Also send metadata and equipment
-			SynchedEntityData synchedEntityData = nmsFake.getEntityData();
-			ClientboundSetEntityDataPacket metadataPacket = new ClientboundSetEntityDataPacket(nmsFake.getId(), synchedEntityData.getNonDefaultValues());
-			nmsSpectator.connection.send(metadataPacket);
-
-			PlayerInventory inventory = fakePlayer.getInventory();
-
-			net.minecraft.world.item.ItemStack helmet = CraftItemStack.asNMSCopy(inventory.getHelmet());
-			net.minecraft.world.item.ItemStack chestplate = CraftItemStack.asNMSCopy(inventory.getChestplate());
-			net.minecraft.world.item.ItemStack leggings = CraftItemStack.asNMSCopy(inventory.getLeggings());
-			net.minecraft.world.item.ItemStack boots = CraftItemStack.asNMSCopy(inventory.getBoots());
-			net.minecraft.world.item.ItemStack mainHand = CraftItemStack.asNMSCopy(inventory.getItemInMainHand());
-			net.minecraft.world.item.ItemStack offHand = CraftItemStack.asNMSCopy(inventory.getItemInOffHand());
-
-			// Create equipment list
-			List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipment = List.of(Pair.of(EquipmentSlot.HEAD, helmet),      // HEAD
-					Pair.of(EquipmentSlot.CHEST, chestplate),  // CHEST
-					Pair.of(EquipmentSlot.LEGS, leggings),    // LEGS
-					Pair.of(EquipmentSlot.FEET, boots),       // FEET
-					Pair.of(EquipmentSlot.MAINHAND, mainHand),    // MAINHAND
-					Pair.of(EquipmentSlot.OFFHAND, offHand)      // OFFHAND
-			);
-
-			// Send equipment packet to the specific spectator
-			ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(nmsFake.getId(), equipment);
-			nmsSpectator.connection.send(equipmentPacket);
-		}
-	}
-
-	private static void runTAS(World world, String section) {
+	public static void runTAS(World world, String section) {
 		if(fakePlayers.isEmpty()) {
 			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
 			return;
@@ -1056,7 +551,7 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 		return plugin;
 	}
 
-	private void startFakePlayerTicker() {
+	private static void startFakePlayerTicker() {
 		if(fakeTickerStarted) {
 			return;
 		}
@@ -1078,25 +573,25 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 					npc.aiStep();
 				}
 			}
-		}.runTaskTimer(this, 0, 1);
+		}.runTaskTimer(getInstance(), 0, 1);
 	}
 
 	private static final Map<ServerPlayer, BukkitRunnable> customConnectionTask = new HashMap<>();
 
-	private void forceCustomConnection(ServerPlayer serverPlayer, TASGamePacketListenerImpl connection) {
+	private static void forceCustomConnection(ServerPlayer serverPlayer, TASGamePacketListenerImpl connection) {
 		customConnectionTask.put(serverPlayer, new BukkitRunnable() {
 			@Override
 			public void run() {
 				serverPlayer.connection = connection;
 			}
 		});
-		customConnectionTask.get(serverPlayer).runTaskTimer(this, 0, 1);
+		customConnectionTask.get(serverPlayer).runTaskTimer(getInstance(), 0, 1);
 	}
 
-	private void stopCustomConnection() {
+	private static void stopCustomConnection() {
 		for(ServerPlayer serverPlayer : customConnectionTask.keySet()) {
 			customConnectionTask.get(serverPlayer).cancel();
-			MinecraftServer nmsServer = ((CraftServer) getServer()).getServer();
+			MinecraftServer nmsServer = ((CraftServer) getInstance().getServer()).getServer();
 			Connection nm = new Connection(PacketFlow.SERVERBOUND) {
 				{
 					this.channel = new EmbeddedChannel();
@@ -1115,86 +610,6 @@ public final class M7tas extends JavaPlugin implements CommandExecutor, TabCompl
 			};
 			CommonListenerCookie cookie = CommonListenerCookie.createInitial(serverPlayer.getGameProfile(), false);
 			serverPlayer.connection = new ServerGamePacketListenerImpl(nmsServer, nm, serverPlayer, cookie);
-		}
-	}
-
-	private void startSpectatorSync() {
-		if(spectatorSyncTask != null) {
-			spectatorSyncTask.cancel();
-		}
-
-		spectatorSyncTask = new BukkitRunnable() {
-			@Override
-			public void run() {
-				// Iterate through all spectator relationships
-				for(Player spectator : spectatorMap.keySet()) {
-					Player fakePlayer = spectatorMap.get(spectator);
-
-					// Get the fake player's current position and update spectators
-					if(fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
-						ServerPlayer nmsFake = craftFake.getHandle();
-						ServerPlayer nmsSpectator = craftSpectator.getHandle();
-						PositionMoveRotation pmr = PositionMoveRotation.of(nmsFake);
-
-						// Use the existing updateSpectators method which already handles this correctly
-//						double distance = spectator.getLocation().distanceSquared(fakePlayer.getLocation());
-//						if(distance < 1024) {
-//							ClientboundPlayerPositionPacket snapCam = new ClientboundPlayerPositionPacket(craftSpectator.getEntityId(), pmr, EnumSet.noneOf(Relative.class));
-//							nmsSpectator.connection.send(snapCam);
-//						} else {
-							spectator.teleport(fakePlayer);
-//						}
-
-						// Send destroy packet every tick to keep fake player hidden
-						ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
-						nmsSpectator.connection.send(destroyPacket);
-						updateFakePlayerVisibility();
-					}
-				}
-			}
-		};
-
-		// Run every tick for smooth camera movement
-		spectatorSyncTask.runTaskTimer(this, 0L, 1L);
-	}
-
-	private void updateFakePlayerVisibility() {
-		for(Player spectator : spectatorMap.keySet()) {
-			Player spectatedFake = spectatorMap.get(spectator);
-			Location spectatorLocation = spectatedFake.getLocation(); // Use fake player's location
-
-			Set<Player> currentlyHidden = hiddenFakePlayers.getOrDefault(spectator, new HashSet<>());
-			Set<Player> shouldBeHidden = new HashSet<>();
-
-			// Check all other fake players
-			for(Player otherFake : fakePlayers.values()) {
-				if(otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
-
-				double distance = spectatorLocation.distance(otherFake.getLocation());
-
-				if(distance <= HIDE_DISTANCE) {
-					shouldBeHidden.add(otherFake);
-
-					// Hide if not already hidden
-					if(!currentlyHidden.contains(otherFake)) {
-						hideFakePlayerFromSpectator(spectator, otherFake);
-					}
-				} else {
-					// Show if currently hidden
-					if(currentlyHidden.contains(otherFake)) {
-						showFakePlayerToSpectator(spectator, otherFake);
-					}
-				}
-			}
-
-			hiddenFakePlayers.put(spectator, shouldBeHidden);
-		}
-	}
-
-	private static void stopSpectatorSync() {
-		if(spectatorSyncTask != null) {
-			spectatorSyncTask.cancel();
-			spectatorSyncTask = null;
 		}
 	}
 }

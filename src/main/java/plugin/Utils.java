@@ -1,6 +1,7 @@
 package plugin;
 
 import com.mojang.datafixers.util.Pair;
+import commands.Spectate;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
@@ -20,9 +21,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
+import javax.annotation.Nullable;
+import java.util.*;
 
 public class Utils {
 	/**
@@ -229,12 +229,38 @@ public class Utils {
 	 * @param pitch  Pitch
 	 */
 	public static void playLocalSound(Player p, Sound s, float volume, float pitch) {
-		if(M7tas.getFakePlayers().contains(p)) {
-			for(Player spectator : M7tas.getReverseSpectatorMap().get(p)) {
+		if(M7tas.getFakePlayers().containsValue(p)) {
+			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.playSound(spectator, s, volume, pitch);
 			}
 		} else {
 			p.playSound(p, s, volume, pitch);
 		}
+	}
+
+	/**
+	 * Gets the nearest real player at the given location
+	 *
+	 * @param l The location
+	 * @return  The nearest real player
+	 */
+	public static @Nullable Player getNearestPlayer(Location l) {
+		ArrayList<Player> playersInWorld = new ArrayList<>(l.getWorld().getEntitiesByClass(Player.class));
+		if(playersInWorld.isEmpty()) {
+			return null;
+		}
+		for(int i = 0; i < playersInWorld.size(); i++) {
+			Player p = playersInWorld.get(i);
+			if(p.getGameMode().equals(GameMode.SPECTATOR) && playersInWorld.size() > 1) {
+				playersInWorld.remove(i);
+				i--;
+			}
+			if(M7tas.getFakePlayers().containsValue(p)) {
+				playersInWorld.remove(i);
+				i--;
+			}
+		}
+		playersInWorld.sort(Comparator.comparingDouble(o -> o.getLocation().distanceSquared(l)));
+		return playersInWorld.getFirst();
 	}
 }

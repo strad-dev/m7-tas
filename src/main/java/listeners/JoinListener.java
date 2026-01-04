@@ -45,7 +45,7 @@ public class JoinListener implements Listener {
 			ServerGamePacketListenerImpl conn = ((CraftPlayer) joiningPlayer).getHandle().connection;              // PlayerConnection
 
 			// Re-send each fake NPC’s “add + spawn” packets just to this connection:
-			for(Player fake : M7tas.getFakePlayers()) {
+			for(Player fake : M7tas.getFakePlayers().values()) {
 				// 1) NMS handles
 				ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 				ServerLevel world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
