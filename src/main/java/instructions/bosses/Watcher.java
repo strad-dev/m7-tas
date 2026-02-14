@@ -31,7 +31,7 @@ public class Watcher {
 	private static World world;
 	private static final Location ORIGINAL_POSITION = new Location(null, -120.5, 72.0, -56.5, -180, 0);
 	private static final List<Location> MOB_SPAWN_LOCATIONS = new ArrayList<>();
-	private static final List<String> MOB_NAMES = List.of("Diamante Giant", "Bonzo", "Meepy_", "Mallyanke", "valej", "nograssbro", "a6j3", "Nucleararmadillo", "lfgm7", "akc0303", "nil4k", "editqble", "JennAiel", "Stenoe", "aalatif_", "Deanvm", "uncheck", "EvilMerlyn", "Beethoven_");
+	private static final List<String> MOB_NAMES = List.of("Diamante Giant", "Bonzo", "Nucleararmadillo", "Jamie_2013", "JennAiel", "s3a3m3", "editqble", "valej", "Merlynade", "HenbotB", "Katsumi9877", "BananaBrigade", "derM0RITZZ", "TypeW", "aalatif_", "Cubpletionist", "akc0303", "AsapIcey", "Beethoven_");
 	private static final List<String> SPAWN_LINES = List.of("This guy looks like a fighter.", "Hmmm... this one!", "You'll do.", "Go, fight!", "Go and live again!");
 	private static final List<String> KILLED_LINES = List.of("Not bad.", "That one was weak anyway.", "I'm impressed.", "Very nice.", "Aw, I liked that one.");
 	private static int mobCount = 0;
@@ -53,7 +53,9 @@ public class Watcher {
 		world = temp;
 		ORIGINAL_POSITION.setWorld(world);
 
-		runnable.cancel();
+		if(runnable != null) {
+			runnable.cancel();
+		}
 		runnable = new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -127,12 +129,27 @@ public class Watcher {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 437);
+			}, 372);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 442);
+			}, 377);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 382);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 387);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 430);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
@@ -142,27 +159,52 @@ public class Watcher {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 452);
+			}, 472);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 494);
+			}, 486);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 527);
+			}, 503);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 568);
+			}, 516);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 598);
+			}, 529);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 542);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 559);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 575);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 600);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 614);
 			Utils.scheduleTask(() -> {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
@@ -172,59 +214,21 @@ public class Watcher {
 				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 				mobsKilled++;
 				updateWatcherBossBar();
-			}, 660);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 689);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 718);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 751);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 783);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 824);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 854);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 887);
-			Utils.scheduleTask(() -> {
-				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-				mobsKilled++;
-				updateWatcherBossBar();
-			}, 916);
+			}, 644);
 			Utils.scheduleTask(() -> {
 				mobsKilled++;
 				updateWatcherBossBar();
 				sendChatMessage("You have proven yourself.  You may pass.");
-			}, 946);
+			}, 658);
 			Utils.scheduleTask(() -> {
 				cleanup();
 				world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
+				Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
+				Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
 				if(doContinue) {
 //					Maxor.maxorInstructions(world, true);
 				}
-			}, 1026);
+			}, 738);
 		}, 3);
 	}
 

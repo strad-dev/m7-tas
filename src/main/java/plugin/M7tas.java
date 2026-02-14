@@ -168,6 +168,7 @@ public final class M7tas extends JavaPlugin {
 		ItemMeta meta = item.getItemMeta();
 		assert meta != null;
 		meta.setItemName(null);
+		meta.setUnbreakable(true);
 		meta.setDisplayName(name);
 		List<String> lore = new ArrayList<>();
 		lore.add(id);
@@ -357,6 +358,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new PearlHelper(), this);
 		getServer().getPluginManager().registerEvents(new MiscListener(), this);
 		getServer().getPluginManager().registerEvents(new CustomItems(), this);
+		getServer().getPluginManager().registerEvents(new AllMobsHaveNames(), this);
 
 		Utils.startInventorySync();
 		Spectate.startSpectatorSync();

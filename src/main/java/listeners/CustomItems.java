@@ -1,5 +1,6 @@
 package listeners;
 
+import commands.Spectate;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -22,7 +23,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -125,7 +126,15 @@ public class CustomItems implements Listener {
 	}
 
 	@EventHandler
+	public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
+		handleCustomItems(e, e.getHand(), e.getPlayer().getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, e.getPlayer());
+	}
+
+	@EventHandler
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
+		if(e.getEntity() instanceof LivingEntity entity) {
+			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
+		}
 		if(e.getDamager() instanceof Player p) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		} else if(e.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player p && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
@@ -140,6 +149,16 @@ public class CustomItems implements Listener {
 	public void onBlockBreak(BlockBreakEvent e) {
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			stonk(e.getBlock());
+		}
+	}
+
+	@EventHandler
+	public void onPlayerAnimation(PlayerAnimationEvent e) {
+		Player p = e.getPlayer();
+		if(e.getAnimationType().equals(PlayerAnimationType.ARM_SWING) && M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
+				spectator.swingMainHand();
+			}
 		}
 	}
 
@@ -205,7 +224,12 @@ public class CustomItems implements Listener {
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if(id != null) {
+			if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
+				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
+					e.setCancelled(true);
+					mageBeam(p);
+				}
+			} else if(id != null) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					switch(id) {
 						case "skyblock/combat/terminator" -> {
@@ -260,11 +284,6 @@ public class CustomItems implements Listener {
 							}
 						}
 					}
-				}
-			} else if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && p.getName().startsWith("Mage")) {
-				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
-					e.setCancelled(true);
-					mageBeam(p);
 				}
 			}
 		}
@@ -418,7 +437,11 @@ public class CustomItems implements Listener {
 								l.setPitch(origin.getPitch());
 								p.teleport(l);
 								Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
-								break;
+								p.setFallDistance(0);
+								Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+								Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
+								Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
+								return;
 							}
 						}
 					}
@@ -526,7 +549,6 @@ public class CustomItems implements Listener {
 
 					// If no safe spot found, don't teleport
 					if(!foundSafe) {
-						p.sendMessage("§cNo safe teleport location found!");
 						return;
 					}
 				}
@@ -614,7 +636,9 @@ public class CustomItems implements Listener {
 									l.setPitch(origin.getPitch());
 									p.teleport(l);
 									Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
-									break;
+									p.setFallDistance(0);
+									Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+									return;
 								}
 							}
 						}
@@ -1233,13 +1257,12 @@ public class CustomItems implements Listener {
 		double yaw = Math.toRadians(l.getYaw());
 
 		// Calculate perpendicular vector (90 degrees to the right)
-		// Adding 90 degrees to get the right-hand direction
 		double rightYaw = yaw + Math.toRadians(90);
 
 		// Calculate offsets (16 pixels = 1 block)
-		double offsetX = -Math.sin(rightYaw) * (5.0 / 16.0);   // 5 pixels = 0.3125 blocks to the right
-		double offsetZ = Math.cos(rightYaw) * (5.0 / 16.0);    // 5 pixels = 0.3125 blocks to the right
-		double offsetY = 1.62 - (13.0 / 16.0);                 // 13 pixels down from eye level = 0.8125 blocks down
+		double offsetX = -Math.sin(rightYaw) * (5.0 / 16.0);
+		double offsetZ = Math.cos(rightYaw) * (5.0 / 16.0);
+		double offsetY = 1.62 - (13.0 / 16.0);
 
 		// Apply offsets
 		l.add(offsetX, offsetY, offsetZ);
@@ -1248,15 +1271,15 @@ public class CustomItems implements Listener {
 		Location eyeLocation = p.getEyeLocation();
 		Vector eyeDirection = eyeLocation.getDirection();
 
-		// Calculate where the eye is looking at 35 blocks away
-		Vector targetPoint = eyeLocation.toVector().add(eyeDirection.multiply(35));
+		// Raytrace to find what the player is actually looking at
+		Vector targetPoint = findTargetPoint(p, eyeLocation, eyeDirection);
 
 		// Calculate the direction from hand to the target point
-		Vector handToTarget = targetPoint.subtract(l.toVector());
+		Vector handToTarget = targetPoint.clone().subtract(l.toVector());
 		handToTarget.normalize();
 
 		// Scale down the vector for per-iteration movement
-		Vector v = handToTarget.multiply(0.2); // Equivalent to dividing by 5
+		Vector v = handToTarget.multiply(0.2);
 
 		for(int i = 0; i < 175; i++) {
 			if(l.getBlock().getType().isSolid()) {
@@ -1265,10 +1288,12 @@ public class CustomItems implements Listener {
 			boolean shouldBreak = false;
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
-				//noinspection DataFlowIssue
-				if(entity instanceof LivingEntity temp && !temp.equals(p) && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					double damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 145 : 85) : (temp instanceof Wither ? 120 : 70);
-					Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(p, temp, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), damage));
+				System.out.println("Detected " + entity.getName());
+				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
+					System.out.println("Attempting to damage " + temp.getName());
+					double damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 275 : 180) : (temp instanceof Wither ? 220 : 145);
+					temp.damage(damage, DamageSource.builder(DamageType.GENERIC_KILL).build());
+					Utils.changeName(temp);
 					shouldBreak = true;
 					break;
 				}
@@ -1276,19 +1301,45 @@ public class CustomItems implements Listener {
 			spawnFireworkParticle(l);
 			l.add(v);
 			if(shouldBreak) {
-				spawnFireworkParticle(l);
-				l.add(v);
-				spawnFireworkParticle(l);
-				l.add(v);
-				spawnFireworkParticle(l);
-				l.add(v);
-				spawnFireworkParticle(l);
-				l.add(v);
-				spawnFireworkParticle(l);
-				l.add(v);
+				for(int j = 0; j < 6; j++) {
+					spawnFireworkParticle(l);
+					l.add(v);
+				}
 				spawnFireworkParticle(l);
 				break;
 			}
+		}
+	}
+
+	private static Vector findTargetPoint(Player p, Location eyeLocation, Vector eyeDirection) {
+		World world = p.getWorld();
+
+		// Raytrace for blocks
+		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
+
+		// Raytrace for entities (excluding the player)
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5,
+				entity -> entity instanceof LivingEntity && !(entity instanceof Player) && !entity.isDead());
+
+		double blockDist = 35;
+		double entityDist = 35;
+
+		if(blockResult != null) {
+			blockDist = eyeLocation.toVector().distance(blockResult.getHitPosition());
+		}
+
+		if(entityResult != null) {
+			entityDist = eyeLocation.toVector().distance(entityResult.getHitPosition());
+		}
+
+		// Return the closest hit point, or max distance if nothing was hit
+		if(entityResult != null && entityDist <= blockDist) {
+			return entityResult.getHitPosition();
+		} else if(blockResult != null) {
+			return blockResult.getHitPosition();
+		} else {
+			// Nothing hit - target 35 blocks out
+			return eyeLocation.toVector().add(eyeDirection.clone().multiply((double) 35));
 		}
 	}
 

@@ -13,8 +13,10 @@ import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -59,7 +61,7 @@ public class Utils {
 	 * Syncs fake player's inventory to spectators using packet-based approach
 	 */
 	public static void syncInventory(Player fakePlayer) {
-		List<Player> spectators = Spectate.getSpectatingPlayers(fakePlayer);
+		Set<Player> spectators = Spectate.getSpectatingPlayers(fakePlayer);
 		if(!spectators.isEmpty()) {
 			// Method 1: Use packet-based sync (more efficient)
 			forceFullInventorySync(fakePlayer, spectators);
@@ -74,7 +76,7 @@ public class Utils {
 	/**
 	 * Force a full resync of the given player's inventory to specified targets.
 	 */
-	public static void forceFullInventorySync(Player sourcePlayer, List<Player> targets) {
+	public static void forceFullInventorySync(Player sourcePlayer, Set<Player> targets) {
 		CraftPlayer cp = (CraftPlayer) sourcePlayer;
 		ServerPlayer handle = cp.getHandle();
 		AbstractContainerMenu menu = handle.containerMenu; // the open window (0 = player inv)
@@ -105,7 +107,7 @@ public class Utils {
 		broadcastPacket(equipPkt);
 
 		// Also update spectators' held items
-		List<Player> spectators = Spectate.getSpectatingPlayers(fake);
+		Set<Player> spectators = Spectate.getSpectatingPlayers(fake);
 		for(Player spectator : spectators) {
 			spectator.getInventory().setHeldItemSlot(fake.getInventory().getHeldItemSlot());
 			spectator.getInventory().setItemInMainHand(fake.getInventory().getItemInMainHand());
@@ -123,7 +125,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		Utils.debug(DebugType.CLIENT, "Sending Packet " + packet.getClass().getSimpleName());
+		Utils.debug(DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName());
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
 			((Packet) packet).handle(customConnection);
@@ -156,6 +158,7 @@ public class Utils {
 		LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
 		assert meta != null;
 		meta.setColor(color);
+		meta.setUnbreakable(true);
 		meta.setDisplayName(name);
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
@@ -229,7 +232,7 @@ public class Utils {
 	 * @param pitch  Pitch
 	 */
 	public static void playLocalSound(Player p, Sound s, float volume, float pitch) {
-		if(M7tas.getFakePlayers().containsValue(p)) {
+		if(M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.playSound(spectator, s, volume, pitch);
 			}
@@ -268,7 +271,26 @@ public class Utils {
 		switch(type) {
 			case CLIENT -> Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] " + message);
 			case SERVER -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] " + message);
-			case BOSS -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Boss] " + message);
+			case BOSS -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Game] " + message);
+		}
+	}
+
+	public static void changeName(LivingEntity entity) {
+		if(!(entity instanceof Player)) {
+			String[] oldName;
+			int health = (int) Math.ceil(entity.getHealth() + entity.getAbsorptionAmount());
+			int maxHealth = (int) Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue();
+			try {
+				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
+			} catch(Exception exception) {
+				oldName = (entity.getName() + " " + ChatColor.YELLOW + health + "/" + maxHealth).split(" ");
+			}
+			oldName[oldName.length - 1] = ChatColor.YELLOW + "" + health + "/" + maxHealth;
+			StringBuilder newName = new StringBuilder(oldName[0]);
+			for(int i = 1; i < oldName.length; i++) {
+				newName.append(" ").append(oldName[i]);
+			}
+			entity.setCustomName(newName.toString());
 		}
 	}
 }

@@ -5,7 +5,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Mage {
@@ -301,50 +304,54 @@ public class Mage {
 //		Utils.scheduleTask(() -> snapHead("Mallyanke"), 447);
 //		Utils.scheduleTask(Mage::mageBeam, 451);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 0f, -35f);
+			Actions.turnHead(mage, 0f, -40f);
 			Actions.setHotbarSlot(mage, 3);
 		}, 5);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 375);
+		Utils.scheduleTask(() -> snapHead("Bonzo"), 376);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 380);
+		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 381);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 385);
+		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 386);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 390);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -40f), 391);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 433);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 450);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 475);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 489);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 506);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 519);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 532);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 545);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 562);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 578);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 603);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 617);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 634);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 647);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 947 Ticks (47.35 seconds)");
-		}, 945);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 661 Ticks (33.05 seconds)");
+		}, 661);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 0f, 4.5f);
+			Actions.turnHead(mage, 0f, 3.4f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
-		}, 946);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 947); // etherwarp to portal
+		}, 662);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 663); // etherwarp to portal
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 9, 36);
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
 			Actions.swapItems(mage, 4, 31);
-		}, 948);
+		}, 664);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1027 Ticks (51.35 seconds)");
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 741 Ticks (37.05 seconds)");
 			if(doContinue) {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 			}
-		}, 1025);
+		}, 741);
 	}
 //
 //	public static void maxor(boolean doContinue) {
@@ -886,42 +893,42 @@ public class Mage {
 //		}, 959);
 //	}
 //
-//	private static void snapHead(String target) {
-//		// Find the nearest mob with the target name
-//		Entity nearestMob = null;
-//		double nearestDistance = Double.MAX_VALUE;
-//
-//		// Search through all nearby entities
-//		for(Entity entity : mage.getNearbyEntities(32, 32, 32)) { // 50 block search radius
-//			// Check if entity is a living entity (mob)
-//			if(entity instanceof LivingEntity) {
-//				// Check if the entity has a custom name containing the target
-//				if(entity.getCustomName() != null && entity.getCustomName().toLowerCase().contains(target.toLowerCase())) {
-//					double distance = mage.getLocation().distance(entity.getLocation());
-//					if(distance < nearestDistance) {
-//						nearestDistance = distance;
-//						nearestMob = entity;
-//					}
-//				}
-//			}
-//		}
-//
-//		// If we found a target, turn the player's head to face it
-//		if(nearestMob != null) {
-//			Location playerLoc = mage.getEyeLocation();
-//			Location targetLoc = nearestMob.getLocation().add(0, nearestMob.getHeight() / 2, 0); // Aim at center of mob
-//
-//			// Calculate the direction vector
-//			Vector direction = targetLoc.subtract(playerLoc).toVector().normalize();
-//
-//			// Convert to yaw and pitch
-//			float yaw = (float) Math.toDegrees(Math.atan2(-direction.getX(), direction.getZ()));
-//			float pitch = (float) Math.toDegrees(Math.asin(-direction.getY()));
-//
-//			// Turn the player's head
-//			Actions.turnHead(mage, yaw, pitch);
-//		}
-//	}
+	private static void snapHead(String target) {
+		// Find the nearest mob with the target name
+		Entity nearestMob = null;
+		double nearestDistance = Double.MAX_VALUE;
+
+		// Search through all nearby entities
+		for(Entity entity : mage.getNearbyEntities(32, 32, 32)) { // 50 block search radius
+			// Check if entity is a living entity (mob)
+			if(entity instanceof LivingEntity) {
+				// Check if the entity has a custom name containing the target
+				if(entity.getCustomName() != null && entity.getCustomName().toLowerCase().contains(target.toLowerCase())) {
+					double distance = mage.getLocation().distance(entity.getLocation());
+					if(distance < nearestDistance) {
+						nearestDistance = distance;
+						nearestMob = entity;
+					}
+				}
+			}
+		}
+
+		// If we found a target, turn the player's head to face it
+		if(nearestMob != null) {
+			Location playerLoc = mage.getEyeLocation();
+			Location targetLoc = nearestMob.getLocation().add(0, nearestMob.getHeight() / 2, 0); // Aim at center of mob
+
+			// Calculate the direction vector
+			Vector direction = targetLoc.subtract(playerLoc).toVector().normalize();
+
+			// Convert to yaw and pitch
+			float yaw = (float) Math.toDegrees(Math.atan2(-direction.getX(), direction.getZ()));
+			float pitch = (float) Math.toDegrees(Math.asin(-direction.getY()));
+
+			// Turn the player's head
+			Actions.turnHead(mage, yaw, pitch);
+		}
+	}
 
 	@SuppressWarnings("unused")
 	public static Player get() {

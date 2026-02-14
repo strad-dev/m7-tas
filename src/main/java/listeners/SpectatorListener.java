@@ -13,7 +13,7 @@ import org.bukkit.potion.PotionEffectType;
 import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.List;
+import java.util.Set;
 
 public class SpectatorListener implements Listener {
 
@@ -27,7 +27,7 @@ public class SpectatorListener implements Listener {
 		if (Spectate.getSpectatorMap().containsKey(player)) {
 			Player fakePlayer = Spectate.getSpectatorMap().remove(player);
 			if (fakePlayer != null) {
-				List<Player> spectators = Spectate.getReverseSpectatorMap().get(fakePlayer);
+				Set<Player> spectators = Spectate.getReverseSpectatorMap().get(fakePlayer);
 				if (spectators != null) {
 					spectators.remove(player);
 					if (spectators.isEmpty()) {

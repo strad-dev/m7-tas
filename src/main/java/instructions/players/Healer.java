@@ -1,5 +1,6 @@
 package instructions.players;
 
+import instructions.Actions;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.enchantments.Enchantment;
@@ -21,6 +22,7 @@ public class Healer {
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 //				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
 //				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
 //				Utils.scheduleTask(() -> Actions.rightClick(healer), 101);
@@ -76,6 +78,20 @@ public class Healer {
 //				Utils.scheduleTask(Healer::witherKing, 60);
 //			}
 		}
+	}
+
+	private static void preClear(boolean doContinue) {
+		Actions.turnHead(healer, 180f, -90f);
+		Actions.swapItems(healer, 2, 29);
+		Actions.setHotbarSlot(healer, 7);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 38), 1); // move to pearl spot
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 39); // lands in 10 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.move(healer, "N", 0);
+		}, 40);
+		// dodge tick 40 teleport
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 49); // etherwarp to top
 	}
 
 	private static void clear(boolean doContinue) {

@@ -30,8 +30,12 @@ import java.util.function.Predicate;
 
 public class Spectate implements CommandExecutor {
 	private static final Map<Player, Set<Player>> hiddenFakePlayers = new HashMap<>();
+
+	// Maps a real Player to the player they are spectating
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
-	private static final HashMap<Player, List<Player>> reverseSpectatorMap = new HashMap<>();
+
+	// Maps a fake Player to the Player(s) that are spectating them
+	private static final HashMap<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
 	private static BukkitRunnable spectatorSyncTask;
 
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
@@ -66,7 +70,7 @@ public class Spectate implements CommandExecutor {
 
 			Player fakePlayer = fakePlayers.get(role);
 			spectatorMap.put(p, fakePlayer);
-			reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new ArrayList<>()).add(p);
+			reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new HashSet<>()).add(p);
 
 			// NEW: Backup the player's inventory before spectating
 			Utils.backupInventory(p);
@@ -86,7 +90,7 @@ public class Spectate implements CommandExecutor {
 			if(spectatorMap.containsKey(p)) {
 				Player fakePlayer = spectatorMap.remove(p);
 				if(fakePlayer != null) {
-					List<Player> spectators = reverseSpectatorMap.get(fakePlayer);
+					Set<Player> spectators = reverseSpectatorMap.get(fakePlayer);
 					if(spectators != null) {
 						spectators.remove(p);
 						if(spectators.isEmpty()) {
@@ -126,15 +130,15 @@ public class Spectate implements CommandExecutor {
 	 * @param player the player whose spectating target is being retrieved
 	 * @return the player being spectated by the given player, or null if the player is not spectating anyone
 	 */
-	public static List<Player> getSpectatingPlayers(Player player) {
-		return reverseSpectatorMap.getOrDefault(player, new ArrayList<>());
+	public static Set<Player> getSpectatingPlayers(Player player) {
+		return reverseSpectatorMap.getOrDefault(player, new HashSet<>());
 	}
 
 	public static Map<Player, Player> getSpectatorMap() {
 		return spectatorMap;
 	}
 
-	public static Map<Player, List<Player>> getReverseSpectatorMap() {
+	public static Map<Player, Set<Player>> getReverseSpectatorMap() {
 		return reverseSpectatorMap;
 	}
 

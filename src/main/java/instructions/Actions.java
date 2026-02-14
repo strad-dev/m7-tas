@@ -294,7 +294,9 @@ public class Actions {
 		Utils.simulatePacket(p, swingPacket);
 
 		// Check for entity target
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity);
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p
+					&& entity instanceof LivingEntity
+					&& !Spectate.getSpectatingPlayers(p).contains(entity));
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
 			// Attack the entity
@@ -349,8 +351,9 @@ public class Actions {
 
 		// Check for entity target - EXCLUDE all players
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
-			if(entity instanceof Player player) return false;
-
+			if(entity instanceof Player player) {
+				return !Spectate.getSpectatingPlayers(p).contains(player);
+			}
 			return entity.isVisibleByDefault();
 		});
 
@@ -360,7 +363,6 @@ public class Actions {
 
 			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
 			Utils.simulatePacket(p, interactPacket);
-			return;
 		}
 
 		// Right click air (eat food, throw pearl, use item ability) - THIS IS WHAT YOU WANT FOR ETHERWARP
@@ -839,7 +841,7 @@ public class Actions {
 		}
 
 		// Also start bow drawing for any real players spectating this fake player
-		List<Player> spectators = Spectate.getSpectatingPlayers(p);
+		Set<Player> spectators = Spectate.getSpectatingPlayers(p);
 		for(Player spectator : spectators) {
 			if(spectator instanceof CraftPlayer craftSpectator) {
 				ServerPlayer serverSpectator = craftSpectator.getHandle();
@@ -1393,7 +1395,7 @@ public class Actions {
 		// 1) do the swing animation
 		p.swingMainHand();
 
-		List<Player> spectators = Spectate.getSpectatingPlayers(p);
+		Set<Player> spectators = Spectate.getSpectatingPlayers(p);
 		for(Player spectator : spectators) {
 			spectator.swingMainHand();
 		}

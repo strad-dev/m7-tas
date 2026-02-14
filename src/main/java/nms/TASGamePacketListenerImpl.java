@@ -225,7 +225,6 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 			case ABORT_DESTROY_BLOCK:
 			case STOP_DESTROY_BLOCK:
 				this.player.gameMode.handleBlockBreakAction(blockposition, packetplayinblockdig_enumplayerdigtype, packetplayinblockdig.getDirection(), this.player.level().getMaxY(), packetplayinblockdig.getSequence());
-				this.ackBlockChangesUpTo(packetplayinblockdig.getSequence());
 				return;
 			default:
 				throw new IllegalArgumentException("Invalid player action");
@@ -233,7 +232,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 	}
 
 	public void handleUseItemOn(ServerboundUseItemOnPacket packetplayinuseitem) {
-		this.ackBlockChangesUpTo(packetplayinuseitem.getSequence());
+		this.player.gameMode.firedInteract = false;
 		ServerLevel worldserver = this.player.level();
 		InteractionHand enumhand = packetplayinuseitem.getHand();
 		ItemStack itemstack = this.player.getItemInHand(enumhand);
@@ -282,7 +281,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 	}
 
 	public void handleUseItem(ServerboundUseItemPacket packetplayinblockplace) {
-		this.ackBlockChangesUpTo(packetplayinblockplace.getSequence());
+		this.player.gameMode.firedInteract = false;
 		ServerLevel worldserver = this.player.level();
 		InteractionHand enumhand = packetplayinblockplace.getHand();
 		ItemStack itemstack = this.player.getItemInHand(enumhand);
