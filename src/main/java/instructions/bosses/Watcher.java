@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
+import plugin.DebugType;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -40,14 +41,26 @@ public class Watcher {
 
 	// Boss bar for the Watcher
 	private static BossBar watcherBossBar;
+	private static int totalTick = 0;
+	private static BukkitRunnable runnable;
 
 	public static void watcherInstructions(World temp, boolean doContinue) {
 		cleanup(); // Clean up any previous instance
 
+		totalTick = 0;
 		mobCount = 0;
 		mobsKilled = 0;
 		world = temp;
 		ORIGINAL_POSITION.setWorld(world);
+
+		runnable.cancel();
+		runnable = new BukkitRunnable() {
+			@Override
+			public void run() {
+				totalTick ++;
+			}
+		};
+		runnable.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 
 		Utils.scheduleTask(() -> {
 			watcher = (Zombie) world.spawnEntity(ORIGINAL_POSITION, EntityType.ZOMBIE);
@@ -107,111 +120,111 @@ public class Watcher {
 			sendChatMessage("Things feel a little more roomy now, eh?");
 			Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
 			Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
-//			Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
+			Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
 
-			// Schedule kill messages and boss bar updates
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 437);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 442);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 447);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 452);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 494);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 527);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 568);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 598);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 631);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 660);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 689);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 718);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 751);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 783);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 824);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 854);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 887);
-//			Utils.scheduleTask(() -> {
-//				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//			}, 916);
-//			Utils.scheduleTask(() -> {
-//				mobsKilled++;
-//				updateWatcherBossBar();
-//				sendChatMessage("You have proven yourself.  You may pass.");
-//			}, 946);
-//			Utils.scheduleTask(() -> {
-//				cleanup();
-//				world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
-//				if(doContinue) {
+//			Schedule kill messages and boss bar updates
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 437);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 442);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 447);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 452);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 494);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 527);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 568);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 598);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 631);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 660);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 689);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 718);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 751);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 783);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 824);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 854);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 887);
+			Utils.scheduleTask(() -> {
+				sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
+				mobsKilled++;
+				updateWatcherBossBar();
+			}, 916);
+			Utils.scheduleTask(() -> {
+				mobsKilled++;
+				updateWatcherBossBar();
+				sendChatMessage("You have proven yourself.  You may pass.");
+			}, 946);
+			Utils.scheduleTask(() -> {
+				cleanup();
+				world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
+				if(doContinue) {
 //					Maxor.maxorInstructions(world, true);
-//				}
-//			}, 1026);
+				}
+			}, 1026);
 		}, 3);
 	}
 
@@ -258,20 +271,20 @@ public class Watcher {
 			ItemStack zombieHead = new ItemStack(Material.ZOMBIE_HEAD);
 			Objects.requireNonNull(stand.getEquipment()).setHelmet(zombieHead);
 
+			Utils.debug(DebugType.BOSS, "Begin spawning " + mobName + " on tick " + totalTick);
 			moveEntitySmooth(stand, headStart.clone().add(0, 1, 0), endLoc, 0.4, () -> {
 				spawnMob(endLoc, mobName);
+				Utils.debug(DebugType.BOSS, mobName + " spawned on tick " + totalTick);
 				stand.remove(); // Remove armor stand after reaching destination
 			});
 
 			sendChatMessage(SPAWN_LINES.get(random.nextInt(5)));
 
-			Utils.scheduleTask(() -> {
-				if(mobCount == 4 || mobCount == 19) {
-					returnToOriginalPosition();
-				} else {
-					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
-				}
-			}, 16);
+			if(mobCount == 4 || mobCount == 19) {
+				returnToOriginalPosition();
+			} else {
+				travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
+			}
 		});
 	}
 
@@ -298,7 +311,7 @@ public class Watcher {
 			cruiseTicks = (int) Math.ceil(cruiseDistance / maxSpeed);
 		}
 
-		final int totalTicks = accelTicks + cruiseTicks + decelTicks;
+		final int movementTicks = accelTicks + cruiseTicks + decelTicks;
 		entity.teleport(start.clone());
 
 		new BukkitRunnable() {
@@ -342,7 +355,7 @@ public class Watcher {
 				}
 
 				tick++;
-				if(tick >= totalTicks) {
+				if(tick >= movementTicks) {
 					entity.teleport(end);
 
 					if(entity.equals(watcher)) {
@@ -411,7 +424,10 @@ public class Watcher {
 		if(watcher != null && world != null) {
 			if(mobCount != 19) {
 				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, () -> sendChatMessage("Let's see how you can handle this."));
-				Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount)), 60);
+				Utils.scheduleTask(() -> {
+					Utils.debug(DebugType.BOSS, "Watcher moved on tick " + totalTick);
+					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
+				}, 60);
 			} else {
 				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, null);
 			}

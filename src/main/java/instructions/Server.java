@@ -10,6 +10,7 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import plugin.DebugType;
 import plugin.Utils;
 
 import java.util.Collection;
@@ -28,9 +29,9 @@ public class Server {
 		Utils.scheduleTask(() -> {
 			switch(section) {
 				case "all", "clear" -> {
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] Out of Bounds Check Triggered!"), 40);
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] Out of Bounds Check Triggered!"), 80);
-					Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] Out of Bounds Check Triggered!"), 120);
+					Utils.scheduleTask(() -> Utils.debug(DebugType.SERVER, "Out of Bounds Check Triggered!"), 40);
+					Utils.scheduleTask(() -> Utils.debug(DebugType.SERVER, "Out of Bounds Check Triggered!"), 80);
+					Utils.scheduleTask(() -> Utils.debug(DebugType.SERVER, "Out of Bounds Check Triggered!"), 120);
 
 					// 5-second countdown
 					Utils.scheduleTask(() -> {

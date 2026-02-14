@@ -1,6 +1,8 @@
 package instructions.players;
 
 import instructions.Actions;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -110,7 +112,6 @@ public class Mage {
 		// tick 1: tac TP back
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 2);
 		// tick 3: blood opens
-	}
 //		/*
 //		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗
 //		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔══██╗██║   ██║██╔════╝██║  ██║
@@ -279,10 +280,15 @@ public class Mage {
 //		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ╚██████╗██║  ██║██║ ╚═╝ ██║██║
 //		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝      ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 //		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 90f, 10f);
+			Actions.setHotbarSlot(mage, 1);
+		}, 3);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 4); // AOTV to correct spot
 //		Utils.scheduleTask(() -> Actions.rag(mage), 374);
 //		Utils.scheduleTask(Server::openBloodDoor, 415);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -12f), 416);
-//		// rag axe activates on tick 434
+		// rag axe activates on tick 434
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 435);
 //		Utils.scheduleTask(() -> {
 //			mageBeam();
@@ -294,44 +300,52 @@ public class Mage {
 //		Utils.scheduleTask(Mage::mageBeam, 446);
 //		Utils.scheduleTask(() -> snapHead("Mallyanke"), 447);
 //		Utils.scheduleTask(Mage::mageBeam, 451);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -35f), 452);
-//		Utils.scheduleTask(Mage::mageBeam, 493);
-//		Utils.scheduleTask(Mage::mageBeam, 526);
-//		Utils.scheduleTask(Mage::mageBeam, 567);
-//		Utils.scheduleTask(Mage::mageBeam, 597);
-//		Utils.scheduleTask(Mage::mageBeam, 630);
-//		Utils.scheduleTask(Mage::mageBeam, 659);
-//		Utils.scheduleTask(Mage::mageBeam, 688);
-//		Utils.scheduleTask(Mage::mageBeam, 717);
-//		Utils.scheduleTask(Mage::mageBeam, 750);
-//		Utils.scheduleTask(Mage::mageBeam, 782);
-//		Utils.scheduleTask(Mage::mageBeam, 823);
-//		Utils.scheduleTask(Mage::mageBeam, 853);
-//		Utils.scheduleTask(Mage::mageBeam, 886);
-//		Utils.scheduleTask(Mage::mageBeam, 915);
-//		Utils.scheduleTask(() -> {
-//			mageBeam();
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 947 Ticks (47.35 seconds)");
-//		}, 945);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 0f, 4.5f);
-//			Actions.setHotbarSlot(mage, 1);
-//		}, 946);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -120.5, 69, -74.5)), 947);
-//		Utils.scheduleTask(() -> {
-//			Actions.swapItems(mage, 9, 36);
-//			Actions.swapItems(mage, 1, 28);
-//			Actions.swapItems(mage, 3, 30);
-//			Actions.swapItems(mage, 4, 31);
-//		}, 948);
-//		Utils.scheduleTask(() -> {
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1027 Ticks (51.35 seconds)");
-//			if(doContinue) {
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 0f, -35f);
+			Actions.setHotbarSlot(mage, 3);
+		}, 5);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 493);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 947 Ticks (47.35 seconds)");
+		}, 945);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 0f, 4.5f);
+			Actions.setHotbarSlot(mage, 1);
+			Actions.move(mage, "N", 2);
+		}, 946);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 947); // etherwarp to portal
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(mage, 9, 36);
+			Actions.swapItems(mage, 1, 28);
+			Actions.swapItems(mage, 3, 30);
+			Actions.swapItems(mage, 4, 31);
+		}, 948);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 1027 Ticks (51.35 seconds)");
+			if(doContinue) {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
-//			}
-//		}, 1025);
-//	}
+			}
+		}, 1025);
+	}
 //
 //	public static void maxor(boolean doContinue) {
 //		Actions.setHotbarSlot(mage, 5);

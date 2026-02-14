@@ -33,6 +33,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import plugin.DebugType;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -357,7 +358,7 @@ public class CustomItems implements Listener {
 			l.setYaw(origin.getYaw());
 			l.setPitch(origin.getPitch());
 			p.teleport(l);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 		} else {
 			switch(result.getHitBlockFace()) {
 				case SELF -> {
@@ -368,14 +369,14 @@ public class CustomItems implements Listener {
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
-					Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				}
 				case DOWN -> {
 					Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
-					Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				}
 				default -> {
 					// Hit a side face - backtrack until we find a safe spot
@@ -416,7 +417,7 @@ public class CustomItems implements Listener {
 								l.setYaw(origin.getYaw());
 								l.setPitch(origin.getPitch());
 								p.teleport(l);
-								Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+								Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 								break;
 							}
 						}
@@ -428,7 +429,7 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 				}
 			}
@@ -472,7 +473,7 @@ public class CustomItems implements Listener {
 				l.setPitch(p.getEyeLocation().getPitch());
 				p.setFallDistance(0);
 				Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
-				Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Etherwarping " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+				Utils.debug(DebugType.SERVER, "Etherwarping " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				p.teleport(l);
 			}
 		} else {
@@ -553,7 +554,7 @@ public class CustomItems implements Listener {
 				l.setYaw(origin.getYaw());
 				l.setPitch(origin.getPitch());
 				p.teleport(l);
-				Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+				Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 			} else {
 				switch(result.getHitBlockFace()) {
 					case SELF -> {
@@ -564,14 +565,14 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 					case DOWN -> {
 						Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					}
 					default -> {
 						// Hit a side face - backtrack until we find a safe spot
@@ -612,7 +613,7 @@ public class CustomItems implements Listener {
 									l.setYaw(origin.getYaw());
 									l.setPitch(origin.getPitch());
 									p.teleport(l);
-									Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+									Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 									break;
 								}
 							}
@@ -624,7 +625,7 @@ public class CustomItems implements Listener {
 							l.setYaw(origin.getYaw());
 							l.setPitch(origin.getPitch());
 							p.teleport(l);
-							Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+							Utils.debug(DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 						}
 					}
 				}
@@ -638,7 +639,7 @@ public class CustomItems implements Listener {
 		// Capture block data
 		Material m = b.getType();
 		BlockData data = b.getBlockData().clone();
-		Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
+		Utils.debug(DebugType.SERVER, "Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
 
 		// Schedule restoration with Java's scheduler
 		Utils.scheduleTask(() -> {
@@ -1206,7 +1207,7 @@ public class CustomItems implements Listener {
 
 	public static void tac(Player p) {
 		Location l = p.getLocation();
-		Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Activating Tactical Insertion at " + l.getX() + " " + l.getY() + " " + l.getZ());
+		Utils.debug(DebugType.SERVER, "Activating Tactical Insertion at " + l.getX() + " " + l.getY() + " " + l.getZ());
 		Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);
 		Utils.playLocalSound(p, Sound.ITEM_FLINTANDSTEEL_USE, 1.0F, 1.0F);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.793701F), 10);
@@ -1217,7 +1218,7 @@ public class CustomItems implements Listener {
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
 			p.teleport(l);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "[Simulate] Returning " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Utils.debug(DebugType.SERVER, "Returning " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 			p.setVelocity(new Vector(0, 0, 0));
 			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
 		}, 60);

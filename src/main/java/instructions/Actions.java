@@ -1,6 +1,7 @@
 package instructions;
 
 import com.mojang.datafixers.util.Pair;
+import commands.Spectate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
@@ -41,6 +42,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import plugin.DebugType;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -59,7 +61,7 @@ public class Actions {
 	 */
 	public static void move(Player player, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
-		Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] Simulating Player Movement");
+		Utils.debug(DebugType.CLIENT, "Simulating Player Movement");
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
@@ -274,7 +276,7 @@ public class Actions {
 		serverPlayer.setYBodyRot(yaw);
 		serverPlayer.setXRot(pitch);
 		serverPlayer.refreshDimensions();
-		Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] Simulating Head Turn");
+		Utils.debug(DebugType.CLIENT, "Simulating Head Turn");
 	}
 
 	/**
@@ -837,7 +839,7 @@ public class Actions {
 		}
 
 		// Also start bow drawing for any real players spectating this fake player
-		List<Player> spectators = M7tas.getSpectatingPlayers(p);
+		List<Player> spectators = Spectate.getSpectatingPlayers(p);
 		for(Player spectator : spectators) {
 			if(spectator instanceof CraftPlayer craftSpectator) {
 				ServerPlayer serverSpectator = craftSpectator.getHandle();
@@ -1391,7 +1393,7 @@ public class Actions {
 		// 1) do the swing animation
 		p.swingMainHand();
 
-		List<Player> spectators = M7tas.getSpectatingPlayers(p);
+		List<Player> spectators = Spectate.getSpectatingPlayers(p);
 		for(Player spectator : spectators) {
 			spectator.swingMainHand();
 		}
@@ -1411,7 +1413,7 @@ public class Actions {
 	@SuppressWarnings("ConstantConditions")
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void rightClickWithSpectators(Player p) {
-		for(Player spectator : M7tas.getSpectatingPlayers(p)) {
+		for(Player spectator : Spectate.getSpectatingPlayers(p)) {
 			PlayerInteractEvent ev = new PlayerInteractEvent(spectator, Action.RIGHT_CLICK_AIR, p.getInventory().getItemInMainHand(), null, null);
 			Bukkit.getPluginManager().callEvent(ev);
 		}

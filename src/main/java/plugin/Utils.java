@@ -59,7 +59,7 @@ public class Utils {
 	 * Syncs fake player's inventory to spectators using packet-based approach
 	 */
 	public static void syncInventory(Player fakePlayer) {
-		List<Player> spectators = M7tas.getSpectatingPlayers(fakePlayer);
+		List<Player> spectators = Spectate.getSpectatingPlayers(fakePlayer);
 		if(!spectators.isEmpty()) {
 			// Method 1: Use packet-based sync (more efficient)
 			forceFullInventorySync(fakePlayer, spectators);
@@ -105,7 +105,7 @@ public class Utils {
 		broadcastPacket(equipPkt);
 
 		// Also update spectators' held items
-		List<Player> spectators = M7tas.getSpectatingPlayers(fake);
+		List<Player> spectators = Spectate.getSpectatingPlayers(fake);
 		for(Player spectator : spectators) {
 			spectator.getInventory().setHeldItemSlot(fake.getInventory().getHeldItemSlot());
 			spectator.getInventory().setItemInMainHand(fake.getInventory().getItemInMainHand());
@@ -123,7 +123,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] Sending Packet " + packet.getClass().getSimpleName());
+		Utils.debug(DebugType.CLIENT, "Sending Packet " + packet.getClass().getSimpleName());
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
 			((Packet) packet).handle(customConnection);
@@ -183,8 +183,8 @@ public class Utils {
 
 		inventorySyncTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
 			// Re-sync all spectators' inventories every 10 ticks
-			for(Player spectator : M7tas.getSpectatorMap().keySet()) {
-				Player fakePlayer = M7tas.getSpectatorMap().get(spectator);
+			for(Player spectator : Spectate.getSpectatorMap().keySet()) {
+				Player fakePlayer = Spectate.getSpectatorMap().get(spectator);
 				if(fakePlayer != null) {
 					syncInventory(fakePlayer);
 				}
@@ -262,5 +262,13 @@ public class Utils {
 		}
 		playersInWorld.sort(Comparator.comparingDouble(o -> o.getLocation().distanceSquared(l)));
 		return playersInWorld.getFirst();
+	}
+
+	public static void debug(DebugType type, String message) {
+		switch(type) {
+			case CLIENT -> Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] " + message);
+			case SERVER -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] " + message);
+			case BOSS -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Boss] " + message);
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package listeners;
 
+import commands.Spectate;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -23,14 +24,14 @@ public class SpectatorListener implements Listener {
 		M7tas.removeFromNoCollisionTeam(player);
 
 		// If they were spectating, clean up
-		if (M7tas.getSpectatorMap().containsKey(player)) {
-			Player fakePlayer = M7tas.getSpectatorMap().remove(player);
+		if (Spectate.getSpectatorMap().containsKey(player)) {
+			Player fakePlayer = Spectate.getSpectatorMap().remove(player);
 			if (fakePlayer != null) {
-				List<Player> spectators = M7tas.getReverseSpectatorMap().get(fakePlayer);
+				List<Player> spectators = Spectate.getReverseSpectatorMap().get(fakePlayer);
 				if (spectators != null) {
 					spectators.remove(player);
 					if (spectators.isEmpty()) {
-						M7tas.getReverseSpectatorMap().remove(fakePlayer);
+						Spectate.getReverseSpectatorMap().remove(fakePlayer);
 					}
 				}
 			}
@@ -45,12 +46,12 @@ public class SpectatorListener implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onInventoryClick(InventoryClickEvent event) {
 		if (event.getWhoClicked() instanceof Player player) {
-			if (M7tas.getSpectatorMap().containsKey(player)) {
+			if (Spectate.getSpectatorMap().containsKey(player)) {
 				// Allow viewing but prevent actual changes
 				event.setCancelled(true);
 
 				// Re-sync inventory to make sure it stays correct
-				Player fakePlayer = M7tas.getSpectatorMap().get(player);
+				Player fakePlayer = Spectate.getSpectatorMap().get(player);
 				if (fakePlayer != null) {
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.syncInventory(fakePlayer), 1L);
 				}
@@ -61,7 +62,7 @@ public class SpectatorListener implements Listener {
 	// NEW: Prevent item drops for spectators
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDropItem(PlayerDropItemEvent event) {
-		if (M7tas.getSpectatorMap().containsKey(event.getPlayer())) {
+		if (Spectate.getSpectatorMap().containsKey(event.getPlayer())) {
 			event.setCancelled(true);
 		}
 	}
