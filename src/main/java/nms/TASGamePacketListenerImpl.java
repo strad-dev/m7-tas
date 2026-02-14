@@ -2,6 +2,7 @@ package nms;
 
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
+import commands.Spectate;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
@@ -33,7 +34,9 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.v1_21_R7.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -125,6 +128,17 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 					}
 
 					public void onAttack() {
+						// Check if target is a spectator of this fake player
+						if(entity instanceof ServerPlayer targetNms) {
+							Player targetBukkit = targetNms.getBukkitEntity();
+							Player attacker = TASGamePacketListenerImpl.this.getCraftPlayer();
+							if(Spectate.getSpectatingPlayers(attacker).contains(targetBukkit)) {
+								PlayerInteractEvent event = new PlayerInteractEvent(attacker, Action.LEFT_CLICK_AIR, attacker.getInventory().getItemInMainHand(), null, null, org.bukkit.inventory.EquipmentSlot.HAND);
+								TASGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
+								return;
+							}
+						}
+
 						if(!(entity instanceof ItemEntity) && !(entity instanceof ExperienceOrb) && (entity != TASGamePacketListenerImpl.this.player || TASGamePacketListenerImpl.this.player.isSpectator())) {
 							label43:
 							{
@@ -141,6 +155,20 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 
 								if(TASGamePacketListenerImpl.this.player.cannotAttackWithItem(itemstack, 5)) {
 									return;
+								}
+
+								// Check if the entity won't produce a damage event
+								boolean immune;
+								if(entity instanceof LivingEntity living) {
+									immune = living.isDeadOrDying() || living.invulnerableTime > 0 || entity.isInvulnerable() || (entity instanceof ServerPlayer target && target.isCreative());
+								} else {
+									immune = entity.isInvulnerable();
+								}
+
+								if(immune) {
+									Player attacker = TASGamePacketListenerImpl.this.getCraftPlayer();
+									PlayerInteractEvent event = new PlayerInteractEvent(attacker, Action.LEFT_CLICK_AIR, attacker.getInventory().getItemInMainHand(), null, null, org.bukkit.inventory.EquipmentSlot.HAND);
+									TASGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
 								}
 
 								TASGamePacketListenerImpl.this.player.attack(entity);
@@ -322,7 +350,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 			}
 
 			if(cancelled) {
-				this.player.getBukkitEntity().updateInventory();
+				this.player.containerMenu.sendAllDataToRemote();
 				return;
 			}
 

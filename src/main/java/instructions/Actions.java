@@ -289,29 +289,21 @@ public class Actions {
 
 		ServerPlayer serverPlayer = cp.getHandle();
 
-		// Always send swing packet for left click
 		ServerboundSwingPacket swingPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
 		Utils.simulatePacket(p, swingPacket);
 
-		// Check for entity target
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p
-					&& entity instanceof LivingEntity
-					&& !Spectate.getSpectatingPlayers(p).contains(entity));
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity);
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
-			// Attack the entity
 			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
-
 			ServerboundInteractPacket attackPacket = ServerboundInteractPacket.createAttackPacket(nmsEntity, serverPlayer.isShiftKeyDown());
 			Utils.simulatePacket(p, attackPacket);
 			return;
 		}
 
-		// Check for block target
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
-			// Start breaking the block
 			Block block = blockRay.getHitBlock();
 			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
 			Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
@@ -350,12 +342,7 @@ public class Actions {
 		}
 
 		// Check for entity target - EXCLUDE all players
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
-			if(entity instanceof Player player) {
-				return !Spectate.getSpectatingPlayers(p).contains(player);
-			}
-			return entity.isVisibleByDefault();
-		});
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player target && Spectate.getSpectatingPlayers(p).contains(target)));
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
 			// Interact with the entity
@@ -547,7 +534,6 @@ public class Actions {
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
 	public static void superboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 21);
@@ -568,7 +554,6 @@ public class Actions {
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
 	public static void crypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Actions.swingHand(p);
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) (x1 + x2) / 2, Math.min(y1, y2), (double) (z1 + z2) / 2), EntityType.ZOMBIE);
@@ -984,7 +969,6 @@ public class Actions {
 	 */
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	public static void flamingFlay(Player p) {
-		swingHand(p);
 		Location startLoc = p.getEyeLocation();
 
 		// Angle up by 5 degrees from player's look direction
@@ -1060,7 +1044,6 @@ public class Actions {
 
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	public static void gyro(Player p, Location l) {
-		swingHand(p);
 		p.getWorld().spawnParticle(Particle.PORTAL, l, 1000);
 		l.setY(l.getY() + 1);
 		new BukkitRunnable() {
