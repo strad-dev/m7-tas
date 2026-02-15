@@ -209,6 +209,32 @@ public class Healer {
 			Actions.move(healer, "WP", 2);
 		}, 46);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 47);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -90f, -90f);
+			Actions.setHotbarSlot(healer, 1);
+			Actions.move(healer, "N", 3);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 3/4 (Picked Up Item)");
+			Utils.playLocalSound(healer, Sound.ENTITY_ITEM_PICKUP);
+		}, 48);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 49);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -76f, -21f), 50);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 51);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 52);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 1), 53);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Utils.playLocalSound(healer, Sound.ENTITY_VILLAGER_YES);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": Oh my lovely crystal ball, mi so happy");
+			Utils.scheduleTask(() -> {
+				Utils.playLocalSound(healer, Sound.ENTITY_VILLAGER_YES);
+				Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": You deserve a reward young gobelin");
+			}, 20);
+			Utils.scheduleTask(() -> {
+				Utils.playLocalSound(healer, Sound.ENTITY_VILLAGER_YES);
+				Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": Granted your team a " + ChatColor.LIGHT_PURPLE + "Blessing of Wisdom I");
+				Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 1);
+			}, 60);
+		}, 54);
 	}
 //		/*
 //		 * ██████╗     ██╗    ██╗███████╗██╗██████╗ ██████╗  ██████╗ ███████╗

@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import plugin.M7tas;
+import plugin.Utils;
 
 public class Simulate implements CommandExecutor {
 	private static Player lastSimulated;
@@ -34,6 +35,21 @@ public class Simulate implements CommandExecutor {
 				lastSimulatedLocation = null;
 				p.sendMessage(ChatColor.GREEN + "Undid previous simulation instruction");
 				return true;
+			}
+			case "allblessings" -> {
+				Utils.broadcastBlessing(p, Utils.BlessingType.LIFE, 1);
+				Utils.broadcastBlessing(p, Utils.BlessingType.LIFE, 2);
+				Utils.broadcastBlessing(p, Utils.BlessingType.LIFE, 5);
+				Utils.broadcastBlessing(p, Utils.BlessingType.POWER, 1);
+				Utils.broadcastBlessing(p, Utils.BlessingType.POWER, 2);
+				Utils.broadcastBlessing(p, Utils.BlessingType.POWER, 5);
+				Utils.broadcastBlessing(p, Utils.BlessingType.STONE, 1);
+				Utils.broadcastBlessing(p, Utils.BlessingType.STONE, 2);
+				Utils.broadcastBlessing(p, Utils.BlessingType.STONE, 5);
+				Utils.broadcastBlessing(p, Utils.BlessingType.WISDOM, 1);
+				Utils.broadcastBlessing(p, Utils.BlessingType.WISDOM, 2);
+				Utils.broadcastBlessing(p, Utils.BlessingType.WISDOM, 5);
+				Utils.broadcastBlessing(p, Utils.BlessingType.TIME, 5);
 			}
 			case "bonzo" -> {
 				p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days");

@@ -15,7 +15,7 @@ public class Berserk {
 	public static void berserkInstructions(Player p, String section) {
 		berserk = p;
 		world = berserk.getWorld();
-		Objects.requireNonNull(berserk.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 12);
+		Objects.requireNonNull(berserk.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 16);
 
 		switch(section) {
 			case "all", "clear" -> {

@@ -1,7 +1,5 @@
 package listeners;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.EnderPearl;
@@ -11,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.util.Vector;
-import plugin.DebugType;
 import plugin.Utils;
 
 public class PearlHelper implements Listener {
@@ -23,7 +20,7 @@ public class PearlHelper implements Listener {
 		Vector direction = p.getLocation().getDirection();
 		pearl.setVelocity(direction.multiply(1.5));
 
-		Utils.debug(DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown");
+		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown");
 		Utils.scheduleTask(() -> p.setCooldown(Material.ENDER_PEARL, 0), 1);
 	}
 
@@ -37,8 +34,8 @@ public class PearlHelper implements Listener {
 			l.setZ(Math.floor(l.getZ()) + 0.5);
 			l.setYaw(p.getLocation().getYaw());
 			l.setPitch(p.getLocation().getPitch());
-			Utils.debug(DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " landed in " + pearl.getTicksLived() + " ticks");
-			Utils.debug(DebugType.SERVER, "Landed at " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " landed in " + pearl.getTicksLived() + " ticks");
+			Utils.debug(Utils.DebugType.SERVER, "Landed at " + l.getX() + " " + l.getY() + " " + l.getZ());
 			pearl.remove();
 			p.teleport(l);
 		}

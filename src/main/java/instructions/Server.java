@@ -10,7 +10,6 @@ import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import plugin.DebugType;
 import plugin.Utils;
 
 import java.util.Collection;
@@ -29,9 +28,9 @@ public class Server {
 		Utils.scheduleTask(() -> {
 			switch(section) {
 				case "all", "clear" -> {
-					Utils.scheduleTask(() -> Utils.debug(DebugType.SERVER, "Out of Bounds Check Triggered!"), 40);
-					Utils.scheduleTask(() -> Utils.debug(DebugType.SERVER, "Out of Bounds Check Triggered!"), 80);
-					Utils.scheduleTask(() -> Utils.debug(DebugType.SERVER, "Out of Bounds Check Triggered!"), 120);
+					Utils.scheduleTask(() -> Utils.debug(Utils.DebugType.SERVER, "Out of Bounds Check Triggered!"), 40);
+					Utils.scheduleTask(() -> Utils.debug(Utils.DebugType.SERVER, "Out of Bounds Check Triggered!"), 80);
+					Utils.scheduleTask(() -> Utils.debug(Utils.DebugType.SERVER, "Out of Bounds Check Triggered!"), 120);
 
 					// 5-second countdown
 					Utils.scheduleTask(() -> {
@@ -78,8 +77,7 @@ public class Server {
 	}
 
 	public static void serverSetup(World world) {
-//		spawnMinibosses(world);
-//		spawn1x1Mobs(world);
+		spawnMinibosses(world);
 		resetGoldorCheese();
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
@@ -112,19 +110,17 @@ public class Server {
 			}
 		}
 
-		Location[] locations = {new Location(world, -120.5, 69, -184.5, 90, 0), // Red Blue (I)
-				new Location(world, -216.5, 69, -184.5, 0, 0), // Spider (II)
-				new Location(world, -120.5, 67, -120.5, -90, 0), // Deathmite (II)
-				new Location(world, -35.5, 69, -152.5, 90, 0), // Dino Dig Site (III)
-				new Location(world, -88.5, 69.0625, -215.5, 0, 0), // Catwalk (IV)
-				new Location(world, -156.5, 69, -120.5, 90, 0), // Well (III)
-				new Location(world, -177.5, 69, -80.5, -90, 0), // Gravel (V)
-				new Location(world, -136.5, 65.0625, -40.5, -180, 0), // Museum (VI)
-				new Location(world, -211.5, 69, -56.5, -90, 0), // Market (VII)
-				new Location(world, -88.5, 69, -56.5, -90, 0) // Melon (VIII)
+		Location[] locations = {new Location(world, -120.5, 69, -152.5, 90f, 0f), // Red Blue (I)
+				new Location(world, -120.5, 67, -88.5, -90f, 0f), // Deathmite (II)
+				new Location(world, -24.5, 69, -184.5, 0f, 0f), // Well (III)
+				new Location(world, -56.5, 69, -48.5, -90f, 0f), // Gravel (III)
+				new Location(world, -168.5, 65.0625, -104.5f, -180, 0f), // Museum (III)
+				new Location(world, -35.5, 69, -120.5, 90f, 0f), // Dino Dig Site (IV)
+				new Location(world, -184.5, 69, -28.5, -90f, 0f), // Market (IV)
+				new Location(world, -152.5, 69, -24.5, -90f, 0f), // Hallway (V)
 		};
 
-		double[] healthValues = {15, 16, 16, 17, 18, 17, 19, 20, 21, 22};
+		double[] healthValues = {15, 16, 17, 17, 17, 18, 18, 19};
 
 		for(int i = 0; i < locations.length; i++) {
 			Zombie zombie = (Zombie) world.spawnEntity(locations[i], EntityType.ZOMBIE);
@@ -135,7 +131,8 @@ public class Server {
 			zombie.setAdult();
 			zombie.setPersistent(true);
 			zombie.setRemoveWhenFarAway(false);
-			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-20);
+			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
+			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-8);
 			Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(healthValues[i]);
 			zombie.setHealth(healthValues[i]);
 
@@ -153,7 +150,7 @@ public class Server {
 			yellowShadowAssassin.remove();
 		}
 
-		yellowShadowAssassin = (Zombie) world.spawnEntity(new Location(world, -216.5, 69, -24.5, -180, 0), EntityType.ZOMBIE);
+		yellowShadowAssassin = (Zombie) world.spawnEntity(new Location(world, -184.5, 69, -184.5, 0f, 0f), EntityType.ZOMBIE);
 		yellowShadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + 30 + "/" + 30);
 		yellowShadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
 		yellowShadowAssassin.setCustomNameVisible(true);

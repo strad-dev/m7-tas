@@ -125,7 +125,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		Utils.debug(DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName());
+		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName());
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
 			((Packet) packet).handle(customConnection);
@@ -226,8 +226,8 @@ public class Utils {
 	/**
 	 * Plays a sound for all players spectating this player if applicable
 	 *
-	 * @param p      The player causing the sound
-	 * @param s      The sound to play
+	 * @param p The player causing the sound
+	 * @param s The sound to play
 	 */
 	public static void playLocalSound(Player p, Sound s) {
 		if(M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
@@ -261,7 +261,7 @@ public class Utils {
 	 * Gets the nearest real player at the given location
 	 *
 	 * @param l The location
-	 * @return  The nearest real player
+	 * @return The nearest real player
 	 */
 	public static @Nullable Player getNearestPlayer(Location l) {
 		ArrayList<Player> playersInWorld = new ArrayList<>(l.getWorld().getEntitiesByClass(Player.class));
@@ -281,6 +281,10 @@ public class Utils {
 		}
 		playersInWorld.sort(Comparator.comparingDouble(o -> o.getLocation().distanceSquared(l)));
 		return playersInWorld.getFirst();
+	}
+
+	public enum DebugType {
+		CLIENT, SERVER, BOSS
 	}
 
 	public static void debug(DebugType type, String message) {
@@ -308,5 +312,56 @@ public class Utils {
 			}
 			entity.setCustomName(newName.toString());
 		}
+	}
+
+	public enum BlessingType {
+		LIFE, POWER, STONE, WISDOM, TIME
+	}
+
+	public static void broadcastBlessing(Player p, BlessingType type, int level) {
+		String message1 = ChatColor.GOLD + "" + ChatColor.BOLD + "DUNGEON BUFF!" + ChatColor.RESET + ChatColor.GOLD + " " + p + ChatColor.WHITE + " found a ";
+		String romanLevel;
+		switch(level) {
+			case 1 -> romanLevel = "I";
+			case 2 -> romanLevel = "II";
+			case 5 -> romanLevel = "V";
+			default -> {
+				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid level " + level);
+				return;
+			}
+		}
+		String message2;
+		switch(type) {
+			case LIFE -> {
+				message1 += ChatColor.GREEN + "Blessing of Life " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + (level * 5.445 / 100) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + (level * 5.445 / 100) + "x" + ChatColor.BLUE + " ❣ Health Regen";
+			}
+			case POWER -> {
+				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Power " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.RED + " ❁ Strength" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.BLUE + " ☠ Crit Damage";
+			}
+			case STONE -> {
+				message1 += ChatColor.DARK_PURPLE + "Blessing of Stone " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x ❈ Defense" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + level * 10.89 + ChatColor.RED + " ❁ Damage";
+			}
+			case WISDOM -> {
+				message1 += ChatColor.BLUE + "Blessing of Wisdom " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.WHITE + " ✦ Speed";
+			}
+			case TIME -> {
+				if(level != 5) {
+					Bukkit.broadcastMessage(ChatColor.RED + "Error: Blessing of Time can only be level 5");
+					return;
+				}
+				message1 += ChatColor.RED + "Blessing of Time " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + "+" + (level * 3.63 / 100) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY + ", " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY + ", " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x ❈ Defense" + ChatColor.GRAY + ", and " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.RED + " ❁ Strength";
+			}
+			default -> {
+				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid blessing type " + type);
+				return;
+			}
+		}
+		Bukkit.broadcastMessage(message1);
+		Bukkit.broadcastMessage(message2);
 	}
 }

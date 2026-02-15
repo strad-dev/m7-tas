@@ -19,7 +19,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
-import plugin.DebugType;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -275,10 +274,10 @@ public class Watcher {
 			ItemStack zombieHead = new ItemStack(Material.ZOMBIE_HEAD);
 			Objects.requireNonNull(stand.getEquipment()).setHelmet(zombieHead);
 
-			Utils.debug(DebugType.BOSS, "Begin spawning " + mobName + " on tick " + totalTick);
+			Utils.debug(Utils.DebugType.BOSS, "Begin spawning " + mobName + " on tick " + totalTick);
 			moveEntitySmooth(stand, headStart.clone().add(0, 1, 0), endLoc, 0.4, () -> {
 				spawnMob(endLoc, mobName);
-				Utils.debug(DebugType.BOSS, mobName + " spawned on tick " + totalTick);
+				Utils.debug(Utils.DebugType.BOSS, mobName + " spawned on tick " + totalTick);
 				stand.remove(); // Remove armor stand after reaching destination
 			});
 
@@ -429,7 +428,7 @@ public class Watcher {
 			if(mobCount != 19) {
 				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, () -> sendChatMessage("Let's see how you can handle this."));
 				Utils.scheduleTask(() -> {
-					Utils.debug(DebugType.BOSS, "Watcher moved on tick " + totalTick);
+					Utils.debug(Utils.DebugType.BOSS, "Watcher moved on tick " + totalTick);
 					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
 				}, 60);
 			} else {

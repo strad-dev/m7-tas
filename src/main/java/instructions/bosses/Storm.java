@@ -1,8 +1,8 @@
 package instructions.bosses;
 
 import instructions.Actions;
-import instructions.players.Mage;
 import instructions.Server;
+import instructions.players.Mage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;

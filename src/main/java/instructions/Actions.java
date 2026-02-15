@@ -42,7 +42,6 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import plugin.DebugType;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -61,7 +60,7 @@ public class Actions {
 	 */
 	public static void move(Player player, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
-		Utils.debug(DebugType.CLIENT, player.getName() + " moving " + input + " for " + durationTicks);
+		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " moving " + input + " for " + durationTicks);
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
@@ -282,7 +281,7 @@ public class Actions {
 		serverPlayer.setYBodyRot(yaw);
 		serverPlayer.setXRot(pitch);
 		serverPlayer.refreshDimensions();
-		Utils.debug(DebugType.CLIENT, player.getName() + " turning head");
+		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " turning head");
 	}
 
 	/**

@@ -3,11 +3,8 @@ package instructions.players;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import plugin.Utils;
-
-import java.util.Objects;
 
 public class Tank {
 	private static Player tank;
