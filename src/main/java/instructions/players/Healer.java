@@ -235,6 +235,14 @@ public class Healer {
 				Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 1);
 			}, 60);
 		}, 54);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 102f, 1f);
+			Actions.move(healer, "N", 1);
+		}, 55);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 56);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 57);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 58);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 41f, 1.21f), 59);
 	}
 //		/*
 //		 * ██████╗     ██╗    ██╗███████╗██╗██████╗ ██████╗  ██████╗ ███████╗

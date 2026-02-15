@@ -257,6 +257,10 @@ public class CustomItems implements Listener {
 								e.setCancelled(true);
 								aotv(p);
 							}
+							case "skyblock/combat/infinityboom" -> {
+								e.setCancelled(true);
+								superboom(p);
+							}
 							case "skyblock/combat/rag" -> {
 								e.setCancelled(true);
 								rag(p);
@@ -654,6 +658,46 @@ public class CustomItems implements Listener {
 			p.setFallDistance(0);
 			Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 		}
+	}
+
+	public static void superboom(Player p) {
+		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
+		if (blockRay == null || blockRay.getHitBlock() == null) return;
+
+		Block origin = blockRay.getHitBlock();
+		if (origin.getType() != Material.CRACKED_STONE_BRICKS) return;
+
+		Set<Block> connected = new HashSet<>();
+		Queue<Block> queue = new LinkedList<>();
+		queue.add(origin);
+		connected.add(origin);
+
+		while (!queue.isEmpty()) {
+			Block current = queue.poll();
+			for (BlockFace face : new BlockFace[]{
+					BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST,
+					BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
+			}) {
+				Block neighbor = current.getRelative(face);
+				if (neighbor.getType() == Material.CRACKED_STONE_BRICKS && connected.add(neighbor)) {
+					queue.add(neighbor);
+				}
+			}
+		}
+
+		Map<Location, BlockData> original = new HashMap<>();
+		for (Block block : connected) {
+			original.put(block.getLocation(), block.getBlockData().clone());
+			block.setType(Material.AIR);
+		}
+
+		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
+
+		Utils.scheduleTask(() -> {
+			for (Map.Entry<Location, BlockData> entry : original.entrySet()) {
+				entry.getKey().getBlock().setBlockData(entry.getValue());
+			}
+		}, 40);
 	}
 
 	public static void stonk(Block b) {

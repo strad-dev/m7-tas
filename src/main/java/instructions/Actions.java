@@ -548,6 +548,7 @@ public class Actions {
 	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
+	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void superboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);

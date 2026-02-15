@@ -128,7 +128,16 @@ public class GetCustomItems implements CommandExecutor {
 		meta.setLore(lore);
 		tac.setItemMeta(meta);
 
-		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay);
+		ItemStack infinityboom = new ItemStack(Material.TNT);
+		meta = tac.getItemMeta();
+		meta.setUnbreakable(true);
+		meta.setDisplayName(ChatColor.GOLD + "Infinityboom TNT");
+		lore = new ArrayList<>();
+		lore.add("skyblock/combat/infinityboom");
+		meta.setLore(lore);
+		tac.setItemMeta(meta);
+
+		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay, infinityboom);
 		p.sendMessage(ChatColor.GREEN + "Here you go!");
 		return true;
 	}
