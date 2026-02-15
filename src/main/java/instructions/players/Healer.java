@@ -206,13 +206,13 @@ public class Healer {
 		// pearl lands tick 45
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
-			Actions.move(healer, "WP", 2);
+			Actions.move(healer, "WP", 0);
 		}, 46);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 47);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, -90f);
 			Actions.setHotbarSlot(healer, 1);
-			Actions.move(healer, "N", 3);
+			Actions.move(healer, "N", 0);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 3/4 (Picked Up Item)");
 			Utils.playLocalSound(healer, Sound.ENTITY_ITEM_PICKUP);
 		}, 48);

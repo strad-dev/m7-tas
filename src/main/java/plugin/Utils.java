@@ -24,6 +24,8 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 public class Utils {
@@ -317,9 +319,38 @@ public class Utils {
 	public enum BlessingType {
 		LIFE, POWER, STONE, WISDOM, TIME
 	}
+	
+	public static String getRealName(Player p) {
+		switch(p.getName()) {
+			case "Archer" -> {
+				return "akc0303";
+			}
+			case "Berserk" -> {
+				return "AsapIcey";
+			}
+			case "Healer" -> {
+				return "Meepy_";
+			}
+			case "Mage" -> {
+				return "Beethoven_";
+			}
+			case "Tank" -> {
+				return "cookiethebald";
+			}
+			default -> {
+				return "???";
+			}
+		}
+	}
+
+	public static String round(double value, int places) {
+		BigDecimal bd = new BigDecimal(Double.toString(value));
+		bd = bd.setScale(places, RoundingMode.HALF_UP);
+		return bd.toPlainString();
+	}
 
 	public static void broadcastBlessing(Player p, BlessingType type, int level) {
-		String message1 = ChatColor.GOLD + "" + ChatColor.BOLD + "DUNGEON BUFF!" + ChatColor.RESET + ChatColor.GOLD + " " + p + ChatColor.WHITE + " found a ";
+		String message1 = ChatColor.GOLD + "" + ChatColor.BOLD + "DUNGEON BUFF!" + ChatColor.RESET + ChatColor.GOLD + " " + getRealName(p) + ChatColor.WHITE + " found a ";
 		String romanLevel;
 		switch(level) {
 			case 1 -> romanLevel = "I";
@@ -333,28 +364,35 @@ public class Utils {
 		String message2;
 		switch(type) {
 			case LIFE -> {
-				message1 += ChatColor.GREEN + "Blessing of Life " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + (level * 5.445 / 100) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + (level * 5.445 / 100) + "x" + ChatColor.BLUE + " ❣ Health Regen";
+				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Life " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(1 + (level * 5.445 / 100), 2) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY +
+						" and " + ChatColor.GREEN + "+" + round(1 + (level * 5.445 / 100), 2) + "x" + ChatColor.BLUE + " ❣ Health Regen";
 			}
 			case POWER -> {
 				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Power " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.RED + " ❁ Strength" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.BLUE + " ☠ Crit Damage";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.RED + " ❁ Strength" + ChatColor.GRAY +
+						" and " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.BLUE + " ☠ Crit Damage";
 			}
 			case STONE -> {
-				message1 += ChatColor.DARK_PURPLE + "Blessing of Stone " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x ❈ Defense" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + level * 10.89 + ChatColor.RED + " ❁ Damage";
+				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Stone " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 2) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense" + ChatColor.GRAY +
+						" and " + ChatColor.GREEN + "+" + round(level * 10.89, 1) + ChatColor.RED + " ❁ Damage";
 			}
 			case WISDOM -> {
-				message1 += ChatColor.BLUE + "Blessing of Wisdom " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.WHITE + " ✦ Speed";
+				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Wisdom " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY +
+						" and " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.WHITE + " ✦ Speed";
 			}
 			case TIME -> {
 				if(level != 5) {
 					Bukkit.broadcastMessage(ChatColor.RED + "Error: Blessing of Time can only be level 5");
 					return;
 				}
-				message1 += ChatColor.RED + "Blessing of Time " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + "+" + (level * 3.63 / 100) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY + ", " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY + ", " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x ❈ Defense" + ChatColor.GRAY + ", and " + ChatColor.GREEN + "+" + level * 7.26 + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + (level * 3.63 / 100) + "x" + ChatColor.RED + " ❁ Strength";
+				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Time " + romanLevel + ChatColor.WHITE + "!";
+				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY +
+						", " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY +
+						", " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense" + ChatColor.GRAY +
+						", and " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.RED + " ❁ Strength";
 			}
 			default -> {
 				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid blessing type " + type);

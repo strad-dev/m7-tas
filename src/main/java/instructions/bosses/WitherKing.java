@@ -172,17 +172,16 @@ public class WitherKing {
 		}
 	}
 
-	public static void pickUpRelic(Player player) {
+	public static void pickUpRelic(Player p) {
 		ItemStack itemStack;
-		String name;
-		switch(player.getName()) {
+		String name = Utils.getRealName(p);
+		switch(p.getName()) {
 			case "Archer" -> {
 				itemStack = new ItemStack(Material.RED_WOOL);
 				ItemMeta meta = itemStack.getItemMeta();
 				assert meta != null;
 				meta.setDisplayName(ChatColor.RED + "Corrupted Red Relic");
 				itemStack.setItemMeta(meta);
-				name = "akc0303";
 			}
 			case "Berserk" -> {
 				itemStack = new ItemStack(Material.ORANGE_WOOL);
@@ -190,7 +189,6 @@ public class WitherKing {
 				assert meta != null;
 				meta.setDisplayName(ChatColor.GOLD + "Corrupted Orange Relic");
 				itemStack.setItemMeta(meta);
-				name = "AsapIcey";
 			}
 			case "Healer" -> {
 				itemStack = new ItemStack(Material.PURPLE_WOOL);
@@ -198,7 +196,6 @@ public class WitherKing {
 				assert meta != null;
 				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Corrupted Purple Relic");
 				itemStack.setItemMeta(meta);
-				name = "Meepy_";
 			}
 			case "Mage" -> {
 				itemStack = new ItemStack(Material.BLUE_WOOL);
@@ -206,7 +203,6 @@ public class WitherKing {
 				assert meta != null;
 				meta.setDisplayName(ChatColor.BLUE + "Corrupted Blue Relic");
 				itemStack.setItemMeta(meta);
-				name = "Beethoven_";
 			}
 			case "Tank" -> {
 				itemStack = new ItemStack(Material.GREEN_WOOL);
@@ -214,7 +210,6 @@ public class WitherKing {
 				assert meta != null;
 				meta.setDisplayName(ChatColor.DARK_GREEN + "Corrupted Green Relic");
 				itemStack.setItemMeta(meta);
-				name = "cookiethebald";
 			}
 			default -> {
 				itemStack = new ItemStack(Material.BLACK_WOOL);
@@ -222,12 +217,11 @@ public class WitherKing {
 				assert meta != null;
 				meta.setDisplayName(ChatColor.BLACK + "Corrupted Unknown Relic");
 				itemStack.setItemMeta(meta);
-				name = "Unknown";
 			}
 		}
 		Bukkit.broadcastMessage(ChatColor.GOLD + name + ChatColor.GREEN + " picked up the " + itemStack.getItemMeta().getDisplayName() + ChatColor.GREEN + "!");
-		player.getInventory().setItem(8, itemStack);
-		Actions.setHotbarSlot(player, 8);
+		p.getInventory().setItem(8, itemStack);
+		Actions.setHotbarSlot(p, 8);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 	}
 

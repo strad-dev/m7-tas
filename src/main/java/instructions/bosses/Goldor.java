@@ -86,16 +86,7 @@ public class Goldor {
 		if(type.equals("gate")) {
 			message = ChatColor.GREEN + "The gate has been destroyed!";
 		} else {
-			String name;
-			switch(p.getName()) {
-				case "Archer" -> name = "akc0303";
-				case "Berserk" -> name = "AsapIcey";
-				case "Healer" -> name = "Meepy_";
-				case "Mage" -> name = "Beethoven_";
-				case "Tank" -> name = "cookiethebald";
-				default -> name = "???";
-			}
-			message = ChatColor.GOLD + name + ChatColor.GREEN + " activated a " + type + "! (" + ChatColor.RED + count + ChatColor.GREEN + "/" + total + ")";
+			message = ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " activated a " + type + "! (" + ChatColor.RED + count + ChatColor.GREEN + "/" + total + ")";
 		}
 		Bukkit.broadcastMessage(message);
 		for(Player player : Bukkit.getOnlinePlayers()) {

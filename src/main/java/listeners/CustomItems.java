@@ -482,7 +482,7 @@ public class CustomItems implements Listener {
 			if(result != null) {
 				Block b = result.getHitBlock();
 				Location l = b.getLocation().add(0.5, 1, 0.5);
-				Utils.debug(Utils.DebugType.SERVER, "Starting at " + p.getLocation().getX() + " " + p.getLocation().getY() + " " + p.getLocation().getZ() + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch());
+				Utils.debug(Utils.DebugType.SERVER, "Starting at " + Utils.round(p.getLocation().getX(), 2) + " " + Utils.round(p.getLocation().getY(), 2) + " " + Utils.round(p.getLocation().getZ(), 2) + " " + Utils.round(p.getLocation().getYaw(), 2) + " " + Utils.round(p.getLocation().getPitch(), 2));
 				if(l.getBlock().getType().isSolid() || l.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
 					Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					return;

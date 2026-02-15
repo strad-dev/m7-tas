@@ -50,6 +50,7 @@ public class Simulate implements CommandExecutor {
 				Utils.broadcastBlessing(p, Utils.BlessingType.WISDOM, 2);
 				Utils.broadcastBlessing(p, Utils.BlessingType.WISDOM, 5);
 				Utils.broadcastBlessing(p, Utils.BlessingType.TIME, 5);
+				return true;
 			}
 			case "bonzo" -> {
 				p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days");

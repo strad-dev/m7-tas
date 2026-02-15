@@ -281,7 +281,7 @@ public class Actions {
 		serverPlayer.setYBodyRot(yaw);
 		serverPlayer.setXRot(pitch);
 		serverPlayer.refreshDimensions();
-		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " turning head");
+		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " turning head to " + yaw + " " + pitch);
 	}
 
 	/**
