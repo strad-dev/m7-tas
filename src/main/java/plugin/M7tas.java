@@ -47,7 +47,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.Pose;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -75,6 +74,7 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.*;
 
@@ -558,6 +558,15 @@ public final class M7tas extends JavaPlugin {
 		}
 		fakeTickerStarted = true;
 
+		Method updatePlayerPose;
+		try {
+			updatePlayerPose = net.minecraft.world.entity.player.Player.class
+					.getDeclaredMethod("updatePlayerPose");
+			updatePlayerPose.setAccessible(true);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find updatePlayerPose", e);
+		}
+
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -565,11 +574,10 @@ public final class M7tas extends JavaPlugin {
 					if(!(fake instanceof CraftPlayer)) continue;
 					ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 					npc.setNoGravity(false);
-
-					if(npc.isShiftKeyDown() && npc.getPose() != Pose.CROUCHING) {
-						npc.setPose(Pose.CROUCHING);
-					} else if(!npc.isShiftKeyDown() && npc.getPose() == Pose.CROUCHING) {
-						npc.setPose(Pose.STANDING);
+					try {
+						updatePlayerPose.invoke(npc);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 					npc.aiStep();
 				}

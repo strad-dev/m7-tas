@@ -82,7 +82,13 @@ public class Actions {
 		} else {
 			serverPlayer.setSprinting(false);
 		}
+
 		serverPlayer.setShiftKeyDown(input.contains("N"));
+		if(input.contains("N")) {
+			serverPlayer.xxa *= 0.3F;
+			serverPlayer.zza *= 0.3F;
+		}
+
 		if(input.contains("J")) {
 			new BukkitRunnable() {
 				int ticks = 0;
@@ -292,7 +298,15 @@ public class Actions {
 		ServerboundSwingPacket swingPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
 		Utils.simulatePacket(p, swingPacket);
 
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity);
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
+			if(entity == p) return false;
+			if(!(entity instanceof LivingEntity)) return false;
+			if(entity instanceof org.bukkit.entity.Player player) {
+				if(M7tas.getFakePlayers().containsValue(player)) return false;
+				return !Spectate.getSpectatingPlayers(p).contains(player);
+			}
+			return true;
+		});
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
 			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
@@ -310,6 +324,8 @@ public class Actions {
 
 			ServerboundPlayerActionPacket breakPacket = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK, pos, direction, 0);
 			Utils.simulatePacket(p, breakPacket);
+			ServerboundPlayerActionPacket breakStopPacket = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, pos, direction, 0);
+			Utils.simulatePacket(p, breakStopPacket);
 		}
 	}
 

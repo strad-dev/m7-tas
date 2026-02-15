@@ -78,6 +78,7 @@ public class Healer {
 	private static void preClear(boolean doContinue) {
 		Actions.turnHead(healer, 180f, -90f);
 		Actions.swapItems(healer, 2, 29);
+		Actions.swapItems(healer, 4, 31);
 		Actions.setHotbarSlot(healer, 7);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 38), 1); // move to pearl spot
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 39); // lands in 10 ticks
@@ -118,15 +119,15 @@ public class Healer {
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
 
-	/**
-	 * ██╗    ██╗██╗███████╗ █████╗ ██████╗ ██████╗
-	 * ██║    ██║██║╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
-	 * ██║ █╗ ██║██║  ███╔╝ ███████║██████╔╝██║  ██║
-	 * ██║███╗██║██║ ███╔╝  ██╔══██║██╔══██╗██║  ██║
-	 * ╚███╔███╔╝██║███████╗██║  ██║██║  ██║██████╔╝
-	 * ╚══╝╚══╝ ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
-	 */
 	private static void clear(boolean doContinue) {
+		/*
+		 * ██╗    ██╗██╗███████╗ █████╗ ██████╗ ██████╗
+		 * ██║    ██║██║╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
+		 * ██║ █╗ ██║██║  ███╔╝ ███████║██████╔╝██║  ██║
+		 * ██║███╗██║██║ ███╔╝  ██╔══██║██╔══██╗██║  ██║
+		 * ╚███╔███╔╝██║███████╗██║  ██║██║  ██║██████╔╝
+		 * ╚══╝╚══╝ ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
+		 */
 		// tick 2: tac tp back, sneak
 		Utils.scheduleTask(() -> Actions.move(healer, "N", 2), 2);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 3);
@@ -146,15 +147,18 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 28f, 7f), 15);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 16); // teleport to crystal
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 45f, 45f), 17);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 18); // pick up crystal
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer found a Special Crystal!");
+		}, 18); // pick up crystal
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, -25f);
-			Actions.move(healer, "N", 13);
+			Actions.move(healer, "N", 20);
 		}, 19);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 20); // etherwarp up
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -161f, -72f), 21);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 22); // etherwarp to secret compartment
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -29f), 23);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -32f), 23);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 24); // etherwarp to secret
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 25);
 		Utils.scheduleTask(() -> {
@@ -164,26 +168,47 @@ public class Healer {
 		}, 26); // obtain secret 1/4
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -139f, 2.5f), 27); // pearl lands tick 27
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 28); // etherwarp towards bat
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, 123f, 26.5f);
-//			Actions.setHotbarSlot(healer, 7);
-//		}, 29);
-//		Utils.scheduleTask(() -> Actions.rightClick(healer), 30); // throw pearl towards exit | lands in 5 ticks
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, -149.7f, 16.2f);
+			Actions.turnHead(healer, -149.7f, 17.5f);
 			Actions.setHotbarSlot(healer, 1);
-		}, 31);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 32); // etherwarp into bat area
+		}, 29);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 30); // etherwarp into bat area
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 145f, 6f);
 			Actions.setHotbarSlot(healer, 0);
-		}, 33);
+		}, 31);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 2/4 (Killed Bat)");
 			Utils.playLocalSound(healer, Sound.ENTITY_BAT_DEATH);
-		}, 34); // kill bat
-		// tick 35: pearl lands
+		}, 32); // kill bat
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -23f, -20f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 33);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 34); // etherwarp out
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 50f, -25f), 35);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 36); // etherwarp up
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -180f, 0.97f);
+			Actions.move(healer, "SN", 2);
+		}, 37);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 39); // etherwarp to position
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 91f, -68f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 40);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 41); // throw pearl to dig spot | lands in 4 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 42);
+		// pearl lands tick 45
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Actions.move(healer, "WP", 2);
+		}, 46);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 47);
 	}
 //		/*
 //		 * ██████╗     ██╗    ██╗███████╗██╗██████╗ ██████╗  ██████╗ ███████╗

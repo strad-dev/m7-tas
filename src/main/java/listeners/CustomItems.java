@@ -225,13 +225,12 @@ public class CustomItems implements Listener {
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
+			 if(id != null) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
-					e.setCancelled(true);
-					mageBeam(p);
-				}
-			} else if(id != null) {
-				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
+					if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
+						e.setCancelled(true);
+						mageBeam(p);
+					}
 					switch(id) {
 						case "skyblock/combat/terminator" -> {
 							e.setCancelled(true);
@@ -245,7 +244,7 @@ public class CustomItems implements Listener {
 				}
 				if(action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK)) {
 					int currentTick = MinecraftServer.currentTick;
-					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0)) {
+					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || M7tas.getFakePlayers().containsValue(p)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
 							case "skyblock/combat/scylla" -> {
@@ -292,16 +291,6 @@ public class CustomItems implements Listener {
 	}
 
 	public static void witherImpact(Player p) {
-		// raytrace???
-		// 1-block tall gap is ok because crawling i guess??
-		// hit block, determine via blockface
-		//		hit bottom
-		//			check if 2 blocks below is possible, otherwise tp to 1 block below
-		//		hit sides
-		//			teleport to the block before the hit block in the raytrace
-		//		hit top
-		//			teleport to the block above
-		// otherwise just move X blocks
 		Location origin = p.getLocation().clone();
 		RayTraceResult result = p.rayTraceBlocks(11.65);
 		if(result == null) {
@@ -491,7 +480,9 @@ public class CustomItems implements Listener {
 			if(result != null) {
 				Block b = result.getHitBlock();
 				Location l = b.getLocation().add(0.5, 1, 0.5);
+				Utils.debug(DebugType.SERVER, "Starting at " + p.getLocation().getX() + " " + p.getLocation().getY() + " " + p.getLocation().getZ() + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch());
 				if(l.getBlock().getType().isSolid() || l.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
+					Utils.debug(DebugType.SERVER, "Could not Etherwarp " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					return;
 				}
 				l.setYaw(p.getEyeLocation().getYaw());
@@ -500,6 +491,8 @@ public class CustomItems implements Listener {
 				Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 				Utils.debug(DebugType.SERVER, "Etherwarping " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 				p.teleport(l);
+			} else {
+				Utils.debug(DebugType.SERVER, "Could not Etherwarp " + p.getName() + " at all");
 			}
 		} else {
 			Location origin = p.getLocation().clone();
