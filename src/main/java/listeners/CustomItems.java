@@ -3,6 +3,7 @@ package listeners;
 import commands.Spectate;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
@@ -41,7 +42,7 @@ import plugin.Utils;
 import java.util.*;
 
 public class CustomItems implements Listener {
-	private static final Map<UUID, Long> cooldowns = new HashMap<>();
+	private static final Map<UUID, Integer> cooldowns = new HashMap<>();
 
 	public static String getID(ItemStack item) {
 		if(item == null || !item.hasItemMeta()) {
@@ -243,8 +244,9 @@ public class CustomItems implements Listener {
 					}
 				}
 				if(action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK)) {
-					if(System.currentTimeMillis() >= cooldowns.getOrDefault(p.getUniqueId(), 0L)) {
-						cooldowns.put(p.getUniqueId(), System.currentTimeMillis() + 40);
+					int currentTick = MinecraftServer.currentTick;
+					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0)) {
+						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
 							case "skyblock/combat/scylla" -> {
 								e.setCancelled(true);
@@ -1288,9 +1290,7 @@ public class CustomItems implements Listener {
 			boolean shouldBreak = false;
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
-				System.out.println("Detected " + entity.getName());
 				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					System.out.println("Attempting to damage " + temp.getName());
 					double damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 275 : 180) : (temp instanceof Wither ? 220 : 145);
 					temp.damage(damage, DamageSource.builder(DamageType.GENERIC_KILL).build());
 					Utils.changeName(temp);

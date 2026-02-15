@@ -20,7 +20,6 @@ public class Tank {
 		world = Tank.tank.getWorld();
 		tank.setGameMode(GameMode.SURVIVAL);
 		tank.setFlying(false);
-		Objects.requireNonNull(tank.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
 		switch(section) {
 			case "all", "clear" -> {

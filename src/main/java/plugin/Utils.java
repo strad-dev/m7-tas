@@ -228,6 +228,22 @@ public class Utils {
 	 *
 	 * @param p      The player causing the sound
 	 * @param s      The sound to play
+	 */
+	public static void playLocalSound(Player p, Sound s) {
+		if(M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
+				spectator.playSound(spectator, s, 1.0f, 1.0f);
+			}
+		} else {
+			p.playSound(p, s, 1.0f, 1.0f);
+		}
+	}
+
+	/**
+	 * Plays a sound for all players spectating this player if applicable
+	 *
+	 * @param p      The player causing the sound
+	 * @param s      The sound to play
 	 * @param volume Volume
 	 * @param pitch  Pitch
 	 */

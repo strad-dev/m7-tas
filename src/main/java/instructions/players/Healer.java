@@ -1,13 +1,9 @@
 package instructions.players;
 
 import instructions.Actions;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import plugin.Utils;
-
-import java.util.Objects;
 
 public class Healer {
 	private static Player healer;
@@ -17,7 +13,6 @@ public class Healer {
 	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
-		Objects.requireNonNull(healer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 2);
 
 		switch(section) {
 			case "all", "clear" -> {
@@ -92,9 +87,103 @@ public class Healer {
 		}, 40);
 		// dodge tick 40 teleport
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 49); // etherwarp to top
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -16f, 0.26f), 50);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 51); // etherwarp to Wizard middle
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 2.2f), 52);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 53); // etherwarp to correct X
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 90f), 54);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 1), 55); // walk off edge and unsneak
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 56);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 57);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 58);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 59);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 60); // teleport down
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 4f), 61);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 62); // aotv into position
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 7);
+			Actions.turnHead(healer, -90f, -55f);
+		}, 63);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 64); // throw pearl | lands in 6 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 2);
+			Actions.turnHead(healer, 125f, -5f);
+		}, 65);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 70); // activate tac, procs in 60 ticks (130)
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 71);
+		// tick 80: get teleported back
+		Utils.scheduleTask(() -> Utils.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
+		// tick 120: dodged
+		// tick 128: run starts
+		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
 
+	/**
+	 * ██╗    ██╗██╗███████╗ █████╗ ██████╗ ██████╗
+	 * ██║    ██║██║╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
+	 * ██║ █╗ ██║██║  ███╔╝ ███████║██████╔╝██║  ██║
+	 * ██║███╗██║██║ ███╔╝  ██╔══██║██╔══██╗██║  ██║
+	 * ╚███╔███╔╝██║███████╗██║  ██║██║  ██║██████╔╝
+	 * ╚══╝╚══╝ ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
+	 */
 	private static void clear(boolean doContinue) {
+		// tick 2: tac tp back, sneak
+		Utils.scheduleTask(() -> Actions.move(healer, "N", 2), 2);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 3);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 4);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 110f, -72f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 5);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 6); // throw pearl towards wizard crystal | lands in 8 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 159.5f, -15.5f), 7);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 8); // throw pearl towards lower part | lands in 19 ticks
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, "N", 1);
+			Actions.setHotbarSlot(healer, 1);
+		}, 13);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 14); // etherwarp into compartment with crystal
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 28f, 7f), 15);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 16); // teleport to crystal
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 45f, 45f), 17);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 18); // pick up crystal
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 180f, -25f);
+			Actions.move(healer, "N", 13);
+		}, 19);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 20); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -161f, -72f), 21);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 22); // etherwarp to secret compartment
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -29f), 23);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 24); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 25);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 1/4 (Opened Chest)");
+			Utils.playLocalSound(healer, Sound.BLOCK_CHEST_OPEN);
+		}, 26); // obtain secret 1/4
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -139f, 2.5f), 27); // pearl lands tick 27
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 28); // etherwarp towards bat
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(healer, 123f, 26.5f);
+//			Actions.setHotbarSlot(healer, 7);
+//		}, 29);
+//		Utils.scheduleTask(() -> Actions.rightClick(healer), 30); // throw pearl towards exit | lands in 5 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -149.7f, 16.2f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 31);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 32); // etherwarp into bat area
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 145f, 6f);
+			Actions.setHotbarSlot(healer, 0);
+		}, 33);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 2/4 (Killed Bat)");
+			Utils.playLocalSound(healer, Sound.ENTITY_BAT_DEATH);
+		}, 34); // kill bat
+		// tick 35: pearl lands
 	}
 //		/*
 //		 * ██████╗     ██╗    ██╗███████╗██╗██████╗ ██████╗  ██████╗ ███████╗

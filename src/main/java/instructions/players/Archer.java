@@ -16,7 +16,7 @@ public class Archer {
 	public static void archerInstructions(Player p, String section) {
 		archer = p;
 		world = archer.getWorld();
-		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 24);
+		Objects.requireNonNull(archer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 56);
 
 		switch(section) {
 			case "all", "clear" -> {

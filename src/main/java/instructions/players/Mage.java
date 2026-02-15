@@ -86,11 +86,8 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 53); // etherwarp onto first checkmark
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -25.9f, 3.55f), 54);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 55); // etherwarp to edge of blood
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 56); // fall into void to facilitate pearls
-		Utils.scheduleTask(() -> {
-			Actions.move(mage, "", 0);
-			Actions.turnHead(mage, 45f, 90f);
-		}, 57);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 1), 56); // fall into void to facilitate pearls
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 45f, 90f), 57);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 58);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 59);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 60); // tp down fast
