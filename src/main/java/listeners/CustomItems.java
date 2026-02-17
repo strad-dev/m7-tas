@@ -227,7 +227,7 @@ public class CustomItems implements Listener {
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if(id != null) {
+			if(item != null && id != null) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
 						e.setCancelled(true);
