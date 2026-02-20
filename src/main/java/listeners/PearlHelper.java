@@ -35,7 +35,15 @@ public class PearlHelper implements Listener {
 			l.setYaw(p.getLocation().getYaw());
 			l.setPitch(p.getLocation().getPitch());
 			Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " landed in " + pearl.getTicksLived() + " ticks");
-			Utils.debug(Utils.DebugType.SERVER, "Landed at " + l.getX() + " " + l.getY() + " " + l.getZ());
+			String hit;
+			if(e.getHitBlock() != null) {
+				hit = "block";
+			} else if(e.getHitEntity() != null) {
+				hit = "entity " + e.getHitEntity().getName();
+			} else {
+				hit = "something intangible";
+			}
+			Utils.debug(Utils.DebugType.SERVER, "Landed at " + l.getX() + " " + l.getY() + " " + l.getZ() + ", due to colliding with " + hit);
 			pearl.remove();
 			p.teleport(l);
 		}

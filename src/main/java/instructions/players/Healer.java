@@ -283,7 +283,7 @@ public class Healer {
 		}, 69);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -67f, -18f), 70);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 71); // reposition for next secret
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 85f, -17.5f), 72);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 85f, 17.5f), 72);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 73); // etherwarp to secret
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -96.3f, 3.1f);

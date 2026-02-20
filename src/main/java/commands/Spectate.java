@@ -102,6 +102,10 @@ public class Spectate implements CommandExecutor {
 				// NEW: Restore the player's original inventory
 				Utils.restoreInventory(p);
 				M7tas.removeFromNoCollisionTeam(p);
+				p.setCollidable(false);
+				if (p instanceof CraftPlayer craftPlayer) {
+					craftPlayer.getHandle().noPhysics = true;
+				}
 				p.removePotionEffect(PotionEffectType.INVISIBILITY);
 
 				if(fakePlayer != null) {
@@ -149,6 +153,11 @@ public class Spectate implements CommandExecutor {
 
 		// Also make the real player unable to be hit by projectiles while spectating
 		realPlayer.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0, true, false));
+		realPlayer.setCollidable(false);
+
+		if (realPlayer instanceof CraftPlayer craftPlayer) {
+			craftPlayer.getHandle().noPhysics = true;
+		}
 	}
 
 	public static void hideFakePlayerFromSpectator(Player spectator, Player fakePlayer) {
