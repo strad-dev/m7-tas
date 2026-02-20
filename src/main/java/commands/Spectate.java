@@ -163,7 +163,6 @@ public class Spectate implements CommandExecutor {
 	}
 
 
-
 	private static void showFakePlayerToSpectator(Player spectator, Player fakePlayer) {
 		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
 			ServerPlayer nmsSpectator = craftSpectator.getHandle();
@@ -240,12 +239,21 @@ public class Spectate implements CommandExecutor {
 					if(fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
 						ServerPlayer nmsFake = craftFake.getHandle();
 						ServerPlayer nmsSpectator = craftSpectator.getHandle();
-						PositionMoveRotation pmr = PositionMoveRotation.of(nmsFake);
-						spectator.teleport(fakePlayer);
+						// Match exact pose
+						nmsSpectator.setPose(nmsFake.getPose());
 
-						// Send destroy packet every tick to keep fake player hidden
-						ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
-						nmsSpectator.connection.send(destroyPacket);
+						// Send pose metadata to spectator's client
+						SynchedEntityData entityData = nmsSpectator.getEntityData();
+						List<SynchedEntityData.DataValue<?>> dirtyData = entityData.getNonDefaultValues();
+						if(dirtyData != null && !dirtyData.isEmpty()) {
+							nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsSpectator.getId(), dirtyData));
+						}
+
+						// Send position and rotation
+						nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
+
+						// Keep fake player hidden
+						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
 						updateFakePlayerVisibility();
 					}
 				}

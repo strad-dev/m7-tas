@@ -153,7 +153,7 @@ public class Healer {
 		}, 18); // pick up crystal
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, -25f);
-			Actions.move(healer, "N", 20);
+			Actions.move(healer, "N", 0);
 		}, 19);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 20); // etherwarp up
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -161f, -72f), 21);
@@ -164,7 +164,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 1/4 (Opened Chest)");
-			Utils.playLocalSound(healer, Sound.BLOCK_CHEST_OPEN);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 26); // obtain secret 1/4
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -139f, 2.5f), 27); // pearl lands tick 27
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 28); // etherwarp towards bat
@@ -180,7 +180,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 2/4 (Killed Bat)");
-			Utils.playLocalSound(healer, Sound.ENTITY_BAT_DEATH);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.BAT);
 		}, 32); // kill bat
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -23f, -20f);
@@ -190,37 +190,44 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 50f, -25f), 35);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 36); // etherwarp up
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, -180f, 0.97f);
-			Actions.move(healer, "SN", 2);
+			Actions.setHotbarSlot(healer, 7);
+			Actions.turnHead(healer, -180f, -14.5f);
+			Actions.move(healer, "S", 1);
 		}, 37);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 39); // etherwarp to position
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 38); // throw pearl to correct spot for well | lands in 26 (?) ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.turnHead(healer, 180f, 0.97f);
+			Actions.move(healer, "N", 0);
+		}, 39);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 40); // etherwarp to position
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 91f, -68f);
 			Actions.setHotbarSlot(healer, 7);
-		}, 40);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 41); // throw pearl to dig spot | lands in 4 ticks
+		}, 41);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 42); // throw pearl to dig spot | lands in 4 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, 0f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 42);
-		// pearl lands tick 45
+		}, 43);
+		// pearl lands tick 46
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Actions.move(healer, "WP", 0);
-		}, 46);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 47); // stonk through wall
+		}, 47);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 48); // stonk through wall
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, -90f);
 			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, "N", 0);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 3/4 (Picked Up Item)");
-			Utils.playLocalSound(healer, Sound.ENTITY_ITEM_PICKUP);
-		}, 48);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 49); // etherwarp up
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -76f, -21f), 50);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 51); // etherwarp to wizard
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 52);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 1), 53); // walk forward 1 tick to be in range
+			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
+		}, 49);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 50); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -76f, -21f), 51);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 52); // etherwarp to wizard
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 53);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 1), 54); // walk forward 1 tick to be in range
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Utils.playLocalSound(healer, Sound.ENTITY_VILLAGER_YES);
@@ -234,45 +241,28 @@ public class Healer {
 				Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": Granted your team a " + ChatColor.LIGHT_PURPLE + "Blessing of Wisdom I");
 				Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 1);
 			}, 60);
-		}, 54);
+		}, 55);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 102f, 1f);
-			Actions.move(healer, "N", 0);
-		}, 55);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 56); // etherwarp to wall
+			Actions.move(healer, "N", 24);
+		}, 56);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 57); // etherwarp to wall
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 41f, 1.21f);
 			Actions.setHotbarSlot(healer, 4);
-		}, 57);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 58); // blow up wall
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 59);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 60); // etherwarp to secret
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -10f, 13f), 61);
+		}, 58);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 59); // blow up wall
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 60);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 61); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -10f, 13f), 62);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 4/4 (Opened Chest)");
-			Utils.playLocalSound(healer, Sound.BLOCK_CHEST_OPEN);
-		}, 62);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -23f, 37f), 63);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 64); // etherwarp into position
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, -90f, 90f);
-			Actions.setHotbarSlot(healer, 5);
-		}, 65);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 66);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 67);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 68);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 69);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 70); // stonk down
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 71);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 72); // etherwarp to floor
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 73);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 74);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 75); // stonk to base level
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 76);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 77); // etherwarp to floor
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -91.5f, 1f), 78);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 79); // etherwarp into Well
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
+		}, 63);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -92f, 1f), 64);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 65); // etherwarp into well
+		// Wizard: 65 ticks
 
 		/*
 		 * ██╗    ██╗███████╗██╗     ██╗
@@ -282,7 +272,97 @@ public class Healer {
 		 * ╚███╔███╔╝███████╗███████╗███████╗
 		 *  ╚══╝╚══╝ ╚══════╝╚══════╝╚══════╝
 		 */
-
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, -60.1f), 66);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 67); // etherwarp up to secret
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, -36f), 68);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 1/7 (Opened Chest)");
+			Utils.playLocalSound(healer, Sound.BLOCK_CHEST_OPEN);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
+		}, 69);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -67f, -18f), 70);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 71); // reposition for next secret
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 85f, -17.5f), 72);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 73); // etherwarp to secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -96.3f, 3.1f);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 2/7 (Picked Up Item)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
+		}, 74);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 75); // etherwarp out
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -158f, 24f), 76);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 77); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -98f, 1.5f), 78);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 79); // etherwarp to secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -90f, 20f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 80);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 81);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 7);
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 3/7 (Opened Chest)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
+		}, 82);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 30f, 0f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 82);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 83); // pearl to upper secret | lands in 13 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.move(healer, "N", 2);
+			Actions.turnHead(healer, 180f, 0f);
+		}, 84);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 85); // reposition for wither essence + pearl
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 16f, 66f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 86);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 87); // pearl to mini | lands in 16 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -93f, 12.5f);
+			Actions.move(healer, "N", 4);
+			Actions.setHotbarSlot(healer, 1);
+		}, 88);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 89); // etherwarp into wither essence chamber
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, -75f), 90);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 91); // etherwarp up to wither essence
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -117f, 31f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 92);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 4/7 (Obtained Wither Essence)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.ESSENCE);
+		}, 93);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 56f, 22f), 94);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 5/7 (Obtained Wither Essence)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.ESSENCE);
+		}, 95);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -11f, 8f);
+			Actions.move(healer, "N", 2);
+		}, 96);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 97); // etherwarp to wall
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -90f, -50f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 98);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 99);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 100);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 101); // stonk to secret
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 4);
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 6/7 (Opened Chest)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
+		}, 102);
 	}
 //		/*
 //		 * ██████╗     ██╗    ██╗███████╗██╗██████╗ ██████╗  ██████╗ ███████╗

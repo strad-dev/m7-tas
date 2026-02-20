@@ -317,6 +317,8 @@ public class Actions {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
+			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) return;
+
 			Block block = blockRay.getHitBlock();
 			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
 			Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
@@ -326,6 +328,21 @@ public class Actions {
 			ServerboundPlayerActionPacket breakStopPacket = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, pos, direction, 0);
 			Utils.simulatePacket(p, breakStopPacket);
 		}
+	}
+
+	/**
+	 * Swings the fake player's hand
+	 * DO NOT USE unless you are obtaining a secret while holding Dungeonbreaker or some other action that should swing the main hand without triggering an interaction
+	 *
+	 * @param p The fake player performing the swing
+	 */
+	public static void swingHand(Player p) {
+		if(!(p instanceof CraftPlayer cp)) return;
+
+		ServerPlayer serverPlayer = cp.getHandle();
+
+		ServerboundSwingPacket swingPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
+		Utils.simulatePacket(p, swingPacket);
 	}
 
 	/**
@@ -1390,7 +1407,7 @@ public class Actions {
 	 */
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	@SuppressWarnings("ConstantConditions")
-	public static void swingHand(Player p) {
+	public static void oldSwingHand(Player p) {
 		// 1) do the swing animation
 		p.swingMainHand();
 

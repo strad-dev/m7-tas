@@ -259,6 +259,36 @@ public class Utils {
 		}
 	}
 
+	public enum SecretType {
+		CHEST, BLESSING_CHEST, ITEM, BAT, ESSENCE
+	}
+
+	public static void playSecretFoundSound(Player p, SecretType type) {
+		Sound sound;
+		switch(type) {
+			case CHEST, BLESSING_CHEST -> sound = Sound.BLOCK_CHEST_OPEN;
+			case ITEM -> sound = Sound.ENTITY_ITEM_PICKUP;
+			case BAT -> sound = Sound.ENTITY_BAT_DEATH;
+			case ESSENCE -> sound = Sound.BLOCK_NOTE_BLOCK_PLING;
+			default -> {
+				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid secret type " + type);
+				return;
+			}
+		}
+		playLocalSound(p, sound, 2.0f, type == SecretType.ESSENCE ? 2.0f : 1.0f);
+		if(type == SecretType.BLESSING_CHEST || type == SecretType.ESSENCE) {
+			playRewardSequence(p);
+		}
+	}
+
+	public static void playRewardSequence(Player p) {
+		playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 0.793685f);
+		scheduleTask(() -> playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 0.891f), 5);
+		scheduleTask(() -> playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 1f), 10);
+		scheduleTask(() -> playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 1.12284f), 15);
+		scheduleTask(() -> playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 1.18945f), 20);
+	}
+
 	/**
 	 * Gets the nearest real player at the given location
 	 *
@@ -291,9 +321,9 @@ public class Utils {
 
 	public static void debug(DebugType type, String message) {
 		switch(type) {
-			case CLIENT -> Bukkit.broadcastMessage(ChatColor.AQUA + "[Client] " + message);
-			case SERVER -> Bukkit.broadcastMessage(ChatColor.YELLOW + "[Server] " + message);
-			case BOSS -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Game] " + message);
+			case CLIENT -> Bukkit.broadcastMessage(ChatColor.DARK_AQUA + "[Client] " + message);
+			case SERVER -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Server] " + message);
+			case BOSS -> Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "[Game] " + message);
 		}
 	}
 
@@ -319,7 +349,7 @@ public class Utils {
 	public enum BlessingType {
 		LIFE, POWER, STONE, WISDOM, TIME
 	}
-	
+
 	public static String getRealName(Player p) {
 		switch(p.getName()) {
 			case "Archer" -> {

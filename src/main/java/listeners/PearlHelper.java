@@ -20,7 +20,7 @@ public class PearlHelper implements Listener {
 		Vector direction = p.getLocation().getDirection();
 		pearl.setVelocity(direction.multiply(1.5));
 
-		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown");
+		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown at " + p.getLocation().getX() + " " + p.getLocation().getY() + " " + p.getLocation().getZ() + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch());
 		Utils.scheduleTask(() -> p.setCooldown(Material.ENDER_PEARL, 0), 1);
 	}
 
