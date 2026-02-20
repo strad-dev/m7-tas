@@ -359,7 +359,7 @@ public class Utils {
 				return "AsapIcey";
 			}
 			case "Healer", "Mage3" -> {
-				return "Meepy_";
+				return "Cubpletionist";
 			}
 			case "Mage", "Mage1" -> {
 				return "Beethoven_";

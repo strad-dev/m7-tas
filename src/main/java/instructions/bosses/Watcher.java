@@ -98,23 +98,23 @@ public class Watcher {
 
 			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -56.5)); // Diamante Giant
 			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -60.5)); // Bonzo
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -60.5)); // Meepy_
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -56.5)); // Mallyanke
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -60.5)); // Nucleararmadillo
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -56.5)); // Jamie_2013
 			/* -------------------- "Let's see how you can handle this" -------------------- */
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -56.5)); // valej
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -52.5)); // nograssbro
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -45.5)); // a6j3
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -45.5)); // Nucleararmadillo
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -45.5)); // lfgm7
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -52.5)); // baldkc0303
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -52.5)); // nil4k
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -56.5)); // editqble
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -60.5)); // JennAiel
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -60.5)); // Stenoe
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -56.5)); // JennAiel
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -52.5)); // s3a3m3
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -45.5)); // editqble
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -45.5)); // valej
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -45.5)); // Merlynade
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -52.5)); // HenbotB
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -52.5)); // Katsumi9877
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -56.5)); // BananaBrigade
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -60.5)); // derM0RITZZ
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -60.5)); // TypeW
 			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -67.5)); // aalatif_
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -67.5)); // Deanvm
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -67.5)); // uncheck
-			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -60.5)); // EvilMerlyn
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -67.5)); // Cubpletionist
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -67.5)); // akc0303
+			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -60.5)); // AsapIcey
 			MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -56.5)); // Beethoven_
 
 			// tick 0 = clear tick 1
