@@ -1,9 +1,17 @@
 package instructions.players;
 
 import instructions.Actions;
+import instructions.Server;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import plugin.M7tas;
 import plugin.Utils;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Healer {
 	private static Player healer;
@@ -367,6 +375,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well Cleared");
+			Utils.broadcastBlessing(healer, Utils.BlessingType.LIFE, 5);
 		}, 104);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -4, 1f);
@@ -394,14 +403,145 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 114); // etherwarp down
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 1), 115);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 106f, 6f);
 			Actions.move(healer, "N", 0);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 7/7 (Picked Up Item)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
 		}, 116);
-		// tick 117: pearl lands | 1 tick buffer to ensure secret gets "picked up"
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 106f, 6f), 117);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 118); // etherwarp into ice fill
+		// Well: 53 ticks
+
+		/*
+		 * ██╗ ██████╗███████╗    ███████╗██╗██╗     ██╗
+		 * ██║██╔════╝██╔════╝    ██╔════╝██║██║     ██║
+		 * ██║██║     █████╗      █████╗  ██║██║     ██║
+		 * ██║██║     ██╔══╝      ██╔══╝  ██║██║     ██║
+		 * ██║╚██████╗███████╗    ██║     ██║███████╗███████╗
+		 * ╚═╝ ╚═════╝╚══════╝    ╚═╝     ╚═╝╚══════╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 0f), 119);
+		Utils.scheduleTask(() -> {
+			startIceFillTask();
+			Actions.move(healer, "WP", 0);
+		}, 120);
+		Utils.scheduleTask(() -> Actions.move(healer, "WN", 0), 123);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 124);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 129);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 130);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 134);
+		Utils.scheduleTask(() -> playIceFillSounds(1), 135);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 138);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 142);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 150);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 152);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 162);
+		Utils.scheduleTask(() -> Actions.move(healer, "DN", 0), 165);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 166);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 176);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 177);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 186);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPD", 0), 195);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 196);
+		Utils.scheduleTask(() -> playIceFillSounds(2), 200);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 204);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 206);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 210);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 218);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 220);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 233);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 236);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 242);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 244);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 249);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 252);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 255);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 258);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 267);
+		Utils.scheduleTask(() -> Actions.move(healer, "S", 0), 275);
+		Utils.scheduleTask(() -> Actions.move(healer, "D", 0), 281);
+		Utils.scheduleTask(() -> Actions.move(healer, "WDP", 0), 285);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 296);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 300);
+		Utils.scheduleTask(() -> Actions.move(healer, "A", 0), 303);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 307);
+		Utils.scheduleTask(() -> {
+			playIceFillSounds(3);
+			Server.openIceFillRewards();
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Ice Fill Cleared");
+		}, 309);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 68f, -33f), 310);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 5);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
+		}, 329);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 112f, -33f), 330);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 5);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
+		}, 331);
+		Utils.scheduleTask(Healer::stopIceFillTask, 400);
+		// Ice Fill: 213 ticks
 	}
+
+	private static void playIceFillSounds(int level) {
+		switch(level) {
+			case 1 -> {
+				Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.189446f);
+				Utils.scheduleTask(() -> Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.3352f), 5);
+				Utils.scheduleTask(() -> Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.41436f), 10);
+			}
+			case 2 -> {
+				Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.4987f);
+				Utils.scheduleTask(() -> Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.5878f), 5);
+				Utils.scheduleTask(() -> Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.6821f), 10);
+			}
+			case 3 -> {
+				Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.782f);
+				Utils.scheduleTask(() -> Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.888f), 5);
+				Utils.scheduleTask(() -> Utils.playLocalSound(healer, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 2.0f), 10);
+			}
+		}
+	}
+
+	private static BukkitTask iceFillTask;
+	private static final Set<Block> frozenBlocks = new HashSet<>();
+
+	private static void startIceFillTask() {
+		if (iceFillTask != null) {
+			iceFillTask.cancel();
+		}
+
+		frozenBlocks.clear();
+
+		iceFillTask = new BukkitRunnable() {
+			@Override
+			public void run() {
+				Block below = healer.getLocation().subtract(0, 1, 0).getBlock();
+				if (below.getType() == Material.ICE) {
+					below.setType(Material.PACKED_ICE);
+					frozenBlocks.add(below);
+					Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f);
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	public static void stopIceFillTask() {
+		if (iceFillTask != null) {
+			iceFillTask.cancel();
+			iceFillTask = null;
+		}
+
+		for (Block block : frozenBlocks) {
+			if (block.getType() == Material.PACKED_ICE) {
+				block.setType(Material.ICE);
+			}
+		}
+		frozenBlocks.clear();
+	}
+
 
 //		/*
 //		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗

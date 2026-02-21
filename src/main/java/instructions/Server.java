@@ -79,6 +79,7 @@ public class Server {
 	public static void serverSetup(World world) {
 		spawnMinibosses(world);
 		resetGoldorCheese();
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
@@ -188,15 +189,8 @@ public class Server {
 		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
 	}
 
-	public static void activatePirateDoor() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 glass");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -24 82 -98 -27 89 -99 minecraft:air"), 20);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone -24 0 -98 -27 7 -99 -27 82 -99"), 100);
-	}
-
-	public static void activateSpiderGate() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -212 87 -166 -212 83 -170 air replace minecraft:cobblestone_wall");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone -212 0 -166 -212 4 -170 -212 83 -170"), 100);
+	public static void openIceFillRewards() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:iron_bars");
 	}
 
 	public static void removeS3Gate() {

@@ -12,9 +12,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
@@ -481,12 +480,12 @@ public class CustomItems implements Listener {
 	}
 
 	public static void aotv(Player p) {
+		Utils.debug(Utils.DebugType.SERVER, "Starting at " + Utils.round(p.getLocation().getX(), 2) + " " + Utils.round(p.getLocation().getY(), 2) + " " + Utils.round(p.getLocation().getZ(), 2) + " " + Utils.round(p.getLocation().getYaw(), 2) + " " + Utils.round(p.getLocation().getPitch(), 2));
 		if(p.isSneaking()) {
 			RayTraceResult result = p.rayTraceBlocks(61);
 			if(result != null) {
 				Block b = result.getHitBlock();
 				Location l = b.getLocation().add(0.5, 1, 0.5);
-				Utils.debug(Utils.DebugType.SERVER, "Starting at " + Utils.round(p.getLocation().getX(), 2) + " " + Utils.round(p.getLocation().getY(), 2) + " " + Utils.round(p.getLocation().getZ(), 2) + " " + Utils.round(p.getLocation().getYaw(), 2) + " " + Utils.round(p.getLocation().getPitch(), 2));
 				if(l.getBlock().getType().isSolid() || l.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
 					Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
 					return;
@@ -662,31 +661,31 @@ public class CustomItems implements Listener {
 
 	public static void superboom(Player p) {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
-		if (blockRay == null || blockRay.getHitBlock() == null) return;
+		if(blockRay == null || blockRay.getHitBlock() == null) return;
 
 		Block origin = blockRay.getHitBlock();
-		if (origin.getType() != Material.CRACKED_STONE_BRICKS) return;
+		if(origin.getType() != Material.CRACKED_STONE_BRICKS) return;
 
 		Set<Block> connected = new HashSet<>();
 		Queue<Block> queue = new LinkedList<>();
 		queue.add(origin);
 		connected.add(origin);
 
-		while (!queue.isEmpty()) {
+		while(!queue.isEmpty()) {
 			Block current = queue.poll();
-			for (BlockFace face : new BlockFace[]{
+			for(BlockFace face : new BlockFace[]{
 					BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST,
 					BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
 			}) {
 				Block neighbor = current.getRelative(face);
-				if (neighbor.getType() == Material.CRACKED_STONE_BRICKS && connected.add(neighbor)) {
+				if(neighbor.getType() == Material.CRACKED_STONE_BRICKS && connected.add(neighbor)) {
 					queue.add(neighbor);
 				}
 			}
 		}
 
 		Map<Location, BlockData> original = new HashMap<>();
-		for (Block block : connected) {
+		for(Block block : connected) {
 			original.put(block.getLocation(), block.getBlockData().clone());
 			block.setType(Material.AIR);
 		}
@@ -694,7 +693,7 @@ public class CustomItems implements Listener {
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
 		Utils.scheduleTask(() -> {
-			for (Map.Entry<Location, BlockData> entry : original.entrySet()) {
+			for(Map.Entry<Location, BlockData> entry : original.entrySet()) {
 				entry.getKey().getBlock().setBlockData(entry.getValue());
 			}
 		}, 40);
@@ -1343,8 +1342,11 @@ public class CustomItems implements Listener {
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
 				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					double damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 295 : 200) : (temp instanceof Wither ? 255 : 170);
-					temp.damage(damage, DamageSource.builder(DamageType.GENERIC_KILL).build());
+					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 295 : 200) : (temp instanceof Wither ? 255 : 170);
+					CraftLivingEntity craftEntity = (CraftLivingEntity) temp;
+					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+					ServerLevel level = (ServerLevel) nmsEntity.level();
+					nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
 					Utils.changeName(temp);
 					shouldBreak = true;
 					break;
