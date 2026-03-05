@@ -1,12 +1,18 @@
 package instructions.players;
 
 import instructions.Actions;
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
+import plugin.M7tas;
 import plugin.Utils;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Archer {
@@ -96,6 +102,12 @@ public class Archer {
 
 	private static void preClear(boolean doContinue) {
 		Actions.move(archer, "WPJ", 12);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 27); // left click mort to start the run
+		Utils.scheduleTask(() -> {
+			Actions.move(archer, "WP", 3);
+			Actions.setHotbarSlot(archer, 4);
+		}, 29); // run up to door
+		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
 
 	private static void clear(boolean doContinue) {
@@ -107,6 +119,162 @@ public class Archer {
 		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ██║  ██║╚██████╔╝███████║██║  ██║
 		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 21); // arrows land in 5 ticks | pick up in 6 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, 3.98f);
+			Actions.move(archer, "N", 2);
+			Actions.setHotbarSlot(archer, 1);
+		}, 22);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 23); // etherwarp to miniboss death location
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 24);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Red Blue Cleared"), 26);
+		Utils.scheduleTask(() -> {
+			Utils.broadcastBlessing(archer, Utils.BlessingType.POWER, 5);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] akc0303 " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!");
+		}, 27);
+		Utils.scheduleTask(() -> Actions.leap(archer, Tank.get()), 28); // leap to door
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, 6f);
+			Actions.setHotbarSlot(archer, 4);
+		}, 29);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 49); // arrows land in 5 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 10f, 6.5f);
+			Actions.move(archer, "N", 0);
+			Actions.setHotbarSlot(archer, 1);
+		}, 50);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 51); // etherwarp into room
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -57.15f, 1.75f), 52);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 53); // etherwarp into Gravel
+		// blooc rush: 53 ticks
+
+		/*
+		 *  ██████╗ ██████╗  █████╗ ██╗   ██╗███████╗██╗
+		 * ██╔════╝ ██╔══██╗██╔══██╗██║   ██║██╔════╝██║
+		 * ██║  ███╗██████╔╝███████║██║   ██║█████╗  ██║
+		 * ██║   ██║██╔══██╗██╔══██║╚██╗ ██╔╝██╔══╝  ██║
+		 * ╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ███████╗███████╗
+		 *  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared");
+		}, 54);
+//		Utils.scheduleTask(Archer::explosiveShot, 95);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, 48.9f, 5.7f);
+//			Actions.crypt(archer, -217, 70, -99, -215, 69, -97);
+//		}, 96);
+//		Utils.scheduleTask(() -> {
+//			Actions.etherwarp(archer, new Location(world, -227.5, 69, -92.5));
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 3/5");
+//		}, 97);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.8f, 9.2f), 98);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -219.5, 69, -86.5)), 99);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -107.7f, 4.6f), 100);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -200.5, 69, -92.5)), 101);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -90f, 13.5f);
+//			Actions.setHotbarSlot(archer, 5);
+//		}, 102);
+//		Utils.scheduleTask(() -> Actions.stonk(archer, world.getBlockAt(-199, 70, -93)), 103);
+//		Utils.scheduleTask(() -> {
+//			Actions.swingHand(archer);
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 1/6 (Opened Chest)");
+//			world.playSound(archer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
+//		}, 104);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, 22.2f, -57.9f);
+//			Actions.setHotbarSlot(archer, 1);
+//			Actions.move(archer, new Vector(-0.8634, 0, 0), 1);
+//		}, 105);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -203.5, 81.5, -86.5)), 106);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -99.7f, -52.3f);
+//			Actions.setHotbarSlot(archer, 0);
+//		}, 107);
+//		Utils.scheduleTask(() -> {
+//			Actions.witherImpact(archer, new Location(world, -197.472, 89.41224, -87.53));
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
+//			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
+//		}, 108);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, 80.1f, 52.2f);
+//			Actions.setHotbarSlot(archer, 1);
+//		}, 109);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -213.5, 69, -84.5)), 110);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -85.1f, 2.75f), 111); // requires 3 sig figs of presicion here
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -179.5, 69, -81.5)), 112);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -62.3f, 3.3f);
+//			Actions.setHotbarSlot(archer, 4);
+//		}, 113);
+//		Utils.scheduleTask(Archer::shoot, 114);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -87.1f, 4.4f);
+//			Actions.setHotbarSlot(archer, 1);
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
+//		}, 115);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -158.5, 69, -80.5)), 116);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -157f, -5f), 117);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -149.5, 73, -100.5)), 118);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, 50f, 29f);
+//			Actions.setHotbarSlot(archer, 7);
+//		}, 119);
+//		Utils.scheduleTask(() -> Actions.throwPearl(archer), 120);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -74.5f, 22f);
+//			Actions.setHotbarSlot(archer, 1);
+//			Actions.move(archer, new Vector(1.0816, 0, 0.3), 1);
+//		}, 121);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -138.5, 70.5, -97.5)), 122);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 161f, 42.7f), 123);
+//		Utils.scheduleTask(() -> {
+//			Actions.swingHand(archer);
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 3/6 (Obtained Wither Essence)");
+//			world.playSound(archer.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
+//		}, 124);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 70f, 19.5f), 125);
+//		Utils.scheduleTask(() -> {
+//			Actions.AOTV(archer, new Location(world, -144.5, 69, -95.5));
+//			Actions.turnHead(archer, 97.9f, 5.4f);
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 4/6 (Obtained Item)");
+//			world.playSound(archer.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
+//		}, 126);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -7f, 0f);
+//			Actions.AOTV(archer, new Location(world, -155.261, 69, -95.686));
+//			Actions.setHotbarSlot(archer, 7);
+//		}, 127);
+//		Utils.scheduleTask(() -> Actions.throwPearl(archer), 128);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, 47.8f, -54.7f);
+//			Actions.setHotbarSlot(archer, 1);
+//		}, 129);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -160.5, 81, -90.5)), 130);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 39.3f, 33.6f), 131);
+//		Utils.scheduleTask(() -> Actions.AOTV(archer, new Location(world, -161.5, 81, -89.5)), 132);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, 90f, -90f);
+//			Actions.move(archer, new Vector(-1.12242, 0, 0), 1);
+//		}, 133);
+//		Utils.scheduleTask(() -> Actions.AOTV(archer, new Location(world, -162.5, 88.38, -89.5)), 134);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 43.8f), 135);
+//		Utils.scheduleTask(() -> {
+//			Actions.swingHand(archer);
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 5/6 (Obtained Wither Essence)");
+//			world.playSound(archer.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
+//			Actions.AOTV(archer, new Location(world, -165.5, 88, -89.5));
+//		}, 136);
+//		Utils.scheduleTask(() -> {
+//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 6/6 (Obtained Item)");
+//			world.playSound(archer.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
+//		}, 137);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -10.5f, -1.7f);
+//			Actions.AOTV(archer, new Location(world, -153.855, 69, -83.063));
+//		}, 138);
+//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -148.5, 72, -54.5)), 139);
 //		Utils.scheduleTask(() -> Actions.turnHead(archer, 6.6f, 9.9f), 3);
 //		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -119.5, 69, -187.5)), 4);
 //		Utils.scheduleTask(() -> {
@@ -291,131 +459,6 @@ public class Archer {
 //			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Tomioka Cleared");
 //		}, 93);
 //		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -215.5, 69, -103.5)), 94);
-//
-//		/*
-//		 *  ██████╗ ██████╗  █████╗ ██╗   ██╗███████╗██╗
-//		 * ██╔════╝ ██╔══██╗██╔══██╗██║   ██║██╔════╝██║
-//		 * ██║  ███╗██████╔╝███████║██║   ██║█████╗  ██║
-//		 * ██║   ██║██╔══██╗██╔══██║╚██╗ ██╔╝██╔══╝  ██║
-//		 * ╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ███████╗███████╗
-//		 *  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝
-//		 */
-//		Utils.scheduleTask(Archer::explosiveShot, 95);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, 48.9f, 5.7f);
-//			Actions.crypt(archer, -217, 70, -99, -215, 69, -97);
-//		}, 96);
-//		Utils.scheduleTask(() -> {
-//			Actions.etherwarp(archer, new Location(world, -227.5, 69, -92.5));
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 3/5");
-//		}, 97);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, -52.8f, 9.2f), 98);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -219.5, 69, -86.5)), 99);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, -107.7f, 4.6f), 100);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -200.5, 69, -92.5)), 101);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -90f, 13.5f);
-//			Actions.setHotbarSlot(archer, 5);
-//		}, 102);
-//		Utils.scheduleTask(() -> Actions.stonk(archer, world.getBlockAt(-199, 70, -93)), 103);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(archer);
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 1/6 (Opened Chest)");
-//			world.playSound(archer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//		}, 104);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, 22.2f, -57.9f);
-//			Actions.setHotbarSlot(archer, 1);
-//			Actions.move(archer, new Vector(-0.8634, 0, 0), 1);
-//		}, 105);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -203.5, 81.5, -86.5)), 106);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -99.7f, -52.3f);
-//			Actions.setHotbarSlot(archer, 0);
-//		}, 107);
-//		Utils.scheduleTask(() -> {
-//			Actions.witherImpact(archer, new Location(world, -197.472, 89.41224, -87.53));
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
-//			world.playSound(archer.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
-//		}, 108);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, 80.1f, 52.2f);
-//			Actions.setHotbarSlot(archer, 1);
-//		}, 109);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -213.5, 69, -84.5)), 110);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, -85.1f, 2.75f), 111); // requires 3 sig figs of presicion here
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -179.5, 69, -81.5)), 112);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -62.3f, 3.3f);
-//			Actions.setHotbarSlot(archer, 4);
-//		}, 113);
-//		Utils.scheduleTask(Archer::shoot, 114);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -87.1f, 4.4f);
-//			Actions.setHotbarSlot(archer, 1);
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
-//		}, 115);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -158.5, 69, -80.5)), 116);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, -157f, -5f), 117);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -149.5, 73, -100.5)), 118);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, 50f, 29f);
-//			Actions.setHotbarSlot(archer, 7);
-//		}, 119);
-//		Utils.scheduleTask(() -> Actions.throwPearl(archer), 120);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -74.5f, 22f);
-//			Actions.setHotbarSlot(archer, 1);
-//			Actions.move(archer, new Vector(1.0816, 0, 0.3), 1);
-//		}, 121);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -138.5, 70.5, -97.5)), 122);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 161f, 42.7f), 123);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(archer);
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 3/6 (Obtained Wither Essence)");
-//			world.playSound(archer.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-//		}, 124);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 70f, 19.5f), 125);
-//		Utils.scheduleTask(() -> {
-//			Actions.AOTV(archer, new Location(world, -144.5, 69, -95.5));
-//			Actions.turnHead(archer, 97.9f, 5.4f);
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 4/6 (Obtained Item)");
-//			world.playSound(archer.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
-//		}, 126);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -7f, 0f);
-//			Actions.AOTV(archer, new Location(world, -155.261, 69, -95.686));
-//			Actions.setHotbarSlot(archer, 7);
-//		}, 127);
-//		Utils.scheduleTask(() -> Actions.throwPearl(archer), 128);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, 47.8f, -54.7f);
-//			Actions.setHotbarSlot(archer, 1);
-//		}, 129);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -160.5, 81, -90.5)), 130);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 39.3f, 33.6f), 131);
-//		Utils.scheduleTask(() -> Actions.AOTV(archer, new Location(world, -161.5, 81, -89.5)), 132);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, 90f, -90f);
-//			Actions.move(archer, new Vector(-1.12242, 0, 0), 1);
-//		}, 133);
-//		Utils.scheduleTask(() -> Actions.AOTV(archer, new Location(world, -162.5, 88.38, -89.5)), 134);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 43.8f), 135);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(archer);
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 5/6 (Obtained Wither Essence)");
-//			world.playSound(archer.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-//			Actions.AOTV(archer, new Location(world, -165.5, 88, -89.5));
-//		}, 136);
-//		Utils.scheduleTask(() -> {
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 6/6 (Obtained Item)");
-//			world.playSound(archer.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
-//		}, 137);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -10.5f, -1.7f);
-//			Actions.AOTV(archer, new Location(world, -153.855, 69, -83.063));
-//		}, 138);
-//		Utils.scheduleTask(() -> Actions.etherwarp(archer, new Location(world, -148.5, 72, -54.5)), 139);
 //
 //		/*
 //		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
@@ -1226,62 +1269,62 @@ public class Archer {
 //		}, 10);
 //	}
 //
-//	public static void explosiveShot() {
-//		Vector v = archer.getLocation().getDirection();
-//		Location lLeft = archer.getLocation().clone().add(v);
-//		lLeft.setYaw(lLeft.getYaw() - 6);
-//		lLeft.setY(lLeft.getY() + 1.62);
-//
-//		Location l = archer.getLocation().clone().add(v);
-//		l.setY(l.getY() + 1.62);
-//
-//		Location lRight = archer.getLocation().clone().add(v);
-//		lRight.setYaw(lRight.getYaw() + 6);
-//		lRight.setY(lRight.getY() + 1.62);
-//
-//		for(Location shootLoc : List.of(lLeft, l, lRight)) {
-//			Arrow arrow = world.spawnArrow(l, shootLoc.getDirection(), 2.5f, 0);
-//			arrow.setDamage(0);
-//			arrow.setPierceLevel(1);
-//			arrow.setShooter(archer);
-//			arrow.setWeapon(archer.getInventory().getItemInMainHand());
-//
-//			new BukkitRunnable() {
-//				@Override
-//				public void run() {
-//					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround()) {
-//						Location impact = arrow.getLocation();
-//
-//						for(Entity e : arrow.getNearbyEntities(3, 3, 3)) {
-//							if(e instanceof LivingEntity target && !e.equals(archer)) {
-//								target.damage(10, archer);
-//							}
-//						}
-//
-//						// Visual effects
-//						world.spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
-//						world.playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
-//
-//						arrow.remove();
-//						cancel();
-//					}
-//				}
-//			}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
-//		}
-//	}
-//
-//	private static void rapidFire(int ticks) {
-//		for(int i = 0; i < ticks; i += 4) {
-//			Utils.scheduleTask(() -> {
-//				Arrow arrow = world.spawnArrow(archer.getEyeLocation().add(archer.getEyeLocation().getDirection()), archer.getEyeLocation().getDirection(), 3, 0);
-//				arrow.setDamage(15);
-//				arrow.setPierceLevel(4);
-//				arrow.setShooter(archer);
-//				arrow.setWeapon(archer.getInventory().getItemInMainHand());
-//				arrow.addScoreboardTag("TerminatorArrow");
-//			}, i);
-//		}
-//	}
+	public static void explosiveShot() {
+		Vector v = archer.getLocation().getDirection();
+		Location lLeft = archer.getLocation().clone().add(v);
+		lLeft.setYaw(lLeft.getYaw() - 6);
+		lLeft.setY(lLeft.getY() + 1.62);
+
+		Location l = archer.getLocation().clone().add(v);
+		l.setY(l.getY() + 1.62);
+
+		Location lRight = archer.getLocation().clone().add(v);
+		lRight.setYaw(lRight.getYaw() + 6);
+		lRight.setY(lRight.getY() + 1.62);
+
+		for(Location shootLoc : List.of(lLeft, l, lRight)) {
+			Arrow arrow = world.spawnArrow(l, shootLoc.getDirection(), 2.5f, 0);
+			arrow.setDamage(0);
+			arrow.setPierceLevel(1);
+			arrow.setShooter(archer);
+			arrow.setWeapon(archer.getInventory().getItemInMainHand());
+
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround()) {
+						Location impact = arrow.getLocation();
+
+						for(Entity e : arrow.getNearbyEntities(3, 3, 3)) {
+							if(e instanceof LivingEntity target && !e.equals(archer)) {
+								target.damage(19, archer);
+							}
+						}
+
+						// Visual effects
+						world.spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
+						world.playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
+
+						arrow.remove();
+						cancel();
+					}
+				}
+			}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
+		}
+	}
+
+	public static void rapidFire(int ticks) {
+		for(int i = 0; i < ticks; i += 4) {
+			Utils.scheduleTask(() -> {
+				Arrow arrow = world.spawnArrow(archer.getEyeLocation().add(archer.getEyeLocation().getDirection()), archer.getEyeLocation().getDirection(), 3, 0);
+				arrow.setDamage(35);
+				arrow.setPierceLevel(4);
+				arrow.setShooter(archer);
+				arrow.setWeapon(archer.getInventory().getItemInMainHand());
+				arrow.addScoreboardTag("TerminatorArrow");
+			}, i);
+		}
+	}
 
 	public static Player get() {
 		return archer;

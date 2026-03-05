@@ -1,8 +1,8 @@
 package instructions.players;
 
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.World;
+import instructions.Actions;
+import instructions.Server;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
 import plugin.Utils;
 
@@ -21,6 +21,7 @@ public class Tank {
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.teleport(tank, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.scheduleTask(() -> preclear(section.equals("all")), 60);
 //				Utils.scheduleTask(() -> Actions.swapItems(tank, 2, 29), 60);
 //				Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 61);
 //				Utils.scheduleTask(() -> Actions.rightClick(tank), 101);
@@ -87,7 +88,52 @@ public class Tank {
 		}
 	}
 
+	private static void preclear(boolean doContinue) {
+		Actions.move(tank, "WPJ", 30);
+		Actions.setHotbarSlot(tank, 1);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -1f, -3.4f), 31);
+		Utils.scheduleTask(() -> clear(doContinue), 128);
+	}
+
 	private static void clear(boolean doContinue) {
+		/*
+		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗     ██████╗ ██╗   ██╗███████╗██╗  ██╗
+		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔══██╗██║   ██║██╔════╝██║  ██║
+		 * ██████╔╝██║     ██║   ██║██║   ██║██║  ██║    ██████╔╝██║   ██║███████╗███████║
+		 * ██╔══██╗██║     ██║   ██║██║   ██║██║  ██║    ██╔══██╗██║   ██║╚════██║██╔══██║
+		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ██║  ██║╚██████╔╝███████║██║  ██║
+		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.move(tank, "N", 4), 20);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 21); // etherwarp into fairy
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 4f, 24f), 22);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 23); // etherwarp to wither door
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Server.openWitherDoor(tank);
+		}, 28); // open door (waits 1 tick after pickup to ensure no race conditions) | opens tick 48
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, 15f), 29);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 49);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 50); // aotv to pick up blessing | reposition
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 94f, -6f);
+			Actions.move(tank, "N", 0);
+		}, 51);
+		Utils.scheduleTask(() -> {
+			Utils.broadcastBlessing(tank, Utils.BlessingType.POWER, 5);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] cookiethebald " + ChatColor.GREEN + "has obtained " + ChatColor.RED + "Blood Key" + ChatColor.GREEN + "!");
+		}, 55); // must wait for key to spawn in before continuing
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 56); // etherwarp into museum
+		// blood rush: 56 ticks
+
+		/*
+		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
+		 * ████╗ ████║██║   ██║██╔════╝██╔════╝██║   ██║████╗ ████║
+		 * ██╔████╔██║██║   ██║███████╗█████╗  ██║   ██║██╔████╔██║
+		 * ██║╚██╔╝██║██║   ██║╚════██║██╔══╝  ██║   ██║██║╚██╔╝██║
+		 * ██║ ╚═╝ ██║╚██████╔╝███████║███████╗╚██████╔╝██║ ╚═╝ ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝
+		 */
 	}
 //		/*
 //		 * ████████╗██████╗  █████╗ ██████╗

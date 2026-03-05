@@ -395,6 +395,13 @@ public class Actions {
 		Utils.simulatePacket(p, packet);
 	}
 
+	public static void dropItem(Player p) {
+		ServerboundPlayerActionPacket.Action action = p.isSprinting() ? ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS : ServerboundPlayerActionPacket.Action.DROP_ITEM;
+		ServerPlayer sp = ((CraftPlayer) p).getHandle();
+		ServerboundPlayerActionPacket packet = new ServerboundPlayerActionPacket(action, sp.blockPosition(), Direction.DOWN, 0);
+		Utils.simulatePacket(p, packet);
+	}
+
 	/**
 	 * Simulates the impact of a wither ability on the player and surrounding entities.
 	 * This involves teleportation, damage dealing to nearby entities, sound effects,
