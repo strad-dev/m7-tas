@@ -1,6 +1,7 @@
 package listeners;
 
 import commands.Spectate;
+import instructions.players.Archer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
@@ -25,6 +26,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.PlayerAnimationEvent;
 import org.bukkit.event.player.PlayerAnimationType;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -164,6 +166,20 @@ public class CustomItems implements Listener {
 		}
 	}
 
+	// currently only Archer abilities are implemented, but if needs arise more may be implemented
+	@EventHandler
+	public void onPlayerDropItem(PlayerDropItemEvent e) {
+		e.setCancelled(true);
+		boolean ultimate = e.getPlayer().isSprinting();
+		if(e.getPlayer().getName().equals("Archer") || e.getPlayer().getScoreboardTags().contains("Archer")) {
+			if(ultimate) {
+				Archer.rapidFire(200);
+			} else {
+				Archer.explosiveShot();
+			}
+		}
+	}
+
 	@EventHandler
 	public void onEntityShootBow(EntityShootBowEvent e) {
 		if(e.getEntity() instanceof Player p) {
@@ -296,6 +312,28 @@ public class CustomItems implements Listener {
 	}
 
 	public static void witherImpact(Player p) {
+		// implosion
+		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 20);
+		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
+		List<EntityType> doNotKill = CustomItems.doNotKill();
+		int damaged = 0;
+		double damage = 0;
+		for(Entity entity : entities) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
+				entity1.damage(1);
+				damaged += 1;
+				damage += 1;
+			}
+		}
+		if(damaged > 0) {
+			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage");
+		}
+		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
+
+		// wither shield
+		// does not affect anything
+		Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
+
 		Location origin = p.getLocation().clone();
 		RayTraceResult result = p.rayTraceBlocks(11.65);
 		if(result == null) {
@@ -455,28 +493,6 @@ public class CustomItems implements Listener {
 		}
 		p.setFallDistance(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
-
-		// implosion
-		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 20);
-		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
-		List<EntityType> doNotKill = CustomItems.doNotKill();
-		int damaged = 0;
-		double damage = 0;
-		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
-				entity1.damage(1);
-				damaged += 1;
-				damage += 1;
-			}
-		}
-		if(damaged > 0) {
-			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage");
-		}
-		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
-
-		// wither shield
-		// does not affect anything
-		Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
 	}
 
 	public static void aotv(Player p) {
@@ -1230,6 +1246,7 @@ public class CustomItems implements Listener {
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
 			arrow.addScoreboardTag("TerminatorArrow");
+			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		}
 
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
@@ -1242,6 +1259,7 @@ public class CustomItems implements Listener {
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
 			arrow.addScoreboardTag("TerminatorArrow");
+			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 			Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 		}, 3);
 
@@ -1253,6 +1271,7 @@ public class CustomItems implements Listener {
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
+				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 			}, 5);
 
@@ -1263,6 +1282,7 @@ public class CustomItems implements Listener {
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
+				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				p.playSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 			}, 10);
 		} else if(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk")) {

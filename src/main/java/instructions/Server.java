@@ -57,6 +57,7 @@ public class Server {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
 						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
 						Watcher.watcherInstructions(world, section.equals("all"));
+						openFirstDoor();
 					}, 128);
 				}
 //				case "boss" -> Maxor.maxorInstructions(world, true);
@@ -79,9 +80,10 @@ public class Server {
 	public static void serverSetup(World world) {
 		spawnMinibosses(world);
 		resetGoldorCheese();
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
@@ -173,11 +175,16 @@ public class Server {
 		yellowShadowAssassin.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SWORD));
 	}
 
-	public static void openWitherDoor() {
+	public static void openFirstDoor() {
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:glass");
+		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:air"), 20);
+	}
+
+	public static void openWitherDoor(Player p) {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:glass");
 		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-		Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_ " + ChatColor.GREEN + "opend a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
+		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " opend a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
 	}
 
 	public static void openBloodDoor() {
