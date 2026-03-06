@@ -13,7 +13,6 @@ import net.minecraft.world.entity.Relative;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
@@ -331,16 +330,14 @@ public class Utils {
 		if(!(entity instanceof Player)) {
 			String[] oldName;
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
-			int maxHealth = (int) Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue();
 			boolean exempt = entity.getScoreboardTags().stream().anyMatch(t -> t.equals("TASWitherKing") || t.equals("TASWatcher"));
 			String healthStr = exempt ? String.valueOf(health) : (int) Math.ceil(health * 2) + "M";
-			String maxHealthStr = exempt ? String.valueOf(maxHealth) : (maxHealth * 2) + "M";
 			try {
 				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
 			} catch(Exception exception) {
-				oldName = (entity.getName() + " " + ChatColor.YELLOW + healthStr + "/" + maxHealthStr).split(" ");
+				oldName = (entity.getName() + " " + ChatColor.YELLOW + healthStr).split(" ");
 			}
-			oldName[oldName.length - 1] = ChatColor.YELLOW + healthStr + "/" + maxHealthStr;
+			oldName[oldName.length - 1] = ChatColor.YELLOW + healthStr;
 			StringBuilder newName = new StringBuilder(oldName[0]);
 			for(int i = 1; i < oldName.length; i++) {
 				newName.append(" ").append(oldName[i]);
