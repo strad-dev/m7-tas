@@ -48,3 +48,7 @@ In the current refactor, the classes Healer.java and Tank.java are cosplaying th
 - CraftBukkit access via `((CraftPlayer) player).getHandle()` pattern
 - Utility methods in `Utils` class (e.g., `Utils.simulatePacket()`, `Utils.broadcastPacket()`)
 - Logging via `Utils.debug(DebugType, String)`: `[Client]` (dark aqua) for simulated client packets, `[Server]` (green) for server-side events, `[Game]` (light purple) for boss/game events
+
+## Notes
+- Do NOT do any builds or compiles.
+- Use python, NOT python3
