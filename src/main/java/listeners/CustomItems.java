@@ -208,6 +208,7 @@ public class CustomItems implements Listener {
 				}
 				arrow.setDamage(1.0);
 				arrow.addScoreboardTag("TerminatorArrow");
+				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				Utils.scheduleTask(() -> {
 					// Fire second arrow
 					Arrow arrow2 = p.launchProjectile(Arrow.class);
@@ -215,13 +216,14 @@ public class CustomItems implements Listener {
 					arrow2.setDamage(0.2);
 					arrow2.setShooter(p);
 					arrow2.addScoreboardTag("TerminatorArrow");
+					arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 					arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
 					// Play bow shoot sound again
 					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 				}, 3);
 
-				if(p.getName().contains("Archer")) {
+				if(p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer")) {
 					Utils.scheduleTask(() -> {
 						// Fire third arrow
 						Arrow arrow2 = p.launchProjectile(Arrow.class);
@@ -229,6 +231,7 @@ public class CustomItems implements Listener {
 						arrow2.setDamage(1.0);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
+						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
 						// Play bow shoot sound again
@@ -242,6 +245,7 @@ public class CustomItems implements Listener {
 						arrow2.setDamage(1.0);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
+						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
 						// Play bow shoot sound again
@@ -1264,6 +1268,12 @@ public class CustomItems implements Listener {
 			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		}
 
+		for(Arrow arrow : Arrays.asList(left, middle, right)) {
+			Utils.scheduleTask(() -> {
+				if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
+			}, 1);
+		}
+
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 
 		// Duplex Arrow
@@ -1276,6 +1286,9 @@ public class CustomItems implements Listener {
 			arrow.addScoreboardTag("TerminatorArrow");
 			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 			Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+			Utils.scheduleTask(() -> {
+				if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
+			}, 1);
 		}, 3);
 
 		if(p.getName().startsWith("Archer") || p.getScoreboardTags().contains("Archer")) {
@@ -1288,6 +1301,9 @@ public class CustomItems implements Listener {
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+				Utils.scheduleTask(() -> {
+					if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
+				}, 1);
 			}, 5);
 
 			Utils.scheduleTask(() -> {
@@ -1299,6 +1315,9 @@ public class CustomItems implements Listener {
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				p.playSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+				Utils.scheduleTask(() -> {
+					if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
+				}, 1);
 			}, 10);
 		} else if(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk")) {
 			PotionEffect strength = p.getPotionEffect(PotionEffectType.STRENGTH);
@@ -1351,6 +1370,7 @@ public class CustomItems implements Listener {
 		float basePitch = p.getEyeLocation().getPitch();
 
 		double speed = 2;
+		List<LivingEntity> alreadyHurt = new ArrayList<>();
 		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
 			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 			nmsArrow.setPos(l.getX(), l.getY(), l.getZ());
@@ -1370,12 +1390,18 @@ public class CustomItems implements Listener {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround()) {
+					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround() || arrow.getLocation().getBlock().getType().isSolid()) {
 						Location impact = arrow.getLocation();
 
-						for(Entity e : arrow.getNearbyEntities(3, 3, 3)) {
-							if(e instanceof LivingEntity target && !e.equals(p)) {
-								target.damage(19, p);
+						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
+							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
+								CraftLivingEntity craftEntity = (CraftLivingEntity) target;
+								net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+								ServerLevel level = (ServerLevel) nmsEntity.level();
+								nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 19);
+								target.setNoDamageTicks(0);
+								Utils.changeName(target);
+								alreadyHurt.add(target);
 							}
 						}
 
@@ -1465,6 +1491,7 @@ public class CustomItems implements Listener {
 					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
 					ServerLevel level = (ServerLevel) nmsEntity.level();
 					nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
+					temp.setNoDamageTicks(0);
 					Utils.changeName(temp);
 					shouldBreak = true;
 					break;

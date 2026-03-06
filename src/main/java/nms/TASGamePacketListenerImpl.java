@@ -365,6 +365,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 			}
 
 			if(cancelled) {
+				this.player.stopUsingItem(); // prevent lingering bow-draw state
 				this.player.containerMenu.sendAllDataToRemote();
 				return;
 			}
