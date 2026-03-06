@@ -385,13 +385,23 @@ public class Watcher {
 
 	private static void spawnMob(Location location, String mobName) {
 		Zombie mob = (Zombie) world.spawnEntity(location, EntityType.ZOMBIE);
+		mob.setAdult();
+		// Clear random armor and prevent chicken jockey from finalizeSpawn
+		Objects.requireNonNull(mob.getEquipment()).setHelmet(null);
+		mob.getEquipment().setChestplate(null);
+		mob.getEquipment().setLeggings(null);
+		mob.getEquipment().setBoots(null);
+		if(mob.isInsideVehicle()) {
+			Entity vehicle = mob.getVehicle();
+			mob.leaveVehicle();
+			if(vehicle != null) vehicle.remove();
+		}
 		mob.setCustomNameVisible(true);
 		mob.addScoreboardTag("WatcherMob");
 		mob.setAI(true);
 		Utils.scheduleTask(() -> mob.setAI(false), 20);
 		mob.setGravity(true);
 		mob.setSilent(true);
-		mob.setAdult();
 		mob.setPersistent(true);
 		mob.setRemoveWhenFarAway(false);
 

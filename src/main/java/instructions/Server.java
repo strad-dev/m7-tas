@@ -247,6 +247,17 @@ public class Server {
 		Zombie zombie = (Zombie) Objects.requireNonNull(loc.getWorld())
 				.spawnEntity(loc, EntityType.ZOMBIE);
 		zombie.setAdult();
+		// Clear random armor and prevent chicken jockey from finalizeSpawn
+		assert zombie.getEquipment() != null;
+		zombie.getEquipment().setHelmet(null);
+		zombie.getEquipment().setChestplate(null);
+		zombie.getEquipment().setLeggings(null);
+		zombie.getEquipment().setBoots(null);
+		if(zombie.isInsideVehicle()) {
+			Entity vehicle = zombie.getVehicle();
+			zombie.leaveVehicle();
+			if(vehicle != null) vehicle.remove();
+		}
 		zombie.setAI(false);
 		zombie.setSilent(true);
 		zombie.setPersistent(true);
@@ -255,7 +266,6 @@ public class Server {
 		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
 		zombie.setHealth(1);
 		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
-		assert zombie.getEquipment() != null;
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
 		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET
