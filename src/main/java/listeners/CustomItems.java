@@ -23,11 +23,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.player.PlayerAnimationEvent;
-import org.bukkit.event.player.PlayerAnimationType;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -42,9 +38,10 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomItems implements Listener {
-	private static final Map<UUID, Integer> cooldowns = new HashMap<>();
+	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
 
 	public static String getID(ItemStack item) {
@@ -139,7 +136,7 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof LivingEntity entity) {
 			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
 		}
-		if(e.getDamager() instanceof Player p) {
+		if(e.getDamager() instanceof Player p && !M7tas.getFakePlayers().containsValue(p)) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		} else if(e.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player p && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
 			e.setCancelled(true);
@@ -169,11 +166,25 @@ public class CustomItems implements Listener {
 	// currently only Archer abilities are implemented, but if needs arise more may be implemented
 	@EventHandler
 	public void onPlayerDropItem(PlayerDropItemEvent e) {
+		if(!M7tas.getFakePlayers().containsValue(e.getPlayer())) return;
 		e.setCancelled(true);
 		Player p = e.getPlayer();
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
 		boolean ultimate = !p.isSprinting();
+		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
+			if(ultimate) {
+				rapidFire(p);
+			} else {
+				explosiveShot(p);
+			}
+		}
+	}
+
+	public static void handleDrop(Player p, boolean ultimate) {
+		if(Spectate.getSpectatorMap().containsKey(p)) return;
+		droppingPlayers.add(p.getUniqueId());
+		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
 				rapidFire(p);
@@ -241,25 +252,20 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	@SuppressWarnings({"DuplicateExpressions", "RedundantSuppression"})
-	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
-		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return;
+	public static boolean handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
+		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return false;
+		boolean fired = false;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
 			if(item != null && id != null) {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
-						e.setCancelled(true);
 						mageBeam(p);
-					}
-					switch(id) {
-						case "skyblock/combat/terminator" -> {
-							e.setCancelled(true);
-							salvation(p);
-						}
-						case "skyblock/combat/gyro" -> {
-							e.setCancelled(true);
-							gyro(p);
+						fired = true;
+					} else {
+						switch(id) {
+							case "skyblock/combat/terminator" -> { salvation(p); fired = true; }
+							case "skyblock/combat/gyro" -> { gyro(p); fired = true; }
 						}
 					}
 				}
@@ -268,51 +274,23 @@ public class CustomItems implements Listener {
 					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || M7tas.getFakePlayers().containsValue(p)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
-							case "skyblock/combat/scylla" -> {
-								e.setCancelled(true);
-								witherImpact(p);
-							}
-							case "skyblock/combat/aotv" -> {
-								e.setCancelled(true);
-								aotv(p);
-							}
-							case "skyblock/combat/infinityboom" -> {
-								e.setCancelled(true);
-								superboom(p);
-							}
-							case "skyblock/combat/rag" -> {
-								e.setCancelled(true);
-								rag(p);
-							}
-							case "skyblock/combat/aots" -> {
-								e.setCancelled(true);
-								aots(p);
-							}
-							case "skyblock/combat/ice_spray" -> {
-								e.setCancelled(true);
-								iceSpray(p);
-							}
-							case "skyblock/combat/flaming_flay" -> {
-								e.setCancelled(true);
-								flamingFlay(p);
-							}
-							case "skyblock/combat/bonzo" -> {
-								e.setCancelled(true);
-								bonzo(p);
-							}
-							case "skyblock/combat/terminator" -> {
-								e.setCancelled(true);
-								terminator(p);
-							}
-							case "skyblock/combat/tac" -> {
-								e.setCancelled(true);
-								tac(p);
-							}
+							case "skyblock/combat/scylla" -> { witherImpact(p); fired = true; }
+							case "skyblock/combat/aotv" -> { aotv(p); fired = true; }
+							case "skyblock/combat/infinityboom" -> { superboom(p); fired = true; }
+							case "skyblock/combat/rag" -> { rag(p); fired = true; }
+							case "skyblock/combat/aots" -> { aots(p); fired = true; }
+							case "skyblock/combat/ice_spray" -> { iceSpray(p); fired = true; }
+							case "skyblock/combat/flaming_flay" -> { flamingFlay(p); fired = true; }
+							case "skyblock/combat/bonzo" -> { bonzo(p); fired = true; }
+							case "skyblock/combat/terminator" -> { terminator(p); fired = true; }
+							case "skyblock/combat/tac" -> { tac(p); fired = true; }
 						}
 					}
 				}
 			}
 		}
+		if(e != null && fired) e.setCancelled(true);
+		return fired;
 	}
 
 	public static void witherImpact(Player p) {
@@ -693,10 +671,7 @@ public class CustomItems implements Listener {
 
 		while(!queue.isEmpty()) {
 			Block current = queue.poll();
-			for(BlockFace face : new BlockFace[]{
-					BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST,
-					BlockFace.WEST, BlockFace.UP, BlockFace.DOWN
-			}) {
+			for(BlockFace face : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN}) {
 				Block neighbor = current.getRelative(face);
 				if(neighbor.getType() == Material.CRACKED_STONE_BRICKS && connected.add(neighbor)) {
 					queue.add(neighbor);
@@ -1341,8 +1316,7 @@ public class CustomItems implements Listener {
 
 		double speed = 2;
 		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
-			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow =
-					new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 			nmsArrow.setPos(l.getX(), l.getY(), l.getZ());
 			nmsArrow.setYRot(baseYaw);
 			nmsArrow.setXRot(basePitch);
@@ -1392,8 +1366,7 @@ public class CustomItems implements Listener {
 				Location spawnLoc = eyeLoc.add(dir.clone());
 				double speed = 2.5;
 
-				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow =
-						new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 				nmsArrow.setPos(spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ());
 				nmsArrow.setYRot(eyeLoc.getYaw());
 				nmsArrow.setXRot(eyeLoc.getPitch());
@@ -1481,8 +1454,7 @@ public class CustomItems implements Listener {
 		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5,
-				entity -> entity instanceof LivingEntity && !(entity instanceof Player) && !entity.isDead());
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity && !(entity instanceof Player) && !entity.isDead());
 
 		double blockDist = 35;
 		double entityDist = 35;

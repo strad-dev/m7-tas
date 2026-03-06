@@ -3,6 +3,7 @@ package nms;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import commands.Spectate;
+import listeners.CustomItems;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
@@ -40,6 +41,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.util.Vector;
 import org.slf4j.Logger;
@@ -49,9 +51,19 @@ import java.util.stream.Collectors;
 
 public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 	static final Logger LOGGER = LogUtils.getLogger();
+	private int lastLeftClickAbilityTick = -1;
 
 	public TASGamePacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, ServerPlayer entityplayer, CommonListenerCookie commonlistenercookie) {
 		super(minecraftserver, networkmanager, entityplayer, commonlistenercookie);
+	}
+
+	@Override
+	public void handleAnimate(ServerboundSwingPacket packet) {
+		super.handleAnimate(packet);
+		Player cp = getCraftPlayer();
+		if(CustomItems.handleCustomItems(null, EquipmentSlot.HAND, cp.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, cp)) {
+			lastLeftClickAbilityTick = MinecraftServer.currentTick;
+		}
 	}
 
 	public void handleInteract(ServerboundInteractPacket packetplayinuseentity) {
@@ -156,6 +168,9 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 								if(TASGamePacketListenerImpl.this.player.cannotAttackWithItem(itemstack, 5)) {
 									return;
 								}
+
+								// Suppress attack if a custom ability already fired on the swing this tick
+								if(lastLeftClickAbilityTick == MinecraftServer.currentTick) return;
 
 								// Check if the entity won't produce a damage event
 								boolean immune;
