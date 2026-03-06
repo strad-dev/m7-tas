@@ -48,7 +48,7 @@ public class Maxor {
 		maxor.setSilent(true);
 		maxor.setPersistent(true);
 		maxor.setRemoveWhenFarAway(false);
-		maxor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Maxor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 400 + "/" + 400);
+		maxor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Maxor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "800M/800M");
 		maxor.setCustomNameVisible(true);
 		maxor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(400);
 		maxor.getAttribute(Attribute.ARMOR).setBaseValue(0);
@@ -187,7 +187,7 @@ public class Maxor {
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
 			// Optional: Set custom name
-			miner.setCustomName("Wither Miner " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 3 + "/" + 3);
+			miner.setCustomName("Wither Miner " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "6M/6M");
 			miner.setCustomNameVisible(true);
 
 			// Store in array

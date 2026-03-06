@@ -45,6 +45,7 @@ import java.util.*;
 
 public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new HashMap<>();
+	private static final Set<UUID> droppingPlayers = new HashSet<>();
 
 	public static String getID(ItemStack item) {
 		if(item == null || !item.hasItemMeta()) {
@@ -170,6 +171,8 @@ public class CustomItems implements Listener {
 	public void onPlayerDropItem(PlayerDropItemEvent e) {
 		e.setCancelled(true);
 		Player p = e.getPlayer();
+		droppingPlayers.add(p.getUniqueId());
+		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
 		boolean ultimate = !p.isSprinting();
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
@@ -240,7 +243,7 @@ public class CustomItems implements Listener {
 
 	@SuppressWarnings({"DuplicateExpressions", "RedundantSuppression"})
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
-		System.out.println(action);
+		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
 			if(item != null && id != null) {
