@@ -2,6 +2,8 @@ package listeners;
 
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
+import io.netty.channel.Channel;
+import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
@@ -9,8 +11,10 @@ import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
+import nms.PlayerPacketInterceptor;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
@@ -21,9 +25,11 @@ import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import plugin.M7tas;
 import plugin.Utils;
 
+import java.lang.reflect.Field;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -42,6 +48,19 @@ public class JoinListener implements Listener {
 	public void onJoin(PlayerJoinEvent ev) {
 		Utils.scheduleTask(() -> {
 			Player joiningPlayer = ev.getPlayer();
+
+			if (!M7tas.getFakePlayers().containsValue(joiningPlayer)) {
+				try {
+					Channel ch = getChannel(joiningPlayer);
+					if (ch.pipeline().get("tas_interceptor") == null)
+						ch.pipeline().addBefore("packet_handler", "tas_interceptor",
+								new PlayerPacketInterceptor(joiningPlayer));
+				} catch (Exception ex) {
+					Bukkit.getLogger().warning("[M7TAS] Could not inject interceptor for "
+							+ joiningPlayer.getName() + ": " + ex.getMessage());
+				}
+			}
+
 			ServerGamePacketListenerImpl conn = ((CraftPlayer) joiningPlayer).getHandle().connection;              // PlayerConnection
 
 			// Re-send each fake NPC’s “add + spawn” packets just to this connection:
@@ -114,5 +133,26 @@ public class JoinListener implements Listener {
 				watcherBossBar.addPlayer(joiningPlayer);
 			}
 		}, 1);
+	}
+
+	@EventHandler
+	public void onQuit(PlayerQuitEvent ev) {
+		Player p = ev.getPlayer();
+		if (M7tas.getFakePlayers().containsValue(p)) return;
+		try {
+			Channel ch = getChannel(p);
+			if (ch.pipeline().get("tas_interceptor") != null)
+				ch.pipeline().remove("tas_interceptor");
+		} catch (Exception ignored) { /* channel already closed */ }
+	}
+
+	private static Channel getChannel(Player player) throws Exception {
+		ServerPlayer nms = ((CraftPlayer) player).getHandle();
+		Field connField = ServerCommonPacketListenerImpl.class.getDeclaredField("connection");
+		connField.setAccessible(true);
+		Connection conn = (Connection) connField.get(nms.connection);
+		Field channelField = Connection.class.getDeclaredField("channel");
+		channelField.setAccessible(true);
+		return (Channel) channelField.get(conn);
 	}
 }
