@@ -165,33 +165,37 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	// currently only Archer abilities are implemented, but if needs arise more may be implemented
 	@EventHandler
 	public void onPlayerDropItem(PlayerDropItemEvent e) {
 		Player p = e.getPlayer();
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
 		boolean ultimate = !p.isSprinting();
-		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
-			e.setCancelled(true);
-			if(!M7tas.getFakePlayers().containsValue(p)) return;
-			if(ultimate) {
-				rapidFire(p);
-			} else {
-				explosiveShot(p);
-			}
-		}
+		boolean isClassPlayer = p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")
+				|| p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
+		if(!isClassPlayer) return;
+		e.setCancelled(true);
+		if(!M7tas.getFakePlayers().containsValue(p)) return;
+		dispatchDrop(p, ultimate);
 	}
 
 	public static void handleDrop(Player p, boolean ultimate) {
 		if(Spectate.getSpectatorMap().containsKey(p)) return;
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
+		dispatchDrop(p, ultimate);
+	}
+
+	private static void dispatchDrop(Player p, boolean ultimate) {
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
 				rapidFire(p);
 			} else {
 				explosiveShot(p);
+			}
+		} else if(p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage")) {
+			if(!ultimate) {
+				guidedSheep(p);
 			}
 		}
 	}
@@ -787,11 +791,11 @@ public class CustomItems implements Listener {
 		Map<Location, BlockData> stored = new HashMap<>();
 		for(Block b : slabBlocks) {
 			stored.put(b.getLocation(), b.getBlockData().clone());
-			b.setType(Material.AIR);
+			b.setType(Material.AIR, false);
 		}
 		for(Block b : stairBlocks) {
 			stored.put(b.getLocation(), b.getBlockData().clone());
-			b.setType(Material.AIR);
+			b.setType(Material.AIR, false);
 		}
 
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
@@ -803,7 +807,7 @@ public class CustomItems implements Listener {
 
 		Utils.scheduleTask(() -> {
 			for(Map.Entry<Location, BlockData> entry : stored.entrySet()) {
-				entry.getKey().getBlock().setBlockData(entry.getValue());
+				entry.getKey().getBlock().setBlockData(entry.getValue(), false);
 			}
 			if(mob.isValid()) mob.remove();
 		}, 40);
@@ -814,26 +818,29 @@ public class CustomItems implements Listener {
 	public static void superboom(Player p) {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 		if(blockRay == null || blockRay.getHitBlock() == null) return;
+		triggerSuperboomAt(blockRay.getHitBlock(), p);
+	}
 
-		Block origin = blockRay.getHitBlock();
-
-		// Try crypt detection first
-		if(origin.getType() == Material.SMOOTH_STONE_SLAB
-				|| origin.getType() == Material.GOLD_BLOCK
-				|| origin.getType() == Material.STONE_BRICK_STAIRS) {
-			if(checkAndActivateCrypt(origin, p)) return;
+	public static void triggerSuperboomAt(Block block, Player p) {
+		// 1. Try crypt
+		if(block.getType() == Material.SMOOTH_STONE_SLAB
+				|| block.getType() == Material.GOLD_BLOCK
+				|| block.getType() == Material.STONE_BRICK_STAIRS) {
+			if(checkAndActivateCrypt(block, p)) return;
 		}
 
-		if(origin.getType() != Material.CRACKED_STONE_BRICKS) return;
+		// 2. Cracked stone bricks flood-fill
+		if(block.getType() != Material.CRACKED_STONE_BRICKS) return;
 
 		Set<Block> connected = new HashSet<>();
 		Queue<Block> queue = new LinkedList<>();
-		queue.add(origin);
-		connected.add(origin);
-
+		queue.add(block);
+		connected.add(block);
 		while(!queue.isEmpty()) {
 			Block current = queue.poll();
-			for(BlockFace face : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN}) {
+			for(BlockFace face : new BlockFace[]{
+					BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST,
+					BlockFace.WEST, BlockFace.UP, BlockFace.DOWN}) {
 				Block neighbor = current.getRelative(face);
 				if(neighbor.getType() == Material.CRACKED_STONE_BRICKS && connected.add(neighbor)) {
 					queue.add(neighbor);
@@ -842,16 +849,14 @@ public class CustomItems implements Listener {
 		}
 
 		Map<Location, BlockData> original = new HashMap<>();
-		for(Block block : connected) {
-			original.put(block.getLocation(), block.getBlockData().clone());
-			block.setType(Material.AIR);
+		for(Block b : connected) {
+			original.put(b.getLocation(), b.getBlockData().clone());
+			b.setType(Material.AIR, false);
 		}
-
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
-
 		Utils.scheduleTask(() -> {
 			for(Map.Entry<Location, BlockData> entry : original.entrySet()) {
-				entry.getKey().getBlock().setBlockData(entry.getValue());
+				entry.getKey().getBlock().setBlockData(entry.getValue(), false);
 			}
 		}, 40);
 	}
@@ -1531,12 +1536,57 @@ public class CustomItems implements Listener {
 						p.getWorld().spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
 						p.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 
+						Block impactBlock = impact.getBlock();
+						if(!impactBlock.getType().isAir()) {
+							triggerSuperboomAt(impactBlock, p);
+						}
+
 						arrow.remove();
 						cancel();
 					}
 				}
 			}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
 		}
+	}
+
+	public static void guidedSheep(Player p) {
+		Location spawnLoc = p.getEyeLocation();
+		Vector direction = spawnLoc.getDirection().normalize();
+		double speed = 0.5; // blocks/tick
+
+		Sheep sheep = (Sheep) p.getWorld().spawnEntity(spawnLoc, EntityType.SHEEP);
+		sheep.setAI(false);
+		sheep.setGravity(false);
+		sheep.setInvulnerable(true);
+		sheep.setSilent(true);
+
+		Vector velocity = direction.multiply(speed);
+
+		new BukkitRunnable() {
+			int ticks = 0;
+			static final int MAX_TICKS = 200; // safety cap: 10 s
+
+			@Override
+			public void run() {
+				if(ticks++ >= MAX_TICKS || !sheep.isValid()) {
+					sheep.remove();
+					cancel();
+					return;
+				}
+
+				Location next = sheep.getLocation().add(velocity);
+				Block nextBlock = next.getBlock();
+
+				if(nextBlock.getType().isSolid()) {
+					triggerSuperboomAt(nextBlock, p);
+					sheep.remove();
+					cancel();
+					return;
+				}
+
+				sheep.teleport(next);
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
 	public static void rapidFire(Player p) {
