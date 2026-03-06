@@ -818,7 +818,29 @@ public class CustomItems implements Listener {
 	public static void superboom(Player p) {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 		if(blockRay == null || blockRay.getHitBlock() == null) return;
-		triggerSuperboomAt(blockRay.getHitBlock(), p);
+		triggerSuperboomRadius(blockRay.getHitBlock().getLocation(), p);
+	}
+
+	public static void triggerSuperboomRadius(Location center, Player p) {
+		triggerSuperboomRadius(center, p, new HashSet<>());
+	}
+
+	public static void triggerSuperboomRadius(Location center, Player p, Set<Block> visited) {
+		World world = center.getWorld();
+		int cx = center.getBlockX(), cy = center.getBlockY(), cz = center.getBlockZ();
+		for(int dx = -1; dx <= 1; dx++) {
+			for(int dy = -1; dy <= 1; dy++) {
+				for(int dz = -1; dz <= 1; dz++) {
+					Block b = world.getBlockAt(cx + dx, cy + dy, cz + dz);
+					Material type = b.getType();
+					if((type == Material.SMOOTH_STONE_SLAB || type == Material.GOLD_BLOCK
+							|| type == Material.STONE_BRICK_STAIRS || type == Material.CRACKED_STONE_BRICKS)
+							&& visited.add(b)) {
+						triggerSuperboomAt(b, p);
+					}
+				}
+			}
+		}
 	}
 
 	public static void triggerSuperboomAt(Block block, Player p) {
@@ -1498,6 +1520,7 @@ public class CustomItems implements Listener {
 
 		double speed = 2;
 		List<LivingEntity> alreadyHurt = new ArrayList<>();
+		Set<Block> visitedBlocks = new HashSet<>();
 		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
 			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 			nmsArrow.setPos(l.getX(), l.getY(), l.getZ());
@@ -1536,10 +1559,7 @@ public class CustomItems implements Listener {
 						p.getWorld().spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
 						p.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 
-						Block impactBlock = impact.getBlock();
-						if(!impactBlock.getType().isAir()) {
-							triggerSuperboomAt(impactBlock, p);
-						}
+						triggerSuperboomRadius(impact, p, visitedBlocks);
 
 						arrow.remove();
 						cancel();
@@ -1552,13 +1572,16 @@ public class CustomItems implements Listener {
 	public static void guidedSheep(Player p) {
 		Location spawnLoc = p.getEyeLocation();
 		Vector direction = spawnLoc.getDirection().normalize();
-		double speed = 0.5; // blocks/tick
+		double speed = 1; // blocks/tick
 
 		Sheep sheep = (Sheep) p.getWorld().spawnEntity(spawnLoc, EntityType.SHEEP);
 		sheep.setAI(false);
 		sheep.setGravity(false);
 		sheep.setInvulnerable(true);
+		sheep.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255));
 		sheep.setSilent(true);
+		sheep.setCustomNameVisible(false);
+		sheep.setCollidable(false);
 
 		Vector velocity = direction.multiply(speed);
 
@@ -1569,6 +1592,9 @@ public class CustomItems implements Listener {
 			@Override
 			public void run() {
 				if(ticks++ >= MAX_TICKS || !sheep.isValid()) {
+					Location loc = sheep.getLocation();
+					loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 10, 0.5, 0.5, 0.5, 0);
+					loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 					sheep.remove();
 					cancel();
 					return;
@@ -1578,7 +1604,7 @@ public class CustomItems implements Listener {
 				Block nextBlock = next.getBlock();
 
 				if(nextBlock.getType().isSolid()) {
-					triggerSuperboomAt(nextBlock, p);
+					triggerSuperboomRadius(next, p);
 					sheep.remove();
 					cancel();
 					return;
