@@ -330,14 +330,18 @@ public class Utils {
 	public static void changeName(LivingEntity entity) {
 		if(!(entity instanceof Player)) {
 			String[] oldName;
-			int health = (int) Math.ceil(entity.getHealth() + entity.getAbsorptionAmount());
+			int health = (int) (entity.getHealth() + entity.getAbsorptionAmount());
 			int maxHealth = (int) Objects.requireNonNull(entity.getAttribute(Attribute.MAX_HEALTH)).getValue();
+			boolean exempt = entity.getScoreboardTags().stream()
+				.anyMatch(t -> t.equals("TASWitherKing") || t.equals("TASWatcher"));
+			String healthStr    = exempt ? String.valueOf(health)    : Utils.round(health * 2, 1)    + "M";
+			String maxHealthStr = exempt ? String.valueOf(maxHealth) : (maxHealth * 2) + "M";
 			try {
 				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
 			} catch(Exception exception) {
-				oldName = (entity.getName() + " " + ChatColor.YELLOW + health + "/" + maxHealth).split(" ");
+				oldName = (entity.getName() + " " + ChatColor.YELLOW + healthStr + "/" + maxHealthStr).split(" ");
 			}
-			oldName[oldName.length - 1] = ChatColor.YELLOW + "" + health + "/" + maxHealth;
+			oldName[oldName.length - 1] = ChatColor.YELLOW + healthStr + "/" + maxHealthStr;
 			StringBuilder newName = new StringBuilder(oldName[0]);
 			for(int i = 1; i < oldName.length; i++) {
 				newName.append(" ").append(oldName[i]);

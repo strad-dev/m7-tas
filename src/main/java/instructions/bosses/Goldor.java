@@ -37,7 +37,7 @@ public class Goldor {
 		goldor.setSilent(true);
 		goldor.setPersistent(true);
 		goldor.setRemoveWhenFarAway(false);
-		goldor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Goldor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 600 + "/" + 600);
+		goldor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Goldor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "1200M/1200M");
 		goldor.setCustomNameVisible(true);
 		goldor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(600);
 		goldor.getAttribute(Attribute.ARMOR).setBaseValue(0);

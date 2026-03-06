@@ -74,6 +74,7 @@ public class WitherKing {
 			witherKing.getAttribute(Attribute.SCALE).setBaseValue(4);
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");
+			witherKing.addScoreboardTag("TASWitherKing");
 			Actions.setWitherArmor(witherKing, true);
 
 			Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(witherKing, ChatColor.MAGIC + "Wither-King"), 1);
@@ -144,7 +145,7 @@ public class WitherKing {
 			dragon.setSilent(true);
 			dragon.setPersistent(true);
 			dragon.setRemoveWhenFarAway(false);
-			dragon.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + dragonName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 500 + "/" + 500);
+			dragon.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + dragonName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "1000M/1000M");
 			dragon.setCustomNameVisible(true);
 			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(500);
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);

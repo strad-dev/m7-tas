@@ -65,6 +65,7 @@ public class Watcher {
 
 		Utils.scheduleTask(() -> {
 			watcher = (Zombie) world.spawnEntity(ORIGINAL_POSITION, EntityType.ZOMBIE);
+			watcher.addScoreboardTag("TASWatcher");
 			watcher.setAI(false);
 			watcher.setSilent(true);
 			watcher.setPersistent(true);
@@ -385,6 +386,7 @@ public class Watcher {
 	private static void spawnMob(Location location, String mobName) {
 		Zombie mob = (Zombie) world.spawnEntity(location, EntityType.ZOMBIE);
 		mob.setCustomNameVisible(true);
+		mob.addScoreboardTag("WatcherMob");
 		mob.setAI(true);
 		Utils.scheduleTask(() -> mob.setAI(false), 20);
 		mob.setGravity(true);
@@ -394,7 +396,7 @@ public class Watcher {
 		mob.setRemoveWhenFarAway(false);
 
 		if(mobName.equals("Diamante Giant")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 40 + "/" + 40);
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "80M/80M");
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			mob.setHealth(40);
@@ -405,13 +407,13 @@ public class Watcher {
 			mob.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 30 + "/" + 30);
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "60M/60M");
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 			mob.setHealth(30);
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + 12 + "/" + 12);
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "24M/24M");
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-12);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(12);
 			mob.setHealth(12);
