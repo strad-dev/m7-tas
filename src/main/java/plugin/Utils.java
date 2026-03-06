@@ -326,12 +326,22 @@ public class Utils {
 		}
 	}
 
+	public static String formatHealthM(double rawHealth) {
+		int displayM = (int) Math.ceil(rawHealth * 2);
+		if(displayM >= 1000) {
+			int tenths = (int) Math.ceil(displayM / 100.0);
+			if(tenths % 10 == 0) return (tenths / 10) + "B";
+			return (tenths / 10) + "." + (tenths % 10) + "B";
+		}
+		return displayM + "M";
+	}
+
 	public static void changeName(LivingEntity entity) {
 		if(!(entity instanceof Player)) {
 			String[] oldName;
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
 			boolean exempt = entity.getScoreboardTags().stream().anyMatch(t -> t.equals("TASWitherKing") || t.equals("TASWatcher"));
-			String healthStr = exempt ? String.valueOf(health) : (int) Math.ceil(health * 2) + "M";
+			String healthStr = exempt ? String.valueOf(health) : formatHealthM(health);
 			try {
 				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
 			} catch(Exception exception) {

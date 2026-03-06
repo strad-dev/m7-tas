@@ -243,6 +243,26 @@ public class Server {
 		Utils.scheduleTask(wither::remove, 160);
 	}
 
+	public static Zombie spawnCryptLurker(Location loc, boolean isPrince) {
+		Zombie zombie = (Zombie) Objects.requireNonNull(loc.getWorld())
+				.spawnEntity(loc, EntityType.ZOMBIE);
+		zombie.setAdult();
+		zombie.setAI(false);
+		zombie.setSilent(true);
+		zombie.setPersistent(true);
+		zombie.setRemoveWhenFarAway(false);
+		zombie.setCustomNameVisible(true);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
+		zombie.setHealth(1);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+		assert zombie.getEquipment() != null;
+		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
+		String mobName = isPrince ? "Prince" : "Crypt Lurker";
+		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET
+				+ ChatColor.RED + " ❤ " + ChatColor.YELLOW + "2M/2M");
+		return zombie;
+	}
+
 	private static LivingEntity spawnTrashMob(Location loc) {
 		boolean isZombie = Math.random() < 0.5;
 		LivingEntity mob = (LivingEntity) Objects.requireNonNull(loc.getWorld()).spawnEntity(loc, isZombie ? EntityType.ZOMBIE : EntityType.SKELETON);
