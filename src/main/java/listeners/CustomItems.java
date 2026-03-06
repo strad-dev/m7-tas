@@ -1,7 +1,6 @@
 package listeners;
 
 import commands.Spectate;
-import instructions.players.Archer;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
@@ -170,12 +169,13 @@ public class CustomItems implements Listener {
 	@EventHandler
 	public void onPlayerDropItem(PlayerDropItemEvent e) {
 		e.setCancelled(true);
-		boolean ultimate = e.getPlayer().isSprinting();
-		if(e.getPlayer().getName().equals("Archer") || e.getPlayer().getScoreboardTags().contains("Archer")) {
+		Player p = e.getPlayer();
+		boolean ultimate = !p.isSprinting();
+		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
-				Archer.rapidFire(200);
+				rapidFire(p);
 			} else {
-				Archer.explosiveShot();
+				explosiveShot(p);
 			}
 		}
 	}
@@ -240,6 +240,7 @@ public class CustomItems implements Listener {
 
 	@SuppressWarnings({"DuplicateExpressions", "RedundantSuppression"})
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
+		System.out.println(action);
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
 			if(item != null && id != null) {
@@ -1197,7 +1198,7 @@ public class CustomItems implements Listener {
 		nmsRight.setXRot(basePitch);
 
 		// Set velocities
-		double speed = 4.0;
+		double speed = 3.175;
 		Vec3 leftVel = new Vec3(leftDirection.getX() * speed, leftDirection.getY() * speed, leftDirection.getZ() * speed);
 		Vec3 middleVel = new Vec3(baseDirection.getX() * speed, baseDirection.getY() * speed, baseDirection.getZ() * speed);
 		Vec3 rightVel = new Vec3(rightDirection.getX() * speed, rightDirection.getY() * speed, rightDirection.getZ() * speed);
@@ -1321,6 +1322,91 @@ public class CustomItems implements Listener {
 		}, 60);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 63);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 66);
+	}
+
+	public static void explosiveShot(Player p) {
+		ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();
+		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
+
+		Vector baseDirection = p.getEyeLocation().getDirection().normalize();
+		Vector leftDirection = baseDirection.clone().rotateAroundY(Math.toRadians(-10));
+		Vector rightDirection = baseDirection.clone().rotateAroundY(Math.toRadians(10));
+
+		Location l = p.getEyeLocation().add(baseDirection.clone());
+		float baseYaw = p.getEyeLocation().getYaw();
+		float basePitch = p.getEyeLocation().getPitch();
+
+		double speed = 2;
+		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
+			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow =
+					new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+			nmsArrow.setPos(l.getX(), l.getY(), l.getZ());
+			nmsArrow.setYRot(baseYaw);
+			nmsArrow.setXRot(basePitch);
+			nmsArrow.setDeltaMovement(new Vec3(dir.getX() * speed, dir.getY() * speed, dir.getZ() * speed));
+			nmsArrow.setOwner(nmsPlayer);
+			nmsWorld.addFreshEntity(nmsArrow);
+
+			Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
+			arrow.setDamage(0);
+			arrow.setPierceLevel(1);
+			arrow.setShooter(p);
+			arrow.setWeapon(p.getInventory().getItemInMainHand());
+			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround()) {
+						Location impact = arrow.getLocation();
+
+						for(Entity e : arrow.getNearbyEntities(3, 3, 3)) {
+							if(e instanceof LivingEntity target && !e.equals(p)) {
+								target.damage(19, p);
+							}
+						}
+
+						// Visual effects
+						p.getWorld().spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
+						p.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
+
+						arrow.remove();
+						cancel();
+					}
+				}
+			}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
+		}
+	}
+
+	public static void rapidFire(Player p) {
+		for(int i = 0; i < 200; i += 4) {
+			Utils.scheduleTask(() -> {
+				ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();
+				ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
+
+				Location eyeLoc = p.getEyeLocation();
+				Vector dir = eyeLoc.getDirection().normalize();
+				Location spawnLoc = eyeLoc.add(dir.clone());
+				double speed = 2.5;
+
+				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow =
+						new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+				nmsArrow.setPos(spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ());
+				nmsArrow.setYRot(eyeLoc.getYaw());
+				nmsArrow.setXRot(eyeLoc.getPitch());
+				nmsArrow.setDeltaMovement(new Vec3(dir.getX() * speed, dir.getY() * speed, dir.getZ() * speed));
+				nmsArrow.setOwner(nmsPlayer);
+				nmsWorld.addFreshEntity(nmsArrow);
+
+				Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
+				arrow.setDamage(35);
+				arrow.setPierceLevel(4);
+				arrow.setShooter(p);
+				arrow.setWeapon(p.getInventory().getItemInMainHand());
+				arrow.addScoreboardTag("TerminatorArrow");
+				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+			}, i);
+		}
 	}
 
 	public static void mageBeam(Player p) {
