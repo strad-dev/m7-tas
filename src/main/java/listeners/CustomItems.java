@@ -135,7 +135,7 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent e) {
-		if(e.getEntity() instanceof LivingEntity entity) {
+		if(e.getEntity() instanceof LivingEntity entity && !entity.getScoreboardTags().contains("TASNoName")) {
 			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
 		}
 		if(e.getDamager() instanceof Player p && !M7tas.getFakePlayers().containsValue(p)) {
@@ -1578,10 +1578,12 @@ public class CustomItems implements Listener {
 		sheep.setAI(false);
 		sheep.setGravity(false);
 		sheep.setInvulnerable(true);
-		sheep.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255));
 		sheep.setSilent(true);
+		sheep.setCustomName(null);
 		sheep.setCustomNameVisible(false);
 		sheep.setCollidable(false);
+		sheep.addScoreboardTag("TASNoName");
+		M7tas.addEntityToNoCollisionTeam(sheep);
 
 		Vector velocity = direction.multiply(speed);
 
@@ -1595,6 +1597,7 @@ public class CustomItems implements Listener {
 					Location loc = sheep.getLocation();
 					loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 10, 0.5, 0.5, 0.5, 0);
 					loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
+					M7tas.removeEntityFromNoCollisionTeam(sheep);
 					sheep.remove();
 					cancel();
 					return;
@@ -1604,7 +1607,10 @@ public class CustomItems implements Listener {
 				Block nextBlock = next.getBlock();
 
 				if(nextBlock.getType().isSolid()) {
+					next.getWorld().spawnParticle(Particle.EXPLOSION, next, 10, 0.5, 0.5, 0.5, 0);
+					next.getWorld().playSound(next, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 					triggerSuperboomRadius(next, p);
+					M7tas.removeEntityFromNoCollisionTeam(sheep);
 					sheep.remove();
 					cancel();
 					return;

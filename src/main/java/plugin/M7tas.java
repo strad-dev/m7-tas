@@ -59,6 +59,7 @@ import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
@@ -519,6 +520,18 @@ public final class M7tas extends JavaPlugin {
 	public static void removeFromNoCollisionTeam(Player player) {
 		if(noCollisionTeam != null) {
 			noCollisionTeam.removeEntry(player.getName());
+		}
+	}
+
+	public static void addEntityToNoCollisionTeam(Entity entity) {
+		if(noCollisionTeam != null) {
+			noCollisionTeam.addEntry(entity.getUniqueId().toString());
+		}
+	}
+
+	public static void removeEntityFromNoCollisionTeam(Entity entity) {
+		if(noCollisionTeam != null) {
+			noCollisionTeam.removeEntry(entity.getUniqueId().toString());
 		}
 	}
 
