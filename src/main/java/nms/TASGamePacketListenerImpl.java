@@ -106,7 +106,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 							if(event.isCancelled() || TASGamePacketListenerImpl.this.player.getInventory().getSelectedItem() == null || TASGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem) {
 								entity.refreshEntityData(TASGamePacketListenerImpl.this.player);
 								if(entity instanceof Allay) {
-									TASGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
+									TASGamePacketListenerImpl.this.send(new ClientboundSetEquipmentPacket(entity.getId(), Arrays.stream(net.minecraft.world.entity.EquipmentSlot.values()).map((slot) -> Pair.of(slot, ((LivingEntity) entity).getItemBySlot(slot).copy())).collect(Collectors.toList())));
 									TASGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 								}
 							}
@@ -217,7 +217,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 
 					PiercingWeapon piercingweapon = itemstack.get(DataComponents.PIERCING_WEAPON);
 					if(piercingweapon != null) {
-						piercingweapon.attack(this.player, EquipmentSlot.MAINHAND);
+						piercingweapon.attack(this.player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
 					}
 
 				}

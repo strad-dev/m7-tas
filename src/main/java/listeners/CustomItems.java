@@ -166,13 +166,13 @@ public class CustomItems implements Listener {
 	// currently only Archer abilities are implemented, but if needs arise more may be implemented
 	@EventHandler
 	public void onPlayerDropItem(PlayerDropItemEvent e) {
-		if(!M7tas.getFakePlayers().containsValue(e.getPlayer())) return;
-		e.setCancelled(true);
 		Player p = e.getPlayer();
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
 		boolean ultimate = !p.isSprinting();
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
+			e.setCancelled(true);
+			if(!M7tas.getFakePlayers().containsValue(p)) return;
 			if(ultimate) {
 				rapidFire(p);
 			} else {
@@ -264,8 +264,14 @@ public class CustomItems implements Listener {
 						fired = true;
 					} else {
 						switch(id) {
-							case "skyblock/combat/terminator" -> { salvation(p); fired = true; }
-							case "skyblock/combat/gyro" -> { gyro(p); fired = true; }
+							case "skyblock/combat/terminator" -> {
+								salvation(p);
+								fired = true;
+							}
+							case "skyblock/combat/gyro" -> {
+								gyro(p);
+								fired = true;
+							}
 						}
 					}
 				}
@@ -274,16 +280,46 @@ public class CustomItems implements Listener {
 					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || M7tas.getFakePlayers().containsValue(p)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
-							case "skyblock/combat/scylla" -> { witherImpact(p); fired = true; }
-							case "skyblock/combat/aotv" -> { aotv(p); fired = true; }
-							case "skyblock/combat/infinityboom" -> { superboom(p); fired = true; }
-							case "skyblock/combat/rag" -> { rag(p); fired = true; }
-							case "skyblock/combat/aots" -> { aots(p); fired = true; }
-							case "skyblock/combat/ice_spray" -> { iceSpray(p); fired = true; }
-							case "skyblock/combat/flaming_flay" -> { flamingFlay(p); fired = true; }
-							case "skyblock/combat/bonzo" -> { bonzo(p); fired = true; }
-							case "skyblock/combat/terminator" -> { terminator(p); fired = true; }
-							case "skyblock/combat/tac" -> { tac(p); fired = true; }
+							case "skyblock/combat/scylla" -> {
+								witherImpact(p);
+								fired = true;
+							}
+							case "skyblock/combat/aotv" -> {
+								aotv(p);
+								fired = true;
+							}
+							case "skyblock/combat/infinityboom" -> {
+								superboom(p);
+								fired = true;
+							}
+							case "skyblock/combat/rag" -> {
+								rag(p);
+								fired = true;
+							}
+							case "skyblock/combat/aots" -> {
+								aots(p);
+								fired = true;
+							}
+							case "skyblock/combat/ice_spray" -> {
+								iceSpray(p);
+								fired = true;
+							}
+							case "skyblock/combat/flaming_flay" -> {
+								flamingFlay(p);
+								fired = true;
+							}
+							case "skyblock/combat/bonzo" -> {
+								bonzo(p);
+								fired = true;
+							}
+							case "skyblock/combat/terminator" -> {
+								terminator(p);
+								fired = true;
+							}
+							case "skyblock/combat/tac" -> {
+								tac(p);
+								fired = true;
+							}
 						}
 					}
 				}
