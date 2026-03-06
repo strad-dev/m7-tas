@@ -1,8 +1,13 @@
 package instructions.players;
 
 import instructions.Actions;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -156,9 +161,7 @@ public class Archer {
 		 * ╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ███████╗███████╗
 		 *  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝
 		 */
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared");
-		}, 54);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared"), 54);
 //		Utils.scheduleTask(Archer::explosiveShot, 95);
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(archer, 48.9f, 5.7f);
@@ -1269,62 +1272,6 @@ public class Archer {
 //		}, 10);
 //	}
 //
-	public static void explosiveShot() {
-		Vector v = archer.getLocation().getDirection();
-		Location lLeft = archer.getLocation().clone().add(v);
-		lLeft.setYaw(lLeft.getYaw() - 6);
-		lLeft.setY(lLeft.getY() + 1.62);
-
-		Location l = archer.getLocation().clone().add(v);
-		l.setY(l.getY() + 1.62);
-
-		Location lRight = archer.getLocation().clone().add(v);
-		lRight.setYaw(lRight.getYaw() + 6);
-		lRight.setY(lRight.getY() + 1.62);
-
-		for(Location shootLoc : List.of(lLeft, l, lRight)) {
-			Arrow arrow = world.spawnArrow(l, shootLoc.getDirection(), 2.5f, 0);
-			arrow.setDamage(0);
-			arrow.setPierceLevel(1);
-			arrow.setShooter(archer);
-			arrow.setWeapon(archer.getInventory().getItemInMainHand());
-
-			new BukkitRunnable() {
-				@Override
-				public void run() {
-					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround()) {
-						Location impact = arrow.getLocation();
-
-						for(Entity e : arrow.getNearbyEntities(3, 3, 3)) {
-							if(e instanceof LivingEntity target && !e.equals(archer)) {
-								target.damage(19, archer);
-							}
-						}
-
-						// Visual effects
-						world.spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
-						world.playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
-
-						arrow.remove();
-						cancel();
-					}
-				}
-			}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
-		}
-	}
-
-	public static void rapidFire(int ticks) {
-		for(int i = 0; i < ticks; i += 4) {
-			Utils.scheduleTask(() -> {
-				Arrow arrow = world.spawnArrow(archer.getEyeLocation().add(archer.getEyeLocation().getDirection()), archer.getEyeLocation().getDirection(), 3, 0);
-				arrow.setDamage(35);
-				arrow.setPierceLevel(4);
-				arrow.setShooter(archer);
-				arrow.setWeapon(archer.getInventory().getItemInMainHand());
-				arrow.addScoreboardTag("TerminatorArrow");
-			}, i);
-		}
-	}
 
 	public static Player get() {
 		return archer;
