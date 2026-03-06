@@ -8,9 +8,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
+import instructions.Server;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Slab;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
@@ -697,11 +699,131 @@ public class CustomItems implements Listener {
 		}
 	}
 
+	public static boolean checkAndActivateCrypt(Block clicked, Player p) {
+		Material type = clicked.getType();
+		int slabY;
+
+		if(type == Material.SMOOTH_STONE_SLAB || type == Material.GOLD_BLOCK) {
+			slabY = clicked.getY();
+		} else if(type == Material.STONE_BRICK_STAIRS) {
+			slabY = clicked.getY() + 1;
+		} else {
+			return false;
+		}
+
+		// Flood-fill horizontally to collect slab-layer blocks
+		Set<Block> slabBlocks = new HashSet<>();
+		Queue<Block> queue = new LinkedList<>();
+		World world = clicked.getWorld();
+		Block startBlock = world.getBlockAt(clicked.getX(), slabY, clicked.getZ());
+		Material startType = startBlock.getType();
+		if(startType != Material.SMOOTH_STONE_SLAB && startType != Material.GOLD_BLOCK) return false;
+		if(startType == Material.SMOOTH_STONE_SLAB) {
+			BlockData bd = startBlock.getBlockData();
+			if(bd instanceof Slab slab && slab.getType() == Slab.Type.TOP) return false;
+		}
+		queue.add(startBlock);
+		slabBlocks.add(startBlock);
+
+		while(!queue.isEmpty() && slabBlocks.size() <= 1000) {
+			Block current = queue.poll();
+			for(BlockFace face : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
+				Block neighbor = current.getRelative(face);
+				if(slabBlocks.contains(neighbor)) continue;
+				Material nType = neighbor.getType();
+				if(nType == Material.SMOOTH_STONE_SLAB) {
+					BlockData bd = neighbor.getBlockData();
+					if(bd instanceof Slab slab && slab.getType() == Slab.Type.TOP) continue;
+					slabBlocks.add(neighbor);
+					queue.add(neighbor);
+				} else if(nType == Material.GOLD_BLOCK) {
+					slabBlocks.add(neighbor);
+					queue.add(neighbor);
+				}
+			}
+		}
+		if(slabBlocks.size() > 1000) return false;
+
+		// Compute bounding box
+		int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
+		int minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
+		for(Block b : slabBlocks) {
+			if(b.getX() < minX) minX = b.getX();
+			if(b.getX() > maxX) maxX = b.getX();
+			if(b.getZ() < minZ) minZ = b.getZ();
+			if(b.getZ() > maxZ) maxZ = b.getZ();
+		}
+
+		// Verify full rectangle
+		int expectedSize = (maxX - minX + 1) * (maxZ - minZ + 1);
+		if(slabBlocks.size() != expectedSize) return false;
+		Set<Long> slabPositions = new HashSet<>();
+		for(Block b : slabBlocks) {
+			slabPositions.add(((long)(b.getX() - minX)) * 10000 + (b.getZ() - minZ));
+		}
+		for(int x = minX; x <= maxX; x++) {
+			for(int z = minZ; z <= maxZ; z++) {
+				if(!slabPositions.contains(((long)(x - minX)) * 10000 + (z - minZ))) return false;
+			}
+		}
+
+		// Validate bottom layer
+		Set<Block> stairBlocks = new HashSet<>();
+		for(int x = minX; x <= maxX; x++) {
+			for(int z = minZ; z <= maxZ; z++) {
+				Block below = world.getBlockAt(x, slabY - 1, z);
+				Material bType = below.getType();
+				if(bType == Material.STONE_BRICK_STAIRS) {
+					stairBlocks.add(below);
+				} else if(bType != Material.AIR) {
+					return false;
+				}
+			}
+		}
+
+		boolean isPrince = slabBlocks.stream().anyMatch(b -> b.getType() == Material.GOLD_BLOCK);
+
+		// Store block data
+		Map<Location, BlockData> stored = new HashMap<>();
+		for(Block b : slabBlocks) {
+			stored.put(b.getLocation(), b.getBlockData().clone());
+			b.setType(Material.AIR);
+		}
+		for(Block b : stairBlocks) {
+			stored.put(b.getLocation(), b.getBlockData().clone());
+			b.setType(Material.AIR);
+		}
+
+		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
+
+		double centerX = (minX + maxX) / 2.0 + 0.5;
+		double centerZ = (minZ + maxZ) / 2.0 + 0.5;
+		Location spawnLoc = new Location(world, centerX, slabY - 1, centerZ);
+		Zombie mob = Server.spawnCryptLurker(spawnLoc, isPrince);
+
+		Utils.scheduleTask(() -> {
+			for(Map.Entry<Location, BlockData> entry : stored.entrySet()) {
+				entry.getKey().getBlock().setBlockData(entry.getValue());
+			}
+			if(mob.isValid()) mob.remove();
+		}, 40);
+
+		return true;
+	}
+
 	public static void superboom(Player p) {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 		if(blockRay == null || blockRay.getHitBlock() == null) return;
 
 		Block origin = blockRay.getHitBlock();
+
+		// Try crypt detection first
+		if(origin.getType() == Material.SMOOTH_STONE_SLAB
+				|| origin.getType() == Material.GOLD_BLOCK
+				|| origin.getType() == Material.STONE_BRICK_STAIRS) {
+			if(checkAndActivateCrypt(origin, p)) return;
+		}
+
 		if(origin.getType() != Material.CRACKED_STONE_BRICKS) return;
 
 		Set<Block> connected = new HashSet<>();
@@ -1517,7 +1639,7 @@ public class CustomItems implements Listener {
 		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity && !(entity instanceof Player) && !entity.isDead());
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead()  && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
 
 		double blockDist = 35;
 		double entityDist = 35;
