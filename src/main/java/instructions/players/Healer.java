@@ -480,6 +480,7 @@ public class Healer {
 			Actions.leftClick(healer);
 			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 5);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 331 Ticks (16.55 seconds)");
 		}, 331);
 		Utils.scheduleTask(Healer::stopIceFillTask, 400);
 		// Ice Fill: 213 ticks
