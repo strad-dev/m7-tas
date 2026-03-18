@@ -67,7 +67,7 @@ public class WitherKing {
 			witherKing.setSilent(true);
 			witherKing.setPersistent(true);
 			witherKing.setRemoveWhenFarAway(false);
-			witherKing.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + ChatColor.MAGIC + "Wither-King" + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 5);
+			witherKing.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + ChatColor.MAGIC + "Wither-King" + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + 5);
 			witherKing.setCustomNameVisible(true);
 			witherKing.getAttribute(Attribute.MAX_HEALTH).setBaseValue(5);
 			witherKing.getAttribute(Attribute.ARMOR).setBaseValue(0);
@@ -145,7 +145,7 @@ public class WitherKing {
 			dragon.setSilent(true);
 			dragon.setPersistent(true);
 			dragon.setRemoveWhenFarAway(false);
-			dragon.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + dragonName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "1000M/1000M");
+			dragon.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + dragonName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1000M");
 			dragon.setCustomNameVisible(true);
 			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(500);
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);

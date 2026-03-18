@@ -327,7 +327,7 @@ public class Utils {
 	}
 
 	public static String formatHealthM(double rawHealth) {
-		int displayM = (int) Math.ceil(rawHealth * 2);
+		int displayM = (int) Math.round(rawHealth * 2);
 		if(displayM >= 1000) {
 			int tenths = (int) Math.ceil(displayM / 100.0);
 			if(tenths % 10 == 0) return (tenths / 10) + "B";
