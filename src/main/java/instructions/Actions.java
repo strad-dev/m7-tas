@@ -373,17 +373,15 @@ public class Actions {
 			return;
 		}
 
-		// Check for entity target - EXCLUDE all players, skip for BOW items (prevents bow drawing on entity interact)
-		if(p.getInventory().getItemInMainHand().getType() != Material.BOW) {
-			RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player target && Spectate.getSpectatingPlayers(p).contains(target)));
+		// Check for entity target - EXCLUDE all players
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player target && Spectate.getSpectatingPlayers(p).contains(target)));
 
-			if(entityRay != null && entityRay.getHitEntity() != null) {
-				// Interact with the entity
-				net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
+		if(entityRay != null && entityRay.getHitEntity() != null) {
+			// Interact with the entity
+			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
 
-				ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
-				Utils.simulatePacket(p, interactPacket);
-			}
+			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
+			Utils.simulatePacket(p, interactPacket);
 		}
 
 		// Right click air (eat food, throw pearl, use item ability) - THIS IS WHAT YOU WANT FOR ETHERWARP
