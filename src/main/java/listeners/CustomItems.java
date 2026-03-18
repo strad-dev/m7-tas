@@ -129,6 +129,16 @@ public class CustomItems implements Listener {
 	}
 
 	@EventHandler
+	public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
+		// Cancel entity interaction for custom items to prevent side effects (e.g. bow drawing)
+		// The ability itself fires from PlayerInteractAtEntityEvent (real clients) or UseItemPacket (fake players)
+		String id = getID(e.getPlayer().getInventory().getItemInMainHand());
+		if(id != null && !id.isEmpty()) {
+			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
 	public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
 		handleCustomItems(e, e.getHand(), e.getPlayer().getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, e.getPlayer());
 	}
