@@ -46,7 +46,7 @@ public class Necron {
 		necron.setSilent(true);
 		necron.setPersistent(true);
 		necron.setRemoveWhenFarAway(false);
-		necron.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Necron" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "1400M/1400M");
+		necron.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Necron" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1400M");
 		necron.setCustomNameVisible(true);
 		necron.getAttribute(Attribute.MAX_HEALTH).setBaseValue(700);
 		necron.getAttribute(Attribute.ARMOR).setBaseValue(0);

@@ -57,7 +57,7 @@ public class Storm {
 		storm.setSilent(true);
 		storm.setPersistent(true);
 		storm.setRemoveWhenFarAway(false);
-		storm.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "1000M/1000M");
+		storm.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1000M");
 		storm.setCustomNameVisible(true);
 		storm.getAttribute(Attribute.MAX_HEALTH).setBaseValue(500);
 		storm.getAttribute(Attribute.ARMOR).setBaseValue(0);
@@ -204,7 +204,7 @@ public class Storm {
 				miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
 				// Optional: Set custom name
-				miner.setCustomName("Wither Miner " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "6M/6M");
+				miner.setCustomName("Wither Miner " + ChatColor.RED + "❤" + ChatColor.YELLOW + "6M");
 				miner.setCustomNameVisible(true);
 
 				Location targetLoc = new Location(world, 73.5, spawnLoc.getY(), 53.5);
@@ -240,7 +240,7 @@ public class Storm {
 			sentry.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
 
 			// Optional: Set custom name
-			sentry.setCustomName("Wither Guard " + ChatColor.RED + "❤ " + ChatColor.YELLOW + "6M/6M");
+			sentry.setCustomName("Wither Guard " + ChatColor.RED + "❤" + ChatColor.YELLOW + "6M");
 			sentry.setCustomNameVisible(true);
 
 			Location targetLoc = new Location(world, 73.5, sentryLocations[i].getY(), 53.5);
@@ -264,7 +264,7 @@ public class Storm {
 
 		for(int i = 0; i < shadowAssassinLocations.length; i++) {
 			Zombie shadowAssassin = (Zombie) world.spawnEntity(shadowAssassinLocations[i], EntityType.ZOMBIE);
-			shadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + "30M/30M");
+			shadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + "30M");
 			shadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
 			shadowAssassin.setCustomNameVisible(true);
 			shadowAssassin.setAI(false);

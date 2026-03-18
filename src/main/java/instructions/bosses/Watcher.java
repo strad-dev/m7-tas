@@ -233,7 +233,7 @@ public class Watcher {
 	}
 
 	private static void createWatcherBossBar() {
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 19;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + 19;
 
 		watcherBossBar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SOLID);
 		watcherBossBar.setProgress(1.0);
@@ -252,7 +252,7 @@ public class Watcher {
 		int mobsRemaining = 19 - mobsKilled;
 		double progress = mobsRemaining / 19.0;
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + mobsRemaining;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + mobsRemaining;
 
 		watcherBossBar.setTitle(title);
 		watcherBossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
@@ -406,7 +406,7 @@ public class Watcher {
 		mob.setRemoveWhenFarAway(false);
 
 		if(mobName.equals("Diamante Giant")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "80M/80M");
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "80M");
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			mob.setHealth(40);
@@ -417,13 +417,13 @@ public class Watcher {
 			mob.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "60M/60M");
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "60M");
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 			mob.setHealth(30);
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "24M/24M");
+			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "24M");
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-12);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(12);
 			mob.setHealth(12);

@@ -127,7 +127,7 @@ public class Server {
 
 		for(int i = 0; i < locations.length; i++) {
 			Zombie zombie = (Zombie) world.spawnEntity(locations[i], EntityType.ZOMBIE);
-			zombie.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Angry Archaeologist " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + ((int) healthValues[i] * 2) + "M/" + ((int) healthValues[i] * 2) + "M");
+			zombie.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Angry Archaeologist " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + ((int) healthValues[i] * 2) + "M");
 			zombie.setCustomNameVisible(true);
 			zombie.setAI(false);
 			zombie.setSilent(true);
@@ -154,7 +154,7 @@ public class Server {
 		}
 
 		yellowShadowAssassin = (Zombie) world.spawnEntity(new Location(world, -184.5, 69, -184.5, 0f, 0f), EntityType.ZOMBIE);
-		yellowShadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤ " + ChatColor.YELLOW + "60M/60M");
+		yellowShadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + "60M");
 		yellowShadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
 		yellowShadowAssassin.setCustomNameVisible(true);
 		yellowShadowAssassin.setAI(false);
@@ -269,7 +269,7 @@ public class Server {
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
 		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET
-				+ ChatColor.RED + " ❤ " + ChatColor.YELLOW + "2M/2M");
+				+ ChatColor.RED + " ❤" + ChatColor.YELLOW + "2M");
 		return zombie;
 	}
 
@@ -383,7 +383,7 @@ public class Server {
 			}
 		}
 
-		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤ " + ChatColor.YELLOW + "" + (health * 2) + "M/" + (health * 2) + "M");
+		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "" + (health * 2) + "M");
 		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-defense);
 
 		if(weapon != Material.AIR) {

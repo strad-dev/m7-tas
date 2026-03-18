@@ -272,7 +272,11 @@ public class CustomItems implements Listener {
 		boolean fired = false;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if(item != null && id != null) {
+			if(item != null && id != null && id.startsWith("skyblock/")) {
+				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
+				if(e != null && (action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK))) {
+					e.setCancelled(true);
+				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
 						mageBeam(p);
@@ -340,6 +344,7 @@ public class CustomItems implements Listener {
 				}
 			}
 		}
+		// Cancel left-click events only if an ability actually fired
 		if(e != null && fired) e.setCancelled(true);
 		return fired;
 	}
