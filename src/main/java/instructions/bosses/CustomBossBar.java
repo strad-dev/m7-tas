@@ -58,8 +58,10 @@ public class CustomBossBar {
 		}
 
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
+		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
+		String healthStr = exempt ? String.valueOf((int) maxHealth) : Utils.formatHealthM(maxHealth);
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + (int) maxHealth + "/" + (int) maxHealth;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + healthStr;
 
 		activeWitherBossBar = Bukkit.createBossBar(title, BarColor.PURPLE, BarStyle.SOLID);
 		activeWitherBossBar.setProgress(1.0);
@@ -96,9 +98,11 @@ public class CustomBossBar {
 
 		double currentHealth = activeWither.getHealth();
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
+		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
+		String healthStr = exempt ? String.valueOf((int) Math.floor(currentHealth)) : Utils.formatHealthM(currentHealth);
 
 		// Update title with current health
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + (int) Math.floor(currentHealth) + "/" + (int) maxHealth;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + healthStr;
 
 		activeWitherBossBar.setTitle(title);
 

@@ -16,6 +16,8 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.util.Vector;
+import plugin.M7tas;
+import plugin.Utils;
 
 public class MiscListener implements Listener {
 	@EventHandler
@@ -55,10 +57,22 @@ public class MiscListener implements Listener {
 				if(arrow.getScoreboardTags().contains("TerminatorArrow")) {
 					arrow.remove();
 				}
-			} else {
-				// Handle arrows hitting entities - prevent self-hits
-				if(e.getHitEntity() instanceof Player player && arrow.getShooter() instanceof Player shooter && player.equals(shooter)) {
+			} else if(e.getHitEntity() instanceof LivingEntity hitEntity) {
+				// Phase through fake players and self
+				if(hitEntity instanceof Player player && (M7tas.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
 					e.setCancelled(true);
+				}
+				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually
+				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p) {
+					e.setCancelled(true);
+					hitEntity.setNoDamageTicks(0);
+					hitEntity.damage(arrow.getDamage());
+					hitEntity.setNoDamageTicks(0);
+					p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
+					Utils.changeName(hitEntity);
+					int newPierce = arrow.getPierceLevel() - 1;
+					if(newPierce <= 0) arrow.remove();
+					else arrow.setPierceLevel(newPierce);
 				}
 			}
 		} else if(e.getEntity() instanceof WindCharge windCharge && windCharge.getScoreboardTags().contains("Bonzo")) {
