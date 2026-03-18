@@ -30,7 +30,7 @@ public class PearlHelper implements Listener {
 			e.setCancelled(true);
 			Location l = pearl.getLocation();
 			l.setX(Math.floor(l.getX()) + 0.5);
-			l.setY(Math.ceil(l.getY()) + 1);
+			l.setY(Math.ceil(l.getY()));
 			l.setZ(Math.floor(l.getZ()) + 0.5);
 			l.setYaw(p.getLocation().getYaw());
 			l.setPitch(p.getLocation().getPitch());

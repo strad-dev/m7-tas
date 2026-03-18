@@ -233,7 +233,7 @@ public class Watcher {
 	}
 
 	private static void createWatcherBossBar() {
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 19 + "/" + 19;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + 19;
 
 		watcherBossBar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SOLID);
 		watcherBossBar.setProgress(1.0);
@@ -252,7 +252,7 @@ public class Watcher {
 		int mobsRemaining = 19 - mobsKilled;
 		double progress = mobsRemaining / 19.0;
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + mobsRemaining + "/" + 19;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + mobsRemaining;
 
 		watcherBossBar.setTitle(title);
 		watcherBossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));

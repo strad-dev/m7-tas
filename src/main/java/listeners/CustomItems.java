@@ -140,9 +140,6 @@ public class CustomItems implements Listener {
 		}
 		if(e.getDamager() instanceof Player p && !M7tas.getFakePlayers().containsValue(p)) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
-		} else if(e.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player p && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
-			entity.setNoDamageTicks(0);
-			p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		}
 	}
 
