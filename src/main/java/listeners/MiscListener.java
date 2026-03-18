@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.util.Vector;
 
 public class MiscListener implements Listener {
@@ -91,6 +92,13 @@ public class MiscListener implements Listener {
 					p.setVelocity(direction);
 				}
 			}
+		}
+	}
+
+	@EventHandler
+	public void onPlayerPickupArrow(PlayerPickupArrowEvent e) {
+		if(e.getArrow().getScoreboardTags().contains("TerminatorArrow")) {
+			e.setCancelled(true);
 		}
 	}
 

@@ -1,6 +1,7 @@
 package listeners;
 
 import commands.Spectate;
+import instructions.Server;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
@@ -8,7 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
-import instructions.Server;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -141,9 +141,7 @@ public class CustomItems implements Listener {
 		if(e.getDamager() instanceof Player p && !M7tas.getFakePlayers().containsValue(p)) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		} else if(e.getDamager() instanceof Arrow arrow && arrow.getShooter() instanceof Player p && arrow.getScoreboardTags().contains("TerminatorArrow") && e.getEntity() instanceof LivingEntity entity) {
-			e.setCancelled(true);
 			entity.setNoDamageTicks(0);
-			entity.damage(arrow.getDamage());
 			p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		}
 	}
@@ -1570,7 +1568,7 @@ public class CustomItems implements Listener {
 	}
 
 	public static void guidedSheep(Player p) {
-		Location spawnLoc = p.getEyeLocation();
+		Location spawnLoc = p.getEyeLocation().add(0, -0.65, 0);
 		Vector direction = spawnLoc.getDirection().normalize();
 		double speed = 1; // blocks/tick
 
@@ -1579,6 +1577,7 @@ public class CustomItems implements Listener {
 		sheep.setGravity(false);
 		sheep.setInvulnerable(true);
 		sheep.setSilent(true);
+		sheep.setColor(DyeColor.WHITE);
 		sheep.setCustomName(null);
 		sheep.setCustomNameVisible(false);
 		sheep.setCollidable(false);
