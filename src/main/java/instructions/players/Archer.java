@@ -157,7 +157,7 @@ public class Archer {
 			Actions.turnHead(archer, 0f, 0f);
 			Actions.move(archer, "P", 0);
 		}, 54);
-		Utils.scheduleTask(() -> Actions.dropItem(archer),55); // blow up crypt | arrows land in 3 ticks
+		Utils.scheduleTask(() -> Actions.dropItem(archer, true),55); // blow up crypt | arrows land in 3 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 45.1f, 4.2f);
 			Actions.move(archer, "N", 0);
