@@ -624,6 +624,7 @@ public class Actions {
 		teleport(p, targetLoc);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
+		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " leaped to " + target.getName() + " at " + targetLoc.getBlockX() + " " + targetLoc.getBlockY() + " " + targetLoc.getBlockZ());
 	}
 
 	public static void mimicChest(Player p, Block b) {
