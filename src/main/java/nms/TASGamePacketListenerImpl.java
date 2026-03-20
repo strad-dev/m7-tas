@@ -254,24 +254,15 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 				return;
 			case DROP_ITEM:
 				if(!this.player.isSpectator()) {
-					// Paper changes return type to boolean; call via reflection to avoid descriptor mismatch
-					try {
-						java.lang.reflect.Method dropMethod = net.minecraft.server.level.ServerPlayer.class.getMethod("drop", boolean.class);
-						dropMethod.invoke(this.player, false);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+					CustomItems.handleDrop(this.player.getBukkitEntity(), true);
+					this.player.getBukkitEntity().updateInventory();
 				}
 
 				return;
 			case DROP_ALL_ITEMS:
 				if(!this.player.isSpectator()) {
-					try {
-						java.lang.reflect.Method dropMethod = net.minecraft.server.level.ServerPlayer.class.getMethod("drop", boolean.class);
-						dropMethod.invoke(this.player, true);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+					CustomItems.handleDrop(this.player.getBukkitEntity(), false);
+					this.player.getBukkitEntity().updateInventory();
 				}
 
 				return;

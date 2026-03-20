@@ -193,7 +193,7 @@ public class Archer {
 			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
 		}, 68); // wither impact, kill bat
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, 74f, 60f);
+			Actions.turnHead(archer, 74f, 59f);
 			Actions.setHotbarSlot(archer, 1);
 		}, 69);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 70); // etherwarp down

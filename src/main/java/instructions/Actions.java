@@ -396,8 +396,10 @@ public class Actions {
 		Utils.simulatePacket(p, packet);
 	}
 
-	public static void dropItem(Player p) {
-		ServerboundPlayerActionPacket.Action action = p.isSprinting() ? ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS : ServerboundPlayerActionPacket.Action.DROP_ITEM;
+	public static void dropItem(Player p, boolean dropAll) {
+		ServerboundPlayerActionPacket.Action action = dropAll
+			? ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS
+			: ServerboundPlayerActionPacket.Action.DROP_ITEM;
 		ServerPlayer sp = ((CraftPlayer) p).getHandle();
 		ServerboundPlayerActionPacket packet = new ServerboundPlayerActionPacket(action, sp.blockPosition(), Direction.DOWN, 0);
 		Utils.simulatePacket(p, packet);
