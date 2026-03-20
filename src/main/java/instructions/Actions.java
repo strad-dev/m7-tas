@@ -603,7 +603,8 @@ public class Actions {
 		zombie.setAI(false);
 		zombie.setSilent(true);
 		zombie.setAdult();
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
 		zombie.setHealth(1);
 
@@ -638,7 +639,8 @@ public class Actions {
 		zombie.setAI(false);
 		zombie.setSilent(true);
 		zombie.setBaby();
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(2);
 		zombie.setHealth(2);
 

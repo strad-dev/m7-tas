@@ -157,7 +157,7 @@ public class CustomItems implements Listener {
 	public void onBlockDamage(BlockDamageEvent e) {
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			e.setInstaBreak(true);
-			stonk(e.getBlock());
+			stonk(e.getPlayer(), e.getBlock());
 		}
 	}
 
@@ -361,7 +361,12 @@ public class CustomItems implements Listener {
 		double damage = 0;
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
-				entity1.damage(1);
+				CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
+				net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+				ServerLevel level = (ServerLevel) nmsEntity.level();
+				nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 1);
+				entity1.setNoDamageTicks(0);
+				Utils.changeName(entity1);
 				damaged += 1;
 				damage += 1;
 			}
@@ -896,11 +901,11 @@ public class CustomItems implements Listener {
 		}, 40);
 	}
 
-	public static void stonk(Block b) {
+	public static void stonk(Player p, Block b) {
 		// Capture block data
 		Material m = b.getType();
 		BlockData data = b.getBlockData().clone();
-		Utils.debug(Utils.DebugType.SERVER, "Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
+		Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
 
 		// Schedule restoration with Java's scheduler
 		Utils.scheduleTask(() -> {
@@ -966,7 +971,12 @@ public class CustomItems implements Listener {
 			for(Entity entity : entities) {
 				if(!damagedEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 					damagedEntities.add(entity);
-					entity1.damage(2.5 + add);
+					CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
+					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+					ServerLevel level = (ServerLevel) nmsEntity.level();
+					nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), (float) (2.5 + add));
+					entity1.setNoDamageTicks(0);
+					Utils.changeName(entity1);
 					pierce--;
 				}
 			}
@@ -1054,7 +1064,12 @@ public class CustomItems implements Listener {
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
-				entity1.damage(1);
+				CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
+				net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+				ServerLevel level = (ServerLevel) nmsEntity.level();
+				nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 1);
+				entity1.setNoDamageTicks(0);
+				Utils.changeName(entity1);
 			}
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
@@ -1116,8 +1131,13 @@ public class CustomItems implements Listener {
 				List<EntityType> doNotKill = doNotKill();
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
 					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
-						// Deal 1 damage using Bukkit damage event
-						entity1.damage(1);
+						// Deal 1 damage using NMS
+						CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
+						net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+						ServerLevel level = (ServerLevel) nmsEntity.level();
+						nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 1);
+						entity1.setNoDamageTicks(0);
+						Utils.changeName(entity1);
 						hitEntities.add(entity);
 					}
 				}
