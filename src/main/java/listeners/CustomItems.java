@@ -22,6 +22,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
@@ -157,6 +158,14 @@ public class CustomItems implements Listener {
 	public void onBlockDamage(BlockDamageEvent e) {
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			e.setInstaBreak(true);
+			stonk(e.getPlayer(), e.getBlock());
+		}
+	}
+
+	@EventHandler
+	public void onBlockBreak(BlockBreakEvent e) {
+		if(e.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE
+				&& getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			stonk(e.getPlayer(), e.getBlock());
 		}
 	}
