@@ -2,7 +2,9 @@ package nms;
 
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import commands.Spectate;
 import listeners.CustomItems;
+import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -17,6 +19,11 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+		if(msg instanceof ServerboundMovePlayerPacket) {
+			if(Spectate.getSpectatorMap().containsKey(player)) {
+				return; // silently drop — don't forward to server
+			}
+		}
 		if(msg instanceof ServerboundPlayerActionPacket pkt) {
 			var action = pkt.getAction();
 			if(action == ServerboundPlayerActionPacket.Action.DROP_ITEM) {

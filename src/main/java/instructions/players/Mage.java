@@ -298,7 +298,10 @@ public class Mage {
 		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ╚██████╗██║  ██║██║ ╚═╝ ██║██║
 		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝      ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 		 */
-		Utils.scheduleTask(Server::openBloodDoor, 353);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Server.openBloodDoor();
+		}, 353);
 		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 374);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 375);
 		Utils.scheduleTask(() -> snapHead("Bonzo"), 376);

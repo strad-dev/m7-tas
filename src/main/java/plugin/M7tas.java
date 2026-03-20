@@ -560,6 +560,10 @@ public final class M7tas extends JavaPlugin {
 		Tank.tankInstructions(fakePlayers.get("Mage2"), section);
 
 		Server.serverInstructions(world, section);
+
+		// Restart spectator sync so it runs AFTER all instruction tasks in each tick
+		Spectate.stopSpectatorSync();
+		Spectate.startSpectatorSync();
 	}
 
 	public static Plugin getInstance() {

@@ -22,6 +22,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -38,7 +39,7 @@ public class Spectate implements CommandExecutor {
 	private static final HashMap<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
 	private static BukkitRunnable spectatorSyncTask;
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
 			sender.sendMessage("Only players can run this");
 			return true;
@@ -138,10 +139,16 @@ public class Spectate implements CommandExecutor {
 		return reverseSpectatorMap.getOrDefault(player, new HashSet<>());
 	}
 
+	/**
+	 * @return the map of which real Player is spectating which fake Player.
+	 */
 	public static Map<Player, Player> getSpectatorMap() {
 		return spectatorMap;
 	}
 
+	/**
+	 * @return the map of which real Players are spectating each fake Player
+	 */
 	public static Map<Player, Set<Player>> getReverseSpectatorMap() {
 		return reverseSpectatorMap;
 	}
@@ -260,6 +267,10 @@ public class Spectate implements CommandExecutor {
 
 						// Send position and rotation
 						nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
+
+						// Sync velocity so client predicts movement correctly between position snaps
+						nmsSpectator.setDeltaMovement(nmsFake.getDeltaMovement());
+						nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), nmsFake.getDeltaMovement()));
 
 						// Keep fake player hidden
 						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
