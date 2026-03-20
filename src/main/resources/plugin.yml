@@ -25,6 +25,9 @@ commands:
   getcustomitems:
     description: Get custom items
     usage: /getcustomitems
+  relight:
+    description: Force relight all loaded chunks
+    usage: /relight
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>
