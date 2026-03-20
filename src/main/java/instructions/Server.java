@@ -134,8 +134,8 @@ public class Server {
 			zombie.setAdult();
 			zombie.setPersistent(true);
 			zombie.setRemoveWhenFarAway(false);
-			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
-			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-8);
+			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(healthValues[i]);
 			zombie.setHealth(healthValues[i]);
 
@@ -162,7 +162,8 @@ public class Server {
 		yellowShadowAssassin.setAdult();
 		yellowShadowAssassin.setPersistent(true);
 		yellowShadowAssassin.setRemoveWhenFarAway(false);
-		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-3);
+		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 		yellowShadowAssassin.setHealth(30);
 
@@ -265,7 +266,8 @@ public class Server {
 		zombie.setCustomNameVisible(true);
 		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
 		zombie.setHealth(1);
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
 		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET
@@ -384,7 +386,8 @@ public class Server {
 		}
 
 		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "" + (health * 2) + "M");
-		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-defense);
+		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 
 		if(weapon != Material.AIR) {
 			assert mob.getEquipment() != null;

@@ -92,7 +92,9 @@ public class Watcher {
 			watcher.getEquipment().setItemInOffHand(new ItemStack(Material.AIR));
 			watcher.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255, false, false));
 			watcher.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 255, false, false));
-			Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
+			Objects.requireNonNull(watcher.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+		Objects.requireNonNull(watcher.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
+		Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
 
 			// Create the boss bar
 			createWatcherBossBar();
@@ -365,7 +367,16 @@ public class Watcher {
 					if(entity.equals(watcher)) {
 						Vector lookVec = ORIGINAL_POSITION.toVector().subtract(end.toVector());
 						if(lookVec.lengthSquared() < 1e-6) {
-							lookVec = new Vector(0, 0, 1);
+							// At ORIGINAL_POSITION: preserve its yaw/pitch
+							Location finalLoc2 = end.clone();
+							finalLoc2.setYaw(ORIGINAL_POSITION.getYaw());
+							finalLoc2.setPitch(ORIGINAL_POSITION.getPitch());
+							watcher.teleport(finalLoc2);
+							if(onComplete != null) {
+								onComplete.run();
+							}
+							cancel();
+							return;
 						} else {
 							lookVec.normalize();
 						}
@@ -407,7 +418,8 @@ public class Watcher {
 
 		if(mobName.equals("Diamante Giant")) {
 			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "80M");
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-22);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			mob.setHealth(40);
 			Objects.requireNonNull(mob.getAttribute(Attribute.SCALE)).setBaseValue(6);
@@ -418,13 +430,15 @@ public class Watcher {
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
 			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "60M");
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-2);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 			mob.setHealth(30);
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
 			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "24M");
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-12);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(12);
 			mob.setHealth(12);
 			Objects.requireNonNull(mob.getEquipment()).setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));

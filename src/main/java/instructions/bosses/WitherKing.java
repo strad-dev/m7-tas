@@ -70,7 +70,8 @@ public class WitherKing {
 			witherKing.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + ChatColor.MAGIC + "Wither-King" + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + 5);
 			witherKing.setCustomNameVisible(true);
 			witherKing.getAttribute(Attribute.MAX_HEALTH).setBaseValue(5);
-			witherKing.getAttribute(Attribute.ARMOR).setBaseValue(0);
+			witherKing.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+		witherKing.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			witherKing.getAttribute(Attribute.SCALE).setBaseValue(4);
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");

@@ -60,7 +60,8 @@ public class Storm {
 		storm.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1000M");
 		storm.setCustomNameVisible(true);
 		storm.getAttribute(Attribute.MAX_HEALTH).setBaseValue(500);
-		storm.getAttribute(Attribute.ARMOR).setBaseValue(0);
+		storm.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+		storm.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 		storm.setHealth(500);
 		storm.addScoreboardTag("TASWither");
 		Actions.setWitherArmor(storm, true);
@@ -199,6 +200,8 @@ public class Storm {
 				// Set health to 3 HP
 				miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(3.0);
 				miner.setHealth(3.0);
+				miner.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+				miner.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 
 				// Give stone pickaxe
 				miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
@@ -234,6 +237,8 @@ public class Storm {
 			// Set health to 3 HP
 			sentry.getAttribute(Attribute.MAX_HEALTH).setBaseValue(3.0);
 			sentry.setHealth(3.0);
+			sentry.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+			sentry.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			sentry.setAI(false);
 
 			// Give stone pickaxe
@@ -272,7 +277,8 @@ public class Storm {
 			shadowAssassin.setAdult();
 			shadowAssassin.setPersistent(true);
 			shadowAssassin.setRemoveWhenFarAway(false);
-			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-3);
+			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
+			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(15);
 			shadowAssassin.setHealth(15);
 

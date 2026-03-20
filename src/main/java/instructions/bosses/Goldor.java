@@ -40,7 +40,8 @@ public class Goldor {
 		goldor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Goldor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1200M");
 		goldor.setCustomNameVisible(true);
 		goldor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(600);
-		goldor.getAttribute(Attribute.ARMOR).setBaseValue(0);
+		goldor.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+		goldor.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 		goldor.setHealth(600);
 		goldor.addScoreboardTag("TASWither");
 		Actions.setWitherArmor(goldor, true);

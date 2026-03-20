@@ -51,7 +51,8 @@ public class Maxor {
 		maxor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Maxor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "800M");
 		maxor.setCustomNameVisible(true);
 		maxor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(400);
-		maxor.getAttribute(Attribute.ARMOR).setBaseValue(0);
+		maxor.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+		maxor.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 		maxor.setHealth(400);
 		maxor.addScoreboardTag("TASWither");
 		Actions.setWitherArmor(maxor, true);
@@ -181,6 +182,8 @@ public class Maxor {
 			// Set health to 3 HP
 			miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(3.0);
 			miner.setHealth(3.0);
+			miner.getAttribute(Attribute.ARMOR).setBaseValue(-30);
+			miner.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			miner.setAI(false);
 
 			// Give stone pickaxe

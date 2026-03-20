@@ -163,7 +163,7 @@ public class Mage {
 			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
 		}, 73);
-		// tick 73: pearl lands
+		// tick 77: pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 78); // reposition
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 79);
 		Utils.scheduleTask(() -> {
@@ -184,6 +184,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 84); // pearl towards crypts | lands in 7 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -138f, -60f);
+			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
 		}, 85);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 86); // etherwarp to top compartment
@@ -263,7 +264,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -90f, 18f);
 			Actions.setHotbarSlot(mage, 3);
-			Actions.move(mage, "SP", 1);
+			Actions.move(mage, "WP", 1);
 		}, 114); // walk forward to reposition
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
@@ -276,7 +277,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 77f, 14f);
 			Actions.setHotbarSlot(mage, 1);
-			Actions.move(mage, "N", 0);
+			Actions.move(mage, "N", 6);
 		}, 117); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 118); // etherwarp back towards blood
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 124f, 3f), 119);
