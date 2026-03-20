@@ -114,7 +114,7 @@ public class Storm {
 		}, 545);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(storm, 7.1f, 35.6f);
-			Actions.move(storm, new Vector(-0.0735, -0.375, 0.59), 19);
+			Actions.forceMove(storm, new Vector(-0.0735, -0.375, 0.59), 19);
 		}, 665);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
@@ -132,7 +132,7 @@ public class Storm {
 				player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
 			}
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
-			Actions.move(storm, new Vector(-0.6, -0.02, 0), 90);
+			Actions.forceMove(storm, new Vector(-0.6, -0.02, 0), 90);
 		}, 694);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
@@ -165,18 +165,18 @@ public class Storm {
 
 	private static void initialMovement() {
 		Actions.turnHead(storm, 45f, 0f);
-		Actions.move(storm, new Vector(-0.29, 0, 0.29), 100);
+		Actions.forceMove(storm, new Vector(-0.29, 0, 0.29), 100);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(storm, 135f, 0f);
-			Actions.move(storm, new Vector(-0.29, 0, -0.29), 100);
+			Actions.forceMove(storm, new Vector(-0.29, 0, -0.29), 100);
 		}, 100);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(storm, -135f, 0f);
-			Actions.move(storm, new Vector(0.29, 0, -0.29), 100);
+			Actions.forceMove(storm, new Vector(0.29, 0, -0.29), 100);
 		}, 200);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(storm, -45f, 0f);
-			Actions.move(storm, new Vector(0.29, 0, 0.29), 100);
+			Actions.forceMove(storm, new Vector(0.29, 0, 0.29), 100);
 		}, 300);
 	}
 

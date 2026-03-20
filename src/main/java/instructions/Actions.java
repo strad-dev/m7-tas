@@ -55,16 +55,16 @@ public class Actions {
 	/**
 	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
 	 *
-	 * @param player        The Player sending movement packets
+	 * @param entity        The LivingEntity sending movement packets
 	 * @param input         The input keys being held down<br>Valid Input contains the following characters: W, A, S, D, J, P, N<br>WASD: movement<br>J: Jump<br>P: sPrint<br>N: sNeak
 	 * @param durationTicks How long the keys are held down for, or 0 for manual override<br>NOTE: Jumping will NOT be held down if duration is 0
 	 */
-	public static void move(Player player, String input, int durationTicks) {
+	public static void move(LivingEntity entity, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
-		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " moving " + input + " for " + durationTicks);
-		if(!(player instanceof CraftPlayer craftPlayer)) return;
+		Utils.debug(Utils.DebugType.CLIENT, entity.getName() + " moving " + input + " for " + durationTicks);
+		if(!(entity instanceof CraftLivingEntity craftEntity)) return;
 
-		ServerPlayer serverPlayer = craftPlayer.getHandle();
+		net.minecraft.world.entity.LivingEntity serverPlayer = craftEntity.getHandle();
 		if(input.contains("A") && input.contains("D")) {
 			serverPlayer.xxa = 0.0F;
 		} else {
@@ -107,7 +107,7 @@ public class Actions {
 		}
 		if(durationTicks > 0) {
 			Utils.scheduleTask(() -> {
-				if(player.isValid()) {
+				if(entity.isValid()) {
 					serverPlayer.xxa = 0.0F;
 					serverPlayer.zza = 0.0F;
 					serverPlayer.setSprinting(false);
@@ -125,7 +125,7 @@ public class Actions {
 	 * @param perTick       The distance to move per tick
 	 * @param durationTicks Number of ticks to move
 	 */
-	public static void move(LivingEntity entity, Vector perTick, int durationTicks) {
+	public static void forceMove(LivingEntity entity, Vector perTick, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
 		if(!(entity instanceof CraftLivingEntity cle) || durationTicks <= 0) return;
 
@@ -1329,14 +1329,14 @@ public class Actions {
 				tickCount++;
 
 				if(firstTick) {
-					move(p, v, 1);
+					forceMove(p, v, 1);
 					firstTick = false;
 				} else {
 					if(nmsEntity.onGround()) {
 						cancel();
 						return;
 					}
-					move(p, impulseVector, 1);
+					forceMove(p, impulseVector, 1);
 				}
 			}
 		};

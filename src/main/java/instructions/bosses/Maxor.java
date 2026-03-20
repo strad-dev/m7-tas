@@ -65,7 +65,7 @@ public class Maxor {
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
-			Actions.move(maxor, new Vector(0, 0, 0.5), 38);
+			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
@@ -95,7 +95,7 @@ public class Maxor {
 				player.sendTitle("", ChatColor.RED + "⚠ Maxor is enraged! ⚠", 0, 40, 0);
 			}
 			Actions.turnHead(maxor, 0f, 30f);
-			Actions.move(maxor, new Vector(0, 0, 0.5), 4);
+			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 4);
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		}, 358);
 		Utils.scheduleTask(() -> {

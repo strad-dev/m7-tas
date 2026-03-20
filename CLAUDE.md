@@ -24,7 +24,7 @@ In the current refactor, the classes Healer.java and Tank.java are cosplaying th
 - All interactions EXCEPT movement are driven by crafting and processing serverbound packets. Movement is simulated by setting the player's movement variables directly.
 
 ### Movement Input
-- `Actions.move(Player, String input, int ticks)` sets NMS movement fields directly for the given number of ticks, or forever if set to 0 ticks
+- `Actions.move(LivingEntity, String input, int ticks)` sets NMS movement fields directly for the given number of ticks, or forever if set to 0 ticks
 - Input string characters: `W`/`A`/`S`/`D` for direction, `J` to jump (sets `setJumping(true)` each tick while grounded), `P` for sprint (only applied when `W` is held and neither `S` nor `N` is present), `N` for sneak (also multiplies `xxa`/`zza` by 0.3)
 - Opposing directions cancel each other (e.g. `W`+`S` → `zza = 0`)
 
