@@ -254,13 +254,13 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 				return;
 			case DROP_ITEM:
 				if(!this.player.isSpectator()) {
-					this.player.drop(false);
+					this.player.dropItem(false);
 				}
 
 				return;
 			case DROP_ALL_ITEMS:
 				if(!this.player.isSpectator()) {
-					this.player.drop(true);
+					this.player.dropItem(true);
 				}
 
 				return;
