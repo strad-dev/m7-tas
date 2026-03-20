@@ -136,7 +136,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 60);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 3);
-			Actions.dropItem(mage);
+			Actions.dropItem(mage, true);
 		}, 61); // blow up wall with Guided Sheep | cooldown for 255 ticks
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 4, 31);
