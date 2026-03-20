@@ -22,7 +22,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.*;
@@ -154,8 +154,9 @@ public class CustomItems implements Listener {
 	}
 
 	@EventHandler
-	public void onBlockBreak(BlockBreakEvent e) {
+	public void onBlockDamage(BlockDamageEvent e) {
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
+			e.setInstaBreak(true);
 			stonk(e.getBlock());
 		}
 	}
@@ -274,7 +275,9 @@ public class CustomItems implements Listener {
 			String id = getID(item);
 			if(item != null && id != null && id.startsWith("skyblock/")) {
 				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
-				if(e != null && (action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK))) {
+				// Skip for items without right-click abilities
+				if(e != null && (action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK))
+						&& !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker")) {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {

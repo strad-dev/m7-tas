@@ -151,7 +151,7 @@ public class Healer {
 			Actions.move(healer, "N", 1);
 			Actions.setHotbarSlot(healer, 1);
 		}, 13);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 14); // etherwarp into compartment with crystal
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 14); // pearl lands, etherwarp into compartment with crystal
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 28f, 7f), 15);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 16); // teleport to crystal
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 45f, 45f), 17);
@@ -174,7 +174,7 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 1/4 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 26); // obtain secret 1/4
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -139f, 2.5f), 27); // pearl lands tick 27
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -139f, 2.5f), 27); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 28); // etherwarp towards bat
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -149.7f, 17.5f);
@@ -202,7 +202,7 @@ public class Healer {
 			Actions.turnHead(healer, -180f, -14.5f);
 			Actions.move(healer, "S", 1);
 		}, 37);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 38); // throw pearl to correct spot for well | lands in 26 (?) ticks
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 38); // pearl to correct spot for well | lands in 26 ticks
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.turnHead(healer, 180f, 0.97f);
@@ -213,12 +213,12 @@ public class Healer {
 			Actions.turnHead(healer, 91f, -68f);
 			Actions.setHotbarSlot(healer, 7);
 		}, 41);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 42); // throw pearl to dig spot | lands in 4 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 42); // pearl to dig spot | lands in 4 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, 0f);
 			Actions.setHotbarSlot(healer, 5);
 		}, 43);
-		// pearl lands tick 46
+		// tick 46: pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Actions.move(healer, "WP", 0);
@@ -268,7 +268,7 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 4/4 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 63);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -92f, 1f), 64);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -92f, 1f), 64); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 65); // etherwarp into well
 		// Wizard: 65 ticks
 
@@ -356,7 +356,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -11f, 8f);
 			Actions.move(healer, "N", 2);
-		}, 96);
+		}, 96); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 97); // etherwarp to wall
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -90f, -50f);
@@ -371,7 +371,7 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 6/7 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 102);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -45f, 0f), 103);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -45f, 0f), 103); // pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well Cleared");
@@ -387,7 +387,7 @@ public class Healer {
 			Actions.turnHead(healer, 59f, 7f);
 			Actions.setHotbarSlot(healer, 7);
 		}, 107);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 108); // throw pearl to ice fill
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 108); // throw pearl to ice fill | lands in 9 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 68f);
 			Actions.move(healer, "N", 0);
@@ -407,7 +407,7 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well 7/7 (Picked Up Item)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
 		}, 116);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 106f, 6f), 117);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 106f, 6f), 117); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 118); // etherwarp into ice fill
 		// Well: 53 ticks
 
