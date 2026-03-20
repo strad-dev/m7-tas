@@ -94,6 +94,10 @@ public class Simulate implements CommandExecutor {
 					return true;
 				}
 				Player applyTo = M7tas.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				if(applyTo == null) {
+					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
+					return true;
+				}
 				if(args.length < 3) {
 					p.sendMessage(ChatColor.RED + "Please specify which keys are held down");
 					return true;

@@ -11,6 +11,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
@@ -626,7 +627,9 @@ public class Actions {
 	}
 
 	public static void mimicChest(Player p, Block b) {
-		stonk(p, b);
+		BlockData originalData = b.getBlockData().clone();
+		org.bukkit.block.BlockState originalState = b.getState();
+		b.setType(Material.AIR);
 
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
 		zombie.setCustomName("Mimic " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + "4M");
@@ -639,6 +642,7 @@ public class Actions {
 		zombie.setHealth(2);
 
 		Utils.scheduleTask(() -> {
+			originalState.update(true, false);
 			try {
 				zombie.remove();
 			} catch(Exception exception) {

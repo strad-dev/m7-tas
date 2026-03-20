@@ -1,6 +1,7 @@
 package instructions.players;
 
 import instructions.Actions;
+import instructions.Server;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -122,130 +123,172 @@ public class Mage {
 		// tick 3: blood opens
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 4);
 		Utils.scheduleTask(() -> Actions.leap(mage, Tank.get()), 51);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -31, 15);
-//			Actions.setHotbarSlot(mage, 7);
-//		}, 30);
-//		Utils.scheduleTask(() -> Actions.throwPearl(mage), 31);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 45.1f, 6f);
-//			Actions.setHotbarSlot(mage, 1);
-//		}, 32);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -130.5, 69, -116.5)), 33);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 0f, 0f);
-//			Actions.setHotbarSlot(mage, 3);
-//		}, 34);
-//		Utils.scheduleTask(() -> Actions.superboom(mage, -131, 69, -116, -130, 72, -115), 35);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 1), 36);
-//		Utils.scheduleTask(() -> Actions.AOTV(mage, new Location(world, -130.5, 69, -111.5)), 37);
-//		Utils.scheduleTask(() -> {
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 1/6 (Obtained Item)");
-//			world.playSound(mage.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0F, 1.0F);
-//		}, 38);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -124f, -78f);
-//			Actions.setHotbarSlot(mage, 7);
-//			Actions.AOTV(mage, new Location(world, -114.535, 67, -119.218));
-//		}, 39);
-//		Utils.scheduleTask(() -> Actions.throwPearl(mage), 40);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -15.3f, -5.2f);
-//			Actions.setHotbarSlot(mage, 1);
-//		}, 41);
-//		Utils.scheduleTask(() -> Actions.AOTV(mage, new Location(world, -111.387, 69, -107.693)), 42);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 76.4f), 43);
-//		Utils.scheduleTask(() -> Actions.AOTV(mage, new Location(world, -109.5, 60, -107.5)), 44);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 171f, 18f), 45);
-//		Utils.scheduleTask(() -> Actions.AOTV(mage, new Location(world, -110.5, 60, -112.5)), 46);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(mage);
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 2/6 (Opened Chest)");
-//			world.playSound(mage.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//		}, 47);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, -90f), 48);
-//		Utils.scheduleTask(() -> Actions.AOTV(mage, new Location(world, -112.3, 78.2, -120.7)), 50);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -112.5, 81, -120.5)), 51);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 52);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(mage);
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 3/6 (Opened Chest)");
-//			world.playSound(mage.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//		}, 53);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 100.8f, 3f), 54);
-//		Utils.scheduleTask(() -> Actions.AOTV(mage, new Location(world, -124.5, 82, -122.5)), 55);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -164.2f, 12.9f), 56);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -122.5, 82, -129.5)), 57);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -90f, 4f);
-//			Actions.setHotbarSlot(mage, 7);
-//		}, 58);
-//		Utils.scheduleTask(() -> Actions.throwPearl(mage), 59);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 124.1f, -63.5f);
-//			Actions.setHotbarSlot(mage, 1);
-//		}, 60);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -125.5, 92, -131.5)), 61);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -133.7f, 39.3f), 62);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(mage);
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 4/6 (Opened Chest)");
-//			world.playSound(mage.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//		}, 63);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -90f, 60f);
-//			Actions.setHotbarSlot(mage, 0);
-//		}, 64);
-//		Utils.scheduleTask(() -> {
-//			Actions.witherImpact(mage, new Location(world, -124.5, 92, -131.5));
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmte 5/6 (Killed Bat)");
-//			world.playSound(mage.getLocation(), Sound.ENTITY_BAT_DEATH, 1.0F, 1.0F);
-//		}, 65);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -84.6f, -4.9f);
-//			Actions.setHotbarSlot(mage, 1);
-//			Actions.AOTV(mage, new Location(world, -113.923, 82, -129.565));
-//		}, 66);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -92.5, 86, -127.5)), 67);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -96.4f, 6.7f), 68);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -78.5, 86, -129.5)), 69);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 171f, 18f);
-//			Actions.setHotbarSlot(mage, 4);
-//		}, 70);
-//		Utils.scheduleTask(() -> {
-//			Actions.crypt(mage, -81, 87, -133, -83, 86, -130);
-//			Actions.crypt(mage, -76, 87, -133, -78, 86, -130);
-//		}, 71);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 124f, 0f);
-//			Actions.setHotbarSlot(mage, 3);
-//		}, 72);
-//		Utils.scheduleTask(() -> {
-//			mageBeam();
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 1/5");
-//		}, 73);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -135f, 0f), 74);
-//		Utils.scheduleTask(() -> {
-//			mageBeam();
-//			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 2/5");
-//		}, 78);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 0f, 17.8f);
-//			Actions.setHotbarSlot(mage, 1);
-//		}, 79);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -78.5, 86, -124.5)), 80);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 45f, 39.4f), 81);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -94.5, 69, -108.5)), 82);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 126.5f, 3.7f), 83);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -119.5, 69, -127.5)), 84);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 2.3f, 4.4f), 85);
-//		Utils.scheduleTask(() -> Actions.etherwarp(mage, new Location(world, -120.5, 69, -106.5)), 86);
-//		// tick 87: open inventory
-//		Utils.scheduleTask(() -> Actions.swapItems(mage, 5, 32), 88);
-//		// tick 89: close inventory
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 90);
-//
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -65f, 3f);
+			Actions.setHotbarSlot(mage, 7);
+		}, 52);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 53); // pearl to next secret | lands in 8 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 72f, -3f);
+			Actions.setHotbarSlot(mage, 1);
+		}, 54);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 55); // aotv to secret
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 56);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, "WP", 3);
+			Actions.dropItem(mage);
+		}, 57); // blow up wall with Guided Sheep | cooldown for 255 ticks
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(mage, 4, 31);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 1/6 (Obtained Item)");
+			Utils.playSecretFoundSound(mage, Utils.SecretType.ITEM);
+		}, 60);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 162f, -66f);
+			Actions.setHotbarSlot(mage, 7);
+		}, 61); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 62); // pearl to top | lands in 11 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 0f, 90f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 63);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 64); // stonk down
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 65);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 66);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 1), 67);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 68); // aotv down
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 2/6 (Opened Chest)");
+			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
+			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
+		}, 69);
+		// tick 73: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 74); // reposition
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 75);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 3/6 (Opened Chest)");
+			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
+			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
+		}, 76);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 110.2f, 0.97f);
+			Actions.move(mage, "N", 2);
+		}, 77);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 78); // etherwarp to next secret
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(mage, 7);
+			Actions.turnHead(mage, -105.5f, 4.5f);
+		}, 79);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 80); // pearl towards crypts | lands in 7 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -138f, -60f);
+			Actions.move(mage, "N", 2);
+		}, 81);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 82); // etherwarp to top compartment
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -180f, 90f);
+			Actions.setHotbarSlot(mage, 0);
+		}, 83);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 4/6 (Killed Bat)");
+			Utils.playSecretFoundSound(mage, Utils.SecretType.BAT);
+		}, 84); // kill bat
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 30f), 85);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 5/6 (Opened Chest)");
+			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
+			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
+		}, 86);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -90f, -6.5f);
+			Actions.setHotbarSlot(mage, 1);
+			Actions.move(mage, "N", 2);
+		}, 87); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 88); // etherwarp to crypts
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 30f), 89);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 90); // aotv to correct spot
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -125f, 10f);
+			Actions.setHotbarSlot(mage, 4);
+		}, 91);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 92); // blow up crypt #1
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 93);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 2/5");
+		}, 94);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 120f, 10f);
+			Actions.setHotbarSlot(mage, 4);
+		}, 95);
+		// infinityboom technically has a 17-tick cooldown with dupe mage + crow bonuses
+		// but let's assume normal superboom is being used (which has no cooldown)
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 96); // blow up crypt #2
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 97);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 3/5");
+		}, 98);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -5f, 16f);
+			Actions.setHotbarSlot(mage, 1);
+		}, 99);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 100); // aotv towards secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -110f, 67f);
+			Actions.move(mage, "N", 2);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 102); // etherwarp to gate
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 43f, -33f);
+			Actions.setHotbarSlot(mage, 7);
+		}, 103);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 104); // throw pearl out | lands in 9 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -90f, 36f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 105);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 106);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 107); // stonk gate
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -90f, -12f);
+			Actions.setHotbarSlot(mage, 1);
+			Actions.move(mage, "N", 0);
+		}, 108);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 109); // etherwarp towards chest
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -90f, 18f);
+			Actions.setHotbarSlot(mage, 3);
+			Actions.move(mage, "SP", 1);
+		}, 110); // walk forward to reposition
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Actions.mimicChest(mage, world.getBlockAt(-54, 69, -89));
+		}, 111);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(mage);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Mimic Killed!");
+		}, 112); // kill mimic
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 77f, 14f);
+			Actions.setHotbarSlot(mage, 1);
+			Actions.move(mage, "N", 0);
+		}, 113); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 114); // etherwarp back towards blood
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 124f, 3f), 115);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 116); // etherwarp opposite of blood (positioning)
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -2f, 3.5f), 117);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 118); // etherwarp to blood
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 0f, 0f);
+			Actions.setHotbarSlot(mage, 3);
+		}, 119);
+		// Deathmite: 66 ticks
+
 		/*
 		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗      ██████╗ █████╗ ███╗   ███╗██████╗
 		 * ██╔══██╗██║     ██╔═══██╗██╔═══██╗██╔══██╗    ██╔════╝██╔══██╗████╗ ████║██╔══██╗
@@ -254,30 +297,8 @@ public class Mage {
 		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ╚██████╗██║  ██║██║ ╚═╝ ██║██║
 		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝      ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 		 */
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 90f, 10f);
-			Actions.setHotbarSlot(mage, 1);
-		}, 3);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 4); // AOTV to correct spot
-//		Utils.scheduleTask(() -> Actions.rag(mage), 374);
-//		Utils.scheduleTask(Server::openBloodDoor, 415);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -12f), 416);
-		// rag axe activates on tick 434
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 435);
-//		Utils.scheduleTask(() -> {
-//			mageBeam();
-//			Actions.move(mage, new Vector(0, 0, 1.12242), 10);
-//		}, 436);
-//		Utils.scheduleTask(() -> snapHead("Bonzo"), 437);
-//		Utils.scheduleTask(Mage::mageBeam, 441);
-//		Utils.scheduleTask(() -> snapHead("Meepy_"), 442);
-//		Utils.scheduleTask(Mage::mageBeam, 446);
-//		Utils.scheduleTask(() -> snapHead("Mallyanke"), 447);
-//		Utils.scheduleTask(Mage::mageBeam, 451);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 0f, -40f);
-			Actions.setHotbarSlot(mage, 3);
-		}, 5);
+		Utils.scheduleTask(Server::openBloodDoor, 353);
+		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 374);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 375);
 		Utils.scheduleTask(() -> snapHead("Bonzo"), 376);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 380);
@@ -285,7 +306,10 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 385);
 		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 386);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 390);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -40f), 391);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, "WP", 10);
+			Actions.turnHead(mage, 0f, -31f);
+		}, 391);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 433);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 450);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 475);
@@ -305,7 +329,7 @@ public class Mage {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 661 Ticks (33.05 seconds)");
 		}, 661);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 0f, 3.4f);
+			Actions.turnHead(mage, 0f, 3.3f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
 		}, 662);
@@ -324,7 +348,8 @@ public class Mage {
 			}
 		}, 741);
 	}
-//
+
+	//
 //	public static void maxor(boolean doContinue) {
 //		Actions.setHotbarSlot(mage, 5);
 //		Actions.move(mage, new Vector(0.22, 0, 1.1), 28);
