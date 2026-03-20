@@ -152,7 +152,52 @@ public class Archer {
 		 * ╚██████╔╝██║  ██║██║  ██║ ╚████╔╝ ███████╗███████╗
 		 *  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚══════╝
 		 */
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared"), 54);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Deathmite Cleared");
+			Actions.turnHead(archer, 0f, 0f);
+			Actions.move(archer, "P", 0);
+		}, 54);
+		Utils.scheduleTask(() -> Actions.dropItem(archer),55); // blow up crypt | arrows land in 3 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 45.1f, 4.2f);
+			Actions.move(archer, "N", 0);
+		}, 56);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 57); // etherwarp into room
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -44f, 8.5f);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 1/5");
+		}, 58);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 59); // reposition for secret
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -106f, 3.3f), 60);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 61); // etherwarp to secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -90f, 7f);
+			Actions.setHotbarSlot(archer, 5);
+		}, 62);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 63);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(archer, 1);
+			Actions.leftClick(archer);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 1/6 (Opened Chest)");
+			Utils.playSecretFoundSound(archer, Utils.SecretType.CHEST);
+		}, 64);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 28.7f, -56f), 65);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 66); // etherwarp up
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -99.7f, -52.3f);
+			Actions.setHotbarSlot(archer, 0);
+		}, 67);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(archer);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
+			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
+		}, 68); // wither impact, kill bat
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 74f, 60f);
+			Actions.setHotbarSlot(archer, 1);
+		}, 69);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 70); // etherwarp down
+
 //		Utils.scheduleTask(Archer::explosiveShot, 95);
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(archer, 48.9f, 5.7f);
