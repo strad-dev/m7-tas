@@ -52,6 +52,16 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
+			case "verbose" -> {
+				if(args.length == 1) {
+					for(String val : new String[]{"true", "false"}) {
+						if(val.startsWith(args[0].toLowerCase())) {
+							completions.add(val);
+						}
+					}
+				}
+			}
+
 			case "simulate" -> {
 				if(args.length == 1) {
 					String[] simCommands = {"undo", "bonzo", "move"};
