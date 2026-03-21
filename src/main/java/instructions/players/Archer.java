@@ -353,7 +353,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 0f, 1.8f);
 			Actions.setHotbarSlot(archer, 1);
-			Actions.move(archer, "N", 0);
+			Actions.move(archer, "N", 5);
 		}, 132);
 		// tick 133: pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 134); // etherwarp back to gravel
