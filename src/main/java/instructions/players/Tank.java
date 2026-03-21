@@ -22,18 +22,6 @@ public class Tank {
 			case "all", "clear" -> {
 				Utils.teleport(tank, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preclear(section.equals("all")), 60);
-//				Utils.scheduleTask(() -> Actions.swapItems(tank, 2, 29), 60);
-//				Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 61);
-//				Utils.scheduleTask(() -> Actions.rightClick(tank), 101);
-//				Utils.scheduleTask(() -> {
-//					Actions.setHotbarSlot(Tank.tank, 1);
-//					Actions.move(tank, new Vector(-0.8634, 0, 0), 5);
-//				}, 102);
-//				Utils.scheduleTask(() -> {
-//					Utils.teleport(tank, new Location(tank.getWorld(), -120.5, 75, -220.5));
-//					Actions.swapItems(Tank.tank, 2, 29);
-//				}, 141);
-//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Utils.teleport(tank, new Location(world, 73.5, 221, 13.5, 0f, 0f));

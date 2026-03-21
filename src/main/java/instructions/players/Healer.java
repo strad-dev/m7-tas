@@ -26,18 +26,6 @@ public class Healer {
 			case "all", "clear" -> {
 				Utils.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
-//				Utils.scheduleTask(() -> Actions.swapItems(healer, 2, 29), 60);
-//				Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 2), 61);
-//				Utils.scheduleTask(() -> Actions.rightClick(healer), 101);
-//				Utils.scheduleTask(() -> {
-//					Actions.setHotbarSlot(healer, 1);
-//					Actions.move(healer, new Vector(0, 0, 0.8634), 5);
-//				}, 102);
-//				Utils.scheduleTask(() -> {
-//					Utils.teleport(healer, new Location(healer.getWorld(), -120.5, 75, -220.5));
-//					Actions.swapItems(healer, 2, 29);
-//				}, 141);
-//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
 			}
 //			case "maxor", "boss" -> {
 //				Utils.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
