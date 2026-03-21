@@ -280,7 +280,7 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 1);
 			Actions.move(archer, "N", 2);
 		}, 104);
-		Utils.scheduleTask(() -> Actions.rightClick(archer),105); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 105); // etherwarp to secret
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -163f, 49f);
 			Actions.setHotbarSlot(archer, 7);
@@ -351,11 +351,10 @@ public class Archer {
 			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
 		}, 131); // kill bat
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, 0f, 1.8f);
 			Actions.setHotbarSlot(archer, 1);
 			Actions.move(archer, "N", 5);
 		}, 132);
-		// tick 133: pearl lands
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 1.8f), 133); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 134); // etherwarp back to gravel
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 1.45f), 135);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 136); // etherwarp to quiz
@@ -574,7 +573,6 @@ public class Archer {
 //			}, 1025);
 //		}
 	}
-
 
 
 	private static final Location PARTICLE_START = new Location(null, -24.5, 85.5, -23.0);
