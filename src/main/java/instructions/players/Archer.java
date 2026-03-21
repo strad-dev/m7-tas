@@ -383,10 +383,13 @@ public class Archer {
 		Utils.scheduleTask(() -> spawnQuestion(2, "Did you know that you can sub scribe to Stradivarius Violin to                        see more content like this?!", new String[]{"Oh wow, I should sub scribe!", "Oh wow, I should sub scribe!!", "Oh wow, I should sub scribe!!!"}, options, particleStart), 376);
 		Utils.scheduleTask(() -> oruoMessage("One more question!"), 477);
 		Utils.scheduleTask(() -> spawnQuestion(3, "                             Is akc0303 bald?", new String[]{"No", "Yes", "Decline to Answer"}, options, particleStart), 517);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Quiz Cleared"), 578);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Quiz Cleared");
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear Finished in 578 Ticks (28.90 seconds)");
+		}, 578);
 		Utils.scheduleTask(() -> oruoMessage("I bestow upon you all the power of a hundred years!"), 598);
 		Utils.scheduleTask(() -> Utils.broadcastBlessing(archer, Utils.BlessingType.TIME, 5), 618);
-		// Quiz: ? ticks | 543 ticks from open | puzzle solved 503 ticks from open
+		// Quiz: 482 ticks | 543 ticks from open | puzzle solved 503 ticks from open
 
 //		/*
 //		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
