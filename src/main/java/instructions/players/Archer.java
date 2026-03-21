@@ -4,7 +4,10 @@ import instructions.Actions;
 import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.TextDisplay;
 import plugin.Utils;
 
 import java.util.Objects;
@@ -12,6 +15,87 @@ import java.util.Objects;
 public class Archer {
 	private static Player archer;
 	private static World world;
+
+	private static final Location PARTICLE_START = new Location(null, -24.5, 85.5, -23.0);
+	private static final double[][] OPTION_COORDS = {
+		{-19.5, 71.5, -33.5},
+		{-24.5, 71.5, -30.5},
+		{-29.5, 71.5, -33.5}
+	};
+
+	private static TextDisplay spawnOption(World world, Location loc, String text) {
+		TextDisplay td = (TextDisplay) world.spawnEntity(loc, EntityType.TEXT_DISPLAY);
+		td.setText(text);
+		td.setAlignment(TextDisplay.TextAlignment.CENTER);
+		td.setBillboard(Display.Billboard.CENTER);
+		return td;
+	}
+
+	private static void spawnParticleTrail(World world, Location start, Location end, int startTick) {
+		int duration = 40;
+		double dx = (end.getX() - start.getX()) / duration;
+		double dy = (end.getY() - start.getY()) / duration;
+		double dz = (end.getZ() - start.getZ()) / duration;
+		for (int i = 0; i <= duration; i++) {
+			final int tick = i;
+			Utils.scheduleTask(() -> {
+				world.spawnParticle(Particle.HAPPY_VILLAGER,
+					start.getX() + dx * tick,
+					start.getY() + dy * tick,
+					start.getZ() + dz * tick,
+					1, 0, 0, 0, 0);
+			}, startTick + i);
+		}
+	}
+
+	private static final String ORUO = ChatColor.DARK_RED + "[STATUE] Oruo the Omniscient" + ChatColor.WHITE + ": ";
+
+	private static void oruoMessage(String message, int tick) {
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ORUO + message);
+			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
+		}, tick);
+	}
+
+	private static final String[] OPTION_LABELS = {"ⓐ", "ⓑ", "ⓒ"};
+	private static final float[] OPTION_PITCHES = {0.6f, 0.7f, 0.8f};
+
+	private static void spawnQuestion(int questionNum, String questionText, String[] answers, TextDisplay[] options, Location particleStart, int startTick) {
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage("");
+			Bukkit.broadcastMessage(ChatColor.GOLD + "                                " + ChatColor.BOLD + "Question #" + questionNum);
+			Bukkit.broadcastMessage(ChatColor.GOLD + questionText);
+			Bukkit.broadcastMessage("");
+			for (int i = 0; i < 3; i++) {
+				Bukkit.broadcastMessage(ChatColor.GOLD + "     " + OPTION_LABELS[i] + " " + ChatColor.GREEN + answers[i]);
+			}
+			Bukkit.broadcastMessage("");
+			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
+		}, startTick);
+		for (int i = 0; i < 3; i++) {
+			spawnParticleTrail(world, particleStart, new Location(world, OPTION_COORDS[i][0], OPTION_COORDS[i][1], OPTION_COORDS[i][2]), startTick + i * 10);
+		}
+		for (int i = 0; i < 3; i++) {
+			final int idx = i;
+			Utils.scheduleTask(() -> {
+				options[idx] = spawnOption(world, new Location(world, OPTION_COORDS[idx][0], OPTION_COORDS[idx][1], OPTION_COORDS[idx][2]),
+					ChatColor.GOLD + OPTION_LABELS[idx] + " " + ChatColor.GREEN + answers[idx]);
+				Utils.playLocalSound(archer, Sound.ENTITY_ITEM_PICKUP, 2.0f, OPTION_PITCHES[idx]);
+			}, startTick + 40 + idx * 10);
+		}
+		answeredCorrectly(questionNum, options, startTick + 61);
+	}
+
+	private static void answeredCorrectly(int questionNum, TextDisplay[] options, int tick) {
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ORUO + ChatColor.GOLD + "akc0303 " + ChatColor.GREEN + "answered " + ChatColor.GOLD + "Question #" + questionNum + ChatColor.GREEN + " correctly!");
+			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
+			Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP, 2.0f, 0.75f);
+			options[0].remove();
+			options[1].remove();
+			options[2].remove();
+		}, tick);
+	}
 
 	public static void archerInstructions(Player p, String section) {
 		archer = p;
@@ -143,7 +227,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.dropItem(archer, true),51); // blow up crypt | arrows land in 4 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 45.1f, 4.2f);
-			Actions.move(archer, "N", 27);
+			Actions.move(archer, "N", 21);
 		}, 52);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 53); // etherwarp into room
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -44f, 8.5f), 54);
@@ -203,10 +287,14 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 180f, -12f);
 			Actions.setHotbarSlot(archer, 7);
+			oruoMessage("I am " + ChatColor.DARK_RED + "Oruo the Omniscient" + ChatColor.WHITE + ".  I have lived many lives.  I have learned all there is to know.", 0);
+			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
+			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 		}, 75);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 76); // pearl to dino | lands in 25 ticks
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, 0f, 0f);
+			Actions.turnHead(archer, 180f, 2.2f);
+			Actions.setHotbarSlot(archer, 1);
 			Actions.move(archer, "N", 2);
 		}, 77);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 78); // etherwarp towards secrets
@@ -256,8 +344,35 @@ public class Archer {
 		}, 100); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 101); // etherwarp into dino
 
-
+		/*
+		 * ██████╗ ██╗███╗   ██╗ ██████╗     ██████╗ ██╗ ██████╗     ███████╗██╗████████╗███████╗
+		 * ██╔══██╗██║████╗  ██║██╔═══██╗    ██╔══██╗██║██╔════╝     ██╔════╝██║╚══██╔══╝██╔════╝
+		 * ██║  ██║██║██╔██╗ ██║██║   ██║    ██║  ██║██║██║  ███╗    ███████╗██║   ██║   █████╗
+		 * ██║  ██║██║██║╚██╗██║██║   ██║    ██║  ██║██║██║   ██║    ╚════██║██║   ██║   ██╔══╝
+		 * ██████╔╝██║██║ ╚████║╚██████╔╝    ██████╔╝██║╚██████╔╝    ███████║██║   ██║   ███████╗
+		 * ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝     ╚═════╝ ╚═╝ ╚═════╝     ╚══════╝╚═╝   ╚═╝   ╚══════╝
+		 */
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 100f, 32f), 102);
+		oruoMessage("Though I sit stationary in this prison that is " + ChatColor.RED + "The Catacombs" + ChatColor.WHITE + ", my knowledge knows no bounds.", 115);
+		oruoMessage("Prove your knowledge by answering 3 questions and I shall reward you in ways that transcend time!", 155);
+		oruoMessage("Answer incorrectly, and your moment of ineptitude will live on for generations.", 195);
+		final TextDisplay[] options = new TextDisplay[3];
+		Location particleStart = PARTICLE_START.clone();
+		particleStart.setWorld(world);
+		spawnQuestion(1, "                      How is the run going so far?",
+			new String[]{"Alright", "Trash", "Literally tick-perfect"}, options, particleStart, 235);
+		oruoMessage("2 question left... then you will have proven your worth to me!", 336);
+		spawnQuestion(2, "Did you know that you can sub scribe to Stradivarius Violin to                        see more content like this?!",
+			new String[]{"Oh wow, I should sub scribe!", "Oh wow, I should sub scribe!!", "Oh wow, I should sub scribe!!!"}, options, particleStart, 376);
+		oruoMessage("One more question!", 477);
+		spawnQuestion(3, "                             Is akc0303 bald?",
+			new String[]{"No", "Yes", "Decline to Answer"}, options, particleStart, 517);
+		oruoMessage("I bestow upon you all the power of a hundred years!", 598);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Quiz Cleared");
+			Utils.broadcastBlessing(archer, Utils.BlessingType.TIME, 5);
+		}, 618);
+
 //		/*
 //		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
 //		 * ████╗ ████║██║   ██║██╔════╝██╔════╝██║   ██║████╗ ████║
