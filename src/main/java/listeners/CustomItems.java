@@ -1444,7 +1444,7 @@ public class CustomItems implements Listener {
 
 		// Duplex Arrow
 		Utils.scheduleTask(() -> {
-			Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 4, 0);
+			Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
 			arrow.setDamage(0.5 + add * 0.2);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(p);
@@ -1459,7 +1459,7 @@ public class CustomItems implements Listener {
 
 		if(p.getName().startsWith("Archer") || p.getScoreboardTags().contains("Archer")) {
 			Utils.scheduleTask(() -> {
-				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 4, 0);
+				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
 				arrow.setDamage(2.5 + add);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(p);
@@ -1473,7 +1473,7 @@ public class CustomItems implements Listener {
 			}, 5);
 
 			Utils.scheduleTask(() -> {
-				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 4, 0);
+				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
 				arrow.setDamage(2.5 + add);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(p);
@@ -1643,7 +1643,7 @@ public class CustomItems implements Listener {
 				Location eyeLoc = p.getEyeLocation();
 				Vector dir = eyeLoc.getDirection().normalize();
 				Location spawnLoc = eyeLoc.add(0, -0.1, 0);
-				double speed = 2.5;
+				double speed = 2;
 
 				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 				nmsArrow.setPos(spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ());

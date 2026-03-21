@@ -288,7 +288,7 @@ public class Mage {
 			Actions.turnHead(mage, 0f, 0f);
 			Actions.setHotbarSlot(mage, 3);
 		}, 118);
-		// Deathmite: 66 ticks
+		// Deathmite: 68 ticks
 
 		/*
 		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗      ██████╗ █████╗ ███╗   ███╗██████╗
