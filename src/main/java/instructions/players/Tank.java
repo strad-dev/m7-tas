@@ -144,7 +144,7 @@ public class Tank {
 			Actions.move(tank, "N", 0);
 		}, 50);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 51); // etherwarp into museum
-		// blood rush: 51 ticks
+		// Blood Rush: 51 ticks
 
 		/*
 		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗

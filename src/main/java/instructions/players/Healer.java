@@ -172,6 +172,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 1/4 (Opened Chest)");
+			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 2);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 26); // obtain secret 1/4
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -139f, 2.5f), 27); // pearl lands
@@ -266,6 +267,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Wizard 4/4 (Opened Chest)");
+			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 1);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 63);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -92f, 1f), 64); // pearl lands
