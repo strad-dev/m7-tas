@@ -7,7 +7,6 @@ import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -164,8 +163,7 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
-		if(e.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE
-				&& getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
+		if(e.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE && getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			stonk(e.getPlayer(), e.getBlock());
 		}
 	}
@@ -186,8 +184,7 @@ public class CustomItems implements Listener {
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
 		boolean ultimate = !p.isSprinting();
-		boolean isClassPlayer = p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")
-				|| p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
+		boolean isClassPlayer = p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer") || p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
 		if(!isClassPlayer) return;
 		e.setCancelled(true);
 		if(!M7tas.getFakePlayers().containsValue(p)) return;
@@ -285,8 +282,8 @@ public class CustomItems implements Listener {
 			if(item != null && id != null && id.startsWith("skyblock/")) {
 				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
 				// Skip for items without right-click abilities
-				if(e != null && (action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK))
-						&& !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker")) {
+				boolean isRightClick = action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK);
+				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker")) {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
@@ -306,7 +303,7 @@ public class CustomItems implements Listener {
 						}
 					}
 				}
-				if(action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK)) {
+				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
 					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || M7tas.getFakePlayers().containsValue(p)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
@@ -790,11 +787,11 @@ public class CustomItems implements Listener {
 		if(slabBlocks.size() != expectedSize) return false;
 		Set<Long> slabPositions = new HashSet<>();
 		for(Block b : slabBlocks) {
-			slabPositions.add(((long)(b.getX() - minX)) * 10000 + (b.getZ() - minZ));
+			slabPositions.add(((long) (b.getX() - minX)) * 10000 + (b.getZ() - minZ));
 		}
 		for(int x = minX; x <= maxX; x++) {
 			for(int z = minZ; z <= maxZ; z++) {
-				if(!slabPositions.contains(((long)(x - minX)) * 10000 + (z - minZ))) return false;
+				if(!slabPositions.contains(((long) (x - minX)) * 10000 + (z - minZ))) return false;
 			}
 		}
 
@@ -860,9 +857,7 @@ public class CustomItems implements Listener {
 				for(int dz = -1; dz <= 1; dz++) {
 					Block b = world.getBlockAt(cx + dx, cy + dy, cz + dz);
 					Material type = b.getType();
-					if((type == Material.SMOOTH_STONE_SLAB || type == Material.GOLD_BLOCK
-							|| type == Material.STONE_BRICK_STAIRS || type == Material.CRACKED_STONE_BRICKS)
-							&& visited.add(b)) {
+					if((type == Material.SMOOTH_STONE_SLAB || type == Material.GOLD_BLOCK || type == Material.STONE_BRICK_STAIRS || type == Material.CRACKED_STONE_BRICKS) && visited.add(b)) {
 						triggerSuperboomAt(b, p);
 					}
 				}
@@ -872,9 +867,7 @@ public class CustomItems implements Listener {
 
 	public static void triggerSuperboomAt(Block block, Player p) {
 		// 1. Try crypt
-		if(block.getType() == Material.SMOOTH_STONE_SLAB
-				|| block.getType() == Material.GOLD_BLOCK
-				|| block.getType() == Material.STONE_BRICK_STAIRS) {
+		if(block.getType() == Material.SMOOTH_STONE_SLAB || block.getType() == Material.GOLD_BLOCK || block.getType() == Material.STONE_BRICK_STAIRS) {
 			if(checkAndActivateCrypt(block, p)) return;
 		}
 
@@ -887,9 +880,7 @@ public class CustomItems implements Listener {
 		connected.add(block);
 		while(!queue.isEmpty()) {
 			Block current = queue.poll();
-			for(BlockFace face : new BlockFace[]{
-					BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST,
-					BlockFace.WEST, BlockFace.UP, BlockFace.DOWN}) {
+			for(BlockFace face : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN}) {
 				Block neighbor = current.getRelative(face);
 				if(neighbor.getType() == Material.CRACKED_STONE_BRICKS && connected.add(neighbor)) {
 					queue.add(neighbor);
@@ -1537,11 +1528,11 @@ public class CustomItems implements Listener {
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
 
 		Vector baseDirection = p.getEyeLocation().getDirection().normalize();
-		Vector leftDirection = baseDirection.clone().rotateAroundY(Math.toRadians(-10));
-		Vector rightDirection = baseDirection.clone().rotateAroundY(Math.toRadians(10));
+		Vector leftDirection = baseDirection.clone().rotateAroundY(Math.toRadians(-7.5));
+		Vector rightDirection = baseDirection.clone().rotateAroundY(Math.toRadians(7.5));
 
 		Location l = p.getEyeLocation().add(0, -0.1, 0);
-		float speed = 2f;
+		float speed = 1.5f;
 		List<LivingEntity> alreadyHurt = new ArrayList<>();
 		Set<Block> visitedBlocks = new HashSet<>();
 		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
@@ -1741,7 +1732,7 @@ public class CustomItems implements Listener {
 		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead()  && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
 
 		double blockDist = 35;
 		double entityDist = 35;

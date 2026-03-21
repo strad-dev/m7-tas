@@ -375,12 +375,13 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Well Cleared");
-			Utils.broadcastBlessing(healer, Utils.BlessingType.LIFE, 5);
 		}, 104);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -4, 1f);
 			Actions.move(healer, "N", 2);
 			Actions.setHotbarSlot(healer, 1);
+			Utils.playLocalSound(healer, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+			Utils.broadcastBlessing(healer, Utils.BlessingType.LIFE, 5);
 		}, 105);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 106); // etherwarp to item
 		Utils.scheduleTask(() -> {
