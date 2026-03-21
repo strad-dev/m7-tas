@@ -184,7 +184,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 28.7f, -56f), 65);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 66); // etherwarp up
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, -99.7f, -52.3f);
+			Actions.turnHead(archer, -99.7f, -53f);
 			Actions.setHotbarSlot(archer, 0);
 		}, 67);
 		Utils.scheduleTask(() -> {
@@ -193,10 +193,12 @@ public class Archer {
 			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
 		}, 68); // wither impact, kill bat
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(archer, 74f, 59f);
+			Actions.turnHead(archer, 74f, 57.5f);
 			Actions.setHotbarSlot(archer, 1);
 		}, 69);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 70); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -86.5f, 2.7f), 71);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 72); // etherwarp to minibossx
 
 //		Utils.scheduleTask(Archer::explosiveShot, 95);
 //		Utils.scheduleTask(() -> {

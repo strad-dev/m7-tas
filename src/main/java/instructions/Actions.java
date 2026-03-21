@@ -385,7 +385,7 @@ public class Actions {
 			Utils.simulatePacket(p, interactPacket);
 		}
 
-		// Right click air (eat food, throw pearl, use item ability) - THIS IS WHAT YOU WANT FOR ETHERWARP
+		// Right click air (eat food, throw pearl, use item ability)
 		ServerboundUseItemPacket useItemPacket = new ServerboundUseItemPacket(InteractionHand.MAIN_HAND, 0, serverPlayer.getYRot(), serverPlayer.getXRot());
 		Utils.simulatePacket(p, useItemPacket);
 	}

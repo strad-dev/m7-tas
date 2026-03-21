@@ -1381,40 +1381,24 @@ public class CustomItems implements Listener {
 		Vector leftDirection = baseDirection.clone().rotateAroundY(Math.toRadians(-5));
 		Vector rightDirection = baseDirection.clone().rotateAroundY(Math.toRadians(5));
 
-		// Calculate spawn position
-		Location l = p.getEyeLocation().add(baseDirection.clone());
-
-		// Calculate rotations
-		float baseYaw = p.getEyeLocation().getYaw();
-		float basePitch = p.getEyeLocation().getPitch();
+		// Calculate spawn position (vanilla: eyeY - 0.1)
+		Location l = p.getEyeLocation().add(0, -0.1, 0);
 
 		// Create NMS arrows directly
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsLeft = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsMiddle = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsRight = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 
-		// Set positions and rotations directly
+		// Set positions
 		nmsLeft.setPos(l.getX(), l.getY(), l.getZ());
-		nmsLeft.setYRot(baseYaw - 5f);
-		nmsLeft.setXRot(basePitch);
-
 		nmsMiddle.setPos(l.getX(), l.getY(), l.getZ());
-		nmsMiddle.setYRot(baseYaw);
-		nmsMiddle.setXRot(basePitch);
-
 		nmsRight.setPos(l.getX(), l.getY(), l.getZ());
-		nmsRight.setYRot(baseYaw + 5f);
-		nmsRight.setXRot(basePitch);
 
-		// Set velocities
-		double speed = 3.175;
-		Vec3 leftVel = new Vec3(leftDirection.getX() * speed, leftDirection.getY() * speed, leftDirection.getZ() * speed);
-		Vec3 middleVel = new Vec3(baseDirection.getX() * speed, baseDirection.getY() * speed, baseDirection.getZ() * speed);
-		Vec3 rightVel = new Vec3(rightDirection.getX() * speed, rightDirection.getY() * speed, rightDirection.getZ() * speed);
-
-		nmsLeft.setDeltaMovement(leftVel);
-		nmsMiddle.setDeltaMovement(middleVel);
-		nmsRight.setDeltaMovement(rightVel);
+		// shoot() sets both velocity and rotation from the direction vector
+		float speed = 3.175f;
+		nmsLeft.shoot(leftDirection.getX(), leftDirection.getY(), leftDirection.getZ(), speed, 0);
+		nmsMiddle.shoot(baseDirection.getX(), baseDirection.getY(), baseDirection.getZ(), speed, 0);
+		nmsRight.shoot(rightDirection.getX(), rightDirection.getY(), rightDirection.getZ(), speed, 0);
 
 		// Set other properties
 		nmsLeft.setOwner(nmsPlayer);
@@ -1556,19 +1540,14 @@ public class CustomItems implements Listener {
 		Vector leftDirection = baseDirection.clone().rotateAroundY(Math.toRadians(-10));
 		Vector rightDirection = baseDirection.clone().rotateAroundY(Math.toRadians(10));
 
-		Location l = p.getEyeLocation().add(baseDirection.clone());
-		float baseYaw = p.getEyeLocation().getYaw();
-		float basePitch = p.getEyeLocation().getPitch();
-
-		double speed = 2;
+		Location l = p.getEyeLocation().add(0, -0.1, 0);
+		float speed = 2f;
 		List<LivingEntity> alreadyHurt = new ArrayList<>();
 		Set<Block> visitedBlocks = new HashSet<>();
 		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
 			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 			nmsArrow.setPos(l.getX(), l.getY(), l.getZ());
-			nmsArrow.setYRot(baseYaw);
-			nmsArrow.setXRot(basePitch);
-			nmsArrow.setDeltaMovement(new Vec3(dir.getX() * speed, dir.getY() * speed, dir.getZ() * speed));
+			nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), speed, 0);
 			nmsArrow.setOwner(nmsPlayer);
 			nmsWorld.addFreshEntity(nmsArrow);
 
@@ -1672,14 +1651,12 @@ public class CustomItems implements Listener {
 
 				Location eyeLoc = p.getEyeLocation();
 				Vector dir = eyeLoc.getDirection().normalize();
-				Location spawnLoc = eyeLoc.add(dir.clone());
+				Location spawnLoc = eyeLoc.add(0, -0.1, 0);
 				double speed = 2.5;
 
 				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
 				nmsArrow.setPos(spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ());
-				nmsArrow.setYRot(eyeLoc.getYaw());
-				nmsArrow.setXRot(eyeLoc.getPitch());
-				nmsArrow.setDeltaMovement(new Vec3(dir.getX() * speed, dir.getY() * speed, dir.getZ() * speed));
+				nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), (float) speed, 0);
 				nmsArrow.setOwner(nmsPlayer);
 				nmsWorld.addFreshEntity(nmsArrow);
 
