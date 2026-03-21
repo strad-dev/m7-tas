@@ -7,6 +7,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -14,7 +15,7 @@ public class Simulate implements CommandExecutor {
 	private static Player lastSimulated;
 	private static Location lastSimulatedLocation;
 
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
 			sender.sendMessage("Only players can run this");
 			return true;
