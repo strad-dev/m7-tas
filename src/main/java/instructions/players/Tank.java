@@ -89,9 +89,10 @@ public class Tank {
 	}
 
 	private static void preclear(boolean doContinue) {
-		Actions.move(tank, "WPJ", 30);
-		Actions.setHotbarSlot(tank, 1);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -1f, -3.4f), 31);
+		Actions.setHotbarSlot(tank, 3);
+		Actions.move(tank, "WPJ", 12);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 27); // left click mort to start the run
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 29); // run up to door
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
 
@@ -104,27 +105,46 @@ public class Tank {
 		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ██║  ██║╚██████╔╝███████║██║  ██║
 		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.move(tank, "N", 4), 20);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 21); // etherwarp into fairy
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 4f, 24f), 22);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 23); // etherwarp to wither door
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Server.openWitherDoor(tank);
-		}, 28); // open door (waits 1 tick after pickup to ensure no race conditions) | opens tick 48
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, 15f), 29);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 49);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 50); // aotv to pick up blessing | reposition
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Red Blue Cleared");
+		}, 21); // kill miniboss instantly
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 94f, -6f);
-			Actions.move(tank, "N", 0);
-		}, 51);
+			Actions.turnHead(tank, 0f, 3.98f);
+			Actions.move(tank, "N", 2);
+			Actions.setHotbarSlot(tank, 1);
+		}, 22);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 23); // etherwarp to miniboss death location
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(tank, 2);
+			Utils.broadcastBlessing(tank, Utils.BlessingType.POWER, 5);
+			Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] cookiethebald " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!");
+		}, 24);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 25);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 0f, 6f);
+			Actions.setHotbarSlot(tank, 3);
+		}, 26);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Deathmite Cleared");
+		}, 46); // kill miniboss instantly
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(tank, 1);
+			Actions.turnHead(tank, 0f, 15f);
+		}, 47);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 48);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 49); // aotv to pick up blessing | reposition
 		Utils.scheduleTask(() -> {
 			Utils.broadcastBlessing(tank, Utils.BlessingType.POWER, 5);
+			Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
 			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] cookiethebald " + ChatColor.GREEN + "has obtained " + ChatColor.RED + "Blood Key" + ChatColor.GREEN + "!");
-		}, 55); // must wait for key to spawn in before continuing
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 56); // etherwarp into museum
-		// blood rush: 56 ticks
+			Actions.turnHead(tank, 94f, -6f);
+			Actions.move(tank, "N", 0);
+		}, 50);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 51); // etherwarp into museum
+		// blood rush: 51 ticks
 
 		/*
 		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
