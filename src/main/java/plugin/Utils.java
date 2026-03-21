@@ -318,7 +318,18 @@ public class Utils {
 		CLIENT, SERVER, BOSS
 	}
 
+	private static boolean verbose = true;
+
+	public static boolean isVerbose() {
+		return verbose;
+	}
+
+	public static void setVerbose(boolean verbose) {
+		Utils.verbose = verbose;
+	}
+
 	public static void debug(DebugType type, String message) {
+		if(!verbose) return;
 		switch(type) {
 			case CLIENT -> Bukkit.broadcastMessage(ChatColor.DARK_AQUA + "[Client] " + message);
 			case SERVER -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Server] " + message);

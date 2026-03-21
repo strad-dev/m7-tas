@@ -25,6 +25,9 @@ commands:
   getcustomitems:
     description: Get custom items
     usage: /getcustomitems
+  verbose:
+    description: Toggle verbose debug messages
+    usage: /verbose <true|false>
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>
