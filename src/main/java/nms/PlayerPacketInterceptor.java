@@ -1,8 +1,8 @@
 package nms;
 
+import commands.Spectate;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
-import commands.Spectate;
 import listeners.CustomItems;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;

@@ -119,7 +119,7 @@ public final class M7tas extends JavaPlugin {
 		}
 	}
 
-	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Mage3", "dff79c40-6aeb-458a-86cf-6789e1831317", "Healer", "f0b1d2e5-dfd2-4d33-9768-4d2b259a4743", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
+	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Mage3", "f0b1d2e5-dfd2-4d33-9768-4d2b259a4743", "Healer", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
 
 
