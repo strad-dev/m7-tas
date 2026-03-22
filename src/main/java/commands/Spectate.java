@@ -301,11 +301,7 @@ public class Spectate implements CommandExecutor {
 
 				if(distance <= 3) {
 					shouldBeHidden.add(otherFake);
-
-					// Hide if not already hidden
-					if(!currentlyHidden.contains(otherFake)) {
-						Spectate.hideFakePlayerFromSpectator(spectator, otherFake);
-					}
+					Spectate.hideFakePlayerFromSpectator(spectator, otherFake);
 				} else {
 					// Show if currently hidden
 					if(currentlyHidden.contains(otherFake)) {
