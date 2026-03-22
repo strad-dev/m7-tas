@@ -1,17 +1,25 @@
 package instructions.players;
 
-import org.bukkit.Location;
-import org.bukkit.World;
+import instructions.Actions;
+import instructions.Server;
+import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+import plugin.M7tas;
 import plugin.Utils;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public class Berserk {
 	private static Player berserk;
 	private static World world;
 
+	// Berserk --> Mage3
 	public static void berserkInstructions(Player p, String section) {
 		berserk = p;
 		world = berserk.getWorld();
@@ -20,21 +28,7 @@ public class Berserk {
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.teleport(berserk, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
-//				Utils.scheduleTask(() -> {
-//					Actions.swapItems(berserk, 2, 29);
-//					Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Tic Tac Toe Pre-Cleared");
-//				}, 60);
-//				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 61);
-//				Utils.scheduleTask(() -> Actions.rightClick(berserk), 101);
-//				Utils.scheduleTask(() -> {
-//					Actions.setHotbarSlot(berserk, 1);
-//					Actions.move(berserk, new Vector(0, 0, -0.8634), 4);
-//				}, 102);
-//				Utils.scheduleTask(() -> {
-//					Utils.teleport(berserk, new Location(world, -120.5, 75, -220.5));
-//					Actions.swapItems(berserk, 2, 29);
-//				}, 141);
-//				Utils.scheduleTask(() -> clear(section.equals("all")), 162);
+				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
 //			case "maxor", "boss" -> {
 //				Utils.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));
@@ -79,9 +73,469 @@ public class Berserk {
 		}
 	}
 
-	private static void clear(boolean doContinue) {
-
+	private static void preClear(boolean doContinue) {
+		Actions.turnHead(berserk, 180f, -90f);
+		Actions.swapItems(berserk, 2, 29);
+		Actions.swapItems(berserk, 4, 31);
+		Actions.setHotbarSlot(berserk, 7);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 38), 1); // move to pearl spot
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 39); // lands in 10 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 1);
+			Actions.move(berserk, "N", 0);
+		}, 40);
+		// dodge tick 40 teleport
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 49); // etherwarp to top
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -16f, 0.26f), 50);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 51); // etherwarp to Wizard middle
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 2.2f), 52);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 53); // etherwarp to correct X
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 90f), 54);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 1), 55); // walk off edge and unsneak
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 56);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 57);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 58);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 59);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 60); // teleport down
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 4f), 61);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 62); // aotv into position
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 7);
+			Actions.turnHead(berserk, -90f, -55f);
+		}, 63);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 64); // throw pearl | lands in 6 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 2);
+			Actions.turnHead(berserk, 125f, -5f);
+		}, 65);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 70); // activate tac, procs in 60 ticks (130)
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 71);
+		// tick 80: get teleported back
+		Utils.scheduleTask(() -> Utils.teleport(berserk, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
+		// tick 120: dodged
+		// tick 128: run starts
+		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
+
+	private static void clear(boolean doContinue) {
+		/*
+		 * ██╗    ██╗██╗███████╗ █████╗ ██████╗ ██████╗
+		 * ██║    ██║██║╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
+		 * ██║ █╗ ██║██║  ███╔╝ ███████║██████╔╝██║  ██║
+		 * ██║███╗██║██║ ███╔╝  ██╔══██║██╔══██╗██║  ██║
+		 * ╚███╔███╔╝██║███████╗██║  ██║██║  ██║██████╔╝
+		 * ╚══╝╚══╝ ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
+		 */
+		// tick 2: tac tp back, sneak
+		Utils.scheduleTask(() -> Actions.move(berserk, "N", 2), 2);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 3);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 4);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 110f, -72f);
+			Actions.setHotbarSlot(berserk, 7);
+		}, 5);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 6); // throw pearl towards wizard crystal | lands in 8 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 159.5f, -15.5f), 7);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 8); // throw pearl towards lower part | lands in 19 ticks
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, "N", 1);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 13);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 14); // pearl lands, etherwarp into compartment with crystal
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 28f, 7f), 15);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 16); // teleport to crystal
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 45f, 45f), 17);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk found a Special Crystal!");
+		}, 18); // pick up crystal
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 180f, -25f);
+			Actions.move(berserk, "N", 0);
+		}, 19);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 20); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -161f, -72f), 21);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 22); // etherwarp to secret compartment
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, -32f), 23);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 24); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 25);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 1/4 (Opened Chest)");
+			Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 2);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+		}, 26); // obtain secret 1/4
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -139f, 2.5f), 27); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 28); // etherwarp towards bat
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -149.7f, 17.5f);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 29);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 30); // etherwarp into bat area
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 145f, 6f);
+			Actions.setHotbarSlot(berserk, 0);
+		}, 31);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 2/4 (Killed Bat)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.BAT);
+		}, 32); // kill bat
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -23f, -20f);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 33);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 34); // etherwarp out
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 50f, -25f), 35);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 36); // etherwarp up
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 7);
+			Actions.turnHead(berserk, -180f, -14.5f);
+			Actions.move(berserk, "S", 1);
+		}, 37);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 38); // pearl to correct spot for well | lands in 26 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 1);
+			Actions.turnHead(berserk, 180f, 0.97f);
+			Actions.move(berserk, "N", 0);
+		}, 39);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 40); // etherwarp to position
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 91f, -68f);
+			Actions.setHotbarSlot(berserk, 7);
+		}, 41);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 42); // pearl to dig spot | lands in 4 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 90f, 0f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 43);
+		// tick 46: pearl lands
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Actions.move(berserk, "WP", 0);
+		}, 47);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 48); // stonk through wall
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -90f, -90f);
+			Actions.setHotbarSlot(berserk, 1);
+			Actions.move(berserk, "N", 0);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 3/4 (Picked Up Item)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.ITEM);
+		}, 49);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 50); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -76f, -21f), 51);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 52); // etherwarp to wizard
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 0f), 53);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 1), 54); // walk forward 1 tick to be in range
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Utils.playLocalSound(berserk, Sound.ENTITY_VILLAGER_YES);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": Oh my lovely crystal ball, mi so happy");
+			Utils.scheduleTask(() -> {
+				Utils.playLocalSound(berserk, Sound.ENTITY_VILLAGER_YES);
+				Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": You deserve a reward young gobelin");
+			}, 20);
+			Utils.scheduleTask(() -> {
+				Utils.playLocalSound(berserk, Sound.ENTITY_VILLAGER_YES);
+				Bukkit.broadcastMessage(ChatColor.YELLOW + "[NPC] Wizard" + ChatColor.WHITE + ": Granted your team a " + ChatColor.LIGHT_PURPLE + "Blessing of Wisdom I");
+				Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 1);
+			}, 60);
+		}, 55);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 102f, 1f);
+			Actions.move(berserk, "N", 24);
+		}, 56);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 57); // etherwarp to wall
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 41f, 1.21f);
+			Actions.setHotbarSlot(berserk, 4);
+		}, 58);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 59); // blow up wall
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 60);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 61); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -10f, 13f), 62);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 4/4 (Opened Chest)");
+			Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 1);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+		}, 63);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -92f, 1f), 64); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 65); // etherwarp into well
+		// Wizard: 65 ticks
+
+		/*
+		 * ██╗    ██╗███████╗██╗     ██╗
+		 * ██║    ██║██╔════╝██║     ██║
+		 * ██║ █╗ ██║█████╗  ██║     ██║
+		 * ██║███╗██║██╔══╝  ██║     ██║
+		 * ╚███╔███╔╝███████╗███████╗███████╗
+		 *  ╚══╝╚══╝ ╚══════╝╚══════╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -60.1f), 66);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 67); // etherwarp up to secret
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -36f), 68);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 1/7 (Opened Chest)");
+			Utils.playLocalSound(berserk, Sound.BLOCK_CHEST_OPEN);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+		}, 69);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -67f, -18f), 70);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 71); // reposition for next secret
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 85f, 17.5f), 72);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 73); // etherwarp to secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -96.3f, 3.1f);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 2/7 (Picked Up Item)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.ITEM);
+		}, 74);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 75); // etherwarp out
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -158f, 24f), 76);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 77); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -98f, 1.5f), 78);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 79); // etherwarp to secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -90f, 20f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 80);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 81);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 7);
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 3/7 (Opened Chest)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+		}, 82);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 30f, 0f);
+			Actions.setHotbarSlot(berserk, 7);
+		}, 82);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 83); // pearl to upper secret | lands in 13 ticks
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 1);
+			Actions.move(berserk, "N", 2);
+			Actions.turnHead(berserk, 180f, 0f);
+		}, 84);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 85); // reposition for wither essence + pearl
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 16f, 66f);
+			Actions.setHotbarSlot(berserk, 7);
+		}, 86);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 87); // pearl to mini | lands in 16 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -93f, 12.5f);
+			Actions.move(berserk, "N", 4);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 88);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 89); // etherwarp into wither essence chamber
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, -75f), 90);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 91); // etherwarp up to wither essence
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -117f, 31f);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 92);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 4/7 (Obtained Wither Essence)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.ESSENCE);
+		}, 93);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 56f, 22f), 94);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 5/7 (Obtained Wither Essence)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.ESSENCE);
+		}, 95);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -11f, 8f);
+			Actions.move(berserk, "N", 2);
+		}, 96); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 97); // etherwarp to wall
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -90f, -50f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 98);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 99);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 100);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 101); // stonk to secret
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 3);
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 6/7 (Opened Chest)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+		}, 102);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -45f, 0f), 103); // pearl lands
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well Cleared");
+		}, 104);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -4, 1f);
+			Actions.move(berserk, "N", 2);
+			Actions.setHotbarSlot(berserk, 1);
+			Utils.playLocalSound(berserk, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+			Utils.broadcastBlessing(berserk, Utils.BlessingType.LIFE, 5);
+		}, 105);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 106); // etherwarp to item
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 59f, 7f);
+			Actions.setHotbarSlot(berserk, 7);
+		}, 107);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 108); // throw pearl to ice fill | lands in 9 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 0f, 68f);
+			Actions.move(berserk, "N", 0);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 109);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 110); // etherwarp down
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 180f, 90f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 111);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 112); // stonk block
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 113);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 114); // etherwarp down
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 1), 115);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, "N", 0);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 7/7 (Picked Up Item)");
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.ITEM);
+		}, 116);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 106f, 6f), 117); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 118); // etherwarp into ice fill
+		// Well: 53 ticks
+
+		/*
+		 * ██╗ ██████╗███████╗    ███████╗██╗██╗     ██╗
+		 * ██║██╔════╝██╔════╝    ██╔════╝██║██║     ██║
+		 * ██║██║     █████╗      █████╗  ██║██║     ██║
+		 * ██║██║     ██╔══╝      ██╔══╝  ██║██║     ██║
+		 * ██║╚██████╗███████╗    ██║     ██║███████╗███████╗
+		 * ╚═╝ ╚═════╝╚══════╝    ╚═╝     ╚═╝╚══════╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 119);
+		Utils.scheduleTask(() -> {
+			startIceFillTask();
+			Actions.move(berserk, "WP", 0);
+		}, 120);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WN", 0), 123);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 124);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 129);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 130);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 134);
+		Utils.scheduleTask(() -> playIceFillSounds(1), 135);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 138);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 142);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 150);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 152);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 162);
+		Utils.scheduleTask(() -> Actions.move(berserk, "DN", 0), 165);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 166);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 176);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 177);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 186);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WPD", 0), 195);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 196);
+		Utils.scheduleTask(() -> playIceFillSounds(2), 200);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 204);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 206);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 210);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 218);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 220);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 233);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 236);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 242);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 244);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 249);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 252);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 255);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 258);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 267);
+		Utils.scheduleTask(() -> Actions.move(berserk, "S", 0), 275);
+		Utils.scheduleTask(() -> Actions.move(berserk, "D", 0), 281);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WDP", 0), 285);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 296);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 300);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 0), 303);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 2), 307);
+		Utils.scheduleTask(() -> {
+			playIceFillSounds(3);
+			Server.openIceFillRewards();
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Ice Fill Cleared");
+		}, 309);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 68f, -33f), 310);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Utils.broadcastBlessing(berserk, Utils.BlessingType.POWER, 5);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
+		}, 329);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 112f, -33f), 330);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(berserk);
+			Utils.broadcastBlessing(berserk, Utils.BlessingType.POWER, 5);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
+			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 331 Ticks (16.55 seconds)");
+		}, 331);
+		Utils.scheduleTask(Berserk::stopIceFillTask, 400);
+		// Ice Fill: 213 ticks
+	}
+
+	private static void playIceFillSounds(int level) {
+		switch(level) {
+			case 1 -> {
+				Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.189446f);
+				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.3352f), 5);
+				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.41436f), 10);
+			}
+			case 2 -> {
+				Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.4987f);
+				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.5878f), 5);
+				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.6821f), 10);
+			}
+			case 3 -> {
+				Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.782f);
+				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.888f), 5);
+				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 2.0f), 10);
+			}
+		}
+	}
+
+	private static BukkitTask iceFillTask;
+	private static final Set<Block> frozenBlocks = new HashSet<>();
+
+	private static void startIceFillTask() {
+		if (iceFillTask != null) {
+			iceFillTask.cancel();
+		}
+
+		frozenBlocks.clear();
+
+		iceFillTask = new BukkitRunnable() {
+			@Override
+			public void run() {
+				Block below = berserk.getLocation().subtract(0, 1, 0).getBlock();
+				if (below.getType() == Material.ICE) {
+					below.setType(Material.PACKED_ICE);
+					frozenBlocks.add(below);
+					Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f);
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	public static void stopIceFillTask() {
+		if (iceFillTask != null) {
+			iceFillTask.cancel();
+			iceFillTask = null;
+		}
+
+		for (Block block : frozenBlocks) {
+			if (block.getType() == Material.PACKED_ICE) {
+				block.setType(Material.ICE);
+			}
+		}
+		frozenBlocks.clear();
+	}
+
 //		// Tick 162 (clear tick 2, delay = 0)
 //		Actions.AOTV(berserk, new Location(world, -24.5, 69, -197.5));
 //		Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Chambers Insta-Cleared");

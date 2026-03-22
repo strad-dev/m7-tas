@@ -119,7 +119,7 @@ public final class M7tas extends JavaPlugin {
 		}
 	}
 
-	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Berserk", "dff79c40-6aeb-458a-86cf-6789e1831317", "Mage3", "f0b1d2e5-dfd2-4d33-9768-4d2b259a4743", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
+	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Mage3", "dff79c40-6aeb-458a-86cf-6789e1831317", "Healer", "f0b1d2e5-dfd2-4d33-9768-4d2b259a4743", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
 
 
@@ -220,7 +220,7 @@ public final class M7tas extends JavaPlugin {
 			inventory.clear();
 
 			switch(entry) {
-				case "Archer", "Berserk", "Healer", "Tank" -> {
+				case "Archer", "Healer", "Tank" -> {
 					ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
 					ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Leggings");
 					ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Boots");
@@ -555,8 +555,8 @@ public final class M7tas extends JavaPlugin {
 		Server.serverSetup(world);
 
 		Archer.archerInstructions(fakePlayers.get("Archer"), section);
-		Berserk.berserkInstructions(fakePlayers.get("Berserk"), section);
-		Healer.healerInstructions(fakePlayers.get("Mage3"), section);
+		Berserk.berserkInstructions(fakePlayers.get("Mage3"), section);
+		Healer.healerInstructions(fakePlayers.get("Healer"), section);
 		Mage.mageInstructions(fakePlayers.get("Mage1"), section);
 		Tank.tankInstructions(fakePlayers.get("Mage2"), section);
 
