@@ -280,6 +280,7 @@ public class Actions {
 		ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
 		serverPlayer.setYRot(yaw);
 		serverPlayer.setYBodyRot(yaw);
+		serverPlayer.setYHeadRot(yaw);
 		serverPlayer.setXRot(pitch);
 		serverPlayer.refreshDimensions();
 		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " turning head to " + yaw + " " + pitch);

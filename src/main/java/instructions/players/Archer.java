@@ -280,7 +280,7 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 1);
 			Actions.move(archer, "N", 2);
 		}, 104);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 105); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.rightClick(archer),105); // etherwarp to secret
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -163f, 49f);
 			Actions.setHotbarSlot(archer, 7);
@@ -351,10 +351,11 @@ public class Archer {
 			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
 		}, 131); // kill bat
 		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, 1.8f);
 			Actions.setHotbarSlot(archer, 1);
 			Actions.move(archer, "N", 5);
 		}, 132);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 1.8f), 133); // pearl lands
+		// tick 133: pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 134); // etherwarp back to gravel
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 1.45f), 135);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 136); // etherwarp to quiz
@@ -379,7 +380,7 @@ public class Archer {
 		particleStart.setWorld(world);
 		Utils.scheduleTask(() -> spawnQuestion(1, "                      How is the run going so far?", new String[]{"Alright", "Trash", "Literally tick-perfect"}, options, particleStart), 235);
 		Utils.scheduleTask(() -> oruoMessage("2 question left... then you will have proven your worth to me!"), 336);
-		Utils.scheduleTask(() -> spawnQuestion(2, "Did you know that you can sub scribe to Stradivarius Violin to                        see more content like this?!", new String[]{"Oh wow, I should sub scribe!", "Oh wow, I should sub scribe!!", "Oh wow, I should sub scribe!!!"}, options, particleStart), 376);
+		Utils.scheduleTask(() -> spawnQuestion(2, "Did you know that you can sub scribe to Stradivarius Violin to                         see more content like this?!", new String[]{"Oh wow, I should sub scribe!", "Oh wow, I should sub scribe!!", "Oh wow, I should sub scribe!!!"}, options, particleStart), 376);
 		Utils.scheduleTask(() -> oruoMessage("One more question!"), 477);
 		Utils.scheduleTask(() -> spawnQuestion(3, "                             Is akc0303 bald?", new String[]{"No", "Yes", "Decline to Answer"}, options, particleStart), 517);
 		Utils.scheduleTask(() -> {
@@ -573,6 +574,7 @@ public class Archer {
 //			}, 1025);
 //		}
 	}
+
 
 
 	private static final Location PARTICLE_START = new Location(null, -24.5, 85.5, -23.0);
