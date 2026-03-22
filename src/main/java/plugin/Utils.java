@@ -376,7 +376,7 @@ public class Utils {
 			case "Archer" -> {
 				return "akc0303";
 			}
-			case "Mage3" -> {
+			case "Berserk", "Mage3" -> {
 				return "AsapIcey";
 			}
 			case "Healer" -> {
