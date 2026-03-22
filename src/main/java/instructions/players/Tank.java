@@ -1,7 +1,6 @@
 package instructions.players;
 
 import instructions.Actions;
-import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import plugin.Utils;
