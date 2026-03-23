@@ -44,15 +44,26 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import plugin.M7tas;
+import plugin.PlayerInventoryBackup;
 import plugin.Utils;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Method;
 import java.util.*;
 
 @SuppressWarnings("unused")
 public class Actions {
 
 	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
+	private static final Method updatePlayerPose;
+	static {
+		try {
+			updatePlayerPose = net.minecraft.world.entity.player.Player.class.getDeclaredMethod("updatePlayerPose");
+			updatePlayerPose.setAccessible(true);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find updatePlayerPose", e);
+		}
+	}
 
 	/**
 	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
@@ -86,6 +97,11 @@ public class Actions {
 		}
 
 		serverPlayer.setShiftKeyDown(input.contains("N"));
+		try {
+			updatePlayerPose.invoke(serverPlayer);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		if(input.contains("N")) {
 			serverPlayer.xxa *= 0.3F;
 			serverPlayer.zza *= 0.3F;
@@ -223,7 +239,7 @@ public class Actions {
 		cp.getHandle().connection.send(heldPkt);
 
 		// Broadcast the new main-hand item to all viewers AND sync to spectators
-		Utils.syncHand(p); // This now handles both!
+		PlayerInventoryBackup.syncHand(p); // This now handles both!
 	}
 
 	/**
@@ -247,11 +263,11 @@ public class Actions {
 		inv.setItem(slotB, a);
 
 		// Re-send the entire inventory window to player AND spectators
-		Utils.syncInventory(p); // This updates spectators
+		PlayerInventoryBackup.syncInventory(p); // This updates spectators
 
 		// If either swapped slot was in the hotbar, update the hand-item too
 		if(slotA < 9 || slotB < 9) {
-			Utils.syncHand(p); // This now handles both viewers and spectators
+			PlayerInventoryBackup.syncHand(p); // This now handles both viewers and spectators
 		}
 
 		if(slotA >= 36 || slotB >= 36) {

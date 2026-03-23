@@ -11,6 +11,8 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.potion.PotionEffectType;
 import plugin.M7tas;
+import plugin.PlayerCollision;
+import plugin.PlayerInventoryBackup;
 import plugin.Utils;
 
 import java.util.Set;
@@ -21,7 +23,7 @@ public class SpectatorListener implements Listener {
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 
-		M7tas.removeFromNoCollisionTeam(player);
+		PlayerCollision.removeFromNoCollisionTeam(player);
 
 		// If they were spectating, clean up
 		if (Spectate.getSpectatorMap().containsKey(player)) {
@@ -37,10 +39,9 @@ public class SpectatorListener implements Listener {
 			}
 		}
 
-		Utils.restoreInventory(player);
-		M7tas.removeFromNoCollisionTeam(player);
+		PlayerInventoryBackup.restoreAndRemove(player);
+		PlayerCollision.removeFromNoCollisionTeam(player);
 		player.removePotionEffect(PotionEffectType.INVISIBILITY);
-		M7tas.removePlayerInventoryBackup(player);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -53,7 +54,7 @@ public class SpectatorListener implements Listener {
 				// Re-sync inventory to make sure it stays correct
 				Player fakePlayer = Spectate.getSpectatorMap().get(player);
 				if (fakePlayer != null) {
-					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> Utils.syncInventory(fakePlayer), 1L);
+					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> PlayerInventoryBackup.syncInventory(fakePlayer), 1L);
 				}
 			}
 		}

@@ -38,6 +38,7 @@ import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import plugin.M7tas;
+import plugin.PlayerCollision;
 import plugin.Utils;
 
 import java.util.*;
@@ -1607,7 +1608,7 @@ public class CustomItems implements Listener {
 		sheep.setCustomNameVisible(false);
 		sheep.setCollidable(false);
 		sheep.addScoreboardTag("TASNoName");
-		M7tas.addEntityToNoCollisionTeam(sheep);
+		PlayerCollision.addEntityToNoCollisionTeam(sheep);
 
 		Vector velocity = direction.multiply(speed);
 
@@ -1621,7 +1622,7 @@ public class CustomItems implements Listener {
 					Location loc = sheep.getLocation();
 					loc.getWorld().spawnParticle(Particle.EXPLOSION, loc, 10, 0.5, 0.5, 0.5, 0);
 					loc.getWorld().playSound(loc, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
-					M7tas.removeEntityFromNoCollisionTeam(sheep);
+					PlayerCollision.removeEntityFromNoCollisionTeam(sheep);
 					sheep.remove();
 					cancel();
 					return;
@@ -1634,7 +1635,7 @@ public class CustomItems implements Listener {
 					next.getWorld().spawnParticle(Particle.EXPLOSION, next, 10, 0.5, 0.5, 0.5, 0);
 					next.getWorld().playSound(next, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 					triggerSuperboomRadius(next, p);
-					M7tas.removeEntityFromNoCollisionTeam(sheep);
+					PlayerCollision.removeEntityFromNoCollisionTeam(sheep);
 					sheep.remove();
 					cancel();
 					return;
