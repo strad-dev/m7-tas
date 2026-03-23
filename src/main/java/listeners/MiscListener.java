@@ -1,5 +1,6 @@
 package listeners;
 
+import commands.TAS;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -16,7 +17,6 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.util.Vector;
-import plugin.M7tas;
 import plugin.Utils;
 
 public class MiscListener implements Listener {
@@ -59,7 +59,7 @@ public class MiscListener implements Listener {
 				}
 			} else if(e.getHitEntity() instanceof LivingEntity hitEntity) {
 				// Phase through fake players and self
-				if(hitEntity instanceof Player player && (M7tas.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
+				if(hitEntity instanceof Player player && (TAS.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
 					e.setCancelled(true);
 				}
 				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually

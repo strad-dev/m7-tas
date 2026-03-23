@@ -1,6 +1,7 @@
 package listeners;
 
 import commands.Spectate;
+import commands.TAS;
 import instructions.Server;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
@@ -153,7 +154,7 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof LivingEntity entity && !entity.getScoreboardTags().contains("TASNoName")) {
 			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
 		}
-		if(e.getDamager() instanceof Player p && !M7tas.getFakePlayers().containsValue(p)) {
+		if(e.getDamager() instanceof Player p && !TAS.getFakePlayers().containsValue(p)) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		}
 	}
@@ -176,7 +177,7 @@ public class CustomItems implements Listener {
 	@EventHandler
 	public void onPlayerAnimation(PlayerAnimationEvent e) {
 		Player p = e.getPlayer();
-		if(e.getAnimationType().equals(PlayerAnimationType.ARM_SWING) && M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+		if(e.getAnimationType().equals(PlayerAnimationType.ARM_SWING) && TAS.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.swingMainHand();
 			}
@@ -192,7 +193,7 @@ public class CustomItems implements Listener {
 		boolean isClassPlayer = p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer") || p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
 		if(!isClassPlayer) return;
 		e.setCancelled(true);
-		if(!M7tas.getFakePlayers().containsValue(p)) return;
+		if(!TAS.getFakePlayers().containsValue(p)) return;
 		dispatchDrop(p, ultimate);
 	}
 
@@ -316,7 +317,7 @@ public class CustomItems implements Listener {
 				}
 				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
-					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || M7tas.getFakePlayers().containsValue(p)) {
+					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || TAS.getFakePlayers().containsValue(p)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
 							case "skyblock/combat/scylla" -> {
@@ -1742,7 +1743,7 @@ public class CustomItems implements Listener {
 		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
 
 		double blockDist = 35;
 		double entityDist = 35;

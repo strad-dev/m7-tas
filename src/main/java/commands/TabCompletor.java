@@ -4,7 +4,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import plugin.M7tas;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +40,7 @@ public class TabCompletor implements TabCompleter {
 			case "spectate" -> {
 				if(args.length == 1) {
 					// Get available classes from fakePlayers map
-					for(String role : M7tas.getFakePlayers().keySet()) {
+					for(String role : TAS.getFakePlayers().keySet()) {
 						if(role.toLowerCase().startsWith(args[0].toLowerCase())) {
 							completions.add(role);
 						}
@@ -72,7 +71,7 @@ public class TabCompletor implements TabCompleter {
 					}
 				} else if(args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move"))) {
 					// Player selection for bonzo/move
-					for(String role : M7tas.getFakePlayers().keySet()) {
+					for(String role : TAS.getFakePlayers().keySet()) {
 						if(role.toLowerCase().startsWith(args[1].toLowerCase())) {
 							completions.add(role);
 						}

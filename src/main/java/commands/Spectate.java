@@ -51,7 +51,7 @@ public class Spectate implements CommandExecutor {
 				return true;
 			}
 
-			Map<String, Player> fakePlayers = M7tas.getFakePlayers();
+			Map<String, Player> fakePlayers = TAS.getFakePlayers();
 			if(fakePlayers.isEmpty()) {
 				p.sendMessage(ChatColor.RED + "No classes to spectate!  Try running /setup first");
 				return true;
@@ -294,7 +294,7 @@ public class Spectate implements CommandExecutor {
 			Set<Player> shouldBeHidden = new HashSet<>();
 
 			// Check all other fake players
-			for(Player otherFake : M7tas.getFakePlayers().values()) {
+			for(Player otherFake : TAS.getFakePlayers().values()) {
 				if(otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
 
 				double distance = spectatorLocation.distanceSquared(otherFake.getLocation());

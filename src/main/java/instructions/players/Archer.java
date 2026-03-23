@@ -97,7 +97,7 @@ public class Archer {
 	private static void preClear(boolean doContinue) {
 		Actions.setHotbarSlot(archer, 1);
 		Actions.move(archer, "WPJ", 0);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 2), 26);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 15), 13);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -1f, -3.4f), 31);
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}

@@ -2,6 +2,7 @@ package plugin;
 
 import com.mojang.datafixers.util.Pair;
 import commands.Spectate;
+import commands.TAS;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
@@ -231,7 +232,7 @@ public class Utils {
 	 * @param s The sound to play
 	 */
 	public static void playLocalSound(Player p, Sound s) {
-		if(M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+		if(TAS.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.playSound(spectator, s, 1.0f, 1.0f);
 			}
@@ -249,7 +250,7 @@ public class Utils {
 	 * @param pitch  Pitch
 	 */
 	public static void playLocalSound(Player p, Sound s, float volume, float pitch) {
-		if(M7tas.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+		if(TAS.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.playSound(spectator, s, volume, pitch);
 			}
@@ -305,7 +306,7 @@ public class Utils {
 				playersInWorld.remove(i);
 				i--;
 			}
-			if(M7tas.getFakePlayers().containsValue(p)) {
+			if(TAS.getFakePlayers().containsValue(p)) {
 				playersInWorld.remove(i);
 				i--;
 			}
