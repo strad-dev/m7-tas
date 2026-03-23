@@ -58,6 +58,13 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 		super(minecraftserver, networkmanager, entityplayer, commonlistenercookie);
 	}
 
+	@Override
+	public void handleAnimate(ServerboundSwingPacket packet) {
+		super.handleAnimate(packet);
+		Player cp = getCraftPlayer();
+		CustomItems.handleCustomItems(null, EquipmentSlot.HAND, cp.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, cp);
+	}
+
 	public void handleInteract(ServerboundInteractPacket packetplayinuseentity) {
 		super.player.level();
 		final ServerLevel worldserver = this.player.level();
