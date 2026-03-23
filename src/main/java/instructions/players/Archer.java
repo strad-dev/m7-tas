@@ -96,8 +96,8 @@ public class Archer {
 
 	private static void preClear(boolean doContinue) {
 		Actions.setHotbarSlot(archer, 1);
-		Actions.move(archer, "WPJ", 12);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 15), 14);
+		Actions.move(archer, "WPJ", 0);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 2), 27);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -1f, -3.4f), 31);
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
@@ -289,6 +289,12 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 13f, 9f);
 			Actions.setHotbarSlot(archer, 3);
+			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Dino Dig Site Cleared");
+			// archer teleports away before the server can register that they were there to pick up the blessing, so auto-pickup it is
+			Utils.scheduleTask(() -> {
+				Utils.broadcastBlessing(archer, Utils.BlessingType.LIFE, 5);
+				Utils.playLocalSound(archer, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+			}, 300);
 		}, 108);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 109); // blow up door
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 1), 110);
