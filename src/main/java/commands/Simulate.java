@@ -8,7 +8,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
-import plugin.M7tas;
 import plugin.Utils;
 
 public class Simulate implements CommandExecutor {
@@ -94,7 +93,7 @@ public class Simulate implements CommandExecutor {
 					p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
 					return true;
 				}
-				Player applyTo = M7tas.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				Player applyTo = TAS.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
 				if(applyTo == null) {
 					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
 					return true;

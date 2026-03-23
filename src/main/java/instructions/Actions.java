@@ -2,6 +2,7 @@ package instructions;
 
 import com.mojang.datafixers.util.Pair;
 import commands.Spectate;
+import commands.TAS;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
@@ -110,6 +111,8 @@ public class Actions {
 				}
 			}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 			jumpTasks.put(entity.getUniqueId(), task);
+		} else {
+			serverPlayer.setJumping(false);
 		}
 		if(durationTicks > 0) {
 			Utils.scheduleTask(() -> {
@@ -307,9 +310,12 @@ public class Actions {
 
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
 			if(entity == p) return false;
-			if(!(entity instanceof LivingEntity)) return false;
+			if(!(entity instanceof LivingEntity le)) return false;
+			if(entity.isDead()) return false;
+			if(entity.isInvulnerable()) return false;
+			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
 			if(entity instanceof org.bukkit.entity.Player player) {
-				if(M7tas.getFakePlayers().containsValue(player)) return false;
+				if(TAS.getFakePlayers().containsValue(player)) return false;
 				return !Spectate.getSpectatingPlayers(p).contains(player);
 			}
 			return true;
@@ -405,8 +411,8 @@ public class Actions {
 
 	public static void dropItem(Player p, boolean dropAll) {
 		ServerboundPlayerActionPacket.Action action = dropAll
-			? ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS
-			: ServerboundPlayerActionPacket.Action.DROP_ITEM;
+				? ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS
+				: ServerboundPlayerActionPacket.Action.DROP_ITEM;
 		ServerPlayer sp = ((CraftPlayer) p).getHandle();
 		ServerboundPlayerActionPacket packet = new ServerboundPlayerActionPacket(action, sp.blockPosition(), Direction.DOWN, 0);
 		Utils.simulatePacket(p, packet);

@@ -248,7 +248,7 @@ public class Mage {
 			Actions.turnHead(mage, 60f, -20f);
 			Actions.setHotbarSlot(mage, 7);
 		}, 102);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 103); // throw pearl out | lands in 13 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 103); // throw pearl back towards blood | lands in 13 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -90f, 36f);
 			Actions.setHotbarSlot(mage, 5);

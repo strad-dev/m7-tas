@@ -69,7 +69,7 @@ public class Healer {
 	public static void preClear(boolean doContinue) {
 		Actions.setHotbarSlot(healer, 1);
 		Actions.move(healer, "WPJ", 0);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 26);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 15), 13);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -9f, 2.9f), 31);
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
@@ -90,7 +90,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -159f, 4.5f), 24);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 25); // etherwarp into trap
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, -110.1f, 0f);
+			Actions.turnHead(healer, -110f, 0f);
 			Actions.setHotbarSlot(healer, 5);
 		}, 26);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 13), 27);
@@ -106,14 +106,90 @@ public class Healer {
 			Actions.turnHead(healer, 175f, 8.5f);
 			Actions.setHotbarSlot(healer, 7);
 		}, 41);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 42); // throw pearl | lands in 12 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 42); // throw pearl across | lands in 12 ticks
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -166f, 48f), 43);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 1/3 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 44);
-
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 109.5f, -68f), 45);
+		// Tick 54: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 55); // throw pearl up | lands in 21 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 32f, 16f), 56);
+		// Tick 76: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 77); // throw pearl towards bat | lands in 4 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 78);
+		// Tick 81: pearl lands
+		Utils.scheduleTask(() -> Actions.move(healer, "AWP", 0), 82);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 84);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 60f, 6f), 86);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 87); // pearl to dig spot | lands in 3 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 78f, -22f);
+			Actions.setHotbarSlot(healer, 0);
+		}, 88);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 2/3 (Killed Bat)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.BAT);
+		}, 89);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 35f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 90); // pearl lands
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Actions.move(healer, "WP", 9);
+		}, 91);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 92);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 93);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 94);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 95);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 96);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 97);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 98);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 20f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 100);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 101); // throw pearl towards chest | lands in 4 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 50f), 102);
+		// Tick 105: pearl lands
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 3/3 (Opened Chest)");
+			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 2);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
+		}, 106);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 81.5f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 107);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 108); // stonk block
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 7), 109);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 110); // throw pearl down | lands in 8 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 30f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 111);
+		// Tick 118: pearl lands
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, "WP", 8);
+			Actions.leftClick(healer);
+		}, 119);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 120);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 121);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 122);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 123);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 124);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 125); // stonk outwards
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -58.5f, 38f);
+			Actions.move(healer, "N", 2);
+			Actions.setHotbarSlot(healer, 7);
+		}, 127);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 128); // throw pearl down | lands in 10 ticks
 
 		/*
 		 * ██████╗ ███████╗██████╗     ██████╗ ██╗     ██╗   ██╗███████╗

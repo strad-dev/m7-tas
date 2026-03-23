@@ -1,5 +1,6 @@
 package listeners;
 
+import commands.TAS;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
 import io.netty.channel.Channel;
@@ -26,7 +27,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import plugin.M7tas;
 import plugin.Utils;
 
 import java.lang.reflect.Field;
@@ -49,7 +49,7 @@ public class JoinListener implements Listener {
 		Utils.scheduleTask(() -> {
 			Player joiningPlayer = ev.getPlayer();
 
-			if (!M7tas.getFakePlayers().containsValue(joiningPlayer)) {
+			if (!TAS.getFakePlayers().containsValue(joiningPlayer)) {
 				try {
 					Channel ch = getChannel(joiningPlayer);
 					if (ch.pipeline().get("tas_interceptor") == null)
@@ -64,7 +64,7 @@ public class JoinListener implements Listener {
 			ServerGamePacketListenerImpl conn = ((CraftPlayer) joiningPlayer).getHandle().connection;              // PlayerConnection
 
 			// Re-send each fake NPC’s “add + spawn” packets just to this connection:
-			for(Player fake : M7tas.getFakePlayers().values()) {
+			for(Player fake : TAS.getFakePlayers().values()) {
 				// 1) NMS handles
 				ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 				ServerLevel world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
@@ -138,7 +138,7 @@ public class JoinListener implements Listener {
 	@EventHandler
 	public void onQuit(PlayerQuitEvent ev) {
 		Player p = ev.getPlayer();
-		if (M7tas.getFakePlayers().containsValue(p)) return;
+		if (TAS.getFakePlayers().containsValue(p)) return;
 		try {
 			Channel ch = getChannel(p);
 			if (ch.pipeline().get("tas_interceptor") != null)

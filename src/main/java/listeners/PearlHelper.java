@@ -2,7 +2,6 @@ package listeners;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Player;
@@ -19,10 +18,10 @@ public class PearlHelper implements Listener {
 		if (!(e.getEntity() instanceof EnderPearl pearl)) return;
 		if (!(e.getEntity().getShooter() instanceof Player p)) return;
 
-		Vector direction = p.getLocation().getDirection();
+		Vector direction = p.getEyeLocation().getDirection();
 		pearl.setVelocity(direction.multiply(1.5));
 
-		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown at " + p.getLocation().getX() + " " + p.getLocation().getY() + " " + p.getLocation().getZ() + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch());
+		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown at " + pearl.getLocation().getX() + " " + pearl.getLocation().getY() + " " + pearl.getLocation().getZ() + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch());
 		Utils.scheduleTask(() -> p.setCooldown(Material.ENDER_PEARL, 0), 1);
 	}
 

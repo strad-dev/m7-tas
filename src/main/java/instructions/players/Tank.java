@@ -225,7 +225,7 @@ public class Tank {
 //			Actions.setHotbarSlot(tank, 5);
 //			Actions.AOTV(tank, new Location(world, -212.5, 79, -205.5));
 //		}, 76);
-//		// Stone through wall from tick 77-84
+//		// Stonk through wall from tick 77-84
 //		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.8634, 0, 0), 9), 77);
 //		Utils.scheduleTask(() -> Actions.stonk(tank, world.getBlockAt(-212, 80, -206)), 77);
 //		Utils.scheduleTask(() -> Actions.stonk(tank, world.getBlockAt(-212, 79, -206)), 78);
