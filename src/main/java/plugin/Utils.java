@@ -1,17 +1,12 @@
 package plugin;
 
-import com.mojang.datafixers.util.Pair;
+import commands.FakePlayerManager;
 import commands.Spectate;
-import commands.TAS;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
-import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
@@ -21,7 +16,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
-import org.bukkit.scheduler.BukkitTask;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -57,64 +51,6 @@ public class Utils {
 		ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
 
 		broadcastPacket(tp);
-	}
-
-	/**
-	 * Syncs fake player's inventory to spectators using packet-based approach
-	 */
-	public static void syncInventory(Player fakePlayer) {
-		Set<Player> spectators = Spectate.getSpectatingPlayers(fakePlayer);
-		if(!spectators.isEmpty()) {
-			// Method 1: Use packet-based sync (more efficient)
-			forceFullInventorySync(fakePlayer, spectators);
-
-			// Method 2: Also sync held item slot specifically
-			for(Player spectator : spectators) {
-				spectator.getInventory().setHeldItemSlot(fakePlayer.getInventory().getHeldItemSlot());
-			}
-		}
-	}
-
-	/**
-	 * Force a full resync of the given player's inventory to specified targets.
-	 */
-	public static void forceFullInventorySync(Player sourcePlayer, Set<Player> targets) {
-		CraftPlayer cp = (CraftPlayer) sourcePlayer;
-		ServerPlayer handle = cp.getHandle();
-		AbstractContainerMenu menu = handle.containerMenu; // the open window (0 = player inv)
-
-		// Build the packet with the current contents
-		ClientboundContainerSetContentPacket pkt = new ClientboundContainerSetContentPacket(menu.containerId, menu.incrementStateId(), menu.getItems(), menu.getCarried());
-
-		// Send to specified targets
-		for(Player target : targets) {
-			if(target instanceof CraftPlayer craftTarget) {
-				craftTarget.getHandle().connection.send(pkt);
-			}
-		}
-	}
-
-	/**
-	 * Updates the held item in an NPC's hand for all viewers AND spectators
-	 */
-	public static void syncHand(Player fake) {
-		ServerPlayer npc = ((CraftPlayer) fake).getHandle();
-		// get whatever ItemStack is in their selected slot
-		net.minecraft.world.item.ItemStack handStack = npc.getInventory().getSelectedItem();
-
-		// build an equipment packet for MAIN_HAND
-		ClientboundSetEquipmentPacket equipPkt = new ClientboundSetEquipmentPacket(npc.getId(), Collections.singletonList(Pair.of(EquipmentSlot.MAINHAND, handStack)));
-
-		// send it to every real viewer
-		broadcastPacket(equipPkt);
-
-		// Also update spectators' held items
-		Set<Player> spectators = Spectate.getSpectatingPlayers(fake);
-		for(Player spectator : spectators) {
-			spectator.getInventory().setHeldItemSlot(fake.getInventory().getHeldItemSlot());
-			spectator.getInventory().setItemInMainHand(fake.getInventory().getItemInMainHand());
-			spectator.updateInventory();
-		}
 	}
 
 	/**
@@ -168,42 +104,6 @@ public class Utils {
 		return item;
 	}
 
-	public static void backupInventory(Player player) {
-		M7tas.addPlayerInventoryBackup(player);
-	}
-
-	public static void restoreInventory(Player player) {
-		M7tas.PlayerInventoryBackup backup = M7tas.removePlayerInventoryBackup(player);
-		if(backup != null) {
-			backup.restore(player);
-		}
-	}
-
-	private static BukkitTask inventorySyncTask;
-
-	public static void startInventorySync() {
-		if(inventorySyncTask != null) {
-			inventorySyncTask.cancel();
-		}
-
-		inventorySyncTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
-			// Re-sync all spectators' inventories every 10 ticks
-			for(Player spectator : Spectate.getSpectatorMap().keySet()) {
-				Player fakePlayer = Spectate.getSpectatorMap().get(spectator);
-				if(fakePlayer != null) {
-					syncInventory(fakePlayer);
-				}
-			}
-		}, 0L, 1L);
-	}
-
-	public static void stopInventorySync() {
-		if(inventorySyncTask != null) {
-			inventorySyncTask.cancel();
-			inventorySyncTask = null;
-		}
-	}
-
 	/**
 	 * Plays a sound for every player on the server
 	 *
@@ -232,7 +132,7 @@ public class Utils {
 	 * @param s The sound to play
 	 */
 	public static void playLocalSound(Player p, Sound s) {
-		if(TAS.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+		if(FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.playSound(spectator, s, 1.0f, 1.0f);
 			}
@@ -250,7 +150,7 @@ public class Utils {
 	 * @param pitch  Pitch
 	 */
 	public static void playLocalSound(Player p, Sound s, float volume, float pitch) {
-		if(TAS.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+		if(FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.playSound(spectator, s, volume, pitch);
 			}
@@ -306,7 +206,7 @@ public class Utils {
 				playersInWorld.remove(i);
 				i--;
 			}
-			if(TAS.getFakePlayers().containsValue(p)) {
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) {
 				playersInWorld.remove(i);
 				i--;
 			}

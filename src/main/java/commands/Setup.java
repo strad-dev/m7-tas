@@ -21,7 +21,7 @@ public class Setup implements CommandExecutor {
 			return true;
 		}
 
-		TAS.spawnAllFakes(p.getWorld());
+		FakePlayerManager.spawnAllFakes(p.getWorld());
 		Server.serverSetup(p.getWorld());
 		p.sendMessage("Cleared all NPCs and spawned new ones");
 		return true;

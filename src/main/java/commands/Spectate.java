@@ -24,6 +24,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
+import plugin.PlayerCollision;
+import plugin.PlayerInventoryBackup;
 import plugin.Utils;
 
 import java.util.*;
@@ -74,7 +76,7 @@ public class Spectate implements CommandExecutor {
 			reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new HashSet<>()).add(p);
 
 			// NEW: Backup the player's inventory before spectating
-			Utils.backupInventory(p);
+			PlayerInventoryBackup.backup(p);
 
 			Location fakeLocation = fakePlayer.getLocation();
 			p.teleport(fakeLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
@@ -82,7 +84,7 @@ public class Spectate implements CommandExecutor {
 			preventPlayerCollision(p, fakePlayer);
 
 			// Sync inventory when starting to spectate
-			Utils.syncInventory(fakePlayer);
+			PlayerInventoryBackup.syncInventory(fakePlayer);
 			Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
 			p.sendMessage("You are now spectating " + role);
@@ -101,8 +103,8 @@ public class Spectate implements CommandExecutor {
 				}
 
 				// NEW: Restore the player's original inventory
-				Utils.restoreInventory(p);
-				M7tas.removeFromNoCollisionTeam(p);
+				PlayerInventoryBackup.restoreAndRemove(p);
+				PlayerCollision.removeFromNoCollisionTeam(p);
 				p.setCollidable(false);
 				if (p instanceof CraftPlayer craftPlayer) {
 					craftPlayer.getHandle().noPhysics = true;
@@ -155,8 +157,8 @@ public class Spectate implements CommandExecutor {
 
 	public static void preventPlayerCollision(Player realPlayer, Player fakePlayer) {
 		// Add both players to the no-collision team
-		M7tas.addToNoCollisionTeam(realPlayer);
-		M7tas.addToNoCollisionTeam(fakePlayer);
+		PlayerCollision.addToNoCollisionTeam(realPlayer);
+		PlayerCollision.addToNoCollisionTeam(fakePlayer);
 
 		// Also make the real player unable to be hit by projectiles while spectating
 		realPlayer.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0, true, false));
@@ -325,7 +327,7 @@ public class Spectate implements CommandExecutor {
 		Spectate.stopSpectatorSync();
 
 		for(Player spectator : new ArrayList<>(Spectate.getSpectatorMap().keySet())) {
-			Utils.restoreInventory(spectator);
+			PlayerInventoryBackup.restoreAndRemove(spectator);
 			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
 		}
 
