@@ -1,6 +1,8 @@
 package instructions.players;
 
 import instructions.Actions;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -67,7 +69,7 @@ public class Healer {
 	public static void preClear(boolean doContinue) {
 		Actions.setHotbarSlot(healer, 1);
 		Actions.move(healer, "WPJ", 0);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 27);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 26);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -9f, 2.9f), 31);
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
@@ -86,6 +88,32 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 109.5f, 1.75f), 22);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 23); // etherwarp towards trap
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -159f, 4.5f), 24);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 25); // etherwarp into trap
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -110.1f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 26);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 13), 27);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 35f), 33);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 35);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 36);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 37);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 38);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 39);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 40);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 35f), 41);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 175f, 8.5f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 41);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 42); // throw pearl | lands in 12 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -166f, 48f), 43);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 1/3 (Opened Chest)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
+		}, 44);
+
 
 		/*
 		 * ██████╗ ███████╗██████╗     ██████╗ ██╗     ██╗   ██╗███████╗

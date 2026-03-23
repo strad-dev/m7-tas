@@ -2,6 +2,8 @@ package listeners;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -28,16 +30,44 @@ public class PearlHelper implements Listener {
 	public void onPearlLand(ProjectileHitEvent e) {
 		if(e.getEntity() instanceof EnderPearl pearl && pearl.getShooter() instanceof Player p) {
 			e.setCancelled(true);
-			Location l = pearl.getLocation();
-			l.setX(Math.floor(l.getX()) + 0.5);
-			l.setY(Math.ceil(l.getY()));
-			l.setZ(Math.floor(l.getZ()) + 0.5);
+			Location l;
+			if(e.getHitBlock() != null && e.getHitBlockFace() != null) {
+				BlockFace face = e.getHitBlockFace();
+				// When pearl is thrown from inside a block, Bukkit inverts the face — use velocity instead
+				if(!p.getEyeLocation().getBlock().isPassable()) {
+					Vector vel = pearl.getVelocity();
+					double absX = Math.abs(vel.getX()), absY = Math.abs(vel.getY()), absZ = Math.abs(vel.getZ());
+					if(absY >= absX && absY >= absZ) {
+						face = vel.getY() > 0 ? BlockFace.UP : BlockFace.DOWN;
+					} else if(absX >= absZ) {
+						face = vel.getX() > 0 ? BlockFace.EAST : BlockFace.WEST;
+					} else {
+						face = vel.getZ() > 0 ? BlockFace.SOUTH : BlockFace.NORTH;
+					}
+				}
+				if(face == BlockFace.UP) {
+					// Top face: teleport above the hit block
+					l = e.getHitBlock().getRelative(BlockFace.UP).getLocation().add(0.5, 0, 0.5);
+				} else if(face == BlockFace.DOWN) {
+					// Bottom face: teleport to the hit block's Y position
+					l = e.getHitBlock().getLocation().add(0.5, 0, 0.5);
+				} else {
+					// Side face: teleport to the adjacent air block
+					l = e.getHitBlock().getRelative(face).getLocation().add(0.5, 0, 0.5);
+				}
+			} else {
+				// Entity hit or unknown — use pearl location floored
+				l = pearl.getLocation();
+				l.setX(Math.floor(l.getX()) + 0.5);
+				l.setY(Math.ceil(l.getY()));
+				l.setZ(Math.floor(l.getZ()) + 0.5);
+			}
 			l.setYaw(p.getLocation().getYaw());
 			l.setPitch(p.getLocation().getPitch());
 			Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " landed in " + pearl.getTicksLived() + " ticks");
 			String hit;
 			if(e.getHitBlock() != null) {
-				hit = "block";
+				hit = "block " + e.getHitBlockFace();
 			} else if(e.getHitEntity() != null) {
 				hit = "entity " + e.getHitEntity().getName();
 			} else {

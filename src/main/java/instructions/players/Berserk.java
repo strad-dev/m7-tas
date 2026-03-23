@@ -163,9 +163,9 @@ public class Berserk {
 			Actions.leftClick(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 1/4 (Opened Chest)");
 			Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 2);
-			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
 		}, 26); // obtain secret 1/4
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -139f, 2.5f), 27); // pearl lands
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -139f, 0f), 27); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 28); // etherwarp towards bat
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -149.7f, 17.5f);
@@ -258,7 +258,7 @@ public class Berserk {
 			Actions.leftClick(berserk);
 			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 4/4 (Opened Chest)");
 			Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 1);
-			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
+			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
 		}, 63);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -92f, 1f), 64); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 65); // etherwarp into well
