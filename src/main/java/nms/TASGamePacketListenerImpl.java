@@ -54,19 +54,8 @@ import java.util.stream.Collectors;
 
 public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 	static final Logger LOGGER = LogUtils.getLogger();
-	private int lastLeftClickAbilityTick = -1;
-
 	public TASGamePacketListenerImpl(MinecraftServer minecraftserver, Connection networkmanager, ServerPlayer entityplayer, CommonListenerCookie commonlistenercookie) {
 		super(minecraftserver, networkmanager, entityplayer, commonlistenercookie);
-	}
-
-	@Override
-	public void handleAnimate(ServerboundSwingPacket packet) {
-		super.handleAnimate(packet);
-		Player cp = getCraftPlayer();
-		if(CustomItems.handleCustomItems(null, EquipmentSlot.HAND, cp.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, cp)) {
-			lastLeftClickAbilityTick = MinecraftServer.currentTick;
-		}
 	}
 
 	public void handleInteract(ServerboundInteractPacket packetplayinuseentity) {
@@ -173,7 +162,7 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 								}
 
 								// Suppress attack if a custom ability already fired on the swing this tick
-								if(lastLeftClickAbilityTick == MinecraftServer.currentTick) return;
+								if(CustomItems.abilityFiredThisTick(TASGamePacketListenerImpl.this.getCraftPlayer())) return;
 
 								// Check if the entity won't produce a damage event
 								boolean immune;

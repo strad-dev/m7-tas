@@ -44,7 +44,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
+
+	public static boolean abilityFiredThisTick(Player p) {
+		return lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick;
+	}
 
 	public static String getID(ItemStack item) {
 		if(item == null || !item.hasItemMeta()) {
@@ -283,23 +288,29 @@ public class CustomItems implements Listener {
 				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
 				// Skip for items without right-click abilities
 				boolean isRightClick = action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK);
-				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker")) {
+				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker") && !id.equals("skyblock/combat/stonk")) {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
-					if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
-						mageBeam(p);
-						fired = true;
-					} else {
-						switch(id) {
-							case "skyblock/combat/terminator" -> {
-								salvation(p);
-								fired = true;
+					int currentTick = MinecraftServer.currentTick;
+					if(currentTick > lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1)) {
+						if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
+							mageBeam(p);
+							fired = true;
+						} else {
+							switch(id) {
+								case "skyblock/combat/terminator" -> {
+									salvation(p);
+									fired = true;
+								}
+								case "skyblock/combat/gyro" -> {
+									gyro(p);
+									fired = true;
+								}
 							}
-							case "skyblock/combat/gyro" -> {
-								gyro(p);
-								fired = true;
-							}
+						}
+						if(fired) {
+							lastLeftClickAbilityTick.put(p.getUniqueId(), currentTick);
 						}
 					}
 				}
