@@ -51,12 +51,14 @@ import java.util.*;
 @SuppressWarnings("unused")
 public class Actions {
 
+	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
+
 	/**
 	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
 	 *
 	 * @param entity        The LivingEntity sending movement packets
 	 * @param input         The input keys being held down<br>Valid Input contains the following characters: W, A, S, D, J, P, N<br>WASD: movement<br>J: Jump<br>P: sPrint<br>N: sNeak
-	 * @param durationTicks How long the keys are held down for, or 0 for manual override<br>NOTE: Jumping will NOT be held down if duration is 0
+	 * @param durationTicks How long the keys are held down for, or 0 for manual override
 	 */
 	public static void move(LivingEntity entity, String input, int durationTicks) {
 		// only handle CraftLivingEntity/NMS and positive duration
@@ -88,13 +90,17 @@ public class Actions {
 			serverPlayer.zza *= 0.3F;
 		}
 
+		BukkitTask existingJump = jumpTasks.remove(entity.getUniqueId());
+		if(existingJump != null) existingJump.cancel();
+
 		if(input.contains("J")) {
-			new BukkitRunnable() {
+			BukkitTask task = new BukkitRunnable() {
 				int ticks = 0;
 
 				@Override
 				public void run() {
-					if(ticks++ >= durationTicks || serverPlayer.isRemoved()) {
+					if((durationTicks > 0 && ticks++ >= durationTicks) || serverPlayer.isRemoved()) {
+						jumpTasks.remove(entity.getUniqueId());
 						cancel();
 						return;
 					}
@@ -103,6 +109,7 @@ public class Actions {
 					}
 				}
 			}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+			jumpTasks.put(entity.getUniqueId(), task);
 		}
 		if(durationTicks > 0) {
 			Utils.scheduleTask(() -> {

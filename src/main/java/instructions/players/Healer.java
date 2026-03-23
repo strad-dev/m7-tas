@@ -1,5 +1,6 @@
 package instructions.players;
 
+import instructions.Actions;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -17,6 +18,7 @@ public class Healer {
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
+				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
 //			case "maxor", "boss" -> {
 //				Utils.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
@@ -62,9 +64,37 @@ public class Healer {
 		}
 	}
 
+	public static void preClear(boolean doContinue) {
+		Actions.setHotbarSlot(healer, 1);
+		Actions.move(healer, "WPJ", 0);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 27);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -9f, 2.9f), 31);
+		Utils.scheduleTask(() -> clear(doContinue), 128);
+	}
 
-	// Clear code moved to Berserk.java (executed by Mage3)
+	public static void clear(boolean doContinue) {
+		/*
+		 * ████████╗██████╗  █████╗ ██████╗
+		 * ╚══██╔══╝██╔══██╗██╔══██╗██╔══██╗
+		 *    ██║   ██████╔╝███████║██████╔╝
+		 *    ██║   ██╔══██╗██╔══██║██╔═══╝
+		 *    ██║   ██║  ██║██║  ██║██║
+		 *    ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝
+		 */
+		Utils.scheduleTask(() -> Actions.move(healer, "N", 6), 20);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 21); // etherwarp into red blue
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 109.5f, 1.75f), 22);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 23); // etherwarp towards trap
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -159f, 4.5f), 24);
 
+		/*
+		 * ██████╗ ███████╗██████╗     ██████╗ ██╗     ██╗   ██╗███████╗
+		 * ██╔══██╗██╔════╝██╔══██╗    ██╔══██╗██║     ██║   ██║██╔════╝
+		 * ██████╔╝█████╗  ██║  ██║    ██████╔╝██║     ██║   ██║█████╗
+		 * ██╔══██╗██╔══╝  ██║  ██║    ██╔══██╗██║     ██║   ██║██╔══╝
+		 * ██║  ██║███████╗██████╔╝    ██████╔╝███████╗╚██████╔╝███████╗
+		 * ╚═╝  ╚═╝╚══════╝╚═════╝     ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝
+		 */
 
 //		/*
 //		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
@@ -168,7 +198,7 @@ public class Healer {
 //				maxor(true);
 //			}, 1025);
 //		}
-//	}
+	}
 //
 //	public static void maxor(boolean doContinue) {
 //		// TODO predev with 500 speed
