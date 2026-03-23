@@ -144,7 +144,7 @@ public class Mage {
 			Utils.playSecretFoundSound(mage, Utils.SecretType.ITEM);
 		}, 59);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 162f, -66f);
+			Actions.turnHead(mage, 162f, -66.2f);
 			Actions.setHotbarSlot(mage, 7);
 		}, 60); // pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 61); // pearl to top | lands in 11 ticks
@@ -160,8 +160,8 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 2/6 (Opened Chest)");
-			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
+			Utils.playSecretFoundSound(mage, Utils.SecretType.BLESSING_CHEST);
 		}, 68);
 		// tick 72: pearl lands
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 73); // reposition
@@ -169,8 +169,8 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 3/6 (Opened Chest)");
-			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
+			Utils.playSecretFoundSound(mage, Utils.SecretType.BLESSING_CHEST);
 		}, 75);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 110.2f, 0.97f);
@@ -201,8 +201,8 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 5/6 (Opened Chest)");
-			Utils.playSecretFoundSound(mage, Utils.SecretType.CHEST);
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
+			Utils.playSecretFoundSound(mage, Utils.SecretType.BLESSING_CHEST);
 		}, 85);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -90f, -6.5f);
@@ -245,10 +245,10 @@ public class Mage {
 		}, 100);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 101); // etherwarp to gate
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 43f, -33f);
+			Actions.turnHead(mage, 60f, -20f);
 			Actions.setHotbarSlot(mage, 7);
 		}, 102);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 103); // throw pearl out | lands in 9 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 103); // throw pearl out | lands in 13 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -90f, 36f);
 			Actions.setHotbarSlot(mage, 5);
@@ -275,20 +275,20 @@ public class Mage {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Mimic Killed!");
 		}, 111); // kill mimic
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 77f, 14f);
+			Actions.turnHead(mage, 68f, 11.5f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 6);
-		}, 112); // pearl lands
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 113); // etherwarp back towards blood
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 124f, 3f), 114);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 115); // etherwarp opposite of blood (positioning)
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -2f, 3.5f), 116);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 117); // etherwarp to blood
+		}, 116); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 117); // etherwarp back towards blood
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 124f, 3f), 118);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 119); // etherwarp opposite of blood (positioning)
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -2f, 3.5f), 120);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 121); // etherwarp to blood
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 0f);
 			Actions.setHotbarSlot(mage, 3);
-		}, 118);
-		// Deathmite: 68 ticks
+		}, 122);
+		// Deathmite: 72 ticks
 
 		/*
 		 * ██████╗ ██╗      ██████╗  ██████╗ ██████╗      ██████╗ █████╗ ███╗   ███╗██████╗

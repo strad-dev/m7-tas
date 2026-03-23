@@ -79,6 +79,7 @@ public class Tank {
 		Actions.setHotbarSlot(tank, 3);
 		Actions.move(tank, "WPJ", 12);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 27); // left click mort to start the run
+		// tick 28: click start button
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 29); // run up to door
 		Utils.scheduleTask(() -> clear(doContinue), 128);
 	}
