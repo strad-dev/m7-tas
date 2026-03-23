@@ -279,8 +279,8 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	public static boolean handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
-		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return false;
+	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
+		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return;
 		boolean fired = false;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
@@ -366,7 +366,6 @@ public class CustomItems implements Listener {
 		}
 		// Cancel left-click events only if an ability actually fired
 		if(e != null && fired) e.setCancelled(true);
-		return fired;
 	}
 
 	public static void witherImpact(Player p) {
