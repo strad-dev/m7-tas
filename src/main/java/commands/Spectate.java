@@ -23,10 +23,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jspecify.annotations.NonNull;
-import plugin.M7tas;
-import plugin.PlayerCollision;
-import plugin.PlayerInventoryBackup;
-import plugin.Utils;
+import plugin.*;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -53,7 +50,7 @@ public class Spectate implements CommandExecutor {
 				return true;
 			}
 
-			Map<String, Player> fakePlayers = TAS.getFakePlayers();
+			Map<String, Player> fakePlayers = FakePlayerManager.getFakePlayers();
 			if(fakePlayers.isEmpty()) {
 				p.sendMessage(ChatColor.RED + "No classes to spectate!  Try running /setup first");
 				return true;
@@ -296,7 +293,7 @@ public class Spectate implements CommandExecutor {
 			Set<Player> shouldBeHidden = new HashSet<>();
 
 			// Check all other fake players
-			for(Player otherFake : TAS.getFakePlayers().values()) {
+			for(Player otherFake : FakePlayerManager.getFakePlayers().values()) {
 				if(otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
 
 				double distance = spectatorLocation.distanceSquared(otherFake.getLocation());

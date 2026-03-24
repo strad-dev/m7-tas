@@ -1,6 +1,6 @@
 package listeners;
 
-import commands.TAS;
+import plugin.FakePlayerManager;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -59,7 +59,7 @@ public class MiscListener implements Listener {
 				}
 			} else if(e.getHitEntity() instanceof LivingEntity hitEntity) {
 				// Phase through fake players and self
-				if(hitEntity instanceof Player player && (TAS.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
+				if(hitEntity instanceof Player player && (FakePlayerManager.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
 					e.setCancelled(true);
 				}
 				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually

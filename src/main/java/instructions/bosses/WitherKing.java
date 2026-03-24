@@ -1,6 +1,6 @@
 package instructions.bosses;
 
-import commands.TAS;
+import plugin.FakePlayerInventory;
 import instructions.Actions;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -12,7 +12,6 @@ import org.bukkit.entity.Wither;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitTask;
-import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.Random;
@@ -231,7 +230,7 @@ public class WitherKing {
 	public static void placeRelic(Player player) {
 		Actions.leftClick(player);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
-		player.getInventory().setItem(8, TAS.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
+		player.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
 		Actions.setHotbarSlot(player, 8);
 	}
 
