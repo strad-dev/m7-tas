@@ -103,7 +103,7 @@ public class Simulate implements CommandExecutor {
 			}
 			case "click" -> {
 				if(args.length < 2) {
-					p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
+					p.sendMessage(ChatColor.RED + "Please specify a player to apply the click to");
 					return true;
 				}
 				Player applyTo = FakePlayerManager.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
@@ -128,6 +128,36 @@ public class Simulate implements CommandExecutor {
 					Actions.rightClick(applyTo);
 				}
 				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " " + click + " clicked");
+				return true;
+			}
+			case "hotbar" -> {
+				if(args.length < 2) {
+					p.sendMessage(ChatColor.RED + "Please specify a player to apply hotbar change to");
+					return true;
+				}
+				Player applyTo = FakePlayerManager.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				if(applyTo == null) {
+					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
+					return true;
+				}
+				if(args.length < 3) {
+					p.sendMessage(ChatColor.RED + "Please specify which slot to change to");
+					return true;
+				}
+				int slot;
+				try {
+					slot = Integer.parseInt(args[2]);
+				} catch(Exception exception) {
+					p.sendMessage(ChatColor.RED + "Slot must be an integer");
+					return true;
+				}
+				if(slot < 0 || slot > 8) {
+					p.sendMessage(ChatColor.RED + "Slot must be between 0 and 8");
+					return true;
+				}
+				Actions.setHotbarSlot(applyTo, slot);
+				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " hotbar slot changed to " + slot);
+				return true;
 			}
 		}
 		return false;
