@@ -68,7 +68,7 @@ public class MiscListener implements Listener {
 					hitEntity.setNoDamageTicks(0);
 					hitEntity.damage(arrow.getDamage());
 					hitEntity.setNoDamageTicks(0);
-					p.playSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
+					Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					Utils.changeName(hitEntity);
 					int newPierce = arrow.getPierceLevel() - 1;
 					if(newPierce <= 0) arrow.remove();
