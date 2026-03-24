@@ -344,6 +344,7 @@ public class Mage {
 			Actions.swapItems(mage, 3, 30);
 			Actions.swapItems(mage, 4, 31);
 		}, 664);
+
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 741 Ticks (37.05 seconds)");
 			if(doContinue) {

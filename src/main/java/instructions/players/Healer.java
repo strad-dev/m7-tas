@@ -284,6 +284,16 @@ public class Healer {
 		}, 166);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 176f, 44.4f), 167);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 168); // etherwarp towards yellow
+		// Red Blue: 26 ticks
+
+		/*
+		 * ██╗   ██╗███████╗██╗     ██╗      ██████╗ ██╗    ██╗
+		 * ╚██╗ ██╔╝██╔════╝██║     ██║     ██╔═══██╗██║    ██║
+		 *  ╚████╔╝ █████╗  ██║     ██║     ██║   ██║██║ █╗ ██║
+		 *   ╚██╔╝  ██╔══╝  ██║     ██║     ██║   ██║██║███╗██║
+		 *    ██║   ███████╗███████╗███████╗╚██████╔╝╚███╔███╔╝
+		 *    ╚═╝   ╚══════╝╚══════╝╚══════╝ ╚═════╝  ╚══╝╚══╝
+		 */
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 5.5f), 169);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 170); // etherwarp up to miniboss
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 171);
@@ -293,109 +303,14 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 5);
 		}, 178);
+		// Yellow: 10 ticks
 
-//		/*
-//		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
-//		 * ████╗ ████║██║   ██║██╔════╝██╔════╝██║   ██║████╗ ████║
-//		 * ██╔████╔██║██║   ██║███████╗█████╗  ██║   ██║██╔████╔██║
-//		 * ██║╚██╔╝██║██║   ██║╚════██║██╔══╝  ██║   ██║██║╚██╔╝██║
-//		 * ██║ ╚═╝ ██║╚██████╔╝███████║███████╗╚██████╔╝██║ ╚═╝ ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 66.6f, 7.8f), 160);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -133.5, 71, -17.5)), 161);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 56.7f, 43.4f), 162);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -136.5, 69, -15.5)), 163);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, 0f, 0f);
-//			Actions.setHotbarSlot(healer, 3);
-//		}, 164);
-//		Utils.scheduleTask(() -> Actions.superboom(healer, -138, 69, -15, -136, 74, -14), 165);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Museum 1/5 (Opened Chest)");
-//			world.playSound(healer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//		}, 166);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, -130.4f, -44.3f);
-//			Actions.setHotbarSlot(healer, 1);
-//		}, 167);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -128.5, 82, -22.5)), 168);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -64.5f, -61.9f), 169);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -124.5, 93, -20.5)), 170);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 29.1f, 31.7f), 171);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Museum 2/5 (Obtained Wither Essence)");
-//			world.playSound(healer.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-//		}, 172);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -171f, 46.3f), 173);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -122.5, 82, -32.5)), 174);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 152.8f, 3.5f), 175);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -134.5, 82, -56.5)), 176);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -135f, 0f), 177);
-//		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -133.5, 82, -57.5)), 178);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -128f, 37.2f), 179);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -132.5, 82, -58.5)), 180);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, 135f, 77.5f);
-//			Actions.move(healer, new Vector(-0.183848, 0, -0.183848), 1);
-//		}, 181);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 182);
-//		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(-133, 81, -59)), 183);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 157.9f, 20.1f), 184);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Museum 3/5 (Opened Chest)");
-//			world.playSound(healer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//		}, 185);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 136.1f, 71.7f), 186);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -135.5, 70, -61.5)), 187);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, 135f, 50f);
-//			Actions.setHotbarSlot(healer, 4);
-//		}, 188);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickOld(healer);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Museum 4/5 (Mimic Chest)");
-//			Actions.mimicChest(healer, world.getBlockAt(-137, 70, -63));
-//		}, 189);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, -89.1f, 7.6f);
-//			Actions.setHotbarSlot(healer, 1);
-//		}, 190);
-//		Utils.scheduleTask(() -> {
-//			Actions.etherwarp(healer, new Location(world, -128.5, 71, -61.5));
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Mimic Killed!");
-//		}, 191);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -97.7f, 23.6f), 192);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -120.5, 69, -62.5)), 193);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 121.4f, 15.1f), 194);
-//		Utils.scheduleTask(() -> Actions.AOTV(healer, new Location(world, -125.5, 69, -65.5)), 195);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, -90f, 90f);
-//			Actions.setHotbarSlot(healer, 3);
-//		}, 196);
-//		Utils.scheduleTask(() -> Actions.superboom(healer, -123, 68, -63, -126, 67, -70), 197);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 60f), 198);
-//		Utils.scheduleTask(() -> Actions.etherwarp(healer, new Location(world, -120.5, 62, -65.5)), 199);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Museum 5/5 (Opened Chest)");
-//			world.playSound(healer.getLocation(), Sound.BLOCK_CHEST_OPEN, 1.0F, 1.0F);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 202 Ticks (10.10 seconds)");
-//		}, 200);
-//		Utils.scheduleTask(() -> {
-//			Actions.swapItems(healer, 1, 28);
-//			Actions.swapItems(healer, 3, 30);
-//			Actions.swapItems(healer, 7, 34);
-//		}, 201);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> {
-//				Utils.teleport(healer, new Location(world, 73.5, 221, 13.5));
+		Utils.scheduleTask(() -> {
+			if(doContinue) {
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
-//			}, 1025);
-//		}
+			}
+		}, 741);
 	}
 //
 //	public static void maxor(boolean doContinue) {
