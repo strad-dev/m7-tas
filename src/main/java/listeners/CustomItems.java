@@ -290,7 +290,7 @@ public class CustomItems implements Listener {
 				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
 				// Skip for items without right-click abilities
 				boolean isRightClick = action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK);
-				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker") && !id.equals("skyblock/combat/stonk")) {
+				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker") && !id.equals("skyblock/combat/stonk") && !id.equals("skyblock/combat/last_breath")) {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
@@ -1713,7 +1713,7 @@ public class CustomItems implements Listener {
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
 				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 295 : 200) : (temp instanceof Wither ? 255 : 170);
+					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
 					CraftLivingEntity craftEntity = (CraftLivingEntity) temp;
 					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
 					ServerLevel level = (ServerLevel) nmsEntity.level();
