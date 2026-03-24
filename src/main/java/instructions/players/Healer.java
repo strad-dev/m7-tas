@@ -1,23 +1,24 @@
 package instructions.players;
 
 import instructions.Actions;
-import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import plugin.Utils;
+
+import java.util.Objects;
 
 public class Healer {
 	private static Player healer;
 	private static World world;
 
-	// Healer --> Healer
 	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
+		Objects.requireNonNull(healer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 16);
 
 		switch(section) {
 			case "all", "clear" -> {
@@ -97,7 +98,7 @@ public class Healer {
 		}, 26);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 27); // throw pearl into spot | lands in 5 ticks
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 180f, -35f);
+			Actions.turnHead(healer, 180f, 35f);
 			Actions.setHotbarSlot(healer, 5);
 		}, 28);
 		// tick 32: pearl lands
@@ -112,11 +113,11 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 38);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 35f), 39);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 175f, 8.5f);
+			Actions.turnHead(healer, 175f, 9.5f);
 			Actions.setHotbarSlot(healer, 7);
 		}, 39);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 40); // throw pearl across | lands in 12 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -166f, 48f), 41);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -160f, 55f), 41);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 1/3 (Opened Chest)");
@@ -199,6 +200,17 @@ public class Healer {
 			Actions.setHotbarSlot(healer, 7);
 		}, 125);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 126); // throw pearl down | lands in 10 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -47f, 20f), 127);
+		// Tick 136: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 137); // throw pearl out of trap | lands in 3 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 16f, 2.9f);
+			Actions.move(healer, "N", 4);
+			Actions.setHotbarSlot(healer, 1);
+		}, 138);
+		// Tick 140: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 141); // etherwarp to red blue
+		// Trap: 141 ticks | Time from Enter: 116 ticks
 
 		/*
 		 * ██████╗ ███████╗██████╗     ██████╗ ██╗     ██╗   ██╗███████╗
@@ -208,6 +220,79 @@ public class Healer {
 		 * ██║  ██║███████╗██████╔╝    ██████╔╝███████╗╚██████╔╝███████╗
 		 * ╚═╝  ╚═╝╚══════╝╚═════╝     ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝
 		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 65f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 142);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 143);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 1/4 (Opened Chest)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
+		}, 144);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, -90f);
+			Actions.move(healer, "N", 0);
+		}, 145);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 146); // etherwarp to prince
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 0f);
+			Actions.setHotbarSlot(healer, 3);
+		}, 147);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 148); // blow up crypt
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 149);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 150); // kill prince | arrows land in 2 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 180f, -5f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 151);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Prince Killed | Crypt 4/5");
+		}, 152); // etherwarp across
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 100f, 10f), 153);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 154); // etherwarp to item
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -97f, -4f);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 2/4 (Picked Up Item)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
+		}, 155);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 156); // etherwarp to chest
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -115f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 157);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 158);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 159); // stonk towards chest
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 3/4 (Opened Chest)");
+			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 2);
+			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
+		}, 160);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 57f, 39f), 161);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 162); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 118f, -39f), 163);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 164); // etherwarp to wither essence
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 23f, 30f), 165);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(healer);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 4/4 (Opened Wither Essence)");
+			Utils.playSecretFoundSound(healer, Utils.SecretType.ESSENCE);
+		}, 166);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 176f, 44.4f), 167);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 168); // etherwarp towards yellow
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 5.5f), 169);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 170); // etherwarp up to miniboss
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 171);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 172);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 177); // shoot at miniboss
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
+			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 5);
+		}, 178);
 
 //		/*
 //		 * ███╗   ███╗██╗   ██╗███████╗███████╗██╗   ██╗███╗   ███╗
