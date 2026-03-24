@@ -1,7 +1,7 @@
 package listeners;
 
+import plugin.FakePlayerManager;
 import commands.Spectate;
-import commands.TAS;
 import instructions.Server;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
@@ -155,7 +155,7 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof LivingEntity entity && !entity.getScoreboardTags().contains("TASNoName")) {
 			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
 		}
-		if(e.getDamager() instanceof Player p && !TAS.getFakePlayers().containsValue(p)) {
+		if(e.getDamager() instanceof Player p && !FakePlayerManager.getFakePlayers().containsValue(p)) {
 			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		}
 	}
@@ -178,7 +178,7 @@ public class CustomItems implements Listener {
 	@EventHandler
 	public void onPlayerAnimation(PlayerAnimationEvent e) {
 		Player p = e.getPlayer();
-		if(e.getAnimationType().equals(PlayerAnimationType.ARM_SWING) && TAS.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+		if(e.getAnimationType().equals(PlayerAnimationType.ARM_SWING) && FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
 				spectator.swingMainHand();
 			}
@@ -194,7 +194,7 @@ public class CustomItems implements Listener {
 		boolean isClassPlayer = p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer") || p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
 		if(!isClassPlayer) return;
 		e.setCancelled(true);
-		if(!TAS.getFakePlayers().containsValue(p)) return;
+		if(!FakePlayerManager.getFakePlayers().containsValue(p)) return;
 		dispatchDrop(p, ultimate);
 	}
 
@@ -318,7 +318,7 @@ public class CustomItems implements Listener {
 				}
 				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
-					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || TAS.getFakePlayers().containsValue(p)) {
+					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || FakePlayerManager.getFakePlayers().containsValue(p)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
 							case "skyblock/combat/scylla" -> {

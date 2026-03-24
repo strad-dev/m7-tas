@@ -10,6 +10,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
+import plugin.FakePlayerInventory;
+import plugin.FakePlayerManager;
 
 import java.util.Map;
 
@@ -47,7 +49,7 @@ public class TAS implements CommandExecutor {
 			return;
 		}
 
-		FakePlayerManager.setInventories();
+		FakePlayerInventory.setInventories();
 		Server.serverSetup(world);
 
 		Archer.archerInstructions(fakePlayers.get("Archer"), section);
@@ -61,21 +63,5 @@ public class TAS implements CommandExecutor {
 		// Restart spectator sync so it runs AFTER all instruction tasks in each tick
 		Spectate.stopSpectatorSync();
 		Spectate.startSpectatorSync();
-	}
-
-	/**
-	 * @deprecated Use {@link FakePlayerManager#getFakePlayers()} instead
-	 */
-	@Deprecated
-	public static Map<String, Player> getFakePlayers() {
-		return FakePlayerManager.getFakePlayers();
-	}
-
-	/**
-	 * @deprecated Use {@link FakePlayerManager#stopCustomConnection()} instead
-	 */
-	@Deprecated
-	public static void stopCustomConnection() {
-		FakePlayerManager.stopCustomConnection();
 	}
 }

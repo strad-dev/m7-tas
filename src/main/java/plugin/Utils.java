@@ -1,6 +1,5 @@
 package plugin;
 
-import commands.FakePlayerManager;
 import commands.Spectate;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;

@@ -1,6 +1,6 @@
 package listeners;
 
-import commands.TAS;
+import plugin.FakePlayerManager;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
 import io.netty.channel.Channel;
@@ -49,7 +49,7 @@ public class JoinListener implements Listener {
 		Utils.scheduleTask(() -> {
 			Player joiningPlayer = ev.getPlayer();
 
-			if (!TAS.getFakePlayers().containsValue(joiningPlayer)) {
+			if (!FakePlayerManager.getFakePlayers().containsValue(joiningPlayer)) {
 				try {
 					Channel ch = getChannel(joiningPlayer);
 					if (ch.pipeline().get("tas_interceptor") == null)
@@ -64,7 +64,7 @@ public class JoinListener implements Listener {
 			ServerGamePacketListenerImpl conn = ((CraftPlayer) joiningPlayer).getHandle().connection;              // PlayerConnection
 
 			// Re-send each fake NPC’s “add + spawn” packets just to this connection:
-			for(Player fake : TAS.getFakePlayers().values()) {
+			for(Player fake : FakePlayerManager.getFakePlayers().values()) {
 				// 1) NMS handles
 				ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 				ServerLevel world = ((CraftWorld) Objects.requireNonNull(fake.getWorld())).getHandle();
@@ -138,7 +138,7 @@ public class JoinListener implements Listener {
 	@EventHandler
 	public void onQuit(PlayerQuitEvent ev) {
 		Player p = ev.getPlayer();
-		if (TAS.getFakePlayers().containsValue(p)) return;
+		if (FakePlayerManager.getFakePlayers().containsValue(p)) return;
 		try {
 			Channel ch = getChannel(p);
 			if (ch.pipeline().get("tas_interceptor") != null)

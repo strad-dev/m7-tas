@@ -1,8 +1,8 @@
 package instructions;
 
 import com.mojang.datafixers.util.Pair;
+import plugin.FakePlayerManager;
 import commands.Spectate;
-import commands.TAS;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
@@ -48,22 +48,12 @@ import plugin.PlayerInventoryBackup;
 import plugin.Utils;
 
 import javax.annotation.Nullable;
-import java.lang.reflect.Method;
 import java.util.*;
 
 @SuppressWarnings("unused")
 public class Actions {
 
 	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
-	private static final Method updatePlayerPose;
-	static {
-		try {
-			updatePlayerPose = net.minecraft.world.entity.player.Player.class.getDeclaredMethod("updatePlayerPose");
-			updatePlayerPose.setAccessible(true);
-		} catch (NoSuchMethodException e) {
-			throw new RuntimeException("Failed to find updatePlayerPose", e);
-		}
-	}
 
 	/**
 	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
@@ -97,11 +87,6 @@ public class Actions {
 		}
 
 		serverPlayer.setShiftKeyDown(input.contains("N"));
-		try {
-			updatePlayerPose.invoke(serverPlayer);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		if(input.contains("N")) {
 			serverPlayer.xxa *= 0.3F;
 			serverPlayer.zza *= 0.3F;
@@ -331,7 +316,7 @@ public class Actions {
 			if(entity.isInvulnerable()) return false;
 			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
 			if(entity instanceof org.bukkit.entity.Player player) {
-				if(TAS.getFakePlayers().containsValue(player)) return false;
+				if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
 				return !Spectate.getSpectatingPlayers(p).contains(player);
 			}
 			return true;

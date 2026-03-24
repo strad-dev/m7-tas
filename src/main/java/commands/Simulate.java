@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
+import plugin.FakePlayerManager;
 import plugin.Utils;
 
 public class Simulate implements CommandExecutor {
@@ -52,34 +53,6 @@ public class Simulate implements CommandExecutor {
 				Utils.broadcastBlessing(p, Utils.BlessingType.TIME, 5);
 				return true;
 			}
-			case "bonzo" -> {
-				p.sendMessage(ChatColor.YELLOW + "This command is being reworked and will be available in 3-5 business days");
-//						if(args.length < 2) {
-//							p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
-//							return true;
-//						}
-//						Player applyTo = fakePlayers.get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
-//						if(args.length < 5) {
-//							p.sendMessage(ChatColor.RED + "Please specify X Y Z of the movement");
-//							return true;
-//						}
-//						double x;
-//						double y;
-//						double z;
-//						try {
-//							x = Double.parseDouble(args[2]);
-//							y = Double.parseDouble(args[3]);
-//							z = Double.parseDouble(args[4]);
-//						} catch(Exception exception) {
-//							p.sendMessage(ChatColor.RED + "Movement must be an double");
-//							return true;
-//						}
-//						lastSimulated = applyTo;
-//						lastSimulatedLocation = applyTo.getLocation();
-////						Actions.bonzo(applyTo, new Vector(x, y, z));
-//						p.sendMessage(ChatColor.GREEN + "Simulating Bonzo movement for " + applyTo.getName());
-				return true;
-			}
 			// Syntax: /simulate move [player] [set from: {W, A, S, D, J, P, N}] [ticks]
 			// WASD - self explainatory
 			// J - jump
@@ -93,7 +66,7 @@ public class Simulate implements CommandExecutor {
 					p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
 					return true;
 				}
-				Player applyTo = TAS.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				Player applyTo = FakePlayerManager.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
 				if(applyTo == null) {
 					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
 					return true;
@@ -128,7 +101,34 @@ public class Simulate implements CommandExecutor {
 				p.sendMessage(ChatColor.GREEN + "Moved " + applyTo.getName() + " for " + duration + " ticks");
 				return true;
 			}
-//					case "explosiveshot" -> Archer.explosiveShot();
+			case "click" -> {
+				if(args.length < 2) {
+					p.sendMessage(ChatColor.RED + "Please specify a player to apply the movement to");
+					return true;
+				}
+				Player applyTo = FakePlayerManager.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				if(applyTo == null) {
+					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
+					return true;
+				}
+				if(args.length < 3) {
+					p.sendMessage(ChatColor.RED + "Please specify which click is being simulated");
+					return true;
+				}
+				String click = args[2].toLowerCase();
+				if(!click.equals("left") && !click.equals("right")) {
+					p.sendMessage(ChatColor.RED + "Invalid click specified.  Valid clicks: left, right");
+					return true;
+				}
+				lastSimulated = applyTo;
+				lastSimulatedLocation = applyTo.getLocation();
+				if(click.equals("left")) {
+					Actions.leftClick(applyTo);
+				} else {
+					Actions.rightClick(applyTo);
+				}
+				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " " + click + " clicked");
+			}
 		}
 		return false;
 	}
