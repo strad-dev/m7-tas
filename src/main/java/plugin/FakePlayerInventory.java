@@ -211,7 +211,7 @@ public class FakePlayerInventory {
 		ItemStack item = new ItemStack(material);
 		ItemMeta meta = item.getItemMeta();
 		assert meta != null;
-		meta.setItemName(null);
+		meta.setItemName(name);
 		meta.setUnbreakable(true);
 		meta.setDisplayName(name);
 		List<String> lore = new ArrayList<>();
