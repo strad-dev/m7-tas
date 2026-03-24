@@ -1,6 +1,7 @@
 package instructions;
 
 import com.mojang.datafixers.util.Pair;
+import listeners.CustomItems;
 import plugin.FakePlayerManager;
 import commands.Spectate;
 import net.minecraft.core.BlockPos;
@@ -332,7 +333,11 @@ public class Actions {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
-			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) return;
+			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) {
+				// No entity hit, block hit but not a pickaxe — dispatch left-click ability
+				CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_BLOCK, p);
+				return;
+			}
 
 			Block block = blockRay.getHitBlock();
 			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
@@ -342,6 +347,9 @@ public class Actions {
 			Utils.simulatePacket(p, breakPacket);
 			ServerboundPlayerActionPacket breakStopPacket = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, pos, direction, 0);
 			Utils.simulatePacket(p, breakStopPacket);
+		} else {
+			// No entity hit, no block hit — dispatch left-click ability
+			CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		}
 	}
 

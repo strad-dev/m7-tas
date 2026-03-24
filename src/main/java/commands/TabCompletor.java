@@ -64,23 +64,31 @@ public class TabCompletor implements TabCompleter {
 
 			case "simulate" -> {
 				if(args.length == 1) {
-					String[] simCommands = {"undo", "bonzo", "move"};
+					String[] simCommands = {"undo", "allblessings", "bonzo", "move", "click", "hotbar"};
 					for(String cmd : simCommands) {
 						if(cmd.startsWith(args[0].toLowerCase())) {
 							completions.add(cmd);
 						}
 					}
-				} else if(args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move"))) {
-					// Player selection for bonzo/move
+				} else if(args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move") || args[0].equalsIgnoreCase("click") || args[0].equalsIgnoreCase("hotbar"))) {
 					for(String role : FakePlayerManager.getFakePlayers().keySet()) {
 						if(role.toLowerCase().startsWith(args[1].toLowerCase())) {
 							completions.add(role);
 						}
 					}
-				} else if((args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move")) && args.length <= 6) {
-					// For bonzo/move, we don't provide completions for x,y,z,duration
-					// but we also don't want to show completions after the expected number of args
-					return completions;
+				} else if(args.length == 3 && args[0].equalsIgnoreCase("click")) {
+					for(String click : new String[]{"left", "right"}) {
+						if(click.startsWith(args[2].toLowerCase())) {
+							completions.add(click);
+						}
+					}
+				} else if(args.length == 3 && args[0].equalsIgnoreCase("hotbar")) {
+					for(int i = 0; i <= 8; i++) {
+						String slot = String.valueOf(i);
+						if(slot.startsWith(args[2])) {
+							completions.add(slot);
+						}
+					}
 				}
 			}
 		}

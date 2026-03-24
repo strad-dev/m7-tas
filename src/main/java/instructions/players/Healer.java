@@ -1,10 +1,12 @@
 package instructions.players;
 
 import instructions.Actions;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import plugin.Utils;
 
@@ -175,7 +177,7 @@ public class Healer {
 		}, 111);
 		// Tick 118: pearl lands
 		Utils.scheduleTask(() -> {
-			Actions.move(healer, "WP", 8);
+			Actions.move(healer, "WP", 0);
 			Actions.leftClick(healer);
 		}, 119);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 120);
