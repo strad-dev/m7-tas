@@ -477,6 +477,13 @@ public class Berserk {
 		}, 331);
 		Utils.scheduleTask(Berserk::stopIceFillTask, 400);
 		// Ice Fill: 213 ticks
+
+		Utils.scheduleTask(() -> {
+			if(doContinue) {
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
+//				maxor(true);
+			}
+		}, 741);
 	}
 
 	private static void playIceFillSounds(int level) {
