@@ -113,6 +113,7 @@ public class Tank {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 0f, 6f);
 			Actions.setHotbarSlot(tank, 3);
+			Actions.swapItems(tank, 4, 31);
 		}, 26);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
@@ -142,14 +143,81 @@ public class Tank {
 		 * ██║ ╚═╝ ██║╚██████╔╝███████║███████╗╚██████╔╝██║ ╚═╝ ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚══════╝╚══════╝ ╚═════╝ ╚═╝     ╚═╝
 		 */
-
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 155f, 10f), 52);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 53); // etherwarp into position
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 0f, 13f);
+			Actions.setHotbarSlot(tank, 3);
+		}, 54);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum Cleared");
+			Utils.scheduleTask(() -> {
+				Utils.broadcastBlessing(tank, Utils.BlessingType.WISDOM, 5);
+				Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+			}, 200);
+		}, 55);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 180f, 1.4f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 56);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 57); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 58); // blow up wall
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 1/5 (Opened Chest)");
+			Utils.broadcastBlessing(tank, Utils.BlessingType.STONE, 2);
+			Utils.playSecretFoundSound(tank, Utils.SecretType.BLESSING_CHEST);
+		}, 59);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 45f, -43f), 60);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 61); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 110f, -60f), 62);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 63); // etherwarp to wither essence
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -147f, 20f), 64);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 2/5 (Obtained Wither Essence)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.ESSENCE);
+		}, 65);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -26f, 64f), 66);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 67); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -10f, 2.5f), 68);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 69); // etherwarp across
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 1f, 15f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 70);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 71);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 72); // stonk wall | you cannot etherwarp through the gap
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 1), 73);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 74); // etherwarp in
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 9f), 75);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 3/5 (Opened Chest)");
+			Utils.broadcastBlessing(tank, Utils.BlessingType.STONE, 2);
+			Utils.playSecretFoundSound(tank, Utils.SecretType.BLESSING_CHEST);
+		}, 76);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, 72.5f);
+			Actions.move(tank, "WP", 1);
+			Actions.setHotbarSlot(tank, 5);
+		}, 77);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 78);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 79); // stonk floor
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, 90f);
+			Actions.move(tank, "N", 0);
+			Actions.setHotbarSlot(tank, 1);
+		}, 80);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 81); // etherwarp to floor
 
 		Utils.scheduleTask(() -> {
 			if(doContinue) {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 			}
-		}, 741);
+		}, 742);
 	}
 
 //	}

@@ -196,7 +196,7 @@ public class Archer {
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(archer, Utils.BlessingType.LIFE, 5);
 				Utils.playLocalSound(archer, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
-			}, 300);
+			}, 200);
 		}, 71);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 72); // etherwarp towards quiz
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 73);
@@ -294,7 +294,7 @@ public class Archer {
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(archer, Utils.BlessingType.LIFE, 5);
 				Utils.playLocalSound(archer, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
-			}, 300);
+			}, 200);
 		}, 108);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 109); // blow up door
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 1), 110);
@@ -402,7 +402,7 @@ public class Archer {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 			}
-		}, 741);
+		}, 742);
 	}
 
 

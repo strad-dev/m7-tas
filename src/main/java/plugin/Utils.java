@@ -19,7 +19,10 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.Objects;
 
 public class Utils {
 	/**

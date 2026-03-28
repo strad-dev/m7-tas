@@ -1,6 +1,5 @@
 package instructions.bosses;
 
-import plugin.FakePlayerInventory;
 import instructions.Actions;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -12,6 +11,7 @@ import org.bukkit.entity.Wither;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitTask;
+import plugin.FakePlayerInventory;
 import plugin.Utils;
 
 import java.util.Random;

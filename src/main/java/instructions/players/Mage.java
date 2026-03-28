@@ -344,14 +344,18 @@ public class Mage {
 			Actions.swapItems(mage, 3, 30);
 			Actions.swapItems(mage, 4, 31);
 		}, 664);
-
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 741 Ticks (37.05 seconds)");
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 742 Ticks (37.05 seconds)");
+			// these are not picked up as boss is entered immediately
+			Utils.scheduleTask(() -> {
+				Utils.broadcastBlessing(mage, Utils.BlessingType.POWER, 5);
+				Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 5);
+			}, 200);
 			if(doContinue) {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 			}
-		}, 741);
+		}, 742);
 	}
 
 	//

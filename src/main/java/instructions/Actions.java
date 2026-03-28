@@ -1,9 +1,8 @@
 package instructions;
 
 import com.mojang.datafixers.util.Pair;
-import listeners.CustomItems;
-import plugin.FakePlayerManager;
 import commands.Spectate;
+import listeners.CustomItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
@@ -44,6 +43,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import plugin.FakePlayerManager;
 import plugin.M7tas;
 import plugin.PlayerInventoryBackup;
 import plugin.Utils;
@@ -314,7 +314,6 @@ public class Actions {
 			if(entity == p) return false;
 			if(!(entity instanceof LivingEntity le)) return false;
 			if(entity.isDead()) return false;
-			if(entity.isInvulnerable()) return false;
 			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
 			if(entity instanceof org.bukkit.entity.Player player) {
 				if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
@@ -1279,7 +1278,7 @@ public class Actions {
 
 
 		for(Entity e : Objects.requireNonNull(l.getWorld()).getNearbyEntities(l, 10, 10, 10)) {
-			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither) && !(entity instanceof EnderDragon)) {
+			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)) {
 				new BukkitRunnable() {
 					int tick = 0;
 

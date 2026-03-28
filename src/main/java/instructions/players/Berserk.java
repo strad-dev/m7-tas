@@ -483,7 +483,7 @@ public class Berserk {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 			}
-		}, 741);
+		}, 742);
 	}
 
 	private static void playIceFillSounds(int level) {

@@ -48,6 +48,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
 import org.slf4j.Logger;
+import plugin.Utils;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -174,9 +175,9 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 								// Check if the entity won't produce a damage event
 								boolean immune;
 								if(entity instanceof LivingEntity living) {
-									immune = living.isDeadOrDying() || living.invulnerableTime > 0 || entity.isInvulnerable() || (entity instanceof ServerPlayer target && target.isCreative());
+									immune = living.isDeadOrDying() || living.invulnerableTime > 0 || (entity instanceof ServerPlayer target && target.isCreative());
 								} else {
-									immune = entity.isInvulnerable();
+									immune = false;
 								}
 
 								if(immune) {

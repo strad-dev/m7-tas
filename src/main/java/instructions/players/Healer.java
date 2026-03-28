@@ -301,6 +301,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 177); // shoot at miniboss
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 178 ticks (8.90 seconds)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 5);
 		}, 178);
 		// Yellow: 10 ticks
@@ -310,7 +311,7 @@ public class Healer {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
 			}
-		}, 741);
+		}, 742);
 	}
 //
 //	public static void maxor(boolean doContinue) {
