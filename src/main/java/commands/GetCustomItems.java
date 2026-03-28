@@ -25,6 +25,7 @@ public class GetCustomItems implements CommandExecutor {
 		ItemMeta meta = stonk.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.RED + "Dungeonbreaker");
+		meta.setItemName(ChatColor.RED + "Dungeonbreaker");
 		List<String> lore = new ArrayList<>();
 		lore.add("skyblock/combat/stonk");
 		meta.setLore(lore);
@@ -34,6 +35,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = term.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Terminator");
+		meta.setItemName(ChatColor.LIGHT_PURPLE + "Precise Terminator");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/terminator");
 		meta.setLore(lore);
@@ -43,6 +45,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = gyro.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.GOLD + "Gyrokinetic Wand");
+		meta.setItemName(ChatColor.GOLD + "Gyrokinetic Wand");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/gyro");
 		meta.setLore(lore);
@@ -52,6 +55,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = scylla.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Hyperion");
+		meta.setItemName(ChatColor.LIGHT_PURPLE + "Withered Hyperion");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/scylla");
 		meta.setLore(lore);
@@ -61,6 +65,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = aotv.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.GOLD + "Warped Aspect of the Void");
+		meta.setItemName(ChatColor.GOLD + "Warped Aspect of the Void");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/aotv");
 		meta.setLore(lore);
@@ -70,6 +75,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = rag.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.DARK_PURPLE + "Withered Ragnarok Axe");
+		meta.setItemName(ChatColor.DARK_PURPLE + "Withered Ragnarok Axe");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/rag");
 		meta.setLore(lore);
@@ -79,6 +85,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = aots.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded");
+		meta.setItemName(ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/aots");
 		meta.setLore(lore);
@@ -88,6 +95,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = iceSpray.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.GOLD + "Heroic Ice Spray Wand");
+		meta.setItemName(ChatColor.GOLD + "Heroic Ice Spray Wand");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/ice_spray");
 		meta.setLore(lore);
@@ -97,6 +105,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = flamingFlay.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Flaming Flay");
+		meta.setItemName(ChatColor.LIGHT_PURPLE + "Withered Flaming Flay");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/flaming_flay");
 		meta.setLore(lore);
@@ -106,6 +115,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = bonzo.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.DARK_PURPLE + "Heroic Bonzo Staff");
+		meta.setItemName(ChatColor.DARK_PURPLE + "Heroic Bonzo Staff");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/bonzo");
 		meta.setLore(lore);
@@ -115,6 +125,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = lb.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Last Breath");
+		meta.setItemName(ChatColor.LIGHT_PURPLE + "Precise Last Breath");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/last_breath");
 		meta.setLore(lore);
@@ -124,6 +135,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = tac.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.GOLD + "Tactical Insertion");
+		meta.setItemName(ChatColor.GOLD + "Tactical Insertion");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/tac");
 		meta.setLore(lore);
@@ -133,6 +145,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta = infinityboom.getItemMeta();
 		meta.setUnbreakable(true);
 		meta.setDisplayName(ChatColor.GOLD + "Infinityboom TNT");
+		meta.setItemName(ChatColor.GOLD + "Infinityboom TNT");
 		lore = new ArrayList<>();
 		lore.add("skyblock/combat/infinityboom");
 		meta.setLore(lore);

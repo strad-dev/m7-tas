@@ -14,7 +14,10 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class PlayerInventoryBackup {
 	private static final Map<Player, PlayerInventoryBackup> originalInventories = new HashMap<>();

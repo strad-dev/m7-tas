@@ -1,6 +1,5 @@
 package listeners;
 
-import plugin.FakePlayerManager;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
 import io.netty.channel.Channel;
@@ -27,6 +26,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import plugin.FakePlayerManager;
 import plugin.Utils;
 
 import java.lang.reflect.Field;

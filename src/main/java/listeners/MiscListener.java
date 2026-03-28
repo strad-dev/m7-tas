@@ -1,22 +1,24 @@
 package listeners;
 
-import plugin.FakePlayerManager;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.WindCharge;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.util.Vector;
+import plugin.FakePlayerManager;
 import plugin.Utils;
 
 public class MiscListener implements Listener {
@@ -116,26 +118,4 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	@EventHandler
-	public void onDragonArrowHit(EntityDamageByEntityEvent e) {
-		// Check if this is an arrow hitting a dragon or dragon part
-		if(!(e.getDamager() instanceof Arrow arrow)) {
-			return;
-		}
-
-		Entity damaged = e.getEntity();
-
-		// Check if we hit a dragon or dragon part
-		boolean isDragonHit = (damaged instanceof EnderDragon) || (damaged instanceof EnderDragonPart);
-
-		if(isDragonHit) {
-			// Consume all pierce levels so the arrow stops after hitting the first part
-			arrow.setPierceLevel(0);
-			arrow.remove();
-
-			// Optional: You could also remove the arrow entirely after a short delay
-			// to ensure it doesn't continue flying
-			// Bukkit.getScheduler().runTaskLater(plugin, arrow::remove, 1L);
-		}
-	}
 }

@@ -1,6 +1,5 @@
 package listeners;
 
-import plugin.FakePlayerManager;
 import commands.Spectate;
 import instructions.Server;
 import net.minecraft.core.particles.ParticleTypes;
@@ -37,6 +36,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import plugin.FakePlayerManager;
 import plugin.M7tas;
 import plugin.PlayerCollision;
 import plugin.Utils;
@@ -1334,7 +1334,7 @@ public class CustomItems implements Listener {
 
 
 		for(Entity e : Objects.requireNonNull(l.getWorld()).getNearbyEntities(l, 10, 10, 10)) {
-			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither) && !(entity instanceof EnderDragon)) {
+			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)) {
 				new BukkitRunnable() {
 					int tick = 0;
 
@@ -1712,7 +1712,7 @@ public class CustomItems implements Listener {
 			boolean shouldBreak = false;
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
-				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
+				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
 					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
 					CraftLivingEntity craftEntity = (CraftLivingEntity) temp;
 					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
@@ -1744,7 +1744,7 @@ public class CustomItems implements Listener {
 		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !entity.isInvulnerable() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
 
 		double blockDist = 35;
 		double entityDist = 35;
