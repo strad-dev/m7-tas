@@ -162,7 +162,7 @@ public class Tank {
 			Actions.setHotbarSlot(tank, 1);
 		}, 56);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 57); // etherwarp to secret
-		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 58); // blow up wall
+		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 58); // blow up wall | cooldown for 255 ticks
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 1/5 (Opened Chest)");
@@ -191,7 +191,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 72); // stonk wall | you cannot etherwarp through the gap
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 1), 73);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 74); // etherwarp in
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 9f), 75);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 75);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 3/5 (Opened Chest)");
@@ -211,8 +211,77 @@ public class Tank {
 			Actions.setHotbarSlot(tank, 1);
 		}, 80);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 81); // etherwarp to floor
-
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -66f, 0f), 82);
 		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 4/5 (Opened Chest)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
+		}, 83);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 75f, 0f), 84);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 85); // etherwarp to wall
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 90f, 60f);
+			Actions.move(tank, "WP", 2);
+			Actions.setHotbarSlot(tank, 5);
+		}, 86);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 87); // break wall
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 30f, 18f);
+			Actions.setHotbarSlot(tank, 7);
+		}, 88);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 89); // throw pearl towards market | lands in 7 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 66f, 66f);
+			Actions.setHotbarSlot(tank, 4);
+		}, 90);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 91); // blow up floor
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 41f, 51f);
+			Actions.move(tank, "N", 0);
+			Actions.setHotbarSlot(tank, 1);
+		}, 92);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 93); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 165f, 0f), 94);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 5/5 (Opened Chest)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
+		}, 95);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 23f, 8f), 96); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 97); // etherwarp into market
+		// Museum: 46 ticks
+
+		/*
+		 * ███╗   ███╗ █████╗ ██████╗ ██╗  ██╗███████╗████████╗
+		 * ████╗ ████║██╔══██╗██╔══██╗██║ ██╔╝██╔════╝╚══██╔══╝
+		 * ██╔████╔██║███████║██████╔╝█████╔╝ █████╗     ██║
+		 * ██║╚██╔╝██║██╔══██║██╔══██╗██╔═██╗ ██╔══╝     ██║
+		 * ██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██╗███████╗   ██║
+		 * ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -12f, 2f);
+			Actions.setHotbarSlot(tank, 7);
+		}, 98);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 99); // throw pearl to reposition | lands in 9 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 54.2f, 63.9f);
+			Actions.setHotbarSlot(tank, 4);
+		}, 100);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 101); // blow up floor
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 1), 102);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 103); // etherwarp down
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -72f, 8f);
+			Actions.setHotbarSlot(tank, 0);
+		}, 104);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(tank);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Tank: Museum 5/5 (Opened Chest)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
+		}, 105);
+
+		 Utils.scheduleTask(() -> {
 			if(doContinue) {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
