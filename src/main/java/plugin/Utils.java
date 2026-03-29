@@ -5,7 +5,6 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import nms.TASGamePacketListenerImpl;
@@ -257,10 +256,12 @@ public class Utils {
 		CraftLivingEntity craftEntity = (CraftLivingEntity) entity;
 		net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
 		ServerLevel level = (ServerLevel) nmsEntity.level();
-		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon nmsDragon) {
-			ServerPlayer nmsPlayer = ((CraftPlayer) attacker).getHandle();
-			DamageSource source = nmsEntity.damageSources().playerAttack(nmsPlayer);
-			nmsDragon.hurt(level, nmsDragon.head, source, damage);
+		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
+			// EnderDragon.hurtServer() delegates to hurt() which rejects damage sources without
+			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
+			// the check but causes infinite recursion via EntityDamageByEntityEvent → handleCustomItems.
+			// Direct health manipulation avoids both issues.
+			entity.setHealth(Math.max(0, (float)(entity.getHealth() - damage)));
 		} else {
 			nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
 		}
