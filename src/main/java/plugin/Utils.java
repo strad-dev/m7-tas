@@ -3,11 +3,14 @@ package plugin;
 import commands.Spectate;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
@@ -248,6 +251,19 @@ public class Utils {
 			return (tenths / 10) + "." + (tenths % 10) + "B";
 		}
 		return displayM + "M";
+	}
+
+	public static void hurtEntity(LivingEntity entity, float damage, Player attacker) {
+		CraftLivingEntity craftEntity = (CraftLivingEntity) entity;
+		net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
+		ServerLevel level = (ServerLevel) nmsEntity.level();
+		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon nmsDragon) {
+			ServerPlayer nmsPlayer = ((CraftPlayer) attacker).getHandle();
+			DamageSource source = nmsEntity.damageSources().playerAttack(nmsPlayer);
+			nmsDragon.hurt(level, nmsDragon.head, source, damage);
+		} else {
+			nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
+		}
 	}
 
 	public static void changeName(LivingEntity entity) {

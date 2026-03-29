@@ -379,10 +379,7 @@ public class CustomItems implements Listener {
 		double damage = 0;
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
-				CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
-				net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-				ServerLevel level = (ServerLevel) nmsEntity.level();
-				nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 1);
+				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
 				damaged += 1;
@@ -983,10 +980,7 @@ public class CustomItems implements Listener {
 			for(Entity entity : entities) {
 				if(!damagedEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 					damagedEntities.add(entity);
-					CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
-					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-					ServerLevel level = (ServerLevel) nmsEntity.level();
-					nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), (float) (2.5 + add));
+					Utils.hurtEntity(entity1, (float) (2.5 + add), p);
 					entity1.setNoDamageTicks(0);
 					Utils.changeName(entity1);
 					pierce--;
@@ -1076,10 +1070,7 @@ public class CustomItems implements Listener {
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
-				CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
-				net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-				ServerLevel level = (ServerLevel) nmsEntity.level();
-				nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 1);
+				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
 			}
@@ -1144,10 +1135,7 @@ public class CustomItems implements Listener {
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
 					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 						// Deal 1 damage using NMS
-						CraftLivingEntity craftEntity = (CraftLivingEntity) entity1;
-						net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-						ServerLevel level = (ServerLevel) nmsEntity.level();
-						nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 1);
+						Utils.hurtEntity(entity1, 1, p);
 						entity1.setNoDamageTicks(0);
 						Utils.changeName(entity1);
 						hitEntities.add(entity);
@@ -1569,10 +1557,7 @@ public class CustomItems implements Listener {
 
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
 							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-								CraftLivingEntity craftEntity = (CraftLivingEntity) target;
-								net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-								ServerLevel level = (ServerLevel) nmsEntity.level();
-								nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), 19);
+								Utils.hurtEntity(target, 19, p);
 								target.setNoDamageTicks(0);
 								Utils.changeName(target);
 								alreadyHurt.add(target);
@@ -1714,10 +1699,7 @@ public class CustomItems implements Listener {
 			for(Entity entity : entities) {
 				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
 					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
-					CraftLivingEntity craftEntity = (CraftLivingEntity) temp;
-					net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-					ServerLevel level = (ServerLevel) nmsEntity.level();
-					nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
+					Utils.hurtEntity(temp, damage, p);
 					temp.setNoDamageTicks(0);
 					Utils.changeName(temp);
 					shouldBreak = true;

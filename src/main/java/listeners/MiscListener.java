@@ -6,10 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.entity.Arrow;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.WindCharge;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityExplodeEvent;
@@ -59,7 +56,13 @@ public class MiscListener implements Listener {
 				if(arrow.getScoreboardTags().contains("TerminatorArrow")) {
 					arrow.remove();
 				}
-			} else if(e.getHitEntity() instanceof LivingEntity hitEntity) {
+			} else if(e.getHitEntity() != null) {
+				// Resolve EnderDragonPart to its parent EnderDragon (EnderDragonPart is not a LivingEntity)
+				Entity rawHit = e.getHitEntity();
+				LivingEntity hitEntity = rawHit instanceof LivingEntity le ? le
+						: rawHit instanceof EnderDragonPart part ? part.getParent() : null;
+				if(hitEntity == null) return;
+
 				// Phase through fake players and self
 				if(hitEntity instanceof Player player && (FakePlayerManager.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
 					e.setCancelled(true);
@@ -68,7 +71,7 @@ public class MiscListener implements Listener {
 				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p) {
 					e.setCancelled(true);
 					hitEntity.setNoDamageTicks(0);
-					hitEntity.damage(arrow.getDamage());
+					Utils.hurtEntity(hitEntity, (float) arrow.getDamage(), p);
 					hitEntity.setNoDamageTicks(0);
 					Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					Utils.changeName(hitEntity);
