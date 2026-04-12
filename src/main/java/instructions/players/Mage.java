@@ -137,7 +137,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 3);
 			Actions.dropItem(mage, true);
-		}, 56); // blow up wall with Guided Sheep | cooldown for 255 ticks
+		}, 56); // blow up wall with Guided Sheep | cooldown for 300 ticks
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 4, 31);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 1/6 (Obtained Item)");
@@ -226,14 +226,14 @@ public class Mage {
 			Actions.turnHead(mage, 120f, 10f);
 			Actions.setHotbarSlot(mage, 4);
 		}, 94);
-		// infinityboom technically has a 17-tick cooldown with dupe mage + crow bonuses
+		// infinityboom technically has a 20-tick cooldown with dupe mage
 		// but let's assume normal superboom is being used (which has no cooldown)
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 95); // blow up crypt #2
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 96);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 3/5");
-		}, 97);
+		}, 98); // mage beam cooldown is 5 ticks with max attack speed
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -5f, 16f);
 			Actions.setHotbarSlot(mage, 1);

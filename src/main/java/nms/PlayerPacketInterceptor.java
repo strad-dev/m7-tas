@@ -19,6 +19,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.inventory.EquipmentSlot;
 import plugin.M7tas;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 	private final Player player;
 
@@ -35,18 +37,19 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 		}
 		if(msg instanceof ServerboundPlayerActionPacket pkt) {
 			var action = pkt.getAction();
+			AtomicBoolean usedAbility = new AtomicBoolean(false);
 			if(action == ServerboundPlayerActionPacket.Action.DROP_ITEM) {
 				Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-					CustomItems.handleDrop(player, true);
+					usedAbility.set(CustomItems.handleDrop(player, true));
 					player.updateInventory();
 				});
-				return;
-			}
-			if(action == ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) {
+			} else if(action == ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) {
 				Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-					CustomItems.handleDrop(player, false);
+					usedAbility.set(CustomItems.handleDrop(player, false));
 					player.updateInventory();
 				});
+			}
+			if(usedAbility.get()) {
 				return;
 			}
 		}

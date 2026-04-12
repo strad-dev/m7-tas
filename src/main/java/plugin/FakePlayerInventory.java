@@ -12,12 +12,15 @@ import net.minecraft.world.entity.EquipmentSlot;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -49,7 +52,10 @@ public class FakePlayerInventory {
 			ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
 			pearls.setAmount(16);
 			ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.RED + "Dungeonbreaker", "skyblock/combat/stonk");
-			pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 10);
+			pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
+			ItemMeta meta = pickaxe.getItemMeta();
+			meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
+			pickaxe.setItemMeta(meta);
 			PlayerInventory inventory = p.getInventory();
 			inventory.clear();
 

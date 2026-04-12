@@ -249,7 +249,7 @@ public class Healer {
 		}, 151);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Prince Killed | Crypt 4/5");
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Prince Killed | Crypt 5/5");
 		}, 152); // etherwarp across
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 100f, 10f), 153);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 154); // etherwarp to item
