@@ -220,6 +220,11 @@ public class Actions {
 		// Update the NMS held-slot index
 		npc.getInventory().setSelectedSlot(hotbarIndex);
 
+		// Reconcile item-attached attribute modifiers (e.g. Dungeonbreaker's BLOCK_BREAK_SPEED)
+		// with the AttributeMap on the same frame as the slot change, instead of waiting for
+		// the level's next entity-tick phase.
+		npc.detectEquipmentUpdates();
+
 		// Tell that player's client "your held slot is now hotbarIndex"
 		ClientboundSetHeldSlotPacket heldPkt = new ClientboundSetHeldSlotPacket(hotbarIndex);
 		cp.getHandle().connection.send(heldPkt);
