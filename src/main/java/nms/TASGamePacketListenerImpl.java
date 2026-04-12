@@ -251,14 +251,12 @@ public class TASGamePacketListenerImpl extends ServerGamePacketListenerImpl {
 			case DROP_ITEM:
 				if(!this.player.isSpectator()) {
 					CustomItems.handleDrop(this.player.getBukkitEntity(), true);
-					this.player.getBukkitEntity().updateInventory();
 				}
 
 				return;
 			case DROP_ALL_ITEMS:
 				if(!this.player.isSpectator()) {
 					CustomItems.handleDrop(this.player.getBukkitEntity(), false);
-					this.player.getBukkitEntity().updateInventory();
 				}
 
 				return;
