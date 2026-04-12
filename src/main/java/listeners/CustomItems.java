@@ -13,7 +13,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
@@ -22,7 +21,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockDamageEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.player.*;
@@ -161,16 +159,8 @@ public class CustomItems implements Listener {
 	}
 
 	@EventHandler
-	public void onBlockDamage(BlockDamageEvent e) {
-		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
-			e.setInstaBreak(true);
-			stonk(e.getPlayer(), e.getBlock());
-		}
-	}
-
-	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
-		if(e.getPlayer().getGameMode() == org.bukkit.GameMode.CREATIVE && getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
+		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			stonk(e.getPlayer(), e.getBlock());
 		}
 	}
@@ -198,25 +188,28 @@ public class CustomItems implements Listener {
 		dispatchDrop(p, ultimate);
 	}
 
-	public static void handleDrop(Player p, boolean ultimate) {
-		if(Spectate.getSpectatorMap().containsKey(p)) return;
+	public static boolean handleDrop(Player p, boolean ultimate) {
+		if(Spectate.getSpectatorMap().containsKey(p)) return false;
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
-		dispatchDrop(p, ultimate);
+		return dispatchDrop(p, ultimate);
 	}
 
-	private static void dispatchDrop(Player p, boolean ultimate) {
+	private static boolean dispatchDrop(Player p, boolean ultimate) {
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
 				rapidFire(p);
 			} else {
 				explosiveShot(p);
 			}
+			return true;
 		} else if(p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage")) {
 			if(!ultimate) {
 				guidedSheep(p);
 			}
+			return true;
 		}
+		return false;
 	}
 
 	@EventHandler
@@ -911,16 +904,18 @@ public class CustomItems implements Listener {
 	}
 
 	public static void stonk(Player p, Block b) {
-		// Capture block data
-		Material m = b.getType();
-		BlockData data = b.getBlockData().clone();
-		Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
+		if(b.getType().getHardness() != -1) {
+			// Capture block data
+			Material m = b.getType();
+			BlockData data = b.getBlockData().clone();
+			Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
 
-		// Schedule restoration with Java's scheduler
-		Utils.scheduleTask(() -> {
-			b.setType(m);
-			b.setBlockData(data);
-		}, 200);
+			// Schedule restoration with Java's scheduler
+			Utils.scheduleTask(() -> {
+				b.setType(m);
+				b.setBlockData(data);
+			}, 200);
+		}
 	}
 
 	public static void rag(Player p) {

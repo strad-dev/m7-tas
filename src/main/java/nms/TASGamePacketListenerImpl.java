@@ -48,7 +48,6 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.util.Vector;
 import org.slf4j.Logger;
-import plugin.Utils;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
