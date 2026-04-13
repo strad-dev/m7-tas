@@ -367,6 +367,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 138); // break block
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(tank, 1);
+			Actions.leftClick(tank);
 			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market 5/5 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 139);
@@ -385,7 +386,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -97f, 0f), 142);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 143); // etherwarp towards miniboss
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, -90f, 10f);
+			Actions.turnHead(tank, -90f, 9f);
 			Actions.setHotbarSlot(tank, 0);
 		}, 144);
 		Utils.scheduleTask(() -> {
@@ -402,12 +403,68 @@ public class Tank {
 		}, 146);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 147); // etherwarp towards chest
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, -67f, 0f);
+			Actions.turnHead(tank, -57f, 6f);
 			Actions.setHotbarSlot(tank, 7);
 		}, 148);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 149); // throw pearl for reposiiton | lands in 10 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 149); // throw pearl for reposiiton | lands in 6 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -180f, 40f);
+			Actions.setHotbarSlot(tank, 5);
+			Actions.move(tank, "WP", 4);
+		}, 150);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 151);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 152); // stonk iron bars
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 1), 153); // move for 2 more ticks
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 166f, 15f), 154);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway 1/3 (Opened Chest)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
+		}, 155);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -122.5f, 2f);
+			Actions.move(tank, "N", 2);
+		}, 156); // pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 157); // etherwarp to next secret
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, 30f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 158);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Actions.move(tank, "WP", 4);
+		}, 159);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 160);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 161);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 162);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -150f, 43f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 163);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway 2/3 (Opened Chest)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
+		}, 164);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -75f, -55f);
+			 Actions.move(tank, "N", 0);
+		}, 165);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 166); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -104.5f, -5f), 167);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 168); // etherwarp to next secret
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, -81f), 169);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 170); // etherwarp up
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -22.5f, 17f), 171);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 172); // etherwarp to secret
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(tank);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway 3/3 (Opened Chest)");
+			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
+			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 173 ticks (8.65 seconds)");
+		}, 173);
 
-		 Utils.scheduleTask(() -> {
+		Utils.scheduleTask(() -> {
 			if(doContinue) {
 //				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
 //				maxor(true);
