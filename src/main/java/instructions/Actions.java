@@ -56,6 +56,22 @@ public class Actions {
 
 	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
 
+	// Spigot-mojang compile name is detectEquipmentUpdatesPublic; Paper runtime has only detectEquipmentUpdates.
+	// Resolve whichever exists at class-load time.
+	private static final java.lang.reflect.Method DETECT_EQUIPMENT_UPDATES = resolveDetectEquipmentUpdates();
+
+	private static java.lang.reflect.Method resolveDetectEquipmentUpdates() {
+		for(String name : new String[]{"detectEquipmentUpdates", "detectEquipmentUpdatesPublic"}) {
+			try {
+				java.lang.reflect.Method m = net.minecraft.world.entity.LivingEntity.class.getMethod(name);
+				m.setAccessible(true);
+				return m;
+			} catch (NoSuchMethodException ignored) {
+			}
+		}
+		throw new IllegalStateException("LivingEntity.detectEquipmentUpdates[Public] not found on runtime");
+	}
+
 	/**
 	 * Simulates a Player pressing movement input keys.  Only call this when the player changes which keys are pressed.
 	 *
@@ -223,7 +239,11 @@ public class Actions {
 		// Reconcile item-attached attribute modifiers (e.g. Dungeonbreaker's BLOCK_BREAK_SPEED)
 		// with the AttributeMap on the same frame as the slot change, instead of waiting for
 		// the level's next entity-tick phase.
-		npc.detectEquipmentUpdates();
+		try {
+			DETECT_EQUIPMENT_UPDATES.invoke(npc);
+		} catch (ReflectiveOperationException e) {
+			throw new RuntimeException(e);
+		}
 
 		// Tell that player's client "your held slot is now hotbarIndex"
 		ClientboundSetHeldSlotPacket heldPkt = new ClientboundSetHeldSlotPacket(hotbarIndex);
