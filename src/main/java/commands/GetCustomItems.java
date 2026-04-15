@@ -157,7 +157,27 @@ public class GetCustomItems implements CommandExecutor {
 		meta.setLore(lore);
 		infinityboom.setItemMeta(meta);
 
-		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay, infinityboom);
+		ItemStack jerrychine = new ItemStack(Material.GOLDEN_HORSE_ARMOR);
+		meta = jerrychine.getItemMeta();
+		meta.setUnbreakable(true);
+		meta.setDisplayName(ChatColor.GOLD + "Heroic Jerry-chine Gun");
+		meta.setItemName(ChatColor.GOLD + "Heroic Jerry-chine Gun");
+		lore = new ArrayList<>();
+		lore.add("skyblock/combat/jerrychine");
+		meta.setLore(lore);
+		jerrychine.setItemMeta(meta);
+
+		ItemStack springBoots = new ItemStack(Material.CHAINMAIL_BOOTS);
+		meta = springBoots.getItemMeta();
+		meta.setUnbreakable(true);
+		meta.setDisplayName(ChatColor.DARK_PURPLE + "Renowned Spring Boots");
+		meta.setItemName(ChatColor.DARK_PURPLE + "Renowned Spring Boots");
+		lore = new ArrayList<>();
+		lore.add("skyblock/combat/spring_boots");
+		meta.setLore(lore);
+		springBoots.setItemMeta(meta);
+
+		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine);
 		p.sendMessage(ChatColor.GREEN + "Here you go!");
 		return true;
 	}

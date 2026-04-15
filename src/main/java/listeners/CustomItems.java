@@ -1,5 +1,10 @@
 package listeners;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
+import com.mojang.authlib.properties.PropertyMap;
 import commands.Spectate;
 import instructions.Server;
 import net.minecraft.core.particles.ParticleTypes;
@@ -14,6 +19,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Slab;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
@@ -23,9 +29,11 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -352,6 +360,10 @@ public class CustomItems implements Listener {
 							}
 							case "skyblock/combat/tac" -> {
 								tac(p);
+								fired = true;
+							}
+							case "skyblock/combat/jerrychine" -> {
+								jerrychine(p);
 								fired = true;
 							}
 						}
@@ -1350,6 +1362,111 @@ public class CustomItems implements Listener {
 		WindCharge windCharge = (WindCharge) l.getWorld().spawnEntity(l, EntityType.WIND_CHARGE);
 		windCharge.addScoreboardTag("Bonzo");
 		windCharge.setShooter(p);
+	}
+
+	private static final double JERRY_SPEED = 20.0 / 30.0; // 20 blocks in 30 ticks
+	private static final double JERRY_BOOST_V = 0.6;
+	private static final double JERRY_BOOST_H = 0.446;
+	private static final double JERRY_BOOST_RADIUS = 3.5;
+	private static final float JERRY_HEAD_SCALE = 1.5f;
+	// MHF_Villager head texture (Hypixel's generic Jerry villager skin)
+	private static final String JERRY_HEAD_TEXTURE = "eyJ0aW1lc3RhbXAiOjE1MTIyMTE4MjQ0MzAsInByb2ZpbGVJZCI6ImJkNDgyNzM5NzY3YzQ1ZGNhMWY4YzMzYzQwNTMwOTUyIiwicHJvZmlsZU5hbWUiOiJNSEZfVmlsbGFnZXIiLCJzaWduYXR1cmVSZXF1aXJlZCI6dHJ1ZSwidGV4dHVyZXMiOnsiU0tJTiI6eyJ1cmwiOiJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzgyMmQ4ZTc1MWM4ZjJmZDRjODk0MmM0NGJkYjJmNWNhNGQ4YWU4ZTU3NWVkM2ViMzRjMThhODZlOTNiIn19fQ==";
+
+	private static ItemStack jerryHeadItem() {
+		ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+		Multimap<String, Property> props = HashMultimap.create();
+		props.put("textures", new Property("textures", JERRY_HEAD_TEXTURE));
+		PropertyMap propertyMap = new PropertyMap(props);
+		GameProfile gp = new GameProfile(UUID.randomUUID(), "jerryhead", propertyMap);
+		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
+		SkullMeta meta = (SkullMeta) head.getItemMeta();
+		assert meta != null;
+		meta.setOwnerProfile(profile);
+		head.setItemMeta(meta);
+		return head;
+	}
+
+	public static void jerrychine(Player p) {
+		Location l = p.getEyeLocation();
+		Snowball s = (Snowball) l.getWorld().spawnEntity(l, EntityType.SNOWBALL);
+		s.addScoreboardTag("jerrychine");
+		s.setShooter(p);
+		s.setGravity(false);
+		s.setVisibleByDefault(false);
+		s.setVelocity(l.getDirection().multiply(JERRY_SPEED));
+
+		ItemDisplay head = (ItemDisplay) l.getWorld().spawnEntity(l, EntityType.ITEM_DISPLAY);
+		head.setItemStack(jerryHeadItem());
+		head.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+		Transformation t = head.getTransformation();
+		head.setTransformation(new Transformation(
+				new Vector3f(0f, 0f, 0f),
+				t.getLeftRotation(),
+				new Vector3f(JERRY_HEAD_SCALE, JERRY_HEAD_SCALE, JERRY_HEAD_SCALE),
+				t.getRightRotation()));
+		head.setBillboard(Display.Billboard.FIXED);
+		head.setInterpolationDuration(1);
+		head.setTeleportDuration(1);
+		head.addScoreboardTag("jerrychineHead");
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				if(!s.isValid() || !head.isValid()) {
+					head.remove();
+					cancel();
+					return;
+				}
+				Location to = s.getLocation();
+				Vector v = s.getVelocity();
+				double speed = v.length();
+				if(speed > 1e-6) {
+					to.setYaw((float) Math.toDegrees(Math.atan2(-v.getX(), v.getZ())));
+					to.setPitch((float) Math.toDegrees(-Math.asin(v.getY() / speed)));
+				}
+				head.teleport(to);
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+
+		l.getWorld().playSound(l, Sound.ENTITY_VILLAGER_YES, 1.0f, 1.0f);
+		Utils.debug(Utils.DebugType.SERVER, p.getName() + " fired Jerry-chine #" + s.getEntityId() + " from " + Utils.round(l.getX(), 2) + " " + Utils.round(l.getY(), 2) + " " + Utils.round(l.getZ(), 2));
+	}
+
+	@EventHandler
+	public void onJerrychineHit(ProjectileHitEvent e) {
+		if(!(e.getEntity() instanceof Snowball s)) return;
+		if(!s.getScoreboardTags().contains("jerrychine")) return;
+		e.setCancelled(true);
+		s.remove();
+
+		if(!(s.getShooter() instanceof Player p)) return;
+
+		double distance = p.getLocation().distanceSquared(s.getLocation());
+		if(distance > JERRY_BOOST_RADIUS * JERRY_BOOST_RADIUS) return;
+		if(!(p instanceof CraftPlayer craftPlayer)) return;
+		ServerPlayer serverPlayer = craftPlayer.getHandle();
+
+		Vector direction = p.getLocation().toVector().subtract(s.getLocation().toVector()).normalize();
+		direction.setY(0);
+		direction.normalize();
+
+		// Horizontal push magnitude scales by cos(firing pitch). Snowball has no gravity, so its velocity
+		// direction equals the shooter's fire-time look direction; cos(pitch) = horizontal-speed / total-speed.
+		Vector vel = s.getVelocity();
+		double speed = vel.length();
+		double cosPitch = speed > 1e-6 ? Math.hypot(vel.getX(), vel.getZ()) / speed : 0;
+		double horizMag = JERRY_BOOST_H * cosPitch;
+
+		direction.multiply(horizMag);
+		direction.setY(JERRY_BOOST_V);
+
+		if(!Double.isFinite(direction.getX())) direction.setX(0);
+		if(!Double.isFinite(direction.getZ())) direction.setZ(0);
+
+		serverPlayer.setOnGround(false);
+		p.setVelocity(direction);
+		double horizSpeed = Math.hypot(direction.getX(), direction.getZ());
+		Utils.debug(Utils.DebugType.SERVER, "Jerry-chine moved " + p.getName() + " " + direction.getX() + " " + direction.getY() + " " + direction.getZ());
 	}
 
 	public static void terminator(Player p) {

@@ -54,7 +54,7 @@ public class TAS implements CommandExecutor {
 
 		Archer.archerInstructions(fakePlayers.get("Archer"), section);
 		Berserk.berserkInstructions(fakePlayers.get("Mage3"), section);
-		Healer.healerInstructions(fakePlayers.get("Healer"), section);
+		Healer.healerInstructions(fakePlayers.get("Mage4"), section);
 		Mage.mageInstructions(fakePlayers.get("Mage1"), section);
 		Tank.tankInstructions(fakePlayers.get("Mage2"), section);
 

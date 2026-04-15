@@ -148,9 +148,9 @@ public class WitherKing {
 			dragon.setRemoveWhenFarAway(false);
 			dragon.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + dragonName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1000M");
 			dragon.setCustomNameVisible(true);
-			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(500);
+			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(950);
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);
-			dragon.setHealth(500);
+			dragon.setHealth(950);
 			dragon.addScoreboardTag("WitherKingDragon");
 			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
@@ -192,7 +192,7 @@ public class WitherKing {
 				meta.setDisplayName(ChatColor.GOLD + "Corrupted Orange Relic");
 				itemStack.setItemMeta(meta);
 			}
-			case "Healer" -> {
+			case "Mage4" -> {
 				itemStack = new ItemStack(Material.PURPLE_WOOL);
 				ItemMeta meta = itemStack.getItemMeta();
 				assert meta != null;

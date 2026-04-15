@@ -59,11 +59,12 @@ public class Storm {
 		storm.setRemoveWhenFarAway(false);
 		storm.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1000M");
 		storm.setCustomNameVisible(true);
-		storm.getAttribute(Attribute.MAX_HEALTH).setBaseValue(500);
+		storm.getAttribute(Attribute.MAX_HEALTH).setBaseValue(700);
 		storm.getAttribute(Attribute.ARMOR).setBaseValue(-30);
 		storm.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-		storm.setHealth(500);
+		storm.setHealth(700);
 		storm.addScoreboardTag("TASWither");
+		storm.addScoreboardTag("TASStorm");
 		Actions.setWitherArmor(storm, true);
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(storm, "Storm"), 1);

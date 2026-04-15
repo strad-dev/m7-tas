@@ -3,12 +3,16 @@ package listeners;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -90,7 +94,7 @@ public class MiscListener implements Listener {
 				p.getWorld().spawnParticle(Particle.CRIT, windCharge.getLocation(), 150, 0, 0, 0, 2);
 				p.getWorld().playSound(windCharge.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
 
-				if(distance <= 16) {
+				if(distance <= 12.25) {
 					if(!(p instanceof CraftPlayer craftPlayer)) return;
 					ServerPlayer serverPlayer = craftPlayer.getHandle();
 
@@ -111,6 +115,17 @@ public class MiscListener implements Listener {
 					p.setVelocity(direction);
 				}
 			}
+		}
+	}
+
+	@EventHandler
+	public void onBlockPlace(BlockPlaceEvent e) {
+		if(e.getBlockPlaced().getType() != Material.SOUL_SAND) return;
+		if(e.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
+		Location loc = e.getBlockPlaced().getLocation();
+		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
+		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {
+			e.setCancelled(true);
 		}
 	}
 

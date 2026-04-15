@@ -9,6 +9,7 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
@@ -21,10 +22,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.Objects;
+import java.util.*;
 
 public class Utils {
 	/**
@@ -242,14 +240,38 @@ public class Utils {
 		}
 	}
 
+	// Scoreboard-tag → display-max in M for bosses whose displayed HP is decoupled from internal HP
+	private static final Map<String, Double> BOSS_DISPLAY_MAX_M = Map.of(
+			"TASMaxor", 800.0,
+			"TASStorm", 1000.0,
+			"TASGoldor", 1200.0,
+			"TASNecron", 1400.0,
+			"WitherKingDragon", 1000.0
+	);
+
+	public static String formatHealthM(LivingEntity entity) {
+		double current = entity.getHealth() + entity.getAbsorptionAmount();
+		for(String tag : entity.getScoreboardTags()) {
+			Double displayMax = BOSS_DISPLAY_MAX_M.get(tag);
+			if(displayMax == null) continue;
+			double maxHealth = entity.getAttribute(Attribute.MAX_HEALTH).getValue();
+			double ratio = maxHealth > 0 ? Math.max(0.0, Math.min(1.0, current / maxHealth)) : 0.0;
+			return formatDisplayM(displayMax * ratio);
+		}
+		return formatHealthM(current);
+	}
+
 	public static String formatHealthM(double rawHealth) {
-		int displayM = (int) Math.round(rawHealth * 2);
+		return formatDisplayM(rawHealth * 2);
+	}
+
+	private static String formatDisplayM(double displayM) {
 		if(displayM >= 1000) {
-			int tenths = (int) Math.ceil(displayM / 100.0);
+			int tenths = (int) Math.round(displayM / 100.0); // round to nearest 0.1B
 			if(tenths % 10 == 0) return (tenths / 10) + "B";
 			return (tenths / 10) + "." + (tenths % 10) + "B";
 		}
-		return displayM + "M";
+		return (int) Math.round(displayM) + "M"; // round to nearest 1M
 	}
 
 	public static void hurtEntity(LivingEntity entity, float damage, Player attacker) {
@@ -272,7 +294,7 @@ public class Utils {
 			String[] oldName;
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
 			boolean exempt = entity.getScoreboardTags().stream().anyMatch(t -> t.equals("TASWitherKing") || t.equals("TASWatcher"));
-			String healthStr = exempt ? String.valueOf(health) : formatHealthM(health);
+			String healthStr = exempt ? String.valueOf(health) : formatHealthM(entity);
 			try {
 				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
 			} catch(Exception exception) {
@@ -299,7 +321,7 @@ public class Utils {
 			case "Berserk", "Mage3" -> {
 				return "Cubpletionist";
 			}
-			case "Healer" -> {
+			case "Mage4" -> {
 				return "Meepy_";
 			}
 			case "Mage", "Mage1" -> {

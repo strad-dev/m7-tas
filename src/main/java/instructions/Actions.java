@@ -1392,41 +1392,7 @@ public class Actions {
 		return runnalbe;
 	}
 
-	public static void lavaJump(Player p, boolean big) {
-		p.teleport(p.getLocation().add(0, 3.5, 0));
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0F, 1.0F);
-		Utils.scheduleTask(() -> {
-			if(!(p instanceof CraftPlayer cp)) {
-				return;
-			}
-
-			ServerPlayer npc = cp.getHandle();
-
-			Vec3 motion = npc.getDeltaMovement();
-			if(big) {
-				npc.setDeltaMovement(new Vec3(motion.x(), 3.4D, motion.z()));
-			} else {
-				npc.setDeltaMovement(new Vec3(motion.x(), 1.7D, motion.z()));
-			}
-		}, 1);
-
-		new BukkitRunnable() {
-			int tickCount = 0;
-
-			@Override
-			public void run() {
-				tickCount++;
-
-				if(tickCount >= 3) {
-					if(((LivingEntity) p).isOnGround()) {
-						cancel();
-					}
-				}
-			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
-	}
-
-	private static BukkitTask armorTask = null;
+private static BukkitTask armorTask = null;
 
 	public static void setWitherArmor(Wither wither, boolean showArmor) {
 
