@@ -296,9 +296,9 @@ public class Healer {
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 5.5f), 169);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 170); // etherwarp up to miniboss
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 171);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 172);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 177); // shoot at miniboss
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 171);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 172);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 177); // claymore swing at miniboss
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 178 ticks (8.90 seconds)");
