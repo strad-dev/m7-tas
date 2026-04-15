@@ -18,7 +18,7 @@ public class AllMobsHaveNames implements Listener {
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
 					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.RED + "❤" + ChatColor.YELLOW + health);
 				} else {
-					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.RED + "❤" + ChatColor.YELLOW + Utils.formatHealthM(health));
+					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.RED + "❤" + ChatColor.YELLOW + Utils.formatHealthM(entity));
 				}
 				entity.setCustomNameVisible(true);
 			}
@@ -34,7 +34,7 @@ public class AllMobsHaveNames implements Listener {
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
 					name += " " + ChatColor.RED + "❤" + ChatColor.YELLOW + health;
 				} else {
-					name += " " + ChatColor.RED + "❤" + ChatColor.YELLOW + Utils.formatHealthM(health);
+					name += " " + ChatColor.RED + "❤" + ChatColor.YELLOW + Utils.formatHealthM(entity);
 				}
 			}
 			entity.setCustomName(name);

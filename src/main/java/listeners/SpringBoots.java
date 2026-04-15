@@ -97,6 +97,7 @@ public class SpringBoots {
 
 	private static class ChargeState {
 		boolean sneakPrev;
+		boolean onGroundPrev;
 		boolean charging;
 		int ticks;
 		int nextNoteIndex;
@@ -135,6 +136,7 @@ public class SpringBoots {
 			if(st == null) {
 				st = new ChargeState();
 				st.sneakPrev = p.isSneaking();
+				st.onGroundPrev = isOnGround(p);
 				states.put(p.getUniqueId(), st);
 			}
 
@@ -152,7 +154,9 @@ public class SpringBoots {
 					maybePlayNote(p, st);
 				}
 			} else {
-				if(sneak && !st.sneakPrev && onGround) {
+				boolean sneakEdge = sneak && !st.sneakPrev;
+				boolean landEdge = onGround && !st.onGroundPrev;
+				if(sneak && onGround && (sneakEdge || landEdge)) {
 					st.charging = true;
 					st.ticks = 0;
 					st.nextNoteIndex = 0;
@@ -161,6 +165,7 @@ public class SpringBoots {
 			}
 
 			st.sneakPrev = sneak;
+			st.onGroundPrev = onGround;
 		}
 	}
 
@@ -172,13 +177,16 @@ public class SpringBoots {
 	private static void maybePlayNote(Player p, ChargeState st) {
 		while(st.nextNoteIndex < NOTE_TICK.length && st.ticks >= NOTE_TICK[st.nextNoteIndex]) {
 			if(st.ticks == NOTE_TICK[st.nextNoteIndex]) {
-				Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, NOTE_PITCH[st.nextNoteIndex]);
+				float pitch = NOTE_PITCH[st.nextNoteIndex];
+				Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, pitch);
+				Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, pitch);
 			}
 			st.nextNoteIndex++;
 		}
 		if(st.nextNoteIndex >= NOTE_TICK.length && st.ticks >= E5_FIRST_TICK + E5_PERIOD
 				&& (st.ticks - E5_FIRST_TICK) % E5_PERIOD == 0) {
 			Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, PITCH_E5);
+			Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0f, PITCH_E5);
 		}
 	}
 
@@ -203,6 +211,8 @@ public class SpringBoots {
 		double v = heightToVelocity(h);
 		Vec3 m = sp.getDeltaMovement();
 		sp.setDeltaMovement(new Vec3(m.x(), v, m.z()));
+		sp.hurtMarked = true;
+		Utils.playLocalSound(p, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1.0f, 1.0f);
 		Utils.debug(Utils.DebugType.SERVER, p.getName() + " Spring Boots launched after " + chargeTicks + " sneak ticks with upwards velocity " + Utils.round(v, 4));
 	}
 

@@ -59,7 +59,7 @@ public class CustomBossBar {
 
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
 		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
-		String healthStr = exempt ? String.valueOf((int) maxHealth) : Utils.formatHealthM(maxHealth);
+		String healthStr = exempt ? String.valueOf((int) maxHealth) : Utils.formatHealthM(activeWither);
 
 		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + healthStr;
 
@@ -99,7 +99,7 @@ public class CustomBossBar {
 		double currentHealth = activeWither.getHealth();
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
 		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
-		String healthStr = exempt ? String.valueOf((int) Math.floor(currentHealth)) : Utils.formatHealthM(currentHealth);
+		String healthStr = exempt ? String.valueOf((int) Math.floor(currentHealth)) : Utils.formatHealthM(activeWither);
 
 		// Update title with current health
 		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + healthStr;

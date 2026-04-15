@@ -66,6 +66,7 @@ public final class M7tas extends JavaPlugin {
 		PlayerInventoryBackup.startInventorySync();
 		Spectate.startSpectatorSync();
 		SpringBoots.start();
+		LavaJump.start();
 	}
 
 	@Override
@@ -74,6 +75,7 @@ public final class M7tas extends JavaPlugin {
 		FakePlayerManager.stopCustomConnection();
 		Spectate.stopSpectatorSync();
 		SpringBoots.stop();
+		LavaJump.stop();
 
 		PlayerCollision.cleanup();
 

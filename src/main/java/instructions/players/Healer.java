@@ -5,11 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import plugin.Utils;
-
-import java.util.Objects;
 
 public class Healer {
 	private static Player healer;
@@ -18,7 +15,6 @@ public class Healer {
 	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
-		Objects.requireNonNull(healer.getInventory().getItem(4)).addUnsafeEnchantment(Enchantment.POWER, 16);
 
 		switch(section) {
 			case "all", "clear" -> {
@@ -238,11 +234,15 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 146); // etherwarp to prince
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, 0f);
-			Actions.setHotbarSlot(healer, 3);
+			Actions.swapItems(healer, 5, 31); // Stonk -> 31, Infinityboom TNT -> 5
+			Actions.setHotbarSlot(healer, 5);
 		}, 147);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 148); // blow up crypt
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 149);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 150); // kill prince | arrows land in 2 ticks
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(healer, 5, 31); // restore: Stonk -> 5, Infinityboom TNT -> 31
+			Actions.setHotbarSlot(healer, 3); // Claymore
+		}, 149);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 150); // kill prince | claymore swing
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, -5f);
 			Actions.setHotbarSlot(healer, 1);
@@ -763,7 +763,7 @@ public class Healer {
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.1051, 0, 0.2602), 27), 167);
 //		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 9.2f), 193);
 //		Utils.scheduleTask(() -> Actions.swingHand(healer), 194);
-//		Utils.scheduleTask(() -> {
+//		Utils.scheduleTask(() -> {howev
 //			Goldor.broadcastTerminalComplete(healer, "terminal", 7, 7);
 //			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 57 ticks (2.85 seconds) | Terminals: 195 ticks (9.75 seconds) | Overall: 2 611 ticks (130.55 seconds)");
 //		}, 195);
