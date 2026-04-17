@@ -19,15 +19,11 @@ import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.v1_21_R7.CraftServer;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.Method;
@@ -166,8 +162,13 @@ public class FakePlayerManager {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
-					// Re-assert sprint before aiStep() to prevent horizontal collision from clearing it
+					// Re-assert movement fields before aiStep() — zza/xxa decay by 0.98x/tick otherwise
 					String input = instructions.Actions.getActiveInput(fake.getUniqueId());
+					if(!input.isEmpty()) {
+						npc.xxa = (input.contains("A") && !input.contains("D")) ? 1.0F : (!input.contains("A") && input.contains("D")) ? -1.0F : 0.0F;
+						npc.zza = (input.contains("W") && !input.contains("S")) ? 1.0F : (!input.contains("W") && input.contains("S")) ? -1.0F : 0.0F;
+						if(input.contains("N")) { npc.xxa *= 0.3F; npc.zza *= 0.3F; }
+					}
 					if(input.contains("P") && npc.zza > 0 && !npc.isShiftKeyDown()) {
 						npc.setSprinting(true);
 					}

@@ -70,43 +70,43 @@ public class Mage {
 	}
 
 	private static void preClear(boolean doContinue) {
-		Actions.turnHead(mage, 180f, -90f);
+		Actions.turnHead(mage, 180f, -89f);
 		Actions.swapItems(mage, 2, 29);
 		Actions.setHotbarSlot(mage, 7);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 38), 1); // move to pearl spot
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 39); // lands in 10 ticks
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 35), 1); // move to pearl spot
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 37); // lands in 10 ticks
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 0);
-		}, 40);
+		}, 38);
 		// dodge tick 40 teleport
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 49); // etherwarp to top
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0.254f), 50);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 51); // etherwarp forward
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 1.3f, 0.6f), 52);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 53); // etherwarp onto first checkmark
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -25.9f, 3.55f), 54);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 55); // etherwarp to edge of blood
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 1), 56); // fall into void to facilitate pearls
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 45f, 90f), 57);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 58);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 59);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 60); // tp down fast
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 35.1f, 20f), 61);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 62); // reposition
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 47); // etherwarp to top
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0.254f), 48);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 49); // etherwarp forward
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 1.3f, 0.6f), 50);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 51); // etherwarp onto first checkmark
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -25.9f, 3.55f), 52);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 53); // etherwarp to edge of blood
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 1), 54); // fall into void to facilitate pearls
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 45f, 90f), 55);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 56);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 57);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 58); // tp down fast
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 35.1f, 20f), 59);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 60); // reposition
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, -90f);
 			Actions.setHotbarSlot(mage, 7);
-		}, 63);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 64); // throw pearl to enter bedrock, lands in 5 ticks
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 65);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 69); // activate tac, procs in 60 ticks (129)
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 7), 70);
+		}, 61);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 62); // throw pearl to enter bedrock, lands in 5 ticks
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 63);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 67); // activate tac, procs in 60 ticks (127)
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 7), 68);
 		// tick 80: get teleported back
 		Utils.scheduleTask(() -> Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
 		// tick 120: dodged
-		// tick 128: run starts
-		Utils.scheduleTask(() -> clear(doContinue), 128);
+		// tick 126: run starts
+		Utils.scheduleTask(() -> clear(doContinue), 126);
 	}
 
 	private static void clear(boolean doContinue) {
@@ -333,7 +333,7 @@ public class Mage {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 661 Ticks (33.05 seconds)");
 		}, 661);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(mage, 0f, 3.3f);
+			Actions.turnHead(mage, 0f, 3.5f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
 		}, 662);

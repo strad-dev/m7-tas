@@ -1,13 +1,7 @@
 package listeners;
 
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -115,6 +109,7 @@ public class MiscListener implements Listener {
 
 					serverPlayer.setOnGround(false);
 					p.setVelocity(direction);
+					Utils.debug(Utils.DebugType.SERVER, p.getName() + " bonzostaff launched with velocity " + Utils.round(direction.getX(), 4) + " " + Utils.round(direction.getY(), 4) + " " + Utils.round(direction.getZ(), 4));
 					MovementAudit.startAirborneAudit(p, "bonzostaff");
 				}
 			}

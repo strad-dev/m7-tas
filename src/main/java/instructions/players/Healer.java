@@ -6,7 +6,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Healer {
@@ -73,7 +72,7 @@ public class Healer {
 		Actions.move(healer, "WPJ", 0);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 15), 13);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -9f, 2.9f), 31);
-		Utils.scheduleTask(() -> clear(doContinue), 128);
+		Utils.scheduleTask(() -> clear(doContinue), 126);
 	}
 
 	public static void clear(boolean doContinue) {
@@ -131,85 +130,85 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 76);
 		// Tick 79: pearl lands
 		Utils.scheduleTask(() -> Actions.move(healer, "AWP", 0), 80);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 2), 82);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 3), 82);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 60f, 6f), 84);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 85); // pearl to dig spot | lands in 3 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 86); // pearl to dig spot | lands in 3 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 78f, -22f);
 			Actions.setHotbarSlot(healer, 0);
-		}, 86);
+		}, 87);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 2/3 (Killed Bat)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BAT);
-		}, 87);
+		}, 88);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, 35f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 88); // pearl lands
+		}, 89); // pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Actions.move(healer, "WP", 9);
-		}, 89);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 90);
+		}, 90);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 91);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 92);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 93);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 94);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 95);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 96);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 97);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 20f);
 			Actions.setHotbarSlot(healer, 7);
-		}, 98);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 99); // throw pearl towards chest | lands in 4 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 50f), 100);
-		// Tick 103: pearl lands
+		}, 99);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 100); // throw pearl towards chest | lands in 4 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 50f), 101);
+		// Tick 104: pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 3/3 (Opened Chest)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 2);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
-		}, 104);
+		}, 105);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 81.5f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 105);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 106); // stonk block
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 7), 107);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 108); // throw pearl down | lands in 8 ticks
+		}, 106);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 107); // stonk block
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 7), 108);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 109); // throw pearl down | lands in 8 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 30f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 109);
-		// Tick 116: pearl lands
+		}, 110);
+		// Tick 117: pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "WP", 0);
 			Actions.leftClick(healer);
-		}, 117);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 118);
+		}, 118);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 119);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 120);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 121);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 122);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 123); // stonk outwards
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 123);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 124); // stonk outwards
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -58.5f, 38f);
 			Actions.move(healer, "N", 2);
 			Actions.setHotbarSlot(healer, 7);
-		}, 125);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 126); // throw pearl down | lands in 10 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -47f, 20f), 127);
-		// Tick 136: pearl lands
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 137); // throw pearl out of trap | lands in 3 ticks
+		}, 126);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 127); // throw pearl down | lands in 10 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -47f, 20f), 128);
+		// Tick 137: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 138); // throw pearl out of trap | lands in 3 ticks
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 16f, 2.9f);
 			Actions.move(healer, "N", 4);
 			Actions.setHotbarSlot(healer, 1);
-		}, 138);
-		// Tick 140: pearl lands
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 141); // etherwarp to red blue
-		// Trap: 141 ticks | Time from Enter: 116 ticks
+		}, 139);
+		// Tick 141: pearl lands
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 142); // etherwarp to red blue
+		// Trap: 142 ticks | Time from Enter: 117 ticks
 
 		/*
 		 * ██████╗ ███████╗██████╗     ██████╗ ██╗     ██╗   ██╗███████╗
@@ -222,71 +221,71 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 65f, 0f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 142);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 143);
+		}, 143);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 144);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 1/4 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
-		}, 144);
+		}, 145);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, -90f);
 			Actions.move(healer, "N", 0);
-		}, 145);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 146); // etherwarp to prince
+		}, 146);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 147); // etherwarp to prince
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, 0f);
 			Actions.swapItems(healer, 5, 31); // Stonk -> 31, Infinityboom TNT -> 5
 			Actions.setHotbarSlot(healer, 5);
-		}, 147);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 148); // blow up crypt
+		}, 148);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 149); // blow up crypt
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(healer, 5, 31); // restore: Stonk -> 5, Infinityboom TNT -> 31
 			Actions.setHotbarSlot(healer, 3); // Claymore
-		}, 149);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 150); // kill prince | claymore swing
+		}, 150);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 151); // kill prince | claymore swing
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 180f, -5f);
 			Actions.setHotbarSlot(healer, 1);
-		}, 151);
+		}, 152);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Prince Killed | Crypt 5/5");
-		}, 152); // etherwarp across
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 100f, 10f), 153);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 154); // etherwarp to item
+		}, 153); // etherwarp across
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 100f, 10f), 154);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 155); // etherwarp to item
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -97f, -4f);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 2/4 (Picked Up Item)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
-		}, 155);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 156); // etherwarp to chest
+		}, 156);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 157); // etherwarp to chest
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -115f, 0f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 157);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 158);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 159); // stonk towards chest
+		}, 158);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 159);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 160); // stonk towards chest
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 3/4 (Opened Chest)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 2);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
-		}, 160);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 57f, 39f), 161);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 162); // etherwarp down
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 118f, -39f), 163);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 164); // etherwarp to wither essence
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 23f, 30f), 165);
+		}, 161);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 57f, 39f), 162);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 163); // etherwarp down
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 118f, -39f), 164);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 165); // etherwarp to wither essence
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 23f, 30f), 166);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 4/4 (Opened Wither Essence)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.ESSENCE);
-		}, 166);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 176f, 44.4f), 167);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 168); // etherwarp towards yellow
+		}, 167);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 176f, 44.4f), 168);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 169); // etherwarp towards yellow
 		// Red Blue: 26 ticks
 
 		/*
@@ -297,16 +296,16 @@ public class Healer {
 		 *    ██║   ███████╗███████╗███████╗╚██████╔╝╚███╔███╔╝
 		 *    ╚═╝   ╚══════╝╚══════╝╚══════╝ ╚═════╝  ╚══╝╚══╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 5.5f), 169);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 170); // etherwarp up to miniboss
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 171);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 172);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 177); // claymore swing at miniboss
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 5.5f), 170);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 171); // etherwarp up to miniboss
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 172);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 173);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 178); // claymore swing at miniboss
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 178 ticks (8.90 seconds)");
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 179 ticks (8.95 seconds)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 5);
-		}, 178);
+		}, 179);
 		// Yellow: 10 ticks
 
 		Utils.scheduleTask(() -> {
@@ -315,7 +314,7 @@ public class Healer {
 			Actions.swapItems(healer, 6, 33);
 			Actions.swapItems(healer, 7, 34);
 			Actions.setHotbarSlot(healer, 5);
-		}, 179);
+		}, 180);
 		Utils.scheduleTask(() -> {
 			if(doContinue) {
 				Utils.teleport(healer, new Location(world, 73.5, 221, 14.5));
@@ -332,7 +331,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 17);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 18); // stonk maxor floor
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -60f, 0f), 19);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 58), 20); // fall to storm floor
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 51), 20); // fall to storm floor
 //		Utils.scheduleTask(() -> Actions.turnHead(healer, -53.7f, 0f), 24);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.226, 0, 0.166), 29), 37);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.9046, 0, 0.6645), 4), 66);

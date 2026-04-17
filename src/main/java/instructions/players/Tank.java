@@ -78,10 +78,10 @@ public class Tank {
 	private static void preclear(boolean doContinue) {
 		Actions.setHotbarSlot(tank, 3);
 		Actions.move(tank, "WPJ", 12);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 27); // left click mort to start the run
-		// tick 28: click start button
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 29); // run up to door
-		Utils.scheduleTask(() -> clear(doContinue), 128);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 25); // left click mort to start the run
+		// tick 26: click start button
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 27); // run up to door
+		Utils.scheduleTask(() -> clear(doContinue), 126);
 	}
 
 	private static void clear(boolean doContinue) {
