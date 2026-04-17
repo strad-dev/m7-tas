@@ -1,6 +1,7 @@
 package instructions;
 
 import instructions.bosses.CustomBossBar;
+import instructions.bosses.Maxor;
 import instructions.bosses.Storm;
 import instructions.bosses.Watcher;
 import org.bukkit.*;
@@ -60,7 +61,7 @@ public class Server {
 						openFirstDoor();
 					}, 128);
 				}
-//				case "boss" -> Maxor.maxorInstructions(world, true);
+				case "boss" -> Maxor.maxorInstructions(world, true);
 //				case "maxor" -> Maxor.maxorInstructions(world, false);
 //				case "storm" -> {
 //					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 minecraft:air");

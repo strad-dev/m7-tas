@@ -6,6 +6,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Healer {
@@ -21,17 +22,19 @@ public class Healer {
 				Utils.teleport(healer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
-//			case "maxor", "boss" -> {
-//				Utils.teleport(healer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
-//				Actions.swapItems(healer, 1, 28);
-//				Actions.swapItems(healer, 3, 30);
-//				Actions.swapItems(healer, 7, 34);
-//				if(section.equals("maxor")) {
-//					Utils.scheduleTask(() -> maxor(false), 60);
-//				} else {
-//					Utils.scheduleTask(() -> maxor(true), 60);
-//				}
-//			}
+			case "maxor", "boss" -> {
+				Utils.teleport(healer, new Location(world, 73.5, 221, 14.5, 0f, 0f));
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 34);
+				Actions.setHotbarSlot(healer, 5);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
 //			case "storm" -> {
 //				Utils.teleport(healer, new Location(world, 111.719, 170, 92.386, -53.2f, 24.7f));
 //				Actions.swapItems(healer, 1, 28);
@@ -307,22 +310,27 @@ public class Healer {
 		// Yellow: 10 ticks
 
 		Utils.scheduleTask(() -> {
+			Actions.swapItems(healer, 1, 28);
+			Actions.swapItems(healer, 3, 30);
+			Actions.swapItems(healer, 6, 33);
+			Actions.swapItems(healer, 7, 34);
+			Actions.setHotbarSlot(healer, 5);
+		}, 179);
+		Utils.scheduleTask(() -> {
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
-//				maxor(true);
+				Utils.teleport(healer, new Location(world, 73.5, 221, 14.5));
+				maxor(true);
 			}
 		}, 742);
 	}
-//
-//	public static void maxor(boolean doContinue) {
-//		// TODO predev with 500 speed
-//		Actions.setHotbarSlot(healer, 5);
-//		Actions.move(healer, new Vector(0.214, 0, 1.102), 17);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -11f, 0f), 1);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0496, 0, 0.255), 4), 17);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 84.1f), 21);
-//		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(77, 220, 33)), 22);
-//		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(77, 220, 32)), 23);
+
+	public static void maxor(boolean doContinue) {
+		Utils.setSpeed(healer, 500);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -11f, 45f), 1);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 16), 2);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 15);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 16);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 17); // stonk ground
 //		Utils.scheduleTask(() -> Actions.turnHead(healer, -53.7f, 0f), 24);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.226, 0, 0.166), 29), 37);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.9046, 0, 0.6645), 4), 66);
@@ -453,9 +461,9 @@ public class Healer {
 //		}, 400);
 //		Utils.scheduleTask(() -> Actions.turnHead(healer, -53.2f, 24.7f), 407);
 //		if(doContinue) {
-//			Utils.scheduleTask(() -> storm(true), 499);
+////			Utils.scheduleTask(() -> storm(true), 499);
 //		}
-//	}
+	}
 //
 //	public static void storm(boolean doContinue) {
 //		Storm.prepadPurple();

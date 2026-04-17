@@ -31,7 +31,7 @@ public class Berserk {
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
 //			case "maxor", "boss" -> {
-//				Utils.teleport(berserk, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(berserk, new Location(world, 73.5, 221, 14.5, 0f, 0f));
 //				Actions.swapItems(berserk, 11, 36);
 //				Actions.swapItems(berserk, 1, 28);
 //				Actions.swapItems(berserk, 7, 35);
@@ -479,8 +479,16 @@ public class Berserk {
 		// Ice Fill: 213 ticks
 
 		Utils.scheduleTask(() -> {
+			Actions.swapItems(berserk, 1, 28);
+			Actions.swapItems(berserk, 3, 30);
+			Actions.swapItems(berserk, 6, 33);
+			Actions.swapItems(berserk, 7, 34);
+			Actions.swapItems(berserk, 9, 36);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 332);
+		Utils.scheduleTask(() -> {
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
 //				maxor(true);
 			}
 		}, 742);

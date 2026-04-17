@@ -10,11 +10,13 @@ import net.minecraft.world.entity.Relative;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
@@ -33,6 +35,14 @@ public class Utils {
 	 */
 	public static void scheduleTask(Runnable task, long delay) {
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay);
+	}
+
+	public static void setSpeed(Player p, int speed) {
+		var instance = p.getAttribute(Attribute.MOVEMENT_SPEED);
+		NamespacedKey key = new NamespacedKey(M7tas.getInstance(), "speed");
+		instance.removeModifier(new AttributeModifier(key, 0, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
+		double modifier = (speed - 100) / 100.0;
+		instance.addModifier(new AttributeModifier(key, modifier, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
 	}
 
 	public static void teleport(Player p, Location to) {

@@ -27,7 +27,7 @@ public class Archer {
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
 //			case "maxor", "boss" -> {
-//				Utils.teleport(archer, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(archer, new Location(world, 73.5, 221, 14.5, 0f, 0f));
 //				Actions.swapItems(archer, 1, 28);
 //				Actions.swapItems(archer, 7, 35);
 //				if(section.equals("maxor")) {
@@ -398,8 +398,15 @@ public class Archer {
 		// Quiz: 482 ticks | 543 ticks from open | puzzle solved 503 ticks from open
 
 		Utils.scheduleTask(() -> {
+			Actions.swapItems(archer, 1, 28);
+			Actions.swapItems(archer, 6, 33);
+			Actions.swapItems(archer, 7, 34);
+			Actions.swapItems(archer, 9, 36);
+			Actions.setHotbarSlot(archer, 5);
+		}, 619);
+		Utils.scheduleTask(() -> {
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
 //				maxor(true);
 			}
 		}, 742);
