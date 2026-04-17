@@ -31,6 +31,7 @@ public class MovementAudit {
 
 		BukkitTask task = new BukkitRunnable() {
 			int tick = 0;
+			Vec3 prev = npc.position();
 
 			@Override
 			public void run() {
@@ -41,10 +42,15 @@ public class MovementAudit {
 				}
 
 				Vec3 pos = npc.position();
+				double dx = pos.x - prev.x;
+				double dy = pos.y - prev.y;
+				double dz = pos.z - prev.z;
+				prev = pos;
+
 				String input = Actions.getActiveInput(id);
 				String sprintSneak = "";
 				if(!input.isEmpty()) {
-					sprintSneak = npc.isShiftKeyDown() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "";
+					sprintSneak = npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "";
 				}
 
 				if(npc.onGround() && tick > 0) {
@@ -54,27 +60,33 @@ public class MovementAudit {
 					return;
 				}
 
-				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " moved " + Utils.round(pos.x, 4) + " " + Utils.round(pos.y, 4) + " " + Utils.round(pos.z, 4) + sprintSneak);
+				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + "ed " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + sprintSneak);
 				tick++;
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L); airborneAudits.put(id, task);
+
+			public void cancel() {
+				super.cancel();
+				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " overwritten after " + tick + " ticks");
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		airborneAudits.put(id, task);
 	}
 
-	public static void auditMove(Player p, ServerPlayer npc) {
+	public static void auditMove(Player p, ServerPlayer npc, double dx, double dy, double dz) {
 		if(!Utils.isSuperVerbose()) return;
 
 		UUID id = p.getUniqueId();
 		String input = Actions.getActiveInput(id);
 
 		if(hasAirborneAudit(id)) {
-			// Airborne audit handles xyz; only log sprint/sneak changes if move() is active
 			return;
 		}
 
 		if(input.isEmpty()) return;
 
-		Vec3 pos = npc.position();
-		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " moved " + Utils.round(pos.x, 4) + " " + Utils.round(pos.y, 4) + " " + Utils.round(pos.z, 4) + (npc.isShiftKeyDown() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : ""));
+		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " moved " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4)
+				+ (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "")
+				+ (npc.onGround() ? " on ground" : ""));
 	}
 
 	public static void cancelAll() {
