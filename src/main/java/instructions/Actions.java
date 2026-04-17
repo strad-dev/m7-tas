@@ -413,8 +413,9 @@ public class Actions {
 		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
-			// Use item on block
 			Block block = blockRay.getHitBlock();
+			if(block.getType() == Material.STONE_BUTTON) return;
+
 			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
 			Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
 
@@ -424,6 +425,7 @@ public class Actions {
 
 			ServerboundUseItemOnPacket useOnBlockPacket = new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND, blockHit, 0);
 			Utils.simulatePacket(p, useOnBlockPacket);
+			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 			return;
 		}
 
@@ -431,11 +433,11 @@ public class Actions {
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player target && Spectate.getSpectatingPlayers(p).contains(target)));
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
-			// Interact with the entity
 			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
 
 			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
 			Utils.simulatePacket(p, interactPacket);
+			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 		}
 
 		// Right click air (eat food, throw pearl, use item ability)
