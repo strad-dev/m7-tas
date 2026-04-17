@@ -383,7 +383,7 @@ public class CustomItems implements Listener {
 		int damaged = 0;
 		double damage = 0;
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
@@ -1668,7 +1668,7 @@ public class CustomItems implements Listener {
 						Location impact = arrow.getLocation();
 
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
-							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
+							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 								Utils.hurtEntity(target, 19, p);
 								target.setNoDamageTicks(0);
 								Utils.changeName(target);
@@ -1809,7 +1809,7 @@ public class CustomItems implements Listener {
 			boolean shouldBreak = false;
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
-				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
+				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
 					Utils.hurtEntity(temp, damage, p);
 					temp.setNoDamageTicks(0);

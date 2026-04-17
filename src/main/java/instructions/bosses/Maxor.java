@@ -50,10 +50,10 @@ public class Maxor {
 		maxor.setRemoveWhenFarAway(false);
 		maxor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Maxor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "800M");
 		maxor.setCustomNameVisible(true);
-		maxor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(350);
+		maxor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(300);
 		maxor.getAttribute(Attribute.ARMOR).setBaseValue(-30);
 		maxor.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-		maxor.setHealth(350);
+		maxor.setHealth(300);
 		maxor.addScoreboardTag("TASWither");
 		maxor.addScoreboardTag("TASMaxor");
 		Actions.setWitherArmor(maxor, true);

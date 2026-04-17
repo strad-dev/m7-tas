@@ -16,13 +16,19 @@ public class Verbose implements CommandExecutor {
 		}
 
 		if(args.length < 1) {
-			p.sendMessage(ChatColor.RED + "Usage: /verbose <true|false>");
+			p.sendMessage(ChatColor.RED + "Usage: /verbose <true|false|super>");
 			return true;
 		}
 
-		boolean value = Boolean.parseBoolean(args[0]);
-		Utils.setVerbose(value);
-		p.sendMessage(ChatColor.GREEN + "Verbose Mode: " + (value ? "ON" : "OFF"));
+		if(args[0].equalsIgnoreCase("super")) {
+			boolean newValue = !Utils.isSuperVerbose();
+			Utils.setSuperVerbose(newValue);
+			p.sendMessage(ChatColor.GREEN + "Super Verbose Mode: " + (newValue ? "ON" : "OFF"));
+		} else {
+			boolean value = Boolean.parseBoolean(args[0]);
+			Utils.setVerbose(value);
+			p.sendMessage(ChatColor.GREEN + "Verbose Mode: " + (value ? "ON" : "OFF"));
+		}
 		return true;
 	}
 }

@@ -62,7 +62,7 @@ public class Server {
 					}, 128);
 				}
 				case "boss" -> Maxor.maxorInstructions(world, true);
-//				case "maxor" -> Maxor.maxorInstructions(world, false);
+				case "maxor" -> Maxor.maxorInstructions(world, false);
 //				case "storm" -> {
 //					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 minecraft:air");
 //					Storm.stormInstructions(world, false);

@@ -166,7 +166,13 @@ public class FakePlayerManager {
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
+					// Re-assert sprint before aiStep() to prevent horizontal collision from clearing it
+					String input = instructions.Actions.getActiveInput(fake.getUniqueId());
+					if(input.contains("P") && npc.zza > 0 && !npc.isShiftKeyDown()) {
+						npc.setSprinting(true);
+					}
 					npc.aiStep();
+					MovementAudit.auditMove(fake, npc);
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0, 1);

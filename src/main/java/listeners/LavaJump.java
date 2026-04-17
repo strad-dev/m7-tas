@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
+import plugin.MovementAudit;
 import plugin.Utils;
 
 import java.util.HashMap;
@@ -80,6 +81,7 @@ public class LavaJump {
 			npc.setDeltaMovement(new Vec3(m.x(), LAUNCH_VELOCITY, m.z()));
 			npc.hurtMarked = true;
 			Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava launched with upwards velocity " + LAUNCH_VELOCITY);
+			MovementAudit.startAirborneAudit(p, "lavajump");
 
 			// One tick after launch, the stored Y delta reflects lava's drag multiplier (if still in lava):
 			//   shallow lava (0.8x): ≈ 2.80 → "big"

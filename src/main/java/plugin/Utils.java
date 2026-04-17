@@ -232,6 +232,7 @@ public class Utils {
 	}
 
 	private static boolean verbose = true;
+	private static boolean superVerbose = false;
 
 	public static boolean isVerbose() {
 		return verbose;
@@ -239,6 +240,16 @@ public class Utils {
 
 	public static void setVerbose(boolean verbose) {
 		Utils.verbose = verbose;
+		if(!verbose) superVerbose = false;
+	}
+
+	public static boolean isSuperVerbose() {
+		return superVerbose;
+	}
+
+	public static void setSuperVerbose(boolean superVerbose) {
+		Utils.superVerbose = superVerbose;
+		if(superVerbose) Utils.verbose = true;
 	}
 
 	public static void debug(DebugType type, String message) {
