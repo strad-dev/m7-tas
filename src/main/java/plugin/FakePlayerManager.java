@@ -150,6 +150,15 @@ public class FakePlayerManager {
 			throw new RuntimeException("Failed to find updatePlayerPose", e);
 		}
 
+		Method updateFluidHeight;
+		try {
+			updateFluidHeight = net.minecraft.world.entity.Entity.class
+					.getDeclaredMethod("updateFluidHeightAndDoFluidPushing");
+			updateFluidHeight.setAccessible(true);
+		} catch (NoSuchMethodException e) {
+			throw new RuntimeException("Failed to find updateFluidHeightAndDoFluidPushing", e);
+		}
+
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -171,6 +180,11 @@ public class FakePlayerManager {
 					}
 					if(input.contains("P") && npc.zza > 0 && !npc.isShiftKeyDown()) {
 						npc.setSprinting(true);
+					}
+					try {
+						updateFluidHeight.invoke(npc);
+					} catch (Exception e) {
+						e.printStackTrace();
 					}
 					net.minecraft.world.phys.Vec3 before = npc.position();
 					npc.aiStep();

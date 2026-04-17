@@ -20,7 +20,7 @@ public class MovementAudit {
 	}
 
 	public static void startAirborneAudit(Player p, String source) {
-		if(!Utils.isSuperVerbose()) return;
+		if(!Utils.isVerbose()) return;
 
 		UUID id = p.getUniqueId();
 		BukkitRunnable existing = airborneAudits.get(id);
@@ -57,7 +57,7 @@ public class MovementAudit {
 					return;
 				}
 
-				if(tick > 0) {
+				if(tick > 0 && Utils.isSuperVerbose()) {
 					Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + "ed " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + sprintSneak);
 				}
 				tick++;
