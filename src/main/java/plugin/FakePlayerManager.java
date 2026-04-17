@@ -171,8 +171,10 @@ public class FakePlayerManager {
 					if(input.contains("P") && npc.zza > 0 && !npc.isShiftKeyDown()) {
 						npc.setSprinting(true);
 					}
+					net.minecraft.world.phys.Vec3 before = npc.position();
 					npc.aiStep();
-					MovementAudit.auditMove(fake, npc);
+					net.minecraft.world.phys.Vec3 after = npc.position();
+					MovementAudit.auditMove(fake, npc, after.x - before.x, after.y - before.y, after.z - before.z);
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0, 1);
