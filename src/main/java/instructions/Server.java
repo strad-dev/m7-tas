@@ -37,29 +37,29 @@ public class Server {
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 28);
+					}, 26);
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 48);
+					}, 46);
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 68);
+					}, 66);
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 88);
+					}, 86);
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 108);
+					}, 106);
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
 						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
 						Watcher.watcherInstructions(world, section.equals("all"));
 						openFirstDoor();
-					}, 128);
+					}, 126);
 				}
 				case "boss" -> Maxor.maxorInstructions(world, true);
 				case "maxor" -> Maxor.maxorInstructions(world, false);

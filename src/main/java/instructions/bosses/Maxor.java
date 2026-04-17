@@ -1,14 +1,12 @@
 package instructions.bosses;
 
 import instructions.Actions;
-import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Vector;
 import plugin.Utils;
 
 import java.util.Random;

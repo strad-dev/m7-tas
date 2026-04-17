@@ -99,7 +99,7 @@ public class Archer {
 		Actions.move(archer, "WPJ", 0);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 15), 13);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -1f, -3.4f), 31);
-		Utils.scheduleTask(() -> clear(doContinue), 128);
+		Utils.scheduleTask(() -> clear(doContinue), 126);
 	}
 
 	private static void clear(boolean doContinue) {
