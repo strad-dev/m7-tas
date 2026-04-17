@@ -64,13 +64,13 @@ public class TabCompletor implements TabCompleter {
 
 			case "simulate" -> {
 				if(args.length == 1) {
-					String[] simCommands = {"undo", "allblessings", "bonzo", "move", "click", "hotbar"};
+					String[] simCommands = {"undo", "allblessings", "move", "click", "hotbar", "turnhead"};
 					for(String cmd : simCommands) {
 						if(cmd.startsWith(args[0].toLowerCase())) {
 							completions.add(cmd);
 						}
 					}
-				} else if(args.length == 2 && (args[0].equalsIgnoreCase("bonzo") || args[0].equalsIgnoreCase("move") || args[0].equalsIgnoreCase("click") || args[0].equalsIgnoreCase("hotbar"))) {
+				} else if(args.length == 2 && (args[0].equalsIgnoreCase("move") || args[0].equalsIgnoreCase("click") || args[0].equalsIgnoreCase("hotbar") || args[0].equalsIgnoreCase("turnhead"))) {
 					for(String role : FakePlayerManager.getFakePlayers().keySet()) {
 						if(role.toLowerCase().startsWith(args[1].toLowerCase())) {
 							completions.add(role);

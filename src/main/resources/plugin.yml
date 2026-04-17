@@ -20,8 +20,8 @@ commands:
     description: Resets all classes to their spawn locations
     usage: /reset
   simulate:
-    description: Simulates movement (either walking or bonzo staff)
-    usage: /simulate <move|bonzo|undo> <input> <duration>
+    description: Simulates player actions
+    usage: /simulate <move|click|hotbar|turnhead|allblessings|undo>
   getcustomitems:
     description: Get custom items
     usage: /getcustomitems
