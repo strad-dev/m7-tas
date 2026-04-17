@@ -23,7 +23,7 @@ public class Tank {
 				Utils.scheduleTask(() -> preclear(section.equals("all")), 60);
 			}
 //			case "maxor", "boss" -> {
-//				Utils.teleport(tank, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(tank, new Location(world, 73.5, 221, 14.5, 0f, 0f));
 //				Actions.swapItems(tank, 1, 28);
 //				Actions.swapItems(tank, 3, 30);
 //				Actions.swapItems(tank, 4, 31);
@@ -463,10 +463,18 @@ public class Tank {
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 173 ticks (8.65 seconds)");
 		}, 173);
+		// Hallway: 32 ticks
 
 		Utils.scheduleTask(() -> {
+			Actions.swapItems(tank, 1, 28);
+			Actions.swapItems(tank, 3, 30);
+			Actions.swapItems(tank, 6, 33);
+			Actions.swapItems(tank, 7, 34);
+			Actions.setHotbarSlot(tank, 5);
+		}, 179);
+		Utils.scheduleTask(() -> {
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
 //				maxor(true);
 			}
 		}, 742);

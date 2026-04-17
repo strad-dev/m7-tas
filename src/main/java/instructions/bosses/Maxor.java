@@ -65,61 +65,61 @@ public class Maxor {
 		sendChatMessage("WELL WELL WELL, LOOK WHO'S HERE!");
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
-		Utils.scheduleTask(() -> {
-			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
-			spawnMiners();
-			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
-			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
-		}, 160);
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "The Energy Laser is charging up!");
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
-		}, 190);
-		Utils.scheduleTask(() -> {
-			sendChatMessage(laserMessage[random.nextInt(2)]);
-			Actions.setWitherArmor(maxor, false);
-			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160);
-		}, 198);
-		Utils.scheduleTask(() -> maxor.setHealth(124), 230);
-		Utils.scheduleTask(() -> {
-			Maxor.spawnCrystals();
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
-		}, 238);
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "The Energy Laser is charging up!");
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
-		}, 292);
-		Utils.scheduleTask(() -> {
-			Actions.setWitherArmor(maxor, true);
-			Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is enraged! ⚠");
-			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle("", ChatColor.RED + "⚠ Maxor is enraged! ⚠", 0, 40, 0);
-			}
-			Actions.turnHead(maxor, 0f, 30f);
-			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 4);
-			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
-		}, 358);
-		Utils.scheduleTask(() -> {
-			sendChatMessage(laserMessage[random.nextInt(2)]);
-			Actions.setWitherArmor(maxor, false);
-			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 2);
-		}, 398);
-		Utils.scheduleTask(() -> {
-			sendChatMessage("I’M TOO YOUNG TO DIE AGAIN!");
-			Server.playWitherDeathSound(maxor);
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor killed in 399 ticks (19.95 seconds) | Overall: 1 426 ticks (71.30 seconds)");
-		}, 399);
-		Utils.scheduleTask(() -> {
-			Maxor.spawnCrystals();
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
-		}, 438);
-		Utils.scheduleTask(() -> sendChatMessage("I’LL MAKE YOU REMEMBER MY DEATH!"), 459);
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in 499 ticks (24.95 seconds) | Overall: 1 526 ticks (76.30 seconds)");
-			if(doContinue) {
-				Storm.stormInstructions(world, true);
-			}
-		}, 499);
+//		Utils.scheduleTask(() -> {
+//			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
+//			spawnMiners();
+//			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
+//			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
+//		}, 160);
+//		Utils.scheduleTask(() -> {
+//			Bukkit.broadcastMessage(ChatColor.GREEN + "The Energy Laser is charging up!");
+//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
+//		}, 190);
+//		Utils.scheduleTask(() -> {
+//			sendChatMessage(laserMessage[random.nextInt(2)]);
+//			Actions.setWitherArmor(maxor, false);
+//			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160);
+//		}, 198);
+//		Utils.scheduleTask(() -> maxor.setHealth(124), 230);
+//		Utils.scheduleTask(() -> {
+//			Maxor.spawnCrystals();
+//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
+//		}, 238);
+//		Utils.scheduleTask(() -> {
+//			Bukkit.broadcastMessage(ChatColor.GREEN + "The Energy Laser is charging up!");
+//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
+//		}, 292);
+//		Utils.scheduleTask(() -> {
+//			Actions.setWitherArmor(maxor, true);
+//			Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is enraged! ⚠");
+//			for(Player player : Bukkit.getOnlinePlayers()) {
+//				player.sendTitle("", ChatColor.RED + "⚠ Maxor is enraged! ⚠", 0, 40, 0);
+//			}
+//			Actions.turnHead(maxor, 0f, 30f);
+//			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 4);
+//			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
+//		}, 358);
+//		Utils.scheduleTask(() -> {
+//			sendChatMessage(laserMessage[random.nextInt(2)]);
+//			Actions.setWitherArmor(maxor, false);
+//			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 2);
+//		}, 398);
+//		Utils.scheduleTask(() -> {
+//			sendChatMessage("I’M TOO YOUNG TO DIE AGAIN!");
+//			Server.playWitherDeathSound(maxor);
+//			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor killed in 399 ticks (19.95 seconds) | Overall: 1 426 ticks (71.30 seconds)");
+//		}, 399);
+//		Utils.scheduleTask(() -> {
+//			Maxor.spawnCrystals();
+//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
+//		}, 438);
+//		Utils.scheduleTask(() -> sendChatMessage("I’LL MAKE YOU REMEMBER MY DEATH!"), 459);
+//		Utils.scheduleTask(() -> {
+//			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in 499 ticks (24.95 seconds) | Overall: 1 526 ticks (76.30 seconds)");
+//			if(doContinue) {
+//				Storm.stormInstructions(world, true);
+//			}
+//		}, 499);
 	}
 
 	private static void spawnCrystals() {

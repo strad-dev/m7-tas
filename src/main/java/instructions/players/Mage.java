@@ -26,7 +26,7 @@ public class Mage {
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
 //			case "maxor", "boss" -> {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5, 0f, 0f));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5, 0f, 0f));
 //				Actions.swapItems(mage, 9, 36);
 //				Actions.swapItems(mage, 1, 28);
 //				Actions.swapItems(mage, 3, 30);
@@ -339,10 +339,11 @@ public class Mage {
 		}, 662);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 663); // etherwarp to portal
 		Utils.scheduleTask(() -> {
-			Actions.swapItems(mage, 9, 36);
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
-			Actions.swapItems(mage, 4, 31);
+			Actions.swapItems(mage, 6, 33);
+			Actions.swapItems(mage, 7, 34);
+			Actions.setHotbarSlot(mage, 5);
 		}, 664);
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 742 Ticks (37.10 seconds)");
@@ -352,7 +353,7 @@ public class Mage {
 				Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 5);
 			}, 200);
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 13.5));
+//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
 //				maxor(true);
 			}
 		}, 742);

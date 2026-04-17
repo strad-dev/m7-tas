@@ -107,7 +107,7 @@ public class FakePlayerManager {
 		Player bukkitPlayer = nmsPlayer.getBukkitEntity();
 
 		PlayerCollision.addToNoCollisionTeam(bukkitPlayer);
-		bukkitPlayer.getAttribute(Attribute.MOVEMENT_SPEED).addModifier(new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "speed"), 3, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
+		Utils.setSpeed(bukkitPlayer, 400);
 
 		return bukkitPlayer;
 	}
