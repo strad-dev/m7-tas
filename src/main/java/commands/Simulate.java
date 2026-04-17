@@ -130,6 +130,36 @@ public class Simulate implements CommandExecutor {
 				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " " + click + " clicked");
 				return true;
 			}
+			case "turnhead" -> {
+				if(args.length < 2) {
+					p.sendMessage(ChatColor.RED + "Please specify a player to apply the turn to");
+					return true;
+				}
+				Player applyTo = FakePlayerManager.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				if(applyTo == null) {
+					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
+					return true;
+				}
+				if(args.length < 3) {
+					p.sendMessage(ChatColor.RED + "Please specify a yaw");
+					return true;
+				}
+				if(args.length < 4) {
+					p.sendMessage(ChatColor.RED + "Please specify a pitch");
+					return true;
+				}
+				float yaw, pitch;
+				try {
+					yaw = Float.parseFloat(args[2]);
+					pitch = Float.parseFloat(args[3]);
+				} catch(Exception exception) {
+					p.sendMessage(ChatColor.RED + "Yaw and pitch must be numbers");
+					return true;
+				}
+				Actions.turnHead(applyTo, yaw, pitch);
+				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " turned to yaw=" + yaw + " pitch=" + pitch);
+				return true;
+			}
 			case "hotbar" -> {
 				if(args.length < 2) {
 					p.sendMessage(ChatColor.RED + "Please specify a player to apply hotbar change to");
