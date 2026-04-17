@@ -13,6 +13,7 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -20,6 +21,7 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.util.Vector;
 import plugin.FakePlayerManager;
+import plugin.MovementAudit;
 import plugin.Utils;
 
 public class MiscListener implements Listener {
@@ -72,7 +74,7 @@ public class MiscListener implements Listener {
 					e.setCancelled(true);
 				}
 				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually
-				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p) {
+				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 					e.setCancelled(true);
 					hitEntity.setNoDamageTicks(0);
 					Utils.hurtEntity(hitEntity, (float) arrow.getDamage(), p);
@@ -113,6 +115,7 @@ public class MiscListener implements Listener {
 
 					serverPlayer.setOnGround(false);
 					p.setVelocity(direction);
+					MovementAudit.startAirborneAudit(p, "bonzostaff");
 				}
 			}
 		}
@@ -125,6 +128,13 @@ public class MiscListener implements Listener {
 		Location loc = e.getBlockPlaced().getLocation();
 		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {
+			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onEnderCrystalDamage(EntityDamageEvent e) {
+		if(e.getEntity() instanceof EnderCrystal) {
 			e.setCancelled(true);
 		}
 	}

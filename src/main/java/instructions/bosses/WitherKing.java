@@ -148,9 +148,9 @@ public class WitherKing {
 			dragon.setRemoveWhenFarAway(false);
 			dragon.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + dragonName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1000M");
 			dragon.setCustomNameVisible(true);
-			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(950);
+			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(800);
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);
-			dragon.setHealth(950);
+			dragon.setHealth(800);
 			dragon.addScoreboardTag("WitherKingDragon");
 			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);

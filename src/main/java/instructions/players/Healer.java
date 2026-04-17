@@ -325,12 +325,14 @@ public class Healer {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Utils.setSpeed(healer, 500);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -11f, 45f), 1);
+		Utils.setSpeed(healer, 500); // change pet to black cat (autopet)
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -15f, 45f), 1);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 16), 2);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 15);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 16);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 17); // stonk ground
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 17);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 18); // stonk maxor floor
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -60f, 0f), 19);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 58), 20); // fall to storm floor
 //		Utils.scheduleTask(() -> Actions.turnHead(healer, -53.7f, 0f), 24);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.226, 0, 0.166), 29), 37);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.9046, 0, 0.6645), 4), 66);

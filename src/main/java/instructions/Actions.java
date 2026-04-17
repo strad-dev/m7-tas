@@ -55,6 +55,11 @@ import java.util.*;
 public class Actions {
 
 	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
+	private static final Map<UUID, String> activeInputs = new HashMap<>();
+
+	public static String getActiveInput(UUID id) {
+		return activeInputs.getOrDefault(id, "");
+	}
 
 	// Spigot-mojang compile name is detectEquipmentUpdatesPublic; Paper runtime has only detectEquipmentUpdates.
 	// Resolve whichever exists at class-load time.
@@ -83,6 +88,7 @@ public class Actions {
 		// only handle CraftLivingEntity/NMS and positive duration
 		Utils.debug(Utils.DebugType.CLIENT, entity.getName() + " moving " + input + " for " + durationTicks);
 		if(!(entity instanceof CraftLivingEntity craftEntity)) return;
+		activeInputs.put(entity.getUniqueId(), input);
 
 		net.minecraft.world.entity.LivingEntity serverPlayer = craftEntity.getHandle();
 		if(input.contains("A") && input.contains("D")) {
@@ -141,6 +147,7 @@ public class Actions {
 					serverPlayer.setShiftKeyDown(false);
 					serverPlayer.setJumping(false);
 				}
+				activeInputs.remove(entity.getUniqueId());
 			}, durationTicks);
 		}
 	}
@@ -476,7 +483,7 @@ public class Actions {
 		int damaged = 0;
 
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
 				EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(p, entity, EntityDamageEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 1);
 
 				Bukkit.getPluginManager().callEvent(damageEvent);

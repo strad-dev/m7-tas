@@ -48,10 +48,10 @@ public class Necron {
 		necron.setRemoveWhenFarAway(false);
 		necron.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Necron" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "1400M");
 		necron.setCustomNameVisible(true);
-		necron.getAttribute(Attribute.MAX_HEALTH).setBaseValue(1150);
+		necron.getAttribute(Attribute.MAX_HEALTH).setBaseValue(1000);
 		necron.getAttribute(Attribute.ARMOR).setBaseValue(-30);
 		necron.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-		necron.setHealth(1150);
+		necron.setHealth(1000);
 		necron.addScoreboardTag("TASWither");
 		necron.addScoreboardTag("TASNecron");
 		Actions.setWitherArmor(necron, true);
