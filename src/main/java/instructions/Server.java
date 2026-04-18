@@ -85,9 +85,9 @@ public class Server {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 43 175 62");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 97 175 62");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 91 -2 45 89 -1 46 89 131 45");
