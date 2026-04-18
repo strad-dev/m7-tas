@@ -1357,11 +1357,14 @@ public class CustomItems implements Listener {
 		}
 	}
 
+	static final Map<Integer, Integer> bonzoFireTick = new HashMap<>();
+
 	public static void bonzo(Player p) {
 		Location l = p.getEyeLocation();
 		WindCharge windCharge = (WindCharge) l.getWorld().spawnEntity(l, EntityType.WIND_CHARGE);
 		windCharge.addScoreboardTag("Bonzo");
 		windCharge.setShooter(p);
+		bonzoFireTick.put(windCharge.getEntityId(), MinecraftServer.currentTick);
 	}
 
 	private static final double JERRY_SPEED = 20.0 / 30.0; // 20 blocks in 30 ticks

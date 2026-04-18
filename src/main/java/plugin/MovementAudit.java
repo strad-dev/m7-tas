@@ -65,7 +65,8 @@ public class MovementAudit {
 
 			@Override
 			public void cancel() {
-				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " landed after " + tick + " ticks");
+				net.minecraft.world.phys.Vec3 landPos = npc.position();
+				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " landed after " + tick + " ticks at " + Utils.round(landPos.x, 2) + " " + Utils.round(landPos.y, 2) + " " + Utils.round(landPos.z, 2));
 				airborneAudits.remove(id);
 				super.cancel();
 			}

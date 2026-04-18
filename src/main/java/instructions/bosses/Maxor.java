@@ -7,6 +7,7 @@ import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Vector;
 import plugin.Utils;
 
 import java.util.Random;
@@ -63,12 +64,12 @@ public class Maxor {
 		sendChatMessage("WELL WELL WELL, LOOK WHO'S HERE!");
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
-//		Utils.scheduleTask(() -> {
-//			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
+		Utils.scheduleTask(() -> {
+			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
 //			spawnMiners();
-//			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
-//			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
-//		}, 160);
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
+			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
+		}, 160);
 //		Utils.scheduleTask(() -> {
 //			Bukkit.broadcastMessage(ChatColor.GREEN + "The Energy Laser is charging up!");
 //			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");

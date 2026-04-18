@@ -29,6 +29,7 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -124,7 +125,7 @@ public class Actions {
 
 				@Override
 				public void run() {
-					if((durationTicks > 0 && ticks++ >= durationTicks) || serverPlayer.isRemoved()) {
+					if(isCancelled() || (durationTicks > 0 && ticks++ >= durationTicks) || serverPlayer.isRemoved()) {
 						jumpTasks.remove(entity.getUniqueId());
 						cancel();
 						return;
@@ -425,7 +426,9 @@ public class Actions {
 
 			ServerboundUseItemOnPacket useOnBlockPacket = new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND, blockHit, 0);
 			Utils.simulatePacket(p, useOnBlockPacket);
-			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
+			if(block.getType().isInteractable()) {
+				for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
+			}
 			return;
 		}
 

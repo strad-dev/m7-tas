@@ -1,5 +1,8 @@
 package listeners;
 
+import commands.Spectate;
+import listeners.CustomItems;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
@@ -13,6 +16,7 @@ import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import plugin.FakePlayerManager;
 import plugin.MovementAudit;
@@ -89,6 +93,7 @@ public class MiscListener implements Listener {
 				p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, windCharge.getLocation(), 350, 0, 0, 0, 0.75);
 				p.getWorld().spawnParticle(Particle.CRIT, windCharge.getLocation(), 150, 0, 0, 0, 2);
 				p.getWorld().playSound(windCharge.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
+				for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.playSound(spectator, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
 
 				if(distance <= 12.25) {
 					if(!(p instanceof CraftPlayer craftPlayer)) return;
@@ -109,7 +114,10 @@ public class MiscListener implements Listener {
 
 					serverPlayer.setOnGround(false);
 					p.setVelocity(direction);
-					Utils.debug(Utils.DebugType.SERVER, p.getName() + " bonzostaff launched with velocity " + Utils.round(direction.getX(), 4) + " " + Utils.round(direction.getY(), 4) + " " + Utils.round(direction.getZ(), 4));
+					Integer fireTick = CustomItems.bonzoFireTick.remove(windCharge.getEntityId());
+					int travelTicks = fireTick != null ? MinecraftServer.currentTick - fireTick : -1;
+					Location loc = p.getLocation();
+					Utils.debug(Utils.DebugType.SERVER, p.getName() + " bonzostaff launched from " + Utils.round(loc.getX(), 2) + " " + Utils.round(loc.getY(), 2) + " " + Utils.round(loc.getZ(), 2) + " with velocity " + Utils.round(direction.getX(), 4) + " " + Utils.round(direction.getY(), 4) + " " + Utils.round(direction.getZ(), 4) + " after " + travelTicks + " ticks");
 					MovementAudit.startAirborneAudit(p, "bonzostaff");
 				}
 			}
@@ -123,7 +131,13 @@ public class MiscListener implements Listener {
 		Location loc = e.getBlockPlaced().getLocation();
 		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {
-			e.setCancelled(true);
+			org.bukkit.block.BlockState replacedState = e.getBlockReplacedState();
+			Player player = e.getPlayer();
+			ItemStack item = e.getItemInHand().clone();
+			plugin.Utils.scheduleTask(() -> {
+				replacedState.getBlock().setBlockData(replacedState.getBlockData());
+				player.getInventory().addItem(item);
+			}, 1);
 		}
 	}
 

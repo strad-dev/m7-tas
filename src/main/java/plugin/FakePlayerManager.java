@@ -65,6 +65,13 @@ public class FakePlayerManager {
 
 		ClientInformation clientInfo = ClientInformation.createDefault();
 		ServerPlayer nmsPlayer = new ServerPlayer(nmsServer, nmsWorld, profile, clientInfo);
+		try {
+			java.lang.reflect.Field firstTick = net.minecraft.world.entity.Entity.class.getDeclaredField("firstTick");
+			firstTick.setAccessible(true);
+			firstTick.set(nmsPlayer, false);
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to clear firstTick on fake player", e);
+		}
 
 		Connection nm = new Connection(PacketFlow.SERVERBOUND) {
 			{
