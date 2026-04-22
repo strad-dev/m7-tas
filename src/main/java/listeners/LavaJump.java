@@ -72,7 +72,7 @@ public class LavaJump {
 		if(last != null && now - last < RELAUNCH_COOLDOWN_TICKS) return;
 		lastLaunchTick.put(id, now);
 
-		Utils.debug(Utils.DebugType.SERVER, p.getName() + (last == null ? " lava contact" : " still-in-lava rebounce") + " detected at Y=" + loc.getY());
+		Utils.debug(Utils.DebugType.SERVER, p.getName() + (last == null ? " lava contact" : " still-in-lava rebounce") + " detected at Y=" + Utils.round(loc.getY(), 5));
 		Utils.playLocalSound(p, Sound.ENTITY_PLAYER_HURT, 1.0F, 1.0F);
 
 		ServerPlayer npc = ((CraftPlayer) p).getHandle();

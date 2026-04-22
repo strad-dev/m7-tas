@@ -75,7 +75,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName());
+		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName() + (Utils.superVerbose ? (" at " + round(player.getLocation().getX(), 3) + " " + round(player.getLocation().getY(), 5) + " " + round(player.getLocation().getZ(), 3) + " " + player.getLocation().getYaw() + " " + player.getLocation().getPitch()) : ""));
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
 			((Packet) packet).handle(customConnection);
@@ -276,7 +276,7 @@ public class Utils {
 			Double displayMax = BOSS_DISPLAY_MAX_M.get(tag);
 			if(displayMax == null) continue;
 			double maxHealth = entity.getAttribute(Attribute.MAX_HEALTH).getValue();
-			double ratio = maxHealth > 0 ? Math.max(0.0, Math.min(1.0, current / maxHealth)) : 0.0;
+			double ratio = maxHealth > 0 ? Math.clamp(current / maxHealth, 0.0, 1.0) : 0.0;
 			return formatDisplayM(displayMax * ratio);
 		}
 		return formatHealthM(current);

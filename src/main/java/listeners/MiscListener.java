@@ -1,7 +1,6 @@
 package listeners;
 
 import commands.Spectate;
-import listeners.CustomItems;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;

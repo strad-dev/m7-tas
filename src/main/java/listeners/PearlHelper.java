@@ -21,7 +21,7 @@ public class PearlHelper implements Listener {
 		Vector direction = p.getEyeLocation().getDirection();
 		pearl.setVelocity(direction.multiply(1.5));
 
-		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown at " + p.getLocation().getX() + " " + p.getLocation().getY() + " " + p.getLocation().getZ() + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch() + " " + (p.isSneaking() ? "sneaking" : "standing"));
+		Utils.debug(Utils.DebugType.SERVER, "Ender Pearl #" + pearl.getEntityId() + " from " + p.getName() + " thrown at " + Utils.round(p.getLocation().getX(), 3) + " " + Utils.round(p.getLocation().getY(), 5) + " " + Utils.round(p.getLocation().getZ(), 3) + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch() + " " + (p.isSneaking() ? "sneaking" : "standing"));
 		Utils.scheduleTask(() -> p.setCooldown(Material.ENDER_PEARL, 0), 1);
 	}
 
@@ -72,7 +72,7 @@ public class PearlHelper implements Listener {
 			} else {
 				hit = "something intangible";
 			}
-			Utils.debug(Utils.DebugType.SERVER, "Landed at " + l.getX() + " " + l.getY() + " " + l.getZ() + ", due to colliding with " + hit);
+			Utils.debug(Utils.DebugType.SERVER, "Landed at " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3) + ", due to colliding with " + hit);
 			pearl.remove();
 			p.teleport(l);
 		}

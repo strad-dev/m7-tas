@@ -4,6 +4,7 @@ import instructions.bosses.CustomBossBar;
 import instructions.bosses.Maxor;
 import instructions.bosses.Storm;
 import instructions.bosses.Watcher;
+import listeners.CustomItems;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -79,6 +80,7 @@ public class Server {
 	}
 
 	public static void serverSetup(World world) {
+		CustomItems.flushStonkRestorations();
 		spawnMinibosses(world);
 		resetGoldorCheese();
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
