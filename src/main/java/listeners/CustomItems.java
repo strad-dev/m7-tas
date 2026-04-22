@@ -37,6 +37,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -54,6 +55,8 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
+	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
+	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
 	public static boolean abilityFiredThisTick(Player p) {
 		return lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick;
@@ -477,7 +480,7 @@ public class CustomItems implements Listener {
 			l.setYaw(origin.getYaw());
 			l.setPitch(origin.getPitch());
 			p.teleport(l);
-			Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 		} else {
 			switch(result.getHitBlockFace()) {
 				case SELF -> {
@@ -488,14 +491,14 @@ public class CustomItems implements Listener {
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
-					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 				}
 				case DOWN -> {
 					Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 					l.setYaw(origin.getYaw());
 					l.setPitch(origin.getPitch());
 					p.teleport(l);
-					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 				}
 				default -> {
 					// Hit a side face - backtrack until we find a safe spot
@@ -536,7 +539,7 @@ public class CustomItems implements Listener {
 								l.setYaw(origin.getYaw());
 								l.setPitch(origin.getPitch());
 								p.teleport(l);
-								Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+								Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 								p.setFallDistance(0);
 								Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 								Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
@@ -552,7 +555,7 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 				}
 			}
@@ -569,14 +572,14 @@ public class CustomItems implements Listener {
 				Block b = result.getHitBlock();
 				Location l = b.getLocation().add(0.5, 1, 0.5);
 				if(l.getBlock().getType().isSolid() || l.clone().add(0, 1, 0).getBlock().getType().isSolid()) {
-					Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+					Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					return;
 				}
 				l.setYaw(p.getEyeLocation().getYaw());
 				l.setPitch(p.getEyeLocation().getPitch());
 				p.setFallDistance(0);
 				Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
-				Utils.debug(Utils.DebugType.SERVER, "Etherwarping " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+				Utils.debug(Utils.DebugType.SERVER, "Etherwarping " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 				p.teleport(l);
 			} else {
 				Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " at all");
@@ -658,7 +661,7 @@ public class CustomItems implements Listener {
 				l.setYaw(origin.getYaw());
 				l.setPitch(origin.getPitch());
 				p.teleport(l);
-				Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+				Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 			} else {
 				switch(result.getHitBlockFace()) {
 					case SELF -> {
@@ -669,14 +672,14 @@ public class CustomItems implements Listener {
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 					case DOWN -> {
 						Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
 						l.setYaw(origin.getYaw());
 						l.setPitch(origin.getPitch());
 						p.teleport(l);
-						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 					default -> {
 						// Hit a side face - backtrack until we find a safe spot
@@ -717,7 +720,7 @@ public class CustomItems implements Listener {
 									l.setYaw(origin.getYaw());
 									l.setPitch(origin.getPitch());
 									p.teleport(l);
-									Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+									Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 									p.setFallDistance(0);
 									Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 									return;
@@ -731,7 +734,7 @@ public class CustomItems implements Listener {
 							l.setYaw(origin.getYaw());
 							l.setPitch(origin.getPitch());
 							p.teleport(l);
-							Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+							Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 						}
 					}
 				}
@@ -917,17 +920,29 @@ public class CustomItems implements Listener {
 
 	public static void stonk(Player p, Block b) {
 		if(b.getType().getHardness() != -1) {
-			// Capture block data
 			Material m = b.getType();
 			BlockData data = b.getBlockData().clone();
-			Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + b.getLocation().getX() + " " + b.getLocation().getY() + " " + b.getLocation().getZ());
+			Location loc = b.getLocation();
+			Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + Utils.round(loc.getX(), 3) + " " + Utils.round(loc.getY(), 5) + " " + Utils.round(loc.getZ(), 3));
 
-			// Schedule restoration with Java's scheduler
-			Utils.scheduleTask(() -> {
+			pendingStonkRestorations.put(loc, data);
+			BukkitTask task = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 				b.setType(m);
 				b.setBlockData(data);
+				pendingStonkRestorations.remove(loc);
+				pendingStonkTasks.remove(loc);
 			}, 200);
+			pendingStonkTasks.put(loc, task);
 		}
+	}
+
+	public static void flushStonkRestorations() {
+		pendingStonkTasks.values().forEach(BukkitTask::cancel);
+		pendingStonkTasks.clear();
+		for(Map.Entry<Location, BlockData> entry : pendingStonkRestorations.entrySet()) {
+			entry.getKey().getBlock().setBlockData(entry.getValue(), false);
+		}
+		pendingStonkRestorations.clear();
 	}
 
 	public static void rag(Player p) {
@@ -1469,7 +1484,7 @@ public class CustomItems implements Listener {
 		serverPlayer.setOnGround(false);
 		p.setVelocity(direction);
 		double horizSpeed = Math.hypot(direction.getX(), direction.getZ());
-		Utils.debug(Utils.DebugType.SERVER, "Jerry-chine moved " + p.getName() + " " + direction.getX() + " " + direction.getY() + " " + direction.getZ());
+		Utils.debug(Utils.DebugType.SERVER, "Jerry-chine moved " + p.getName() + " " + Utils.round(direction.getX(), 3) + " " + Utils.round(direction.getY(), 5) + " " + Utils.round(direction.getZ(), 3));
 	}
 
 	public static void terminator(Player p) {
@@ -1619,7 +1634,7 @@ public class CustomItems implements Listener {
 
 	public static void tac(Player p) {
 		Location l = p.getLocation();
-		Utils.debug(Utils.DebugType.SERVER, "Activating Tactical Insertion at " + l.getX() + " " + l.getY() + " " + l.getZ());
+		Utils.debug(Utils.DebugType.SERVER, "Activating Tactical Insertion at " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 		Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);
 		Utils.playLocalSound(p, Sound.ITEM_FLINTANDSTEEL_USE, 1.0F, 1.0F);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.793701F), 10);
@@ -1630,7 +1645,7 @@ public class CustomItems implements Listener {
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F);
 			p.teleport(l);
-			Utils.debug(Utils.DebugType.SERVER, "Returning " + p.getName() + " to " + l.getX() + " " + l.getY() + " " + l.getZ());
+			Utils.debug(Utils.DebugType.SERVER, "Returning " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 			p.setVelocity(new Vector(0, 0, 0));
 			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
 		}, 60);

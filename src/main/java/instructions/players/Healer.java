@@ -27,6 +27,7 @@ public class Healer {
 				Actions.swapItems(healer, 3, 30);
 				Actions.swapItems(healer, 6, 33);
 				Actions.swapItems(healer, 7, 34);
+				Actions.swapItems(healer, 12, 39);
 				Actions.setHotbarSlot(healer, 5);
 				if(section.equals("maxor")) {
 					Utils.scheduleTask(() -> maxor(false), 60);
@@ -313,6 +314,7 @@ public class Healer {
 			Actions.swapItems(healer, 3, 30);
 			Actions.swapItems(healer, 6, 33);
 			Actions.swapItems(healer, 7, 34);
+			Actions.swapItems(healer, 12, 39);
 			Actions.setHotbarSlot(healer, 5);
 		}, 180);
 		Utils.scheduleTask(() -> {
@@ -324,90 +326,90 @@ public class Healer {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Utils.setSpeed(healer, 500); // change pet to black cat (autopet)
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -15f, 45f), 1);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 14), 2);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 15);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 16); // stonk maxor floor
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -60f, 0f), 17);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 48), 18); // fall to storm floor
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 30f), 66);
+		Utils.setSpeed(healer, 650); // change pet to black cat (autopet)
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -14.5f, 37.5f), 1);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 11), 2);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 12);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 13); // stonk maxor floor
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -55f, 0f), 14);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 16); // fall to storm floor
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 30f), 62);
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "W", 11);
 			Actions.leftClick(healer);
-		}, 67); // walk forward + fall to goldor floor
+		}, 63); // walk forward + fall to goldor floor
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 64);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 65);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 66);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 67);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 68);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 69);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 70);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 71);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 72);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 73);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 74);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 75);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 76); // stonk into goldor
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 72); // stonk into goldor
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 0f, 80f); // adjust movement angle
+			Actions.turnHead(healer, 15f, 0f); // adjust movement angle
 			Actions.setHotbarSlot(healer, 1);
-		}, 78);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 79);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 12f, 80f), 119);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 121); // bonzo 1 of 4
-		// tick 122: propelled forward for 12 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 134);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -12f, 80f), 143);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 144); // bonzo 2 of 4
-		// tick 145: propelled forward for 10 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 3f, 80f), 154);
-		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 156); // jump to gain slightly more distance
+		}, 74);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 75);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 116);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 118);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 80f), 128);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -4f, 80f), 137);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 138); // bonzo 1 of 3
+		// tick 139: propelled forward for 10 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 80f), 140);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 150); // jump to gain slightly more distance
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 151);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 152); // bonzo 2 of 3
+		// tick 154: propelled forward for 11 ticks
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 166); // bonzo 3 of 3
+		// tick 167: propelled forward for 10 ticks
 		Utils.scheduleTask(() -> {
-			Actions.move(healer, "WPD", 0); // microadjustment
-		}, 157);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 158); // bonzo 3 of 4 | need to bonzo a little earlier to get the needed momentum and height
-		// tick 160: propelled forward for 13 ticks
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 121), 161);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 5f, 80f), 172);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 173); // bonzo 4 of 4
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 0f, 30f);
+			Actions.turnHead(healer, 0f, 45f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 174);
-		// tick 175: propelled forward for 7 ticks
-		// tick 182: walk forward and fall for 7 ticks
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 190);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 191);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 192);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 193);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 194);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 195);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 1), 196);
-		// tick 197: start falling for 13 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 81f, 80f), 199);
-		// tick 210: reach ground
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 214); // bonzo to lights
-		// tick 215: propelled forward for 23 ticks
+		}, 168);
+		// tick 177: walk forward and fall for 7 ticks
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 184);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 185);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 186);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 187);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 188);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 75f, 90f);
+			Actions.leftClick(healer);
+			Actions.move(healer, "W", 0);
+		}, 189);
+		// tick 191: start falling for 13 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 75f, 90f), 193);
+		// tick 204: reach ground
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 205);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 90f);
 			Actions.setHotbarSlot(healer, 7);
-		}, 216);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 238); // soul sand to lava jump higher
+		}, 220);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 222);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 49), 224);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 237); // soul sand to lava jump higher
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 0f, -23f);
+			Actions.turnHead(healer, 16f, 0f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 280);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 283);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, -40f), 284);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 285);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -43f, -45f), 286);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 287);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 44f, -45f), 288);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 289);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -42f, 3f), 290);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 291);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 43f, 3f), 292);
+		}, 238);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 85f, 0f), 271);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -12f, -16f), 273);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 274);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -34f, -63f), 275);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 276);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 34f, -30f), 277);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 278);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 33f, -53f), 279);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 280);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 66f, 3f), 281);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 282);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 66f, -43f), 283);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 293 Ticks (14.65 seconds) | Overall: 1 035 ticks (51.75 seconds)");
-		}, 293);
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 284 Ticks (14.20 seconds) | Overall: 1 026 ticks (51.30 seconds)");
+		}, 284);
 
 //		Utils.scheduleTask(() -> {
 //			Actions.rightClickLever(healer);

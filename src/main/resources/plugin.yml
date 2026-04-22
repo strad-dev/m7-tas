@@ -28,6 +28,9 @@ commands:
   verbose:
     description: Toggle verbose debug messages
     usage: /verbose <true|false>
+  setspeed:
+    description: Set your movement speed (100 = default)
+    usage: /setspeed <speed>
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>

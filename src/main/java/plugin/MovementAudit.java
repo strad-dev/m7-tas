@@ -58,7 +58,7 @@ public class MovementAudit {
 				}
 
 				if(tick > 0 && Utils.isSuperVerbose()) {
-					Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + "ed " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + sprintSneak);
+					Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + "ed " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + sprintSneak + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
 				}
 				tick++;
 			}
@@ -87,7 +87,8 @@ public class MovementAudit {
 
 		if(input.isEmpty()) return;
 
-		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " moved " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : ""));
+		Vec3 pos = npc.position();
+		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " moved " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : "") + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
 	}
 
 	public static void cancelAll() {

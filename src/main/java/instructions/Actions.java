@@ -29,7 +29,6 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -132,6 +131,7 @@ public class Actions {
 					}
 					if(serverPlayer.onGround()) {
 						serverPlayer.setJumping(true);
+						Utils.debug(Utils.DebugType.CLIENT, entity.getName() + " jumped at " + Utils.round(serverPlayer.getX(), 3) + " " + Utils.round(serverPlayer.getY(), 5) + " " + Utils.round(serverPlayer.getZ(), 3));
 					}
 				}
 			}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
@@ -592,12 +592,17 @@ public class Actions {
 			p.getWorld().playSound(p.getLocation(), Sound.BLOCK_STONE_BREAK, 1.0F, 1.0F);
 		}
 		Material material = b.getType();
-		BlockData blockdata = b.getBlockData();
+		BlockData blockdata = b.getBlockData().clone();
+		Location loc = b.getLocation();
 		b.setType(Material.AIR);
-		Utils.scheduleTask(() -> {
+		CustomItems.pendingStonkRestorations.put(loc, blockdata);
+		BukkitTask task = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			b.setType(material);
 			b.setBlockData(blockdata);
+			CustomItems.pendingStonkRestorations.remove(loc);
+			CustomItems.pendingStonkTasks.remove(loc);
 		}, 6);
+		CustomItems.pendingStonkTasks.put(loc, task);
 	}
 
 	/**
