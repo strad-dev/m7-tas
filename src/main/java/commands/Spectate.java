@@ -7,6 +7,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -263,12 +264,10 @@ public class Spectate implements CommandExecutor {
 							nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsSpectator.getId(), dirtyData));
 						}
 
-						// Send position and rotation
-						nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
-
-						// Sync velocity so client predicts movement correctly between position snaps
+						// Position + velocity in one packet — PositionMoveRotation.of() already includes
+						// getKnownMovement(), so no separate motion packet needed (it would overwrite the velocity)
 						nmsSpectator.setDeltaMovement(nmsFake.getDeltaMovement());
-						nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), nmsFake.getDeltaMovement()));
+						nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
 
 						// Keep fake player hidden
 						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));

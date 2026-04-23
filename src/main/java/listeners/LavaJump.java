@@ -80,7 +80,6 @@ public class LavaJump {
 			Vec3 m = npc.getDeltaMovement();
 			npc.setDeltaMovement(new Vec3(m.x(), LAUNCH_VELOCITY, m.z()));
 			npc.hurtMarked = true;
-			Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava launched with upwards velocity " + LAUNCH_VELOCITY);
 			MovementAudit.startAirborneAudit(p, "lavajump");
 
 			// One tick after launch, the stored Y delta reflects lava's drag multiplier (if still in lava):
@@ -89,7 +88,7 @@ public class LavaJump {
 			Utils.scheduleTask(() -> {
 				double postY = npc.getDeltaMovement().y();
 				String kind = postY > (LAUNCH_VELOCITY * 0.65D) ? "big" : "small";
-				Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava jump classified " + kind);
+				Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava launched with upwards velocity " + postY + " classified " + kind);
 			}, 1);
 		}, 1);
 	}
