@@ -7,7 +7,9 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemStack;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -33,6 +35,9 @@ public class Spectate implements CommandExecutor {
 
 	// Maps a real Player to the player they are spectating
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
+
+	// Previous fake-player position per spectator — used to compute observed delta for velocity injection
+	private static final Map<Player, Vec3> prevFakePositions = new HashMap<>();
 
 	// Maps a fake Player to the Player(s) that are spectating them
 	private static final HashMap<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
@@ -99,6 +104,7 @@ public class Spectate implements CommandExecutor {
 					}
 				}
 
+				prevFakePositions.remove(p);
 				// NEW: Restore the player's original inventory
 				PlayerInventoryBackup.restoreAndRemove(p);
 				PlayerCollision.removeFromNoCollisionTeam(p);
@@ -254,20 +260,25 @@ public class Spectate implements CommandExecutor {
 					if(fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
 						ServerPlayer nmsFake = craftFake.getHandle();
 						ServerPlayer nmsSpectator = craftSpectator.getHandle();
-						// Match exact pose
-						nmsSpectator.setPose(nmsFake.getPose());
+						Vec3 prevPos = prevFakePositions.getOrDefault(spectator, nmsFake.position());
+						Vec3 delta = nmsFake.position().subtract(prevPos);
+						double gravityComp = nmsFake.onGround() ? 0.0 : 0.08;
 
-						// Send pose metadata to spectator's client
-						SynchedEntityData entityData = nmsSpectator.getEntityData();
-						List<SynchedEntityData.DataValue<?>> dirtyData = entityData.getNonDefaultValues();
-						if(dirtyData != null && !dirtyData.isEmpty()) {
-							nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsSpectator.getId(), dirtyData));
+						// Only snap position/rotation when desynced — sending every tick causes
+						// handleMovePlayer → setOldPosAndRot() to collapse xOld=x=P_T, killing
+						// client-side interpolation and producing 20fps stutter.
+						double posDesync = nmsSpectator.position().distanceToSqr(nmsFake.position());
+						float yawDiff = Math.abs(Mth.wrapDegrees(nmsSpectator.getYRot() - nmsFake.getYRot()));
+						float pitchDiff = Math.abs(nmsSpectator.getXRot() - nmsFake.getXRot());
+						if(posDesync > 0.01 || yawDiff > 0.1f || pitchDiff > 0.1f) {
+							nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
 						}
 
-						// Position + velocity in one packet — PositionMoveRotation.of() already includes
-						// getKnownMovement(), so no separate motion packet needed (it would overwrite the velocity)
-						nmsSpectator.setDeltaMovement(nmsFake.getDeltaMovement());
-						nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
+						// Always inject the observed delta as velocity so client physics produces
+						// smooth xOld→x interpolation each frame. Gravity compensation cancels the
+						// 0.08/tick the client would subtract on top of our injected y while airborne.
+						nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), new Vec3(delta.x, delta.y + gravityComp, delta.z)));
+						prevFakePositions.put(spectator, nmsFake.position());
 
 						// Keep fake player hidden
 						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
@@ -329,5 +340,6 @@ public class Spectate implements CommandExecutor {
 		Spectate.getSpectatorMap().clear();
 		reverseSpectatorMap.clear();
 		hiddenFakePlayers.clear();
+		prevFakePositions.clear();
 	}
 }
