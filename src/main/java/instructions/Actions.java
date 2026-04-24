@@ -328,6 +328,14 @@ public class Actions {
 		serverPlayer.setXRot(pitch);
 		serverPlayer.refreshDimensions();
 		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " turning head to " + yaw + " " + pitch);
+
+		for (Player spectator : Spectate.getSpectatingPlayers(player)) {
+			if (spectator instanceof CraftPlayer craftSpectator) {
+				ServerPlayer nmsSpectator = craftSpectator.getHandle();
+				nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(yaw, false, pitch, false));
+				Spectate.updateLastSentRotation(spectator, yaw, pitch);
+			}
+		}
 	}
 
 	/**
