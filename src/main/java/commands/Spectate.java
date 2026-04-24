@@ -279,10 +279,16 @@ public class Spectate implements CommandExecutor {
 						boolean firstTick = lastRot == null;
 						float yawDiff = firstTick ? 180f : Math.abs(Mth.wrapDegrees(lastRot[0] - fakeYaw));
 						float pitchDiff = firstTick ? 180f : Math.abs(lastRot[1] - fakePitch);
-						double deltaLenSq = delta.lengthSqr();
-						boolean teleport = deltaLenSq > 10.0;
+						double spectatorDesyncSq = nmsSpectator.position().distanceToSqr(nmsFake.position());
+						boolean teleport = spectatorDesyncSq > 10.0;
 						boolean posSnap = firstTick || teleport;
 						boolean rotSnap = yawDiff > 0.1f || pitchDiff > 0.1f;
+
+						nmsSpectator.setPose(nmsFake.getPose());
+						List<SynchedEntityData.DataValue<?>> dirtyData = nmsSpectator.getEntityData().getNonDefaultValues();
+						if(dirtyData != null && !dirtyData.isEmpty()) {
+							nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsSpectator.getId(), dirtyData));
+						}
 
 						if(posSnap) {
 							// Position only — handleMovePlayer fires AFTER Entity.tick(), so sending
