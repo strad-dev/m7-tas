@@ -93,6 +93,10 @@ public class Spectate implements CommandExecutor {
 			PlayerInventoryBackup.syncInventory(fakePlayer);
 			Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
+			if(spectatorSyncTask == null) {
+				startSpectatorSync();
+			}
+
 			p.sendMessage("You are now spectating " + role);
 			return true;
 		} else if(cmd.getName().equalsIgnoreCase("unspectate")) {
