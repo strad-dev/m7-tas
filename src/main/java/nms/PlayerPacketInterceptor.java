@@ -37,15 +37,7 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					double y = pkt.getY(0);
 					double z = pkt.getZ(0);
 					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-						Player fakePlayer = Spectate.getSpectatorMap().get(player);
-						if(fakePlayer == null) return;
-						ServerPlayer nmsFake = ((CraftPlayer) fakePlayer).getHandle();
-						double dx = x - nmsFake.getX();
-						double dy = y - nmsFake.getY();
-						double dz = z - nmsFake.getZ();
-						if(dx*dx + dy*dy + dz*dz > 10.0) {
-							Spectate.snapToFake(player);
-						}
+						Spectate.updateClientPosition(player, x, y, z);
 					});
 				}
 				return;

@@ -7,7 +7,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemStack;
@@ -42,6 +41,9 @@ public class Spectate implements CommandExecutor {
 	// Last yaw/pitch we snapped the spectator to — used to detect rotation changes without relying on
 	// nmsSpectator.getYRot() which stays stale when noPhysics=true blocks server position updates
 	private static final Map<Player, float[]> lastSentRotations = new HashMap<>();
+
+	// Real client position, updated every tick from ServerboundMovePlayerPacket before it's dropped
+	private static final Map<Player, Vec3> lastKnownClientPositions = new HashMap<>();
 
 	// Maps a fake Player to the Player(s) that are spectating them
 	private static final HashMap<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
@@ -114,6 +116,7 @@ public class Spectate implements CommandExecutor {
 
 				prevFakePositions.remove(p);
 				lastSentRotations.remove(p);
+				lastKnownClientPositions.remove(p);
 				// NEW: Restore the player's original inventory
 				PlayerInventoryBackup.restoreAndRemove(p);
 				PlayerCollision.removeFromNoCollisionTeam(p);
@@ -156,6 +159,10 @@ public class Spectate implements CommandExecutor {
 
 	public static void updateLastSentRotation(Player spectator, float yaw, float pitch) {
 		lastSentRotations.put(spectator, new float[]{yaw, pitch});
+	}
+
+	public static void updateClientPosition(Player spectator, double x, double y, double z) {
+		lastKnownClientPositions.put(spectator, new Vec3(x, y, z));
 	}
 
 	public static void snapToFake(Player spectator) {
@@ -288,14 +295,11 @@ public class Spectate implements CommandExecutor {
 
 						float fakeYaw = nmsFake.getYRot();
 						float fakePitch = nmsFake.getXRot();
-						float[] lastRot = lastSentRotations.get(spectator);
-						boolean firstTick = lastRot == null;
-						float yawDiff = firstTick ? 180f : Math.abs(Mth.wrapDegrees(lastRot[0] - fakeYaw));
-						float pitchDiff = firstTick ? 180f : Math.abs(lastRot[1] - fakePitch);
-						double spectatorDesyncSq = nmsSpectator.position().distanceToSqr(nmsFake.position());
+						boolean firstTick = lastSentRotations.get(spectator) == null;
+						Vec3 clientPos = lastKnownClientPositions.getOrDefault(spectator, nmsFake.position());
+						double spectatorDesyncSq = clientPos.distanceToSqr(nmsFake.position());
 						boolean teleport = spectatorDesyncSq > 10.0;
 						boolean posSnap = firstTick || teleport;
-						boolean rotSnap = yawDiff > 0.1f || pitchDiff > 0.1f;
 
 						nmsSpectator.setPose(nmsFake.getPose());
 						List<SynchedEntityData.DataValue<?>> dirtyData = nmsSpectator.getEntityData().getNonDefaultValues();
@@ -304,22 +308,15 @@ public class Spectate implements CommandExecutor {
 						}
 
 						if(posSnap) {
-							// Position only — handleMovePlayer fires AFTER Entity.tick(), so sending
-							// velocity on the same tick is redundant (it applies next tick anyway) and
-							// the gap is already collapsed by setOldPosAndRot(). Keep them exclusive.
 							nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
-							lastSentRotations.put(spectator, new float[]{fakeYaw, fakePitch});
-						} else if(rotSnap) {
-							nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
+							nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), fakeYaw, fakePitch);
+							lastKnownClientPositions.put(spectator, nmsFake.position());
 							lastSentRotations.put(spectator, new float[]{fakeYaw, fakePitch});
 						} else {
 							nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
-							// Velocity only — Entity.tick() provides the natural xo/x gap for smooth rendering.
-							// The client applies the injected delta as exact displacement (no gravity subtraction).
 							nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), new Vec3(delta.x, delta.y, delta.z)));
 						}
 						prevFakePositions.put(spectator, nmsFake.position());
-						nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), fakeYaw, fakePitch);
 
 						// Keep fake player hidden
 						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
@@ -387,5 +384,6 @@ public class Spectate implements CommandExecutor {
 		hiddenFakePlayers.clear();
 		prevFakePositions.clear();
 		lastSentRotations.clear();
+		lastKnownClientPositions.clear();
 	}
 }
