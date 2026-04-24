@@ -30,23 +30,23 @@ import java.util.*;
 import java.util.function.Predicate;
 
 public class Spectate implements CommandExecutor {
-	private static final Map<Player, Set<Player>> hiddenFakePlayers = new HashMap<>();
 
-	// Maps a real Player to the player they are spectating
+	private static class SpectatorState {
+		Vec3 prevFakePosition;
+		float[] lastSentRotation;
+		Vec3 lastKnownClientPosition;
+		final Set<Player> hiddenFakePlayers = new HashSet<>();
+	}
+
+	// Maps a real Player to the fake Player they are spectating
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
 
-	// Previous fake-player position per spectator — used to compute observed delta for velocity injection
-	private static final Map<Player, Vec3> prevFakePositions = new HashMap<>();
-
-	// Last yaw/pitch we snapped the spectator to — used to detect rotation changes without relying on
-	// nmsSpectator.getYRot() which stays stale when noPhysics=true blocks server position updates
-	private static final Map<Player, float[]> lastSentRotations = new HashMap<>();
-
-	// Real client position, updated every tick from ServerboundMovePlayerPacket before it's dropped
-	private static final Map<Player, Vec3> lastKnownClientPositions = new HashMap<>();
+	// Per-spectator sync state
+	private static final Map<Player, SpectatorState> spectatorStates = new HashMap<>();
 
 	// Maps a fake Player to the Player(s) that are spectating them
-	private static final HashMap<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
+	private static final Map<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
+
 	private static BukkitRunnable spectatorSyncTask;
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
@@ -82,8 +82,8 @@ public class Spectate implements CommandExecutor {
 			Player fakePlayer = fakePlayers.get(role);
 			spectatorMap.put(p, fakePlayer);
 			reverseSpectatorMap.computeIfAbsent(fakePlayer, k -> new HashSet<>()).add(p);
+			spectatorStates.put(p, new SpectatorState());
 
-			// NEW: Backup the player's inventory before spectating
 			PlayerInventoryBackup.backup(p);
 
 			Location fakeLocation = fakePlayer.getLocation();
@@ -91,7 +91,6 @@ public class Spectate implements CommandExecutor {
 
 			preventPlayerCollision(p, fakePlayer);
 
-			// Sync inventory when starting to spectate
 			PlayerInventoryBackup.syncInventory(fakePlayer);
 			Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
@@ -103,41 +102,7 @@ public class Spectate implements CommandExecutor {
 			return true;
 		} else if(cmd.getName().equalsIgnoreCase("unspectate")) {
 			if(spectatorMap.containsKey(p)) {
-				Player fakePlayer = spectatorMap.remove(p);
-				if(fakePlayer != null) {
-					Set<Player> spectators = reverseSpectatorMap.get(fakePlayer);
-					if(spectators != null) {
-						spectators.remove(p);
-						if(spectators.isEmpty()) {
-							reverseSpectatorMap.remove(fakePlayer);
-						}
-					}
-				}
-
-				prevFakePositions.remove(p);
-				lastSentRotations.remove(p);
-				lastKnownClientPositions.remove(p);
-				// NEW: Restore the player's original inventory
-				PlayerInventoryBackup.restoreAndRemove(p);
-				PlayerCollision.removeFromNoCollisionTeam(p);
-				p.setCollidable(false);
-				if (p instanceof CraftPlayer craftPlayer) {
-					craftPlayer.getHandle().setNoGravity(false);
-					craftPlayer.getHandle().noPhysics = false;
-				}
-				p.removePotionEffect(PotionEffectType.INVISIBILITY);
-
-				if(fakePlayer != null) {
-					showFakePlayerToSpectator(p, fakePlayer);
-				}
-
-				Set<Player> hidden = hiddenFakePlayers.remove(p);
-				if(hidden != null) {
-					for(Player hiddenFake : hidden) {
-						showFakePlayerToSpectator(p, hiddenFake);
-					}
-				}
-
+				removeSpectator(p);
 				p.sendMessage("You are no longer spectating a class");
 				return true;
 			}
@@ -147,58 +112,68 @@ public class Spectate implements CommandExecutor {
 		return true;
 	}
 
-	/**
-	 * Retrieves the player that the given player is currently spectating.
-	 *
-	 * @param player the player whose spectating target is being retrieved
-	 * @return the player being spectated by the given player, or null if the player is not spectating anyone
-	 */
+	private static void removeSpectator(Player p) {
+		SpectatorState state = spectatorStates.remove(p);
+		Player fakePlayer = spectatorMap.remove(p);
+
+		if(fakePlayer != null) {
+			Set<Player> spectators = reverseSpectatorMap.get(fakePlayer);
+			if(spectators != null) {
+				spectators.remove(p);
+				if(spectators.isEmpty()) reverseSpectatorMap.remove(fakePlayer);
+			}
+			showFakePlayerToSpectator(p, fakePlayer);
+		}
+
+		if(state != null) {
+			for(Player hiddenFake : state.hiddenFakePlayers) {
+				showFakePlayerToSpectator(p, hiddenFake);
+			}
+		}
+
+		PlayerInventoryBackup.restoreAndRemove(p);
+		restorePlayerCollision(p);
+	}
+
 	public static Set<Player> getSpectatingPlayers(Player player) {
 		return reverseSpectatorMap.getOrDefault(player, new HashSet<>());
 	}
 
 	public static void updateLastSentRotation(Player spectator, float yaw, float pitch) {
-		lastSentRotations.put(spectator, new float[]{yaw, pitch});
+		SpectatorState state = spectatorStates.get(spectator);
+		if(state != null) state.lastSentRotation = new float[]{yaw, pitch};
 	}
 
 	public static void updateClientPosition(Player spectator, double x, double y, double z) {
-		lastKnownClientPositions.put(spectator, new Vec3(x, y, z));
+		SpectatorState state = spectatorStates.get(spectator);
+		if(state != null) state.lastKnownClientPosition = new Vec3(x, y, z);
 	}
 
-	public static void snapToFake(Player spectator) {
-		Player fakePlayer = spectatorMap.get(spectator);
-		if(fakePlayer == null || !(spectator instanceof CraftPlayer cs) || !(fakePlayer instanceof CraftPlayer cf)) return;
-		ServerPlayer nmsSpectator = cs.getHandle();
-		ServerPlayer nmsFake = cf.getHandle();
-		nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
-		nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), nmsFake.getYRot(), nmsFake.getXRot());
-	}
-
-	/**
-	 * @return the map of which real Player is spectating which fake Player.
-	 */
 	public static Map<Player, Player> getSpectatorMap() {
 		return spectatorMap;
 	}
 
-	/**
-	 * @return the map of which real Players are spectating each fake Player
-	 */
 	public static Map<Player, Set<Player>> getReverseSpectatorMap() {
 		return reverseSpectatorMap;
 	}
 
 	public static void preventPlayerCollision(Player realPlayer, Player fakePlayer) {
-		// Add both players to the no-collision team
 		PlayerCollision.addToNoCollisionTeam(realPlayer);
 		PlayerCollision.addToNoCollisionTeam(fakePlayer);
-
-		// Also make the real player unable to be hit by projectiles while spectating
 		realPlayer.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0, true, false));
 		realPlayer.setCollidable(false);
-
-		if (realPlayer instanceof CraftPlayer craftPlayer) {
+		if(realPlayer instanceof CraftPlayer craftPlayer) {
 			craftPlayer.getHandle().noPhysics = true;
+		}
+	}
+
+	private static void restorePlayerCollision(Player player) {
+		PlayerCollision.removeFromNoCollisionTeam(player);
+		player.setCollidable(true);
+		player.removePotionEffect(PotionEffectType.INVISIBILITY);
+		if(player instanceof CraftPlayer craftPlayer) {
+			craftPlayer.getHandle().setNoGravity(false);
+			craftPlayer.getHandle().noPhysics = false;
 		}
 	}
 
@@ -206,70 +181,33 @@ public class Spectate implements CommandExecutor {
 		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
 			ServerPlayer nmsSpectator = craftSpectator.getHandle();
 			ServerPlayer nmsFake = craftFake.getHandle();
-
-			// Send destroy packet to hide the fake player from this spectator
-			ClientboundRemoveEntitiesPacket destroyPacket = new ClientboundRemoveEntitiesPacket(nmsFake.getId());
-			nmsSpectator.connection.send(destroyPacket);
+			nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
 		}
 	}
-
 
 	private static void showFakePlayerToSpectator(Player spectator, Player fakePlayer) {
 		if(spectator instanceof CraftPlayer craftSpectator && fakePlayer instanceof CraftPlayer craftFake) {
 			ServerPlayer nmsSpectator = craftSpectator.getHandle();
 			ServerPlayer nmsFake = craftFake.getHandle();
 
-			// Re-send spawn packet to show the fake player again
 			ServerEntity entry = new ServerEntity(nmsFake.level(), nmsFake, 0, false, new ServerEntity.Synchronizer() {
-				@Override
-				public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {
-					// No-op for fake players
-				}
-
-				@Override
-				public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {
-					// No-op for fake players
-				}
-
-				@Override
-				public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {
-					// No-op for fake players
-				}
-
-				@Override
-				public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {
-					// No-op for fake players
-				}
+				@Override public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {}
+				@Override public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {}
+				@Override public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {}
+				@Override public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {}
 			}, new HashSet<>());
-			ClientboundAddEntityPacket spawn = new ClientboundAddEntityPacket(nmsFake, entry);
-			nmsSpectator.connection.send(spawn);
-
-			// Also send metadata and equipment
-			SynchedEntityData synchedEntityData = nmsFake.getEntityData();
-			ClientboundSetEntityDataPacket metadataPacket = new ClientboundSetEntityDataPacket(nmsFake.getId(), synchedEntityData.getNonDefaultValues());
-			nmsSpectator.connection.send(metadataPacket);
+			nmsSpectator.connection.send(new ClientboundAddEntityPacket(nmsFake, entry));
+			nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsFake.getId(), nmsFake.getEntityData().getNonDefaultValues()));
 
 			PlayerInventory inventory = fakePlayer.getInventory();
-
-			net.minecraft.world.item.ItemStack helmet = CraftItemStack.asNMSCopy(inventory.getHelmet());
-			net.minecraft.world.item.ItemStack chestplate = CraftItemStack.asNMSCopy(inventory.getChestplate());
-			net.minecraft.world.item.ItemStack leggings = CraftItemStack.asNMSCopy(inventory.getLeggings());
-			net.minecraft.world.item.ItemStack boots = CraftItemStack.asNMSCopy(inventory.getBoots());
-			net.minecraft.world.item.ItemStack mainHand = CraftItemStack.asNMSCopy(inventory.getItemInMainHand());
-			net.minecraft.world.item.ItemStack offHand = CraftItemStack.asNMSCopy(inventory.getItemInOffHand());
-
-			// Create equipment list
-			List<Pair<EquipmentSlot, ItemStack>> equipment = List.of(Pair.of(EquipmentSlot.HEAD, helmet),      // HEAD
-					Pair.of(EquipmentSlot.CHEST, chestplate),  // CHEST
-					Pair.of(EquipmentSlot.LEGS, leggings),    // LEGS
-					Pair.of(EquipmentSlot.FEET, boots),       // FEET
-					Pair.of(EquipmentSlot.MAINHAND, mainHand),    // MAINHAND
-					Pair.of(EquipmentSlot.OFFHAND, offHand)      // OFFHAND
-			);
-
-			// Send equipment packet to the specific spectator
-			ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(nmsFake.getId(), equipment);
-			nmsSpectator.connection.send(equipmentPacket);
+			nmsSpectator.connection.send(new ClientboundSetEquipmentPacket(nmsFake.getId(), List.of(
+				Pair.of(EquipmentSlot.HEAD,     CraftItemStack.asNMSCopy(inventory.getHelmet())),
+				Pair.of(EquipmentSlot.CHEST,    CraftItemStack.asNMSCopy(inventory.getChestplate())),
+				Pair.of(EquipmentSlot.LEGS,     CraftItemStack.asNMSCopy(inventory.getLeggings())),
+				Pair.of(EquipmentSlot.FEET,     CraftItemStack.asNMSCopy(inventory.getBoots())),
+				Pair.of(EquipmentSlot.MAINHAND, CraftItemStack.asNMSCopy(inventory.getItemInMainHand())),
+				Pair.of(EquipmentSlot.OFFHAND,  CraftItemStack.asNMSCopy(inventory.getItemInOffHand()))
+			)));
 		}
 	}
 
@@ -281,82 +219,74 @@ public class Spectate implements CommandExecutor {
 		spectatorSyncTask = new BukkitRunnable() {
 			@Override
 			public void run() {
-				Map<Player, Player> spectatorMap = Spectate.getSpectatorMap();
-				// Iterate through all spectator relationships
-				for(Player spectator : spectatorMap.keySet()) {
-					Player fakePlayer = spectatorMap.get(spectator);
+				for(Map.Entry<Player, Player> entry : spectatorMap.entrySet()) {
+					Player spectator = entry.getKey();
+					Player fakePlayer = entry.getValue();
+					SpectatorState state = spectatorStates.get(spectator);
 
-					// Get the fake player's current position and update spectators
-					if(fakePlayer instanceof CraftPlayer craftFake && spectator instanceof CraftPlayer craftSpectator) {
-						ServerPlayer nmsFake = craftFake.getHandle();
-						ServerPlayer nmsSpectator = craftSpectator.getHandle();
-						Vec3 prevPos = prevFakePositions.getOrDefault(spectator, nmsFake.position());
-						Vec3 delta = nmsFake.position().subtract(prevPos);
+					if(state == null || !(fakePlayer instanceof CraftPlayer craftFake) || !(spectator instanceof CraftPlayer craftSpectator)) continue;
 
-						float fakeYaw = nmsFake.getYRot();
-						float fakePitch = nmsFake.getXRot();
-						boolean firstTick = lastSentRotations.get(spectator) == null;
-						Vec3 clientPos = lastKnownClientPositions.getOrDefault(spectator, nmsFake.position());
-						double spectatorDesyncSq = clientPos.distanceToSqr(nmsFake.position());
-						boolean teleport = spectatorDesyncSq > 10.0;
-						boolean posSnap = firstTick || teleport;
+					ServerPlayer nmsFake = craftFake.getHandle();
+					ServerPlayer nmsSpectator = craftSpectator.getHandle();
 
-						nmsSpectator.setPose(nmsFake.getPose());
-						List<SynchedEntityData.DataValue<?>> dirtyData = nmsSpectator.getEntityData().getNonDefaultValues();
-						if(dirtyData != null && !dirtyData.isEmpty()) {
-							nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsSpectator.getId(), dirtyData));
-						}
+					Vec3 prevPos = state.prevFakePosition != null ? state.prevFakePosition : nmsFake.position();
+					Vec3 delta = nmsFake.position().subtract(prevPos);
+					Vec3 clientPos = state.lastKnownClientPosition != null ? state.lastKnownClientPosition : nmsFake.position();
 
-						if(posSnap) {
-							nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
-							nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), fakeYaw, fakePitch);
-							lastKnownClientPositions.put(spectator, nmsFake.position());
-							lastSentRotations.put(spectator, new float[]{fakeYaw, fakePitch});
-						} else {
-							nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
-							nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), new Vec3(delta.x, delta.y, delta.z)));
-						}
-						prevFakePositions.put(spectator, nmsFake.position());
+					float fakeYaw = nmsFake.getYRot();
+					float fakePitch = nmsFake.getXRot();
+					boolean firstTick = state.prevFakePosition == null;
+					boolean posSnap = firstTick || clientPos.distanceToSqr(nmsFake.position()) > 0.01;
 
-						// Keep fake player hidden
-						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
-						updateFakePlayerVisibility();
+					nmsSpectator.setPose(nmsFake.getPose());
+					List<SynchedEntityData.DataValue<?>> dirtyData = nmsSpectator.getEntityData().getNonDefaultValues();
+					if(dirtyData != null && !dirtyData.isEmpty()) {
+						nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsSpectator.getId(), dirtyData));
 					}
+
+					if(posSnap) {
+						nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
+						nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), fakeYaw, fakePitch);
+						state.lastKnownClientPosition = nmsFake.position();
+						state.lastSentRotation = new float[]{fakeYaw, fakePitch};
+					} else {
+						nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
+						nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), new Vec3(delta.x, delta.y, delta.z)));
+					}
+					state.prevFakePosition = nmsFake.position();
+
+					nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
 				}
+				updateFakePlayerVisibility();
 			}
 		};
 
-		// Run every tick for smooth camera movement
 		spectatorSyncTask.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
 	private static void updateFakePlayerVisibility() {
-		Map<Player, Player> spectatorMap = Spectate.getSpectatorMap();
-		for(Player spectator : spectatorMap.keySet()) {
-			Player spectatedFake = spectatorMap.get(spectator);
-			Location spectatorLocation = spectatedFake.getLocation(); // Use fake player's location
+		for(Map.Entry<Player, Player> entry : spectatorMap.entrySet()) {
+			Player spectator = entry.getKey();
+			Player spectatedFake = entry.getValue();
+			SpectatorState state = spectatorStates.get(spectator);
+			if(state == null) continue;
 
-			Set<Player> currentlyHidden = hiddenFakePlayers.getOrDefault(spectator, new HashSet<>());
+			Location spectatorLocation = spectatedFake.getLocation();
 			Set<Player> shouldBeHidden = new HashSet<>();
 
-			// Check all other fake players
 			for(Player otherFake : FakePlayerManager.getFakePlayers().values()) {
-				if(otherFake.equals(spectatedFake)) continue; // Skip the one being spectated
-
+				if(otherFake.equals(spectatedFake)) continue;
 				double distance = spectatorLocation.distanceSquared(otherFake.getLocation());
-
 				if(distance <= 3) {
 					shouldBeHidden.add(otherFake);
-					Spectate.hideFakePlayerFromSpectator(spectator, otherFake);
-				} else {
-					// Show if currently hidden
-					if(currentlyHidden.contains(otherFake)) {
-						showFakePlayerToSpectator(spectator, otherFake);
-					}
+					hideFakePlayerFromSpectator(spectator, otherFake);
+				} else if(state.hiddenFakePlayers.contains(otherFake)) {
+					showFakePlayerToSpectator(spectator, otherFake);
 				}
 			}
 
-			hiddenFakePlayers.put(spectator, shouldBeHidden);
+			state.hiddenFakePlayers.clear();
+			state.hiddenFakePlayers.addAll(shouldBeHidden);
 		}
 	}
 
@@ -368,22 +298,12 @@ public class Spectate implements CommandExecutor {
 	}
 
 	public static void clearSpectatorMaps() {
-		Spectate.stopSpectatorSync();
-
-		for(Player spectator : new ArrayList<>(Spectate.getSpectatorMap().keySet())) {
-			PlayerInventoryBackup.restoreAndRemove(spectator);
-			spectator.removePotionEffect(PotionEffectType.INVISIBILITY);
-			if(spectator instanceof CraftPlayer craftPlayer) {
-				craftPlayer.getHandle().setNoGravity(false);
-				craftPlayer.getHandle().noPhysics = false;
-			}
+		stopSpectatorSync();
+		for(Player spectator : new ArrayList<>(spectatorMap.keySet())) {
+			removeSpectator(spectator);
 		}
-
-		Spectate.getSpectatorMap().clear();
+		spectatorMap.clear();
 		reverseSpectatorMap.clear();
-		hiddenFakePlayers.clear();
-		prevFakePositions.clear();
-		lastSentRotations.clear();
-		lastKnownClientPositions.clear();
+		spectatorStates.clear();
 	}
 }
