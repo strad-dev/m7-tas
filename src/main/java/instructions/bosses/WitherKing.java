@@ -76,7 +76,7 @@ public class WitherKing {
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");
 			witherKing.addScoreboardTag("TASWitherKing");
-			Actions.setWitherArmor(witherKing, true);
+			WitherActions.setWitherArmor(witherKing, true);
 
 			Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(witherKing, ChatColor.MAGIC + "Wither-King"), 1);
 

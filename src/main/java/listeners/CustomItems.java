@@ -403,6 +403,11 @@ public class CustomItems implements Listener {
 		// does not affect anything
 		Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
 
+		// Inside the F7 Goldor/Necron arena, Wither Impact implodes but does not teleport.
+		if(LavaJump.isInBossArena(p.getLocation())) {
+			return;
+		}
+
 		Location origin = p.getLocation().clone();
 		RayTraceResult result = p.rayTraceBlocks(11.65);
 		if(result == null) {

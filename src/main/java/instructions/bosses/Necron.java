@@ -1,6 +1,5 @@
 package instructions.bosses;
 
-import instructions.Actions;
 import instructions.Server;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -54,7 +53,7 @@ public class Necron {
 		necron.setHealth(1000);
 		necron.addScoreboardTag("TASWither");
 		necron.addScoreboardTag("TASNecron");
-		Actions.setWitherArmor(necron, true);
+		WitherActions.setWitherArmor(necron, true);
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(necron, "Necron"), 1);
 
@@ -64,10 +63,10 @@ public class Necron {
 			destroyPlatform();
 		}, 60);
 		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), 120);
-		Utils.scheduleTask(() -> Actions.setWitherArmor(necron, false), 160);
+		Utils.scheduleTask(() -> WitherActions.setWitherArmor(necron, false), 160);
 		// first frenzy
 		Utils.scheduleTask(() -> {
-			Actions.setWitherArmor(necron, true);
+			WitherActions.setWitherArmor(necron, true);
 			frenzy();
 		}, 161);
 		Utils.scheduleTask(() -> necron.setHealth(560), 162);
@@ -75,18 +74,18 @@ public class Necron {
 		// damageable on tick 302
 		// blow up platform
 		Utils.scheduleTask(() -> {
-			Actions.setWitherArmor(necron, true);
+			WitherActions.setWitherArmor(necron, true);
 			destroyPlatform();
 		}, 307);
 		Utils.scheduleTask(() -> necron.setHealth(175), 308);
 		// damagable on tick 368 (mage one beam)
 		Utils.scheduleTask(() -> {
-			Actions.setWitherArmor(necron, false);
+			WitherActions.setWitherArmor(necron, false);
 			sendChatMessage(frenzyEndMessages[random.nextInt(frenzyEndMessages.length)]);
 		}, 367);
 		// second frenzy
 		Utils.scheduleTask(() -> {
-			Actions.setWitherArmor(necron, true);
+			WitherActions.setWitherArmor(necron, true);
 			frenzy();
 		}, 368);
 		Utils.scheduleTask(() -> necron.setHealth(35), 369);
@@ -170,7 +169,7 @@ public class Necron {
 		}, 120);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(frenzyEndMessages[random.nextInt(frenzyEndMessages.length)]);
-			Actions.setWitherArmor(necron, false);
+			WitherActions.setWitherArmor(necron, false);
 		}, 140);
 	}
 
