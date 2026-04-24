@@ -16,9 +16,9 @@ public class AllMobsHaveNames implements Listener {
 			if(temp instanceof LivingEntity entity && entity.getCustomName() == null) {
 				double health = entity.getHealth() + entity.getAbsorptionAmount();
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
-					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.RED + "❤" + ChatColor.YELLOW + health);
+					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.YELLOW + health + ChatColor.RED + "❤");
 				} else {
-					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.RED + "❤" + ChatColor.YELLOW + Utils.formatHealthM(entity));
+					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.YELLOW + Utils.formatHealthM(entity) + ChatColor.RED + "❤");
 				}
 				entity.setCustomNameVisible(true);
 			}
@@ -32,9 +32,9 @@ public class AllMobsHaveNames implements Listener {
 			String name = ChatColor.AQUA + entity.getName();
 			if(!name.contains("❤")) {
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
-					name += " " + ChatColor.RED + "❤" + ChatColor.YELLOW + health;
+					name += " " + ChatColor.YELLOW + health + ChatColor.RED + "❤";
 				} else {
-					name += " " + ChatColor.RED + "❤" + ChatColor.YELLOW + Utils.formatHealthM(entity);
+					name += " " + ChatColor.YELLOW + Utils.formatHealthM(entity) + ChatColor.RED + "❤";
 				}
 			}
 			entity.setCustomName(name);

@@ -356,6 +356,7 @@ public class Actions {
 			if(!(entity instanceof LivingEntity le)) return false;
 			if(entity.isDead()) return false;
 			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
+			if(entity instanceof Wither w && w.getInvulnerabilityTicks() != 0) return false;
 			if(entity instanceof org.bukkit.entity.Player player) {
 				if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
 				return !Spectate.getSpectatingPlayers(p).contains(player);
@@ -671,7 +672,7 @@ public class Actions {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) (x1 + x2) / 2, Math.min(y1, y2), (double) (z1 + z2) / 2), EntityType.ZOMBIE);
-		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + "2M");
+		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.YELLOW + "2M" + ChatColor.RED + "❤");
 		zombie.setCustomNameVisible(true);
 		zombie.setAI(false);
 		zombie.setSilent(true);
@@ -707,7 +708,7 @@ public class Actions {
 		b.setType(Material.AIR);
 
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
-		zombie.setCustomName("Mimic " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + "4M");
+		zombie.setCustomName("Mimic " + ChatColor.RESET + ChatColor.YELLOW + "4M" + ChatColor.RED + "❤");
 		zombie.setCustomNameVisible(true);
 		zombie.setAI(false);
 		zombie.setSilent(true);

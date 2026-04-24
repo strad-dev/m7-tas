@@ -485,24 +485,18 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 52);
 		Utils.scheduleTask(() -> {
 			Actions.move(tank, "N", 0);
-			Actions.turnHead(tank, -180f, 0f);
+			Actions.turnHead(tank, -180f, -5f);
 		}, 63);
-//		Utils.scheduleTask(() -> Actions.jump(tank), 48);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, -5f), 58);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 59);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 71);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 83);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 95);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 107);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 119);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 131);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 143);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 155);
-//		Utils.scheduleTask(() -> Actions.AOTS(tank), 167);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 168);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 29), 169);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 4), 198);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 4), 202);
+		for(int i = 65; i <= 160; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
+		}
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 161); // Wither Impact has a 3-tick cooldown
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 164);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 167);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 170); // clear out wither miners
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 171);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 172); // draw LB
+
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 203);
 //		Utils.scheduleTask(() -> Actions.iceSpray(tank), 204);
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 205);

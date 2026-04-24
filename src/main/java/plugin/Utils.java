@@ -321,9 +321,9 @@ public class Utils {
 			try {
 				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
 			} catch(Exception exception) {
-				oldName = (entity.getName() + " " + ChatColor.RED + "❤" + ChatColor.YELLOW + healthStr).split(" ");
+				oldName = (entity.getName() + " " + ChatColor.YELLOW + healthStr + ChatColor.RED + "❤").split(" ");
 			}
-			oldName[oldName.length - 1] = ChatColor.RED + "❤" + ChatColor.YELLOW + healthStr;
+			oldName[oldName.length - 1] = ChatColor.YELLOW + healthStr + ChatColor.RED + "❤";
 			StringBuilder newName = new StringBuilder(oldName[0]);
 			for(int i = 1; i < oldName.length; i++) {
 				newName.append(" ").append(oldName[i]);
