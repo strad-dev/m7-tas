@@ -130,7 +130,7 @@ public class Server {
 
 		for(int i = 0; i < locations.length; i++) {
 			Zombie zombie = (Zombie) world.spawnEntity(locations[i], EntityType.ZOMBIE);
-			zombie.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Angry Archaeologist " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + ((int) healthValues[i] * 2) + "M");
+			zombie.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Angry Archaeologist " + ChatColor.RESET + ChatColor.YELLOW + ((int) healthValues[i] * 2) + "M" + ChatColor.RED + "❤");
 			zombie.setCustomNameVisible(true);
 			zombie.setAI(false);
 			zombie.setSilent(true);
@@ -157,7 +157,7 @@ public class Server {
 		}
 
 		yellowShadowAssassin = (Zombie) world.spawnEntity(new Location(world, -184.5, 69, -184.5, 0f, 0f), EntityType.ZOMBIE);
-		yellowShadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.RED + "❤" + ChatColor.YELLOW + "60M");
+		yellowShadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "60M" + ChatColor.RED + "❤");
 		yellowShadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
 		yellowShadowAssassin.setCustomNameVisible(true);
 		yellowShadowAssassin.setAI(false);

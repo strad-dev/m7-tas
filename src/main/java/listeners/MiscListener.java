@@ -15,6 +15,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -56,6 +57,13 @@ public class MiscListener implements Listener {
 	public void onEntityExplode(EntityExplodeEvent e) {
 		if(e.getEntity() instanceof WindCharge windCharge && windCharge.getScoreboardTags().contains("Bonzo")) {
 			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onWitherSpawn(EntitySpawnEvent e) {
+		if(e.getEntity() instanceof Wither wither) {
+			wither.setCollidable(false);
 		}
 	}
 

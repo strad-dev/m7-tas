@@ -40,6 +40,13 @@ public final class M7tas extends JavaPlugin {
 	public void onEnable() {
 		plugin = this;
 
+		// Suppress Paper's deprecated-event registration warnings (EntityKnockbackEvent / EntityKnockbackByEntityEvent).
+		// Must be set before registerEvents() below, since the warning is logged there.
+		getLogger().setFilter(record -> {
+			String msg = record.getMessage();
+			return msg == null || !msg.contains("but the event is Deprecated");
+		});
+
 		PlayerCollision.setupNoCollisionTeam();
 
 		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset", "getcustomitems", "verbose", "setspeed")) {

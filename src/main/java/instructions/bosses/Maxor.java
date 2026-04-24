@@ -1,5 +1,6 @@
 package instructions.bosses;
 
+import instructions.players.Tank;
 import listeners.CustomItems;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -22,13 +23,18 @@ public class Maxor {
 	private static World world;
 	private static BossBar maxorBossBar;
 	private static BukkitTask bossBarUpdateTask;
-	private static EnderCrystal leftCrystal;
-	private static EnderCrystal rightCrystal;
+	// Top spawn crystals — pickupable. Nulled on pickUp.
+	private static EnderCrystal topLeftCrystal;
+	private static EnderCrystal topRightCrystal;
+	// Plate-placed crystals — NOT pickupable. Committed once placed.
+	private static EnderCrystal plateLeftCrystal;
+	private static EnderCrystal plateRightCrystal;
 	private static final Random random = new Random();
 	private static final String[] laserMessage = {"YOU TRICKED ME!", "THAT BEAM!  IT HURTS!  IT HURTS!"};
 	private static final WitherSkeleton[] miners = new WitherSkeleton[10];
 
 	private static final String ENERGY_CRYSTAL_ID = "skyblock/game/energy_crystal";
+	private static final String ENERGY_CRYSTAL_NAME = ChatColor.GOLD + "" + ChatColor.BOLD + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Energy Crystal" + ChatColor.GOLD + ChatColor.BOLD + " ﴿";
 	private static final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
 
 	public static void maxorInstructions(World temp, boolean doContinue) {
@@ -53,7 +59,7 @@ public class Maxor {
 		maxor.setSilent(true);
 		maxor.setPersistent(true);
 		maxor.setRemoveWhenFarAway(false);
-		maxor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Maxor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + "800M");
+		maxor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Maxor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + "800M" + ChatColor.RED + "❤");
 		maxor.setCustomNameVisible(true);
 		maxor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(300);
 		maxor.getAttribute(Attribute.ARMOR).setBaseValue(-30);
@@ -71,9 +77,8 @@ public class Maxor {
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
-//			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
-			WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"));
-//			spawnMiners();
+			WitherActions.setWitherAggro(maxor, Tank.get());
+			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
 		}, 160);
@@ -133,20 +138,20 @@ public class Maxor {
 	}
 
 	public static boolean notEnergyCrystal(Entity e) {
-		return !(e instanceof EnderCrystal) || (!e.equals(leftCrystal) && !e.equals(rightCrystal));
+		// Only the top spawn crystals can be picked up — plate-placed ones are committed.
+		return !(e instanceof EnderCrystal) || (!e.equals(topLeftCrystal) && !e.equals(topRightCrystal));
 	}
 
 	public static void resetCrystals() {
 		if(world == null) world = Bukkit.getWorlds().getFirst();
 
-		if(leftCrystal != null) {
-			leftCrystal.remove();
-		}
-		if(rightCrystal != null) {
-			rightCrystal.remove();
-		}
-		leftCrystal = spawnEnergyCrystal(new Location(world, 82.5, 238.48, 50.5));
-		rightCrystal = spawnEnergyCrystal(new Location(world, 64.5, 238.48, 50.5));
+		if(topLeftCrystal != null) topLeftCrystal.remove();
+		if(topRightCrystal != null) topRightCrystal.remove();
+		if(plateLeftCrystal != null) { plateLeftCrystal.remove(); plateLeftCrystal = null; }
+		if(plateRightCrystal != null) { plateRightCrystal.remove(); plateRightCrystal = null; }
+
+		topLeftCrystal = spawnEnergyCrystal(new Location(world, 82.5, 238.48, 50.5));
+		topRightCrystal = spawnEnergyCrystal(new Location(world, 64.5, 238.48, 50.5));
 	}
 
 	public static void pickUp(Player p, EnderCrystal crystal) {
@@ -157,8 +162,8 @@ public class Maxor {
 		p.getInventory().setItem(8, getEnergyCrystalItem());
 
 		crystal.remove();
-		if(crystal.equals(leftCrystal)) leftCrystal = null;
-		else if(crystal.equals(rightCrystal)) rightCrystal = null;
+		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
+		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
 	}
 
 	public static void placeAtPlate(Player p, Location plate) {
@@ -169,11 +174,11 @@ public class Maxor {
 		int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
 
 		if(px == 94 && py == 224 && pz == 41) {
-			if(leftCrystal != null) return;
-			leftCrystal = spawnEnergyCrystal(new Location(world, 94.5, 224.48, 41.5));
+			if(plateLeftCrystal != null) return;
+			plateLeftCrystal = spawnEnergyCrystal(new Location(world, 94.5, 224.48, 41.5));
 		} else if(px == 52 && py == 224 && pz == 41) {
-			if(rightCrystal != null) return;
-			rightCrystal = spawnEnergyCrystal(new Location(world, 52.5, 224.48, 41.5));
+			if(plateRightCrystal != null) return;
+			plateRightCrystal = spawnEnergyCrystal(new Location(world, 52.5, 224.48, 41.5));
 		} else {
 			return;
 		}
@@ -186,8 +191,8 @@ public class Maxor {
 
 	private static EnderCrystal spawnEnergyCrystal(Location loc) {
 		EnderCrystal c = (EnderCrystal) world.spawnEntity(loc, EntityType.END_CRYSTAL);
-		c.setCustomName("Energy Crystal");
-		c.setCustomNameVisible(true);
+		c.setCustomName(ENERGY_CRYSTAL_NAME);
+		c.setCustomNameVisible(false);
 		return c;
 	}
 
@@ -212,9 +217,9 @@ public class Maxor {
 
 			WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
 
-			// Set health to 3 HP
-			miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(3.0);
-			miner.setHealth(3.0);
+			// Set health to 4 HP
+			miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
+			miner.setHealth(4.0);
 			miner.getAttribute(Attribute.ARMOR).setBaseValue(-30);
 			miner.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			miner.setAI(false);
@@ -223,7 +228,7 @@ public class Maxor {
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
 			// Optional: Set custom name
-			miner.setCustomName("Wither Miner " + ChatColor.RED + "❤" + ChatColor.YELLOW + "6M");
+			miner.setCustomName("Wither Miner " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤");
 			miner.setCustomNameVisible(true);
 
 			// Store in array

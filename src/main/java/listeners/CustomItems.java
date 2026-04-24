@@ -1797,6 +1797,10 @@ public class CustomItems implements Listener {
 	public static void mageBeam(Player p) {
 		Location l = p.getLocation();
 
+		// Range depends on boss fight state: 45 blocks during a boss fight, 25 otherwise.
+		double range = instructions.bosses.CustomBossBar.getActiveWither() != null ? 45.0 : 25.0;
+		int iterations = (int) (range / 0.2);
+
 		// Get player's yaw in radians
 		double yaw = Math.toRadians(l.getYaw());
 
@@ -1816,7 +1820,7 @@ public class CustomItems implements Listener {
 		Vector eyeDirection = eyeLocation.getDirection();
 
 		// Raytrace to find what the player is actually looking at
-		Vector targetPoint = findTargetPoint(p, eyeLocation, eyeDirection);
+		Vector targetPoint = findTargetPoint(p, eyeLocation, eyeDirection, range);
 
 		// Calculate the direction from hand to the target point
 		Vector handToTarget = targetPoint.clone().subtract(l.toVector());
@@ -1825,14 +1829,28 @@ public class CustomItems implements Listener {
 		// Scale down the vector for per-iteration movement
 		Vector v = handToTarget.multiply(0.2);
 
-		for(int i = 0; i < 175; i++) {
+		// Track invulnerable withers already sounded on this shot — the beam passes through
+		// them and we'd otherwise fire the sound 20+ times as the loop steps through the hitbox.
+		Set<UUID> soundedInvulnerable = new HashSet<>();
+
+		for(int i = 0; i < iterations; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;
 			}
 			boolean shouldBreak = false;
-			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 1, 1, 1);
+			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 0.1, 0.1, 0.1);
 			for(Entity entity : entities) {
-				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+				if(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
+					if(soundedInvulnerable.add(wither.getUniqueId())) {
+						wither.getWorld().playSound(wither.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+						Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+						for(Player spectator : Spectate.getSpectatingPlayers(p)) {
+							Utils.playLocalSound(spectator, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+						}
+					}
+					continue;
+				}
+				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
 					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
 					Utils.hurtEntity(temp, damage, p);
 					temp.setNoDamageTicks(0);
@@ -1854,17 +1872,17 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	private static Vector findTargetPoint(Player p, Location eyeLocation, Vector eyeDirection) {
+	private static Vector findTargetPoint(Player p, Location eyeLocation, Vector eyeDirection, double range) {
 		World world = p.getWorld();
 
 		// Raytrace for blocks
-		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, 35, FluidCollisionMode.NEVER, true);
+		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, 35, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, range, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
 
-		double blockDist = 35;
-		double entityDist = 35;
+		double blockDist = range;
+		double entityDist = range;
 
 		if(blockResult != null) {
 			blockDist = eyeLocation.toVector().distance(blockResult.getHitPosition());
@@ -1880,8 +1898,8 @@ public class CustomItems implements Listener {
 		} else if(blockResult != null) {
 			return blockResult.getHitPosition();
 		} else {
-			// Nothing hit - target 35 blocks out
-			return eyeLocation.toVector().add(eyeDirection.clone().multiply((double) 35));
+			// Nothing hit - target max range out
+			return eyeLocation.toVector().add(eyeDirection.clone().multiply(range));
 		}
 	}
 
