@@ -1,5 +1,6 @@
 package instructions.bosses;
 
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class WitherActions {
 
-	public enum WitherAggroHeight { LOW, HIGH }
+	private static final double Y_OFFSET = 1.0;
 
 	private static final Map<UUID, BukkitTask> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
@@ -24,23 +25,26 @@ public class WitherActions {
 	/**
 	 * Makes a Wither deterministically chase a target using vanilla-equivalent
 	 * aiStep chase math, independent of its actual HP / isPowered() state.
+	 * Hovers 1 block above the target (footage-tuned for both Maxor and Storm).
 	 * Also enables noPhysics so the Wither phases through walls while chasing.
 	 *
 	 * @param wither The Wither. Must have setAI(false); the RNG-bearing goals and
 	 *               customServerAiStep path are skipped under noAi.
 	 * @param target LivingEntity to chase.
-	 * @param height HIGH = hover ~5 blocks above target (Storm-style, !isPowered vanilla),
-	 *               LOW  = hover at target's Y (Maxor-style, isPowered vanilla).
 	 */
-	public static void setWitherAggro(Wither wither, LivingEntity target, WitherAggroHeight height) {
+	public static void setWitherAggro(Wither wither, LivingEntity target) {
 		clearWitherAggro(wither);
 
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
 		net.minecraft.world.entity.LivingEntity t = ((CraftLivingEntity) target).getHandle();
-		double yOffset = (height == WitherAggroHeight.HIGH) ? 5.0 : 0.0;
 		w.noPhysics = true;
 
 		BukkitTask task = new BukkitRunnable() {
+			// Own velocity state — vanilla aiStep mutates deltaMovement between our ticks
+			// (its multiply(1,0.6,1) y-damp and the !isEffectiveAi 0.98 scale still run even
+			// with setAI(false)), so we can't rely on deltaMovement to carry state for us.
+			double vx = 0, vy = 0, vz = 0;
+
 			@Override
 			public void run() {
 				if(w.isRemoved() || t.isRemoved() || !t.isAlive()) {
@@ -50,24 +54,49 @@ public class WitherActions {
 					return;
 				}
 
-				Vec3 v = w.getDeltaMovement();
-				double dy = v.y;
-				if(w.getY() < t.getY() + yOffset) {
-					dy = Math.max(0.0, dy);
-					dy += 0.3 - dy * 0.6;
-				}
-				v = new Vec3(v.x, dy, v.z);
+				// Soft proportional vertical control — desired vy is proportional to the
+				// Y error, capped in [-0.2, 0.5]. Replaces the vanilla below/above toggle
+				// which was flipping every tick near the target Y and causing the bounce.
+				double targetY = t.getY() + Y_OFFSET;
+				double desiredVy = Math.max(-0.2, Math.min(0.5, (targetY - w.getY()) * 0.3));
+				vy += (desiredVy - vy) * 0.4;
 
-				Vec3 flat = new Vec3(t.getX() - w.getX(), 0.0, t.getZ() - w.getZ());
-				if(flat.horizontalDistanceSqr() > 9.0) {
-					Vec3 dir = flat.normalize();
-					v = v.add(dir.x * 0.3 - v.x * 0.6, 0.0, dir.z * 0.3 - v.z * 0.6);
+				// Horizontal chase (mirrors Wither.aiStep:173-177) — only when > 3 blocks away.
+				double dx = t.getX() - w.getX();
+				double dz = t.getZ() - w.getZ();
+				double horizSq = dx * dx + dz * dz;
+				if(horizSq > 9.0) {
+					double len = Math.sqrt(horizSq);
+					double dirx = dx / len;
+					double dirz = dz / len;
+					vx += dirx * 0.3 - vx * 0.6;
+					vz += dirz * 0.3 - vz * 0.6;
 				}
 
+				Vec3 v = new Vec3(vx, vy, vz);
 				w.setDeltaMovement(v);
+				w.hurtMarked = true;
+
+				// Vanilla LivingEntity.travel() no-ops when !isControlledByLocalInstance(),
+				// which is true for a Mob under setAI(false). Move manually — noPhysics makes
+				// this a pure setPos.
+				w.move(MoverType.SELF, v);
+
+				// Turn body + main head toward direction of travel. Side heads are driven
+				// independently by vanilla's AlternativeTarget logic.
 				if(v.horizontalDistanceSqr() > 0.05) {
-					w.setYRot((float) (net.minecraft.util.Mth.atan2(v.z, v.x) * (180.0 / Math.PI) - 90.0));
+					float yaw = (float) (net.minecraft.util.Mth.atan2(v.z, v.x) * (180.0 / Math.PI) - 90.0);
+					w.setYRot(yaw);
+					w.setYBodyRot(yaw);
+					w.setYHeadRot(yaw);
 				}
+
+				// Horizontal friction for next tick. Within 3 blocks (not actively chasing),
+				// damp harder so the wither hovers in front of the player instead of
+				// overshooting from accumulated momentum.
+				double frictionH = horizSq > 9.0 ? 0.91 : 0.5;
+				vx *= frictionH;
+				vz *= frictionH;
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 
@@ -75,8 +104,8 @@ public class WitherActions {
 	}
 
 	/**
-	 * Cancels any active aggro task on the given Wither. The Wither will coast
-	 * to a stop via vanilla travel() friction. Also restores block collision.
+	 * Cancels any active aggro task on the given Wither and restores block collision.
+	 * Remaining delta movement is left as-is; vanilla aiStep will continue to dampen it.
 	 */
 	public static void clearWitherAggro(Wither wither) {
 		BukkitTask prior = witherAggroTasks.remove(wither.getUniqueId());

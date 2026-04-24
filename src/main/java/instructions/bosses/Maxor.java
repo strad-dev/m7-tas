@@ -1,14 +1,19 @@
 package instructions.bosses;
 
+import listeners.CustomItems;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
+import plugin.FakePlayerInventory;
 import plugin.Utils;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 @SuppressWarnings("DataFlowIssue")
 public class Maxor {
@@ -22,6 +27,9 @@ public class Maxor {
 	private static final Random random = new Random();
 	private static final String[] laserMessage = {"YOU TRICKED ME!", "THAT BEAM!  IT HURTS!  IT HURTS!"};
 	private static final WitherSkeleton[] miners = new WitherSkeleton[10];
+
+	private static final String ENERGY_CRYSTAL_ID = "skyblock/game/energy_crystal";
+	private static final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
 
 	public static void maxorInstructions(World temp, boolean doContinue) {
 		world = temp;
@@ -57,14 +65,14 @@ public class Maxor {
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(maxor, "Maxor"), 1);
 
-		spawnCrystals();
+		resetCrystals();
 
 		sendChatMessage("WELL WELL WELL, LOOK WHO'S HERE!");
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
 //			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
-			WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"), WitherActions.WitherAggroHeight.LOW);
+			WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"));
 //			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
@@ -120,41 +128,67 @@ public class Maxor {
 //		}, 499);
 	}
 
-	private static void spawnCrystals() {
+	public static ItemStack getEnergyCrystalItem() {
+		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.RED + "Energy Crystal", ENERGY_CRYSTAL_ID);
+	}
+
+	public static boolean notEnergyCrystal(Entity e) {
+		return !(e instanceof EnderCrystal) || (!e.equals(leftCrystal) && !e.equals(rightCrystal));
+	}
+
+	public static void resetCrystals() {
+		if(world == null) world = Bukkit.getWorlds().getFirst();
+
 		if(leftCrystal != null) {
 			leftCrystal.remove();
 		}
-
 		if(rightCrystal != null) {
 			rightCrystal.remove();
 		}
-		leftCrystal = (EnderCrystal) world.spawnEntity(new Location(world, 82.5, 238.48, 50.5), EntityType.END_CRYSTAL);
-		leftCrystal.setCustomName("Energy Crystal");
-		leftCrystal.setCustomNameVisible(true);
-		rightCrystal = (EnderCrystal) world.spawnEntity(new Location(world, 64.5, 238.48, 50.5), EntityType.END_CRYSTAL);
-		rightCrystal.setCustomName("Energy Crystal");
-		rightCrystal.setCustomNameVisible(true);
+		leftCrystal = spawnEnergyCrystal(new Location(world, 82.5, 238.48, 50.5));
+		rightCrystal = spawnEnergyCrystal(new Location(world, 64.5, 238.48, 50.5));
 	}
 
-	public static void pickUpCrystal(Player p) {
-		if(p.getName().contains("Berserk") && rightCrystal != null) {
-			rightCrystal.remove();
-		} else if(p.getName().contains("Mage") && leftCrystal != null) {
-			leftCrystal.remove();
-		}
+	public static void pickUp(Player p, EnderCrystal crystal) {
+		if(notEnergyCrystal(crystal)) return;
+
+		ItemStack prev = p.getInventory().getItem(8);
+		previousSlot8.put(p.getUniqueId(), prev == null ? null : prev.clone());
+		p.getInventory().setItem(8, getEnergyCrystalItem());
+
+		crystal.remove();
+		if(crystal.equals(leftCrystal)) leftCrystal = null;
+		else if(crystal.equals(rightCrystal)) rightCrystal = null;
 	}
 
-	public static void placeCrystal(Player p) {
-		if(p.getName().contains("Berserk") && rightCrystal != null) {
-			rightCrystal = (EnderCrystal) world.spawnEntity(new Location(world, 52.5, 224.48, 41.5), EntityType.END_CRYSTAL);
-			rightCrystal.setCustomName("Energy Crystal");
-			rightCrystal.setCustomNameVisible(true);
-		} else if(p.getName().contains("Mage") && leftCrystal != null) {
-			leftCrystal = (EnderCrystal) world.spawnEntity(new Location(world, 94.5, 224.48, 41.5), EntityType.END_CRYSTAL);
-			leftCrystal.setCustomName("Energy Crystal");
-			leftCrystal.setCustomNameVisible(true);
+	public static void placeAtPlate(Player p, Location plate) {
+		ItemStack slot8 = p.getInventory().getItem(8);
+		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(CustomItems.getID(slot8))) return;
+
+		if(world == null) world = Bukkit.getWorlds().getFirst();
+		int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
+
+		if(px == 94 && py == 224 && pz == 41) {
+			if(leftCrystal != null) return;
+			leftCrystal = spawnEnergyCrystal(new Location(world, 94.5, 224.48, 41.5));
+		} else if(px == 52 && py == 224 && pz == 41) {
+			if(rightCrystal != null) return;
+			rightCrystal = spawnEnergyCrystal(new Location(world, 52.5, 224.48, 41.5));
+		} else {
+			return;
 		}
+
+		ItemStack restore = previousSlot8.remove(p.getUniqueId());
+		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
+
 		Bukkit.broadcastMessage(ChatColor.RED + "1" + ChatColor.GREEN + "/2 Energy Crystals are now active!");
+	}
+
+	private static EnderCrystal spawnEnergyCrystal(Location loc) {
+		EnderCrystal c = (EnderCrystal) world.spawnEntity(loc, EntityType.END_CRYSTAL);
+		c.setCustomName("Energy Crystal");
+		c.setCustomNameVisible(true);
+		return c;
 	}
 
 	private static void sendChatMessage(String message) {
