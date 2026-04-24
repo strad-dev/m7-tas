@@ -3,7 +3,9 @@ package nms;
 import commands.Spectate;
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPromise;
 import listeners.CustomItems;
+import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
@@ -33,12 +35,7 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 		if(msg instanceof ServerboundMovePlayerPacket pkt) {
 			if(Spectate.getSpectatorMap().containsKey(player)) {
 				if(pkt.hasPosition()) {
-					double x = pkt.getX(0);
-					double y = pkt.getY(0);
-					double z = pkt.getZ(0);
-					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-						Spectate.updateClientPosition(player, x, y, z);
-					});
+					Spectate.updateClientPosition(player, pkt.getX(0), pkt.getY(0), pkt.getZ(0));
 				}
 				return;
 			}
@@ -78,5 +75,20 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			});
 		}
 		super.channelRead(ctx, msg);
+	}
+
+	@Override
+	public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+		if(msg instanceof ClientboundContainerSetContentPacket pkt && pkt.containerId() == 0) {
+			Player fakePlayer = Spectate.getSpectatorMap().get(player);
+			if(fakePlayer instanceof CraftPlayer craftFake) {
+				ServerPlayer nmsFake = craftFake.getHandle();
+				msg = new ClientboundContainerSetContentPacket(
+					0, pkt.stateId(),
+					nmsFake.containerMenu.getItems(), nmsFake.containerMenu.getCarried()
+				);
+			}
+		}
+		super.write(ctx, msg, promise);
 	}
 }

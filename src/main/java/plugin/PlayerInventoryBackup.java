@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import commands.Spectate;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -14,8 +15,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -89,23 +90,22 @@ public class PlayerInventoryBackup {
 		Set<Player> spectators = Spectate.getSpectatingPlayers(fakePlayer);
 		if(!spectators.isEmpty()) {
 			forceFullInventorySync(fakePlayer, spectators);
-
-			for(Player spectator : spectators) {
-				spectator.getInventory().setHeldItemSlot(fakePlayer.getInventory().getHeldItemSlot());
-			}
 		}
 	}
 
 	public static void forceFullInventorySync(Player sourcePlayer, Set<Player> targets) {
 		CraftPlayer cp = (CraftPlayer) sourcePlayer;
-		ServerPlayer handle = cp.getHandle();
-		AbstractContainerMenu menu = handle.containerMenu;
-
-		ClientboundContainerSetContentPacket pkt = new ClientboundContainerSetContentPacket(menu.containerId, menu.incrementStateId(), menu.getItems(), menu.getCarried());
+		ServerPlayer sourceHandle = cp.getHandle();
 
 		for(Player target : targets) {
 			if(target instanceof CraftPlayer craftTarget) {
-				craftTarget.getHandle().connection.send(pkt);
+				ServerPlayer targetHandle = craftTarget.getHandle();
+				AbstractContainerMenu targetMenu = targetHandle.containerMenu;
+				ClientboundContainerSetContentPacket pkt = new ClientboundContainerSetContentPacket(
+					targetMenu.containerId, targetMenu.incrementStateId(),
+					sourceHandle.containerMenu.getItems(), sourceHandle.containerMenu.getCarried()
+				);
+				targetHandle.connection.send(pkt);
 			}
 		}
 	}
@@ -114,15 +114,15 @@ public class PlayerInventoryBackup {
 		ServerPlayer npc = ((CraftPlayer) fake).getHandle();
 		net.minecraft.world.item.ItemStack handStack = npc.getInventory().getSelectedItem();
 
-		ClientboundSetEquipmentPacket equipPkt = new ClientboundSetEquipmentPacket(npc.getId(), Collections.singletonList(Pair.of(EquipmentSlot.MAINHAND, handStack)));
-
+		ClientboundSetEquipmentPacket equipPkt = new ClientboundSetEquipmentPacket(npc.getId(), List.of(Pair.of(EquipmentSlot.MAINHAND, handStack)));
 		Utils.broadcastPacket(equipPkt);
 
+		int heldSlot = fake.getInventory().getHeldItemSlot();
 		Set<Player> spectators = Spectate.getSpectatingPlayers(fake);
 		for(Player spectator : spectators) {
-			spectator.getInventory().setHeldItemSlot(fake.getInventory().getHeldItemSlot());
-			spectator.getInventory().setItemInMainHand(fake.getInventory().getItemInMainHand());
-			spectator.updateInventory();
+			if(spectator instanceof CraftPlayer craftSpectator) {
+				craftSpectator.getHandle().connection.send(new ClientboundSetHeldSlotPacket(heldSlot));
+			}
 		}
 	}
 }
