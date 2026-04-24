@@ -45,7 +45,7 @@ public class Goldor {
 		goldor.setHealth(700);
 		goldor.addScoreboardTag("TASWither");
 		goldor.addScoreboardTag("TASGoldor");
-		Actions.setWitherArmor(goldor, true);
+		WitherActions.setWitherArmor(goldor, true);
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(goldor, "Goldor"), 1);
 
@@ -60,7 +60,7 @@ public class Goldor {
 			sendChatMessage("You have done it, you destroyed the factory...");
 			Actions.turnHead(goldor, 94.722f, 0f);
 			Actions.forceMove(goldor, new Vector(-0.7931, 0, -0.0655), 52);
-			Actions.setWitherArmor(goldor, false);
+			WitherActions.setWitherArmor(goldor, false);
 		}, 238);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("...");

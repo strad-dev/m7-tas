@@ -22,20 +22,19 @@ public class Tank {
 				Utils.teleport(tank, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preclear(section.equals("all")), 60);
 			}
-//			case "maxor", "boss" -> {
-//				Utils.teleport(tank, new Location(world, 73.5, 221, 14.5, 0f, 0f));
-//				Actions.swapItems(tank, 1, 28);
-//				Actions.swapItems(tank, 3, 30);
-//				Actions.swapItems(tank, 4, 31);
-//				Actions.swapItems(tank, 5, 32);
-//				Actions.swapItems(tank, 6, 33);
-//				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
-//				if(section.equals("maxor")) {
-//					Utils.scheduleTask(() -> maxor(false), 60);
-//				} else {
-//					Utils.scheduleTask(() -> maxor(true), 60);
-//				}
-//			}
+			case "maxor", "boss" -> {
+				Utils.teleport(tank, new Location(world, 73.5, 221, 14.5, 0f, 0f));
+				Actions.swapItems(tank, 1, 28);
+				Actions.swapItems(tank, 3, 30);
+				Actions.swapItems(tank, 6, 33);
+				Actions.swapItems(tank, 7, 34);
+				Actions.setHotbarSlot(tank, 3);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
 //			case "storm" -> {
 //				Utils.teleport(tank, new Location(world, 35.043, 170, 92.054, 46.9f, 25f));
 //				Actions.swapItems(tank, 1, 28);
@@ -470,21 +469,24 @@ public class Tank {
 			Actions.swapItems(tank, 3, 30);
 			Actions.swapItems(tank, 6, 33);
 			Actions.swapItems(tank, 7, 34);
-			Actions.setHotbarSlot(tank, 5);
+			Actions.setHotbarSlot(tank, 3);
 		}, 179);
 		Utils.scheduleTask(() -> {
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
-//				maxor(true);
+				Utils.teleport(tank, new Location(world, 73.5, 221, 14.5));
+				maxor(true);
 			}
 		}, 742);
 	}
 
-//	}
-//
-//	public static void maxor(boolean doContinue) {
-//		Actions.setHotbarSlot(tank, 4);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, 1.12242), 57), 1);
+	public static void maxor(boolean doContinue) {
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 1);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 50);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 52);
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, "N", 0);
+			Actions.turnHead(tank, -180f, 0f);
+		}, 63);
 //		Utils.scheduleTask(() -> Actions.jump(tank), 48);
 //		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, -5f), 58);
 //		Utils.scheduleTask(() -> Actions.AOTS(tank), 59);
@@ -536,10 +538,10 @@ public class Tank {
 //			Actions.setHotbarSlot(tank, 7);
 //			Actions.swapItems(tank, 4, 31);
 //		}, 449);
-//		if(doContinue) {
+		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
-//		}
-//	}
+		}
+	}
 //
 //	public static void storm(boolean doContinue) {
 //		Storm.prepadYellow();

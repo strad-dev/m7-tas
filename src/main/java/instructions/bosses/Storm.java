@@ -65,7 +65,7 @@ public class Storm {
 		storm.setHealth(600);
 		storm.addScoreboardTag("TASWither");
 		storm.addScoreboardTag("TASStorm");
-		Actions.setWitherArmor(storm, true);
+		WitherActions.setWitherArmor(storm, true);
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(storm, "Storm"), 1);
 
@@ -120,13 +120,13 @@ public class Storm {
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
-			Actions.setWitherArmor(storm, false);
+			WitherActions.setWitherArmor(storm, false);
 			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 8);
 			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
 		}, 685);
 		Utils.scheduleTask(() -> {
 			sendChatMessage(enrageMessage[random.nextInt(enrageMessage.length)]);
-			Actions.setWitherArmor(storm, true);
+			WitherActions.setWitherArmor(storm, true);
 			storm.setHealth(225);
 			Bukkit.broadcastMessage(ChatColor.RED + "⚠ Storm is enraged! ⚠");
 			for(Player player : Bukkit.getOnlinePlayers()) {
@@ -138,7 +138,7 @@ public class Storm {
 		Utils.scheduleTask(() -> {
 			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
-			Actions.setWitherArmor(storm, false);
+			WitherActions.setWitherArmor(storm, false);
 			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 6);
 			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
 		}, 784);

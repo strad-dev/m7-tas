@@ -1,13 +1,11 @@
 package instructions.bosses;
 
-import instructions.Actions;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.Vector;
 import plugin.Utils;
 
 import java.util.Random;
@@ -55,7 +53,7 @@ public class Maxor {
 		maxor.setHealth(300);
 		maxor.addScoreboardTag("TASWither");
 		maxor.addScoreboardTag("TASMaxor");
-		Actions.setWitherArmor(maxor, true);
+		WitherActions.setWitherArmor(maxor, true);
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(maxor, "Maxor"), 1);
 
@@ -65,7 +63,8 @@ public class Maxor {
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
-			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
+//			Actions.forceMove(maxor, new Vector(0, 0, 0.5), 38);
+			WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"), WitherActions.WitherAggroHeight.LOW);
 //			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
@@ -76,7 +75,7 @@ public class Maxor {
 //		}, 190);
 //		Utils.scheduleTask(() -> {
 //			sendChatMessage(laserMessage[random.nextInt(2)]);
-//			Actions.setWitherArmor(maxor, false);
+//			WitherActions.setWitherArmor(maxor, false);
 //			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160);
 //		}, 198);
 //		Utils.scheduleTask(() -> maxor.setHealth(124), 230);
@@ -89,7 +88,7 @@ public class Maxor {
 //			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
 //		}, 292);
 //		Utils.scheduleTask(() -> {
-//			Actions.setWitherArmor(maxor, true);
+//			WitherActions.setWitherArmor(maxor, true);
 //			Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is enraged! ⚠");
 //			for(Player player : Bukkit.getOnlinePlayers()) {
 //				player.sendTitle("", ChatColor.RED + "⚠ Maxor is enraged! ⚠", 0, 40, 0);
@@ -100,7 +99,7 @@ public class Maxor {
 //		}, 358);
 //		Utils.scheduleTask(() -> {
 //			sendChatMessage(laserMessage[random.nextInt(2)]);
-//			Actions.setWitherArmor(maxor, false);
+//			WitherActions.setWitherArmor(maxor, false);
 //			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 2);
 //		}, 398);
 //		Utils.scheduleTask(() -> {

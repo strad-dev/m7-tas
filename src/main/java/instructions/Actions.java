@@ -1417,32 +1417,7 @@ public class Actions {
 		return runnalbe;
 	}
 
-private static BukkitTask armorTask = null;
-
-	public static void setWitherArmor(Wither wither, boolean showArmor) {
-
-		// Cancel any existing task
-		if(armorTask != null && !armorTask.isCancelled()) {
-			armorTask.cancel();
-			armorTask = null;
-		}
-
-		if(showArmor) {
-			// Start the armor maintenance task
-			armorTask = new BukkitRunnable() {
-				@Override
-				public void run() {
-					// Reapply invulnerability ticks
-					wither.setInvulnerabilityTicks(3);
-				}
-			}.runTaskTimer(M7tas.getInstance(), 0L, 1L); // Start immediately, repeat every 20 ticks (1 second)
-		} else {
-			// Remove armor immediately
-			wither.setInvulnerabilityTicks(0);
-		}
-	}
-
-	/**
+/**
 	 * Sets up the player's initial location by resetting their velocity, teleporting them
 	 * to the specified location, and updating the location of any spectators.
 	 *

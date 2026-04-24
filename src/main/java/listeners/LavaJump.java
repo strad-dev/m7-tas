@@ -25,6 +25,12 @@ public class LavaJump {
 	private static final double MIN_Y = 0, MAX_Y = 254;
 	private static final double MIN_Z = -8, MAX_Z = 147;
 
+	public static boolean isInBossArena(Location loc) {
+		return loc.getX() >= MIN_X && loc.getX() <= MAX_X
+				&& loc.getY() >= MIN_Y && loc.getY() <= MAX_Y
+				&& loc.getZ() >= MIN_Z && loc.getZ() <= MAX_Z;
+	}
+
 	private static final Map<UUID, Integer> lastLaunchTick = new HashMap<>();
 	private static BukkitTask poller;
 
@@ -57,10 +63,7 @@ public class LavaJump {
 		Location loc = p.getLocation();
 		UUID id = p.getUniqueId();
 
-		boolean inBounds = loc.getX() >= MIN_X && loc.getX() <= MAX_X
-				&& loc.getY() >= MIN_Y && loc.getY() <= MAX_Y
-				&& loc.getZ() >= MIN_Z && loc.getZ() <= MAX_Z;
-		boolean touchingLava = inBounds && loc.getBlock().getType() == Material.LAVA;
+		boolean touchingLava = isInBossArena(loc) && loc.getBlock().getType() == Material.LAVA;
 
 		if(!touchingLava) {
 			lastLaunchTick.remove(id);
