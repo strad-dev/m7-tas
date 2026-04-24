@@ -386,7 +386,7 @@ public class CustomItems implements Listener {
 		int damaged = 0;
 		double damage = 0;
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) && !FakePlayerManager.getFakePlayers().containsValue(entity)) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);

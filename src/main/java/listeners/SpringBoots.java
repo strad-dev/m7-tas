@@ -10,6 +10,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
+import plugin.MovementAudit;
 import plugin.Utils;
 
 import java.util.HashMap;
@@ -214,6 +215,7 @@ public class SpringBoots {
 		sp.hurtMarked = true;
 		Utils.playLocalSound(p, Sound.ENTITY_FIREWORK_ROCKET_LAUNCH, 1.0f, 1.0f);
 		Utils.debug(Utils.DebugType.SERVER, p.getName() + " Spring Boots launched after " + chargeTicks + " sneak ticks with upwards velocity " + Utils.round(v, 4));
+		MovementAudit.startAirborneAudit(p, "springboots");
 	}
 
 	// invert Minecraft player vertical physics. per-tick: pos += v; v -= 0.08; v *= 0.98.

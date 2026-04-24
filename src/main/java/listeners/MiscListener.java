@@ -1,9 +1,11 @@
 package listeners;
 
 import commands.Spectate;
+import instructions.bosses.Maxor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -12,8 +14,12 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
+import org.bukkit.event.entity.EntityKnockbackEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -22,6 +28,15 @@ import plugin.MovementAudit;
 import plugin.Utils;
 
 public class MiscListener implements Listener {
+	@EventHandler
+	public void onStoneButtonInArena(PlayerInteractEvent e) {
+		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		if(e.getClickedBlock() == null || e.getClickedBlock().getType() != Material.STONE_BUTTON) return;
+		if(LavaJump.isInBossArena(e.getClickedBlock().getLocation())) {
+			e.setCancelled(true);
+		}
+	}
+
 	@EventHandler
 	public void onPlayerChat(AsyncPlayerChatEvent e) {
 		String player = e.getPlayer().getName();
@@ -46,7 +61,21 @@ public class MiscListener implements Listener {
 
 	@EventHandler
 	public void onEntityKnockbackByEntity(EntityKnockbackByEntityEvent e) {
+		if(e.getEntity() instanceof Player p && FakePlayerManager.getFakePlayers().containsValue(p)) {
+			e.setCancelled(true);
+			return;
+		}
 		if(e.getSourceEntity() instanceof WindCharge windCharge && windCharge.getScoreboardTags().contains("Bonzo")) {
+			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onEntityKnockback(EntityKnockbackEvent e) {
+		// Catches sources that don't fire the by-entity subclass (e.g. wither skull
+		// explosion knockback, which pushes via Explosion physics rather than a
+		// direct attacker-victim hit).
+		if(e.getEntity() instanceof Player p && FakePlayerManager.getFakePlayers().containsValue(p)) {
 			e.setCancelled(true);
 		}
 	}
@@ -144,6 +173,25 @@ public class MiscListener implements Listener {
 	public void onEnderCrystalDamage(EntityDamageEvent e) {
 		if(e.getEntity() instanceof EnderCrystal) {
 			e.setCancelled(true);
+		}
+	}
+
+	@EventHandler
+	public void onEnergyCrystalRightClick(PlayerInteractAtEntityEvent e) {
+		if(!(e.getRightClicked() instanceof EnderCrystal crystal)) return;
+		if(Maxor.notEnergyCrystal(crystal)) return;
+		e.setCancelled(true);
+		Maxor.pickUp(e.getPlayer(), crystal);
+	}
+
+	@EventHandler
+	public void onEnergyCrystalPlate(PlayerInteractEvent e) {
+		if(e.getAction() != Action.PHYSICAL) return;
+		Block b = e.getClickedBlock();
+		if(b == null) return;
+		int x = b.getX(), y = b.getY(), z = b.getZ();
+		if(y == 224 && z == 41 && (x == 52 || x == 94)) {
+			Maxor.placeAtPlate(e.getPlayer(), b.getLocation());
 		}
 	}
 
