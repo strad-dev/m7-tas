@@ -32,7 +32,7 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		if(msg instanceof ServerboundMovePlayerPacket) {
 			if(Spectate.getSpectatorMap().containsKey(player)) {
-				return; // silently drop — don't forward to server
+				return;
 			}
 		}
 		if(msg instanceof ServerboundPlayerActionPacket pkt) {
