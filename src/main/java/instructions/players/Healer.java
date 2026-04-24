@@ -301,12 +301,11 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 171); // etherwarp up to miniboss
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 172);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 173);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 178); // claymore swing at miniboss
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 179 ticks (8.95 seconds)");
+			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 174 ticks (8.70d seconds)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 5);
-		}, 179);
+		}, 174);
 		// Yellow: 10 ticks
 
 		Utils.scheduleTask(() -> {
@@ -316,7 +315,7 @@ public class Healer {
 			Actions.swapItems(healer, 7, 34);
 			Actions.swapItems(healer, 12, 39);
 			Actions.setHotbarSlot(healer, 5);
-		}, 180);
+		}, 175);
 		Utils.scheduleTask(() -> {
 			if(doContinue) {
 				Utils.teleport(healer, new Location(world, 73.5, 221, 14.5));

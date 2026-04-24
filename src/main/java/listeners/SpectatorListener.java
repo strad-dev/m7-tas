@@ -9,12 +9,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.potion.PotionEffectType;
 import plugin.M7tas;
 import plugin.PlayerCollision;
 import plugin.PlayerInventoryBackup;
-
-import java.util.Set;
 
 public class SpectatorListener implements Listener {
 
@@ -22,25 +19,11 @@ public class SpectatorListener implements Listener {
 	public void onPlayerQuit(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 
-		PlayerCollision.removeFromNoCollisionTeam(player);
-
-		// If they were spectating, clean up
 		if (Spectate.getSpectatorMap().containsKey(player)) {
-			Player fakePlayer = Spectate.getSpectatorMap().remove(player);
-			if (fakePlayer != null) {
-				Set<Player> spectators = Spectate.getReverseSpectatorMap().get(fakePlayer);
-				if (spectators != null) {
-					spectators.remove(player);
-					if (spectators.isEmpty()) {
-						Spectate.getReverseSpectatorMap().remove(fakePlayer);
-					}
-				}
-			}
+			Spectate.removeSpectator(player);
+		} else {
+			PlayerCollision.removeFromNoCollisionTeam(player);
 		}
-
-		PlayerInventoryBackup.restoreAndRemove(player);
-		PlayerCollision.removeFromNoCollisionTeam(player);
-		player.removePotionEffect(PotionEffectType.INVISIBILITY);
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST)

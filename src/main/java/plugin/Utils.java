@@ -34,6 +34,7 @@ public class Utils {
 	 * @param delay In how many ticks this task should be run.
 	 */
 	public static void scheduleTask(Runnable task, long delay) {
+		if(!M7tas.getInstance().isEnabled()) return;
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay);
 	}
 
@@ -63,6 +64,7 @@ public class Utils {
 		ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
 
 		broadcastPacket(tp);
+		Spectate.snapSpectatorsToFake(p);
 	}
 
 	/**

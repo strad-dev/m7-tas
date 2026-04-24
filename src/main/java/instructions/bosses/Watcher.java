@@ -228,9 +228,9 @@ public class Watcher {
 				Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
 				Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
 				if(doContinue) {
-//					Maxor.maxorInstructions(world, true);
+					Maxor.maxorInstructions(world, true);
 				}
-			}, 738);
+			}, 739);
 		}, 3);
 	}
 
@@ -257,7 +257,7 @@ public class Watcher {
 		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤" + ChatColor.YELLOW + mobsRemaining;
 
 		watcherBossBar.setTitle(title);
-		watcherBossBar.setProgress(Math.max(0.0, Math.min(1.0, progress)));
+		watcherBossBar.setProgress(Math.clamp(progress, 0.0, 1.0));
 	}
 
 	private static void travelToAndSpawnMob(Location l, String mobName) {

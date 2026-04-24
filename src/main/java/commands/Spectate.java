@@ -26,6 +26,7 @@ import org.jspecify.annotations.NonNull;
 import plugin.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 public class Spectate implements CommandExecutor {
@@ -33,15 +34,16 @@ public class Spectate implements CommandExecutor {
 	private static class SpectatorState {
 		Vec3 prevFakePosition;
 		float[] lastSentRotation;
-		Vec3 lastKnownClientPosition;
+		volatile Vec3 lastKnownClientPosition;
+		int snapCooldown;
 		final Set<Player> hiddenFakePlayers = new HashSet<>();
 	}
 
 	// Maps a real Player to the fake Player they are spectating
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
 
-	// Per-spectator sync state
-	private static final Map<Player, SpectatorState> spectatorStates = new HashMap<>();
+	// Per-spectator sync state — ConcurrentHashMap so the netty thread can safely read it
+	private static final ConcurrentHashMap<Player, SpectatorState> spectatorStates = new ConcurrentHashMap<>();
 
 	// Maps a fake Player to the Player(s) that are spectating them
 	private static final Map<Player, Set<Player>> reverseSpectatorMap = new HashMap<>();
@@ -111,7 +113,7 @@ public class Spectate implements CommandExecutor {
 		return true;
 	}
 
-	private static void removeSpectator(Player p) {
+	public static void removeSpectator(Player p) {
 		SpectatorState state = spectatorStates.remove(p);
 		Player fakePlayer = spectatorMap.remove(p);
 
@@ -146,6 +148,24 @@ public class Spectate implements CommandExecutor {
 	public static void updateClientPosition(Player spectator, double x, double y, double z) {
 		SpectatorState state = spectatorStates.get(spectator);
 		if(state != null) state.lastKnownClientPosition = new Vec3(x, y, z);
+	}
+
+	public static void snapSpectatorsToFake(Player fakePlayer) {
+		Set<Player> spectators = getSpectatingPlayers(fakePlayer);
+		if(spectators.isEmpty() || !(fakePlayer instanceof CraftPlayer craftFake)) return;
+		ServerPlayer nmsFake = craftFake.getHandle();
+		for(Player spectator : spectators) {
+			if(!(spectator instanceof CraftPlayer craftSpectator)) continue;
+			SpectatorState state = spectatorStates.get(spectator);
+			if(state == null) continue;
+			ServerPlayer nmsSpectator = craftSpectator.getHandle();
+			nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
+			nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), nmsFake.getYRot(), nmsFake.getXRot());
+			state.prevFakePosition = nmsFake.position();
+			state.lastKnownClientPosition = nmsFake.position();
+			state.lastSentRotation = new float[]{nmsFake.getYRot(), nmsFake.getXRot()};
+			state.snapCooldown = 1;
+		}
 	}
 
 	public static Map<Player, Player> getSpectatorMap() {
@@ -211,6 +231,7 @@ public class Spectate implements CommandExecutor {
 	}
 
 	public static void startSpectatorSync() {
+		if(!M7tas.getInstance().isEnabled()) return;
 		if(spectatorSyncTask != null) {
 			spectatorSyncTask.cancel();
 		}
@@ -235,7 +256,7 @@ public class Spectate implements CommandExecutor {
 					float fakeYaw = nmsFake.getYRot();
 					float fakePitch = nmsFake.getXRot();
 					boolean firstTick = state.prevFakePosition == null;
-					boolean posSnap = firstTick || clientPos.distanceToSqr(nmsFake.position()) > 0.01;
+					boolean posSnap = firstTick || (state.snapCooldown == 0 && clientPos.distanceToSqr(prevPos) > 0.000361);
 
 					nmsSpectator.setPose(nmsFake.getPose());
 					List<SynchedEntityData.DataValue<?>> dirtyData = nmsSpectator.getEntityData().getNonDefaultValues();
@@ -248,11 +269,13 @@ public class Spectate implements CommandExecutor {
 						nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), fakeYaw, fakePitch);
 						state.lastKnownClientPosition = nmsFake.position();
 						state.lastSentRotation = new float[]{fakeYaw, fakePitch};
+						state.snapCooldown = 1;
 					} else {
 						nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
 						nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), new Vec3(delta.x, delta.y, delta.z)));
 					}
 					state.prevFakePosition = nmsFake.position();
+					if(state.snapCooldown > 0) state.snapCooldown--;
 
 					nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));
 				}
@@ -294,6 +317,10 @@ public class Spectate implements CommandExecutor {
 			spectatorSyncTask.cancel();
 			spectatorSyncTask = null;
 		}
+	}
+
+	private static String fmtVec(Vec3 v) {
+		return String.format("(%.3f, %.5f, %.3f)", v.x, v.y, v.z);
 	}
 
 	public static void clearSpectatorMaps() {
