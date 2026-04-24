@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import plugin.FakePlayerInventory;
 import plugin.FakePlayerManager;
+import plugin.Utils;
 
 import java.util.Map;
 
@@ -51,6 +52,8 @@ public class TAS implements CommandExecutor {
 
 		FakePlayerInventory.setInventories();
 		Server.serverSetup(world);
+
+		fakePlayers.values().forEach(p -> Utils.setSpeed(p, 400));
 
 		Archer.archerInstructions(fakePlayers.get("Archer"), section);
 		Berserk.berserkInstructions(fakePlayers.get("Mage3"), section);
