@@ -158,6 +158,15 @@ public class Spectate implements CommandExecutor {
 		lastSentRotations.put(spectator, new float[]{yaw, pitch});
 	}
 
+	public static void snapToFake(Player spectator) {
+		Player fakePlayer = spectatorMap.get(spectator);
+		if(fakePlayer == null || !(spectator instanceof CraftPlayer cs) || !(fakePlayer instanceof CraftPlayer cf)) return;
+		ServerPlayer nmsSpectator = cs.getHandle();
+		ServerPlayer nmsFake = cf.getHandle();
+		nmsSpectator.connection.send(new ClientboundPlayerPositionPacket(nmsSpectator.getId(), PositionMoveRotation.of(nmsFake), Set.of()));
+		nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), nmsFake.getYRot(), nmsFake.getXRot());
+	}
+
 	/**
 	 * @return the map of which real Player is spectating which fake Player.
 	 */
@@ -304,11 +313,13 @@ public class Spectate implements CommandExecutor {
 							nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
 							lastSentRotations.put(spectator, new float[]{fakeYaw, fakePitch});
 						} else {
+							nmsSpectator.connection.send(new ClientboundPlayerRotationPacket(fakeYaw, false, fakePitch, false));
 							// Velocity only — Entity.tick() provides the natural xo/x gap for smooth rendering.
 							// The client applies the injected delta as exact displacement (no gravity subtraction).
 							nmsSpectator.connection.send(new ClientboundSetEntityMotionPacket(nmsSpectator.getId(), new Vec3(delta.x, delta.y, delta.z)));
 						}
 						prevFakePositions.put(spectator, nmsFake.position());
+						nmsSpectator.absSnapTo(nmsFake.getX(), nmsFake.getY(), nmsFake.getZ(), fakeYaw, fakePitch);
 
 						// Keep fake player hidden
 						nmsSpectator.connection.send(new ClientboundRemoveEntitiesPacket(nmsFake.getId()));

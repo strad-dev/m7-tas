@@ -30,8 +30,24 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-		if(msg instanceof ServerboundMovePlayerPacket) {
+		if(msg instanceof ServerboundMovePlayerPacket pkt) {
 			if(Spectate.getSpectatorMap().containsKey(player)) {
+				if(pkt.hasPosition()) {
+					double x = pkt.getX(0);
+					double y = pkt.getY(0);
+					double z = pkt.getZ(0);
+					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
+						Player fakePlayer = Spectate.getSpectatorMap().get(player);
+						if(fakePlayer == null) return;
+						ServerPlayer nmsFake = ((CraftPlayer) fakePlayer).getHandle();
+						double dx = x - nmsFake.getX();
+						double dy = y - nmsFake.getY();
+						double dz = z - nmsFake.getZ();
+						if(dx*dx + dy*dy + dz*dz > 10.0) {
+							Spectate.snapToFake(player);
+						}
+					});
+				}
 				return;
 			}
 		}
