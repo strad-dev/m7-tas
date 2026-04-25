@@ -54,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> lastWitherShieldSoundTick = new ConcurrentHashMap<>();
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
@@ -378,6 +379,15 @@ public class CustomItems implements Listener {
 		if(e != null && fired) e.setCancelled(true);
 	}
 
+	private static void playWitherShieldSound(Player p) {
+		int currentTick = MinecraftServer.currentTick;
+		Integer lastTick = lastWitherShieldSoundTick.get(p.getUniqueId());
+		if(lastTick == null || currentTick - lastTick >= 100) {
+			Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
+			lastWitherShieldSoundTick.put(p.getUniqueId(), currentTick);
+		}
+	}
+
 	public static void witherImpact(Player p) {
 		// implosion
 		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 20);
@@ -399,9 +409,8 @@ public class CustomItems implements Listener {
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
-		// wither shield
-		// does not affect anything
-		Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
+		// wither shield sound — 100-tick cooldown per player.
+		playWitherShieldSound(p);
 
 		// Inside the F7 Goldor/Necron arena, Wither Impact implodes but does not teleport.
 		if(LavaJump.isInBossArena(p.getLocation())) {
@@ -548,7 +557,7 @@ public class CustomItems implements Listener {
 								p.setFallDistance(0);
 								Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
 								Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
-								Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1f, 0.66666f);
+								playWitherShieldSound(p);
 								return;
 							}
 						}
@@ -1829,10 +1838,6 @@ public class CustomItems implements Listener {
 		// Scale down the vector for per-iteration movement
 		Vector v = handToTarget.multiply(0.2);
 
-		// Track invulnerable withers already sounded on this shot — the beam passes through
-		// them and we'd otherwise fire the sound 20+ times as the loop steps through the hitbox.
-		Set<UUID> soundedInvulnerable = new HashSet<>();
-
 		for(int i = 0; i < iterations; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;
@@ -1841,14 +1846,13 @@ public class CustomItems implements Listener {
 			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 0.1, 0.1, 0.1);
 			for(Entity entity : entities) {
 				if(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
-					if(soundedInvulnerable.add(wither.getUniqueId())) {
-						wither.getWorld().playSound(wither.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-						Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-						for(Player spectator : Spectate.getSpectatingPlayers(p)) {
-							Utils.playLocalSound(spectator, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-						}
+					wither.getWorld().playSound(wither.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+					Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+					for(Player spectator : Spectate.getSpectatingPlayers(p)) {
+						Utils.playLocalSound(spectator, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 					}
-					continue;
+					shouldBreak = true;
+					break;
 				}
 				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
 					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
@@ -1861,14 +1865,7 @@ public class CustomItems implements Listener {
 			}
 			spawnFireworkParticle(l);
 			l.add(v);
-			if(shouldBreak) {
-				for(int j = 0; j < 6; j++) {
-					spawnFireworkParticle(l);
-					l.add(v);
-				}
-				spawnFireworkParticle(l);
-				break;
-			}
+			if(shouldBreak) break;
 		}
 	}
 
@@ -1879,21 +1876,18 @@ public class CustomItems implements Listener {
 		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
 
 		// Raytrace for entities (excluding the player)
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, range, 0.5, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+		// raySize=0 (precise) instead of 0.5: the 0.5 inflate blew up geometry at close
+		// range to large hitboxes (e.g. withers), because the player's eye ends up inside
+		// the inflated AABB and the raytrace returns an arbitrary exit face.
+		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, range, 0, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
 
-		double blockDist = range;
-		double entityDist = range;
-
-		if(blockResult != null) {
-			blockDist = eyeLocation.toVector().distance(blockResult.getHitPosition());
-		}
-
+		// Prefer entity over block: if an entity is anywhere along the ray, aim at it.
+		// A block that's slightly closer than the entity (e.g. floor in front of a low
+		// target while aiming downward) would otherwise terminate findTargetPoint early
+		// even though the entity is in the user's crosshair. If a block is actually
+		// between eye and entity, the per-step beam loop still stops on the block via
+		// its isSolid() check, so aiming past it doesn't cause damage through walls.
 		if(entityResult != null) {
-			entityDist = eyeLocation.toVector().distance(entityResult.getHitPosition());
-		}
-
-		// Return the closest hit point, or max distance if nothing was hit
-		if(entityResult != null && entityDist <= blockDist) {
 			return entityResult.getHitPosition();
 		} else if(blockResult != null) {
 			return blockResult.getHitPosition();

@@ -419,6 +419,17 @@ public class Actions {
 
 		ServerPlayer serverPlayer = cp.getHandle();
 
+		// Last Breath: BowItem.use() bails when the player has no arrows and isn't creative.
+		// Bypass the packet round-trip for LB specifically and start the using-item state
+		// directly so the draw animation syncs (via entity-data LIVING_ENTITY_FLAGS bit 0)
+		// without needing real projectiles in the fake player's inventory. Other bows (e.g.
+		// Terminator) go through the normal packet path so their ability dispatch still fires.
+		String heldId = CustomItems.getID(p.getInventory().getItemInMainHand());
+		if("skyblock/combat/last_breath".equals(heldId)) {
+			serverPlayer.startUsingItem(InteractionHand.MAIN_HAND);
+			return;
+		}
+
 		// Check for block target FIRST (before entity)
 		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
 

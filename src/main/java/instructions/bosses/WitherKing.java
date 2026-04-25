@@ -1,9 +1,14 @@
 package instructions.bosses;
 
 import instructions.Actions;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonDeathPhase;
+import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEnderDragon;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -14,6 +19,7 @@ import org.bukkit.scheduler.BukkitTask;
 import plugin.FakePlayerInventory;
 import plugin.Utils;
 
+import java.lang.reflect.Field;
 import java.util.Random;
 
 @SuppressWarnings({"unused", "DataFlowIssue"})
@@ -157,6 +163,38 @@ public class WitherKing {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0f, 1.0f);
 		}, 100);
+	}
+
+	/**
+	 * Forces an Ender Dragon to play its death animation in place instead of flying
+	 * to 0,0,0 (the default portal target of DragonDeathPhase). Reflects
+	 * DragonDeathPhase.targetLocation to the dragon's current position and kicks
+	 * dragonDeathTime to 1 so the death animation starts this tick.
+	 */
+	public static void instaKillDragon(EnderDragon dragon) {
+		if(dragon == null || !(dragon instanceof CraftEnderDragon craftDragon)) return;
+		net.minecraft.world.entity.boss.enderdragon.EnderDragon nmsDragon = craftDragon.getHandle();
+		nmsDragon.getPhaseManager().setPhase(EnderDragonPhase.DYING);
+		DragonPhaseInstance phase = nmsDragon.getPhaseManager().getCurrentPhase();
+		if(phase instanceof DragonDeathPhase deathPhase) {
+			try {
+				Field targetField = DragonDeathPhase.class.getDeclaredField("targetLocation");
+				targetField.setAccessible(true);
+				Location l = dragon.getLocation();
+				targetField.set(deathPhase, new Vec3(l.getX(), l.getY(), l.getZ()));
+			} catch(ReflectiveOperationException e) {
+				Bukkit.getLogger().warning("Failed to force dragon death targetLocation: " + e.getMessage());
+			}
+		}
+		nmsDragon.setDeltaMovement(Vec3.ZERO);
+		nmsDragon.setHealth(1.0F);
+		try {
+			Field deathTimeField = nmsDragon.getClass().getDeclaredField("dragonDeathTime");
+			deathTimeField.setAccessible(true);
+			deathTimeField.setInt(nmsDragon, 1);
+		} catch(ReflectiveOperationException e) {
+			Bukkit.getLogger().warning("Failed to force dragon dragonDeathTime: " + e.getMessage());
+		}
 	}
 
 	public static void playDragonDeathSound(boolean sendMessage) {

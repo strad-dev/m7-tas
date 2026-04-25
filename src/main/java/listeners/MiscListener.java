@@ -64,6 +64,7 @@ public class MiscListener implements Listener {
 	public void onWitherSpawn(EntitySpawnEvent e) {
 		if(e.getEntity() instanceof Wither wither) {
 			wither.setCollidable(false);
+			plugin.PlayerCollision.addEntityToNoCollisionTeam(wither);
 		}
 	}
 
