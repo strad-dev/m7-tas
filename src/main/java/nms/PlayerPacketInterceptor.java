@@ -6,9 +6,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import listeners.CustomItems;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
+import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -37,6 +39,14 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				if(pkt.hasPosition()) {
 					Spectate.updateClientPosition(player, pkt.getX(0), pkt.getY(0), pkt.getZ(0));
 				}
+				return;
+			}
+		}
+		if(msg instanceof ServerboundSetCarriedItemPacket) {
+			Player fakePlayer = Spectate.getSpectatorMap().get(player);
+			if(fakePlayer != null) {
+				((CraftPlayer) player).getHandle().connection.send(
+					new ClientboundSetHeldSlotPacket(fakePlayer.getInventory().getHeldItemSlot()));
 				return;
 			}
 		}

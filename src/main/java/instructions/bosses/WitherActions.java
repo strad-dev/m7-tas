@@ -1,7 +1,6 @@
 package instructions.bosses;
 
 import net.minecraft.commands.arguments.EntityAnchorArgument;
-import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
@@ -11,7 +10,6 @@ import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
-import plugin.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,12 +39,6 @@ public class WitherActions {
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
 		net.minecraft.world.entity.LivingEntity t = ((CraftLivingEntity) target).getHandle();
 		w.noPhysics = true;
-
-		// Side heads: vanilla's WitherBoss.aiStep runs xRotHeads1/yRotHeads1 lerp toward
-		// the alternativeTarget even under setAI(false). We leave slot 0 unset because
-		// it would trigger vanilla's own chase push in addition to our manual chase.
-		w.setAlternativeTarget(1, t.getId());
-		w.setAlternativeTarget(2, t.getId());
 
 		BukkitTask task = new BukkitRunnable() {
 			// Own velocity state — vanilla aiStep mutates deltaMovement between our ticks
@@ -95,25 +87,6 @@ public class WitherActions {
 				// uses to aim a mob at a target, so the formula and sign conventions are
 				// guaranteed to match rendering. It sets xRot, yRot, yHeadRot in one call.
 				w.lookAt(EntityAnchorArgument.Anchor.EYES, t.getEyePosition());
-				float targetYaw = w.getYRot();
-				w.setYBodyRot(targetYaw);
-
-				// Write server-side side-head rotation arrays directly. Safe because
-				// getHeadYRots()/getHeadXRots() return the mutable internal float[]s.
-				float[] yRotHeads = w.getHeadYRots();
-				float[] xRotHeads = w.getHeadXRots();
-				if(yRotHeads.length >= 2) {
-					yRotHeads[0] = targetYaw;
-					yRotHeads[1] = targetYaw;
-				}
-				if(xRotHeads.length >= 2) {
-					xRotHeads[0] = 0;
-					xRotHeads[1] = 0;
-				}
-
-				// Force-broadcast yHeadRot to client each tick so client-side aiStep can't
-				// drift it. The byte encoding is Minecraft's standard 8-bit angle.
-				Utils.broadcastPacket(new ClientboundRotateHeadPacket(w, (byte) ((int) (targetYaw * 256.0F / 360.0F))));
 
 				// Horizontal friction for next tick. Within 3 blocks (not actively chasing),
 				// damp harder so the wither hovers in front of the player instead of
@@ -138,8 +111,6 @@ public class WitherActions {
 		}
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
 		w.noPhysics = false;
-		w.setAlternativeTarget(1, 0);
-		w.setAlternativeTarget(2, 0);
 	}
 
 	public static void setWitherArmor(Wither wither, boolean showArmor) {

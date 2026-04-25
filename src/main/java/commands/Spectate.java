@@ -93,6 +93,7 @@ public class Spectate implements CommandExecutor {
 			preventPlayerCollision(p, fakePlayer);
 
 			PlayerInventoryBackup.syncInventory(fakePlayer);
+			((CraftPlayer) p).getHandle().connection.send(new ClientboundSetHeldSlotPacket(fakePlayer.getInventory().getHeldItemSlot()));
 			Utils.scheduleTask(() -> hideFakePlayerFromSpectator(p, fakePlayer), 1);
 
 			if(spectatorSyncTask == null) {
