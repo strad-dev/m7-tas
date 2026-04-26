@@ -1400,7 +1400,7 @@ public class CustomItems implements Listener {
 	private static final double JERRY_BOOST_V = 0.6;
 	private static final double JERRY_BOOST_H = 0.446;
 	private static final double JERRY_BOOST_RADIUS = 3.5;
-	private static final float JERRY_HEAD_SCALE = 0.5f;
+	private static final float JERRY_HEAD_SCALE = 1.0f;
 	// MHF_Villager head texture (Hypixel's generic Jerry villager skin)
 	private static final String JERRY_HEAD_TEXTURE = "eyJ0aW1lc3RhbXAiOjE1MTIyMTE4MjQ0MzAsInByb2ZpbGVJZCI6ImJkNDgyNzM5NzY3YzQ1ZGNhMWY4YzMzYzQwNTMwOTUyIiwicHJvZmlsZU5hbWUiOiJNSEZfVmlsbGFnZXIiLCJzaWduYXR1cmVSZXF1aXJlZCI6dHJ1ZSwidGV4dHVyZXMiOnsiU0tJTiI6eyJ1cmwiOiJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzgyMmQ4ZTc1MWM4ZjJmZDRjODk0MmM0NGJkYjJmNWNhNGQ4YWU4ZTU3NWVkM2ViMzRjMThhODZlOTNiIn19fQ==";
 
@@ -1859,7 +1859,7 @@ public class CustomItems implements Listener {
 					break;
 				}
 				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 290 : 200) : (temp instanceof Wither ? 250 : 170);
+					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
 					Utils.hurtEntity(temp, damage, p);
 					temp.setNoDamageTicks(0);
 					Utils.changeName(temp);

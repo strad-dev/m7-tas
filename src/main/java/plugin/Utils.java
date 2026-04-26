@@ -273,6 +273,8 @@ public class Utils {
 	);
 
 	public static String formatHealthM(LivingEntity entity) {
+		// Withers flagged as dying always display "1" regardless of internal HP.
+		if(entity.getScoreboardTags().contains("TASDying")) return "1";
 		double current = entity.getHealth() + entity.getAbsorptionAmount();
 		for(String tag : entity.getScoreboardTags()) {
 			Double displayMax = BOSS_DISPLAY_MAX_M.get(tag);

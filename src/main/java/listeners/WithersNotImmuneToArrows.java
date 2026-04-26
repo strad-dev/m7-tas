@@ -18,7 +18,7 @@ public class WithersNotImmuneToArrows implements Listener {
 	 * damage a vulnerable wither at any HP. Cancel the event preemptively (LOWEST) so
 	 * vanilla never gets to bounce/skip, then apply the damage manually.
 	 */
-	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	@EventHandler(priority = EventPriority.LOWEST)
 	public void onArrowHitWither(ProjectileHitEvent event) {
 		if(!(event.getEntity() instanceof Arrow arrow)) return;
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
@@ -29,7 +29,10 @@ public class WithersNotImmuneToArrows implements Listener {
 
 		event.setCancelled(true);
 		wither.setNoDamageTicks(0);
-		Utils.hurtEntity(wither, (float) arrow.getDamage(), p);
+		// Bukkit's no-source damage() uses a non-projectile cause, so the vanilla wither
+		// "powered" projectile shield doesn't apply. The fired EntityDamageEvent still reaches
+		// Maxor.handleDamage for clamping.
+		wither.damage((double) arrow.getDamage());
 		wither.setNoDamageTicks(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		Utils.changeName(wither);
