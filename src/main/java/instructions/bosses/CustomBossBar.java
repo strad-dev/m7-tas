@@ -25,6 +25,7 @@ public class CustomBossBar {
 	private static BossBar activeWitherBossBar;
 	private static Wither activeWither;
 	private static BukkitTask bossBarUpdateTask;
+	private static TextDisplay activeStunIndicator;
 
 	// Generic method to handle any Wither boss bar
 	public static void setupWitherBossBar(Wither wither, String witherName) {
@@ -150,8 +151,11 @@ public class CustomBossBar {
 	}
 
 	public static void spawnAnimatedStunnedIndicator(Wither wither, int duration) {
+		removeStunIndicator();
+
 		Location loc = wither.getLocation().add(0, wither.getHeight() + 0.5, 0);
 		TextDisplay indicator = wither.getWorld().spawn(loc, TextDisplay.class);
+		activeStunIndicator = indicator;
 
 		indicator.setBillboard(Display.Billboard.CENTER);
 		indicator.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
@@ -187,7 +191,17 @@ public class CustomBossBar {
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 5L); // Run every 5 ticks instead of every tick
 
-		Utils.scheduleTask(indicator::remove, duration);
+		Utils.scheduleTask(() -> {
+			if(activeStunIndicator == indicator) activeStunIndicator = null;
+			indicator.remove();
+		}, duration);
 
+	}
+
+	public static void removeStunIndicator() {
+		if(activeStunIndicator != null) {
+			if(activeStunIndicator.isValid()) activeStunIndicator.remove();
+			activeStunIndicator = null;
+		}
 	}
 }

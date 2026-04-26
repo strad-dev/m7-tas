@@ -9,8 +9,10 @@ import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
@@ -108,8 +110,9 @@ public class MiscListener implements Listener {
 				if(hitEntity instanceof Player player && (FakePlayerManager.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
 					e.setCancelled(true);
 				}
-				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually
-				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually.
+				// Wither hits are handled by WithersNotImmuneToArrows (which bypasses vanilla shield logic).
+				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither)) {
 					e.setCancelled(true);
 					hitEntity.setNoDamageTicks(0);
 					Utils.hurtEntity(hitEntity, (float) arrow.getDamage(), p);
@@ -185,6 +188,57 @@ public class MiscListener implements Listener {
 		}
 	}
 
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+	public void onMaxorDamage(EntityDamageEvent e) {
+		Maxor.handleDamage(e);
+	}
+
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onWitherSuffocation(EntityDamageEvent e) {
+		if(e.getEntity() instanceof Wither && e.getCause() == EntityDamageEvent.DamageCause.SUFFOCATION) {
+			e.setCancelled(true);
+		}
+	}
+
+	// Runs before Maxor.handleDamage's HIGH-priority clamp so the original (pre-clamp)
+	// damage is what we judge "did this hit do anything?" by. Otherwise hits that get
+	// clamped to 0 (e.g. once the 75% stun cap is hit) would silently skip the sound.
+	// Listens on the broader EntityDamageEvent so non-by-entity sources (e.g. mage beam's
+	// Utils.hurtEntity, which uses genericKill) also trigger the sound.
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onWitherHurtSound(EntityDamageEvent e) {
+		if(!(e.getEntity() instanceof Wither wither)) return;
+		if(e.getFinalDamage() <= 0) return;
+		// While dying, only the death noise plays — no hurt sound.
+		if(Maxor.isDyingWither(wither)) return;
+
+		Location loc = wither.getLocation();
+		wither.getWorld().playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+
+		Player damager = null;
+		if(e instanceof EntityDamageByEntityEvent be) {
+			damager = resolveDamager(be.getDamager());
+		}
+		if(damager == null) return;
+		damager.playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+
+		// If a fake player dealt the damage, route the sound to its spectators too.
+		if(FakePlayerManager.getFakePlayers().containsValue(damager)) {
+			java.util.Set<Player> spectators = Spectate.getReverseSpectatorMap().get(damager);
+			if(spectators != null) {
+				for(Player spec : spectators) {
+					spec.playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+				}
+			}
+		}
+	}
+
+	private static Player resolveDamager(Entity damager) {
+		if(damager instanceof Player p) return p;
+		if(damager instanceof Projectile proj && proj.getShooter() instanceof Player p) return p;
+		return null;
+	}
+
 	@EventHandler
 	public void onEnergyCrystalRightClick(PlayerInteractAtEntityEvent e) {
 		if(!(e.getRightClicked() instanceof EnderCrystal crystal)) return;
@@ -200,7 +254,7 @@ public class MiscListener implements Listener {
 		if(b == null) return;
 		int x = b.getX(), y = b.getY(), z = b.getZ();
 		if(y == 224 && z == 41 && (x == 52 || x == 94)) {
-			Maxor.placeAtPlate(e.getPlayer(), b.getLocation());
+			Maxor.onPlateStep(e.getPlayer(), b.getLocation());
 		}
 	}
 

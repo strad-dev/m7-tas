@@ -1400,7 +1400,7 @@ public class CustomItems implements Listener {
 	private static final double JERRY_BOOST_V = 0.6;
 	private static final double JERRY_BOOST_H = 0.446;
 	private static final double JERRY_BOOST_RADIUS = 3.5;
-	private static final float JERRY_HEAD_SCALE = 1.5f;
+	private static final float JERRY_HEAD_SCALE = 0.5f;
 	// MHF_Villager head texture (Hypixel's generic Jerry villager skin)
 	private static final String JERRY_HEAD_TEXTURE = "eyJ0aW1lc3RhbXAiOjE1MTIyMTE4MjQ0MzAsInByb2ZpbGVJZCI6ImJkNDgyNzM5NzY3YzQ1ZGNhMWY4YzMzYzQwNTMwOTUyIiwicHJvZmlsZU5hbWUiOiJNSEZfVmlsbGFnZXIiLCJzaWduYXR1cmVSZXF1aXJlZCI6dHJ1ZSwidGV4dHVyZXMiOnsiU0tJTiI6eyJ1cmwiOiJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzgyMmQ4ZTc1MWM4ZjJmZDRjODk0MmM0NGJkYjJmNWNhNGQ4YWU4ZTU3NWVkM2ViMzRjMThhODZlOTNiIn19fQ==";
 
@@ -1839,7 +1839,11 @@ public class CustomItems implements Listener {
 		Vector v = handToTarget.multiply(0.2);
 
 		for(int i = 0; i < iterations; i++) {
-			if(l.getBlock().getType().isSolid()) {
+			// Use the block's actual world-space bounding box rather than Material.isSolid() —
+			// the latter returns true for thin shapes like pressure plates and would stop the
+			// beam the moment it passes over one, even though the beam is well above the plate.
+			Block beamBlock = l.getBlock();
+			if(beamBlock.getType().isSolid() && beamBlock.getBoundingBox().contains(l.toVector())) {
 				break;
 			}
 			boolean shouldBreak = false;
