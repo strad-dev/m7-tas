@@ -1,57 +1,41 @@
 package listeners;
 
-import org.bukkit.Bukkit;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
+import org.bukkit.Sound;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
 public class WithersNotImmuneToArrows implements Listener {
-	private static final Set<UUID> processingArrows = new HashSet<>();
+	/**
+	 * Vanilla blocks projectile damage on a "powered" wither (HP <= 50%) and while its
+	 * invulnerability shield is up. We want arrows — including Terminator arrows — to
+	 * damage a vulnerable wither at any HP. Cancel the event preemptively (LOWEST) so
+	 * vanilla never gets to bounce/skip, then apply the damage manually.
+	 */
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onArrowHitWither(ProjectileHitEvent event) {
+		if(!(event.getEntity() instanceof Arrow arrow)) return;
+		if(!(event.getHitEntity() instanceof Wither wither)) return;
+		if(!(arrow.getShooter() instanceof Player p)) return;
 
-	@EventHandler
-	public void onProjectileHit(ProjectileHitEvent event) {
-		// Only handle arrows hitting withers
-		if(!(event.getEntity() instanceof Arrow arrow)) {
-			return;
-		}
-		if(!(event.getHitEntity() instanceof Wither wither)) {
-			return;
-		}
+		// Shield up (invulnerability ticks active) → bounce, no damage.
+		if(wither.getInvulnerabilityTicks() != 0) return;
 
-		// Prevent double processing
-		UUID arrowUUID = arrow.getUniqueId();
-		if(processingArrows.contains(arrowUUID)) {
-			return;
-		}
+		event.setCancelled(true);
+		wither.setNoDamageTicks(0);
+		Utils.hurtEntity(wither, (float) arrow.getDamage(), p);
+		wither.setNoDamageTicks(0);
+		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
+		Utils.changeName(wither);
 
-		// Check if wither would normally be immune (health <= 50%)
-		if(wither.getHealth() > wither.getAttribute(Attribute.MAX_HEALTH).getValue() / 2.0f) {
-			return; // Wither isn't in armor phase, let vanilla handle it
-		}
-
-		// Mark arrow as being processed
-		processingArrows.add(arrowUUID);
-
-		try {
-			// Create and fire the damage event
-			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(arrow, wither, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 0));
-
-			// Cancel the original event to prevent the bounce
-			event.setCancelled(true);
-		} finally {
-			// Clean up tracking
-			processingArrows.remove(arrowUUID);
-		}
+		int newPierce = arrow.getPierceLevel() - 1;
+		if(newPierce <= 0) arrow.remove();
+		else arrow.setPierceLevel(newPierce);
 	}
 }

@@ -1,14 +1,18 @@
 package instructions.bosses;
 
+import instructions.Server;
 import instructions.players.Tank;
 import listeners.CustomItems;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.FakePlayerInventory;
+import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.HashMap;
@@ -37,6 +41,23 @@ public class Maxor {
 	private static final String ENERGY_CRYSTAL_NAME = ChatColor.GOLD + "" + ChatColor.BOLD + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Energy Crystal" + ChatColor.GOLD + ChatColor.BOLD + " ﴿";
 	private static final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
 
+	// Laser/stun cycle state.
+	private static final double LASER_CENTER_X = 73.5;
+	private static final double LASER_CENTER_Z = 73.5;
+	private static final double LASER_RADIUS_SQ = 2.5 * 2.5;
+	private static final int CHARGE_DELAY_TICKS = 30;
+	private static final int STUN_COOLDOWN_TICKS = 200;
+	private static final int PLATE_GATE_TICKS = 160;
+	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
+	private static BukkitTask laserScanTask;
+	private static BukkitTask stunEnrageTask;
+	private static boolean platesActive;
+	private static boolean stunCooldownActive;
+	private static boolean inStun;
+	private static boolean dying;
+	private static double stunDamageDealt;
+	private static final java.util.List<Runnable> pendingPlateChecks = new java.util.ArrayList<>();
+
 	public static void maxorInstructions(World temp, boolean doContinue) {
 		world = temp;
 
@@ -53,6 +74,23 @@ public class Maxor {
 			bossBarUpdateTask.cancel();
 			bossBarUpdateTask = null;
 		}
+
+		// Reset laser/stun state for this fight so subsequent TASes work.
+		cancelLaserScan();
+		cancelStunEnrageTask();
+		CustomBossBar.removeStunIndicator();
+		inStun = false;
+		dying = false;
+		stunDamageDealt = 0;
+		stunCooldownActive = false;
+		platesActive = false;
+		pendingPlateChecks.clear();
+		Utils.scheduleTask(() -> {
+			platesActive = true;
+			java.util.List<Runnable> snapshot = new java.util.ArrayList<>(pendingPlateChecks);
+			pendingPlateChecks.clear();
+			for(Runnable r : snapshot) r.run();
+		}, PLATE_GATE_TICKS);
 
 		maxor = (Wither) world.spawnEntity(new Location(world, 73.5, 226, 53.5, 0f, 0f), EntityType.WITHER);
 		maxor.setAI(false);
@@ -77,7 +115,7 @@ public class Maxor {
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
-			WitherActions.setWitherAggro(maxor, Tank.get());
+			WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"), 3.0, 1.0);
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
@@ -157,6 +195,11 @@ public class Maxor {
 	public static void pickUp(Player p, EnderCrystal crystal) {
 		if(notEnergyCrystal(crystal)) return;
 
+		// Already holding an Energy Crystal anywhere in inventory? Reject.
+		for(ItemStack item : p.getInventory().getContents()) {
+			if(item != null && ENERGY_CRYSTAL_ID.equals(CustomItems.getID(item))) return;
+		}
+
 		ItemStack prev = p.getInventory().getItem(8);
 		previousSlot8.put(p.getUniqueId(), prev == null ? null : prev.clone());
 		p.getInventory().setItem(8, getEnergyCrystalItem());
@@ -164,6 +207,34 @@ public class Maxor {
 		crystal.remove();
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
+
+		// If the player is already standing on a plate, place immediately —
+		// no PHYSICAL interact fires until they re-step on the plate.
+		Location feet = p.getLocation();
+		int fx = feet.getBlockX(), fy = feet.getBlockY(), fz = feet.getBlockZ();
+		if(fy == 224 && fz == 41 && (fx == 52 || fx == 94)) {
+			onPlateStep(p, feet);
+		}
+	}
+
+	/**
+	 * Plate-step entry point. If plates are active, place immediately.
+	 * Otherwise schedule a recheck for when the gate opens — if the player is still
+	 * standing on the same plate at that moment (and still holds a crystal), place then.
+	 */
+	public static void onPlateStep(Player p, Location plate) {
+		if(platesActive) {
+			placeAtPlate(p, plate);
+			return;
+		}
+		// Gate not open yet — queue a recheck. The gate-open task drains and runs these.
+		final int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
+		pendingPlateChecks.add(() -> {
+			Location feet = p.getLocation();
+			if(feet.getBlockX() == px && feet.getBlockY() == py && feet.getBlockZ() == pz) {
+				placeAtPlate(p, plate);
+			}
+		});
 	}
 
 	public static void placeAtPlate(Player p, Location plate) {
@@ -171,6 +242,8 @@ public class Maxor {
 		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(CustomItems.getID(slot8))) return;
 
 		if(world == null) world = Bukkit.getWorlds().getFirst();
+		// Pressure-plate placement is disabled until 160 ticks into the fight.
+		if(!platesActive) return;
 		int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
 
 		if(px == 94 && py == 224 && pz == 41) {
@@ -186,7 +259,182 @@ public class Maxor {
 		ItemStack restore = previousSlot8.remove(p.getUniqueId());
 		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
 
-		Bukkit.broadcastMessage(ChatColor.RED + "1" + ChatColor.GREEN + "/2 Energy Crystals are now active!");
+		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
+		int placed = bothPlaced ? 2 : 1;
+		ChatColor placedColor = bothPlaced ? ChatColor.GREEN : ChatColor.RED;
+		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!";
+		Bukkit.broadcastMessage(activeMsg);
+		for(Player player : Bukkit.getOnlinePlayers()) {
+			player.sendTitle("", activeMsg, 0, 40, 0);
+		}
+
+		if(bothPlaced) {
+			beginLaserCharge();
+		}
+	}
+
+	private static void beginLaserCharge() {
+		cancelLaserScan();
+		Utils.scheduleTask(() -> {
+			if(maxor == null || maxor.isDead()) return;
+			if(plateLeftCrystal == null || plateRightCrystal == null) return;
+			String chargeMsg = ChatColor.GREEN + "The Energy Laser is charging up!";
+			Bukkit.broadcastMessage(chargeMsg);
+			for(Player player : Bukkit.getOnlinePlayers()) {
+				player.sendTitle("", chargeMsg, 0, 40, 0);
+			}
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
+			startLaserScan();
+		}, CHARGE_DELAY_TICKS);
+	}
+
+	private static void startLaserScan() {
+		cancelLaserScan();
+		laserScanTask = new BukkitRunnable() {
+			@Override
+			public void run() {
+				if(maxor == null || maxor.isDead()) {
+					cancel();
+					laserScanTask = null;
+					return;
+				}
+				if(stunCooldownActive) return;
+
+				double dx = maxor.getLocation().getX() - LASER_CENTER_X;
+				double dz = maxor.getLocation().getZ() - LASER_CENTER_Z;
+				if(dx * dx + dz * dz <= LASER_RADIUS_SQ) {
+					triggerStun();
+					cancel();
+					laserScanTask = null;
+				}
+			}
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	private static void cancelLaserScan() {
+		if(laserScanTask != null && !laserScanTask.isCancelled()) {
+			laserScanTask.cancel();
+		}
+		laserScanTask = null;
+	}
+
+	private static void triggerStun() {
+		stunCooldownActive = true;
+		Utils.scheduleTask(() -> stunCooldownActive = false, STUN_COOLDOWN_TICKS);
+		inStun = true;
+		stunDamageDealt = 0;
+
+		WitherActions.clearWitherAggro(maxor);
+		WitherActions.setWitherArmor(maxor, false);
+		sendChatMessage(laserMessage[random.nextInt(laserMessage.length)]);
+
+		// Laser hit: 5% max HP damage + wither hurt sound. Bypasses the damage event
+		// (no event recursion) and counts toward the stun's 75% damage cap.
+		double maxHp = maxor.getAttribute(Attribute.MAX_HEALTH).getValue();
+		double laserDmg = maxHp * 0.05;
+		maxor.setHealth(Math.max(0.0, maxor.getHealth() - laserDmg));
+		stunDamageDealt += laserDmg;
+		Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+
+		CustomBossBar.spawnAnimatedStunnedIndicator(maxor, Integer.MAX_VALUE);
+
+		Utils.scheduleTask(() -> {
+			resetCrystals();
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
+		}, CRYSTAL_RESPAWN_DELAY_TICKS);
+
+		// Auto-enrage 160 ticks after the stun, regardless of damage taken.
+		cancelStunEnrageTask();
+		stunEnrageTask = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), Maxor::enrageMaxor, 160L);
+	}
+
+	private static void cancelStunEnrageTask() {
+		if(stunEnrageTask != null && !stunEnrageTask.isCancelled()) {
+			stunEnrageTask.cancel();
+		}
+		stunEnrageTask = null;
+	}
+
+	private static void enrageMaxor() {
+		if(!inStun) return;
+		inStun = false;
+		cancelStunEnrageTask();
+
+		WitherActions.setWitherArmor(maxor, true);
+		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is enraged! ⚠");
+		for(Player player : Bukkit.getOnlinePlayers()) {
+			player.sendTitle("", ChatColor.RED + "⚠ Maxor is enraged! ⚠", 0, 40, 0);
+		}
+		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
+		CustomBossBar.removeStunIndicator();
+		WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"), 3.0, 1.0);
+	}
+
+	/**
+	 * Damage interceptor for Maxor. Hook from a Bukkit listener.
+	 * - If a hit would kill him, clamp it to leave him on 1% HP and play the death dialogue.
+	 * - Otherwise during a stun, clamp cumulative damage to 75% of max HP and trigger enrage.
+	 */
+	public static void handleDamage(EntityDamageEvent e) {
+		if(maxor == null || !maxor.equals(e.getEntity())) return;
+		if(e.isCancelled()) return;
+
+		// Dying = completely immune. Cancel before any damage logic.
+		if(dying) {
+			e.setCancelled(true);
+			return;
+		}
+
+		double finalDmg = e.getFinalDamage();
+		if(finalDmg <= 0) return;
+
+		double currentHp = maxor.getHealth();
+		double maxHp = maxor.getAttribute(Attribute.MAX_HEALTH).getValue();
+		double onePercent = maxHp * 0.01;
+
+		// Killing-blow clamp: leave him on 1% HP and play death dialogue.
+		if(finalDmg >= currentHp) {
+			double allowed = Math.max(0, currentHp - onePercent);
+			scaleEventDamage(e, finalDmg, allowed);
+			dying = true;
+			cancelStunEnrageTask();
+			cancelLaserScan();
+			inStun = false;
+			CustomBossBar.removeStunIndicator();
+			playDeathDialogue();
+			return;
+		}
+
+		// Stun damage cap: 75% of max HP across the stun cycle.
+		if(inStun) {
+			double damageCap = maxHp * 0.75;
+			double remaining = damageCap - stunDamageDealt;
+			if(finalDmg >= remaining) {
+				scaleEventDamage(e, finalDmg, remaining);
+				stunDamageDealt = damageCap;
+				Bukkit.getScheduler().runTask(M7tas.getInstance(), Maxor::enrageMaxor);
+			} else {
+				stunDamageDealt += finalDmg;
+			}
+		}
+	}
+
+	private static void scaleEventDamage(EntityDamageEvent e, double currentFinal, double targetFinal) {
+		if(currentFinal <= 0) return;
+		double scale = Math.max(0, targetFinal) / currentFinal;
+		e.setDamage(e.getDamage() * scale);
+	}
+
+	private static void playDeathDialogue() {
+		// Bypass sendChatMessage so we don't emit ENTITY_WITHER_AMBIENT — the death noise
+		// is the only sound permitted while dying.
+		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'M TOO YOUNG TO DIE AGAIN!");
+		Server.playWitherDeathSound(maxor);
+		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
+	}
+
+	public static boolean isDyingWither(Wither w) {
+		return dying && w != null && w.equals(maxor);
 	}
 
 	private static EnderCrystal spawnEnergyCrystal(Location loc) {

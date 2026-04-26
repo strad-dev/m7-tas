@@ -18,22 +18,22 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class WitherActions {
 
-	private static final double Y_OFFSET = 1.0;
-
 	private static final Map<UUID, BukkitTask> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
 
 	/**
 	 * Makes a Wither deterministically chase a target using vanilla-equivalent
 	 * aiStep chase math, independent of its actual HP / isPowered() state.
-	 * Hovers 1 block above the target (footage-tuned for both Maxor and Storm).
 	 * Also enables noPhysics so the Wither phases through walls while chasing.
 	 *
-	 * @param wither The Wither. Must have setAI(false); the RNG-bearing goals and
-	 *               customServerAiStep path are skipped under noAi.
-	 * @param target LivingEntity to chase.
+	 * @param wither       The Wither. Must have setAI(false); the RNG-bearing goals and
+	 *                     customServerAiStep path are skipped under noAi.
+	 * @param target       LivingEntity to chase.
+	 * @param stopDistance Horizontal distance (blocks) at which the wither stops chasing.
+	 * @param yOffset      Vertical offset above the target the wither hovers at.
 	 */
-	public static void setWitherAggro(Wither wither, LivingEntity target) {
+	public static void setWitherAggro(Wither wither, LivingEntity target, double stopDistance, double yOffset) {
+		final double stopDistSq = stopDistance * stopDistance;
 		clearWitherAggro(wither);
 
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
@@ -58,20 +58,26 @@ public class WitherActions {
 				// Soft proportional vertical control — desired vy is proportional to the
 				// Y error, capped in [-0.2, 0.5]. Replaces the vanilla below/above toggle
 				// which was flipping every tick near the target Y and causing the bounce.
-				double targetY = t.getY() + Y_OFFSET;
+				double targetY = t.getY() + yOffset;
 				double desiredVy = Math.max(-0.2, Math.min(0.5, (targetY - w.getY()) * 0.3));
 				vy += (desiredVy - vy) * 0.4;
 
-				// Horizontal chase (mirrors Wither.aiStep:173-177) — only when > 3 blocks away.
+				// Horizontal chase (mirrors Wither.aiStep:173-177) — only when > stopDistance blocks away.
+				// Within stopDistance, zero horizontal velocity BEFORE move() so the wither hard-stops
+				// on this tick rather than coasting one extra tick of leftover momentum.
 				double dx = t.getX() - w.getX();
 				double dz = t.getZ() - w.getZ();
 				double horizSq = dx * dx + dz * dz;
-				if(horizSq > 9.0) {
+				boolean chasing = horizSq > stopDistSq;
+				if(chasing) {
 					double len = Math.sqrt(horizSq);
 					double dirx = dx / len;
 					double dirz = dz / len;
 					vx += dirx * 0.3 - vx * 0.6;
 					vz += dirz * 0.3 - vz * 0.6;
+				} else {
+					vx = 0;
+					vz = 0;
 				}
 
 				Vec3 v = new Vec3(vx, vy, vz);
@@ -88,12 +94,11 @@ public class WitherActions {
 				// guaranteed to match rendering. It sets xRot, yRot, yHeadRot in one call.
 				w.lookAt(EntityAnchorArgument.Anchor.EYES, t.getEyePosition());
 
-				// Horizontal friction for next tick. Within 3 blocks (not actively chasing),
-				// damp harder so the wither hovers in front of the player instead of
-				// overshooting from accumulated momentum.
-				double frictionH = horizSq > 9.0 ? 0.91 : 0.5;
-				vx *= frictionH;
-				vz *= frictionH;
+				// Vanilla in-air friction for next tick (only matters while still chasing).
+				if(chasing) {
+					vx *= 0.91;
+					vz *= 0.91;
+				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 
