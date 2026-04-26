@@ -65,7 +65,9 @@ public class MiscListener implements Listener {
 	@EventHandler
 	public void onWitherSpawn(EntitySpawnEvent e) {
 		if(e.getEntity() instanceof Wither wither) {
-			wither.setCollidable(false);
+			// Don't call setCollidable(false) — CraftBukkit makes canBeCollidedWith() return false
+			// when collides=false, which causes vanilla's projectile sweep to skip the entity
+			// (arrows phase through the wither). The scoreboard team below handles no-push collision.
 			plugin.PlayerCollision.addEntityToNoCollisionTeam(wither);
 		}
 	}
@@ -200,6 +202,15 @@ public class MiscListener implements Listener {
 		}
 	}
 
+	// Refresh nametag (which embeds current HP) after any damage event resolves —
+	// MONITOR + 1-tick delay so we read the post-HP value, not the pre-event value.
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onWitherDamageNameRefresh(EntityDamageEvent e) {
+		if(!(e.getEntity() instanceof Wither wither)) return;
+		if(e.getFinalDamage() <= 0) return;
+		Utils.scheduleTask(() -> { if(wither.isValid()) Utils.changeName(wither); }, 1);
+	}
+
 	// Runs before Maxor.handleDamage's HIGH-priority clamp so the original (pre-clamp)
 	// damage is what we judge "did this hit do anything?" by. Otherwise hits that get
 	// clamped to 0 (e.g. once the 75% stun cap is hit) would silently skip the sound.
@@ -209,6 +220,9 @@ public class MiscListener implements Listener {
 	public void onWitherHurtSound(EntityDamageEvent e) {
 		if(!(e.getEntity() instanceof Wither wither)) return;
 		if(e.getFinalDamage() <= 0) return;
+		// Suffocation is cancelled by onWitherSuffocation but Bukkit doesn't guarantee
+		// listener order within a class at the same priority — explicitly skip here.
+		if(e.getCause() == EntityDamageEvent.DamageCause.SUFFOCATION) return;
 		// While dying, only the death noise plays — no hurt sound.
 		if(Maxor.isDyingWither(wither)) return;
 

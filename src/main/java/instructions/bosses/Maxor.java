@@ -105,6 +105,7 @@ public class Maxor {
 		maxor.setHealth(300);
 		maxor.addScoreboardTag("TASWither");
 		maxor.addScoreboardTag("TASMaxor");
+		maxor.removeScoreboardTag("TASDying");
 		WitherActions.setWitherArmor(maxor, true);
 
 		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(maxor, "Maxor"), 1);
@@ -207,6 +208,8 @@ public class Maxor {
 		crystal.remove();
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
+
+		Bukkit.broadcastMessage(ChatColor.GOLD + p.getName() + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
 
 		// If the player is already standing on a plate, place immediately —
 		// no PHYSICAL interact fires until they re-step on the plate.
@@ -319,6 +322,22 @@ public class Maxor {
 	}
 
 	private static void triggerStun() {
+		double maxHp = maxor.getAttribute(Attribute.MAX_HEALTH).getValue();
+		double laserDmg = maxHp * 0.05;
+		double currentHp = maxor.getHealth();
+		double onePercent = maxHp * 0.01;
+
+		// Killing-blow path: laser would drop Maxor to/below 0 HP — clamp to 1% + death sequence.
+		if(laserDmg >= currentHp) {
+			WitherActions.clearWitherAggro(maxor);
+			WitherActions.setWitherArmor(maxor, false);
+			sendChatMessage(laserMessage[random.nextInt(laserMessage.length)]);
+			maxor.setHealth(onePercent);
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+			enterDyingState();
+			return;
+		}
+
 		stunCooldownActive = true;
 		Utils.scheduleTask(() -> stunCooldownActive = false, STUN_COOLDOWN_TICKS);
 		inStun = true;
@@ -330,10 +349,9 @@ public class Maxor {
 
 		// Laser hit: 5% max HP damage + wither hurt sound. Bypasses the damage event
 		// (no event recursion) and counts toward the stun's 75% damage cap.
-		double maxHp = maxor.getAttribute(Attribute.MAX_HEALTH).getValue();
-		double laserDmg = maxHp * 0.05;
-		maxor.setHealth(Math.max(0.0, maxor.getHealth() - laserDmg));
+		maxor.setHealth(Math.max(0.0, currentHp - laserDmg));
 		stunDamageDealt += laserDmg;
+		Utils.changeName(maxor);
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
 
 		CustomBossBar.spawnAnimatedStunnedIndicator(maxor, Integer.MAX_VALUE);
@@ -346,6 +364,20 @@ public class Maxor {
 		// Auto-enrage 160 ticks after the stun, regardless of damage taken.
 		cancelStunEnrageTask();
 		stunEnrageTask = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), Maxor::enrageMaxor, 160L);
+	}
+
+	private static void enterDyingState() {
+		dying = true;
+		maxor.addScoreboardTag("TASDying");
+		cancelStunEnrageTask();
+		cancelLaserScan();
+		inStun = false;
+		CustomBossBar.removeStunIndicator();
+		// Pin internal HP to 1 — display already shows "1" via the TASDying tag in formatHealthM.
+		// Deferred 1 tick so vanilla's post-event setHealth doesn't overwrite us.
+		Utils.scheduleTask(() -> { if(maxor != null && maxor.isValid()) maxor.setHealth(1.0); }, 1);
+		Utils.changeName(maxor);
+		playDeathDialogue();
 	}
 
 	private static void cancelStunEnrageTask() {
@@ -392,30 +424,36 @@ public class Maxor {
 		double maxHp = maxor.getAttribute(Attribute.MAX_HEALTH).getValue();
 		double onePercent = maxHp * 0.01;
 
-		// Killing-blow clamp: leave him on 1% HP and play death dialogue.
-		if(finalDmg >= currentHp) {
-			double allowed = Math.max(0, currentHp - onePercent);
-			scaleEventDamage(e, finalDmg, allowed);
-			dying = true;
-			cancelStunEnrageTask();
-			cancelLaserScan();
-			inStun = false;
-			CustomBossBar.removeStunIndicator();
-			playDeathDialogue();
-			return;
-		}
-
-		// Stun damage cap: 75% of max HP across the stun cycle.
+		// Apply stun cap FIRST so that subsequent killing-blow check sees the already-capped value.
+		// Otherwise a single huge hit during stun bypasses the cap by clamping straight to "1% HP" via the kill clamp.
+		double cappedDmg = finalDmg;
+		boolean willEnrage = false;
 		if(inStun) {
 			double damageCap = maxHp * 0.75;
-			double remaining = damageCap - stunDamageDealt;
-			if(finalDmg >= remaining) {
-				scaleEventDamage(e, finalDmg, remaining);
-				stunDamageDealt = damageCap;
-				Bukkit.getScheduler().runTask(M7tas.getInstance(), Maxor::enrageMaxor);
-			} else {
-				stunDamageDealt += finalDmg;
+			double remaining = Math.max(0, damageCap - stunDamageDealt);
+			if(cappedDmg >= remaining) {
+				cappedDmg = remaining;
+				willEnrage = true;
 			}
+		}
+
+		// Killing-blow check on the (possibly cap-clamped) damage.
+		boolean willDie = false;
+		if(cappedDmg >= currentHp) {
+			cappedDmg = Math.max(0, currentHp - onePercent);
+			willDie = true;
+			willEnrage = false; // dying overrides — no enrage
+		}
+
+		if(cappedDmg < finalDmg) {
+			scaleEventDamage(e, finalDmg, cappedDmg);
+		}
+
+		if(willDie) {
+			enterDyingState();
+		} else {
+			if(inStun) stunDamageDealt = Math.min(maxHp * 0.75, stunDamageDealt + cappedDmg);
+			if(willEnrage) Bukkit.getScheduler().runTask(M7tas.getInstance(), Maxor::enrageMaxor);
 		}
 	}
 
@@ -429,8 +467,15 @@ public class Maxor {
 		// Bypass sendChatMessage so we don't emit ENTITY_WITHER_AMBIENT — the death noise
 		// is the only sound permitted while dying.
 		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'M TOO YOUNG TO DIE AGAIN!");
-		Server.playWitherDeathSound(maxor);
+		// Inlined Server.playWitherDeathSound — sounds + remove at +160.
+		Utils.playGlobalSound(Sound.ENTITY_WITHER_DEATH);
+		maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_HURT, 2.0F, 1.0F);
+		int[] hurtTicks = {10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140};
+		int[] shootTicks = {4, 14, 24, 34, 44, 54};
+		for(int t : hurtTicks) Utils.scheduleTask(() -> { if(maxor.isValid()) maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_HURT, 2.0F, 1.0F); }, t);
+		for(int t : shootTicks) Utils.scheduleTask(() -> { if(maxor.isValid()) maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_SHOOT, 2.0F, 1.0F); }, t);
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
+		Utils.scheduleTask(() -> { if(maxor != null && maxor.isValid()) maxor.remove(); }, 160);
 	}
 
 	public static boolean isDyingWither(Wither w) {
