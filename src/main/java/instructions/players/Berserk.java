@@ -3,17 +3,11 @@ package instructions.players;
 import instructions.Actions;
 import instructions.Server;
 import org.bukkit.*;
-import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 public class Berserk {
 	private static Player berserk;
@@ -416,142 +410,7 @@ public class Berserk {
 		 * ██║╚██████╗███████╗    ██║     ██║███████╗███████╗
 		 * ╚═╝ ╚═════╝╚══════╝    ╚═╝     ╚═╝╚══════╝╚══════╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 121);
-		Utils.scheduleTask(() -> {
-			startIceFillTask();
-			Actions.rightClick(berserk);
-		}, 122);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 123);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 124);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 125);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 126);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 127);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 128);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 129);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 130);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 131);
-		Utils.scheduleTask(() -> {
-			Actions.rightClick(berserk);
-			playIceFillSounds(1);
-		}, 132);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 133);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 134);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 135);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 136);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 137);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 138);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 139);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 140);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 141);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 142);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 143);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 144);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 145);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 146);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 147);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 148);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 149);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 150);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 151);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 152);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 153);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 154);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 155);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 156);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 157);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 158);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 159);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 160);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 161);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 162);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 163);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 164);
-		Utils.scheduleTask(() -> {
-			Actions.rightClick(berserk);
-			playIceFillSounds(2);
-		}, 165);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 166);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 167);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 168);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 169);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 170);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 171);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 172);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 173);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 174);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 175);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 176);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 177);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 178);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 179);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 180);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 181);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 182);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 183);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 184);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 185);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 186);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 187);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 188);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 189);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 190);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 191);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 192);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 193);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 194);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 195);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 196);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 197);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 198);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 199);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 200);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 201);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 202);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 203);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 204);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 205);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 206);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 207);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 60f), 208);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 209);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 210);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 60f), 211);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 212);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 213);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 214);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 215);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 216);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 217);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 218);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 219);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 220);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 221);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 222);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 223);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 60f), 224);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 225);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 226);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 60f), 227);
-		Utils.scheduleTask(() -> {
-			Actions.rightClick(berserk);
-			playIceFillSounds(3);
-			Server.openIceFillRewards();
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Ice Fill Cleared");
-		}, 228);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 1), 229);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 68f, -33f), 230);
-		Utils.scheduleTask(() -> {
-			Actions.leftClick(berserk);
-			Utils.broadcastBlessing(berserk, Utils.BlessingType.POWER, 5);
-			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
-		}, 248);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 112f, -33f), 249);
-		Utils.scheduleTask(() -> {
-			Actions.leftClick(berserk);
-			Utils.broadcastBlessing(berserk, Utils.BlessingType.POWER, 5);
-			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 250 Ticks (12.50 seconds)");
-		}, 250);
+		Server.IceFill.run(berserk, world);
 		// Ice Fill: 127 ticks
 
 		Utils.scheduleTask(() -> {
@@ -562,69 +421,12 @@ public class Berserk {
 			Actions.setHotbarSlot(berserk, 5);
 		}, 248);
 		Utils.scheduleTask(() -> {
-			Berserk.stopIceFillTask();
+			Server.IceFill.stopIceFillTask();
 			if(doContinue) {
 				Utils.teleport(berserk, new Location(world, 73.5, 221, 14.5));
 				maxor(true);
 			}
 		}, 742);
-	}
-
-	private static void playIceFillSounds(int level) {
-		switch(level) {
-			case 1 -> {
-				Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.189446f);
-				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.3352f), 5);
-				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.41436f), 10);
-			}
-			case 2 -> {
-				Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.4987f);
-				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.5878f), 5);
-				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.6821f), 10);
-			}
-			case 3 -> {
-				Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.782f);
-				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.888f), 5);
-				Utils.scheduleTask(() -> Utils.playLocalSound(berserk, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 2.0f), 10);
-			}
-		}
-	}
-
-	private static BukkitTask iceFillTask;
-	private static final Set<Block> frozenBlocks = new HashSet<>();
-
-	private static void startIceFillTask() {
-		if (iceFillTask != null) {
-			iceFillTask.cancel();
-		}
-
-		frozenBlocks.clear();
-
-		iceFillTask = new BukkitRunnable() {
-			@Override
-			public void run() {
-				Block below = berserk.getLocation().subtract(0, 1, 0).getBlock();
-				if (below.getType() == Material.ICE) {
-					below.setType(Material.PACKED_ICE);
-					frozenBlocks.add(below);
-					Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f);
-				}
-			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
-	}
-
-	public static void stopIceFillTask() {
-		if (iceFillTask != null) {
-			iceFillTask.cancel();
-			iceFillTask = null;
-		}
-
-		for (Block block : frozenBlocks) {
-			if (block.getType() == Material.PACKED_ICE) {
-				block.setType(Material.ICE);
-			}
-		}
-		frozenBlocks.clear();
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -634,8 +436,12 @@ public class Berserk {
 		}, 3);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 18);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 19);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -35f, 0f), 21);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 35f, 0f), 21);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 70), 22);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -145f, 0f), 287);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 60), 288);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 298);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -35f, 0f), 338);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}

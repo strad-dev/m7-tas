@@ -410,6 +410,27 @@ public class Healer {
 			Actions.rightClick(healer);
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 284 Ticks (14.20 seconds) | Overall: 1 026 ticks (51.30 seconds)");
 		}, 284);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 285);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 286);
+		// TODO wait for mage2 (tank) to leap down before going to pad
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.move(healer, "WP", 0);
+		}, 287);
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, "WPJ", 0);
+			Actions.turnHead(healer, 35f, 80f);
+		}, 292);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 294);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 35f, 0f);
+			Actions.move(healer, "WP", 20);
+			Actions.setHotbarSlot(healer, 0);
+		}, 295);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(healer, 12, 39);
+			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
+		}, 316);
 
 //		Utils.scheduleTask(() -> {
 //			Actions.rightClickLever(healer);

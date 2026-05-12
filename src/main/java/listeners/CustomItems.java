@@ -1814,7 +1814,7 @@ public class CustomItems implements Listener {
 		Location l = p.getLocation();
 
 		// Range depends on boss fight state: 45 blocks during a boss fight, 25 otherwise.
-		double range = instructions.bosses.CustomBossBar.getActiveWither() != null ? 45.0 : 25.0;
+		double range = LavaJump.isInBossArena(p.getLocation()) ? 50.0 : 25.0;
 		int iterations = (int) (range / 0.2);
 
 		// Get player's yaw in radians
