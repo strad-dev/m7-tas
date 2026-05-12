@@ -149,8 +149,15 @@ public class CustomItems implements Listener {
 	public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
 		// Cancel entity interaction for custom items to prevent side effects (e.g. bow drawing)
 		// The ability itself fires from PlayerInteractAtEntityEvent (real clients) or UseItemPacket (fake players)
+		// Mirror the right-click exemption list at handleCustomItems so items without right-click
+		// abilities (Dungeonbreaker/stonk, gyro, last_breath) can still interact with entities like
+		// item frames normally.
 		String id = getID(e.getPlayer().getInventory().getItemInMainHand());
-		if(id != null && !id.isEmpty()) {
+		if(id != null && !id.isEmpty()
+				&& !id.equals("skyblock/combat/gyro")
+				&& !id.equals("skyblock/combat/dungeonbreaker")
+				&& !id.equals("skyblock/combat/stonk")
+				&& !id.equals("skyblock/combat/last_breath")) {
 			e.setCancelled(true);
 		}
 	}

@@ -12,6 +12,7 @@ public class Healer {
 	private static Player healer;
 	private static World world;
 
+	// Healer --> Mage4
 	public static void healerInstructions(Player p, String section) {
 		healer = p;
 		world = healer.getWorld();
