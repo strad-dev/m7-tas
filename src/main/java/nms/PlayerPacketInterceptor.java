@@ -11,10 +11,8 @@ import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
@@ -69,19 +67,19 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			}
 		}
 		if(msg instanceof ServerboundInteractPacket pkt) {
+			// Dispatch the LEFT_CLICK_AIR ability path for every attack action. EntityDamageByEntityEvent
+			// only fires when damage actually lands, which excludes invulnerable-shield withers, dying
+			// entities, and other no-damage cases — meaning abilities like the mage beam never fire on
+			// those hits via the normal EDBEE path. The same-tick cooldown in handleCustomItems
+			// (lastLeftClickAbilityTick) dedupes against the EDBEE dispatch when damage does land.
 			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-				ServerPlayer nmsPlayer = ((CraftPlayer) player).getHandle();
-				ServerLevel level = nmsPlayer.level();
-				net.minecraft.world.entity.Entity target = pkt.getTarget(level);
-				if(target instanceof LivingEntity living && living.isDeadOrDying()) {
-					pkt.dispatch(new ServerboundInteractPacket.Handler() {
-						public void onInteraction(InteractionHand hand) {}
-						public void onInteraction(InteractionHand hand, Vec3 pos) {}
-						public void onAttack() {
-							CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player);
-						}
-					});
-				}
+				pkt.dispatch(new ServerboundInteractPacket.Handler() {
+					public void onInteraction(InteractionHand hand) {}
+					public void onInteraction(InteractionHand hand, Vec3 pos) {}
+					public void onAttack() {
+						CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player);
+					}
+				});
 			});
 		}
 		super.channelRead(ctx, msg);

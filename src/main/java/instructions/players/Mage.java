@@ -25,18 +25,20 @@ public class Mage {
 				Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
-//			case "maxor", "boss" -> {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5, 0f, 0f));
-//				Actions.swapItems(mage, 9, 36);
-//				Actions.swapItems(mage, 1, 28);
-//				Actions.swapItems(mage, 3, 30);
-//				Actions.swapItems(mage, 5, 32);
-//				if(section.equals("maxor")) {
-//					Utils.scheduleTask(() -> maxor(false), 60);
-//				} else {
-//					Utils.scheduleTask(() -> maxor(true), 60);
-//				}
-//			}
+			case "maxor", "boss" -> {
+				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5, 0f, 0f));
+				Actions.swapItems(mage, 1, 28);
+				Actions.swapItems(mage, 3, 30);
+				Actions.swapItems(mage, 6, 33);
+				Actions.swapItems(mage, 7, 34);
+				Actions.swapItems(mage, 9, 36);
+				Actions.setHotbarSlot(mage, 5);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
 //			case "storm" -> {
 //				Utils.teleport(mage, new Location(world, 46.576, 169, 49.503, 1.4f, 22.4f));
 //				Actions.swapItems(mage, 1, 28);
@@ -343,6 +345,7 @@ public class Mage {
 			Actions.swapItems(mage, 3, 30);
 			Actions.swapItems(mage, 6, 33);
 			Actions.swapItems(mage, 7, 34);
+			Actions.swapItems(mage, 9, 36);
 			Actions.setHotbarSlot(mage, 5);
 		}, 664);
 		Utils.scheduleTask(() -> {
@@ -360,8 +363,8 @@ public class Mage {
 	}
 
 	//
-//	public static void maxor(boolean doContinue) {
-//		Actions.setHotbarSlot(mage, 5);
+	public static void maxor(boolean doContinue) {
+
 //		Actions.move(mage, new Vector(0.22, 0, 1.1), 28);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, -11.31f, 0f), 1);
 //		Utils.scheduleTask(() -> {
@@ -412,11 +415,11 @@ public class Mage {
 //			Actions.turnHead(mage, 1.4f, 22.4f);
 //			Actions.setHotbarSlot(mage, 6);
 //		}, 414);
-//		if(doContinue) {
+		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
-//		}
-//	}
-//
+		}
+	}
+
 //	public static void storm(boolean doContinue) {
 //		Actions.setHotbarSlot(mage, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(mage, new Location(world, 46.5, 169, 53.5)), 1); // gyro will be up in 7.5 seconds (150 ticks)

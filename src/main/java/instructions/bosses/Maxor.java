@@ -116,7 +116,7 @@ public class Maxor {
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
-			WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"), 3.0, 1.0);
+			WitherActions.setWitherAggro(maxor, Tank.get(), 3.0, 1.0);
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);

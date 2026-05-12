@@ -27,6 +27,7 @@ public class MovementAudit {
 		if(existing != null) existing.cancel();
 
 		ServerPlayer npc = ((CraftPlayer) p).getHandle();
+		Vec3 startPos = npc.position();
 
 		BukkitRunnable runnable = new BukkitRunnable() {
 			int tick = 0;
@@ -66,7 +67,8 @@ public class MovementAudit {
 			@Override
 			public void cancel() {
 				net.minecraft.world.phys.Vec3 landPos = npc.position();
-				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " landed after " + tick + " ticks at " + Utils.round(landPos.x, 2) + " " + Utils.round(landPos.y, 2) + " " + Utils.round(landPos.z, 2));
+				double distanceTraveled = landPos.distanceTo(startPos);
+				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " landed after " + tick + " ticks at " + Utils.round(landPos.x, 2) + " " + Utils.round(landPos.y, 2) + " " + Utils.round(landPos.z, 2) + ", distance traveled " + Utils.round(distanceTraveled, 2) + " blocks");
 				airborneAudits.remove(id);
 				super.cancel();
 			}

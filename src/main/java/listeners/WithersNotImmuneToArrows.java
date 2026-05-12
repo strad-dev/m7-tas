@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import instructions.bosses.Maxor;
 import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
@@ -26,6 +27,12 @@ public class WithersNotImmuneToArrows implements Listener {
 
 		// Shield up (invulnerability ticks active) → bounce, no damage.
 		if(wither.getInvulnerabilityTicks() != 0) return;
+
+		// Dying wither: phase the arrow through silently — no ding, no damage, no pierce loss.
+		if(Maxor.isDyingWither(wither)) {
+			event.setCancelled(true);
+			return;
+		}
 
 		event.setCancelled(true);
 		wither.setNoDamageTicks(0);
