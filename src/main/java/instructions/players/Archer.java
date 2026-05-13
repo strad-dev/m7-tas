@@ -397,8 +397,8 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 14f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 2);
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 27);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 26), 39);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 50);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 26), 40);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 60);
 //		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
 //		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11.31f, 0f), 1);
 //		Utils.scheduleTask(() -> {

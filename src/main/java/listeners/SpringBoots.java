@@ -210,6 +210,7 @@ public class SpringBoots {
 			h += (NOTE_HEIGHT[noteIdx + 1] - h) * frac;
 		}
 		double v = heightToVelocity(h);
+		v = (int)(v * 8000.0) / 8000.0;
 		Vec3 m = sp.getDeltaMovement();
 		sp.setDeltaMovement(new Vec3(m.x(), v, m.z()));
 		sp.hurtMarked = true;

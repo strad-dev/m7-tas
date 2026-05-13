@@ -218,7 +218,7 @@ public class Maxor {
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
 
-		Bukkit.broadcastMessage(ChatColor.GOLD + p.getName() + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!  (" + formatTick(maxorTick) + ChatColor.GREEN + ")");
+		Bukkit.broadcastMessage(ChatColor.GOLD + p.getName() + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!\n" + formatTick(maxorTick));
 
 		// If the player is already standing on a plate, place immediately —
 		// no PHYSICAL interact fires until they re-step on the plate.
@@ -274,10 +274,10 @@ public class Maxor {
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;
 		ChatColor placedColor = bothPlaced ? ChatColor.GREEN : ChatColor.RED;
-		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!  (" + formatTick(maxorTick) + ChatColor.GREEN + ")";
+		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!\n" + formatTick(maxorTick);
 		Bukkit.broadcastMessage(activeMsg);
 		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.sendTitle("", activeMsg, 0, 40, 0);
+			player.sendTitle("", activeMsg.split("\n")[0], 0, 40, 0);
 		}
 
 		if(bothPlaced) {
@@ -290,10 +290,10 @@ public class Maxor {
 		Utils.scheduleTask(() -> {
 			if(maxor == null || maxor.isDead()) return;
 			if(plateLeftCrystal == null || plateRightCrystal == null) return;
-			String chargeMsg = ChatColor.GREEN + "The Energy Laser is charging up!";
+			String chargeMsg = ChatColor.GREEN + "The Energy Laser is charging up!\n" + formatTick(maxorTick);
 			Bukkit.broadcastMessage(chargeMsg);
 			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle("", chargeMsg, 0, 40, 0);
+				player.sendTitle("", chargeMsg.split("\n")[0], 0, 40, 0);
 			}
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
 			startLaserScan();
@@ -403,13 +403,13 @@ public class Maxor {
 		cancelStunEnrageTask();
 
 		WitherActions.setWitherArmor(maxor, true);
-		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is Enraged ⚠  (" + formatTick(maxorTick) + ChatColor.RED + ")");
+		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is Enraged ⚠\n" + formatTick(maxorTick));
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", ChatColor.RED + "⚠ Maxor is Enraged ⚠", 0, 40, 0);
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
-		WitherActions.setWitherAggro(maxor, Bukkit.getPlayer("Beethoven_"), 3.0, 1.0);
+		WitherActions.setWitherAggro(maxor, Tank.get(), 3.0, 1.0);
 	}
 
 	/**
