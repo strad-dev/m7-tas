@@ -30,33 +30,25 @@ public class SpringBoots {
 	private static final float PITCH_B4    = 1.3348f; // note 17
 	private static final float PITCH_E5    = 1.7818f; // note 22
 
-	// Per-note schedule. Each Note = (tickOffset from charge start, pitch, targetHeight if released NOW).
-	// Heights for L1-L5 come from the Hypixel community guide. L6-L8 are linearly
-	// interpolated from 47 (end of L5) up to 61 (8th-pitch cap from the wiki).
-	private static final int[]    NOTE_TICK;
-	private static final float[]  NOTE_PITCH;
-	private static final double[] NOTE_HEIGHT;
+	// Per-note schedule for charge-up sounds.
+	private static final int[]   NOTE_TICK;
+	private static final float[] NOTE_PITCH;
 
 	static {
 		java.util.List<int[]> ticks = new java.util.ArrayList<>();
 		java.util.List<Float> pitches = new java.util.ArrayList<>();
-		java.util.List<Double> heights = new java.util.ArrayList<>();
 
-		// level descriptor: pitch, count, tickGapInto (from previous note), tickGapWithin
-		record Level(float pitch, int count, int gapInto, int gapWithin, double[] h) {}
-		// Existing-code cadence for C/Eb/first-E: 2-tick spacing, first note at t=0,
-		// then user's spec kicks in from the 2nd low-E onward.
+		record Level(float pitch, int count, int gapInto, int gapWithin) {}
 		Level[] levels = new Level[] {
-				new Level(PITCH_C4,  2, 0, 2, new double[]{3.0, 6.5}),
-				new Level(PITCH_EB4, 6, 2, 2, new double[]{9.0, 11.5, 13.5, 16.0, 18.0, 19.0}),
-				new Level(PITCH_E4,  8, 2, 4, new double[]{20.5, 22.5, 25.0, 26.5, 28.0, 29.0, 30.0, 31.0}),
-				new Level(PITCH_F4,  7, 6, 6, new double[]{33.0, 34.0, 35.5, 37.0, 38.0, 39.5, 40.0}),
-				new Level(PITCH_G4,  7, 6, 8, new double[]{41.0, 42.5, 43.5, 44.0, 45.0, 46.0, 47.0}),
-				new Level(PITCH_A4, 10, 7,10, rampFrom(48.0, 55.5, 10)),
-				new Level(PITCH_B4,  5,30,30, rampFrom(57.0, 60.0, 5)),
-				new Level(PITCH_E5,  1,10,40, new double[]{61.0}),
+				new Level(PITCH_C4,  2, 0, 2),
+				new Level(PITCH_EB4, 6, 2, 2),
+				new Level(PITCH_E4,  8, 2, 4),
+				new Level(PITCH_F4,  7, 6, 6),
+				new Level(PITCH_G4,  7, 6, 8),
+				new Level(PITCH_A4, 10, 7,10),
+				new Level(PITCH_B4,  5,30,30),
+				new Level(PITCH_E5,  1,10,40),
 		};
-		// E5 repeats indefinitely every E5_PERIOD ticks past E5_FIRST_TICK (handled in maybePlayNote/launch).
 
 		int t = 0;
 		boolean first = true;
@@ -66,32 +58,19 @@ public class SpringBoots {
 				else t += (i == 0 ? lvl.gapInto : lvl.gapWithin);
 				ticks.add(new int[]{t});
 				pitches.add(lvl.pitch);
-				heights.add(lvl.h[i]);
 			}
 		}
 
 		NOTE_TICK = ticks.stream().mapToInt(a -> a[0]).toArray();
 		NOTE_PITCH = new float[pitches.size()];
 		for(int i = 0; i < pitches.size(); i++) NOTE_PITCH[i] = pitches.get(i);
-		NOTE_HEIGHT = heights.stream().mapToDouble(Double::doubleValue).toArray();
 	}
 
 	private static final int E5_FIRST_TICK = 397;
 	private static final int E5_PERIOD = 40;
-	private static final double E5_HEIGHT = 61.0;
 
-	private static double[] rampFrom(double first, double last, int count) {
-		double[] out = new double[count];
-		if(count == 1) { out[0] = first; return out; }
-		for(int i = 0; i < count; i++) out[i] = first + (last - first) * i / (double) (count - 1);
-		return out;
-	}
-
-	private static double[] filled(double v, int count) {
-		double[] out = new double[count];
-		java.util.Arrays.fill(out, v);
-		return out;
-	}
+	private static final double MAX_HEIGHT = 61.0;
+	private static final double V_CAP = heightToVelocity(MAX_HEIGHT);
 
 	private static final Map<UUID, ChargeState> states = new HashMap<>();
 	private static BukkitTask poller;
@@ -196,20 +175,7 @@ public class SpringBoots {
 		ServerPlayer sp = cp.getHandle();
 		if(!sp.onGround()) return;
 
-		int noteIdx = -1;
-		for(int i = 0; i < NOTE_TICK.length; i++) {
-			if(NOTE_TICK[i] <= chargeTicks) noteIdx = i;
-			else break;
-		}
-		if(noteIdx < 0) return;
-
-		double h = NOTE_HEIGHT[noteIdx];
-		if(noteIdx + 1 < NOTE_TICK.length) {
-			int t0 = NOTE_TICK[noteIdx], t1 = NOTE_TICK[noteIdx + 1];
-			double frac = (chargeTicks - t0) / (double) (t1 - t0);
-			h += (NOTE_HEIGHT[noteIdx + 1] - h) * frac;
-		}
-		double v = heightToVelocity(h);
+		double v = Math.min(V_CAP, 0.7 + 0.65 * Math.log(1 + chargeTicks / 2.5));
 		v = (int)(v * 8000.0) / 8000.0;
 		Vec3 m = sp.getDeltaMovement();
 		sp.setDeltaMovement(new Vec3(m.x(), v, m.z()));
