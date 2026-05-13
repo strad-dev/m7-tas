@@ -353,13 +353,14 @@ public class Actions {
 
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
 			if(entity == p) return false;
-			if(!(entity instanceof LivingEntity le)) return false;
 			if(entity.isDead()) return false;
-			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
-			if(entity instanceof Wither w && w.getInvulnerabilityTicks() != 0) return false;
-			if(entity instanceof org.bukkit.entity.Player player) {
-				if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
-				return !Spectate.getSpectatingPlayers(p).contains(player);
+			if(entity instanceof LivingEntity le) {
+				if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
+				if(le instanceof Wither w && w.getInvulnerabilityTicks() != 0) return false;
+				if(le instanceof org.bukkit.entity.Player player) {
+					if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
+					return !Spectate.getSpectatingPlayers(p).contains(player);
+				}
 			}
 			return true;
 		});
@@ -430,10 +431,26 @@ public class Actions {
 			return;
 		}
 
-		// Check for block target FIRST (before entity)
-		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
+		// Ray-trace both blocks and entities, pick whichever is closer (vanilla client behavior)
+		double blockRange = p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue();
+		RayTraceResult blockRay = p.rayTraceBlocks(blockRange);
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && !(entity instanceof Player target && (FakePlayerManager.getFakePlayers().containsValue(target) || Spectate.getSpectatingPlayers(p).contains(target))));
 
-		if(blockRay != null && blockRay.getHitBlock() != null) {
+		double blockDist = (blockRay != null && blockRay.getHitBlock() != null)
+				? blockRay.getHitPosition().distanceSquared(p.getEyeLocation().toVector()) : Double.MAX_VALUE;
+		double entityDist = (entityRay != null && entityRay.getHitEntity() != null)
+				? entityRay.getHitPosition().distanceSquared(p.getEyeLocation().toVector()) : Double.MAX_VALUE;
+
+		// Entity is closer (or equal) — send interact packet
+		if(entityDist <= blockDist && entityRay != null && entityRay.getHitEntity() != null) {
+			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
+
+			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
+			Utils.simulatePacket(p, interactPacket);
+			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
+		}
+		// Block is closer — send use-item-on packet
+		else if(blockRay != null && blockRay.getHitBlock() != null) {
 			Block block = blockRay.getHitBlock();
 			if(block.getType() == Material.STONE_BUTTON) return;
 
@@ -450,17 +467,6 @@ public class Actions {
 				for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 			}
 			return;
-		}
-
-		// Check for entity target - EXCLUDE all players
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && entity instanceof LivingEntity && !(entity instanceof Player target && Spectate.getSpectatingPlayers(p).contains(target)));
-
-		if(entityRay != null && entityRay.getHitEntity() != null) {
-			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
-
-			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
-			Utils.simulatePacket(p, interactPacket);
-			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 		}
 
 		// Right click air (eat food, throw pearl, use item ability)

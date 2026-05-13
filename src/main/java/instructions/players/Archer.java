@@ -280,7 +280,7 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 1);
 			Actions.move(archer, "N", 2);
 		}, 104);
-		Utils.scheduleTask(() -> Actions.rightClick(archer),105); // etherwarp to secret
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 105); // etherwarp to secret
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -163f, 49f);
 			Actions.setHotbarSlot(archer, 7);
@@ -394,11 +394,13 @@ public class Archer {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 14f, 0f), 1);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 13f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 2);
-		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 27);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 26), 40);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 60);
+		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 26);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 48), 39);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 62);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 130f, 0f), 64);
 //		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
 //		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11.31f, 0f), 1);
 //		Utils.scheduleTask(() -> {
