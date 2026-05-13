@@ -37,6 +37,10 @@ public class Maxor {
 	private static final String[] laserMessage = {"YOU TRICKED ME!", "THAT BEAM!  IT HURTS!  IT HURTS!"};
 	private static final WitherSkeleton[] miners = new WitherSkeleton[10];
 
+	private static final int PRE_MAXOR_TICKS = 742;
+	private static int maxorTick;
+	private static BukkitTask tickerTask;
+
 	private static final String ENERGY_CRYSTAL_ID = "skyblock/game/energy_crystal";
 	private static final String ENERGY_CRYSTAL_NAME = ChatColor.GOLD + "" + ChatColor.BOLD + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Energy Crystal" + ChatColor.GOLD + ChatColor.BOLD + " ﴿";
 	private static final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
@@ -74,6 +78,11 @@ public class Maxor {
 			bossBarUpdateTask.cancel();
 			bossBarUpdateTask = null;
 		}
+
+		// Reset tick counter and start ticker.
+		maxorTick = 0;
+		if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
+		tickerTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> maxorTick++, 0L, 1L);
 
 		// Reset laser/stun state for this fight so subsequent TASes work.
 		cancelLaserScan();
@@ -128,7 +137,7 @@ public class Maxor {
 //		Utils.scheduleTask(() -> {
 //			sendChatMessage(laserMessage[random.nextInt(2)]);
 //			WitherActions.setWitherArmor(maxor, false);
-//			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160);
+//			CustomBossBar.spawnAnimatedStunnedIndicator(maxor, 160); "
 //		}, 198);
 //		Utils.scheduleTask(() -> maxor.setHealth(124), 230);
 //		Utils.scheduleTask(() -> {
@@ -209,7 +218,7 @@ public class Maxor {
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
 
-		Bukkit.broadcastMessage(ChatColor.GOLD + p.getName() + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
+		Bukkit.broadcastMessage(ChatColor.GOLD + p.getName() + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!  (" + formatTick(maxorTick) + ChatColor.GREEN + ")");
 
 		// If the player is already standing on a plate, place immediately —
 		// no PHYSICAL interact fires until they re-step on the plate.
@@ -265,7 +274,7 @@ public class Maxor {
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;
 		ChatColor placedColor = bothPlaced ? ChatColor.GREEN : ChatColor.RED;
-		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!";
+		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!  (" + formatTick(maxorTick) + ChatColor.GREEN + ")";
 		Bukkit.broadcastMessage(activeMsg);
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", activeMsg, 0, 40, 0);
@@ -346,6 +355,7 @@ public class Maxor {
 		WitherActions.clearWitherAggro(maxor);
 		WitherActions.setWitherArmor(maxor, false);
 		sendChatMessage(laserMessage[random.nextInt(laserMessage.length)]);
+		Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor stunned in " + formatTick(maxorTick));
 
 		// Laser hit: 5% max HP damage + wither hurt sound. Bypasses the damage event
 		// (no event recursion) and counts toward the stun's 75% damage cap.
@@ -393,9 +403,9 @@ public class Maxor {
 		cancelStunEnrageTask();
 
 		WitherActions.setWitherArmor(maxor, true);
-		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is enraged! ⚠");
+		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is Enraged ⚠  (" + formatTick(maxorTick) + ChatColor.RED + ")");
 		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.sendTitle("", ChatColor.RED + "⚠ Maxor is enraged! ⚠", 0, 40, 0);
+			player.sendTitle("", ChatColor.RED + "⚠ Maxor is Enraged ⚠", 0, 40, 0);
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
@@ -467,6 +477,7 @@ public class Maxor {
 		// Bypass sendChatMessage so we don't emit ENTITY_WITHER_AMBIENT — the death noise
 		// is the only sound permitted while dying.
 		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'M TOO YOUNG TO DIE AGAIN!");
+		Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor killed in " + formatTick(maxorTick));
 		// Inlined Server.playWitherDeathSound — sounds + remove at +160.
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_DEATH);
 		maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_HURT, 2.0F, 1.0F);
@@ -475,6 +486,10 @@ public class Maxor {
 		for(int t : hurtTicks) Utils.scheduleTask(() -> { if(maxor.isValid()) maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_HURT, 2.0F, 1.0F); }, t);
 		for(int t : shootTicks) Utils.scheduleTask(() -> { if(maxor.isValid()) maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_SHOOT, 2.0F, 1.0F); }, t);
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in " + formatTick(maxorTick));
+			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
+		}, 100);
 		Utils.scheduleTask(() -> { if(maxor != null && maxor.isValid()) maxor.remove(); }, 160);
 	}
 
@@ -487,6 +502,22 @@ public class Maxor {
 		c.setCustomName(ENERGY_CRYSTAL_NAME);
 		c.setCustomNameVisible(false);
 		return c;
+	}
+
+	private static String formatTick(int tick) {
+		int overall = tick + PRE_MAXOR_TICKS;
+		return ChatColor.GREEN + String.format("%s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
+				formatWithSpaces(tick), tick / 20.0, formatWithSpaces(overall), overall / 20.0);
+	}
+
+	private static String formatWithSpaces(int n) {
+		StringBuilder sb = new StringBuilder();
+		String s = String.valueOf(n);
+		for(int i = 0; i < s.length(); i++) {
+			if(i > 0 && (s.length() - i) % 3 == 0) sb.append(' ');
+			sb.append(s.charAt(i));
+		}
+		return sb.toString();
 	}
 
 	private static void sendChatMessage(String message) {
