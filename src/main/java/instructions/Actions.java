@@ -431,42 +431,44 @@ public class Actions {
 			return;
 		}
 
-		// Ray-trace both blocks and entities, pick whichever is closer (vanilla client behavior)
-		double blockRange = p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue();
-		RayTraceResult blockRay = p.rayTraceBlocks(blockRange);
+		// Check for entity target first
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && !(entity instanceof Player target && (FakePlayerManager.getFakePlayers().containsValue(target) || Spectate.getSpectatingPlayers(p).contains(target))));
 
-		double blockDist = (blockRay != null && blockRay.getHitBlock() != null)
-				? blockRay.getHitPosition().distanceSquared(p.getEyeLocation().toVector()) : Double.MAX_VALUE;
-		double entityDist = (entityRay != null && entityRay.getHitEntity() != null)
-				? entityRay.getHitPosition().distanceSquared(p.getEyeLocation().toVector()) : Double.MAX_VALUE;
-
-		// Entity is closer (or equal) — send interact packet
-		if(entityDist <= blockDist && entityRay != null && entityRay.getHitEntity() != null) {
+		if(entityRay != null && entityRay.getHitEntity() != null) {
 			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
 
+			Vec3 entityPos = nmsEntity.position();
+			Vec3 hitPos = new Vec3(entityRay.getHitPosition().getX(), entityRay.getHitPosition().getY(), entityRay.getHitPosition().getZ());
+			Vec3 localHit = hitPos.subtract(entityPos);
+
+			ServerboundInteractPacket interactAtPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND, localHit);
+			Utils.simulatePacket(p, interactAtPacket);
 			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
 			Utils.simulatePacket(p, interactPacket);
 			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 		}
-		// Block is closer — send use-item-on packet
-		else if(blockRay != null && blockRay.getHitBlock() != null) {
-			Block block = blockRay.getHitBlock();
-			if(block.getType() == Material.STONE_BUTTON) return;
+		// Check for block target
+		else {
+			RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
 
-			BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
-			Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
+			if(blockRay != null && blockRay.getHitBlock() != null) {
+				Block block = blockRay.getHitBlock();
+				if(block.getType() == Material.STONE_BUTTON) return;
 
-			Vec3 hitVec = new Vec3(blockRay.getHitPosition().getX(), blockRay.getHitPosition().getY(), blockRay.getHitPosition().getZ());
+				BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
+				Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
 
-			BlockHitResult blockHit = new BlockHitResult(hitVec, direction, pos, false);
+				Vec3 hitVec = new Vec3(blockRay.getHitPosition().getX(), blockRay.getHitPosition().getY(), blockRay.getHitPosition().getZ());
 
-			ServerboundUseItemOnPacket useOnBlockPacket = new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND, blockHit, 0);
-			Utils.simulatePacket(p, useOnBlockPacket);
-			if(block.getType().isInteractable()) {
-				for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
+				BlockHitResult blockHit = new BlockHitResult(hitVec, direction, pos, false);
+
+				ServerboundUseItemOnPacket useOnBlockPacket = new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND, blockHit, 0);
+				Utils.simulatePacket(p, useOnBlockPacket);
+				if(block.getType().isInteractable()) {
+					for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
+				}
+				return;
 			}
-			return;
 		}
 
 		// Right click air (eat food, throw pearl, use item ability)

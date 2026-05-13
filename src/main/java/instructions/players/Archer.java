@@ -387,8 +387,8 @@ public class Archer {
 		}, 619);
 		Utils.scheduleTask(() -> {
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
-//				maxor(true);
+				Utils.teleport(archer, new Location(world, 73.5, 221, 14.5));
+				maxor(true);
 			}
 		}, 742);
 	}
@@ -396,81 +396,15 @@ public class Archer {
 	public static void maxor(boolean doContinue) {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 13f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 2);
-		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 26);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 48), 39);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 61);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 62);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 130f, 0f), 64);
-//		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11.31f, 0f), 1);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(berserk, new Vector(-0.051, 0, 0.255), 16);
-//			Actions.springBoots(berserk);
-//		}, 28);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 33f, 0f), 45);
-//		Utils.scheduleTask(() -> {
-//			Maxor.pickUpCrystal(berserk);
-//			Bukkit.broadcastMessage(ChatColor.GOLD + "AsapIcey" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
-//		}, 56);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.1403, 0, 0.243), 2), 57);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 58);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 16), 59);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 128f, 0f), 75);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.8844, 0, -0.691), 1), 79);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2211, 0, -0.1728), 19), 81);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -52f, 0f), 100);
-//		Utils.scheduleTask(() -> {
-//			Maxor.placeCrystal(berserk);
-//			Actions.move(berserk, new Vector(0.205, 0, 0.16), 15);
-//			Actions.springBoots(berserk);
-//		}, 160);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.2211, 0, 0.1728), 24), 177);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.0512, 0, 0.04), 1), 206);
-//		Utils.scheduleTask(() -> Actions.swapItems(berserk, 11, 36), 207);
-//		Utils.scheduleTask(() -> {
-//			Maxor.pickUpCrystal(berserk);
-//			Bukkit.broadcastMessage(ChatColor.GOLD + "AsapIcey" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
-//		}, 239);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 128f, 0f), 240);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.8844, 0, -0.691), 1), 241);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2211, 0, -0.1728), 20), 242);
-//		Utils.scheduleTask(() -> {
-//			Maxor.placeCrystal(berserk);
-//			Actions.turnHead(berserk, -90f, 0f);
-//		}, 262);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12242, 0, 0), 10), 263);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -34.5f, 0f), 273);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.636, 0, 0.925), 7), 274);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.489, 0, 0.7116), 1), 281);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 90f), 282);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(berserk, new Vector(0.26, 0, 0), 1);
-//			Actions.stonk(berserk, world.getBlockAt(69, 220, 49));
-//		}, 283);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -180f, 70f), 284);
-//		Utils.scheduleTask(() -> Actions.stonk(berserk, world.getBlockAt(69, 220, 48)), 285);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 88.8f, 0f), 286);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2805, 0, 0.000588), 40), 287);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.12217, 0, 0.0235), 5), 327);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 55.6f, 0f), 331);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -77f, 0f), 334);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 384);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -105f, 0f), 401);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.0842, 0, -0.2905), 29), 402);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 431);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(berserk, new Vector(1.12242, 0, 0), 1);
-//			Actions.ghostPick(berserk, world.getBlockAt(91, 166, 41));
-//		}, 432);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, 77.5f, 0f);
-//			Actions.setHotbarSlot(berserk, 6);
-//		}, 468);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-1.096, 0, 0.243), 6), 469);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 475);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 1.12242), 6), 476);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -89f, 0f), 482);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.12225, 0, 0.0196), 18), 483);
+		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 25);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 49), 38);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 60);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 133f, 0f), 63);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -50f, 0f), 88);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 161);
+		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 162);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 27), 173);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}
