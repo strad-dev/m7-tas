@@ -23,16 +23,19 @@ public class Archer {
 				Utils.teleport(archer, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f));
 				Utils.scheduleTask(() -> preClear(section.equals("all")), 60);
 			}
-//			case "maxor", "boss" -> {
-//				Utils.teleport(archer, new Location(world, 73.5, 221, 14.5, 0f, 0f));
-//				Actions.swapItems(archer, 1, 28);
-//				Actions.swapItems(archer, 7, 35);
-//				if(section.equals("maxor")) {
-//					Utils.scheduleTask(() -> maxor(false), 60);
-//				} else {
-//					Utils.scheduleTask(() -> maxor(true), 60);
-//				}
-//			}
+			case "maxor", "boss" -> {
+				Utils.teleport(archer, new Location(world, 73.5, 221, 14.5, 0f, 0f));
+				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 6, 33);
+				Actions.swapItems(archer, 7, 34);
+				Actions.swapItems(archer, 9, 36);
+				Actions.setHotbarSlot(archer, 5);
+				if(section.equals("maxor")) {
+					Utils.scheduleTask(() -> maxor(false), 60);
+				} else {
+					Utils.scheduleTask(() -> maxor(true), 60);
+				}
+			}
 //			case "storm" -> {
 //				Utils.teleport(archer, new Location(world, 46.687, 169, 57.747, 177.8f, 0f));
 //				Actions.swapItems(archer, 1, 28);
@@ -391,7 +394,11 @@ public class Archer {
 	}
 
 	public static void maxor(boolean doContinue) {
-//		Actions.setHotbarSlot(berserk, 5);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 14f, 0f), 1);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 2);
+		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 27);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 26), 39);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 50);
 //		Actions.move(berserk, new Vector(-0.22, 0, 1.1), 28);
 //		Utils.scheduleTask(() -> Actions.turnHead(berserk, 11.31f, 0f), 1);
 //		Utils.scheduleTask(() -> {
