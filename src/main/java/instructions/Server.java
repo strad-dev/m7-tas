@@ -307,11 +307,9 @@ public class Server {
 				case 1 -> {
 					name = "Crypt Lurker";
 					weapon = Material.BONE;
-					defense = 2;
 				}
 				case 2 -> {
 					name = "Zombie Soldier";
-					defense = 9;
 					helmetColor = Color.fromRGB(0xD07F00);
 					chestplateColor = Color.fromRGB(0xD07F00);
 					leggingsColor = Color.fromRGB(0xD07F00);
@@ -319,7 +317,6 @@ public class Server {
 				}
 				case 3 -> {
 					name = "Tank Zombie";
-					defense = 9;
 					helmetColor = Color.fromRGB(0xFFFFFE);
 					chestplateColor = Color.fromRGB(0x828282);
 					leggingsColor = Color.fromRGB(0x828282);
@@ -328,7 +325,6 @@ public class Server {
 				case 4 -> {
 					name = "Super Tank Zombie";
 					weapon = Material.STONE_SWORD;
-					defense = 9;
 					helmetColor = Color.fromRGB(0xE6E6E6);
 					chestplateColor = Color.fromRGB(0x5A6464);
 					leggingsColor = Color.fromRGB(0x5A6464);
@@ -337,7 +333,6 @@ public class Server {
 				case 5 -> {
 					name = "Zombie Commander";
 					weapon = Material.FISHING_ROD;
-					defense = 9;
 					helmetColor = Color.fromRGB(0xD51230);
 					chestplateColor = Color.fromRGB(0xD51230);
 					leggingsColor = Color.fromRGB(0xD51230);
@@ -349,7 +344,6 @@ public class Server {
 				case 1 -> {
 					name = "Skeleton Soldier";
 					weapon = Material.BOW;
-					defense = 7;
 					helmetColor = Color.fromRGB(0xFFBC0B);
 					chestplateColor = Color.fromRGB(0xFFBC0B);
 					leggingsColor = Color.fromRGB(0xFFBC0B);
@@ -358,7 +352,6 @@ public class Server {
 				case 2 -> {
 					name = "Skeleton Master";
 					weapon = Material.BOW;
-					defense = 7;
 					helmetColor = Color.fromRGB(0xFF6B0B);
 					chestplateColor = Color.fromRGB(0xFF6B0B);
 					leggingsColor = Color.fromRGB(0xFF6B0B);
@@ -367,7 +360,6 @@ public class Server {
 				case 3 -> {
 					name = "Skeleton Lord";
 					weapon = Material.BOW;
-					defense = 7;
 					helmetColor = Color.fromRGB(0xFFFF55);
 					chestplateColor = Color.fromRGB(0x268105);
 					leggingsColor = Color.fromRGB(0x268105);
@@ -376,7 +368,6 @@ public class Server {
 				case 4 -> {
 					name = "Skeletor Prime";
 					weapon = Material.BONE;
-					defense = 7;
 					helmetColor = Color.fromRGB(0xAAAAAA);
 					chestplateColor = Color.fromRGB(0x191919);
 					leggingsColor = Color.fromRGB(0x191919);
@@ -389,7 +380,7 @@ public class Server {
 			}
 		}
 
-		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "" + (health * 2) + "M");
+		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + (health * 2) + "M");
 		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
 		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 

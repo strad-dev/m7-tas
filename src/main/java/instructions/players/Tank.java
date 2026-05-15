@@ -495,43 +495,15 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 167);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 170); // clear out wither miners
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 171);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 172); // draw LB
-
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 203);
-//		Utils.scheduleTask(() -> Actions.iceSpray(tank), 204);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 205);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 206);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 218);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 230); // 124
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 242); // 123
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 254); // 122
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 266); // 121
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 278); // 120
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 290); // 119
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 302); // 118
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 314); // 117
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 326); // 116
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 338); // 115
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 350); // 114
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 362);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 374);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 386);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 398);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 399);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Berserk.get()), 400);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(tank, 28.7f, 0f);
-//			Actions.setHotbarSlot(tank, 1);
-//		}, 401);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.539, 0, 0.9845), 28), 402);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 28.7f, 82f), 429);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.7326, 0.5, 1.338)), 430);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.539, 0, 0.9845), 6), 441);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 46.9f, 25f), 448);
-//		Utils.scheduleTask(() -> {
-//			Actions.setHotbarSlot(tank, 7);
-//			Actions.swapItems(tank, 4, 31);
-//		}, 449);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 172);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 199);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 200);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 204);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 205);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 209);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 210);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 357); // hit 1, do not insta-enrage
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 399); // hit 2 to kill
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}
