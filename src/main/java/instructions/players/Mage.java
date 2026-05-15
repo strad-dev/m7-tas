@@ -356,65 +356,25 @@ public class Mage {
 				Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 5);
 			}, 200);
 			if(doContinue) {
-//				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
-//				maxor(true);
+				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
+				maxor(true);
 			}
 		}, 742);
 	}
 
 	//
 	public static void maxor(boolean doContinue) {
-
-//		Actions.move(mage, new Vector(0.22, 0, 1.1), 28);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -11.31f, 0f), 1);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(mage, new Vector(0.051, 0, 0.255), 16);
-//			Actions.springBoots(mage);
-//		}, 28);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -33f, 0f), 45);
-//		Utils.scheduleTask(() -> {
-//			Maxor.pickUpCrystal(mage);
-//			Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
-//		}, 56);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1403, 0, 0.243), 2), 57);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 58);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2806, 0, 0), 16), 59);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -131.2925f, 0f), 75);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 79);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2108, 0, -0.1852), 19), 81);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 100);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1954, 0, -0.1716), 1), 101);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 48.7075f, 0f), 102);
-//		Utils.scheduleTask(() -> {
-//			Maxor.placeCrystal(mage);
-//			Actions.move(mage, new Vector(-0.1954, 0, 0.1716), 16);
-//			Actions.springBoots(mage);
-//		}, 160);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2108, 0, 0.1852), 27), 177);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0488, 0, 0.0429), 1), 206);
-//		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 207);
-//		Utils.scheduleTask(() -> {
-//			Maxor.pickUpCrystal(mage);
-//			Bukkit.broadcastMessage(ChatColor.GOLD + "Beethoven_" + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
-//		}, 239);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -131.2925f, 0f), 240);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 241);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2108, 0, -0.1852), 19), 242);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.8433, 0, -0.7401), 1), 261);
-//		Utils.scheduleTask(() -> Maxor.placeCrystal(mage), 262);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 263);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 324);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 325);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 326);
-//		Utils.scheduleTask(Mage::mageBeam, 399);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 400);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 401);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 402);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.12242, 0, 0), 11), 403);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 1.4f, 22.4f);
-//			Actions.setHotbarSlot(mage, 6);
-//		}, 414);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -13f, 0f), 1);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 2);
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 25);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 49), 38);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 60);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -133f, 0f), 63);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 50f, 0f), 88);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 161);
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 162);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 173);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}

@@ -404,7 +404,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -50f, 0f), 88);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 161);
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 162);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 27), 173);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 173);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}
