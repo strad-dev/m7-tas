@@ -485,7 +485,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 52);
 		Utils.scheduleTask(() -> {
 			Actions.move(tank, "N", 0);
-			Actions.turnHead(tank, -180f, -5f);
+			Actions.turnHead(tank, 180f, -5f);
 		}, 63);
 		for(int i = 65; i <= 160; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
@@ -495,13 +495,16 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 167);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 170); // clear out wither miners
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 171);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 172);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 180f, -20f);
+			Actions.rightClick(tank);
+		}, 172);
 		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 199);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 200);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 204);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 205);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 209);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 210);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 206);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 207);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 213);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 214);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 357); // hit 1, do not insta-enrage
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 399); // hit 2 to kill
 		if(doContinue) {

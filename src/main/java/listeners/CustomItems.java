@@ -12,6 +12,7 @@ import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -243,49 +244,45 @@ public class CustomItems implements Listener {
 				} else {
 					return;
 				}
-				arrow.setDamage(1.0);
+				boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
+				arrow.setDamage(isArcher ? 8.0 : 1.5);
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+				Vector launchVelocity = arrow.getVelocity().clone();
 				Utils.scheduleTask(() -> {
-					// Fire second arrow
 					Arrow arrow2 = p.launchProjectile(Arrow.class);
-					arrow2.setVelocity(arrow.getVelocity());
-					arrow2.setDamage(0.2);
+					arrow2.setVelocity(launchVelocity);
+					arrow2.setDamage(isArcher ? 1.6 : 0.3);
 					arrow2.setShooter(p);
 					arrow2.addScoreboardTag("TerminatorArrow");
 					arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 					arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
-					// Play bow shoot sound again
 					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 				}, 3);
 
-				if(p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer")) {
+				if(isArcher) {
 					Utils.scheduleTask(() -> {
-						// Fire third arrow
 						Arrow arrow2 = p.launchProjectile(Arrow.class);
-						arrow2.setVelocity(arrow.getVelocity());
-						arrow2.setDamage(1.0);
+						arrow2.setVelocity(launchVelocity);
+						arrow2.setDamage(8.0);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
 						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
-						// Play bow shoot sound again
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 5);
 
 					Utils.scheduleTask(() -> {
-						// Fire fourth arrow
 						Arrow arrow2 = p.launchProjectile(Arrow.class);
-						arrow2.setVelocity(arrow.getVelocity());
-						arrow2.setDamage(1.0);
+						arrow2.setVelocity(launchVelocity);
+						arrow2.setDamage(8.0);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
 						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
-						// Play bow shoot sound again
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 10);
 				}
@@ -294,6 +291,7 @@ public class CustomItems implements Listener {
 	}
 
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
+		if(Spectate.getSpectatorMap().containsKey(p)) return;
 		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return;
 		boolean fired = false;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
@@ -302,7 +300,7 @@ public class CustomItems implements Listener {
 				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
 				// Skip for items without right-click abilities
 				boolean isRightClick = action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK);
-				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker") && !id.equals("skyblock/combat/stonk") && !id.equals("skyblock/combat/last_breath")) {
+				if(e != null && isRightClick && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker") && !id.equals("skyblock/combat/stonk")) {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
@@ -375,6 +373,10 @@ public class CustomItems implements Listener {
 							}
 							case "skyblock/combat/jerrychine" -> {
 								jerrychine(p);
+								fired = true;
+							}
+							case "skyblock/combat/last_breath" -> {
+								((CraftPlayer) p).getHandle().startUsingItem(InteractionHand.MAIN_HAND);
 								fired = true;
 							}
 						}
