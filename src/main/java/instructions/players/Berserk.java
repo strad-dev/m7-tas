@@ -436,12 +436,22 @@ public class Berserk {
 		}, 3);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 18);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 19);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 35f, 0f), 21);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 34f, 0f), 21);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 70), 22);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -145f, 0f), 287);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 60), 288);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 298);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -35f, 0f), 338);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 288);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 297);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -32f, 0f), 337);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -32f, 80f);
+			Actions.move(berserk, "WPJ", 0);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 354);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 355);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -32f, 0f);
+			Actions.move(berserk, "WP", 21);
+		}, 356);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}

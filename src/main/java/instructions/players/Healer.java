@@ -412,25 +412,24 @@ public class Healer {
 		}, 284);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 285);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 286);
-		// TODO wait for mage2 (tank) to leap down before going to pad
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, "WP", 0);
-		}, 287);
+		}, 402);
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "WPJ", 0);
-			Actions.turnHead(healer, 35f, 80f);
-		}, 292);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 294);
+			Actions.turnHead(healer, 34f, 80f);
+		}, 407);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 409);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(healer, 35f, 0f);
-			Actions.move(healer, "WP", 20);
+			Actions.turnHead(healer, 34f, 0f);
+			Actions.move(healer, "WP", 19);
 			Actions.setHotbarSlot(healer, 0);
-		}, 295);
+		}, 410);
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(healer, 12, 39);
 			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
-		}, 316);
+		}, 430);
 
 //		Utils.scheduleTask(() -> {
 //			Actions.rightClickLever(healer);
