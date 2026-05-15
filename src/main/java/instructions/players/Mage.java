@@ -367,14 +367,24 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -13f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 2);
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 25);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 49), 38);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 38);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 60);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 61);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -133f, 0f), 63);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 50f, 0f), 88);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -135f, 0f), 63);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 45f), 67);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 68);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 0f), 69);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 86); // temporarily remove spring boots so that pos readjustment doesnt trigger ability
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 1), 87);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 52f, 0f), 88);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 89);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 161);
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 162);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 173);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 22), 173);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 200);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 239);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 0f), 240);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 241);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}

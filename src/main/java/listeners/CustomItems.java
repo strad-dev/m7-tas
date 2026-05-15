@@ -1815,7 +1815,6 @@ public class CustomItems implements Listener {
 
 		// Range depends on boss fight state: 45 blocks during a boss fight, 25 otherwise.
 		double range = LavaJump.isInBossArena(p.getLocation()) ? 50.0 : 25.0;
-		int iterations = (int) (range / 0.2);
 
 		// Get player's yaw in radians
 		double yaw = Math.toRadians(l.getYaw());
@@ -1836,76 +1835,54 @@ public class CustomItems implements Listener {
 		Vector eyeDirection = eyeLocation.getDirection();
 
 		// Raytrace to find what the player is actually looking at
-		Vector targetPoint = findTargetPoint(p, eyeLocation, eyeDirection, range);
+		RayTraceResult entityResult = findTargetEntity(p, eyeLocation, eyeDirection, range);
+		Vector targetPoint = findTargetPoint(p, eyeLocation, eyeDirection, range, entityResult);
+		Entity targetEntity = entityResult != null ? entityResult.getHitEntity() : null;
 
 		// Calculate the direction from hand to the target point
 		Vector handToTarget = targetPoint.clone().subtract(l.toVector());
+		double distance = handToTarget.length();
 		handToTarget.normalize();
 
-		// Scale down the vector for per-iteration movement
+		// Iterations based on distance to target, not max range
+		int iterations = (int) (distance / 0.2);
 		Vector v = handToTarget.multiply(0.2);
 
 		for(int i = 0; i < iterations; i++) {
-			// Use the block's actual world-space bounding box rather than Material.isSolid() —
-			// the latter returns true for thin shapes like pressure plates and would stop the
-			// beam the moment it passes over one, even though the beam is well above the plate.
-			Block beamBlock = l.getBlock();
-			if(beamBlock.getType().isSolid() && beamBlock.getBoundingBox().contains(l.toVector())) {
-				break;
-			}
-			boolean shouldBreak = false;
-			ArrayList<Entity> entities = (ArrayList<Entity>) p.getWorld().getNearbyEntities(l, 0.1, 0.1, 0.1);
-			for(Entity entity : entities) {
-				if(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
-					wither.getWorld().playSound(wither.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-					Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-					for(Player spectator : Spectate.getSpectatingPlayers(p)) {
-						Utils.playLocalSound(spectator, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-					}
-					shouldBreak = true;
-					break;
-				}
-				if(entity instanceof LivingEntity temp && !(temp instanceof Player) && !entity.isDead() && !(temp.hasPotionEffect(PotionEffectType.RESISTANCE) && temp.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255)) {
-					float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
-					Utils.hurtEntity(temp, damage, p);
-					temp.setNoDamageTicks(0);
-					Utils.changeName(temp);
-					shouldBreak = true;
-					break;
-				}
-			}
 			spawnFireworkParticle(l);
 			l.add(v);
-			if(shouldBreak) break;
+		}
+
+		if(targetEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
+			wither.getWorld().playSound(wither.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+			Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+			for(Player spectator : Spectate.getSpectatingPlayers(p)) {
+				Utils.playLocalSound(spectator, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+			}
+		} else if(targetEntity instanceof LivingEntity temp) {
+			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
+			Utils.hurtEntity(temp, damage, p);
+			temp.setNoDamageTicks(0);
+			Utils.changeName(temp);
 		}
 	}
 
-	private static Vector findTargetPoint(Player p, Location eyeLocation, Vector eyeDirection, double range) {
-		World world = p.getWorld();
-
-		// Raytrace for blocks
-		RayTraceResult blockResult = world.rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
-
-		// Raytrace for entities (excluding the player)
+	private static RayTraceResult findTargetEntity(Player p, Location eyeLocation, Vector eyeDirection, double range) {
 		// raySize=0 (precise) instead of 0.5: the 0.5 inflate blew up geometry at close
 		// range to large hitboxes (e.g. withers), because the player's eye ends up inside
 		// the inflated AABB and the raytrace returns an arbitrary exit face.
-		RayTraceResult entityResult = world.rayTraceEntities(eyeLocation, eyeDirection, range, 0, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+		return p.getWorld().rayTraceEntities(eyeLocation, eyeDirection, range, 0, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+	}
 
-		// Prefer entity over block: if an entity is anywhere along the ray, aim at it.
-		// A block that's slightly closer than the entity (e.g. floor in front of a low
-		// target while aiming downward) would otherwise terminate findTargetPoint early
-		// even though the entity is in the user's crosshair. If a block is actually
-		// between eye and entity, the per-step beam loop still stops on the block via
-		// its isSolid() check, so aiming past it doesn't cause damage through walls.
+	private static Vector findTargetPoint(Player p, Location eyeLocation, Vector eyeDirection, double range, RayTraceResult entityResult) {
 		if(entityResult != null) {
 			return entityResult.getHitPosition();
-		} else if(blockResult != null) {
-			return blockResult.getHitPosition();
-		} else {
-			// Nothing hit - target max range out
-			return eyeLocation.toVector().add(eyeDirection.clone().multiply(range));
 		}
+		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
+		if(blockResult != null) {
+			return blockResult.getHitPosition();
+		}
+		return eyeLocation.toVector().add(eyeDirection.clone().multiply(range));
 	}
 
 	public static void spawnFireworkParticle(Location l) {

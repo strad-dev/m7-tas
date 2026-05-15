@@ -401,10 +401,14 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 60);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 61);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 133f, 0f), 63);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -50f, 0f), 88);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -52f, 0f), 88);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 161);
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 162);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 173);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 22), 173);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 36), 200);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 239);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 128f, 0f), 240);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 241);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}
