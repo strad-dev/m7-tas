@@ -2,83 +2,164 @@ package instructions.bosses;
 
 import instructions.Actions;
 import instructions.Server;
-import instructions.players.Mage;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Color;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
-import org.bukkit.entity.*;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Wither;
+import org.bukkit.entity.WitherSkeleton;
+import org.bukkit.entity.Zombie;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+import plugin.FakePlayerManager;
+import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 @SuppressWarnings("DataFlowIssue")
-public class Storm {
-	private static Wither storm;
-	private static World world;
-	private static BossBar stormBossBar;
-	private static BukkitTask bossBarUpdateTask;
+public final class Storm extends WitherLord {
+	public static final Storm INSTANCE = new Storm();
+
+	private static final int PRE_STORM_TICKS = 1526;
+
+	// Intro ends at this tick; aggro + crush detection enable here.
+	private static final int INTRO_END_TICK = 665;
+
+	// Crush parameters.
+	private static final double CRUSH_DAMAGE_FRACTION = 0.05;
+	private static final double STUN_DAMAGE_CAP_FRACTION = 0.55;
+	private static final int CRUSH_EXPLOSION_DELAY = 20;
+	private static final float CRUSH_EXPLOSION_POWER = 7.0f;
+	private static final int CRUSH_DETECTOR_WINDOW = 60;
+	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
+
+	// Aggro parameters (post-intro and post-enrage).
+	private static final double AGGRO_STOP_DISTANCE = 6.0;
+	private static final double AGGRO_Y_OFFSET = 2.0;
+	private static final String TARGET_PLAYER_NAME = "Beethoven_";
+
+	// Center the miners and sentries face toward.
+	private static final Location FACING_CENTER = new Location(null, 73.5, 0, 53.5);
+
+	// Deterministic Wither Guard locations — these are placed at exact pillar-sentry spots
+	// rather than randomized within an AABB.
+	private static final double[][] SENTRY_COORDS = {
+			{114.5, 175, 35.5}, {114.5, 175, 45.5}, {114.5, 175, 61.5}, {114.5, 175, 71.5},
+			{86.5, 175, 35.5}, {86.5, 175, 45.5}, {86.5, 175, 61.5}, {86.5, 175, 71.5},
+			{60.5, 175, 35.5}, {60.5, 175, 45.5}, {60.5, 175, 61.5}, {60.5, 175, 71.5},
+			{32.5, 175, 35.5}, {32.5, 175, 45.5}, {32.5, 175, 61.5}, {32.5, 175, 71.5},
+			{79.5, 170, 104.5}, {77.5, 170, 103.5}, {75.5, 170, 103.5}, {73.5, 170, 103.5},
+			{71.5, 170, 103.5}, {69.5, 170, 103.5}, {67.5, 170, 104.5},
+			{22.5, 172, 59.5}, {23.5, 172, 57.5}, {23.5, 172, 55.5}, {23.5, 172, 53.5},
+			{23.5, 172, 51.5}, {23.5, 172, 49.5}, {22.5, 172, 47.5},
+			{67.5, 170, 2.5}, {69.5, 170, 3.5}, {71.5, 170, 3.5}, {73.5, 170, 3.5},
+			{75.5, 170, 3.5}, {77.5, 170, 3.5}, {79.5, 170, 2.5},
+			{124.5, 172, 47.5}, {123.5, 172, 49.5}, {123.5, 172, 51.5}, {123.5, 172, 53.5},
+			{123.5, 172, 55.5}, {123.5, 172, 57.5}, {124.5, 172, 59.5}
+	};
+
 	private static final Random random = new Random();
-	private static final String[] lightningMessage = {"ENERGY HEED MY CALL!", "THUNDER LET ME BE YOUR CATALYST!"};
-	private static final String[] crushedMessage = {"Ouch, that hurt!", "Oof"};
-	private static final String[] enrageMessage = {"THAT WAS ONLY IN MY WAY!", "Slowing me down will be your greatest accomplishment!", "This factory is too small for me!", "BEGONE PILLAR!"};
-	private static final WitherSkeleton[] witherGuards = new WitherSkeleton[44];
-	private static final WitherSkeleton[] witherMiners = new WitherSkeleton[200];
-	private static final Zombie[] shadowAssassins = new Zombie[4];
+	private static final String[] LIGHTNING_MESSAGE = {"ENERGY HEED MY CALL!", "THUNDER LET ME BE YOUR CATALYST!"};
+	private static final String[] CRUSHED_MESSAGE = {"Ouch, that hurt!", "Oof"};
+	private static final String[] ENRAGE_MESSAGE = {"THAT WAS ONLY IN MY WAY!", "Slowing me down will be your greatest accomplishment!", "This factory is too small for me!", "BEGONE PILLAR!"};
 
-	public static void stormInstructions(World temp, boolean doContinue) {
-		world = temp;
+	private final List<PillarOscillator> pillars = new ArrayList<>();
+	private final List<MobGroup> mobGroups = new ArrayList<>();
+	private final List<WitherSkeleton> sentries = new ArrayList<>();
 
-		if(storm != null) {
-			storm.remove();
+	private BukkitTask cycleTask;
+	private BukkitTask stunEnrageTask;
+	private boolean crushEnabled;
+	private boolean inStun;
+	private double stunDamageDealt;
+
+	private Storm() {
+		register(this);
+	}
+
+	/** Static facade for /tas and the boss-chain. */
+	public static void stormInstructions(World world, boolean doContinue) {
+		INSTANCE.start(world, doContinue);
+	}
+
+	@Override protected String name() { return "Storm"; }
+	@Override protected String displayName() { return "Storm"; }
+	@Override protected Location spawnLocation() { return new Location(world, 102.5, 182, 53.5, 90f, 0f); }
+	@Override protected double maxHealth() { return 600; }
+	@Override protected String displayHealth() { return "1B"; }
+	@Override protected int previousTicks() { return PRE_STORM_TICKS; }
+
+	@Override
+	protected void resetState() {
+		cancelCycleTask();
+		cancelStunEnrageTask();
+		CustomBossBar.removeStunIndicator();
+		crushEnabled = false;
+		inStun = false;
+		stunDamageDealt = 0;
+		cleanupMobs();
+		pillars.clear();
+		for(PadAndPillar p : PadAndPillar.ACTIVE) {
+			pillars.add(new PillarOscillator(p));
 		}
+	}
 
-		if(stormBossBar != null) {
-			stormBossBar.removeAll();
-			stormBossBar = null;
-		}
-
-		if(bossBarUpdateTask != null) {
-			bossBarUpdateTask.cancel();
-			bossBarUpdateTask = null;
-		}
-
-		storm = (Wither) world.spawnEntity(new Location(world, 102.5, 182, 53.5, 90f, 0f), EntityType.WITHER);
-		storm.setAI(false);
-		storm.setSilent(true);
-		storm.setPersistent(true);
-		storm.setRemoveWhenFarAway(false);
-		storm.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + "1B" + ChatColor.RED + "❤");
-		storm.setCustomNameVisible(true);
-		storm.getAttribute(Attribute.MAX_HEALTH).setBaseValue(600);
-		storm.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-		storm.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-		storm.setHealth(600);
-		storm.addScoreboardTag("TASWither");
-		storm.addScoreboardTag("TASStorm");
-		WitherActions.setWitherArmor(storm, true);
-
-		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(storm, "Storm"), 1);
-
+	@Override
+	protected void onStart() {
+		spawnMobGroups();
 		initialMovement();
-		spawnMobs();
+		scheduleIntroDialogue();
 
+		Utils.scheduleTask(() -> {
+			crushEnabled = true;
+			Player target = resolveTargetPlayer();
+			if(target != null) {
+				setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET);
+			}
+		}, INTRO_END_TICK);
+
+		startCycleTask();
+	}
+
+	@Override
+	protected void chainNext(boolean doContinue) {
+		if(doContinue) {
+			Goldor.goldorInstructions(world, true);
+		}
+	}
+
+	private Player resolveTargetPlayer() {
+		Player real = Bukkit.getPlayerExact(TARGET_PLAYER_NAME);
+		if(real != null) return real;
+		// Fallback to the nearest non-fake, non-spectator real player.
+		return Utils.getNearestPlayer(boss.getLocation());
+	}
+
+	private void scheduleIntroDialogue() {
 		sendChatMessage("Pathetic Maxor, just like expected.");
 		Utils.scheduleTask(() -> sendChatMessage("Don't boast about beating this simple-minded Wither."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("My abilities are unparalleled, in may ways I am the last bastion."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("The memory of your death will be your fondest, focus up!"), 180);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("The power of lightning is quite phenomenal.  A single strike can vaporize a person whole.");
-			Actions.turnHead(storm, 90f, 0f);
+			Actions.turnHead(boss, 90f, 0f);
 		}, 400);
 		Utils.scheduleTask(() -> {
 			for(Player player : Bukkit.getOnlinePlayers()) {
@@ -101,7 +182,7 @@ public class Storm {
 				player.sendTitle(ChatColor.DARK_RED + "1", "", 0, 25, 0);
 			}
 		}, 515);
-		Utils.scheduleTask(() -> sendChatMessage(lightningMessage[random.nextInt(lightningMessage.length)]), 525);
+		Utils.scheduleTask(() -> sendChatMessage(LIGHTNING_MESSAGE[random.nextInt(LIGHTNING_MESSAGE.length)]), 525);
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 2.0F);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 0.6F);
@@ -111,306 +192,397 @@ public class Storm {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 2.0F);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 0.6F);
 			spamLightning();
-			cleanupMobs();
 		}, 545);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(storm, 7.1f, 35.6f);
-			Actions.forceMove(storm, new Vector(-0.0735, -0.375, 0.59), 19);
-		}, 665);
-		Utils.scheduleTask(() -> {
-			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
-			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
-			WitherActions.setWitherArmor(storm, false);
-			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 8);
-			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
-		}, 685);
-		Utils.scheduleTask(() -> {
-			sendChatMessage(enrageMessage[random.nextInt(enrageMessage.length)]);
-			WitherActions.setWitherArmor(storm, true);
-			storm.setHealth(225);
-			Bukkit.broadcastMessage(ChatColor.RED + "⚠ Storm is enraged! ⚠");
-			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
-			}
-			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
-			Actions.forceMove(storm, new Vector(-0.6, -0.02, 0), 90);
-		}, 694);
-		Utils.scheduleTask(() -> {
-			sendChatMessage(crushedMessage[random.nextInt(crushedMessage.length)]);
-			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
-			WitherActions.setWitherArmor(storm, false);
-			CustomBossBar.spawnAnimatedStunnedIndicator(storm, 6);
-			Bukkit.getPluginManager().callEvent(new EntityDamageByEntityEvent(Mage.get(), storm, EntityDamageByEntityEvent.DamageCause.KILL, DamageSource.builder(DamageType.GENERIC_KILL).build(), 25));
-		}, 784);
-		Utils.scheduleTask(() -> {
-			sendChatMessage("I should have known that I stand no chance.");
-			Server.playWitherDeathSound(storm);
-			for(int i = 0; i < 301; i += 10) {
-				Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F), i);
-			}
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in 790 ticks (39.50 seconds) | Overall: 2 316 ticks (115.80 seconds)");
-		}, 790);
-		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 850);
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in 890 ticks (44.50 seconds) | Overall: 2 416 ticks (120.80 seconds)");
-			if(doContinue) {
-				Goldor.goldorInstructions(world, true);
-			}
-		}, 890);
 	}
 
-	private static void sendChatMessage(String message) {
-		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Storm" + ChatColor.RED + ": " + message);
-		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT);
-	}
-
-	private static void initialMovement() {
-		Actions.turnHead(storm, 45f, 0f);
-		Actions.forceMove(storm, new Vector(-0.29, 0, 0.29), 100);
+	private void initialMovement() {
+		Actions.turnHead(boss, 45f, 0f);
+		Actions.forceMove(boss, new Vector(-0.29, 0, 0.29), 100);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(storm, 135f, 0f);
-			Actions.forceMove(storm, new Vector(-0.29, 0, -0.29), 100);
+			Actions.turnHead(boss, 135f, 0f);
+			Actions.forceMove(boss, new Vector(-0.29, 0, -0.29), 100);
 		}, 100);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(storm, -135f, 0f);
-			Actions.forceMove(storm, new Vector(0.29, 0, -0.29), 100);
+			Actions.turnHead(boss, -135f, 0f);
+			Actions.forceMove(boss, new Vector(0.29, 0, -0.29), 100);
 		}, 200);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(storm, -45f, 0f);
-			Actions.forceMove(storm, new Vector(0.29, 0, 0.29), 100);
+			Actions.turnHead(boss, -45f, 0f);
+			Actions.forceMove(boss, new Vector(0.29, 0, 0.29), 100);
 		}, 300);
 	}
 
-	private static void spawnMobs() {
-		Location[] shadowAssassinLocations = {new Location(world, 26.5, 170, 100.5), new Location(world, 26.5, 170, 6.5), new Location(world, 120.5, 170, 6.5), new Location(world, 120.5, 170, 100.5)};
-		Location[] sentryLocations = {new Location(world, 114.5, 175, 35.5), new Location(world, 114.5, 175, 45.5), new Location(world, 114.5, 175, 61.5), new Location(world, 114.5, 175, 71.5), new Location(world, 86.5, 175, 35.5), new Location(world, 86.5, 175, 45.5), new Location(world, 86.5, 175, 61.5), new Location(world, 86.5, 175, 71.5), new Location(world, 60.5, 175, 35.5), new Location(world, 60.5, 175, 45.5), new Location(world, 60.5, 175, 61.5), new Location(world, 60.5, 175, 71.5), new Location(world, 32.5, 175, 35.5), new Location(world, 32.5, 175, 45.5), new Location(world, 32.5, 175, 61.5), new Location(world, 32.5, 175, 71.5), new Location(world, 79.5, 170, 104.5), new Location(world, 77.5, 170, 103.5), new Location(world, 75.5, 170, 103.5), new Location(world, 73.5, 170, 103.5), new Location(world, 71.5, 170, 103.5), new Location(world, 69.5, 170, 103.5), new Location(world, 67.5, 170, 104.5), new Location(world, 22.5, 172, 59.5), new Location(world, 23.5, 172, 57.5), new Location(world, 23.5, 172, 55.5), new Location(world, 23.5, 172, 53.5), new Location(world, 23.5, 172, 51.5), new Location(world, 23.5, 172, 49.5), new Location(world, 22.5, 172, 47.5), new Location(world, 67.5, 170, 2.5), new Location(world, 69.5, 170, 3.5), new Location(world, 71.5, 170, 3.5), new Location(world, 73.5, 170, 3.5), new Location(world, 75.5, 170, 3.5), new Location(world, 77.5, 170, 3.5), new Location(world, 79.5, 170, 2.5), new Location(world, 124.5, 172, 47.5), new Location(world, 123.5, 172, 49.5), new Location(world, 123.5, 172, 51.5), new Location(world, 123.5, 172, 53.5), new Location(world, 123.5, 172, 55.5), new Location(world, 123.5, 172, 57.5), new Location(world, 124.5, 172, 59.5)};
-		Location[] minerCenters = {new Location(world, 114.5, 170, 94.5), new Location(world, 80.5, 163, 96.5), new Location(world, 66.5, 163, 96.5), new Location(world, 32.5, 170, 94.5), new Location(world, 28.5, 165, 59.5), new Location(world, 28.5, 165, 47.5), new Location(world, 32.5, 170, 12.5), new Location(world, 66.5, 163, 10.5), new Location(world, 80.5, 163, 10.5), new Location(world, 114.5, 170, 12.5), new Location(world, 118.5, 165, 47.5), new Location(world, 118.5, 165, 59.5), new Location(world, 100.5, 169, 57.5), new Location(world, 100.5, 169, 49.5), new Location(world, 79.5, 165, 59.5), new Location(world, 79.5, 165, 47.5), new Location(world, 67.5, 165, 47.5), new Location(world, 67.5, 165, 59.5), new Location(world, 46.5, 169, 57.5), new Location(world, 46.5, 169, 49.5)};
+	// --- 20-tick poll loop: pad gating + crush detection ---
 
-		cleanupMobs();
+	private void startCycleTask() {
+		cancelCycleTask();
+		cycleTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
+			if(boss == null || boss.isDead()) {
+				cancelCycleTask();
+				return;
+			}
 
-		int index = 0;
-		for(Location l : minerCenters) {
-			for(int i = 0; i < 10; i++) {
-				// Random location within 3 blocks of center (73.5, 225, 73.5)
-				double x = l.getX() + (random.nextDouble() * 10 - 5); // -3 to +3
-				double z = l.getZ() + (random.nextDouble() * 10 - 5); // -3 to +3
-				Location spawnLoc = new Location(world, x, l.getY(), z);
+			// Pad-gated pillar advance: per pillar, if a real player stands on its pad, run a cycle.
+			for(PillarOscillator osc : pillars) {
+				if(padOccupied(osc.getPillar().padBox())) {
+					osc.runCycle(tick);
+				}
+			}
 
-				WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
+			// Crush detection — only after intro ends, only while not already stunned, and only
+			// within the 60-tick window after any pillar's most recent movement.
+			if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
+				triggerCrush();
+			}
+		}, 0L, 20L);
+	}
 
-				// Set health to 4 HP
-				miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
-				miner.setHealth(4.0);
-				miner.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-				miner.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
+	private void cancelCycleTask() {
+		if(cycleTask != null && !cycleTask.isCancelled()) cycleTask.cancel();
+		cycleTask = null;
+	}
 
-				// Give stone pickaxe
-				miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
+	private boolean padOccupied(BoundingBox padBox) {
+		for(Player p : world.getPlayers()) {
+			if(p.getGameMode() == GameMode.SPECTATOR) continue;
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
+			int bx = p.getLocation().getBlockX();
+			int by = p.getLocation().getBlockY();
+			int bz = p.getLocation().getBlockZ();
+			if(bx >= padBox.getMinX() && bx <= padBox.getMaxX()
+					&& by >= padBox.getMinY() && by <= padBox.getMaxY()
+					&& bz >= padBox.getMinZ() && bz <= padBox.getMaxZ()) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-				// Optional: Set custom name
-				miner.setCustomName("Wither Miner " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤");
-				miner.setCustomNameVisible(true);
+	private boolean anyPillarMovedRecently() {
+		for(PillarOscillator osc : pillars) {
+			if(osc.movedRecently(tick, CRUSH_DETECTOR_WINDOW)) return true;
+		}
+		return false;
+	}
 
-				Location targetLoc = new Location(world, 73.5, spawnLoc.getY(), 53.5);
-				Vector direction = targetLoc.toVector().subtract(spawnLoc.toVector()).normalize();
-				float yaw = (float) (Math.atan2(-direction.getX(), direction.getZ()) * 180.0 / Math.PI);
-				float pitch = (float) (Math.asin(-direction.getY()) * 180.0 / Math.PI);
+	private boolean stormInDiorite() {
+		BoundingBox box = boss.getBoundingBox();
+		int minX = (int) Math.floor(box.getMinX());
+		int maxX = (int) Math.floor(box.getMaxX());
+		int minY = (int) Math.floor(box.getMinY());
+		int maxY = (int) Math.floor(box.getMaxY());
+		int minZ = (int) Math.floor(box.getMinZ());
+		int maxZ = (int) Math.floor(box.getMaxZ());
+		for(int x = minX; x <= maxX; x++) {
+			for(int y = minY; y <= maxY; y++) {
+				for(int z = minZ; z <= maxZ; z++) {
+					Material m = world.getBlockAt(x, y, z).getType();
+					if(m == Material.DIORITE || m == Material.POLISHED_DIORITE) return true;
+				}
+			}
+		}
+		return false;
+	}
 
-				Location facingLoc = spawnLoc.clone();
-				facingLoc.setYaw(yaw);
-				facingLoc.setPitch(pitch);
-				miner.teleport(facingLoc);
+	// --- Crush mechanic (mirror Maxor.triggerStun / handleDamage with 0.55 cap and 20t-delayed explosion) ---
 
-				net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWitherSkeleton = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((CraftWitherSkeleton) miner).getHandle();
+	private void triggerCrush() {
+		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
+		double crushDmg = maxHp * CRUSH_DAMAGE_FRACTION;
+		double currentHp = boss.getHealth();
+		double onePercent = maxHp * 0.01;
 
-				// This single line makes the skeleton raise its arms
-				nmsWitherSkeleton.setAggressive(true);
+		// Killing-blow path: crush would drop Storm to/below 0 HP — clamp to 1% + death sequence.
+		if(crushDmg >= currentHp) {
+			clearAggro();
+			setArmor(false);
+			sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
+			boss.setHealth(onePercent);
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+			enterDyingState();
+			Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
+			return;
+		}
 
-				// Store in array
-				witherMiners[index] = miner;
-				index++;
+		inStun = true;
+		stunDamageDealt = 0;
+
+		clearAggro();
+		setArmor(false);
+		sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
+		Bukkit.broadcastMessage(ChatColor.GREEN + "Storm crushed in " + formatTick(tick));
+
+		// Crush damage: 5% max HP, bypasses event (no recursion) — counted toward the 55% stun cap.
+		boss.setHealth(Math.max(0.0, currentHp - crushDmg));
+		stunDamageDealt += crushDmg;
+		Utils.changeName(boss);
+		Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+
+		CustomBossBar.spawnAnimatedStunnedIndicator(boss, Integer.MAX_VALUE);
+
+		// Auto-enrage 160 ticks after the crush (subject to in-game research per the plan).
+		cancelStunEnrageTask();
+		stunEnrageTask = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), this::enrageStorm, STUN_AUTO_ENRAGE_TICKS);
+
+		// Pillar destruction explosion fires 20 ticks after Storm is damaged.
+		Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
+	}
+
+	private void fireCrushExplosion() {
+		if(boss == null || !boss.isValid()) return;
+		Location loc = boss.getLocation();
+		// Power=7 mirrors the vanilla Wither spawn explosion. StormCrushExplosion listener
+		// filters the resulting block list to keep only diorite/polished_diorite with y<196.
+		world.createExplosion(loc.getX(), loc.getY(), loc.getZ(), CRUSH_EXPLOSION_POWER, false, true, boss);
+	}
+
+	private void enrageStorm() {
+		if(!inStun) return;
+		inStun = false;
+		cancelStunEnrageTask();
+
+		setArmor(true);
+		sendChatMessage(ENRAGE_MESSAGE[random.nextInt(ENRAGE_MESSAGE.length)]);
+		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Storm is enraged! ⚠\n" + formatTick(tick));
+		for(Player player : Bukkit.getOnlinePlayers()) {
+			player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
+		}
+		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
+		CustomBossBar.removeStunIndicator();
+
+		Player target = resolveTargetPlayer();
+		if(target != null) {
+			setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET);
+		}
+	}
+
+	private void cancelStunEnrageTask() {
+		if(stunEnrageTask != null && !stunEnrageTask.isCancelled()) stunEnrageTask.cancel();
+		stunEnrageTask = null;
+	}
+
+	/**
+	 * Damage interceptor for Storm. Hooked from MiscListener. Identical shape to
+	 * Maxor.handleDamage but with the 0.55 stun cap.
+	 */
+	public void handleDamage(EntityDamageEvent e) {
+		if(boss == null || !boss.equals(e.getEntity())) return;
+		if(e.isCancelled()) return;
+
+		if(dying) {
+			e.setCancelled(true);
+			return;
+		}
+
+		double finalDmg = e.getFinalDamage();
+		if(finalDmg <= 0) return;
+
+		double currentHp = boss.getHealth();
+		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
+		double onePercent = maxHp * 0.01;
+
+		double cappedDmg = finalDmg;
+		boolean willEnrage = false;
+		if(inStun) {
+			double damageCap = maxHp * STUN_DAMAGE_CAP_FRACTION;
+			double remaining = Math.max(0, damageCap - stunDamageDealt);
+			if(cappedDmg >= remaining) {
+				cappedDmg = remaining;
+				willEnrage = true;
 			}
 		}
 
-		for(int i = 0; i < sentryLocations.length; i++) {
-			WitherSkeleton sentry = (WitherSkeleton) world.spawnEntity(sentryLocations[i], EntityType.WITHER_SKELETON);
+		boolean willDie = false;
+		if(cappedDmg >= currentHp) {
+			cappedDmg = Math.max(0, currentHp - onePercent);
+			willDie = true;
+			willEnrage = false;
+		}
 
-			// Set health to 4 HP
+		if(cappedDmg < finalDmg) {
+			scaleEventDamage(e, finalDmg, cappedDmg);
+		}
+
+		if(willDie) {
+			enterDyingState();
+		} else {
+			if(inStun) stunDamageDealt = Math.min(maxHp * STUN_DAMAGE_CAP_FRACTION, stunDamageDealt + cappedDmg);
+			if(willEnrage) Bukkit.getScheduler().runTask(M7tas.getInstance(), this::enrageStorm);
+		}
+	}
+
+	private static void scaleEventDamage(EntityDamageEvent e, double currentFinal, double targetFinal) {
+		if(currentFinal <= 0) return;
+		double scale = Math.max(0, targetFinal) / currentFinal;
+		e.setDamage(e.getDamage() * scale);
+	}
+
+	private void enterDyingState() {
+		dying = true;
+		boss.addScoreboardTag("TASDying");
+		cancelStunEnrageTask();
+		cancelCycleTask();
+		inStun = false;
+		CustomBossBar.removeStunIndicator();
+		Utils.scheduleTask(() -> { if(boss != null && boss.isValid()) boss.setHealth(1.0); }, 1);
+		Utils.changeName(boss);
+		playDeathDialogue();
+	}
+
+	private void playDeathDialogue() {
+		sendChatMessage("I should have known that I stand no chance.");
+		Server.playWitherDeathSound(boss);
+		Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in " + formatTick(tick));
+		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 60);
+		Utils.scheduleTask(() -> {
+			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in " + formatTick(tick - 1));
+			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
+			chainNext(doContinue);
+		}, 100);
+	}
+
+	public boolean isDyingWither(Wither w) {
+		return dying && w != null && w.equals(boss);
+	}
+
+	// --- Mob spawning ---
+
+	private void spawnMobGroups() {
+		mobGroups.clear();
+
+		// Static name + equipment shared by every miner.
+		String minerName = "Wither Miner " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤";
+		ItemStack stonePickaxe = new ItemStack(Material.STONE_PICKAXE);
+		Location facingCenter = FACING_CENTER.clone();
+		facingCenter.setWorld(world);
+
+		// 0t: Pillar A (south pillar zone) + Pillar B (north pillar zone)
+		mobGroups.add(new MobGroup(minerSpec("Pillar A", 20, MobSpawnSpec.uniformIn(36, 169, 37, 56, 169, 69), minerName, stonePickaxe, facingCenter, 0)));
+		mobGroups.add(new MobGroup(minerSpec("Pillar B", 20, MobSpawnSpec.uniformIn(90, 169, 37, 110, 169, 69), minerName, stonePickaxe, facingCenter, 0)));
+
+		// 40t: lava bridge groups
+		mobGroups.add(new MobGroup(minerSpec("Lava bridge SW", 5, MobSpawnSpec.uniformIn(72, 168, 29, 74, 168, 31), minerName, stonePickaxe, facingCenter, 40)));
+		mobGroups.add(new MobGroup(minerSpec("Lava bridge SE", 5, MobSpawnSpec.uniformIn(72, 168, 21, 74, 168, 23), minerName, stonePickaxe, facingCenter, 40)));
+		mobGroups.add(new MobGroup(minerSpec("Lava bridge NW", 5, MobSpawnSpec.uniformIn(72, 168, 75, 74, 168, 77), minerName, stonePickaxe, facingCenter, 40)));
+		mobGroups.add(new MobGroup(minerSpec("Lava bridge NE", 5, MobSpawnSpec.uniformIn(72, 168, 83, 74, 168, 86), minerName, stonePickaxe, facingCenter, 40)));
+
+		// 40t: center-edge groups
+		mobGroups.add(new MobGroup(minerSpec("Center edge N", 20, MobSpawnSpec.uniformIn(58, 163, 92, 88, 163, 100), minerName, stonePickaxe, facingCenter, 40)));
+		mobGroups.add(new MobGroup(minerSpec("Center edge W", 20, MobSpawnSpec.uniformIn(26, 165, 37, 30, 165, 69), minerName, stonePickaxe, facingCenter, 40)));
+		mobGroups.add(new MobGroup(minerSpec("Center edge S", 20, MobSpawnSpec.uniformIn(58, 163, 6, 88, 163, 14), minerName, stonePickaxe, facingCenter, 40)));
+		mobGroups.add(new MobGroup(minerSpec("Center edge E", 20, MobSpawnSpec.uniformIn(116, 165, 37, 120, 165, 69), minerName, stonePickaxe, facingCenter, 40)));
+
+		// 80t: center + 4 pad groups (each with one shadow assassin at a corner)
+		mobGroups.add(new MobGroup(minerSpec("Center", 40, MobSpawnSpec.uniformIn(65, 165, 41, 81, 165, 65), minerName, stonePickaxe, facingCenter, 80)));
+
+		mobGroups.add(new MobGroup(minerSpec("Pad NE", 10, MobSpawnSpec.uniformIn(108, 170, 88, 120, 170, 100), minerName, stonePickaxe, facingCenter, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow NE", 120.5, 170, 100.5, 80)));
+
+		mobGroups.add(new MobGroup(minerSpec("Pad NW", 10, MobSpawnSpec.uniformIn(26, 170, 88, 38, 170, 100), minerName, stonePickaxe, facingCenter, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow NW", 26.5, 170, 100.5, 80)));
+
+		mobGroups.add(new MobGroup(minerSpec("Pad SW", 10, MobSpawnSpec.uniformIn(26, 170, 6, 38, 170, 18), minerName, stonePickaxe, facingCenter, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SW", 26.5, 170, 6.5, 80)));
+
+		mobGroups.add(new MobGroup(minerSpec("Pad SE", 10, MobSpawnSpec.uniformIn(108, 170, 6, 120, 170, 18), minerName, stonePickaxe, facingCenter, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SE", 120.5, 170, 6.5, 80)));
+
+		// Sentries — deterministic locations, spawned inline (44 separate fixed-location entities).
+		spawnSentries();
+
+		// Schedule all groups
+		for(MobGroup g : mobGroups) {
+			g.spawn(world, random);
+		}
+	}
+
+	private static MobSpawnSpec minerSpec(String groupName, int count, java.util.function.Function<Random, Vector> provider, String customName, ItemStack mainHand, Location facingCenter, int startTick) {
+		return new MobSpawnSpec(
+				groupName, EntityType.WITHER_SKELETON, count, provider,
+				4.0, -30, -20,
+				customName, mainHand,
+				/* aiEnabled */ true, /* aggressive */ true, /* adult */ false,
+				/* silent */ false, /* persistent */ true,
+				facingCenter,
+				null, null,
+				startTick
+		);
+	}
+
+	private static MobSpawnSpec shadowAssassinSpec(String groupName, double x, double y, double z, int startTick) {
+		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
+		List<ItemStack> armor = Arrays.asList(new ItemStack(Material.AIR), new ItemStack(Material.AIR), new ItemStack(Material.AIR), boots);
+		List<PotionEffect> effects = List.of(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
+		return new MobSpawnSpec(
+				groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, y, z),
+				15.0, -30, -20,
+				ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤",
+				new ItemStack(Material.STONE_SWORD),
+				/* aiEnabled */ false, /* aggressive */ false, /* adult */ true,
+				/* silent */ true, /* persistent */ true,
+				/* facingTarget */ null,
+				effects, armor,
+				startTick
+		);
+	}
+
+	private void spawnSentries() {
+		sentries.clear();
+		Location center = FACING_CENTER.clone();
+		center.setWorld(world);
+
+		for(double[] coords : SENTRY_COORDS) {
+			Location loc = new Location(world, coords[0], coords[1], coords[2]);
+			WitherSkeleton sentry = (WitherSkeleton) world.spawnEntity(loc, EntityType.WITHER_SKELETON);
 			sentry.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
 			sentry.setHealth(4.0);
 			sentry.getAttribute(Attribute.ARMOR).setBaseValue(-30);
 			sentry.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			sentry.setAI(false);
-
-			// Give stone pickaxe
 			sentry.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
-
-			// Optional: Set custom name
 			sentry.setCustomName("Wither Guard " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤");
 			sentry.setCustomNameVisible(true);
 
-			Location targetLoc = new Location(world, 73.5, sentryLocations[i].getY(), 53.5);
-			Vector direction = targetLoc.toVector().subtract(sentryLocations[i].toVector()).normalize();
+			Location targetLoc = new Location(world, center.getX(), loc.getY(), center.getZ());
+			Vector direction = targetLoc.toVector().subtract(loc.toVector()).normalize();
 			float yaw = (float) (Math.atan2(-direction.getX(), direction.getZ()) * 180.0 / Math.PI);
 			float pitch = (float) (Math.asin(-direction.getY()) * 180.0 / Math.PI);
-
-			Location facingLoc = sentryLocations[i].clone();
+			Location facingLoc = loc.clone();
 			facingLoc.setYaw(yaw);
 			facingLoc.setPitch(pitch);
 			sentry.teleport(facingLoc);
 
-			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWitherSkeleton = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((CraftWitherSkeleton) sentry).getHandle();
+			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWs =
+					(net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton) sentry).getHandle();
+			nmsWs.setAggressive(true);
 
-			// This single line makes the skeleton raise its arms
-			nmsWitherSkeleton.setAggressive(true);
-
-			// Store in array
-			witherGuards[i] = sentry;
-		}
-
-		for(int i = 0; i < shadowAssassinLocations.length; i++) {
-			Zombie shadowAssassin = (Zombie) world.spawnEntity(shadowAssassinLocations[i], EntityType.ZOMBIE);
-			shadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤");
-			shadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
-			shadowAssassin.setCustomNameVisible(true);
-			shadowAssassin.setAI(false);
-			shadowAssassin.setSilent(true);
-			shadowAssassin.setAdult();
-			shadowAssassin.setPersistent(true);
-			shadowAssassin.setRemoveWhenFarAway(false);
-			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-			Objects.requireNonNull(shadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(15);
-			shadowAssassin.setHealth(15);
-
-			ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
-			assert shadowAssassin.getEquipment() != null;
-			shadowAssassin.getEquipment().setBoots(boots);
-			shadowAssassin.getEquipment().setLeggings(new ItemStack(Material.AIR));
-			shadowAssassin.getEquipment().setChestplate(new ItemStack(Material.AIR));
-			shadowAssassin.getEquipment().setHelmet(new ItemStack(Material.AIR));
-			shadowAssassin.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_SWORD));
-
-			shadowAssassins[i] = shadowAssassin;
+			sentries.add(sentry);
 		}
 	}
 
-	public static void cleanupMobs() {
-		for(WitherSkeleton witherSkeleton : witherGuards) {
-			if(witherSkeleton != null && witherSkeleton.isValid()) {
-				witherSkeleton.remove();
+	public void cleanupMobs() {
+		for(MobGroup g : mobGroups) g.cleanup();
+		mobGroups.clear();
+		for(WitherSkeleton ws : sentries) {
+			if(ws != null && ws.isValid()) ws.remove();
+		}
+		sentries.clear();
+	}
+
+	private void spamLightning() {
+		for(MobGroup g : mobGroups) {
+			for(LivingEntity mob : g.getSpawned()) {
+				if(mob == null || !mob.isValid()) continue;
+				if(mob instanceof Zombie) continue; // Shadow assassins don't get the lightning effect on them.
+				Location l = mob.getLocation();
+				world.strikeLightning(l);
+				Utils.scheduleTask(() -> world.strikeLightning(l), 10);
 			}
 		}
-
-		for(WitherSkeleton witherSkeleton : witherMiners) {
-			if(witherSkeleton != null && witherSkeleton.isValid()) {
-				witherSkeleton.remove();
-			}
-		}
-
-		for(Zombie zombie : shadowAssassins) {
-			if(zombie != null && zombie.isValid()) {
-				zombie.remove();
-			}
-		}
-	}
-
-	private static final int CLONE_DELAY = 4;
-	private static final int AIR_START_TICK = 48;
-	private static final int AIR_DELAY = 4;
-	private static final int CLONE_RESUME_TICK = 148;
-
-	// Pad configurations
-	private static final PadConfig PURPLE_PAD = new PadConfig(103, 97, 68, 62);
-	private static final PadConfig YELLOW_PAD = new PadConfig(49, 43, 68, 62);
-
-	private record PadConfig(int x1, int x2, int z1, int z2) {
-	}
-
-	public static void prepadPurple() {
-		prepadSequence(PURPLE_PAD);
-	}
-
-	public static void prepadYellow() {
-		prepadSequence(YELLOW_PAD);
-	}
-
-	public static void crushPurple() {
-		crushSequence(PURPLE_PAD);
-	}
-
-	public static void crushYellow() {
-		crushSequence(YELLOW_PAD);
-	}
-
-	private static void prepadSequence(PadConfig pad) {
-		// Phase 1: Clone downwards (175 -> 170)
-		for(int i = 0; i < 6; i++) {
-			final int sourceY = 175 - i;
-			final int targetY = 174 - i;
-			scheduleCommand(i * CLONE_DELAY,
-					String.format("clone %d %d %d %d %d %d %d %d %d",
-							pad.x1, sourceY, pad.z1,
-							pad.x2, sourceY, pad.z2,
-							pad.x2, targetY, pad.z2));
-		}
-
-		// Phase 2: Clear with air (169 -> 188)
-		int tick = AIR_START_TICK;
-		for(int y = 169; y <= 188; y++) {
-			scheduleCommand(tick,
-					String.format("fill %d %d %d %d %d %d minecraft:air",
-							pad.x1, y, pad.z1,
-							pad.x2, y, pad.z2));
-			tick += AIR_DELAY;
-		}
-
-		// Phase 3: Clone downwards (189 -> 182)
-		tick = CLONE_RESUME_TICK;
-		for(int i = 0; i < 8; i++) {
-			final int sourceY = 189 - i;
-			final int targetY = 188 - i;
-			scheduleCommand(tick,
-					String.format("clone %d %d %d %d %d %d %d %d %d",
-							pad.x1, sourceY, pad.z1,
-							pad.x2, sourceY, pad.z2,
-							pad.x2, targetY, pad.z2));
-			tick += CLONE_DELAY;
-		}
-	}
-
-	private static void crushSequence(PadConfig pad) {
-		// Clone downwards (181 -> 176)
-		for(int i = 0; i < 5; i++) {
-			final int sourceY = 181 - i;
-			final int targetY = 180 - i;
-			scheduleCommand(i * CLONE_DELAY,
-					String.format("clone %d %d %d %d %d %d %d %d %d",
-							pad.x1, sourceY, pad.z1,
-							pad.x2, sourceY, pad.z2,
-							pad.x2, targetY, pad.z2));
-		}
-	}
-
-	private static void scheduleCommand(int delay, String command) {
-		Utils.scheduleTask(() -> {
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
-			playPistonSound();
-		}, delay);
-	}
-
-	private static void playPistonSound() {
-		Utils.playGlobalSound(Sound.BLOCK_PISTON_CONTRACT, 2.0f, 1.0f);
-	}
-
-	private static void spamLightning() {
-		for(WitherSkeleton skeleton : witherMiners) {
-			Location l = skeleton.getLocation();
-			world.strikeLightning(l);
-			Utils.scheduleTask(() -> world.strikeLightning(l), 10);
-		}
-		for(WitherSkeleton skeleton : witherGuards) {
-			Location l = skeleton.getLocation();
+		for(WitherSkeleton ws : sentries) {
+			if(ws == null || !ws.isValid()) continue;
+			Location l = ws.getLocation();
 			world.strikeLightning(l);
 			Utils.scheduleTask(() -> world.strikeLightning(l), 10);
 		}

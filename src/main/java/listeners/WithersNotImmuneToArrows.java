@@ -8,7 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import instructions.bosses.Maxor;
+import instructions.bosses.WitherLord;
 import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
@@ -28,8 +28,9 @@ public class WithersNotImmuneToArrows implements Listener {
 		// Shield up (invulnerability ticks active) → bounce, no damage.
 		if(wither.getInvulnerabilityTicks() != 0) return;
 
-		// Dying wither: phase the arrow through silently — no ding, no damage, no pierce loss.
-		if(Maxor.isDyingWither(wither)) {
+		// Dying wither (any WitherLord): phase the arrow through silently — no ding, no damage, no pierce loss.
+		WitherLord activeLord = WitherLord.activeFor(wither);
+		if(activeLord != null && activeLord.isDying()) {
 			event.setCancelled(true);
 			return;
 		}
@@ -38,7 +39,7 @@ public class WithersNotImmuneToArrows implements Listener {
 		wither.setNoDamageTicks(0);
 		// Bukkit's no-source damage() uses a non-projectile cause, so the vanilla wither
 		// "powered" projectile shield doesn't apply. The fired EntityDamageEvent still reaches
-		// Maxor.handleDamage for clamping.
+		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.
 		wither.damage((double) arrow.getDamage());
 		wither.setNoDamageTicks(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);

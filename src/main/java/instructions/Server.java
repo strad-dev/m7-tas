@@ -101,7 +101,8 @@ public class Server {
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 63 79 minecraft:stone_brick_slab[type=top]");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
-		Storm.cleanupMobs();
+		Storm.INSTANCE.cleanupMobs();
+		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 //		turnArrow(world, false);
 	}
 
