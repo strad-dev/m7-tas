@@ -1,66 +1,55 @@
 package instructions.bosses;
 
 import instructions.Actions;
-import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.boss.BossBar;
-import org.bukkit.entity.EntityType;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Wither;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
-public class Goldor {
-	private static Wither goldor;
-	private static BossBar goldorBossBar;
-	private static BukkitTask bossBarUpdateTask;
+public final class Goldor extends WitherLord {
+	public static final Goldor INSTANCE = new Goldor();
 
-	public static void goldorInstructions(World temp, boolean doContinue) {
-		if(goldor != null) {
-			goldor.remove();
-		}
+	private static final int PRE_GOLDOR_TICKS = 2416;
 
-		if(goldorBossBar != null) {
-			goldorBossBar.removeAll();
-			goldorBossBar = null;
-		}
+	private Goldor() {
+		register(this);
+	}
 
-		if(bossBarUpdateTask != null) {
-			bossBarUpdateTask.cancel();
-			bossBarUpdateTask = null;
-		}
+	/** Static facade for the boss-chain. */
+	public static void goldorInstructions(World world, boolean doContinue) {
+		INSTANCE.start(world, doContinue);
+	}
 
-		goldor = (Wither) temp.spawnEntity(new Location(temp, 80.5, 116, 40.5, -90f, 0f), EntityType.WITHER);
-		goldor.setAI(false);
-		goldor.setSilent(true);
-		goldor.setPersistent(true);
-		goldor.setRemoveWhenFarAway(false);
-		goldor.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Goldor" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + "1.2B" + ChatColor.RED + "❤");
-		goldor.setCustomNameVisible(true);
-		goldor.getAttribute(Attribute.MAX_HEALTH).setBaseValue(700);
-		goldor.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-		goldor.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-		goldor.setHealth(700);
-		goldor.addScoreboardTag("TASWither");
-		goldor.addScoreboardTag("TASGoldor");
-		WitherActions.setWitherArmor(goldor, true);
+	@Override protected String name() { return "Goldor"; }
+	@Override protected String displayName() { return "Goldor"; }
+	@Override protected Location spawnLocation() { return new Location(world, 80.5, 116, 40.5, -90f, 0f); }
+	@Override protected double maxHealth() { return 700; }
+	@Override protected String displayHealth() { return "1.2B"; }
+	@Override protected int previousTicks() { return PRE_GOLDOR_TICKS; }
 
-		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(goldor, "Goldor"), 1);
+	@Override
+	protected void resetState() {
+		// Goldor has no per-fight state beyond what the base class handles.
+	}
 
+	@Override
+	protected void onStart() {
 		sendChatMessage("Who dares trespass into my domain?");
-		Actions.forceMove(goldor, new Vector(0.1, 0, 0), 200);
+		Actions.forceMove(boss, new Vector(0.1, 0, 0), 200);
 		Utils.scheduleTask(() -> sendChatMessage("Little ants, plotting and scheming, thinking they are invincibile..."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I won't let you break the factory core, I gave my life to my Master."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("No one matches me in close quarters."), 180);
-		Utils.scheduleTask(() -> Actions.turnHead(goldor, 0f, 0f), 199);
-		Utils.scheduleTask(() -> Actions.forceMove(goldor, new Vector(0, 0, 0.1), 38), 200);
+		Utils.scheduleTask(() -> Actions.turnHead(boss, 0f, 0f), 199);
+		Utils.scheduleTask(() -> Actions.forceMove(boss, new Vector(0, 0, 0.1), 38), 200);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("You have done it, you destroyed the factory...");
-			Actions.turnHead(goldor, 94.722f, 0f);
-			Actions.forceMove(goldor, new Vector(-0.7931, 0, -0.0655), 52);
-			WitherActions.setWitherArmor(goldor, false);
+			Actions.turnHead(boss, 94.722f, 0f);
+			Actions.forceMove(boss, new Vector(-0.7931, 0, -0.0655), 52);
+			setArmor(false);
 		}, 238);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("...");
@@ -70,17 +59,17 @@ public class Goldor {
 		Utils.scheduleTask(() -> {
 			sendChatMessage("Necron, forgive me.");
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Terminals + Goldor finished in 350 ticks (17.50 seconds) | Overall: 2 766 ticks (135.30 seconds)");
-			if(doContinue) {
-				Necron.necronInstructions(temp, true);
-			}
+			chainNext(doContinue);
 		}, 350);
 		Utils.scheduleTask(() -> sendChatMessage("YOU ARE FACE TO FACE WITH GOLDOR!"), 358);
-		Utils.scheduleTask(goldor::remove, 450);
+		Utils.scheduleTask(boss::remove, 450);
 	}
 
-	private static void sendChatMessage(String message) {
-		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Goldor" + ChatColor.RED + ": " + message);
-		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT);
+	@Override
+	protected void chainNext(boolean doContinue) {
+		if(doContinue) {
+			Necron.necronInstructions(world, true);
+		}
 	}
 
 	public static void broadcastTerminalComplete(Player p, String type, int count, int total) {
@@ -94,6 +83,6 @@ public class Goldor {
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", message, 0, 40, 0);
 		}
-		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
+		Utils.playGlobalSound(org.bukkit.Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
 }

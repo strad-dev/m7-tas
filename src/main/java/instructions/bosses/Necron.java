@@ -1,108 +1,100 @@
 package instructions.bosses;
 
 import instructions.Server;
-import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.boss.BossBar;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Wither;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 import plugin.Utils;
 
 import java.util.Random;
 
+/**
+ * Necron on the real Hypixel server has the same live-chase aggro as Maxor
+ * (see {@link WitherActions#setWitherAggro} with stopDistance≈3.0, yOffset≈1.0).
+ * The TAS keeps him stationary for choreography; this is a simplification, not
+ * a faithful behavior.
+ */
 @SuppressWarnings("DataFlowIssue")
-public class Necron {
-	private static World world;
-	private static Wither necron;
-	private static BossBar necronBossBar;
-	private static BukkitTask bossBarUpdateTask;
+public final class Necron extends WitherLord {
+	public static final Necron INSTANCE = new Necron();
+
+	private static final int PRE_NECRON_TICKS = 2766;
 	private static final Random random = new Random();
-	private static final String[] frenzyStartMessages = {"Sometimes when you have a problem, you just need to destroy it all and start again.", "WITNESS MY RAW NUCLEAR POWER!"};
-	private static final String[] frenzyEndMessages = {"ARGH!", "Let's make some space!"};
+	private static final String[] FRENZY_START_MESSAGES = {"Sometimes when you have a problem, you just need to destroy it all and start again.", "WITNESS MY RAW NUCLEAR POWER!"};
+	private static final String[] FRENZY_END_MESSAGES = {"ARGH!", "Let's make some space!"};
 
-	public static void necronInstructions(World temp, boolean doContinue) {
-		world = temp;
+	private Necron() {
+		register(this);
+	}
 
-		if(necron != null) {
-			necron.remove();
-		}
+	/** Static facade for the boss-chain. */
+	public static void necronInstructions(World world, boolean doContinue) {
+		INSTANCE.start(world, doContinue);
+	}
 
-		if(necronBossBar != null) {
-			necronBossBar.removeAll();
-			necronBossBar = null;
-		}
+	@Override protected String name() { return "Necron"; }
+	@Override protected String displayName() { return "Necron"; }
+	@Override protected Location spawnLocation() { return new Location(world, 54.5, 66, 76.5, 0f, 0f); }
+	@Override protected double maxHealth() { return 1000; }
+	@Override protected String displayHealth() { return "1.4B"; }
+	@Override protected int previousTicks() { return PRE_NECRON_TICKS; }
 
-		if(bossBarUpdateTask != null) {
-			bossBarUpdateTask.cancel();
-			bossBarUpdateTask = null;
-		}
+	@Override
+	protected void resetState() {
+		// Necron has no per-fight state beyond what the base class handles.
+	}
 
-		necron = (Wither) temp.spawnEntity(new Location(temp, 54.5, 66, 76.5, 0f, 0f), EntityType.WITHER);
-		necron.setAI(false);
-		necron.setSilent(true);
-		necron.setPersistent(true);
-		necron.setRemoveWhenFarAway(false);
-		necron.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Necron" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + "1.4B" + ChatColor.RED + "❤");
-		necron.setCustomNameVisible(true);
-		necron.getAttribute(Attribute.MAX_HEALTH).setBaseValue(1000);
-		necron.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-		necron.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-		necron.setHealth(1000);
-		necron.addScoreboardTag("TASWither");
-		necron.addScoreboardTag("TASNecron");
-		WitherActions.setWitherArmor(necron, true);
-
-		Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(necron, "Necron"), 1);
-
+	@Override
+	protected void onStart() {
 		sendChatMessage("You went further than any human before, congratulations.");
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I'm afraid your journey ends now.");
 			destroyPlatform();
 		}, 60);
 		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), 120);
-		Utils.scheduleTask(() -> WitherActions.setWitherArmor(necron, false), 160);
+		Utils.scheduleTask(() -> setArmor(false), 160);
 		// first frenzy
 		Utils.scheduleTask(() -> {
-			WitherActions.setWitherArmor(necron, true);
+			setArmor(true);
 			frenzy();
 		}, 161);
-		Utils.scheduleTask(() -> necron.setHealth(560), 162);
+		Utils.scheduleTask(() -> boss.setHealth(560), 162);
 		Utils.scheduleTask(() -> sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself."), 180);
 		// damageable on tick 302
 		// blow up platform
 		Utils.scheduleTask(() -> {
-			WitherActions.setWitherArmor(necron, true);
+			setArmor(true);
 			destroyPlatform();
 		}, 307);
-		Utils.scheduleTask(() -> necron.setHealth(175), 308);
+		Utils.scheduleTask(() -> boss.setHealth(175), 308);
 		// damagable on tick 368 (mage one beam)
 		Utils.scheduleTask(() -> {
-			WitherActions.setWitherArmor(necron, false);
-			sendChatMessage(frenzyEndMessages[random.nextInt(frenzyEndMessages.length)]);
+			setArmor(false);
+			sendChatMessage(FRENZY_END_MESSAGES[random.nextInt(FRENZY_END_MESSAGES.length)]);
 		}, 367);
 		// second frenzy
 		Utils.scheduleTask(() -> {
-			WitherActions.setWitherArmor(necron, true);
+			setArmor(true);
 			frenzy();
 		}, 368);
-		Utils.scheduleTask(() -> necron.setHealth(35), 369);
+		Utils.scheduleTask(() -> boss.setHealth(35), 369);
 		// damageable on tick 508
 		// die on tick 509
 		Utils.scheduleTask(() -> {
 			sendChatMessage("All this, for nothing...");
-			Server.playWitherDeathSound(necron);
+			Server.playWitherDeathSound(boss);
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron killed in 509 ticks (25.45 seconds) | Overall: 3 275 ticks (163.75 seconds)");
 		}, 509);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 569);
 		Utils.scheduleTask(() -> {
 			// note: in skytils, the Necron timer ends 2 seconds too early, thus making Wither King start 2 seconds too early.  The timing in this TAS fixes this.  To compare to Skytils time, subtract 2 seconds here and add 2 seconds to Wither King time.
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Necron finished in 609 ticks (30.45 seconds) | Overall: 3 375 ticks (168.75 seconds)");
-			if(doContinue) {
-				WitherKing.witherKingInstructions(world);
-			}
+			chainNext(doContinue);
 		}, 609);
 		Utils.scheduleTask(() -> sendChatMessage("The Catacombs... are no more."), 629);
 
@@ -118,30 +110,37 @@ public class Necron {
 		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in 3 315 ticks (172.75 seconds | 2:52.75)"), 649);
 	}
 
-	private static void destroyPlatform() {
-		shootFireball();
-		Utils.scheduleTask(Necron::shootFireball, 10);
-		Utils.scheduleTask(Necron::shootFireball, 20);
-		Utils.scheduleTask(Necron::shootFireball, 30);
-		Utils.scheduleTask(() -> {
-			Necron.shootFireball();
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -10 120 38 -6 99 38 59 99");
-		}, 40);
-		Utils.scheduleTask(Necron::shootFireball, 50);
-		Utils.scheduleTask(Necron::shootFireball, 60);
-		Utils.scheduleTask(Necron::shootFireball, 70);
+	@Override
+	protected void chainNext(boolean doContinue) {
+		if(doContinue) {
+			WitherKing.witherKingInstructions(world);
+		}
 	}
 
-	private static void shootFireball() {
-		Fireball fireball = (Fireball) world.spawnEntity(necron.getLocation().add(0, 3, 0), EntityType.FIREBALL);
+	private void destroyPlatform() {
+		shootFireball();
+		Utils.scheduleTask(this::shootFireball, 10);
+		Utils.scheduleTask(this::shootFireball, 20);
+		Utils.scheduleTask(this::shootFireball, 30);
+		Utils.scheduleTask(() -> {
+			shootFireball();
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -10 120 38 -6 99 38 59 99");
+		}, 40);
+		Utils.scheduleTask(this::shootFireball, 50);
+		Utils.scheduleTask(this::shootFireball, 60);
+		Utils.scheduleTask(this::shootFireball, 70);
+	}
+
+	private void shootFireball() {
+		Fireball fireball = (Fireball) world.spawnEntity(boss.getLocation().add(0, 3, 0), EntityType.FIREBALL);
 		fireball.setVelocity(new Vector(0, -0.25, 1.25));
 		Utils.scheduleTask(fireball::remove, 21);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
 	}
 
-	private static void frenzy() {
-		sendChatMessage(frenzyStartMessages[random.nextInt(frenzyStartMessages.length)]);
+	private void frenzy() {
+		sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
 		Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE);
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
@@ -168,13 +167,8 @@ public class Necron {
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
 		}, 120);
 		Utils.scheduleTask(() -> {
-			sendChatMessage(frenzyEndMessages[random.nextInt(frenzyEndMessages.length)]);
-			WitherActions.setWitherArmor(necron, false);
+			sendChatMessage(FRENZY_END_MESSAGES[random.nextInt(FRENZY_END_MESSAGES.length)]);
+			setArmor(false);
 		}, 140);
-	}
-
-	private static void sendChatMessage(String message) {
-		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Necron" + ChatColor.RED + ": " + message);
-		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT);
 	}
 }

@@ -2,6 +2,8 @@ package listeners;
 
 import commands.Spectate;
 import instructions.bosses.Maxor;
+import instructions.bosses.Storm;
+import instructions.bosses.WitherLord;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
@@ -191,8 +193,9 @@ public class MiscListener implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-	public void onMaxorDamage(EntityDamageEvent e) {
-		Maxor.handleDamage(e);
+	public void onWitherLordDamage(EntityDamageEvent e) {
+		Maxor.INSTANCE.handleDamage(e);
+		Storm.INSTANCE.handleDamage(e);
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -211,9 +214,9 @@ public class MiscListener implements Listener {
 		Utils.scheduleTask(() -> { if(wither.isValid()) Utils.changeName(wither); }, 1);
 	}
 
-	// Runs before Maxor.handleDamage's HIGH-priority clamp so the original (pre-clamp)
+	// Runs before the WitherLord handleDamage HIGH-priority clamp so the original (pre-clamp)
 	// damage is what we judge "did this hit do anything?" by. Otherwise hits that get
-	// clamped to 0 (e.g. once the 75% stun cap is hit) would silently skip the sound.
+	// clamped to 0 (e.g. once Maxor's 75% / Storm's 55% stun cap is hit) would silently skip the sound.
 	// Listens on the broader EntityDamageEvent so non-by-entity sources (e.g. mage beam's
 	// Utils.hurtEntity, which uses genericKill) also trigger the sound.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
@@ -224,7 +227,8 @@ public class MiscListener implements Listener {
 		// listener order within a class at the same priority — explicitly skip here.
 		if(e.getCause() == EntityDamageEvent.DamageCause.SUFFOCATION) return;
 		// While dying, only the death noise plays — no hurt sound.
-		if(Maxor.isDyingWither(wither)) return;
+		WitherLord activeLord = WitherLord.activeFor(wither);
+		if(activeLord != null && activeLord.isDying()) return;
 
 		Location loc = wither.getLocation();
 		wither.getWorld().playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
@@ -256,9 +260,9 @@ public class MiscListener implements Listener {
 	@EventHandler
 	public void onEnergyCrystalRightClick(PlayerInteractAtEntityEvent e) {
 		if(!(e.getRightClicked() instanceof EnderCrystal crystal)) return;
-		if(Maxor.notEnergyCrystal(crystal)) return;
+		if(Maxor.INSTANCE.notEnergyCrystal(crystal)) return;
 		e.setCancelled(true);
-		Maxor.pickUp(e.getPlayer(), crystal);
+		Maxor.INSTANCE.pickUp(e.getPlayer(), crystal);
 	}
 
 	@EventHandler
@@ -268,7 +272,7 @@ public class MiscListener implements Listener {
 		if(b == null) return;
 		int x = b.getX(), y = b.getY(), z = b.getZ();
 		if(y == 224 && z == 41 && (x == 52 || x == 94)) {
-			Maxor.onPlateStep(e.getPlayer(), b.getLocation());
+			Maxor.INSTANCE.onPlateStep(e.getPlayer(), b.getLocation());
 		}
 	}
 

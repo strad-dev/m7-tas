@@ -70,6 +70,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new MiscListener(), this);
 		getServer().getPluginManager().registerEvents(new CustomItems(), this);
 		getServer().getPluginManager().registerEvents(new AllMobsHaveNames(), this);
+		getServer().getPluginManager().registerEvents(new StormCrushExplosion(), this);
 
 		PlayerInventoryBackup.startInventorySync();
 		Spectate.startSpectatorSync();
