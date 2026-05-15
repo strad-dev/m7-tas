@@ -61,6 +61,17 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					usedAbility.set(CustomItems.handleDrop(player, false));
 					player.updateInventory();
 				});
+			} else if(action == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
+				String heldId = CustomItems.getID(player.getInventory().getItemInMainHand());
+				if("skyblock/combat/last_breath".equals(heldId)) {
+					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
+						ServerPlayer sp = ((CraftPlayer) player).getHandle();
+						sp.getAbilities().instabuild = true;
+						sp.releaseUsingItem();
+						sp.getAbilities().instabuild = false;
+					});
+					return;
+				}
 			}
 			if(usedAbility.get()) {
 				return;

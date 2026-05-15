@@ -116,16 +116,18 @@ public class Simulate implements CommandExecutor {
 					return true;
 				}
 				String click = args[2].toLowerCase();
-				if(!click.equals("left") && !click.equals("right")) {
-					p.sendMessage(ChatColor.RED + "Invalid click specified.  Valid clicks: left, right");
+				if(!click.equals("left") && !click.equals("right") && !click.equals("release")) {
+					p.sendMessage(ChatColor.RED + "Invalid click specified.  Valid clicks: left, right, release");
 					return true;
 				}
 				lastSimulated = applyTo;
 				lastSimulatedLocation = applyTo.getLocation();
 				if(click.equals("left")) {
 					Actions.leftClick(applyTo);
-				} else {
+				} else if(click.equals("right")) {
 					Actions.rightClick(applyTo);
+				} else {
+					Actions.stopRightClick(applyTo);
 				}
 				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " " + click + " clicked");
 				return true;

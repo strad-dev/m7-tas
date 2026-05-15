@@ -26,6 +26,7 @@ import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
@@ -157,6 +158,15 @@ public class FakePlayerManager {
 			throw new RuntimeException("Failed to find updatePlayerPose", e);
 		}
 
+		Field useItemRemainingField;
+		try {
+			useItemRemainingField = net.minecraft.world.entity.LivingEntity.class
+					.getDeclaredField("useItemRemaining");
+			useItemRemainingField.setAccessible(true);
+		} catch (NoSuchFieldException e) {
+			throw new RuntimeException("Failed to find useItemRemaining", e);
+		}
+
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -178,6 +188,18 @@ public class FakePlayerManager {
 					}
 					if(input.contains("P") && npc.zza > 0 && !npc.isShiftKeyDown()) {
 						npc.setSprinting(true);
+					}
+					if(npc.isUsingItem()) {
+						try {
+							int remaining = useItemRemainingField.getInt(npc);
+							if(remaining > 1) {
+								useItemRemainingField.setInt(npc, remaining - 1);
+							} else {
+								npc.stopUsingItem();
+							}
+						} catch(IllegalAccessException e) {
+							e.printStackTrace();
+						}
 					}
 					npc.updateFluidHeightAndDoFluidPushing(net.minecraft.tags.FluidTags.WATER, 0.014);
 					npc.updateFluidHeightAndDoFluidPushing(net.minecraft.tags.FluidTags.LAVA, 0.007);

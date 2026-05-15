@@ -459,7 +459,7 @@ public class Maxor {
 	private static EnderCrystal spawnEnergyCrystal(Location loc) {
 		EnderCrystal c = (EnderCrystal) world.spawnEntity(loc, EntityType.END_CRYSTAL);
 		c.setCustomName(ENERGY_CRYSTAL_NAME);
-		c.setCustomNameVisible(false);
+		c.setCustomNameVisible(true);
 		return c;
 	}
 
