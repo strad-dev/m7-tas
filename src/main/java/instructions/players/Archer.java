@@ -409,6 +409,8 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 239);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 128f, 0f), 240);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 241);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 242);
+		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 339);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}

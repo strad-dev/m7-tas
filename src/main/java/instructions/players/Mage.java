@@ -385,6 +385,8 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 239);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 0f), 240);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 241);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 242);
+		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 339);
 		if(doContinue) {
 //			Utils.scheduleTask(() -> storm(true), 499);
 		}

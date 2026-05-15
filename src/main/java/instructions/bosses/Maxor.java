@@ -428,9 +428,7 @@ public class Maxor {
 	}
 
 	private static void playDeathDialogue() {
-		// Bypass sendChatMessage so we don't emit ENTITY_WITHER_AMBIENT — the death noise
-		// is the only sound permitted while dying.
-		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'M TOO YOUNG TO DIE AGAIN!");
+		sendChatMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'M TOO YOUNG TO DIE AGAIN!");
 		Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor killed in " + formatTick(maxorTick));
 		// Inlined Server.playWitherDeathSound — sounds + remove at +160.
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_DEATH);
@@ -439,7 +437,7 @@ public class Maxor {
 		int[] shootTicks = {4, 14, 24, 34, 44, 54};
 		for(int t : hurtTicks) Utils.scheduleTask(() -> { if(maxor.isValid()) maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_HURT, 2.0F, 1.0F); }, t);
 		for(int t : shootTicks) Utils.scheduleTask(() -> { if(maxor.isValid()) maxor.getWorld().playSound(maxor.getLocation(), Sound.ENTITY_WITHER_SHOOT, 2.0F, 1.0F); }, t);
-		Utils.scheduleTask(() -> Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
+		Utils.scheduleTask(() -> sendChatMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
 		Utils.scheduleTask(() -> {
 			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in " + formatTick(maxorTick - 1));
