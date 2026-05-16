@@ -40,9 +40,11 @@ public final class MobGroup {
 	}
 
 	private void doSpawn(World world, Random rng) {
+		Location firstSpawnLoc = null;
 		for(int i = 0; i < spec.count(); i++) {
 			Vector pos = spec.locationProvider().apply(rng);
 			Location spawnLoc = new Location(world, pos.getX(), pos.getY(), pos.getZ());
+			if(firstSpawnLoc == null) firstSpawnLoc = spawnLoc;
 
 			LivingEntity mob = (LivingEntity) world.spawnEntity(spawnLoc, spec.type());
 
@@ -103,6 +105,11 @@ public final class MobGroup {
 			}
 
 			spawned.add(mob);
+		}
+
+		// One sound per group, at the first mob's spawn location.
+		if(spec.spawnSound() != null && firstSpawnLoc != null) {
+			world.playSound(firstSpawnLoc, spec.spawnSound(), 1.0f, spec.spawnSoundPitch());
 		}
 	}
 

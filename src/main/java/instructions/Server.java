@@ -65,10 +65,7 @@ public class Server {
 				}
 				case "boss" -> Maxor.maxorInstructions(world, true);
 				case "maxor" -> Maxor.maxorInstructions(world, false);
-//				case "storm" -> {
-//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 165 41 95 167 40 minecraft:air");
-//					Storm.stormInstructions(world, false);
-//				}
+				case "storm" -> Storm.stormInstructions(world, false);
 //				case "goldor" -> {
 //					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
 //					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
@@ -83,7 +80,6 @@ public class Server {
 	public static void serverSetup(World world) {
 		CustomItems.flushStonkRestorations();
 		spawnMinibosses(world);
-		resetGoldorCheese();
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
@@ -91,11 +87,6 @@ public class Server {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 43 175 62");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 43 196 38 49 175 44 97 175 62");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 91 -2 45 89 -1 46 89 131 45");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 96 -2 121 96 -1 123 96 120 121");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -5 120 38 -1 99 38 59 99");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 64 79 minecraft:jungle_planks");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 64 80 minecraft:jungle_stairs");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 63 79 minecraft:stone_brick_slab[type=top]");
@@ -104,11 +95,6 @@ public class Server {
 		Storm.INSTANCE.cleanupMobs();
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 //		turnArrow(world, false);
-	}
-
-	public static void resetGoldorCheese() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 91 167 40 91 165 41 minecraft:coal_block");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 92 167 40 95 165 41 minecraft:stone_bricks");
 	}
 
 	private static void spawnMinibosses(World world) {
@@ -278,172 +264,6 @@ public class Server {
 		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET
 				+ ChatColor.RED + " ❤" + ChatColor.YELLOW + "2M");
 		return zombie;
-	}
-
-	private static LivingEntity spawnTrashMob(Location loc) {
-		boolean isZombie = Math.random() < 0.5;
-		LivingEntity mob = (LivingEntity) Objects.requireNonNull(loc.getWorld()).spawnEntity(loc, isZombie ? EntityType.ZOMBIE : EntityType.SKELETON);
-
-		int health = new Random().nextInt(5) + 1; // 1-5 HP
-		mob.setCustomNameVisible(true);
-		if(mob instanceof Zombie) ((Zombie) mob).setAdult();
-		mob.setAI(false);
-		mob.setSilent(true);
-		mob.setPersistent(true);
-		mob.setRemoveWhenFarAway(false);
-
-		Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(health);
-		mob.setHealth(health);
-
-		Color helmetColor = Color.WHITE;
-		Color chestplateColor = Color.WHITE;
-		Color leggingsColor = Color.WHITE;
-		Color bootsColor = Color.WHITE;
-		String name = "";
-		Material weapon = Material.AIR;
-		double defense = 0;
-
-		if(mob instanceof Zombie) {
-			switch(health) {
-				case 1 -> {
-					name = "Crypt Lurker";
-					weapon = Material.BONE;
-				}
-				case 2 -> {
-					name = "Zombie Soldier";
-					helmetColor = Color.fromRGB(0xD07F00);
-					chestplateColor = Color.fromRGB(0xD07F00);
-					leggingsColor = Color.fromRGB(0xD07F00);
-					bootsColor = Color.fromRGB(0xD07F00);
-				}
-				case 3 -> {
-					name = "Tank Zombie";
-					helmetColor = Color.fromRGB(0xFFFFFE);
-					chestplateColor = Color.fromRGB(0x828282);
-					leggingsColor = Color.fromRGB(0x828282);
-					bootsColor = Color.fromRGB(0xFFFFFE);
-				}
-				case 4 -> {
-					name = "Super Tank Zombie";
-					weapon = Material.STONE_SWORD;
-					helmetColor = Color.fromRGB(0xE6E6E6);
-					chestplateColor = Color.fromRGB(0x5A6464);
-					leggingsColor = Color.fromRGB(0x5A6464);
-					bootsColor = Color.fromRGB(0xE6E6E6);
-				}
-				case 5 -> {
-					name = "Zombie Commander";
-					weapon = Material.FISHING_ROD;
-					helmetColor = Color.fromRGB(0xD51230);
-					chestplateColor = Color.fromRGB(0xD51230);
-					leggingsColor = Color.fromRGB(0xD51230);
-					bootsColor = Color.fromRGB(0xD51230);
-				}
-			}
-		} else {
-			switch(health) {
-				case 1 -> {
-					name = "Skeleton Soldier";
-					weapon = Material.BOW;
-					helmetColor = Color.fromRGB(0xFFBC0B);
-					chestplateColor = Color.fromRGB(0xFFBC0B);
-					leggingsColor = Color.fromRGB(0xFFBC0B);
-					bootsColor = Color.fromRGB(0xFFBC0B);
-				}
-				case 2 -> {
-					name = "Skeleton Master";
-					weapon = Material.BOW;
-					helmetColor = Color.fromRGB(0xFF6B0B);
-					chestplateColor = Color.fromRGB(0xFF6B0B);
-					leggingsColor = Color.fromRGB(0xFF6B0B);
-					bootsColor = Color.fromRGB(0xFF6B0B);
-				}
-				case 3 -> {
-					name = "Skeleton Lord";
-					weapon = Material.BOW;
-					helmetColor = Color.fromRGB(0xFFFF55);
-					chestplateColor = Color.fromRGB(0x268105);
-					leggingsColor = Color.fromRGB(0x268105);
-					bootsColor = Color.fromRGB(0x268105);
-				}
-				case 4 -> {
-					name = "Skeletor Prime";
-					weapon = Material.BONE;
-					helmetColor = Color.fromRGB(0xAAAAAA);
-					chestplateColor = Color.fromRGB(0x191919);
-					leggingsColor = Color.fromRGB(0x191919);
-					bootsColor = Color.fromRGB(0x191919);
-				}
-				case 5 -> {
-					name = "Super Archer";
-					weapon = Material.BOW;
-				}
-			}
-		}
-
-		mob.setCustomName(ChatColor.RED + name + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + (health * 2) + "M");
-		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-		Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-
-		if(weapon != Material.AIR) {
-			assert mob.getEquipment() != null;
-			mob.getEquipment().setItemInMainHand(new ItemStack(weapon));
-		}
-
-		if(helmetColor != Color.WHITE) {
-			assert mob.getEquipment() != null;
-			mob.getEquipment().setHelmet(Utils.createLeatherArmor(Material.LEATHER_HELMET, helmetColor, name + " Helmet"));
-			mob.getEquipment().setChestplate(Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, chestplateColor, name + " Chestplate"));
-			mob.getEquipment().setLeggings(Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, leggingsColor, name + " Leggings"));
-			mob.getEquipment().setBoots(Utils.createLeatherArmor(Material.LEATHER_BOOTS, bootsColor, name + " Boots"));
-		}
-
-		return mob;
-	}
-
-	public static void spawn1x1Mobs(World world) {
-		Location zodd = new Location(world, -90.5, 67, -90.5);
-		Location admin = new Location(world, -88.5, 69, -24.5);
-		Location tomioka = new Location(world, -216.5, 69, -120.5);
-
-		// Remove existing mobs
-		for(LivingEntity mob : trashMobs) {
-			if(mob != null) {
-				mob.remove();
-			}
-		}
-
-		int index = 0;
-		Location[] spawnPoints = {zodd, admin, tomioka};
-
-		for(Location center : spawnPoints) {
-			for(int i = 0; i < 6; i++) {
-				Location spawnLoc = getRandomLocation(center);
-				trashMobs[index++] = spawnTrashMob(spawnLoc);
-			}
-		}
-	}
-
-	public static void turnArrow(World world, boolean isCompleting) {
-		Block block = world.getBlockAt(-2, 122, 77);
-		Collection<Entity> entities = world.getNearbyEntities(block.getLocation().add(0.5, 0.5, 0.5), 1, 1, 1);
-
-		for(Entity entity : entities) {
-			if(entity instanceof ItemFrame itemFrame) {
-				// Check if this item frame is actually at the block we want
-				if(entity.getLocation().getBlockX() == -2 &&
-						entity.getLocation().getBlockY() == 122 &&
-						entity.getLocation().getBlockZ() == 77) {
-
-					if(isCompleting) {
-						itemFrame.setRotation(Rotation.CLOCKWISE_45);
-					} else {
-						itemFrame.setRotation(Rotation.NONE);
-					}
-					break;
-				}
-			}
-		}
 	}
 
 	public static class Quiz {

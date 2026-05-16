@@ -1,6 +1,7 @@
 package instructions.bosses;
 
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -35,7 +36,9 @@ public record MobSpawnSpec(
 		Location facingTarget,
 		List<PotionEffect> potionEffects,
 		List<ItemStack> armorPieces,  // helmet, chestplate, leggings, boots — order matters; null entries skipped
-		int startTick
+		int startTick,
+		Sound spawnSound,              // played once at first mob's location when the group spawns; null = silent
+		float spawnSoundPitch
 ) {
 
 	/**

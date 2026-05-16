@@ -11,6 +11,9 @@ import net.minecraft.network.protocol.game.ServerboundInteractPacket;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
 import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+import net.minecraft.network.protocol.game.ServerboundUseItemPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.Vec3;
@@ -92,6 +95,36 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					}
 				});
 			});
+		}
+		// Reset vanilla's interact dedupe so repeated clicks on the same block keep firing
+		// PlayerInteractEvent. Without this, vanilla's ServerPlayerGameMode.useItemOn caches
+		// the (block, hand, item) triple of the previous event and reuses its result for
+		// subsequent matching packets — so rapid clicks on the same block only fire one
+		// ability and the rest are silently absorbed. TASGamePacketListenerImpl resets at
+		// the top of handleUseItemOn for fake players (line 277); real players use vanilla's
+		// listener which does not, so we reset here.
+		//
+		// Scheduled onto the server's executor (not Bukkit.scheduler.runTask) so it lands on
+		// the main thread *in the same queue* as the packet handler — both are dequeued in
+		// FIFO order, so the reset runs immediately before vanilla processes this packet.
+		// Dispatch the right-click ability directly, bypassing whatever vanilla mechanism
+		// is suppressing PlayerInteractEvent for repeated same-block clicks. This is wired
+		// at the netty layer so every UseItem(On) packet hits CustomItems.handleCustomItems,
+		// which has its own 1-tick anti-spam cooldown to dedupe against vanilla's event if
+		// it also fires.
+		//
+		// ServerboundUseItemOnPacket → RIGHT_CLICK_BLOCK
+		// ServerboundUseItemPacket   → RIGHT_CLICK_AIR
+		// Scheduled on the server executor (same queue as vanilla's packet handler) so it
+		// runs on the main thread immediately before vanilla processes the packet.
+		if(msg instanceof ServerboundUseItemOnPacket usePkt && usePkt.getHand() == InteractionHand.MAIN_HAND) {
+			MinecraftServer.getServer().execute(() ->
+					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
+							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player));
+		} else if(msg instanceof ServerboundUseItemPacket airPkt && airPkt.getHand() == InteractionHand.MAIN_HAND) {
+			MinecraftServer.getServer().execute(() ->
+					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
+							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, player));
 		}
 		super.channelRead(ctx, msg);
 	}

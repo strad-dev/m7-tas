@@ -422,12 +422,10 @@ public final class Maxor extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
-		// Original passes the full "[BOSS] Maxor: ..." prefix to sendChatMessage, which
-		// also adds it — producing a doubled prefix. Preserve verbatim for Phase 1.
-		sendChatMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'M TOO YOUNG TO DIE AGAIN!");
+		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
 		Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor killed in " + formatTick(tick));
 		Server.playWitherDeathSound(boss);
-		Utils.scheduleTask(() -> sendChatMessage(ChatColor.DARK_RED + "[BOSS] Maxor" + ChatColor.RED + ": I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
+		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
 		Utils.scheduleTask(() -> {
 			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in " + formatTick(tick - 1));
@@ -474,7 +472,7 @@ public final class Maxor extends WitherLord {
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
 			// Optional: Set custom name
-			miner.setCustomName("Wither Miner " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤");
+			miner.setCustomName("Wither Miner " + ChatColor.YELLOW + "8M" + ChatColor.RED + "❤");
 			miner.setCustomNameVisible(true);
 
 			// Store in array
