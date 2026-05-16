@@ -1836,10 +1836,28 @@ public class CustomItems implements Listener {
 		Location eyeLocation = p.getEyeLocation();
 		Vector eyeDirection = eyeLocation.getDirection();
 
-		// Raytrace to find what the player is actually looking at
+		// Raytrace both entities and blocks. Whichever is closer along the line of sight is
+		// what the beam actually hits — so if a wall is between the player and an entity,
+		// the wall stops the beam and the entity takes no damage.
 		RayTraceResult entityResult = findTargetEntity(p, eyeLocation, eyeDirection, range);
-		Vector targetPoint = findTargetPoint(p, eyeLocation, eyeDirection, range, entityResult);
-		Entity targetEntity = entityResult != null ? entityResult.getHitEntity() : null;
+		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
+
+		Vector eye = eyeLocation.toVector();
+		double entityDist = entityResult != null ? entityResult.getHitPosition().distance(eye) : Double.MAX_VALUE;
+		double blockDist = blockResult != null ? blockResult.getHitPosition().distance(eye) : Double.MAX_VALUE;
+
+		Vector targetPoint;
+		Entity targetEntity;
+		if(entityResult != null && entityDist <= blockDist) {
+			targetEntity = entityResult.getHitEntity();
+			targetPoint = entityResult.getHitPosition();
+		} else if(blockResult != null) {
+			targetEntity = null;
+			targetPoint = blockResult.getHitPosition();
+		} else {
+			targetEntity = null;
+			targetPoint = eye.clone().add(eyeDirection.clone().multiply(range));
+		}
 
 		// Calculate the direction from hand to the target point
 		Vector handToTarget = targetPoint.clone().subtract(l.toVector());
@@ -1874,17 +1892,6 @@ public class CustomItems implements Listener {
 		// range to large hitboxes (e.g. withers), because the player's eye ends up inside
 		// the inflated AABB and the raytrace returns an arbitrary exit face.
 		return p.getWorld().rayTraceEntities(eyeLocation, eyeDirection, range, 0, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
-	}
-
-	private static Vector findTargetPoint(Player p, Location eyeLocation, Vector eyeDirection, double range, RayTraceResult entityResult) {
-		if(entityResult != null) {
-			return entityResult.getHitPosition();
-		}
-		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
-		if(blockResult != null) {
-			return blockResult.getHitPosition();
-		}
-		return eyeLocation.toVector().add(eyeDirection.clone().multiply(range));
 	}
 
 	public static void spawnFireworkParticle(Location l) {

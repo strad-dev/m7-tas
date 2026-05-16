@@ -21,19 +21,26 @@ public class WitherActions {
 	private static final Map<UUID, BukkitTask> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
 
+	/** Max horizontal displacement per tick along the XZ wither-to-target vector. */
+	private static final double AGGRO_SPEED_HORIZONTAL = 0.6;
+
+	/** Max vertical displacement per tick, applied independently of the horizontal step. */
+	private static final double AGGRO_SPEED_VERTICAL = 0.2;
+
 	/**
-	 * Makes a Wither deterministically chase a target using vanilla-equivalent
-	 * aiStep chase math, independent of its actual HP / isPowered() state.
-	 * Also enables noPhysics so the Wither phases through walls while chasing.
+	 * Makes a Wither chase a target using a per-tick "linear-toward-target" model:
+	 * each tick the target point is recomputed (the closest spot at {@code stopDistance}
+	 * horizontally from the target's position, with {@code yOffset} vertical offset),
+	 * and the wither steps toward it at {@link #AGGRO_SPEED} blocks/tick. If the wither
+	 * is already within one step of the target, it snaps exactly to the target.
+	 * Also enables {@code noPhysics} so the wither phases through walls while chasing.
 	 *
-	 * @param wither       The Wither. Must have setAI(false); the RNG-bearing goals and
-	 *                     customServerAiStep path are skipped under noAi.
+	 * @param wither       The Wither. Must have setAI(false).
 	 * @param target       LivingEntity to chase.
 	 * @param stopDistance Horizontal distance (blocks) at which the wither stops chasing.
 	 * @param yOffset      Vertical offset above the target the wither hovers at.
 	 */
 	public static void setWitherAggro(Wither wither, LivingEntity target, double stopDistance, double yOffset) {
-		final double stopDistSq = stopDistance * stopDistance;
 		clearWitherAggro(wither);
 
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
@@ -41,11 +48,6 @@ public class WitherActions {
 		w.noPhysics = true;
 
 		BukkitTask task = new BukkitRunnable() {
-			// Own velocity state — vanilla aiStep mutates deltaMovement between our ticks
-			// (its multiply(1,0.6,1) y-damp and the !isEffectiveAi 0.98 scale still run even
-			// with setAI(false)), so we can't rely on deltaMovement to carry state for us.
-			double vx = 0, vy = 0, vz = 0;
-
 			@Override
 			public void run() {
 				if(w.isRemoved() || t.isRemoved() || !t.isAlive()) {
@@ -55,29 +57,49 @@ public class WitherActions {
 					return;
 				}
 
-				// Soft proportional vertical control — desired vy is proportional to the
-				// Y error, capped in [-0.2, 0.5]. Replaces the vanilla below/above toggle
-				// which was flipping every tick near the target Y and causing the bounce.
-				double targetY = t.getY() + yOffset;
-				double desiredVy = Math.max(-0.2, Math.min(0.5, (targetY - w.getY()) * 0.3));
-				vy += (desiredVy - vy) * 0.4;
+				double wx = w.getX(), wy = w.getY(), wz = w.getZ();
+				double tx = t.getX(), tz = t.getZ();
 
-				// Horizontal chase (mirrors Wither.aiStep:173-177) — only when > stopDistance blocks away.
-				// Within stopDistance, zero horizontal velocity BEFORE move() so the wither hard-stops
-				// on this tick rather than coasting one extra tick of leftover momentum.
-				double dx = t.getX() - w.getX();
-				double dz = t.getZ() - w.getZ();
-				double horizSq = dx * dx + dz * dz;
-				boolean chasing = horizSq > stopDistSq;
-				if(chasing) {
-					double len = Math.sqrt(horizSq);
-					double dirx = dx / len;
-					double dirz = dz / len;
-					vx += dirx * 0.3 - vx * 0.6;
-					vz += dirz * 0.3 - vz * 0.6;
+				// Horizontal target: closest point on the (radius=stopDistance) ring around the
+				// player, projected from the wither's current horizontal position. If the wither
+				// is exactly above the player, fall back to keeping its current direction.
+				double dx = wx - tx;
+				double dz = wz - tz;
+				double horiz = Math.sqrt(dx * dx + dz * dz);
+				double goalX, goalZ;
+				if(horiz < 1e-6) {
+					goalX = tx + stopDistance;
+					goalZ = tz;
 				} else {
-					vx = 0;
-					vz = 0;
+					double scale = stopDistance / horiz;
+					goalX = tx + dx * scale;
+					goalZ = tz + dz * scale;
+				}
+				double goalY = t.getY() + yOffset;
+
+				// Horizontal step: cap at AGGRO_SPEED_HORIZONTAL along the XZ vector to the goal.
+				double mx = goalX - wx;
+				double mz = goalZ - wz;
+				double horizMove = Math.sqrt(mx * mx + mz * mz);
+				double vx, vz;
+				if(horizMove <= AGGRO_SPEED_HORIZONTAL || horizMove < 1e-9) {
+					vx = mx;
+					vz = mz;
+				} else {
+					double k = AGGRO_SPEED_HORIZONTAL / horizMove;
+					vx = mx * k;
+					vz = mz * k;
+				}
+
+				// Vertical step: independent of horizontal — cap at AGGRO_SPEED_VERTICAL along Y only.
+				// Decoupling fixes the "diagonal slow-down" where a small vertical error combined
+				// with a large horizontal error would make Y barely change tick-to-tick.
+				double my = goalY - wy;
+				double vy;
+				if(Math.abs(my) <= AGGRO_SPEED_VERTICAL) {
+					vy = my;
+				} else {
+					vy = Math.signum(my) * AGGRO_SPEED_VERTICAL;
 				}
 
 				Vec3 v = new Vec3(vx, vy, vz);
@@ -93,12 +115,6 @@ public class WitherActions {
 				// uses to aim a mob at a target, so the formula and sign conventions are
 				// guaranteed to match rendering. It sets xRot, yRot, yHeadRot in one call.
 				w.lookAt(EntityAnchorArgument.Anchor.EYES, t.getEyePosition());
-
-				// Vanilla in-air friction for next tick (only matters while still chasing).
-				if(chasing) {
-					vx *= 0.91;
-					vz *= 0.91;
-				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 

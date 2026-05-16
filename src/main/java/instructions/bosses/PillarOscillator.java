@@ -37,21 +37,27 @@ public final class PillarOscillator {
 	private int bottomY;
 	private Direction direction;
 	private int lastMovementTick;
+	private boolean used;
 
 	public PillarOscillator(PadAndPillar pillar) {
 		this.pillar = pillar;
 		reset();
 	}
 
-	/** Resets to initial state — bottom at y175, direction DOWN, no movement recorded. */
+	/** Resets to initial state — bottom at y175, direction DOWN, no movement recorded, not used. */
 	public void reset() {
 		bottomY = PadAndPillar.PILLAR_BOTTOM_INITIAL;
 		direction = Direction.DOWN;
 		lastMovementTick = Integer.MIN_VALUE;
+		used = false;
 	}
 
 	public PadAndPillar getPillar() { return pillar; }
 	public int getBottomY() { return bottomY; }
+
+	/** @return true once this pillar has crushed Storm and been consumed — the pad no longer activates it. */
+	public boolean isUsed() { return used; }
+	public void markUsed() { used = true; }
 
 	/**
 	 * Execute one 20-tick cycle's motion, scheduling per-block clone ops at 4-tick
@@ -81,7 +87,10 @@ public final class PillarOscillator {
 			Utils.scheduleTask(this::moveOne, delay + i * 4L);
 		}
 
-		lastMovementTick = currentTick;
+		// Only downward motion arms the crush detector — upward cycles don't count.
+		if(direction == Direction.DOWN) {
+			lastMovementTick = currentTick;
+		}
 	}
 
 	private void moveOne() {

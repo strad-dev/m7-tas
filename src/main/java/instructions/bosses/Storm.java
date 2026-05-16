@@ -2,21 +2,9 @@ package instructions.bosses;
 
 import instructions.Actions;
 import instructions.Server;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Color;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Wither;
-import org.bukkit.entity.WitherSkeleton;
-import org.bukkit.entity.Zombie;
+import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -46,8 +34,10 @@ public final class Storm extends WitherLord {
 	private static final double CRUSH_DAMAGE_FRACTION = 0.05;
 	private static final double STUN_DAMAGE_CAP_FRACTION = 0.55;
 	private static final int CRUSH_EXPLOSION_DELAY = 20;
-	private static final float CRUSH_EXPLOSION_POWER = 7.0f;
-	private static final int CRUSH_DETECTOR_WINDOW = 60;
+	// Tuned for a wider visible blast radius. Each 0.3-block step through diorite decays
+	// ray power by ~1.9, so the average destruction radius is roughly power/6 blocks.
+	private static final float CRUSH_EXPLOSION_POWER = 50.0f;
+	private static final int CRUSH_DETECTOR_WINDOW = 61;
 	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
 
 	// Aggro parameters (post-intro and post-enrage).
@@ -60,20 +50,7 @@ public final class Storm extends WitherLord {
 
 	// Deterministic Wither Guard locations — these are placed at exact pillar-sentry spots
 	// rather than randomized within an AABB.
-	private static final double[][] SENTRY_COORDS = {
-			{114.5, 175, 35.5}, {114.5, 175, 45.5}, {114.5, 175, 61.5}, {114.5, 175, 71.5},
-			{86.5, 175, 35.5}, {86.5, 175, 45.5}, {86.5, 175, 61.5}, {86.5, 175, 71.5},
-			{60.5, 175, 35.5}, {60.5, 175, 45.5}, {60.5, 175, 61.5}, {60.5, 175, 71.5},
-			{32.5, 175, 35.5}, {32.5, 175, 45.5}, {32.5, 175, 61.5}, {32.5, 175, 71.5},
-			{79.5, 170, 104.5}, {77.5, 170, 103.5}, {75.5, 170, 103.5}, {73.5, 170, 103.5},
-			{71.5, 170, 103.5}, {69.5, 170, 103.5}, {67.5, 170, 104.5},
-			{22.5, 172, 59.5}, {23.5, 172, 57.5}, {23.5, 172, 55.5}, {23.5, 172, 53.5},
-			{23.5, 172, 51.5}, {23.5, 172, 49.5}, {22.5, 172, 47.5},
-			{67.5, 170, 2.5}, {69.5, 170, 3.5}, {71.5, 170, 3.5}, {73.5, 170, 3.5},
-			{75.5, 170, 3.5}, {77.5, 170, 3.5}, {79.5, 170, 2.5},
-			{124.5, 172, 47.5}, {123.5, 172, 49.5}, {123.5, 172, 51.5}, {123.5, 172, 53.5},
-			{123.5, 172, 55.5}, {123.5, 172, 57.5}, {124.5, 172, 59.5}
-	};
+	private static final double[][] SENTRY_COORDS = {{114.5, 175, 35.5}, {114.5, 175, 45.5}, {114.5, 175, 61.5}, {114.5, 175, 71.5}, {86.5, 175, 35.5}, {86.5, 175, 45.5}, {86.5, 175, 61.5}, {86.5, 175, 71.5}, {60.5, 175, 35.5}, {60.5, 175, 45.5}, {60.5, 175, 61.5}, {60.5, 175, 71.5}, {32.5, 175, 35.5}, {32.5, 175, 45.5}, {32.5, 175, 61.5}, {32.5, 175, 71.5}, {79.5, 170, 104.5}, {77.5, 170, 103.5}, {75.5, 170, 103.5}, {73.5, 170, 103.5}, {71.5, 170, 103.5}, {69.5, 170, 103.5}, {67.5, 170, 104.5}, {22.5, 172, 59.5}, {23.5, 172, 57.5}, {23.5, 172, 55.5}, {23.5, 172, 53.5}, {23.5, 172, 51.5}, {23.5, 172, 49.5}, {22.5, 172, 47.5}, {67.5, 170, 2.5}, {69.5, 170, 3.5}, {71.5, 170, 3.5}, {73.5, 170, 3.5}, {75.5, 170, 3.5}, {77.5, 170, 3.5}, {79.5, 170, 2.5}, {124.5, 172, 47.5}, {123.5, 172, 49.5}, {123.5, 172, 51.5}, {123.5, 172, 53.5}, {123.5, 172, 55.5}, {123.5, 172, 57.5}, {124.5, 172, 59.5}};
 
 	private static final Random random = new Random();
 	private static final String[] LIGHTNING_MESSAGE = {"ENERGY HEED MY CALL!", "THUNDER LET ME BE YOUR CATALYST!"};
@@ -89,22 +66,49 @@ public final class Storm extends WitherLord {
 	private boolean crushEnabled;
 	private boolean inStun;
 	private double stunDamageDealt;
+	private PadAndPillar currentCrushPillar;
+	private boolean crushExplosionActive;
 
 	private Storm() {
 		register(this);
 	}
 
-	/** Static facade for /tas and the boss-chain. */
+	/**
+	 * Static facade for /tas and the boss-chain.
+	 */
 	public static void stormInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
 	}
 
-	@Override protected String name() { return "Storm"; }
-	@Override protected String displayName() { return "Storm"; }
-	@Override protected Location spawnLocation() { return new Location(world, 102.5, 182, 53.5, 90f, 0f); }
-	@Override protected double maxHealth() { return 600; }
-	@Override protected String displayHealth() { return "1B"; }
-	@Override protected int previousTicks() { return PRE_STORM_TICKS; }
+	@Override
+	protected String name() {
+		return "Storm";
+	}
+
+	@Override
+	protected String displayName() {
+		return "Storm";
+	}
+
+	@Override
+	protected Location spawnLocation() {
+		return new Location(world, 102.5, 182, 53.5, 90f, 0f);
+	}
+
+	@Override
+	protected double maxHealth() {
+		return 600;
+	}
+
+	@Override
+	protected String displayHealth() {
+		return "1B";
+	}
+
+	@Override
+	protected int previousTicks() {
+		return PRE_STORM_TICKS;
+	}
 
 	@Override
 	protected void resetState() {
@@ -114,6 +118,7 @@ public final class Storm extends WitherLord {
 		crushEnabled = false;
 		inStun = false;
 		stunDamageDealt = 0;
+		currentCrushPillar = null;
 		cleanupMobs();
 		pillars.clear();
 		for(PadAndPillar p : PadAndPillar.ACTIVE) {
@@ -222,8 +227,10 @@ public final class Storm extends WitherLord {
 				return;
 			}
 
-			// Pad-gated pillar advance: per pillar, if a real player stands on its pad, run a cycle.
+			// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
+			// Used (already-crushed) pillars are skipped — their pad is dead.
 			for(PillarOscillator osc : pillars) {
+				if(osc.isUsed()) continue;
 				if(padOccupied(osc.getPillar().padBox())) {
 					osc.runCycle(tick);
 				}
@@ -245,13 +252,10 @@ public final class Storm extends WitherLord {
 	private boolean padOccupied(BoundingBox padBox) {
 		for(Player p : world.getPlayers()) {
 			if(p.getGameMode() == GameMode.SPECTATOR) continue;
-			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			int bx = p.getLocation().getBlockX();
 			int by = p.getLocation().getBlockY();
 			int bz = p.getLocation().getBlockZ();
-			if(bx >= padBox.getMinX() && bx <= padBox.getMaxX()
-					&& by >= padBox.getMinY() && by <= padBox.getMaxY()
-					&& bz >= padBox.getMinZ() && bz <= padBox.getMaxZ()) {
+			if(bx >= padBox.getMinX() && bx <= padBox.getMaxX() && by >= padBox.getMinY() && by <= padBox.getMaxY() && bz >= padBox.getMinZ() && bz <= padBox.getMaxZ()) {
 				return true;
 			}
 		}
@@ -287,6 +291,13 @@ public final class Storm extends WitherLord {
 	// --- Crush mechanic (mirror Maxor.triggerStun / handleDamage with 0.55 cap and 20t-delayed explosion) ---
 
 	private void triggerCrush() {
+		// Consume the pillar Storm is currently inside so its pad goes dead, and
+		// record it so the T+20 explosion listener can scope block destruction
+		// to that pillar's column only (no collateral damage to other pillars).
+		PillarOscillator crushed = findPillarStormIsIn();
+		currentCrushPillar = crushed != null ? crushed.getPillar() : null;
+		if(crushed != null) crushed.markUsed();
+
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
 		double crushDmg = maxHp * CRUSH_DAMAGE_FRACTION;
 		double currentHp = boss.getHealth();
@@ -328,12 +339,43 @@ public final class Storm extends WitherLord {
 		Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
 	}
 
+	/**
+	 * @return the PillarOscillator whose column Storm's hitbox currently overlaps horizontally,
+	 * or null if none. Used to identify which pillar should be consumed on a crush.
+	 */
+	private PillarOscillator findPillarStormIsIn() {
+		BoundingBox box = boss.getBoundingBox();
+		double sx1 = box.getMinX(), sx2 = box.getMaxX();
+		double sz1 = box.getMinZ(), sz2 = box.getMaxZ();
+		for(PillarOscillator osc : pillars) {
+			if(osc.isUsed()) continue;
+			PadAndPillar p = osc.getPillar();
+			// Pillar block columns occupy x in [pillarX1, pillarX2+1) and z in [pillarZ1, pillarZ2+1).
+			if(sx2 >= p.pillarX1() && sx1 <= p.pillarX2() + 1
+					&& sz2 >= p.pillarZ1() && sz1 <= p.pillarZ2() + 1) {
+				return osc;
+			}
+		}
+		return null;
+	}
+
 	private void fireCrushExplosion() {
 		if(boss == null || !boss.isValid()) return;
 		Location loc = boss.getLocation();
 		// Power=7 mirrors the vanilla Wither spawn explosion. StormCrushExplosion listener
 		// filters the resulting block list to keep only diorite/polished_diorite with y<196.
-		world.createExplosion(loc.getX(), loc.getY(), loc.getZ(), CRUSH_EXPLOSION_POWER, false, true, boss);
+		// Vanilla's Level.explode() force-disables block-breaking when the source is a Mob and
+		// mobGriefing is false, regardless of the breakBlocks parameter. Toggle the gamerule
+		// for the duration of this call so the explosion can destroy pillar blocks.
+		Boolean prevMobGriefing = world.getGameRuleValue(GameRule.MOB_GRIEFING);
+		try {
+			world.setGameRule(GameRule.MOB_GRIEFING, true);
+			crushExplosionActive = true;
+			world.createExplosion(loc.getX(), loc.getY(), loc.getZ(), CRUSH_EXPLOSION_POWER, false, true, boss);
+		} finally {
+			crushExplosionActive = false;
+			world.setGameRule(GameRule.MOB_GRIEFING, prevMobGriefing != null && prevMobGriefing);
+		}
 	}
 
 	private void enrageStorm() {
@@ -424,7 +466,9 @@ public final class Storm extends WitherLord {
 		cancelCycleTask();
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
-		Utils.scheduleTask(() -> { if(boss != null && boss.isValid()) boss.setHealth(1.0); }, 1);
+		Utils.scheduleTask(() -> {
+			if(boss != null && boss.isValid()) boss.setHealth(1.0);
+		}, 1);
 		Utils.changeName(boss);
 		playDeathDialogue();
 	}
@@ -446,13 +490,31 @@ public final class Storm extends WitherLord {
 		return dying && w != null && w.equals(boss);
 	}
 
+	/**
+	 * The pillar currently being destroyed by a crush explosion (set in {@link #triggerCrush}
+	 * and consumed by {@link listeners.StormCrushExplosion}). null between crushes.
+	 */
+	public PadAndPillar getCurrentCrushPillar() {
+		return currentCrushPillar;
+	}
+
+	/**
+	 * True only during the synchronous call to {@code world.createExplosion(...)} inside
+	 * {@code fireCrushExplosion}. Used by {@link listeners.StormCrushExplosion} to identify
+	 * damage/knockback events sourced by Storm's crush even when the event doesn't carry
+	 * the wither entity explicitly.
+	 */
+	public boolean isCrushExplosionActive() {
+		return crushExplosionActive;
+	}
+
 	// --- Mob spawning ---
 
 	private void spawnMobGroups() {
 		mobGroups.clear();
 
 		// Static name + equipment shared by every miner.
-		String minerName = "Wither Miner " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤";
+		String minerName = "Wither Miner " + ChatColor.YELLOW + "8M" + ChatColor.RED + "❤";
 		ItemStack stonePickaxe = new ItemStack(Material.STONE_PICKAXE);
 		Location facingCenter = FACING_CENTER.clone();
 		facingCenter.setWorld(world);
@@ -498,33 +560,21 @@ public final class Storm extends WitherLord {
 	}
 
 	private static MobSpawnSpec minerSpec(String groupName, int count, java.util.function.Function<Random, Vector> provider, String customName, ItemStack mainHand, Location facingCenter, int startTick) {
-		return new MobSpawnSpec(
-				groupName, EntityType.WITHER_SKELETON, count, provider,
-				4.0, -30, -20,
-				customName, mainHand,
+		return new MobSpawnSpec(groupName, EntityType.WITHER_SKELETON, count, provider, 4.0, -30, -20, customName, mainHand,
 				/* aiEnabled */ true, /* aggressive */ true, /* adult */ false,
-				/* silent */ false, /* persistent */ true,
-				facingCenter,
-				null, null,
-				startTick
-		);
+				/* silent */ false, /* persistent */ true, facingCenter, null, null, startTick,
+				Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f);
 	}
 
 	private static MobSpawnSpec shadowAssassinSpec(String groupName, double x, double y, double z, int startTick) {
 		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
 		List<ItemStack> armor = Arrays.asList(new ItemStack(Material.AIR), new ItemStack(Material.AIR), new ItemStack(Material.AIR), boots);
 		List<PotionEffect> effects = List.of(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
-		return new MobSpawnSpec(
-				groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, y, z),
-				15.0, -30, -20,
-				ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤",
-				new ItemStack(Material.STONE_SWORD),
+		return new MobSpawnSpec(groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, y, z), 15.0, -30, -20, ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤", new ItemStack(Material.STONE_SWORD),
 				/* aiEnabled */ false, /* aggressive */ false, /* adult */ true,
 				/* silent */ true, /* persistent */ true,
-				/* facingTarget */ null,
-				effects, armor,
-				startTick
-		);
+				/* facingTarget */ null, effects, armor, startTick,
+				null, 1.0f);
 	}
 
 	private void spawnSentries() {
@@ -541,7 +591,7 @@ public final class Storm extends WitherLord {
 			sentry.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			sentry.setAI(false);
 			sentry.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
-			sentry.setCustomName("Wither Guard " + ChatColor.YELLOW + "6M" + ChatColor.RED + "❤");
+			sentry.setCustomName("Wither Guard " + ChatColor.YELLOW + "8M" + ChatColor.RED + "❤");
 			sentry.setCustomNameVisible(true);
 
 			Location targetLoc = new Location(world, center.getX(), loc.getY(), center.getZ());
@@ -553,8 +603,7 @@ public final class Storm extends WitherLord {
 			facingLoc.setPitch(pitch);
 			sentry.teleport(facingLoc);
 
-			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWs =
-					(net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton) sentry).getHandle();
+			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWs = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton) sentry).getHandle();
 			nmsWs.setAggressive(true);
 
 			sentries.add(sentry);
