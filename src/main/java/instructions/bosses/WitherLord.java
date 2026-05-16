@@ -140,8 +140,8 @@ public abstract class WitherLord {
 		WitherActions.setWitherArmor(boss, on);
 	}
 
-	protected final void setAggro(LivingEntity target, double stopDistance, double yOffset) {
-		WitherActions.setWitherAggro(boss, target, stopDistance, yOffset);
+	protected final void setAggro(LivingEntity target, double stopDistance, double yOffset, double maxSpeed) {
+		WitherActions.setWitherAggro(boss, target, stopDistance, yOffset, maxSpeed);
 	}
 
 	protected final void clearAggro() {

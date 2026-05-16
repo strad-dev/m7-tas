@@ -12,7 +12,6 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
-import plugin.FakePlayerManager;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -38,11 +37,15 @@ public final class Storm extends WitherLord {
 	// ray power by ~1.9, so the average destruction radius is roughly power/6 blocks.
 	private static final float CRUSH_EXPLOSION_POWER = 50.0f;
 	private static final int CRUSH_DETECTOR_WINDOW = 61;
+	// Lowest Y Storm can be pushed down to by a descending pillar — at or below this
+	// the push no-ops and the pillar is allowed to crush.
+	private static final double STORM_FLOOR_Y = 169.0;
 	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
 
 	// Aggro parameters (post-intro and post-enrage).
 	private static final double AGGRO_STOP_DISTANCE = 6.0;
 	private static final double AGGRO_Y_OFFSET = 2.0;
+	private static final double AGGRO_MAX_SPEED = 0.6;
 	private static final String TARGET_PLAYER_NAME = "Beethoven_";
 
 	// Center the miners and sentries face toward.
@@ -136,7 +139,7 @@ public final class Storm extends WitherLord {
 			crushEnabled = true;
 			Player target = resolveTargetPlayer();
 			if(target != null) {
-				setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET);
+				setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 			}
 		}, INTRO_END_TICK);
 
@@ -340,13 +343,19 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * @return the PillarOscillator whose column Storm's hitbox currently overlaps horizontally,
-	 * or null if none. Used to identify which pillar should be consumed on a crush.
+	 * @return the PillarOscillator whose column Storm's hitbox currently overlaps horizontally.
+	 * If no overlap (e.g. Storm is between columns at trigger time), falls back to the closest
+	 * unused active pillar by horizontal distance — so the crush always has a valid pillar to
+	 * scope explosion destruction to. Returns null only if every active pillar has been used.
 	 */
 	private PillarOscillator findPillarStormIsIn() {
 		BoundingBox box = boss.getBoundingBox();
 		double sx1 = box.getMinX(), sx2 = box.getMaxX();
 		double sz1 = box.getMinZ(), sz2 = box.getMaxZ();
+		PillarOscillator closest = null;
+		double closestDistSq = Double.POSITIVE_INFINITY;
+		double sxMid = (sx1 + sx2) * 0.5;
+		double szMid = (sz1 + sz2) * 0.5;
 		for(PillarOscillator osc : pillars) {
 			if(osc.isUsed()) continue;
 			PadAndPillar p = osc.getPillar();
@@ -355,8 +364,17 @@ public final class Storm extends WitherLord {
 					&& sz2 >= p.pillarZ1() && sz1 <= p.pillarZ2() + 1) {
 				return osc;
 			}
+			double pxMid = (p.pillarX1() + p.pillarX2() + 1) * 0.5;
+			double pzMid = (p.pillarZ1() + p.pillarZ2() + 1) * 0.5;
+			double ddx = sxMid - pxMid;
+			double ddz = szMid - pzMid;
+			double d2 = ddx * ddx + ddz * ddz;
+			if(d2 < closestDistSq) {
+				closestDistSq = d2;
+				closest = osc;
+			}
 		}
-		return null;
+		return closest;
 	}
 
 	private void fireCrushExplosion() {
@@ -394,7 +412,7 @@ public final class Storm extends WitherLord {
 
 		Player target = resolveTargetPlayer();
 		if(target != null) {
-			setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET);
+			setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 		}
 	}
 
@@ -506,6 +524,36 @@ public final class Storm extends WitherLord {
 	 */
 	public boolean isCrushExplosionActive() {
 		return crushExplosionActive;
+	}
+
+	/**
+	 * Called by {@link PillarOscillator} immediately before each DOWN clone op. If
+	 * Storm's hitbox horizontally overlaps {@code pillar} and the new pillar bottom
+	 * row at {@code newBottomY} would dip into Storm's vertical extent, shove Storm
+	 * down by one block to keep him below the descending pillar.
+	 * <br>
+	 * No-ops if Storm has reached {@link #STORM_FLOOR_Y} — at that point the descending
+	 * pillar is allowed to crush. This preserves the rule that a stationary or upward-
+	 * moving pillar Storm flies into horizontally still crushes via the 20-tick poll;
+	 * push only happens during active downward motion.
+	 */
+	public void tryPushBelowDescendingPillar(PadAndPillar pillar, int newBottomY) {
+		if(boss == null || !boss.isValid()) return;
+		BoundingBox box = boss.getBoundingBox();
+
+		// Horizontal overlap with pillar column [pillarX1, pillarX2+1) × [pillarZ1, pillarZ2+1).
+		if(box.getMaxX() <= pillar.pillarX1() || box.getMinX() >= pillar.pillarX2() + 1) return;
+		if(box.getMaxZ() <= pillar.pillarZ1() || box.getMinZ() >= pillar.pillarZ2() + 1) return;
+
+		// New bottom block occupies y in [newBottomY, newBottomY+1). No vertical overlap
+		// means the new clone wouldn't touch Storm — nothing to push out of.
+		if(box.getMaxY() <= newBottomY) return;
+
+		if(boss.getLocation().getY() <= STORM_FLOOR_Y) return;
+
+		Location loc = boss.getLocation();
+		loc.setY(loc.getY() - 1);
+		boss.teleport(loc);
 	}
 
 	// --- Mob spawning ---

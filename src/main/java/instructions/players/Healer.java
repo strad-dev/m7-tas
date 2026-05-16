@@ -36,13 +36,15 @@ public class Healer {
 					Utils.scheduleTask(() -> maxor(true), 60);
 				}
 			}
-//			case "storm" -> {
-//				Utils.teleport(healer, new Location(world, 111.719, 170, 92.386, -53.2f, 24.7f));
-//				Actions.swapItems(healer, 1, 28);
-//				Actions.swapItems(healer, 3, 30);
-//				Actions.swapItems(healer, 7, 34);
-//				Utils.scheduleTask(() -> storm(false), 60);
-//			}
+			case "storm" -> {
+				Utils.teleport(healer, new Location(world, 32.702, 170, 95.151, -155f, 0f));
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 34);
+				Actions.setHotbarSlot(healer, 0);
+				Utils.scheduleTask(() -> storm(false), 60);
+			}
 //			case "goldor" -> {
 //				Utils.teleport(healer, new Location(world, 108.308, 120, 93.895, -132.4f, 2.3f));
 //				Actions.swapItems(healer, 1, 28);
@@ -411,52 +413,56 @@ public class Healer {
 			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 284 Ticks (14.20 seconds) | Overall: 1 026 ticks (51.30 seconds)");
 		}, 284);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 285);
-		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 286);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 286); // leap to bers
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, "WP", 0);
-		}, 402);
+		}, 400);
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "WPJ", 0);
 			Actions.turnHead(healer, 34f, 80f);
-		}, 407);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 409);
+		}, 405);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 407); // bonzo to yellow pad
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 34f, 0f);
 			Actions.move(healer, "WP", 19);
 			Actions.setHotbarSlot(healer, 0);
-		}, 410);
+		}, 408);
 		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -155f, 0f);
 			Actions.swapItems(healer, 12, 39);
+			Actions.setHotbarSlot(healer, 0);
 			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
-		}, 430);
-
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(healer);
-//			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 317 Ticks (15.85 seconds) | Overall: 1 344 ticks (67.20 seconds)");
-//		}, 317);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 334);
-//		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 335);
-//		Utils.scheduleTask(() -> {
-//			Actions.setHotbarSlot(healer, 1);
-//			Actions.move(healer, new Vector(1.0936, 0, 0.2525), 33);
-//		}, 336);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -31.8f, 0f), 368);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.5915, 0, 0.954), 20), 369);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -31.8f, 82f), 388);
-//		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(0.804, 0.5, 1.296)), 389);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -31.8f, 0f), 390);
-//		Utils.scheduleTask(() -> {
-//			Actions.setHotbarSlot(healer, 6);
-//			Actions.move(healer, new Vector(0.5915, 0, 0.954), 7);
-//		}, 400);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -53.2f, 24.7f), 407);
-//		if(doContinue) {
-////			Utils.scheduleTask(() -> storm(true), 499);
-//		}
+		}, 428);
+		if(doContinue) {
+			Utils.scheduleTask(() -> storm(true), 497);
+		}
 	}
-//
-//	public static void storm(boolean doContinue) {
+
+	public static void storm(boolean doContinue) {
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 81);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 84);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 87);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 90);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 91);
+		for(int i = 95; i <= 170; i += 3) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+		} // clear pad, including shadow assassin
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, "WP", 30);
+			Actions.setHotbarSlot(healer, 1);
+		}, 171); // move off the pad early enough
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -155f, 80f), 178);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 179); // bonzo back to pillar
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -155f, 0f);
+			Actions.setHotbarSlot(healer, 3);
+		}, 180);
+		for(int i = 202; i <= 532; i += 5) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+		} // kill outstanding wither skeletons
 //		Storm.prepadPurple();
 //		Actions.setHotbarSlot(healer, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(healer, new Location(world, 114, 169, 94)), 1);
@@ -599,8 +605,8 @@ public class Healer {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}
-//	}
-//
+	}
+
 //	private static void goldor(boolean doContinue) {
 //		/*
 //		 *  ██╗

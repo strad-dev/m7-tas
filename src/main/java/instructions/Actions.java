@@ -6,6 +6,7 @@ import listeners.CustomItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -38,6 +39,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -50,12 +52,16 @@ import plugin.Utils;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 
 @SuppressWarnings("unused")
 public class Actions {
 
 	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
 	private static final Map<UUID, String> activeInputs = new HashMap<>();
+	/** UUIDs of mobs already claimed by an in-flight Terminator arrow, mapped to the
+	 *  server tick when the claim expires (i.e. when the arrow should have landed). */
+	private static final Map<UUID, Integer> terminatorClaimedUntil = new HashMap<>();
 
 	public static String getActiveInput(UUID id) {
 		return activeInputs.getOrDefault(id, "");
@@ -336,6 +342,201 @@ public class Actions {
 				Spectate.updateLastSentRotation(spectator, yaw, pitch);
 			}
 		}
+	}
+
+	/**
+	 * Turns the given player's head directly toward the center of the nearest non-Player,
+	 * non-Boss living entity that has clear line of sight from the player's eye. Intended
+	 * for Mage hitscan abilities (mage beam, etc.) where the projectile travels in a
+	 * straight line; targets behind walls are skipped in favor of the next-nearest visible
+	 * mob.
+	 */
+	public static void snapHeadToNearestEnemy(Player p) {
+		LivingEntity target = findNearestEnemy(p, le -> hasLineOfSight(p, le));
+		if(target == null) return;
+
+		Location eye = p.getEyeLocation();
+		Vector center = target.getBoundingBox().getCenter();
+		double dx = center.getX() - eye.getX();
+		double dy = center.getY() - eye.getY();
+		double dz = center.getZ() - eye.getZ();
+
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(Math.atan2(dy, Math.sqrt(dx * dx + dz * dz)));
+		turnHead(p, yaw, pitch);
+	}
+
+	/**
+	 * Turns the given player's head so that an arrow shot from a Terminator (spawn pos
+	 * {@code eyeLocation + (0, -0.1, 0)}, speed 3.175) would land on the center of the
+	 * nearest non-Player, non-Boss living entity reachable by ballistic trajectory.
+	 * Compensates for arrow gravity (0.05/t) and air drag (0.99/t) by iteratively solving
+	 * the launch angle, and skips any candidate whose trajectory would be blocked by
+	 * terrain before reaching its bounding box.
+	 */
+	public static void aimTerminatorAtNearestEnemy(Player p) {
+		int now = MinecraftServer.currentTick;
+		terminatorClaimedUntil.entrySet().removeIf(e -> e.getValue() <= now);
+
+		LivingEntity target = findNearestEnemy(p, le ->
+				!terminatorClaimedUntil.containsKey(le.getUniqueId()) && canTerminatorReach(p, le));
+		if(target == null) return;
+
+		Location spawn = p.getEyeLocation().add(0, -0.1, 0);
+		Vector center = target.getBoundingBox().getCenter();
+		double dx = center.getX() - spawn.getX();
+		double dy = center.getY() - spawn.getY();
+		double dz = center.getZ() - spawn.getZ();
+		double dh = Math.sqrt(dx * dx + dz * dz);
+
+		final double speed = 3.175;
+		Double angle = solveLaunchAngle(speed, dh, dy);
+		if(angle == null) return; // should not happen: canTerminatorReach already verified feasibility
+
+		// Claim the target for the arrow's flight time (+ small buffer) so the next call
+		// won't pick the same mob while the shot is still in the air.
+		int flightTicks = simulateArrowFlightTicks(speed, angle, dh);
+		terminatorClaimedUntil.put(target.getUniqueId(), now + flightTicks + 3);
+
+		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+		float pitch = (float) -Math.toDegrees(angle); // angle>0 (upward) → MC pitch<0
+		turnHead(p, yaw, pitch);
+	}
+
+	private static LivingEntity findNearestEnemy(Player p, Predicate<LivingEntity> canHit) {
+		Vector origin = p.getEyeLocation().toVector();
+		List<LivingEntity> candidates = new ArrayList<>();
+		for(Entity e : p.getNearbyEntities(64, 64, 64)) {
+			if(!(e instanceof LivingEntity le)) continue;
+			if(le instanceof Player) continue;
+			if(le instanceof Wither) continue;
+			if(le.isDead()) continue;
+			candidates.add(le);
+		}
+		candidates.sort(Comparator.comparingDouble(le -> le.getBoundingBox().getCenter().distanceSquared(origin)));
+		for(LivingEntity le : candidates) {
+			if(canHit.test(le)) return le;
+		}
+		return null;
+	}
+
+	private static boolean hasLineOfSight(Player p, LivingEntity target) {
+		Location eye = p.getEyeLocation();
+		Vector dir = target.getBoundingBox().getCenter().subtract(eye.toVector());
+		double dist = dir.length();
+		if(dist < 1e-6) return true;
+		RayTraceResult hit = p.getWorld().rayTraceBlocks(eye, dir.multiply(1.0 / dist), dist, FluidCollisionMode.NEVER, true);
+		return hit == null;
+	}
+
+	private static boolean canTerminatorReach(Player p, LivingEntity target) {
+		Location spawn = p.getEyeLocation().add(0, -0.1, 0);
+		Vector center = target.getBoundingBox().getCenter();
+		double dx = center.getX() - spawn.getX();
+		double dy = center.getY() - spawn.getY();
+		double dz = center.getZ() - spawn.getZ();
+		double dh = Math.sqrt(dx * dx + dz * dz);
+		if(dh < 1e-6) return hasLineOfSight(p, target);
+
+		final double speed = 3.175;
+		Double angle = solveLaunchAngle(speed, dh, dy);
+		if(angle == null) return false;
+
+		// Walk the trajectory tick-by-tick in world coords; abort if a block intervenes
+		// before the arrow's path crosses the target's bounding box.
+		double yawRad = Math.atan2(-dx, dz);
+		double vh = speed * Math.cos(angle);
+		double vy = speed * Math.sin(angle);
+		double vx = -Math.sin(yawRad) * vh;
+		double vz = Math.cos(yawRad) * vh;
+
+		Vector pos = spawn.toVector();
+		BoundingBox box = target.getBoundingBox();
+		World world = p.getWorld();
+
+		for(int t = 0; t < 200; t++) {
+			Vector vel = new Vector(vx, vy, vz);
+			double stepLen = vel.length();
+			if(stepLen < 1e-6) return false;
+			Vector dirNorm = vel.clone().multiply(1.0 / stepLen);
+
+			RayTraceResult boxHit = box.rayTrace(pos, dirNorm, stepLen);
+			RayTraceResult blockHit = world.rayTraceBlocks(pos.toLocation(world), dirNorm, stepLen, FluidCollisionMode.NEVER, true);
+
+			if(boxHit != null) {
+				if(blockHit == null) return true;
+				double boxD2 = boxHit.getHitPosition().distanceSquared(pos);
+				double blockD2 = blockHit.getHitPosition().distanceSquared(pos);
+				return boxD2 <= blockD2;
+			}
+			if(blockHit != null) return false;
+
+			pos.add(vel);
+			vx *= 0.99;
+			vz *= 0.99;
+			vy = vy * 0.99 - 0.05;
+
+			// Safety: arrow has clearly fallen past the target
+			if(pos.getY() < box.getMinY() - 20) return false;
+		}
+		return false;
+	}
+
+	/** Iteratively solves the upward launch angle (radians) that hits offset (dh, dy) given
+	 *  the projectile's 3D speed. Returns null if no feasible angle was found. */
+	private static Double solveLaunchAngle(double speed, double dh, double dy) {
+		double aimY = dy;
+		double angle = Math.atan2(aimY, dh);
+		for(int i = 0; i < 12; i++) {
+			Double yHit = simulateArrowYAtDistance(speed, angle, dh);
+			if(yHit == null) return null;
+			double err = dy - yHit;
+			if(Math.abs(err) < 0.01) return angle;
+			aimY += err;
+			angle = Math.atan2(aimY, dh);
+		}
+		return angle;
+	}
+
+	/** Returns the number of ticks an arrow launched at {@code angleRad} (radians above horizontal)
+	 *  with the given 3D speed takes to travel {@code targetH} horizontal distance under Minecraft
+	 *  arrow physics. Returns 60 as a conservative fallback if the arrow can't reach. */
+	private static int simulateArrowFlightTicks(double speed, double angleRad, double targetH) {
+		double vh = speed * Math.cos(angleRad);
+		double vy = speed * Math.sin(angleRad);
+		double h = 0;
+		for(int t = 1; t <= 400; t++) {
+			h += vh;
+			vh *= 0.99;
+			vy = vy * 0.99 - 0.05;
+			if(h >= targetH) return t;
+			if(vh < 1e-4) return 60;
+		}
+		return 60;
+	}
+
+	/** Simulates a Minecraft arrow launched at {@code angleRad} above horizontal with the given
+	 *  3D speed; returns its Y offset (relative to spawn) when it crosses {@code targetH}
+	 *  horizontal distance, or null if it never reaches that distance. */
+	private static Double simulateArrowYAtDistance(double speed, double angleRad, double targetH) {
+		double vh = speed * Math.cos(angleRad);
+		double vy = speed * Math.sin(angleRad);
+		double h = 0, y = 0;
+		double prevH, prevY;
+		for(int t = 0; t < 400; t++) {
+			prevH = h;
+			prevY = y;
+			h += vh;
+			y += vy;
+			vh *= 0.99;
+			vy = vy * 0.99 - 0.05;
+			if(h >= targetH) {
+				double frac = (targetH - prevH) / (h - prevH);
+				return prevY + frac * (y - prevY);
+			}
+			if(vh < 1e-4) return null;
+		}
+		return null;
 	}
 
 	/**

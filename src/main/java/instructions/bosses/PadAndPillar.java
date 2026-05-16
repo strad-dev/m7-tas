@@ -36,6 +36,17 @@ public record PadAndPillar(
 	/** Anchor layer — always contains pillar material; explosion filter preserves y >= this. */
 	public static final int PILLAR_ANCHOR_Y = 196;
 
+	/**
+	 * Red pillar footprint — the inert fourth pillar. Not in {@link #ACTIVE} because it
+	 * never oscillates and has no pad, but the crush-explosion filter uses these bounds
+	 * to explicitly preserve Red's column even when an active pillar's blast radius
+	 * reaches it.
+	 */
+	public static final int RED_PILLAR_X1 = 97;
+	public static final int RED_PILLAR_X2 = 103;
+	public static final int RED_PILLAR_Z1 = 38;
+	public static final int RED_PILLAR_Z2 = 44;
+
 	public static final PadAndPillar PURPLE = new PadAndPillar(
 			"Purple",
 			new BoundingBox(111, 169, 91, 117, 171, 97),

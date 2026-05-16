@@ -39,13 +39,15 @@ public class Mage {
 					Utils.scheduleTask(() -> maxor(true), 60);
 				}
 			}
-//			case "storm" -> {
-//				Utils.teleport(mage, new Location(world, 46.576, 169, 49.503, 1.4f, 22.4f));
-//				Actions.swapItems(mage, 1, 28);
-//				Actions.swapItems(mage, 3, 30);
-//				Actions.swapItems(mage, 5, 32);
-//				Utils.scheduleTask(() -> storm(false), 60);
-//			}
+			case "storm" -> {
+				Utils.teleport(mage, new Location(world, 100.504, 169, 53.534, 90f, 0f));
+				Actions.swapItems(mage, 1, 28);
+				Actions.swapItems(mage, 3, 30);
+				Actions.swapItems(mage, 6, 33);
+				Actions.swapItems(mage, 7, 34);
+				Actions.setHotbarSlot(mage, 0);
+				Utils.scheduleTask(() -> storm(false), 60);
+			}
 //			case "goldor" -> {
 //				Utils.teleport(mage, new Location(world, 108.308, 120, 94.675, -139.3f, 1.6f));
 //				Actions.swapItems(mage, 1, 28);
@@ -362,24 +364,24 @@ public class Mage {
 		}, 742);
 	}
 
-	//
+
 	public static void maxor(boolean doContinue) {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -13f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 2);
-		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 25);
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 25); // spring boots to left crystal
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 38);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 60);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 61);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -135f, 0f), 63);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 45f), 67);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 68);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 45f), 67); // minor repositioning to avoid bonking
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 68); // stonk block to avoid bonking
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 0f), 69);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 86); // temporarily remove spring boots so that pos readjustment doesnt trigger ability
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 1), 87);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 52f, 0f), 88);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 89);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 161);
-		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 162);
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 162); // spring boots to left crystal
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 22), 173);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 200);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 239);
@@ -387,12 +389,28 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 241);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 242);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 339);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -121f, 0f);
+			Actions.setHotbarSlot(mage, 0);
+		}, 340);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 9), 341); // move to storm clear spot
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 342);
 		if(doContinue) {
-//			Utils.scheduleTask(() -> storm(true), 499);
+			Utils.scheduleTask(() -> storm(true), 497);
 		}
 	}
 
-//	public static void storm(boolean doContinue) {
+	public static void storm(boolean doContinue) {
+		for(int i = 0; i <= 30; i += 3) {
+			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
+		} // clear platform
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 32);
+		for(int i = 35; i <= 530; i += 5) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(mage), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+		} // kill outstanding wither skeletons
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 531);
+		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 532);
 //		Actions.setHotbarSlot(mage, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(mage, new Location(world, 46.5, 169, 53.5)), 1); // gyro will be up in 7.5 seconds (150 ticks)
 //		Utils.scheduleTask(() -> {
@@ -554,8 +572,8 @@ public class Mage {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}
-//	}
-//
+	}
+
 //	private static void goldor(boolean doContinue) {
 //		/*
 //		 *  ██╗

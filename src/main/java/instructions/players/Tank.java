@@ -35,15 +35,15 @@ public class Tank {
 					Utils.scheduleTask(() -> maxor(true), 60);
 				}
 			}
-//			case "storm" -> {
-//				Utils.teleport(tank, new Location(world, 35.043, 170, 92.054, 46.9f, 25f));
-//				Actions.swapItems(tank, 1, 28);
-//				Actions.swapItems(tank, 3, 30);
-//				Actions.swapItems(tank, 5, 32);
-//				Actions.swapItems(tank, 6, 33);
-//				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
-//				Utils.scheduleTask(() -> storm(false), 60);
-//			}
+			case "storm" -> {
+				Utils.teleport(tank, new Location(world, 46.794, 169, 53.835, -90f, 0f));
+				Actions.swapItems(tank, 1, 28);
+				Actions.swapItems(tank, 3, 30);
+				Actions.swapItems(tank, 5, 32);
+				Actions.swapItems(tank, 6, 33);
+				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
+				Utils.scheduleTask(() -> storm(false), 60);
+			}
 //			case "goldor" -> {
 //				Utils.teleport(tank, new Location(world, 107.736, 120, 89.242, -54.5f, 2f));
 //				Actions.swapItems(tank, 1, 28);
@@ -480,7 +480,7 @@ public class Tank {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 1);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 1); // move to aggro spot
 		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 50);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 52);
 		Utils.scheduleTask(() -> {
@@ -499,22 +499,38 @@ public class Tank {
 			Actions.turnHead(tank, 180f, -20f);
 			Actions.rightClick(tank);
 		}, 172);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 199);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 200);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 206);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 207);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 213);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 214);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 357); // hit 1, do not insta-enrage
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 399); // hit 2 to kill
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 400);
-		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 401);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 197);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 199);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 204);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 205);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 211); // debuff
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 212);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 355); // hit 1, avoid insta-enrage
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 397); // hit 2 to kill
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 398);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 399);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 156f, 0f);
+			Actions.setHotbarSlot(tank, 0);
+		}, 400);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 401);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 413);
 		if(doContinue) {
-//			Utils.scheduleTask(() -> storm(true), 499);
+			Utils.scheduleTask(() -> storm(true), 497);
 		}
 	}
 //
-//	public static void storm(boolean doContinue) {
+	public static void storm(boolean doContinue) {
+		for(int i = 0; i <= 30; i += 3) {
+			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
+		} // clear platform
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 32);
+		for(int i = 35; i <= 530; i += 5) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(tank), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
+		} // kill outstanding wither skeletons
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 531);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 532);
 //		Storm.prepadYellow();
 //		Actions.setHotbarSlot(tank, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(tank, new Location(world, 32.5, 170, 94.5)), 1);
@@ -634,8 +650,8 @@ public class Tank {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}
-//	}
-//
+	}
+
 //	private static void goldor(boolean doContinue) {
 //		/*
 //		 *  ██╗

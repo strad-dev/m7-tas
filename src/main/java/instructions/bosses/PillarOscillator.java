@@ -95,6 +95,10 @@ public final class PillarOscillator {
 
 	private void moveOne() {
 		if(direction == Direction.DOWN) {
+			// Push Storm out from under the descending pillar before placing the
+			// new bottom row. If Storm is already at the floor the push no-ops
+			// and the next 20-tick poll's crush detector handles him.
+			Storm.INSTANCE.tryPushBelowDescendingPillar(pillar, bottomY - 1);
 			Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
 					String.format("clone %d %d %d %d %d %d %d %d %d",
 							pillar.pillarX1(), bottomY, pillar.pillarZ1(),
@@ -111,8 +115,13 @@ public final class PillarOscillator {
 		Utils.playGlobalSound(Sound.BLOCK_PISTON_CONTRACT, 2.0f, 1.0f);
 	}
 
-	/** @return true if a clone op was scheduled within the last {@code windowTicks} ticks (used for crush arming). */
+	/**
+	 * @return true if the pillar is currently descending AND a DOWN clone op was scheduled
+	 * within the last {@code windowTicks} ticks. An UP-moving pillar never arms crush, even
+	 * if its prior DOWN cycle was within the window.
+	 */
 	public boolean movedRecently(int currentTick, int windowTicks) {
+		if(direction != Direction.DOWN) return false;
 		return lastMovementTick != Integer.MIN_VALUE && (currentTick - lastMovementTick) <= windowTicks;
 	}
 }
