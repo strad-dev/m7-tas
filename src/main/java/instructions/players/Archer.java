@@ -36,12 +36,14 @@ public class Archer {
 					Utils.scheduleTask(() -> maxor(true), 60);
 				}
 			}
-//			case "storm" -> {
-//				Utils.teleport(archer, new Location(world, 46.687, 169, 57.747, 177.8f, 0f));
-//				Actions.swapItems(archer, 1, 28);
-//				Actions.swapItems(archer, 7, 35);
-//				Utils.scheduleTask(() -> storm(false), 60);
-//			}
+			case "storm" -> {
+				Utils.teleport(archer, new Location(world, 65.087, 165, 69.329, -180f, 0f));
+				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 6, 33);
+				Actions.swapItems(archer, 7, 34);
+				Actions.setHotbarSlot(archer, 4);
+				Utils.scheduleTask(() -> storm(false), 60);
+			}
 //			// lb: -73.1 -46.8, take 36 ticks to hit
 //			// term: 5 ticks
 //			// -15.4, -7.6 face here
@@ -396,13 +398,13 @@ public class Archer {
 	public static void maxor(boolean doContinue) {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 13f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 2);
-		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 25);
+		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 25); // spring boots to right crystal
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 49), 38);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 60);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 61);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 133f, 0f), 63);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -52f, 0f), 88);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 161);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -52f, 0f), 88); // land on pad
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 161); // spring boots again to right crystal
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 162);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 22), 173);
 		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 36), 200);
@@ -411,12 +413,36 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 241);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 242);
 		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 339);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, -76f, 0f);
+			Actions.setHotbarSlot(archer, 4);
+		}, 340);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 9), 341); // move to storm clear spot
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -180f, 0f), 350);
 		if(doContinue) {
-//			Utils.scheduleTask(() -> storm(true), 499);
+			Utils.scheduleTask(() -> storm(true), 497);
 		}
 	}
 
-//	public static void storm(boolean doContinue) {
+	public static void storm(boolean doContinue) {
+		Utils.scheduleTask(() -> Actions.move(archer, "DN", 60), 80);
+		for(int i = 80; i <= 140; i += 5) {
+			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+		} // clear mid
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 141);
+		Utils.scheduleTask(() -> Actions.leap(archer, Tank.get()), 142); // leap to help clear green pad
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 180f, 0f);
+			Actions.setHotbarSlot(archer, 4);
+		}, 143);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 144);
+		Utils.scheduleTask(() -> Actions.move(archer, "WN", 3), 163);
+		for(int i = 165; i <= 525; i += 5) {
+			Utils.scheduleTask(() -> Actions.aimTerminatorAtNearestEnemy(archer), i - 1);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+		}
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 0f), 526);
+		Utils.scheduleTask(() -> Actions.move(archer, "D", 10), 527);
 //		Actions.setHotbarSlot(archer, 4);
 //		Utils.scheduleTask(Archer::shoot, 1);
 //		Utils.scheduleTask(() -> Actions.salvation(archer), 2);
@@ -591,7 +617,7 @@ public class Archer {
 //			Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.403, 0, 0), 1), 889);
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}
-//	}
+	}
 //
 //	private static void goldor(boolean doContinue) {
 //		// rapid fire arrow fires

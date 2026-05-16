@@ -21,33 +21,43 @@ public class WitherActions {
 	private static final Map<UUID, BukkitTask> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
 
-	/** Max horizontal displacement per tick along the XZ wither-to-target vector. */
-	private static final double AGGRO_SPEED_HORIZONTAL = 0.6;
-
-	/** Max vertical displacement per tick, applied independently of the horizontal step. */
-	private static final double AGGRO_SPEED_VERTICAL = 0.2;
+	/** Hard cap on per-tick vertical displacement so a large goalY-wy gap doesn't snap-teleport. */
+	private static final double AGGRO_SPEED_VERTICAL_MAX = 0.5;
 
 	/**
-	 * Makes a Wither chase a target using a per-tick "linear-toward-target" model:
-	 * each tick the target point is recomputed (the closest spot at {@code stopDistance}
-	 * horizontally from the target's position, with {@code yOffset} vertical offset),
-	 * and the wither steps toward it at {@link #AGGRO_SPEED} blocks/tick. If the wither
-	 * is already within one step of the target, it snaps exactly to the target.
+	 * Makes a Wither chase a target using a vanilla-style PD-with-friction velocity controller:
+	 * each tick the goal is recomputed (closest spot at {@code stopDistance} horizontally from
+	 * the target, with {@code yOffset} vertical offset), and the wither's horizontal velocity
+	 * is integrated via the same shape as vanilla {@code Wither.aiStep} — {@code v += dir*A - v*0.6}
+	 * then a {@code *= 0.91} friction. The acceleration term {@code A} is scaled so the
+	 * steady-state per-tick displacement equals {@code maxSpeed} (vanilla's hard-coded
+	 * {@code A=0.3} gives ~0.4717 blocks/tick; we use {@code A = maxSpeed * 0.636}). When the
+	 * PD step would overshoot the goal, the wither snaps exactly to the goal and the velocity
+	 * state is zeroed — no ramp-down.
+	 * <br>
 	 * Also enables {@code noPhysics} so the wither phases through walls while chasing.
 	 *
 	 * @param wither       The Wither. Must have setAI(false).
 	 * @param target       LivingEntity to chase.
 	 * @param stopDistance Horizontal distance (blocks) at which the wither stops chasing.
 	 * @param yOffset      Vertical offset above the target the wither hovers at.
+	 * @param maxSpeed     Steady-state horizontal displacement per tick along the XZ wither-to-target vector.
 	 */
-	public static void setWitherAggro(Wither wither, LivingEntity target, double stopDistance, double yOffset) {
+	public static void setWitherAggro(Wither wither, LivingEntity target, double stopDistance, double yOffset, double maxSpeed) {
 		clearWitherAggro(wither);
 
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
 		net.minecraft.world.entity.LivingEntity t = ((CraftLivingEntity) target).getHandle();
 		w.noPhysics = true;
 
+		// Scale vanilla's A=0.3 so steady-state move-per-tick equals maxSpeed instead of ~0.4717.
+		// See class doc above for derivation: move_steady = A * 1.5723 → A = maxSpeed / 1.5723.
+		final double A = maxSpeed * 0.636;
+
 		BukkitTask task = new BukkitRunnable() {
+			// Persistent velocity state across ticks (the PD's "v"). Reset to 0 on every snap-to-goal.
+			double vxState = 0, vzState = 0;
+
 			@Override
 			public void run() {
 				if(w.isRemoved() || t.isRemoved() || !t.isAlive()) {
@@ -62,14 +72,14 @@ public class WitherActions {
 
 				// Horizontal target: closest point on the (radius=stopDistance) ring around the
 				// player, projected from the wither's current horizontal position. If the wither
-				// is exactly above the player, fall back to keeping its current direction.
+				// is already inside the ring, hold position — never back away from the player.
 				double dx = wx - tx;
 				double dz = wz - tz;
 				double horiz = Math.sqrt(dx * dx + dz * dz);
 				double goalX, goalZ;
-				if(horiz < 1e-6) {
-					goalX = tx + stopDistance;
-					goalZ = tz;
+				if(horiz <= stopDistance) {
+					goalX = wx;
+					goalZ = wz;
 				} else {
 					double scale = stopDistance / horiz;
 					goalX = tx + dx * scale;
@@ -77,29 +87,49 @@ public class WitherActions {
 				}
 				double goalY = t.getY() + yOffset;
 
-				// Horizontal step: cap at AGGRO_SPEED_HORIZONTAL along the XZ vector to the goal.
+				// Horizontal step: vanilla-shape PD (vxState += dir*A - vxState*0.6), then check
+				// for overshoot and snap if reached. Velocity state persists across ticks so the
+				// wither accelerates smoothly from rest like a vanilla Wither.
 				double mx = goalX - wx;
 				double mz = goalZ - wz;
 				double horizMove = Math.sqrt(mx * mx + mz * mz);
 				double vx, vz;
-				if(horizMove <= AGGRO_SPEED_HORIZONTAL || horizMove < 1e-9) {
-					vx = mx;
-					vz = mz;
+				if(horizMove < 1e-9) {
+					vxState = 0;
+					vzState = 0;
+					vx = 0;
+					vz = 0;
 				} else {
-					double k = AGGRO_SPEED_HORIZONTAL / horizMove;
-					vx = mx * k;
-					vz = mz * k;
+					double dirx = mx / horizMove;
+					double dirz = mz / horizMove;
+					vxState += dirx * A - vxState * 0.6;
+					vzState += dirz * A - vzState * 0.6;
+					double stepLen = Math.sqrt(vxState * vxState + vzState * vzState);
+					if(stepLen >= horizMove) {
+						// Would reach or overshoot the goal this tick — snap exactly, no ramp-down.
+						vx = mx;
+						vz = mz;
+						vxState = 0;
+						vzState = 0;
+					} else {
+						vx = vxState;
+						vz = vzState;
+					}
 				}
 
-				// Vertical step: independent of horizontal — cap at AGGRO_SPEED_VERTICAL along Y only.
-				// Decoupling fixes the "diagonal slow-down" where a small vertical error combined
-				// with a large horizontal error would make Y barely change tick-to-tick.
+				// Vertical step: synced to horizontal arrival time at maxSpeed so a stationary
+				// target is reached at the same tick on Y as on XZ, then clamped to
+				// {@link #AGGRO_SPEED_VERTICAL_MAX} so a huge goalY-wy gap doesn't snap-teleport.
 				double my = goalY - wy;
 				double vy;
-				if(Math.abs(my) <= AGGRO_SPEED_VERTICAL) {
+				if(horizMove < 1e-9) {
 					vy = my;
 				} else {
-					vy = Math.signum(my) * AGGRO_SPEED_VERTICAL;
+					double ticksToArrive = Math.max(1.0, horizMove / maxSpeed);
+					vy = my / ticksToArrive;
+				}
+				if(Math.abs(vy) > AGGRO_SPEED_VERTICAL_MAX) {
+					vy = Math.signum(vy) * AGGRO_SPEED_VERTICAL_MAX;
 				}
 
 				Vec3 v = new Vec3(vx, vy, vz);
@@ -115,6 +145,12 @@ public class WitherActions {
 				// uses to aim a mob at a target, so the formula and sign conventions are
 				// guaranteed to match rendering. It sets xRot, yRot, yHeadRot in one call.
 				w.lookAt(EntityAnchorArgument.Anchor.EYES, t.getEyePosition());
+
+				// Vanilla air-drag for next tick: matches Wither.aiStep's `*= 0.91` after the move.
+				// Combined with the per-tick `- vxState * 0.6` PD damping, this gives the same
+				// ramp curve shape vanilla uses; the time constant is independent of maxSpeed.
+				vxState *= 0.91;
+				vzState *= 0.91;
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 

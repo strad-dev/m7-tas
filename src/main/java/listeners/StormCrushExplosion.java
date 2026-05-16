@@ -48,7 +48,9 @@ public class StormCrushExplosion implements Listener {
 			boolean inActivePillar = pillar != null
 					&& b.getX() >= pillar.pillarX1() && b.getX() <= pillar.pillarX2()
 					&& b.getZ() >= pillar.pillarZ1() && b.getZ() <= pillar.pillarZ2();
-			if(!isDiorite || !belowAnchor || !inActivePillar) {
+			boolean inRedPillar = b.getX() >= PadAndPillar.RED_PILLAR_X1 && b.getX() <= PadAndPillar.RED_PILLAR_X2
+					&& b.getZ() >= PadAndPillar.RED_PILLAR_Z1 && b.getZ() <= PadAndPillar.RED_PILLAR_Z2;
+			if(!isDiorite || !belowAnchor || !inActivePillar || inRedPillar) {
 				it.remove();
 			}
 		}

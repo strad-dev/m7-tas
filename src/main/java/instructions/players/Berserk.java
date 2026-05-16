@@ -37,12 +37,15 @@ public class Berserk {
 					Utils.scheduleTask(() -> maxor(true), 60);
 				}
 			}
-//			case "storm" -> {
-//				Utils.teleport(berserk, new Location(world, 100.422, 169, 49.624, -1f, 23f));
-//				Actions.swapItems(berserk, 1, 28);
-//				Actions.swapItems(berserk, 7, 35);
-//				Utils.scheduleTask(() -> storm(false), 60);
-//			}
+			case "storm" -> {
+				Utils.teleport(berserk, new Location(world, 114.145, 170, 93.962, 154f, 0f));
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 3, 30);
+				Actions.swapItems(berserk, 6, 33);
+				Actions.swapItems(berserk, 7, 34);
+				Actions.setHotbarSlot(berserk, 0);
+				Utils.scheduleTask(() -> storm(false), 60);
+			}
 //			case "goldor" -> {
 //				Utils.teleport(berserk, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
 //				Actions.swapItems(berserk, 1, 28);
@@ -437,9 +440,9 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 18);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 19);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 34f, 0f), 21);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 70), 22);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 70), 22); // move to leap spot for healer
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -145f, 0f), 287);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 288);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 288); // move to leap spot for mage1
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 297);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -32f, 0f), 337);
 		Utils.scheduleTask(() -> {
@@ -447,17 +450,44 @@ public class Berserk {
 			Actions.move(berserk, "WPJ", 0);
 			Actions.setHotbarSlot(berserk, 1);
 		}, 354);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 355);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 355); // bonzo to purple pad
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -32f, 0f);
 			Actions.move(berserk, "WP", 21);
 		}, 356);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 154f, 0f);
+			Actions.setHotbarSlot(berserk, 0);
+		}, 377);
 		if(doContinue) {
-//			Utils.scheduleTask(() -> storm(true), 499);
+			Utils.scheduleTask(() -> storm(true), 497);
 		}
 	}
 
-//	public static void storm(boolean doContinue) {
+	public static void storm(boolean doContinue) {
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 81);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 84);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 87);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 90);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 91);
+		for(int i = 95; i <= 150; i += 3) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(berserk), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+		} // clear pad, including shadow assassin
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, "WP", 30);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 151); // move off the pad early enough
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 154f, 80f), 158);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 159); // bonzo back to pillar
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 154f, 0f);
+			Actions.setHotbarSlot(berserk, 3);
+		}, 160);
+		for(int i = 182; i <= 532; i += 5) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(berserk), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+		} // kill outstanding wither skeletons
 //		// move continues for 2 more ticks from previous instruction
 //		Actions.setHotbarSlot(berserk, 6);
 //		Utils.scheduleTask(() -> Actions.turnHead(berserk, -1f, 23f), 2);
@@ -623,8 +653,8 @@ public class Berserk {
 //			Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 888);
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}
-//	}
-//
+	}
+
 //	private static void goldor(boolean doContinue) {
 //		/*
 //		 * ██╗██╗  ██╗
