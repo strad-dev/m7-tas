@@ -1,6 +1,8 @@
-package instructions.bosses;
+package instructions.bosses.witherking;
 
 import instructions.Actions;
+import instructions.bosses.CustomBossBar;
+import instructions.bosses.WitherActions;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonDeathPhase;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;

@@ -1,23 +1,14 @@
-package instructions.bosses;
+package instructions.bosses.maxor;
 
 import instructions.Server;
+import instructions.bosses.CustomBossBar;
+import instructions.bosses.WitherLord;
+import instructions.bosses.storm.Storm;
 import instructions.players.Tank;
 import listeners.CustomItems;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
-import org.bukkit.entity.EnderCrystal;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Wither;
-import org.bukkit.entity.WitherSkeleton;
+import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -26,12 +17,7 @@ import plugin.FakePlayerInventory;
 import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @SuppressWarnings("DataFlowIssue")
 public final class Maxor extends WitherLord {
@@ -75,17 +61,42 @@ public final class Maxor extends WitherLord {
 		register(this);
 	}
 
-	/** Static facade for /tas, Watcher, and the boss-chain. */
+	/**
+	 * Static facade for /tas, Watcher, and the boss-chain.
+	 */
 	public static void maxorInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
 	}
 
-	@Override protected String name() { return "Maxor"; }
-	@Override protected String displayName() { return "Maxor"; }
-	@Override protected Location spawnLocation() { return new Location(world, 73.5, 226, 53.5, 0f, 0f); }
-	@Override protected double maxHealth() { return 300; }
-	@Override protected String displayHealth() { return "800M"; }
-	@Override protected int previousTicks() { return PRE_MAXOR_TICKS; }
+	@Override
+	protected String name() {
+		return "Maxor";
+	}
+
+	@Override
+	protected String displayName() {
+		return "Maxor";
+	}
+
+	@Override
+	protected Location spawnLocation() {
+		return new Location(world, 73.5, 226, 53.5, 0f, 0f);
+	}
+
+	@Override
+	protected double maxHealth() {
+		return 300;
+	}
+
+	@Override
+	protected String displayHealth() {
+		return "800M";
+	}
+
+	@Override
+	protected int previousTicks() {
+		return PRE_MAXOR_TICKS;
+	}
 
 	@Override
 	protected void resetState() {
@@ -143,8 +154,14 @@ public final class Maxor extends WitherLord {
 
 		if(topLeftCrystal != null) topLeftCrystal.remove();
 		if(topRightCrystal != null) topRightCrystal.remove();
-		if(plateLeftCrystal != null) { plateLeftCrystal.remove(); plateLeftCrystal = null; }
-		if(plateRightCrystal != null) { plateRightCrystal.remove(); plateRightCrystal = null; }
+		if(plateLeftCrystal != null) {
+			plateLeftCrystal.remove();
+			plateLeftCrystal = null;
+		}
+		if(plateRightCrystal != null) {
+			plateRightCrystal.remove();
+			plateRightCrystal = null;
+		}
 
 		topLeftCrystal = spawnEnergyCrystal(new Location(world, 82.5, 238.48, 50.5));
 		topRightCrystal = spawnEnergyCrystal(new Location(world, 64.5, 238.48, 50.5));
@@ -333,7 +350,9 @@ public final class Maxor extends WitherLord {
 		CustomBossBar.removeStunIndicator();
 		// Pin internal HP to 1 — display already shows "1" via the TASDying tag in formatHealthM.
 		// Deferred 1 tick so vanilla's post-event setHealth doesn't overwrite us.
-		Utils.scheduleTask(() -> { if(boss != null && boss.isValid()) boss.setHealth(1.0); }, 1);
+		Utils.scheduleTask(() -> {
+			if(boss != null && boss.isValid()) boss.setHealth(1.0);
+		}, 1);
 		Utils.changeName(boss);
 		playDeathDialogue();
 	}

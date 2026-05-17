@@ -1,7 +1,13 @@
-package instructions.bosses;
+package instructions.bosses.storm;
 
 import instructions.Actions;
 import instructions.Server;
+import instructions.bosses.CustomBossBar;
+import instructions.bosses.MobGroup;
+import instructions.bosses.MobSpawnSpec;
+import instructions.bosses.WitherLord;
+import instructions.bosses.goldor.Goldor;
+import instructions.players.Mage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
@@ -24,7 +30,7 @@ import java.util.Random;
 public final class Storm extends WitherLord {
 	public static final Storm INSTANCE = new Storm();
 
-	private static final int PRE_STORM_TICKS = 1526;
+	private static final int PRE_STORM_TICKS = 1239;
 
 	// Intro ends at this tick; aggro + crush detection enable here.
 	private static final int INTRO_END_TICK = 665;
@@ -46,7 +52,6 @@ public final class Storm extends WitherLord {
 	private static final double AGGRO_STOP_DISTANCE = 6.0;
 	private static final double AGGRO_Y_OFFSET = 2.0;
 	private static final double AGGRO_MAX_SPEED = 0.6;
-	private static final String TARGET_PLAYER_NAME = "Beethoven_";
 
 	// Center the miners and sentries face toward.
 	private static final Location FACING_CENTER = new Location(null, 73.5, 0, 53.5);
@@ -137,10 +142,7 @@ public final class Storm extends WitherLord {
 
 		Utils.scheduleTask(() -> {
 			crushEnabled = true;
-			Player target = resolveTargetPlayer();
-			if(target != null) {
-				setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
-			}
+			setAggro(Mage.get(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 		}, INTRO_END_TICK);
 
 		startCycleTask();
@@ -151,13 +153,6 @@ public final class Storm extends WitherLord {
 		if(doContinue) {
 			Goldor.goldorInstructions(world, true);
 		}
-	}
-
-	private Player resolveTargetPlayer() {
-		Player real = Bukkit.getPlayerExact(TARGET_PLAYER_NAME);
-		if(real != null) return real;
-		// Fallback to the nearest non-fake, non-spectator real player.
-		return Utils.getNearestPlayer(boss.getLocation());
 	}
 
 	private void scheduleIntroDialogue() {
@@ -409,11 +404,7 @@ public final class Storm extends WitherLord {
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
-
-		Player target = resolveTargetPlayer();
-		if(target != null) {
-			setAggro(target, AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
-		}
+		setAggro(Mage.get(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 	}
 
 	private void cancelStunEnrageTask() {
@@ -500,7 +491,7 @@ public final class Storm extends WitherLord {
 			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in " + formatTick(tick - 1));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
-			chainNext(doContinue);
+//			chainNext(doContinue);
 		}, 100);
 	}
 

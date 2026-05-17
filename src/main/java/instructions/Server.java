@@ -1,9 +1,9 @@
 package instructions;
 
 import instructions.bosses.CustomBossBar;
-import instructions.bosses.Maxor;
-import instructions.bosses.Storm;
 import instructions.bosses.Watcher;
+import instructions.bosses.maxor.Maxor;
+import instructions.bosses.storm.Storm;
 import listeners.CustomItems;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;

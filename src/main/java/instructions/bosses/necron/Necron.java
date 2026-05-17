@@ -1,6 +1,9 @@
-package instructions.bosses;
+package instructions.bosses.necron;
 
 import instructions.Server;
+import instructions.bosses.WitherActions;
+import instructions.bosses.WitherLord;
+import instructions.bosses.witherking.WitherKing;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

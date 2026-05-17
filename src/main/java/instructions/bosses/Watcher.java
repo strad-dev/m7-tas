@@ -1,5 +1,7 @@
 package instructions.bosses;
 
+import instructions.bosses.maxor.Maxor;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.authlib.GameProfile;
