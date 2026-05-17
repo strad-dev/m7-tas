@@ -561,7 +561,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 825);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 826);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 827);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 110f, 0f), 837);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 111f, 0f), 836);
 //		if(doContinue) {
 //			Utils.scheduleTask(Berserk::shoot, 887);
 //			Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 888);
