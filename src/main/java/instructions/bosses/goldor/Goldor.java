@@ -15,23 +15,48 @@ import plugin.Utils;
 public final class Goldor extends WitherLord {
 	public static final Goldor INSTANCE = new Goldor();
 
-	private static final int PRE_GOLDOR_TICKS = 2416;
+	private static final int PRE_GOLDOR_TICKS = 2120;
 
 	private Goldor() {
 		register(this);
 	}
 
-	/** Static facade for the boss-chain. */
+	/**
+	 * Static facade for the boss-chain.
+	 */
 	public static void goldorInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
 	}
 
-	@Override protected String name() { return "Goldor"; }
-	@Override protected String displayName() { return "Goldor"; }
-	@Override protected Location spawnLocation() { return new Location(world, 80.5, 116, 40.5, -90f, 0f); }
-	@Override protected double maxHealth() { return 700; }
-	@Override protected String displayHealth() { return "1.2B"; }
-	@Override protected int previousTicks() { return PRE_GOLDOR_TICKS; }
+	@Override
+	protected String name() {
+		return "Goldor";
+	}
+
+	@Override
+	protected String displayName() {
+		return "Goldor";
+	}
+
+	@Override
+	protected Location spawnLocation() {
+		return new Location(world, 80.5, 116, 40.5, -90f, 0f);
+	}
+
+	@Override
+	protected double maxHealth() {
+		return 700;
+	}
+
+	@Override
+	protected String displayHealth() {
+		return "1.2B";
+	}
+
+	@Override
+	protected int previousTicks() {
+		return PRE_GOLDOR_TICKS;
+	}
 
 	@Override
 	protected void resetState() {

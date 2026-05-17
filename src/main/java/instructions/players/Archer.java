@@ -44,9 +44,11 @@ public class Archer {
 				Actions.setHotbarSlot(archer, 4);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
-//			// lb: -73.1 -46.8, take 36 ticks to hit
-//			// term: 5 ticks
-//			// -15.4, -7.6 face here
+			// lb: -74 -47, take 36 ticks to hit
+			// term: 5 ticks (-15 -2.5) (-14.5 5)
+			// explosive shot: 11 ticks (-10.5 -15.5)
+			// rapid fire: 8 ticks (-3 -4) (-3 4)
+			// -15.4, -7.6 face here
 //			case "goldor" -> {
 //				Utils.teleport(archer, new Location(world, 63.343, 127, 35.246, -73.1f, -46.8f));
 //				Actions.swapItems(archer, 1, 28);
