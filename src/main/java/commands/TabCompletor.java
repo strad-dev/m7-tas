@@ -1,5 +1,6 @@
 package commands;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
@@ -57,6 +58,30 @@ public class TabCompletor implements TabCompleter {
 					for(String val : new String[]{"true", "false", "super"}) {
 						if(val.startsWith(args[0].toLowerCase())) {
 							completions.add(val);
+						}
+					}
+				}
+			}
+
+			case "setspeed" -> {
+				String[] speedPresets = {"400", "500", "600", "650"};
+				if(args.length == 1) {
+					String input = args[0].toLowerCase();
+					for(Player online : Bukkit.getOnlinePlayers()) {
+						if(online.getName().toLowerCase().startsWith(input)) {
+							completions.add(online.getName());
+						}
+					}
+					for(String preset : speedPresets) {
+						if(preset.startsWith(input)) {
+							completions.add(preset);
+						}
+					}
+				} else if(args.length == 2) {
+					String input = args[1].toLowerCase();
+					for(String preset : speedPresets) {
+						if(preset.startsWith(input)) {
+							completions.add(preset);
 						}
 					}
 				}

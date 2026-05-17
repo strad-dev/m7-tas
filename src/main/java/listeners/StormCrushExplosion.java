@@ -1,7 +1,7 @@
 package listeners;
 
-import instructions.bosses.PadAndPillar;
-import instructions.bosses.Storm;
+import instructions.bosses.storm.PadAndPillar;
+import instructions.bosses.storm.Storm;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -13,6 +13,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 
 import java.util.Iterator;
 
@@ -26,7 +28,12 @@ import java.util.Iterator;
  *       wither with cause {@code ENTITY_EXPLOSION}, so entities take no damage
  *       from the blast,</li>
  *   <li>cancels any {@link EntityKnockbackEvent} originating from Storm's wither
- *       so the blast doesn't push entities around.</li>
+ *       so the blast doesn't push entities around,</li>
+ *   <li>cancels any {@link HangingBreakEvent} caused by Storm's crush explosion
+ *       so item frames / paintings inside the blast radius (e.g. Goldor terminal
+ *       frames) are not silently destroyed — hanging entities are removed by
+ *       vanilla on a separate event path that is not covered by the damage or
+ *       knockback cancellations.</li>
  * </ol>
  */
 public class StormCrushExplosion implements Listener {
@@ -73,6 +80,21 @@ public class StormCrushExplosion implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onAnyKnockback(EntityKnockbackEvent event) {
 		if(event.getCause() != EntityKnockbackEvent.KnockbackCause.EXPLOSION) return;
+		if(!Storm.INSTANCE.isCrushExplosionActive()) return;
+		event.setCancelled(true);
+	}
+
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onCrushHangingBreak(HangingBreakByEntityEvent event) {
+		if(event.getCause() != HangingBreakEvent.RemoveCause.EXPLOSION) return;
+		if(!isStormCrush(event.getRemover())) return;
+		event.setCancelled(true);
+	}
+
+	/** Fallback for explosion paths that fire the parent event without a remover entity. */
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onAnyHangingBreak(HangingBreakEvent event) {
+		if(event.getCause() != HangingBreakEvent.RemoveCause.EXPLOSION) return;
 		if(!Storm.INSTANCE.isCrushExplosionActive()) return;
 		event.setCancelled(true);
 	}

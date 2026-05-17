@@ -29,8 +29,8 @@ commands:
     description: Toggle verbose debug messages
     usage: /verbose <true|false>
   setspeed:
-    description: Set your movement speed (100 = default)
-    usage: /setspeed <speed>
+    description: Set movement speed (100 = default); target self or a named player (fake or real)
+    usage: /setspeed [player] [speed]
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>

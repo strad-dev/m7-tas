@@ -173,8 +173,19 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof LivingEntity entity && !entity.getScoreboardTags().contains("TASNoName")) {
 			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
 		}
-		if(e.getDamager() instanceof Player p && !FakePlayerManager.getFakePlayers().containsValue(p)) {
-			handleCustomItems(e, EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
+		// Ability dispatch for real-player melee hits is handled by PlayerPacketInterceptor
+		// (fires for every attack packet, including no-damage cases like iframe/dying mobs).
+		// Routing EDBEE through handleCustomItems caused double-fire because the interceptor's
+		// runTask landed on tick T+1 while EDBEE fired on tick T, bypassing the same-tick dedupe.
+		//
+		// Still suppress vanilla melee damage for Mage-class iron/stone swords so the target
+		// only takes mage-beam damage, not vanilla sword damage on top of it.
+		if(e.getDamager() instanceof Player p) {
+			ItemStack held = p.getInventory().getItemInMainHand();
+			boolean isMage = p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
+			if(isMage && (held.getType() == Material.IRON_SWORD || held.getType() == Material.STONE_SWORD)) {
+				e.setCancelled(true);
+			}
 		}
 	}
 

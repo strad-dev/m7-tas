@@ -1,6 +1,8 @@
-package instructions.bosses;
+package instructions.bosses.goldor;
 
 import instructions.Actions;
+import instructions.bosses.WitherLord;
+import instructions.bosses.necron.Necron;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;

@@ -1,4 +1,4 @@
-package instructions.bosses;
+package instructions.bosses.storm;
 
 import org.bukkit.util.BoundingBox;
 

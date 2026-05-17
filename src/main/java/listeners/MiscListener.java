@@ -1,9 +1,9 @@
 package listeners;
 
 import commands.Spectate;
-import instructions.bosses.Maxor;
-import instructions.bosses.Storm;
 import instructions.bosses.WitherLord;
+import instructions.bosses.maxor.Maxor;
+import instructions.bosses.storm.Storm;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
@@ -110,8 +110,9 @@ public class MiscListener implements Listener {
 						: rawHit instanceof EnderDragonPart part ? part.getParent() : null;
 				if(hitEntity == null) return;
 
-				// Phase through fake players and self
-				if(hitEntity instanceof Player player && (FakePlayerManager.getFakePlayers().containsValue(player) || (arrow.getShooter() instanceof Player shooter && player.equals(shooter)))) {
+				// Phase through all real and fake players — fake-player arrows must never
+				// damage a real player (would bypass Creative invulnerability via genericKill below).
+				if(hitEntity instanceof Player) {
 					e.setCancelled(true);
 				}
 				// Handle TerminatorArrow entity hits - cancel to preserve pierce, apply damage manually.

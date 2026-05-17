@@ -1,5 +1,6 @@
 package instructions.bosses;
 
+import instructions.bosses.storm.PadAndPillar;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 

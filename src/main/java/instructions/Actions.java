@@ -354,7 +354,15 @@ public class Actions {
 	public static void snapHeadToNearestEnemy(Player p) {
 		LivingEntity target = findNearestEnemy(p, le -> hasLineOfSight(p, le));
 		if(target == null) return;
+		snapHeadAtEntity(p, target);
+	}
 
+	/**
+	 * Turns the given player's head directly toward the center of the given target's
+	 * bounding box — no LOS check, no boss/player filtering. Use when the caller has
+	 * already chosen the target (e.g. aiming the mage beam at Storm during the boss fight).
+	 */
+	public static void snapHeadAtEntity(Player p, LivingEntity target) {
 		Location eye = p.getEyeLocation();
 		Vector center = target.getBoundingBox().getCenter();
 		double dx = center.getX() - eye.getX();
@@ -381,7 +389,18 @@ public class Actions {
 		LivingEntity target = findNearestEnemy(p, le ->
 				!terminatorClaimedUntil.containsKey(le.getUniqueId()) && canTerminatorReach(p, le));
 		if(target == null) return;
+		aimTerminatorAtEntity(p, target);
+	}
 
+	/**
+	 * Turns the given player's head so that a Terminator arrow would land on the center
+	 * of the given target's bounding box — no boss/player filter, no terrain check.
+	 * Use when the caller has already chosen the target (e.g. aiming at Storm during the
+	 * boss fight). Returns silently if the target is out of ballistic range. Registers
+	 * a flight-time claim so the auto-pick variant won't re-target this mob while the
+	 * shot is in the air.
+	 */
+	public static void aimTerminatorAtEntity(Player p, LivingEntity target) {
 		Location spawn = p.getEyeLocation().add(0, -0.1, 0);
 		Vector center = target.getBoundingBox().getCenter();
 		double dx = center.getX() - spawn.getX();
@@ -391,10 +410,9 @@ public class Actions {
 
 		final double speed = 3.175;
 		Double angle = solveLaunchAngle(speed, dh, dy);
-		if(angle == null) return; // should not happen: canTerminatorReach already verified feasibility
+		if(angle == null) return; // out of ballistic range
 
-		// Claim the target for the arrow's flight time (+ small buffer) so the next call
-		// won't pick the same mob while the shot is still in the air.
+		int now = MinecraftServer.currentTick;
 		int flightTicks = simulateArrowFlightTicks(speed, angle, dh);
 		terminatorClaimedUntil.put(target.getUniqueId(), now + flightTicks + 3);
 

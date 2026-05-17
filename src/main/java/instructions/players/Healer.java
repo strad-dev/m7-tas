@@ -42,7 +42,7 @@ public class Healer {
 				Actions.swapItems(healer, 3, 30);
 				Actions.swapItems(healer, 6, 33);
 				Actions.swapItems(healer, 7, 34);
-				Actions.setHotbarSlot(healer, 0);
+				Actions.setHotbarSlot(healer, 3);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 //			case "goldor" -> {
@@ -431,7 +431,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -155f, 0f);
 			Actions.swapItems(healer, 12, 39);
-			Actions.setHotbarSlot(healer, 0);
+			Actions.setHotbarSlot(healer, 3);
 			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
 		}, 428);
 		if(doContinue) {
@@ -440,29 +440,38 @@ public class Healer {
 	}
 
 	public static void storm(boolean doContinue) {
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 81);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 84);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 87);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 90);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 91);
+		for(int i = 0; i <= 80; i += 5) {
+			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 0), 81);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 82);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 85);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 88);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 91);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 92);
 		for(int i = 95; i <= 170; i += 3) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
 		} // clear pad, including shadow assassin
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -155f, 0f), 171);
 		Utils.scheduleTask(() -> {
-			Actions.move(healer, "WP", 30);
+			Actions.move(healer, "WP", 32);
 			Actions.setHotbarSlot(healer, 1);
-		}, 171); // move off the pad early enough
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -155f, 80f), 178);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 179); // bonzo back to pillar
+		}, 172); // move off the pad early enough
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -155f, 80f), 179);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 180); // bonzo back to pillar
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -155f, 0f);
 			Actions.setHotbarSlot(healer, 3);
-		}, 180);
-		for(int i = 202; i <= 532; i += 5) {
+		}, 181);
+		for(int i = 207; i <= 532; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
 		} // kill outstanding wither skeletons
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -85f, 0f), 533);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 546);
+		Utils.scheduleTask(() -> Actions.move(healer, "WN", 6), 556); // go to checkpoint spot
 //		Storm.prepadPurple();
 //		Actions.setHotbarSlot(healer, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(healer, new Location(world, 114, 169, 94)), 1);

@@ -394,23 +394,35 @@ public class Mage {
 			Actions.setHotbarSlot(mage, 0);
 		}, 340);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 9), 341); // move to storm clear spot
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 342);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 350);
 		if(doContinue) {
 			Utils.scheduleTask(() -> storm(true), 497);
 		}
 	}
 
 	public static void storm(boolean doContinue) {
-		for(int i = 0; i <= 30; i += 3) {
+		for(int i = 0; i <= 10; i += 3) {
 			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
 		} // clear platform
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 32);
-		for(int i = 35; i <= 530; i += 5) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 11);
+		for(int i = 15; i <= 530; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(mage), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
 		} // kill outstanding wither skeletons
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 531);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 532);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -26f, 0f);
+			Actions.setHotbarSlot(mage, 1);
+		}, 533);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 546);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 554);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -26f, 80f), 556);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 557); // bonzo back to pad
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -26f, 0f);
+			Actions.move(mage, "WP", 15);
+		}, 558);
 //		Actions.setHotbarSlot(mage, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(mage, new Location(world, 46.5, 169, 53.5)), 1); // gyro will be up in 7.5 seconds (150 ticks)
 //		Utils.scheduleTask(() -> {
