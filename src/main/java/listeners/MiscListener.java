@@ -135,8 +135,8 @@ public class MiscListener implements Listener {
 
 			if(windCharge.getShooter() instanceof Player p) {
 				double distance = p.getLocation().distanceSquared(windCharge.getLocation());
-				p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, windCharge.getLocation(), 350, 0, 0, 0, 0.75);
-				p.getWorld().spawnParticle(Particle.CRIT, windCharge.getLocation(), 150, 0, 0, 0, 2);
+				p.getWorld().spawnParticle(Particle.TOTEM_OF_UNDYING, windCharge.getLocation(), 128, 0, 0, 0, 0.75);
+				p.getWorld().spawnParticle(Particle.CRIT, windCharge.getLocation(), 64, 0, 0, 0, 2);
 				p.getWorld().playSound(windCharge.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
 				for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.playSound(spectator, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
 

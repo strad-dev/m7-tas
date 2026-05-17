@@ -112,7 +112,7 @@ public final class PillarOscillator {
 							pillar.pillarX2(), bottomY, pillar.pillarZ2()));
 			bottomY++;
 		}
-		Utils.playGlobalSound(Sound.BLOCK_PISTON_CONTRACT, 2.0f, 1.0f);
+		Utils.playGlobalSound(Sound.BLOCK_PISTON_CONTRACT, 0.5f, 1.0f);
 	}
 
 	/**

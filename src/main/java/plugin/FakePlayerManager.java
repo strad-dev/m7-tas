@@ -2,6 +2,8 @@ package plugin;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
@@ -13,10 +15,13 @@ import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ParticleStatus;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.ChatVisiblity;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -26,9 +31,13 @@ import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -64,7 +73,9 @@ public class FakePlayerManager {
 
 		GameProfile profile = buildFakeProfileWithSkin(UUID.randomUUID(), fakePlayerName, skinOwner);
 
-		ClientInformation clientInfo = ClientInformation.createDefault();
+		// View distance 0 — ChunkMap.getPlayerViewDistance clamps to min 2 internally,
+		// but this still drops the per-fake chunk load from 17x17=289 to 5x5=25.
+		ClientInformation clientInfo = new ClientInformation("en_us", 0, ChatVisiblity.FULL, true, 0, HumanoidArm.RIGHT, false, false, ParticleStatus.MINIMAL);
 		ServerPlayer nmsPlayer = new ServerPlayer(nmsServer, nmsWorld, profile, clientInfo);
 		try {
 			java.lang.reflect.Field firstTick = net.minecraft.world.entity.Entity.class.getDeclaredField("firstTick");
@@ -116,22 +127,85 @@ public class FakePlayerManager {
 		return bukkitPlayer;
 	}
 
+	private static final long SKIN_CACHE_TTL_MS = 24L * 60L * 60L * 1000L;
+	private static Map<UUID, CachedSkin> skinCache = null;
+
+	private record CachedSkin(String value, String signature, long fetchedAt) {
+		boolean isFresh() {
+			return System.currentTimeMillis() - fetchedAt < SKIN_CACHE_TTL_MS;
+		}
+	}
+
 	public static GameProfile buildFakeProfileWithSkin(UUID fakeUuid, String fakeName, UUID skinOwnerUuid) {
-		MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
-		ProfileResult result = nms.services().sessionService().fetchProfile(skinOwnerUuid, true);
-
-		if(result == null) {
-			throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
+		if(skinCache == null) {
+			skinCache = loadSkinCache();
 		}
 
-		GameProfile populated = result.profile();
+		CachedSkin cached = skinCache.get(skinOwnerUuid);
+		Property texture;
+		if(cached != null && cached.isFresh()) {
+			texture = new Property("textures", cached.value(), cached.signature());
+		} else {
+			MinecraftServer nms = ((CraftServer) Bukkit.getServer()).getServer();
+			ProfileResult result = nms.services().sessionService().fetchProfile(skinOwnerUuid, true);
+			if(result == null) {
+				throw new IllegalStateException("Failed to fetch profile for " + skinOwnerUuid);
+			}
+			var fetched = result.profile().properties().get("textures").iterator();
+			if(!fetched.hasNext()) {
+				throw new IllegalStateException("Profile for " + skinOwnerUuid + " has no textures property");
+			}
+			texture = fetched.next();
+			skinCache.put(skinOwnerUuid, new CachedSkin(texture.value(), texture.signature(), System.currentTimeMillis()));
+			saveSkinCache(skinCache);
+		}
+
 		Multimap<String, Property> properties = HashMultimap.create();
-		for(Property tex : populated.properties().get("textures")) {
-			properties.put("textures", tex);
-		}
+		properties.put("textures", texture);
+		return new GameProfile(fakeUuid, fakeName, new PropertyMap(properties));
+	}
 
-		PropertyMap propertyMap = new PropertyMap(properties);
-		return new GameProfile(fakeUuid, fakeName, propertyMap);
+	private static File getSkinCacheFile() {
+		File folder = M7tas.getInstance().getDataFolder();
+		if(!folder.exists()) {
+			folder.mkdirs();
+		}
+		return new File(folder, "skins.json");
+	}
+
+	private static Map<UUID, CachedSkin> loadSkinCache() {
+		Map<UUID, CachedSkin> out = new HashMap<>();
+		File file = getSkinCacheFile();
+		if(!file.exists()) {
+			return out;
+		}
+		try {
+			String raw = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+			JsonObject root = JsonParser.parseString(raw).getAsJsonObject();
+			for(var entry : root.entrySet()) {
+				JsonObject obj = entry.getValue().getAsJsonObject();
+				out.put(UUID.fromString(entry.getKey()), new CachedSkin(obj.get("value").getAsString(), obj.has("signature") && !obj.get("signature").isJsonNull() ? obj.get("signature").getAsString() : null, obj.get("fetchedAt").getAsLong()));
+			}
+		} catch (Exception e) {
+			M7tas.getInstance().getLogger().warning("Failed to load skin cache, starting empty: " + e.getMessage());
+		}
+		return out;
+	}
+
+	private static void saveSkinCache(Map<UUID, CachedSkin> cache) {
+		JsonObject root = new JsonObject();
+		for(var entry : cache.entrySet()) {
+			JsonObject obj = new JsonObject();
+			obj.addProperty("value", entry.getValue().value());
+			obj.addProperty("signature", entry.getValue().signature());
+			obj.addProperty("fetchedAt", entry.getValue().fetchedAt());
+			root.add(entry.getKey().toString(), obj);
+		}
+		try {
+			Files.write(getSkinCacheFile().toPath(), root.toString().getBytes(StandardCharsets.UTF_8));
+		} catch (IOException e) {
+			M7tas.getInstance().getLogger().warning("Failed to save skin cache: " + e.getMessage());
+		}
 	}
 
 	private static void kickAllFakes() {

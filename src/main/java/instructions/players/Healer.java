@@ -357,7 +357,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 75);
 		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 116);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 118);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 80f), 128);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 128);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -4f, 80f), 137);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 138); // bonzo 1 of 3
 		// tick 139: propelled forward for 10 ticks
@@ -443,7 +443,7 @@ public class Healer {
 	public static void storm(boolean doContinue) {
 		for(int i = 0; i <= 80; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClickLoop(healer), i);
+			Utils.scheduleTask(() -> Actions.loopLeftClick(healer), i);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 0), 81);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 82);
@@ -453,7 +453,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 92);
 		for(int i = 95; i <= 170; i += 3) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClickLoop(healer), i);
+			Utils.scheduleTask(() -> Actions.loopLeftClick(healer), i);
 		} // clear pad, including shadow assassin
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -155f, 0f), 171);
 		Utils.scheduleTask(() -> {
@@ -468,7 +468,7 @@ public class Healer {
 		}, 181);
 		for(int i = 207; i <= 532; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClickLoop(healer), i);
+			Utils.scheduleTask(() -> Actions.loopLeftClick(healer), i);
 		} // kill outstanding wither skeletons
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -85f, 0f);
@@ -505,6 +505,19 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 4), 741);
 		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 780);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 781);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(healer, 650);
+			Actions.setHotbarSlot(healer, 4);
+			Actions.swapItems(healer, 12, 39);
+		}, 782);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 783);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 1);
+			Actions.move(healer, "WP", 12);
+		}, 784);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 785);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -47f, 0f), 786);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -141f, 1f), 800);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}

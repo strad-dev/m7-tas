@@ -466,7 +466,7 @@ public class Actions {
 	 * target — the beam plays a stun sound even when the wither is invulnerable). Also
 	 * skips firing if a solid block sits closer than the entity along the line of sight.
 	 */
-	public static void leftClickLoop(Player p) {
+	public static void loopLeftClick(Player p) {
 		if(!mageBeamWouldHit(p)) return;
 		leftClick(p);
 	}
@@ -488,6 +488,77 @@ public class Actions {
 		if(blockHit == null) return true;
 		Vector eyeVec = eye.toVector();
 		return entityHit.getHitPosition().distanceSquared(eyeVec) <= blockHit.getHitPosition().distanceSquared(eyeVec);
+	}
+
+	/**
+	 * Terminator-loop variant of {@link #rightClick}: simulates the middle Terminator arrow's
+	 * ballistic trajectory from the player's current facing direction and only sends the
+	 * use-item packet (which triggers {@code CustomItems.terminator}) if the arrow would
+	 * intercept a valid living entity before hitting terrain or running out of horizontal
+	 * range. Mirrors {@link #loopLeftClick}'s purpose: avoid the per-tick arrow-spawn cost
+	 * when no target is in the line of fire.
+	 *
+	 * Uses the same entity filter as {@link #mageBeamWouldHit} (skips Players, dead, and
+	 * resistance-255 mobs; includes Withers so Storm/etc. count as valid targets). The
+	 * trajectory is walked tick-by-tick with Minecraft arrow physics ({@code v.xz *= 0.99},
+	 * {@code v.y = v.y * 0.99 - 0.05}); the walk bails when horizontal distance exceeds
+	 * {@link #TERMINATOR_MAX_RANGE} or horizontal velocity collapses.
+	 *
+	 * Only checks the middle arrow of the 3-arrow spread — left/right are ±5° and rarely
+	 * matter when the middle misses.
+	 */
+	public static void loopRightClick(Player p) {
+		if(!terminatorWouldHit(p)) return;
+		rightClick(p);
+	}
+
+	private static boolean terminatorWouldHit(Player p) {
+		Location spawn = p.getEyeLocation().add(0, -0.1, 0);
+		Vector dir = p.getEyeLocation().getDirection();
+
+		final double speed = 3.175;
+		double vx = dir.getX() * speed;
+		double vy = dir.getY() * speed;
+		double vz = dir.getZ() * speed;
+
+		Vector pos = spawn.toVector();
+		Vector start = pos.clone();
+		World world = p.getWorld();
+		double maxRangeSq = TERMINATOR_MAX_RANGE * TERMINATOR_MAX_RANGE;
+
+		for(int t = 0; t < 200; t++) {
+			Vector vel = new Vector(vx, vy, vz);
+			double stepLen = vel.length();
+			if(stepLen < 1e-4) return false;
+			Vector dirNorm = vel.clone().multiply(1.0 / stepLen);
+
+			RayTraceResult entityHit = world.rayTraceEntities(pos.toLocation(world), dirNorm, stepLen, 0, entity -> {
+				if(!(entity instanceof LivingEntity le)) return false;
+				if(le instanceof Player) return false;
+				if(le.isDead()) return false;
+				return !(le.hasPotionEffect(PotionEffectType.RESISTANCE)
+						&& le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255);
+			});
+			RayTraceResult blockHit = world.rayTraceBlocks(pos.toLocation(world), dirNorm, stepLen, FluidCollisionMode.NEVER, true);
+
+			if(entityHit != null) {
+				if(blockHit == null) return true;
+				double entityD2 = entityHit.getHitPosition().distanceSquared(pos);
+				double blockD2 = blockHit.getHitPosition().distanceSquared(pos);
+				return entityD2 <= blockD2;
+			}
+			if(blockHit != null) return false;
+
+			pos.add(vel);
+			vx *= 0.99;
+			vz *= 0.99;
+			vy = vy * 0.99 - 0.05;
+
+			double dx = pos.getX() - start.getX();
+			double dz = pos.getZ() - start.getZ();
+			if(dx * dx + dz * dz > maxRangeSq) return false;
+		}
+		return false;
 	}
 
 	private static boolean hasLineOfSight(Player p, LivingEntity target) {
@@ -1367,7 +1438,7 @@ public class Actions {
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void iceSpray(Player p) {
 		Location l = p.getEyeLocation();
-		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 1000);
+		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 512);
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
@@ -1461,7 +1532,7 @@ public class Actions {
 
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new leftClick() while holding the correct item")
 	public static void gyro(Player p, Location l) {
-		p.getWorld().spawnParticle(Particle.PORTAL, l, 1000);
+		p.getWorld().spawnParticle(Particle.PORTAL, l, 512);
 		l.setY(l.getY() + 1);
 		new BukkitRunnable() {
 			float pitch = 0.5f;
@@ -1679,10 +1750,10 @@ public class Actions {
 		Random random = new Random();
 
 		// Spawn 20 critical particles with random directions
-		world.spawnParticle(Particle.TOTEM_OF_UNDYING, location, 350, 0, 0, 0, 0.75);
+		world.spawnParticle(Particle.TOTEM_OF_UNDYING, location, 128, 0, 0, 0, 0.75);
 
 		// Add critical particles for texture variety
-		world.spawnParticle(Particle.CRIT, location, 150, 0, 0, 0, 2);
+		world.spawnParticle(Particle.CRIT, location, 64, 0, 0, 0, 2);
 
 		p.getWorld().playSound(location, Sound.ENTITY_FIREWORK_ROCKET_BLAST, 2.0F, 1.0F);
 
