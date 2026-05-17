@@ -247,6 +247,8 @@ public class FakePlayerManager {
 				for(Player fake : fakePlayers.values()) {
 					if(!(fake instanceof CraftPlayer)) continue;
 					ServerPlayer npc = ((CraftPlayer) fake).getHandle();
+					TASGamePacketListenerImpl conn = fakeConnections.get(npc);
+					if(conn != null) npc.connection = conn;
 					npc.setNoGravity(false);
 					try {
 						updatePlayerPose.invoke(npc);
@@ -277,30 +279,27 @@ public class FakePlayerManager {
 					}
 					npc.updateFluidHeightAndDoFluidPushing(net.minecraft.tags.FluidTags.WATER, 0.014);
 					npc.updateFluidHeightAndDoFluidPushing(net.minecraft.tags.FluidTags.LAVA, 0.007);
-					net.minecraft.world.phys.Vec3 before = npc.position();
-					npc.aiStep();
-					net.minecraft.world.phys.Vec3 after = npc.position();
-					MovementAudit.auditMove(fake, npc, after.x - before.x, after.y - before.y, after.z - before.z);
+					if(Utils.isSuperVerbose()) {
+						net.minecraft.world.phys.Vec3 before = npc.position();
+						npc.aiStep();
+						net.minecraft.world.phys.Vec3 after = npc.position();
+						MovementAudit.auditMove(fake, npc, after.x - before.x, after.y - before.y, after.z - before.z);
+					} else {
+						npc.aiStep();
+					}
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0, 1);
 	}
 
-	private static final Map<ServerPlayer, BukkitRunnable> customConnectionTask = new HashMap<>();
+	private static final Map<ServerPlayer, TASGamePacketListenerImpl> fakeConnections = new HashMap<>();
 
 	private static void forceCustomConnection(ServerPlayer serverPlayer, TASGamePacketListenerImpl connection) {
-		customConnectionTask.put(serverPlayer, new BukkitRunnable() {
-			@Override
-			public void run() {
-				serverPlayer.connection = connection;
-			}
-		});
-		customConnectionTask.get(serverPlayer).runTaskTimer(M7tas.getInstance(), 0, 1);
+		fakeConnections.put(serverPlayer, connection);
 	}
 
 	public static void stopCustomConnection() {
-		for(ServerPlayer serverPlayer : customConnectionTask.keySet()) {
-			customConnectionTask.get(serverPlayer).cancel();
+		for(ServerPlayer serverPlayer : fakeConnections.keySet()) {
 			MinecraftServer nmsServer = ((CraftServer) M7tas.getInstance().getServer()).getServer();
 			Connection nm = new Connection(PacketFlow.SERVERBOUND) {
 				{
@@ -321,5 +320,6 @@ public class FakePlayerManager {
 			CommonListenerCookie cookie = CommonListenerCookie.createInitial(serverPlayer.getGameProfile(), false);
 			serverPlayer.connection = new ServerGamePacketListenerImpl(nmsServer, nm, serverPlayer, cookie);
 		}
+		fakeConnections.clear();
 	}
 }

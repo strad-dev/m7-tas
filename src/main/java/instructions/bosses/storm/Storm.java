@@ -188,14 +188,14 @@ public final class Storm extends WitherLord {
 		Utils.scheduleTask(() -> sendChatMessage(LIGHTNING_MESSAGE[random.nextInt(LIGHTNING_MESSAGE.length)]), 525);
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F);
-			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 1.0F);
-			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
+			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0F, 1.0F);
+			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 1.0F);
 			spamLightning();
 		}, 535);
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F);
-			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0F, 1.0F);
-			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
+			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0F, 1.0F);
+			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 1.0F);
 			spamLightning();
 		}, 545);
 	}
