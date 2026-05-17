@@ -427,7 +427,7 @@ public class Archer {
 	public static void storm(boolean doContinue) {
 		for(int i = 1; i <= 79; i += 5) {
 			Utils.scheduleTask(() -> Actions.aimTerminatorAtNearestEnemy(archer), i - 1);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+			Utils.scheduleTask(() -> Actions.loopRightClick(archer), i);
 		}
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, -4f), 79);
 		Utils.scheduleTask(() -> Actions.move(archer, "DN", 60), 80);
@@ -444,7 +444,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 3), 163);
 		for(int i = 165; i <= 520; i += 5) {
 			Utils.scheduleTask(() -> Actions.aimTerminatorAtNearestEnemy(archer), i - 1);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+			Utils.scheduleTask(() -> Actions.loopRightClick(archer), i);
 		}
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 30f), 525);
 		Utils.scheduleTask(() -> Actions.move(archer, "D", 0), 526);
@@ -454,7 +454,7 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 5);
 			Actions.swapItems(archer, 12, 39); // put on racing helmet
 		}, 537);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 93), 546); // go to goldor
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 95), 546); // go to goldor
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 576);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 577);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 578);
@@ -476,20 +476,29 @@ public class Archer {
 			Actions.turnHead(archer, 71f, 0f);
 			Actions.setHotbarSlot(archer, 5);
 		}, 604);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 639);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 640);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 45f, 0f), 638);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 71f, 0f), 640);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 641);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 642);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 71f, 25f), 643);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 643);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 644);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 645);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 75f, 30f), 645);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 646);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 647);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 648);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 75f, 0f), 684);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 6), 685);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 688);
-		Utils.scheduleTask(() -> Actions.leftClickLoop(archer), 689);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 648);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 649);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 650);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 45f, 0f), 684);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 685);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 687);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 689);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 125f, 80f);
+			Actions.setHotbarSlot(archer, 1);
+		}, 700);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 702); // bonzo towards i4
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 86f, 0f), 717);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 7), 718);
 //		if(doContinue) {
 //			Utils.scheduleTask(Archer::explosiveShot, 887);
 //			Utils.scheduleTask(() -> {

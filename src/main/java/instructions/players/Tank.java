@@ -527,7 +527,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 11);
 		for(int i = 15; i <= 530; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(tank), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClickLoop(tank), i);
+			Utils.scheduleTask(() -> Actions.loopLeftClick(tank), i);
 		} // kill outstanding wither skeletons
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 531);
 		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 532);

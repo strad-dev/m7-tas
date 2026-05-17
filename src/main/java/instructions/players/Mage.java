@@ -408,7 +408,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 11);
 		for(int i = 15; i <= 530; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(mage), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClickLoop(mage), i);
+			Utils.scheduleTask(() -> Actions.loopLeftClick(mage), i);
 		} // kill outstanding wither skeletons
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 531);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 532);
@@ -459,6 +459,17 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 751);
 		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 756);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 759);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(mage, 650);
+			Actions.setHotbarSlot(mage, 4);
+			Actions.swapItems(mage, 12, 39);
+		}, 800);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 801);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, "AN", 1);
+			Actions.setHotbarSlot(mage, 5);
+		}, 802);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -126f, 1f), 803);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}

@@ -410,7 +410,7 @@ public class CustomItems implements Listener {
 
 	public static void witherImpact(Player p) {
 		// implosion
-		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 20);
+		p.getWorld().spawnParticle(Particle.EXPLOSION, p.getEyeLocation(), 1);
 		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
 		List<EntityType> doNotKill = CustomItems.doNotKill();
 		int damaged = 0;
@@ -1019,15 +1019,15 @@ public class CustomItems implements Listener {
 		l.add(0, 1.62, 0);
 
 		Vector v = l.getDirection();
-		v.setX(v.getX() / 5);
-		v.setY(v.getY() / 5);
-		v.setZ(v.getZ() / 5);
+		v.setX(v.getX() / 4);
+		v.setY(v.getY() / 4);
+		v.setZ(v.getZ() / 4);
 		World world = l.getWorld();
 		Set<Entity> damagedEntities = new HashSet<>();
 		List<EntityType> doNotKill = doNotKill();
 		damagedEntities.add(p);
 		int pierce = 5;
-		for(int i = 0; i < 640 && pierce > 0; i++) {
+		for(int i = 0; i < 256 && pierce > 0; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;
 			}
@@ -1121,7 +1121,7 @@ public class CustomItems implements Listener {
 
 	public static void iceSpray(Player p) {
 		Location l = p.getEyeLocation();
-		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 1000);
+		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 512);
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
@@ -1216,7 +1216,7 @@ public class CustomItems implements Listener {
 			return;
 		}
 		Location l = result.getHitBlock().getLocation();
-		p.getWorld().spawnParticle(Particle.PORTAL, l, 1000);
+		p.getWorld().spawnParticle(Particle.PORTAL, l, 512);
 		l.setY(l.getY() + 1);
 		new BukkitRunnable() {
 			float pitch = 0.5f;
@@ -1681,7 +1681,7 @@ public class CustomItems implements Listener {
 			p.teleport(l);
 			Utils.debug(Utils.DebugType.SERVER, "Returning " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 			p.setVelocity(new Vector(0, 0, 0));
-			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 1000), 1);
+			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 512), 1);
 		}, 60);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 63);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 66);
@@ -1876,8 +1876,8 @@ public class CustomItems implements Listener {
 		handToTarget.normalize();
 
 		// Iterations based on distance to target, not max range
-		int iterations = (int) (distance / 0.2);
-		Vector v = handToTarget.multiply(0.2);
+		int iterations = (int) (distance / 0.25);
+		Vector v = handToTarget.multiply(0.25);
 
 		for(int i = 0; i < iterations; i++) {
 			spawnFireworkParticle(l);
