@@ -500,7 +500,7 @@ public class Archer {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}
 	}
-//
+
 //	private static void goldor(boolean doContinue) {
 //		// rapid fire arrow fires
 //		// explosve shot reaches
