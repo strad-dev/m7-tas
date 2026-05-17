@@ -2,6 +2,7 @@ package listeners;
 
 import commands.Spectate;
 import instructions.bosses.WitherLord;
+import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.storm.Storm;
 import net.minecraft.server.MinecraftServer;
@@ -197,6 +198,7 @@ public class MiscListener implements Listener {
 	public void onWitherLordDamage(EntityDamageEvent e) {
 		Maxor.INSTANCE.handleDamage(e);
 		Storm.INSTANCE.handleDamage(e);
+		Goldor.INSTANCE.handleDamage(e);
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
