@@ -78,6 +78,21 @@ public class Actions {
 		return activeInputs.getOrDefault(id, "");
 	}
 
+	/**
+	 * Forcibly clears a player's movement inputs for the current tick — used to simulate
+	 * the server opening a GUI (terminal click in Goldor phase). Does NOT touch activeInputs,
+	 * so a fake player's per-tick input ticker will repress the keys on the next tick.
+	 */
+	public static void clearMovementInput(Player p) {
+		if(!(p instanceof CraftPlayer cp)) return;
+		ServerPlayer sp = cp.getHandle();
+		sp.xxa = 0f;
+		sp.zza = 0f;
+		sp.setSprinting(false);
+		sp.setShiftKeyDown(false);
+		sp.setJumping(false);
+	}
+
 	// Spigot-mojang compile name is detectEquipmentUpdatesPublic; Paper runtime has only detectEquipmentUpdates.
 	// Resolve whichever exists at class-load time.
 	private static final java.lang.reflect.Method DETECT_EQUIPMENT_UPDATES = resolveDetectEquipmentUpdates();

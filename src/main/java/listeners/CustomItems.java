@@ -893,7 +893,9 @@ public class CustomItems implements Listener {
 	public static void superboom(Player p) {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 		if(blockRay == null || blockRay.getHitBlock() == null) return;
-		triggerSuperboomRadius(blockRay.getHitBlock().getLocation(), p);
+		Location center = blockRay.getHitBlock().getLocation();
+		instructions.bosses.goldor.Goldor.INSTANCE.notifyExplosionAt(center);
+		triggerSuperboomRadius(center, p);
 	}
 
 	public static void triggerSuperboomRadius(Location center, Player p) {
