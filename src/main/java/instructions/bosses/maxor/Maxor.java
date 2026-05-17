@@ -430,7 +430,7 @@ public final class Maxor extends WitherLord {
 			enterDyingState();
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * 0.75, stunDamageDealt + cappedDmg);
-			if(willEnrage) Bukkit.getScheduler().runTask(M7tas.getInstance(), this::enrageMaxor);
+			if(willEnrage) enrageMaxor();
 		}
 	}
 

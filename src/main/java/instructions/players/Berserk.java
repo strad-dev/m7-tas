@@ -2,6 +2,7 @@ package instructions.players;
 
 import instructions.Actions;
 import instructions.Server;
+import instructions.bosses.storm.Storm;
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
@@ -465,10 +466,9 @@ public class Berserk {
 	}
 
 	public static void storm(boolean doContinue) {
-
 		for(int i = 0; i <= 80; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(berserk), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(berserk), i);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 0), 81);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 82);
@@ -478,7 +478,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 92);
 		for(int i = 95; i <= 150; i += 3) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(berserk), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(berserk), i);
 		} // clear pad, including shadow assassin
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 154f, 0f), 151);
 		Utils.scheduleTask(() -> {
@@ -493,8 +493,39 @@ public class Berserk {
 		}, 161);
 		for(int i = 187; i <= 532; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(berserk), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(berserk), i);
 		} // kill outstanding wither skeletons
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -155f, -90f);
+			Actions.setHotbarSlot(berserk, 5);
+			Actions.swapItems(berserk, 5, 32);
+		}, 533);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, "WP", 2);
+			Actions.rightClick(berserk); // rag buff
+		}, 546);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 6);
+			Actions.swapItems(berserk, 5, 32);
+		}, 607); // last breath
+		int lbFor = 9;
+		for(int i = 608; i <= 679 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
+		}
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 3);
+			Actions.snapHeadAtEntity(berserk, Storm.INSTANCE.getBoss());
+		}, 680);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 681);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(berserk, 650);
+			Actions.setHotbarSlot(berserk, 4);
+			Actions.swapItems(berserk, 12, 39); // equip racing helmet and black cat
+		}, 682);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 683);
+		Utils.scheduleTask(() -> Actions.move(berserk, "AWP", 0), 684);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 18), 687);
 //		// move continues for 2 more ticks from previous instruction
 //		Actions.setHotbarSlot(berserk, 6);
 //		Utils.scheduleTask(() -> Actions.turnHead(berserk, -1f, 23f), 2);

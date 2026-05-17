@@ -454,7 +454,7 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 5);
 			Actions.swapItems(archer, 12, 39); // put on racing helmet
 		}, 537);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 546); // go to goldor
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 93), 546); // go to goldor
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 576);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 577);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 578);
@@ -471,8 +471,25 @@ public class Archer {
 		}, 586);
 		// tick 587: begin falling
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -109f, 0f), 602);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 603); // bonzo off opposite wall
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 71f, 0f), 604);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 603); // bonzo off opposite wall | lands in 34 ticks
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 71f, 0f);
+			Actions.setHotbarSlot(archer, 5);
+		}, 604);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 639);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 640);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 641);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 642);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 71f, 25f), 643);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 644);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 645);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 646);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 647);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 648);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 75f, 0f), 684);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 6), 685);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 688);
+		Utils.scheduleTask(() -> Actions.leftClickLoop(archer), 689);
 //		if(doContinue) {
 //			Utils.scheduleTask(Archer::explosiveShot, 887);
 //			Utils.scheduleTask(() -> {
