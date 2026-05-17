@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -21,6 +22,7 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
 import org.bukkit.craftbukkit.v1_21_R7.block.CraftBlock;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
@@ -62,6 +64,15 @@ public class Actions {
 	/** UUIDs of mobs already claimed by an in-flight Terminator arrow, mapped to the
 	 *  server tick when the claim expires (i.e. when the arrow should have landed). */
 	private static final Map<UUID, Integer> terminatorClaimedUntil = new HashMap<>();
+
+	/** Max effective mage-beam range during a boss fight (matches the range used by
+	 *  {@link listeners.CustomItems#mageBeam} when {@code LavaJump.isInBossArena} is true).
+	 *  Beam-firing/aim helpers short-circuit if no candidate sits within this radius. */
+	private static final double MAGE_BEAM_RANGE = 50.0;
+	/** Practical max range a Terminator arrow can ballistically reach with a sensible launch
+	 *  angle. Used as the candidate-search radius for the auto-aim variant — past this distance
+	 *  the trajectory either falls into terrain or takes long enough that the target moves. */
+	private static final double TERMINATOR_MAX_RANGE = 100.0;
 
 	public static String getActiveInput(UUID id) {
 		return activeInputs.getOrDefault(id, "");
@@ -352,7 +363,7 @@ public class Actions {
 	 * mob.
 	 */
 	public static void snapHeadToNearestEnemy(Player p) {
-		LivingEntity target = findNearestEnemy(p, le -> hasLineOfSight(p, le));
+		LivingEntity target = findNearestEnemy(p, MAGE_BEAM_RANGE, le -> hasLineOfSight(p, le));
 		if(target == null) return;
 		snapHeadAtEntity(p, target);
 	}
@@ -386,7 +397,7 @@ public class Actions {
 		int now = MinecraftServer.currentTick;
 		terminatorClaimedUntil.entrySet().removeIf(e -> e.getValue() <= now);
 
-		LivingEntity target = findNearestEnemy(p, le ->
+		LivingEntity target = findNearestEnemy(p, TERMINATOR_MAX_RANGE, le ->
 				!terminatorClaimedUntil.containsKey(le.getUniqueId()) && canTerminatorReach(p, le));
 		if(target == null) return;
 		aimTerminatorAtEntity(p, target);
@@ -421,21 +432,62 @@ public class Actions {
 		turnHead(p, yaw, pitch);
 	}
 
-	private static LivingEntity findNearestEnemy(Player p, Predicate<LivingEntity> canHit) {
+	private static LivingEntity findNearestEnemy(Player p, double range, Predicate<LivingEntity> canHit) {
 		Vector origin = p.getEyeLocation().toVector();
+		double rangeSq = range * range;
 		List<LivingEntity> candidates = new ArrayList<>();
-		for(Entity e : p.getNearbyEntities(64, 64, 64)) {
+		// getNearbyEntities takes half-extents — passing `range` gives a 2·range cube around the
+		// player, which is the smallest AABB that fully contains the desired sphere.
+		for(Entity e : p.getNearbyEntities(range, range, range)) {
 			if(!(e instanceof LivingEntity le)) continue;
 			if(le instanceof Player) continue;
 			if(le instanceof Wither) continue;
 			if(le.isDead()) continue;
+			if(le.getBoundingBox().getCenter().distanceSquared(origin) > rangeSq) continue;
 			candidates.add(le);
 		}
+		if(candidates.isEmpty()) return null; // skip sort/predicate when nothing is in range
 		candidates.sort(Comparator.comparingDouble(le -> le.getBoundingBox().getCenter().distanceSquared(origin)));
 		for(LivingEntity le : candidates) {
 			if(canHit.test(le)) return le;
 		}
 		return null;
+	}
+
+	/**
+	 * Mage-beam loop variant of {@link #leftClick}: only sends the swing packet (and thus
+	 * the mage-beam dispatch in {@link nms.TASGamePacketListenerImpl#handleAnimate}) if a
+	 * mage beam fired from the player's current facing direction would actually intercept
+	 * a damageable entity within {@link #MAGE_BEAM_RANGE}. Avoids the thousands of no-op
+	 * swing/dispatch packets that would otherwise be sent during Storm-phase beam spam.
+	 *
+	 * Mirrors the raytrace logic in {@code CustomItems.mageBeam}: ignores Players and dead
+	 * or resistance-255 living entities, but DOES include Withers (the boss is a valid
+	 * target — the beam plays a stun sound even when the wither is invulnerable). Also
+	 * skips firing if a solid block sits closer than the entity along the line of sight.
+	 */
+	public static void leftClickLoop(Player p) {
+		if(!mageBeamWouldHit(p)) return;
+		leftClick(p);
+	}
+
+	private static boolean mageBeamWouldHit(Player p) {
+		Location eye = p.getEyeLocation();
+		Vector dir = eye.getDirection();
+		RayTraceResult entityHit = p.getWorld().rayTraceEntities(eye, dir, MAGE_BEAM_RANGE, 0, entity -> {
+			if(!(entity instanceof LivingEntity le)) return false;
+			if(le instanceof Player) return false;
+			if(le.isDead()) return false;
+			return !(le.hasPotionEffect(PotionEffectType.RESISTANCE)
+					&& le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255);
+		});
+		if(entityHit == null) return false;
+		// If a solid block is closer than the entity along the line of sight, the beam
+		// would stop at the block and do no damage — skip the fire.
+		RayTraceResult blockHit = p.getWorld().rayTraceBlocks(eye, dir, MAGE_BEAM_RANGE, FluidCollisionMode.NEVER, true);
+		if(blockHit == null) return true;
+		Vector eyeVec = eye.toVector();
+		return entityHit.getHitPosition().distanceSquared(eyeVec) <= blockHit.getHitPosition().distanceSquared(eyeVec);
 	}
 
 	private static boolean hasLineOfSight(Player p, LivingEntity target) {
@@ -573,13 +625,16 @@ public class Actions {
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
 			if(entity == p) return false;
 			if(entity.isDead()) return false;
-			if(entity instanceof LivingEntity le) {
-				if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
-				if(le instanceof Wither w && w.getInvulnerabilityTicks() != 0) return false;
-				if(le instanceof org.bukkit.entity.Player player) {
-					if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
-					return !Spectate.getSpectatingPlayers(p).contains(player);
-				}
+			// Only LivingEntity is attackable — TASGamePacketListenerImpl.handleInteract rejects
+			// ItemEntity / ExperienceOrb / non-attackable arrows and disconnects the fake player
+			// ("Attempting to attack an invalid entity"). Storm death dropping XP orbs near the
+			// player was triggering this.
+			if(!(entity instanceof LivingEntity le)) return false;
+			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
+			if(le instanceof Wither w && w.getInvulnerabilityTicks() != 0) return false;
+			if(le instanceof org.bukkit.entity.Player player) {
+				if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
+				return !Spectate.getSpectatingPlayers(p).contains(player);
 			}
 			return true;
 		});
@@ -1244,54 +1299,23 @@ public class Actions {
 					}
 
 					// Fire first arrow
-					Arrow arrow1 = p.launchProjectile(Arrow.class);
-					arrow1.setVelocity(l.clone().getDirection().multiply(velocity));
-					arrow1.setDamage(1.0);
-					arrow1.setShooter(p);
-					arrow1.addScoreboardTag("TerminatorArrow");
-					arrow1.setWeapon(p.getInventory().getItemInMainHand());
-
-					// Play bow shoot sound
+					fireLastBreathArrow(p, l, velocity, 1.0);
 					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 
 					// Schedule second arrow for 3 ticks later
 					Utils.scheduleTask(() -> {
-						// Fire second arrow
-						Arrow arrow2 = p.launchProjectile(Arrow.class);
-						arrow2.setVelocity(l.clone().getDirection().multiply(velocity));
-						arrow2.setDamage(0.2);
-						arrow2.setShooter(p);
-						arrow2.addScoreboardTag("TerminatorArrow");
-						arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
-						// Play bow shoot sound again
+						fireLastBreathArrow(p, l, velocity, 0.2);
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 3);
 
 					if(p.getName().contains("Archer")) {
 						Utils.scheduleTask(() -> {
-							// Fire third arrow
-							Arrow arrow2 = p.launchProjectile(Arrow.class);
-							arrow2.setVelocity(l.clone().getDirection().multiply(velocity));
-							arrow2.setDamage(1.0);
-							arrow2.setShooter(p);
-							arrow2.addScoreboardTag("TerminatorArrow");
-							arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
-							// Play bow shoot sound again
+							fireLastBreathArrow(p, l, velocity, 1.0);
 							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 						}, 5);
 
 						Utils.scheduleTask(() -> {
-							// Fire fourth arrow
-							Arrow arrow2 = p.launchProjectile(Arrow.class);
-							arrow2.setVelocity(l.clone().getDirection().multiply(velocity));
-							arrow2.setDamage(1.0);
-							arrow2.setShooter(p);
-							arrow2.addScoreboardTag("TerminatorArrow");
-							arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
-							// Play bow shoot sound again
+							fireLastBreathArrow(p, l, velocity, 1.0);
 							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 						}, 10);
 					}
@@ -1301,6 +1325,38 @@ public class Actions {
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	/**
+	 * Spawns a deterministic Last-Breath arrow. Bypasses {@code Player.launchProjectile},
+	 * whose CraftBukkit implementation internally calls {@code Arrow.shootFromRotation} with
+	 * inaccuracy=1.0F (consuming RNG and stamping a spread-direction rotation on the arrow
+	 * that we'd then have to overwrite). Goes directly through NMS with {@code shoot(..., 0)}
+	 * for a perfectly clean trajectory — mirrors the pattern used by {@code CustomItems.terminator}.
+	 *
+	 * Spawns at the player's current eye location (with the vanilla -0.1 Y offset that
+	 * {@code launchProjectile} applies); uses {@code aimFrom.getDirection()} for the flight
+	 * direction, so the caller can capture the aim at draw-start and have it survive any
+	 * head movement between draw and release.
+	 */
+	private static void fireLastBreathArrow(Player p, Location aimFrom, float speed, double damage) {
+		ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();
+		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
+		Vector dir = aimFrom.getDirection();
+		Location spawn = p.getEyeLocation().add(0, -0.1, 0);
+
+		net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(
+				net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+		nmsArrow.setPos(spawn.getX(), spawn.getY(), spawn.getZ());
+		nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), speed, 0);
+		nmsArrow.setOwner(nmsPlayer);
+		nmsWorld.addFreshEntity(nmsArrow);
+
+		Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
+		arrow.setDamage(damage);
+		arrow.setShooter(p);
+		arrow.addScoreboardTag("TerminatorArrow");
+		arrow.setWeapon(p.getInventory().getItemInMainHand());
 	}
 
 	/**

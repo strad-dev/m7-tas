@@ -1,6 +1,7 @@
 package instructions.players;
 
 import instructions.Actions;
+import instructions.bosses.storm.Storm;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -442,7 +443,7 @@ public class Healer {
 	public static void storm(boolean doContinue) {
 		for(int i = 0; i <= 80; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(healer), i);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 0), 81);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 82);
@@ -452,7 +453,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 92);
 		for(int i = 95; i <= 170; i += 3) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(healer), i);
 		} // clear pad, including shadow assassin
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -155f, 0f), 171);
 		Utils.scheduleTask(() -> {
@@ -467,11 +468,43 @@ public class Healer {
 		}, 181);
 		for(int i = 207; i <= 532; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(healer), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(healer), i);
 		} // kill outstanding wither skeletons
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -85f, 0f), 533);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 546);
-		Utils.scheduleTask(() -> Actions.move(healer, "WN", 6), 556); // go to checkpoint spot
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -85f, 0f);
+			Actions.swapItems(healer, 5, 32);
+			Actions.setHotbarSlot(healer, 6);
+		}, 533);
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, "WP", 0);
+			Actions.rightClick(healer); // rag buff
+		}, 546);
+		Utils.scheduleTask(() -> Actions.move(healer, "WN", 8), 555); // go to checkpoint spot
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -94.5f, -18.5f), 565);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(healer, 6);
+			Actions.swapItems(healer, 5, 32);
+		}, 607);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 608);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 665);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 0f), 684);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 685);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 36f, 0f), 691);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 36f, 80f);
+			Actions.move(healer, "WPJ", 0);
+			Actions.setHotbarSlot(healer, 1);
+		}, 699);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 702);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 36f, 0f);
+			Actions.move(healer, "WP", 20);
+			Actions.setHotbarSlot(healer, 3);
+		}, 703);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -144f, 0f), 723);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 4), 741);
+		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 780);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 781);
 //		Storm.prepadPurple();
 //		Actions.setHotbarSlot(healer, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(healer, new Location(world, 114, 169, 94)), 1);

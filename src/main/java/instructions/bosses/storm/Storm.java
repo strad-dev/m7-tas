@@ -458,7 +458,7 @@ public final class Storm extends WitherLord {
 			enterDyingState();
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * STUN_DAMAGE_CAP_FRACTION, stunDamageDealt + cappedDmg);
-			if(willEnrage) Bukkit.getScheduler().runTask(M7tas.getInstance(), this::enrageStorm);
+			if(willEnrage) enrageStorm();
 		}
 	}
 

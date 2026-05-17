@@ -1826,7 +1826,7 @@ public class CustomItems implements Listener {
 	public static void mageBeam(Player p) {
 		Location l = p.getLocation();
 
-		// Range depends on boss fight state: 45 blocks during a boss fight, 25 otherwise.
+		// Range depends on boss fight state: 50 blocks during a boss fight, 25 otherwise.
 		double range = LavaJump.isInBossArena(p.getLocation()) ? 50.0 : 25.0;
 
 		// Get player's yaw in radians

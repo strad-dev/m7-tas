@@ -2,6 +2,7 @@ package instructions.players;
 
 import instructions.Actions;
 import instructions.Server;
+import instructions.bosses.storm.Storm;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -407,13 +408,14 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 11);
 		for(int i = 15; i <= 530; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(mage), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(mage), i);
 		} // kill outstanding wither skeletons
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 531);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 532);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -26f, 0f);
 			Actions.setHotbarSlot(mage, 1);
+			Actions.swapItems(mage, 5, 32);
 		}, 533);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 546);
 		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 554);
@@ -422,7 +424,41 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -26f, 0f);
 			Actions.move(mage, "WP", 15);
+			Actions.setHotbarSlot(mage, 3);
 		}, 558);
+		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss()), 574);
+		for(int i = 575; i <= 630; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 585);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 586); // rag buff
+		Utils.scheduleTask(() -> Actions.move(mage, "S", 0), 631);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 637);
+		Utils.scheduleTask(() -> Actions.move(mage, "A", 22), 638);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(mage, 6);
+			Actions.swapItems(mage, 5, 32);
+		}, 647);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 648);
+		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 668);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(mage, 3);
+			Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss());
+		}, 680);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 681);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 682);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 683);
+		Utils.scheduleTask(() -> {
+			Actions.move(mage, "S", 29);
+			Actions.setHotbarSlot(mage, 3);
+		}, 684);
+		for(int i = 686; i <= 781; i += 5) {
+			Utils.scheduleTask(() -> Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss()), i - 1);
+			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+		} // man wish i could have gotten an earlier kill but whatever
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 751);
+		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 756);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 759);
 //		Actions.setHotbarSlot(mage, 6);
 //		Utils.scheduleTask(() -> Actions.gyro(mage, new Location(world, 46.5, 169, 53.5)), 1); // gyro will be up in 7.5 seconds (150 ticks)
 //		Utils.scheduleTask(() -> {
@@ -586,7 +622,7 @@ public class Mage {
 //		}
 	}
 
-//	private static void goldor(boolean doContinue) {
+	//	private static void goldor(boolean doContinue) {
 //		/*
 //		 *  ██╗
 //		 * ███║

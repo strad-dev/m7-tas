@@ -527,7 +527,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 11);
 		for(int i = 15; i <= 530; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadToNearestEnemy(tank), i - 1);
-			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
+			Utils.scheduleTask(() -> Actions.leftClickLoop(tank), i);
 		} // kill outstanding wither skeletons
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 531);
 		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 532);
@@ -540,47 +540,47 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 546);
 		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 554);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 556); // move to i3 dig spot
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 45f), 574);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 575); // 19/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 576); // 18/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 577); // 17/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 578); // 16/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 579); // 15/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 580); // 14/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 581); // 13/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 582); // 12/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 583); // 11/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 584); // 10/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 585); // 10/20 regen 1
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 586); // 9/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 587); // 8/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 588); // 7/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 589); // 6/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 590); // 5/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 591); // 4/20
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 90f), 592);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 593); // 3/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 594); // 2/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 595); // 2/20 regen 1
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 596); // 1/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 597); // 0/20
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 605);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 615);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 625);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 635);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 645);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 655);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 665);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 675);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 685);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 695);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 705);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 715);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 725);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 735); // move for 22 ticks before landing
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 72f, 0f), 736);
-		Utils.scheduleTask(() -> Actions.move(tank, "WN", 5), 760);
-//		Utils.scheduleTask(() -> Actions.move(tank, "WN", 0), 765);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 45f), 573);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 574); // 19/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 575); // 18/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 576); // 17/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 577); // 16/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 578); // 15/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 579); // 14/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 580); // 13/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 581); // 12/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 582); // 11/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 583); // 10/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 584); // 10/20 regen 1
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 585); // 9/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 586); // 8/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 587); // 7/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 588); // 6/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 589); // 5/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 590); // 4/20
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 90f), 591);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 592); // 3/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 593); // 2/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 594); // 2/20 regen 1
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 595); // 1/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 596); // 0/20
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 604);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 614);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 624);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 634);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 644);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 654);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 664);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 674);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 684);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 694);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 704);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 714);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 724);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 734); // move for 22 ticks before landing
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 72f, -25f), 735);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 24), 736);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 4), 766); // move to in front of dev3
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> goldor(true), 890);
 //		}

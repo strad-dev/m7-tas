@@ -23,8 +23,9 @@ public final class WitherSpawn {
 	 * <ol>
 	 *   <li>Air-clear y169..y175 — wipes any stale blocks left below the initial bottom
 	 *       if a previous run ended with the pillar over-extended down to y169..y174.
-	 *   <li>Iteratively clone-down from the anchor at y196: clone (y+1)→y for y from
-	 *       y195 down to y175. The anchor at y196 is the source and never moves.
+	 *   <li>Exponentially clone-down from the anchor at y196: each step doubles the
+	 *       already-filled region, so a 21-row column rebuilds in ~5 clones instead of 21.
+	 *       The anchor at y196 stays put as the seed for the first clone.
 	 * </ol>
 	 *
 	 * Final state: 22-block pillar column from y175 to y196, with air at y169..y174.
@@ -37,13 +38,22 @@ public final class WitherSpawn {
 							p.pillarX1(), PadAndPillar.PILLAR_BOTTOM_MIN, p.pillarZ1(),
 							p.pillarX2(), PadAndPillar.PILLAR_BOTTOM_INITIAL, p.pillarZ2()));
 
-			// Step 2: clone-down from the anchor at y196 to rebuild the column to y175
-			for(int y = PadAndPillar.PILLAR_ANCHOR_Y - 1; y >= PadAndPillar.PILLAR_BOTTOM_INITIAL; y--) {
+			// Step 2: exponential clone-down. Each pass copies the lowest `rowsToAdd` rows
+			// of the filled region to the next `rowsToAdd` rows below it, doubling the
+			// column height (capped so we don't shoot past PILLAR_BOTTOM_INITIAL).
+			int bottom = PadAndPillar.PILLAR_ANCHOR_Y; // currently filled down to here (just the anchor row)
+			while(bottom > PadAndPillar.PILLAR_BOTTOM_INITIAL) {
+				int filledRows = PadAndPillar.PILLAR_ANCHOR_Y - bottom + 1;
+				int rowsToAdd = Math.min(filledRows, bottom - PadAndPillar.PILLAR_BOTTOM_INITIAL);
+				int srcY1 = bottom;
+				int srcY2 = bottom + rowsToAdd - 1;
+				int dstY1 = bottom - rowsToAdd;
 				Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
 						String.format("clone %d %d %d %d %d %d %d %d %d",
-								p.pillarX1(), y + 1, p.pillarZ1(),
-								p.pillarX2(), y + 1, p.pillarZ2(),
-								p.pillarX1(), y, p.pillarZ1()));
+								p.pillarX1(), srcY1, p.pillarZ1(),
+								p.pillarX2(), srcY2, p.pillarZ2(),
+								p.pillarX1(), dstY1, p.pillarZ1()));
+				bottom = dstY1;
 			}
 		}
 	}
