@@ -46,13 +46,17 @@ public class Healer {
 				Actions.setHotbarSlot(healer, 3);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
-//			case "goldor" -> {
-//				Utils.teleport(healer, new Location(world, 108.308, 120, 93.895, -132.4f, 2.3f));
-//				Actions.swapItems(healer, 1, 28);
-//				Actions.swapItems(healer, 3, 30);
-//				Actions.swapItems(healer, 7, 34);
-////				Utils.scheduleTask(() -> goldor(false), 60);
-//			}
+			case "goldor" -> {
+				Utils.setSpeed(healer, 650);
+				Utils.teleport(healer, new Location(world, 107.729, 120, 93.816, -139.3f, 1.6f));
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 34);
+				Actions.swapItems(healer, 12, 39);
+				Actions.setHotbarSlot(healer, 5);
+				Utils.scheduleTask(() -> goldor(false), 60);
+			}
 //			case "necron" -> {
 //				Utils.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(healer, 1, 28);
@@ -518,12 +522,22 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 785);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -47f, 0f), 786);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -141f, 1f), 800);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> goldor(true), 890);
-//		}
+		Utils.scheduleTask(() -> Actions.move(healer, "AN", 1), 802);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -126f, 1f), 803);
+		if(doContinue) {
+			Utils.scheduleTask(() -> goldor(true), 881);
+		}
 	}
 
-//	private static void goldor(boolean doContinue) {
+	private static void goldor(boolean doContinue) {
+		Actions.rightClick(healer);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 1);
+		// tick 2: body-blocked by tank
+		// tick 3: body-blocked by tank
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 4);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 5);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 6);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 7);
 //		/*
 //		 *  ██╗
 //		 * ███║
@@ -737,8 +751,8 @@ public class Healer {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}
-//	}
-//
+	}
+
 //	private static void necron(boolean doContinue) {
 //		Actions.setHotbarSlot(healer, 3);
 //		Utils.scheduleTask(() -> Actions.leap(healer, Tank.get()), 121);

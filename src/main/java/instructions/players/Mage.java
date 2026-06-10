@@ -49,13 +49,17 @@ public class Mage {
 				Actions.setHotbarSlot(mage, 0);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
-//			case "goldor" -> {
-//				Utils.teleport(mage, new Location(world, 108.308, 120, 94.675, -139.3f, 1.6f));
-//				Actions.swapItems(mage, 1, 28);
-//				Actions.swapItems(mage, 3, 30);
-//				Actions.swapItems(mage, 6, 33);
-////				Utils.scheduleTask(() -> goldor(false), 60);
-//			}
+			case "goldor" -> {
+				Utils.setSpeed(mage, 650);
+				Utils.teleport(mage, new Location(world, 108.5, 120, 94.496, -141f, 1f));
+				Actions.swapItems(mage, 1, 28);
+				Actions.swapItems(mage, 3, 30);
+				Actions.swapItems(mage, 6, 33);
+				Actions.swapItems(mage, 7, 34);
+				Actions.swapItems(mage, 12, 39);
+				Actions.setHotbarSlot(mage, 5);
+				Utils.scheduleTask(() -> goldor(false), 60);
+			}
 //			case "necron" -> {
 //				Utils.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(mage, 1, 28);
@@ -365,7 +369,6 @@ public class Mage {
 		}, 742);
 	}
 
-
 	public static void maxor(boolean doContinue) {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -13f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 2);
@@ -465,17 +468,19 @@ public class Mage {
 			Actions.swapItems(mage, 12, 39);
 		}, 800);
 		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 801);
-		Utils.scheduleTask(() -> {
-			Actions.move(mage, "AN", 1);
-			Actions.setHotbarSlot(mage, 5);
-		}, 802);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -126f, 1f), 803);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> goldor(true), 890);
-//		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 802);
+		if(doContinue) {
+			Utils.scheduleTask(() -> goldor(true), 881);
+		}
 	}
 
-	//	private static void goldor(boolean doContinue) {
+	private static void goldor(boolean doContinue) {
+		Actions.rightClick(mage);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 1);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 2);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 3);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 4);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 5);
 //		/*
 //		 *  ██╗
 //		 * ███║
@@ -663,9 +668,9 @@ public class Mage {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}
-//	}
-//
-//	private static void necron(boolean doContinue) {
+	}
+
+	//	private static void necron(boolean doContinue) {
 //		Actions.setHotbarSlot(mage, 5);
 //		Utils.scheduleTask(() -> Actions.rag(mage), 59);
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 120);

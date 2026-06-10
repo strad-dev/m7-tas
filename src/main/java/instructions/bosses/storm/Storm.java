@@ -493,7 +493,7 @@ public final class Storm extends WitherLord {
 			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
 			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in " + formatTick(tick - 1));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
-//			chainNext(doContinue);
+			chainNext(doContinue);
 		}, 100);
 	}
 

@@ -126,7 +126,7 @@ public abstract class WitherLord {
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
 	}
 
-	private static String formatWithSpaces(int n) {
+	protected static String formatWithSpaces(int n) {
 		StringBuilder sb = new StringBuilder();
 		String s = String.valueOf(n);
 		for(int i = 0; i < s.length(); i++) {

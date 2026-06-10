@@ -10,16 +10,18 @@ import org.bukkit.entity.TextDisplay;
 public final class GoldorTerminal {
 	public static final String TAG_PREFIX = "goldor_terminal_";
 
-	private static final String INACTIVE_TEXT =
-			ChatColor.RED + "Inactive Terminal\n" + ChatColor.GOLD + "" + ChatColor.BOLD + "CLICK HERE";
-	private static final String ACTIVE_TEXT =
-			ChatColor.GREEN + "Terminal Active";
+	private static final String INACTIVE_LINE_1 = ChatColor.RED + "Inactive Terminal";
+	private static final String INACTIVE_LINE_2 = ChatColor.GREEN + "" + ChatColor.BOLD + "CLICK HERE";
+	private static final String ACTIVE_TEXT = ChatColor.GREEN + "Terminal Active";
 
 	public final int sectionIdx;
 	public final int terminalIdx;
 
 	private final Interaction interaction;
-	private final TextDisplay display;
+	/** Top display: "Inactive Terminal" when inactive; "Terminal Active" when activated. */
+	private final TextDisplay displayTop;
+	/** Bottom display: "CLICK HERE" when inactive; hidden/empty when activated. */
+	private final TextDisplay displayBottom;
 	private boolean activated = false;
 	private boolean pending = false;
 
@@ -28,18 +30,27 @@ public final class GoldorTerminal {
 		this.terminalIdx = terminalIdx;
 
 		Location interactionLoc = new Location(world, x + 0.5, y, z + 0.5);
-		Location displayLoc = new Location(world, x + 0.5, y + 1.0, z + 0.5);
+		// Two separate TextDisplays with vanilla backgrounds; gap between them has no background.
+		Location bottomLoc = new Location(world, x + 0.5, y + 1.0, z + 0.5);
+		Location topLoc = new Location(world, x + 0.5, y + 1.375, z + 0.5);
 
 		this.interaction = world.spawn(interactionLoc, Interaction.class, e -> {
 			e.setInteractionWidth(1.0f);
-			e.setInteractionHeight(1.0f);
+			e.setInteractionHeight(1.5f);
 			e.setResponsive(true);
 			e.addScoreboardTag(TAG_PREFIX + sectionIdx + "_" + terminalIdx);
 			e.addScoreboardTag("TASNoName");
 		});
 
-		this.display = world.spawn(displayLoc, TextDisplay.class, e -> {
-			e.setText(INACTIVE_TEXT);
+		this.displayTop = world.spawn(topLoc, TextDisplay.class, e -> {
+			e.setText(INACTIVE_LINE_1);
+			e.setBillboard(Display.Billboard.CENTER);
+			e.setAlignment(TextDisplay.TextAlignment.CENTER);
+			e.addScoreboardTag("TASNoName");
+		});
+
+		this.displayBottom = world.spawn(bottomLoc, TextDisplay.class, e -> {
+			e.setText(INACTIVE_LINE_2);
 			e.setBillboard(Display.Billboard.CENTER);
 			e.setAlignment(TextDisplay.TextAlignment.CENTER);
 			e.addScoreboardTag("TASNoName");
@@ -61,12 +72,15 @@ public final class GoldorTerminal {
 	public void markActivated() {
 		activated = true;
 		pending = false;
-		display.setText(ACTIVE_TEXT);
+		// Active label replaces the bottom display; top display is emptied (no background when text is empty).
+		displayTop.setText("");
+		displayBottom.setText(ACTIVE_TEXT);
 	}
 
 	public void cleanup() {
 		if(interaction != null && interaction.isValid()) interaction.remove();
-		if(display != null && display.isValid()) display.remove();
+		if(displayTop != null && displayTop.isValid()) displayTop.remove();
+		if(displayBottom != null && displayBottom.isValid()) displayBottom.remove();
 	}
 
 	public static int[] parseTag(String tag) {

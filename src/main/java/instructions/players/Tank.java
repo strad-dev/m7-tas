@@ -44,15 +44,17 @@ public class Tank {
 				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
-//			case "goldor" -> {
-//				Utils.teleport(tank, new Location(world, 107.736, 120, 89.242, -54.5f, 2f));
-//				Actions.swapItems(tank, 1, 28);
-//				Actions.swapItems(tank, 3, 30);
-//				Actions.swapItems(tank, 5, 32);
-//				Actions.swapItems(tank, 6, 33);
-//				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
-////				Utils.scheduleTask(() -> goldor(false), 60);
-//			}
+			case "goldor" -> {
+				Utils.setSpeed(tank, 650);
+				Utils.teleport(tank, new Location(world, -0.240, 120, 76.775, 72f, -25f));
+				Actions.swapItems(tank, 1, 28);
+				Actions.swapItems(tank, 3, 30);
+				Actions.swapItems(tank, 6, 33);
+				Actions.swapItems(tank, 7, 34);
+				Actions.swapItems(tank, 12, 39);
+				Actions.setHotbarSlot(tank, 4);
+				Utils.scheduleTask(() -> goldor(false), 60);
+			}
 //			case "necron" -> {
 //				Utils.teleport(tank, new Location(world, 54.529, 65, 83.688, 180f, -5f));
 //				Actions.swapItems(tank, 1, 28);
@@ -519,7 +521,7 @@ public class Tank {
 			Utils.scheduleTask(() -> storm(true), 497);
 		}
 	}
-//
+
 	public static void storm(boolean doContinue) {
 		for(int i = 0; i <= 10; i += 3) {
 			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
@@ -578,15 +580,25 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 714);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 724);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 734); // move for 22 ticks before landing
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 72f, -25f), 735);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 72f, -25f);
+			Actions.setHotbarSlot(tank, 4);
+		}, 735);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 24), 736);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 4), 766); // move to in front of dev3
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> goldor(true), 890);
-//		}
+		if(doContinue) {
+			Utils.scheduleTask(() -> goldor(true), 881);
+		}
 	}
 
-//	private static void goldor(boolean doContinue) {
+	private static void goldor(boolean doContinue) {
+		Actions.rightClick(tank); // complete i2
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 1);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 179f, 0f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 2);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 3);
 //		/*
 //		 *  ██╗
 //		 * ███║
@@ -771,7 +783,7 @@ public class Tank {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}
-//	}
+	}
 //
 //	private static void necron(boolean doContinue) {
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 71);

@@ -2,6 +2,7 @@ package instructions.bosses.goldor;
 
 import instructions.bosses.WitherLord;
 import instructions.bosses.necron.Necron;
+import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
@@ -14,6 +15,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
+import org.bukkit.Rotation;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
@@ -37,28 +39,52 @@ public final class Goldor extends WitherLord {
 
 	private static final int PRE_GOLDOR_TICKS = 2416;
 
-	// Patrol waypoints (block-center XZ). Y fixed at spawn Y = 116.
+	// Patrol waypoints (block-center XZ). Y stays at spawn Y = 118 during patrol.
 	private static final double WP_AX = 100.5, WP_AZ = 40.5;
 	private static final double WP_BX = 100.5, WP_BZ = 132.5;
 	private static final double WP_CX = 8.5,   WP_CZ = 132.5;
 	private static final double WP_DX = 8.5,   WP_DZ = 40.5;
 	private static final double PATROL_SPEED = 0.1;
 
-	// Core approach
+	// Core approach — horizontal targets (Y target is 116, descent is independent of horizontal motion)
 	private static final double CORE_TARGET_X = 54.5, CORE_TARGET_Z = 40.5;
 	private static final double CORE_FINAL_X  = 54.5, CORE_FINAL_Z  = 114.5;
+	private static final double CORE_TARGET_Y = 116.0;
 	private static final double CORE_APPROACH_SPEED = 0.8;
+	private static final double Y_DESCENT_SPEED = 0.1;
 
-	// Item-frame protection AABB (covers all four sections + margin)
-	private static final BoundingBox ARENA_BOUNDS = new BoundingBox(-10, 100, 20, 120, 140, 150);
+	// Item-frame protection AABB — only the S3 frame wall per user: -2,119,74 to -2,125,80 (block coords).
+	// Expand by 1 in each direction to tolerate the frame entity's offset from its attached block.
+	private static final BoundingBox S3_FRAME_BOUNDS = new BoundingBox(-3, 118, 73, 0, 126, 81);
+
+	// Simon Says button coord (S1 device) — kept in sync with GoldorListener.SIMON_B{X,Y,Z}.
+	private static final int SIMON_BX = 110, SIMON_BY = 121, SIMON_BZ = 91;
+	// Block directly behind the Simon Says button (also stonk-immune so the button can't be knocked off).
+	private static final int SIMON_BEHIND_BX = 111, SIMON_BEHIND_BY = 121, SIMON_BEHIND_BZ = 91;
+	// S2 "Lights" device — the blocks the wall levers are mounted on (levers at z=142, mount blocks at z=143).
+	private static final int LIGHTS_MOUNT_Z = 143, LIGHTS_MOUNT_X1 = 58, LIGHTS_MOUNT_X2 = 62, LIGHTS_MOUNT_Y1 = 133, LIGHTS_MOUNT_Y2 = 136;
+	// S4 Sharp Shooter — the block supporting the gold pressure plate (plate at 63,127,35).
+	private static final int PLATE_SUPPORT_BX = 63, PLATE_SUPPORT_BY = 126, PLATE_SUPPORT_BZ = 35;
 
 	// Per-fight state
 	private final List<GoldorSection> sections = new ArrayList<>(4);
 	private int currentSectionIdx = 0;
+	/** Goldor-relative tick at which the current section began (0 = Goldor start, i.e. S1's start). */
+	private int sectionStartTick = 0;
+	/** Goldor-relative tick at which the core opened (S4 complete). Used to time the final kill. */
+	private int coreOpenTick = 0;
 	private boolean phaseActive = false;
+	/** True once the core has opened (S4 complete). Before this, Goldor is on patrol and takes no health damage. */
+	private boolean coreOpen = false;
+	/** Goldor-relative tick of the most recent patrol hit; halves patrol movement speed for 10 ticks after. */
+	private int lastDamagedTick = -1000;
 	private BukkitTask patrolTask;
 	private BukkitTask coreApproachTask;
 	private final List<ItemFrame> protectedFrames = new ArrayList<>();
+	private ItemFrame arrowAlignFrame;
+
+	// S3 Arrow Align item frame block coord
+	private static final int ARROW_X = -2, ARROW_Y = 122, ARROW_Z = 77;
 	private final Map<Location, BlockData> coreSnapshot = new HashMap<>();
 	private boolean coreBarrierActive = false;
 
@@ -73,7 +99,7 @@ public final class Goldor extends WitherLord {
 
 	@Override protected String name() { return "Goldor"; }
 	@Override protected String displayName() { return "Goldor"; }
-	@Override protected Location spawnLocation() { return new Location(world, 80.5, 116, 40.5, -90f, 0f); }
+	@Override protected Location spawnLocation() { return new Location(world, 80.5, 118, 40.5, -90f, 0f); }
 	@Override protected double maxHealth() { return 700; }
 	@Override protected String displayHealth() { return "1.2B"; }
 	@Override protected int previousTicks() { return PRE_GOLDOR_TICKS; }
@@ -81,7 +107,11 @@ public final class Goldor extends WitherLord {
 	@Override
 	protected void resetState() {
 		phaseActive = false;
+		coreOpen = false;
+		lastDamagedTick = -1000;
 		currentSectionIdx = 0;
+		sectionStartTick = 0;
+		coreOpenTick = 0;
 		for(GoldorSection s : sections) s.cleanup();
 		sections.clear();
 		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
@@ -122,6 +152,11 @@ public final class Goldor extends WitherLord {
 	private void startPhase() {
 		phaseActive = true;
 
+		// Goldor is hittable while on patrol — drop the wither invulnerability shield so attacks actually
+		// land (terminator ding, hurt sound, and the patrol slow all fire). His health bar is still
+		// protected by the !coreOpen branch in handleDamage, which cancels the damage itself.
+		setArmor(false);
+
 		sections.add(buildS1());
 		sections.add(buildS2());
 		sections.add(buildS3());
@@ -138,11 +173,11 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 0, 1, 110, 119, 79));
 		terms.add(new GoldorTerminal(world, 0, 2, 90, 112, 92));
 		terms.add(new GoldorTerminal(world, 0, 3, 90, 122, 101));
-		GoldorDevice dev = new GoldorDevice(world, 0, 110, 121, 91);
+		GoldorDevice dev = new GoldorDevice(world, 0, 110, 121, 91, 1.0);
 		List<GoldorLever> lev = new ArrayList<>();
 		lev.add(new GoldorLever(world, 0, 0, 106, 124, 113));
 		lev.add(new GoldorLever(world, 0, 1, 94, 124, 113));
-		GoldorGate gate = new GoldorGate(world, makeBox(96, 115, 122, 104, 135, 124));
+		GoldorGate gate = new GoldorGate(world, 0, makeBox(96, 115, 122, 104, 135, 124));
 		return new GoldorSection(0, terms, dev, lev, gate);
 	}
 
@@ -157,7 +192,7 @@ public final class Goldor extends WitherLord {
 		List<GoldorLever> lev = new ArrayList<>();
 		lev.add(new GoldorLever(world, 1, 0, 27, 124, 127));
 		lev.add(new GoldorLever(world, 1, 1, 23, 132, 138));
-		GoldorGate gate = new GoldorGate(world, makeBox(16, 115, 128, 18, 135, 136));
+		GoldorGate gate = new GoldorGate(world, 1, makeBox(16, 115, 128, 18, 135, 136));
 		return new GoldorSection(1, terms, dev, lev, gate);
 	}
 
@@ -171,7 +206,7 @@ public final class Goldor extends WitherLord {
 		List<GoldorLever> lev = new ArrayList<>();
 		lev.add(new GoldorLever(world, 2, 0, 2, 122, 55));
 		lev.add(new GoldorLever(world, 2, 1, 14, 122, 55));
-		GoldorGate gate = new GoldorGate(world, makeBox(4, 115, 48, 12, 135, 50));
+		GoldorGate gate = new GoldorGate(world, 2, makeBox(4, 115, 48, 12, 135, 50));
 		return new GoldorSection(2, terms, dev, lev, gate);
 	}
 
@@ -196,13 +231,65 @@ public final class Goldor extends WitherLord {
 	}
 
 	private void protectAllItemFrames() {
-		Collection<Entity> ents = world.getNearbyEntities(ARENA_BOUNDS);
+		// Per user: only frames in the S3 frame wall (-2,119,74 to -2,125,80) are immune.
+		Collection<Entity> ents = world.getNearbyEntities(S3_FRAME_BOUNDS);
+
+		// First pass: protect all S3 frames and find the one closest to the Arrow Align target.
+		final double targetX = -1.5, targetY = 122.0, targetZ = 77.5;
+		double bestDist = Double.MAX_VALUE;
+		ItemFrame best = null;
 		for(Entity e : ents) {
 			if(e instanceof ItemFrame frame) {
 				frame.setInvulnerable(true);
 				protectedFrames.add(frame);
+				Location floc = frame.getLocation();
+				double dx = floc.getX() - targetX;
+				double dy = floc.getY() - targetY;
+				double dz = floc.getZ() - targetZ;
+				double dist = dx * dx + dy * dy + dz * dz;
+				if(dist < bestDist) {
+					bestDist = dist;
+					best = frame;
+				}
 			}
 		}
+		if(best != null) {
+			best.setRotation(Rotation.NONE);
+			arrowAlignFrame = best;
+		}
+	}
+
+	/** Reset the S3 Arrow Align item frame (used by /setup). Finds the frame closest to the Arrow Align
+	 *  target inside the S3 frame wall and rotates it back to NONE so the device starts the next run unsolved. */
+	public static void resetS3Device(World world) {
+		final double targetX = -1.5, targetY = 122.0, targetZ = 77.5;
+		double bestDist = Double.MAX_VALUE;
+		ItemFrame best = null;
+		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
+			if(e instanceof ItemFrame frame) {
+				Location floc = frame.getLocation();
+				double dx = floc.getX() - targetX;
+				double dy = floc.getY() - targetY;
+				double dz = floc.getZ() - targetZ;
+				double dist = dx * dx + dy * dy + dz * dz;
+				if(dist < bestDist) {
+					bestDist = dist;
+					best = frame;
+				}
+			}
+		}
+		if(best != null) best.setRotation(Rotation.NONE);
+	}
+
+	public ItemFrame getArrowAlignFrame() {
+		return arrowAlignFrame;
+	}
+
+	/** Returns true if this item frame is within the S3 protected zone (immune to rotation/punch/break).
+	 *  Uses live coord check rather than the cached set so frames loaded after phase-start still match. */
+	public boolean isProtectedFrame(ItemFrame frame) {
+		if(!phaseActive) return false;
+		return S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
 	}
 
 	// ---------- Patrol ----------
@@ -218,34 +305,36 @@ public final class Goldor extends WitherLord {
 				}
 				Location loc = boss.getLocation();
 				double x = loc.getX(), z = loc.getZ();
+				// Halve patrol speed if Goldor was damaged within the last 5 ticks.
+				double speed = (tick - lastDamagedTick < 10) ? PATROL_SPEED * 0.5 : PATROL_SPEED;
 				double yaw;
 				double dx = 0, dz = 0;
 				switch(leg[0]) {
 					case 0 -> {
 						yaw = -90f;
 						double rem = WP_AX - x;
-						double step = Math.clamp(rem, 0, PATROL_SPEED);
+						double step = Math.clamp(rem, 0, speed);
 						dx = step;
 						if(rem - step <= 1e-5) leg[0] = 1;
 					}
 					case 1 -> {
 						yaw = 0f;
 						double rem = WP_BZ - z;
-						double step = Math.clamp(rem, 0, PATROL_SPEED);
+						double step = Math.clamp(rem, 0, speed);
 						dz = step;
 						if(rem - step <= 1e-5) leg[0] = 2;
 					}
 					case 2 -> {
 						yaw = 90f;
 						double rem = x - WP_CX;
-						double step = Math.clamp(rem, 0, PATROL_SPEED);
+						double step = Math.clamp(rem, 0, speed);
 						dx = -step;
 						if(rem - step <= 1e-5) leg[0] = 3;
 					}
 					default -> {
 						yaw = 180f;
 						double rem = z - WP_DZ;
-						double step = Math.clamp(rem, 0, PATROL_SPEED);
+						double step = Math.clamp(rem, 0, speed);
 						dz = -step;
 						if(rem - step <= 1e-5) leg[0] = 0;
 					}
@@ -284,6 +373,23 @@ public final class Goldor extends WitherLord {
 		return !phaseActive;
 	}
 
+	/** Force-end any lingering Goldor phase immediately. Called when a new run is triggered so a previous
+	 *  run's still-active phase (phaseActive=true with its S4 device already marked activated, since the
+	 *  fight never reached a clean end) doesn't reject this run's pre-fired sharpshooter arrows as
+	 *  "device already activated". Mirrors the cleanup {@link #start} does, but runs now instead of waiting
+	 *  for the new phase to spin up — so the gap between trigger and new start() is a clean, inactive phase. */
+	public void forceEndPhase() {
+		if(boss != null) {
+			boss.remove();
+			boss = null;
+		}
+		if(tickerTask != null && !tickerTask.isCancelled()) {
+			tickerTask.cancel();
+			tickerTask = null;
+		}
+		resetState();
+	}
+
 	/** Called from GoldorListener when a terminal/device/lever is activated. */
 	public void onActivation(Player p, GoldorSection ownSection, String thingLabel) {
 		if(!phaseActive) return;
@@ -305,19 +411,62 @@ public final class Goldor extends WitherLord {
 			}
 		}
 		broadcastActivation(p, thingLabel, order, total);
+		if(Utils.isVerbose()) Bukkit.broadcastMessage(verboseTimingLine());
 
 		if(ownSection == cur && cur.completed >= cur.totalItems) {
-			onSectionComplete(cur);
+			onAllItemsComplete(cur);
 		}
 	}
 
-	private void onSectionComplete(GoldorSection s) {
+	/** Verbose per-activation timing: elapsed ticks within the current section and within the whole Goldor fight.
+	 *  Used after each terminal/device/lever activation (gated on {@link Utils#isVerbose()} by the caller). */
+	public String verboseTimingLine() {
+		int secTicks = tick - sectionStartTick;
+		return ChatColor.GREEN + String.format("S%d: %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
+				currentSectionIdx + 1, formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(tick), tick / 20.0);
+	}
+
+	/** Verbose line for a destroyed gate: same shape as an activation line (section-relative + Goldor-relative),
+	 *  but headed "Gate destroyed in" instead of an "S#:" label. Section time is measured from that gate's section. */
+	public String gateDestroyedLine(int gateSectionStartTick) {
+		int secTicks = tick - gateSectionStartTick;
+		return ChatColor.GREEN + String.format("Gate destroyed in %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
+				formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(tick), tick / 20.0);
+	}
+
+	/** Every terminal/device/lever in this section is now done. A section is NOT yet "complete":
+	 *  for S1–S3 it stays the current section (its terminals already done, the next section's still
+	 *  locked) until its gate is actually destroyed — {@link GoldorGate} calls {@link #onGateDestroyed}
+	 *  at that moment to finalize the timing and advance. S4 has no gate, so it completes immediately. */
+	private void onAllItemsComplete(GoldorSection s) {
 		if(s.idx < 3) {
+			// Kick off the gate's destruction (immediate if already blown, else the 100t auto-destruct).
 			s.gate.onSectionComplete();
-			currentSectionIdx++;
 		} else {
+			reportSectionFinished(s);
 			onCoreOpen();
 		}
+	}
+
+	/** Called by {@link GoldorGate} the instant its blocks are removed — which only ever happens after
+	 *  the section's items are done. This is the true "section complete" event for S1–S3: report the
+	 *  timing (measured to now, i.e. gate destruction) and advance to the next section. */
+	public void onGateDestroyed(int sectionIdx) {
+		GoldorSection s = getSection(sectionIdx);
+		if(s == null || sectionIdx != currentSectionIdx) return;
+		reportSectionFinished(s);
+		currentSectionIdx++;
+		sectionStartTick = tick;
+		// The next section is now active — stamp its gate so a later destruction reports time-into-that-section.
+		GoldorSection next = getCurrentSection();
+		if(next != null && next.gate != null) next.gate.setSectionStartTick(tick);
+	}
+
+	/** Broadcast this section's duration (measured to now), the cumulative terminal-phase time, and the run-overall time. */
+	private void reportSectionFinished(GoldorSection s) {
+		int sectionTicks = tick - sectionStartTick;
+		Bukkit.broadcastMessage(ChatColor.GREEN + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
+				s.idx + 1, formatWithSpaces(sectionTicks), sectionTicks / 20.0) + formatTick(tick));
 	}
 
 	public static void broadcastActivation(Player p, String thing, int order, int total) {
@@ -329,6 +478,43 @@ public final class Goldor extends WitherLord {
 			pl.sendTitle("", msg, 0, 40, 0);
 		}
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
+	}
+
+	/** True if this block must not be removed by stonk while the Goldor phase is active. Losing any of these
+	 *  mid-fight would soft-lock the phase (they're the only way to complete their sections) or knock an
+	 *  interactable off its mount. Covers: the Simon Says button (S1 device) and the block behind it; the
+	 *  S2 "Lights" lever mount blocks; the S4 Sharp Shooter pressure-plate support; and every section lever
+	 *  plus the block directly beneath it. */
+	public boolean isStonkImmune(Block b) {
+		if(!phaseActive) return false;
+		int bx = b.getX(), by = b.getY(), bz = b.getZ();
+		// S1 Simon Says button and the block behind it.
+		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) return true;
+		if(bx == SIMON_BEHIND_BX && by == SIMON_BEHIND_BY && bz == SIMON_BEHIND_BZ) return true;
+		// S2 "Lights" lever mount blocks.
+		if(bz == LIGHTS_MOUNT_Z && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
+		// S4 Sharp Shooter gold pressure-plate support block.
+		if(bx == PLATE_SUPPORT_BX && by == PLATE_SUPPORT_BY && bz == PLATE_SUPPORT_BZ) return true;
+		// Section levers and the support block directly beneath each.
+		for(GoldorSection s : sections) {
+			for(GoldorLever lev : s.levers) {
+				if(lev.isLeverBlock(bx, by, bz)) return true;
+				if(lev.isLeverBlock(bx, by + 1, bz)) return true; // candidate block sits directly under a lever
+			}
+		}
+		return false;
+	}
+
+	/** Failsafe invoked from M7tas.onDisable() — immediately restore any gates whose blocks were removed,
+	 *  so a mid-fight server stop never leaves the world with broken gate blocks. */
+	public void shutdownRegenerateGates() {
+		for(GoldorSection s : sections) {
+			if(s.gate != null) s.gate.cleanup();
+		}
+		if(coreBarrierActive) {
+			restoreCoreOriginalBlocks();
+			coreBarrierActive = false;
+		}
 	}
 
 	/** Hook called from CustomItems.superboom and other explosion sources. */
@@ -358,6 +544,8 @@ public final class Goldor extends WitherLord {
 	}
 
 	private void onCoreOpen() {
+		coreOpen = true;
+		coreOpenTick = tick;
 		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
 
 		sendChatMessage("You have done it, you destroyed the factory...");
@@ -377,7 +565,7 @@ public final class Goldor extends WitherLord {
 		for(Location loc : coreSnapshot.keySet()) {
 			loc.getBlock().setType(Material.BARRIER, false);
 		}
-		String msg = ChatColor.YELLOW + "The Core entrance is opening!";
+		String msg = ChatColor.GREEN + "The Core entrance is opening!";
 		Bukkit.broadcastMessage(msg);
 		for(Player pl : Bukkit.getOnlinePlayers()) {
 			pl.sendTitle("", msg, 0, 40, 0);
@@ -408,27 +596,34 @@ public final class Goldor extends WitherLord {
 				}
 				Location loc = boss.getLocation();
 				double x = loc.getX(), y = loc.getY(), z = loc.getZ();
+
+				// Vertical motion is independent of horizontal — Y descends toward CORE_TARGET_Y at Y_DESCENT_SPEED each tick.
+				double ny = y;
+				if(y > CORE_TARGET_Y) {
+					ny = Math.max(CORE_TARGET_Y, y - Y_DESCENT_SPEED);
+				}
+
 				if(phase[0] == 0) {
 					double dx = CORE_TARGET_X - x;
 					double dz = CORE_TARGET_Z - z;
 					double mag = Math.sqrt(dx * dx + dz * dz);
 					if(mag <= CORE_APPROACH_SPEED) {
 						float yaw = computeYaw(dx, dz);
-						moveBossTo(CORE_TARGET_X, y, CORE_TARGET_Z, yaw);
+						moveBossTo(CORE_TARGET_X, ny, CORE_TARGET_Z, yaw);
 						phase[0] = 1;
 					} else {
 						double nx = x + dx / mag * CORE_APPROACH_SPEED;
 						double nz = z + dz / mag * CORE_APPROACH_SPEED;
 						float yaw = computeYaw(dx, dz);
-						moveBossTo(nx, y, nz, yaw);
+						moveBossTo(nx, ny, nz, yaw);
 					}
 				} else {
 					double rem = CORE_FINAL_Z - z;
 					if(rem <= PATROL_SPEED) {
-						moveBossTo(CORE_FINAL_X, y, CORE_FINAL_Z, 0f);
-						cancel();
+						moveBossTo(CORE_FINAL_X, ny, CORE_FINAL_Z, 0f);
+						if(ny == CORE_TARGET_Y) cancel();
 					} else {
-						moveBossTo(CORE_FINAL_X, y, z + PATROL_SPEED, 0f);
+						moveBossTo(CORE_FINAL_X, ny, z + PATROL_SPEED, 0f);
 					}
 				}
 			}
@@ -451,6 +646,18 @@ public final class Goldor extends WitherLord {
 		}
 		double finalDmg = e.getFinalDamage();
 		if(finalDmg <= 0) return;
+		// While on patrol (pre-core), Goldor is "damageable" for feedback only: the hit registers
+		// (terminator arrow ding still plays in WithersNotImmuneToArrows after wither.damage() returns)
+		// but never reduces his health bar. A recent hit halves his patrol speed for 10 ticks.
+		if(!coreOpen) {
+			lastDamagedTick = tick;
+			// Cancelling the damage below suppresses the vanilla hurt flash, so send the hurt animation
+			// ourselves — one packet renders the red flash for ~10 ticks (re-armed by follow-up hits),
+			// matching the slow window.
+			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
+			e.setCancelled(true);
+			return;
+		}
 		double currentHp = boss.getHealth();
 		if(currentHp - finalDmg <= 0) {
 			e.setCancelled(true);
@@ -474,14 +681,19 @@ public final class Goldor extends WitherLord {
 
 	private void playDeathDialogue() {
 		sendChatMessage("...");
-		Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor killed in " + formatTick(tick));
+		// Three columns: time-since-core-opened (S4 complete), then the shared Terminals (Goldor) + Overall columns.
+		int coreTicks = tick - coreOpenTick;
+		Bukkit.broadcastMessage(ChatColor.GREEN + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
+				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(tick));
+		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 60);
 		Utils.scheduleTask(() -> {
-			sendChatMessage("Necron, forgive me.");
+			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
+			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor finished in " + formatTick(tick - 1));
+			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
-		}, 60);
+		}, 100);
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.remove();
-			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 		}, 160);
 	}
 }

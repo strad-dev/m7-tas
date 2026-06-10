@@ -2,9 +2,11 @@ package instructions;
 
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
+import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.storm.Storm;
 import listeners.CustomItems;
+import listeners.GoldorListener;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -25,6 +27,10 @@ public class Server {
 	private static final LivingEntity[] trashMobs = new LivingEntity[18]; // each 1x1 has 6 mobs spawned
 
 	public static void serverInstructions(World world, String section) {
+		// Tear down any lingering Goldor phase from a previous run immediately, before this run's pre-fired
+		// arrows/abilities can interact with stale phase state (e.g. an already-activated S4 device). Without
+		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
+		Goldor.INSTANCE.forceEndPhase();
 		// Begin with 3 seconds of delay
 		Bukkit.broadcastMessage("TAS starts in 3 seconds");
 
@@ -66,11 +72,11 @@ public class Server {
 				case "boss" -> Maxor.maxorInstructions(world, true);
 				case "maxor" -> Maxor.maxorInstructions(world, false);
 				case "storm" -> Storm.stormInstructions(world, false);
-//				case "goldor" -> {
-//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
-//					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
-//					Goldor.goldorInstructions(world, false);
-//				}
+				case "goldor" -> {
+					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
+					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
+					Goldor.goldorInstructions(world, false);
+				}
 //				case "necron" -> Necron.necronInstructions(world, false);
 //				case "witherking" -> WitherKing.witherKingInstructions(world);
 			}
@@ -87,6 +93,7 @@ public class Server {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:gold_block");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 64 79 minecraft:jungle_planks");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 64 80 minecraft:jungle_stairs");
 //		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 63 79 minecraft:stone_brick_slab[type=top]");
@@ -94,6 +101,8 @@ public class Server {
 		Watcher.forceCleanup();
 		Storm.INSTANCE.cleanupMobs();
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
+		Goldor.resetS3Device(world);
+		if(GoldorListener.INSTANCE != null) GoldorListener.INSTANCE.resetSharpShooter(world);
 //		turnArrow(world, false);
 	}
 
@@ -190,23 +199,6 @@ public class Server {
 
 	public static void openIceFillRewards() {
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:iron_bars");
-	}
-
-	public static void removeS3Gate() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 19 135 128 16 115 136 minecraft:air");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 19 -21 128 16 -1 136 16 115 128"), 100);
-	}
-
-	public static void openCore() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:glass");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:air"), 20);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:gold_block"), 200);
-	}
-
-	private static Location getRandomLocation(Location center) {
-		double x = center.getX() + (Math.random() * 2 - 1) * 1.25;
-		double z = center.getZ() + (Math.random() * 2 - 1) * 1.25;
-		return new Location(center.getWorld(), x, center.getY(), z, (float) (Math.random() * 360) - 180, 0);
 	}
 
 	public static void playWitherDeathSound(Wither wither) {

@@ -69,9 +69,10 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				if("skyblock/combat/last_breath".equals(heldId)) {
 					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
 						ServerPlayer sp = ((CraftPlayer) player).getHandle();
+						boolean was = sp.getAbilities().instabuild;
 						sp.getAbilities().instabuild = true;
 						sp.releaseUsingItem();
-						sp.getAbilities().instabuild = false;
+						sp.getAbilities().instabuild = was;
 					});
 					return;
 				}

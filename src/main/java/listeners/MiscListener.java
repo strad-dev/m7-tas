@@ -25,6 +25,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
 import org.bukkit.inventory.ItemStack;
@@ -277,6 +278,17 @@ public class MiscListener implements Listener {
 		if(y == 224 && z == 41 && (x == 52 || x == 94)) {
 			Maxor.INSTANCE.onPlateStep(e.getPlayer(), b.getLocation());
 		}
+	}
+
+	// Mort and the Wizard are villagers — block right-clicks so the vanilla trade GUI doesn't open.
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onVillagerInteract(PlayerInteractEntityEvent e) {
+		if(e.getRightClicked() instanceof Villager) e.setCancelled(true);
+	}
+
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onVillagerInteractAt(PlayerInteractAtEntityEvent e) {
+		if(e.getRightClicked() instanceof Villager) e.setCancelled(true);
 	}
 
 	@EventHandler
