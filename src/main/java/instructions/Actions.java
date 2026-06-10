@@ -838,10 +838,11 @@ public class Actions {
 
 	public static void stopRightClick(Player p) {
 		ServerPlayer sp = ((CraftPlayer) p).getHandle();
+		boolean was = sp.getAbilities().instabuild;
 		sp.getAbilities().instabuild = true;
 		ServerboundPlayerActionPacket packet = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM, sp.blockPosition(), Direction.DOWN, 0);
 		Utils.simulatePacket(p, packet);
-		sp.getAbilities().instabuild = false;
+		sp.getAbilities().instabuild = was;
 	}
 
 	public static void dropItem(Player p, boolean dropAll) {

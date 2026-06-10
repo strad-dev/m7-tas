@@ -47,16 +47,18 @@ public class Berserk {
 				Actions.setHotbarSlot(berserk, 3);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
-//			case "goldor" -> {
-//				Utils.teleport(berserk, new Location(world, 89.565, 115.0625, 132.272, -128f, -19f));
-//				Actions.swapItems(berserk, 1, 28);
-//				Actions.swapItems(berserk, 7, 35);
-//				Actions.swapItems(berserk, 9, 39);
-//				Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 56);
-//				Utils.scheduleTask(Berserk::shoot, 57);
-//				Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 58);
-//				Utils.scheduleTask(() -> goldor(false), 60);
-//			}
+			case "goldor" -> {
+				Utils.setSpeed(berserk, 650);
+				Utils.teleport(berserk, new Location(world, 91.351, 115, 133.781, -145f, -5f));
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 3, 30);
+				Actions.swapItems(berserk, 6, 33);
+				Actions.swapItems(berserk, 7, 34);
+				Actions.swapItems(berserk, 12, 39);
+				Actions.setHotbarSlot(berserk, 1);
+				Utils.scheduleTask(() -> Actions.dropItem(berserk, true), 49);
+				Utils.scheduleTask(() -> goldor(false), 60);
+			}
 //			case "necron" -> {
 //				Utils.teleport(berserk, new Location(world, 56.488, 64, 111.700, -180f, 0f));
 //				Actions.swapItems(berserk, 1, 28);
@@ -562,14 +564,17 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 826);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 827);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 111f, 0f), 836);
-//		if(doContinue) {
-//			Utils.scheduleTask(Berserk::shoot, 887);
-//			Utils.scheduleTask(() -> Actions.turnHead(berserk, -15.4f, -1f), 888);
-//			Utils.scheduleTask(() -> goldor(true), 890);
-//		}
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -145f, -5);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 845);
+		if(doContinue) {
+			Utils.scheduleTask(() -> Actions.dropItem(berserk, true), 870);
+			Utils.scheduleTask(() -> goldor(true), 881);
+		}
 	}
 
-//	private static void goldor(boolean doContinue) {
+	private static void goldor(boolean doContinue) {
 //		/*
 //		 * ██╗██╗  ██╗
 //		 * ╚═╝██║  ██║
@@ -787,8 +792,8 @@ public class Berserk {
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}
-//	}
-//
+	}
+
 //	private static void necron(boolean doContinue) {
 //		Actions.setHotbarSlot(berserk, 2);
 //		Utils.scheduleTask(() -> Actions.leap(berserk, Tank.get()), 121);

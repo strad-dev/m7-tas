@@ -25,6 +25,7 @@
 package plugin;
 
 import commands.*;
+import instructions.bosses.goldor.Goldor;
 import listeners.*;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -88,6 +89,8 @@ public final class M7tas extends JavaPlugin {
 		LavaJump.stop();
 
 		CustomItems.flushStonkRestorations();
+
+		Goldor.INSTANCE.shutdownRegenerateGates();
 
 		PlayerCollision.cleanup();
 

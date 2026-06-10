@@ -17,8 +17,12 @@ public final class GoldorDevice {
 	private boolean activated = false;
 
 	public GoldorDevice(World world, int sectionIdx, int x, int y, int z) {
+		this(world, sectionIdx, x, y, z, 1.5);
+	}
+
+	public GoldorDevice(World world, int sectionIdx, int x, int y, int z, double yOffset) {
 		this.sectionIdx = sectionIdx;
-		Location displayLoc = new Location(world, x + 0.5, y + 1.0, z + 0.5);
+		Location displayLoc = new Location(world, x + 0.5, y + yOffset, z + 0.5);
 		this.display = world.spawn(displayLoc, TextDisplay.class, e -> {
 			e.setText(INACTIVE_TEXT);
 			e.setBillboard(Display.Billboard.CENTER);

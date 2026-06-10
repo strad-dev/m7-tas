@@ -23,7 +23,7 @@ public final class GoldorLever {
 		this.x = x;
 		this.y = y;
 		this.z = z;
-		Location displayLoc = new Location(world, x + 0.5, y + 1.0, z + 0.5);
+		Location displayLoc = new Location(world, x + 0.5, y + 0.625, z + 0.5);
 		this.display = world.spawn(displayLoc, TextDisplay.class, e -> {
 			e.setText(INACTIVE_TEXT);
 			e.setBillboard(Display.Billboard.CENTER);

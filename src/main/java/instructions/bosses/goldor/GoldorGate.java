@@ -22,18 +22,26 @@ import java.util.Map;
  */
 public final class GoldorGate {
 	private final World world;
+	/** Index of the section this gate belongs to (0=S1, 1=S2, 2=S3). Reported back to Goldor on destruction. */
+	private final int sectionIdx;
 	private final BoundingBox bounds;
 	private final BoundingBox expandedBounds;
 	private final Map<Location, BlockData> snapshot = new HashMap<>();
 
+	/** Goldor-relative tick at which this gate's section became active (0 = S1, set by Goldor for S2/S3). */
+	private int sectionStartTick = 0;
+
 	private boolean sectionComplete = false;
 	private boolean explosionMarked = false;
 	private boolean blocksRemoved = false;
+	/** True once the "gate destroyed" broadcast has fired (either at early explosion or at block removal). */
+	private boolean destroyedAnnounced = false;
 	private BukkitTask pendingDelayedRemoval;
 	private BukkitTask pendingRegen;
 
-	public GoldorGate(World world, BoundingBox bounds) {
+	public GoldorGate(World world, int sectionIdx, BoundingBox bounds) {
 		this.world = world;
+		this.sectionIdx = sectionIdx;
 		this.bounds = bounds;
 		this.expandedBounds = bounds.clone().expand(1.0, 1.0, 1.0);
 		snapshotBlocks();
@@ -62,13 +70,24 @@ public final class GoldorGate {
 		return expandedBounds;
 	}
 
+	/** Records when this gate's section became active, so the verbose "Gate destroyed" line can report
+	 *  ticks elapsed since the start of that section (not whichever section is current at destruction time). */
+	public void setSectionStartTick(int t) {
+		this.sectionStartTick = t;
+	}
+
 	/** Event A from plan §8: explosion lands on/near this gate. */
 	public void onExplosion() {
 		if(blocksRemoved) return;
 		if(sectionComplete) {
+			// Section already finished; gate was sitting in the 100t auto-destruct window. Skip the wait.
 			removeBlocksNow();
 		} else {
-			explosionMarked = true;
+			// Pre-section hit: gate stays standing, but announce "destroyed" now (per user spec).
+			if(!explosionMarked) {
+				explosionMarked = true;
+				announceDestroyed();
+			}
 		}
 	}
 
@@ -76,8 +95,6 @@ public final class GoldorGate {
 	public void onSectionComplete() {
 		if(sectionComplete) return;
 		sectionComplete = true;
-		// Always schedule regen 100t after section complete.
-		pendingRegen = Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), this::regenerate, 100L);
 		if(explosionMarked) {
 			removeBlocksNow();
 		} else {
@@ -96,6 +113,18 @@ public final class GoldorGate {
 		for(Location loc : snapshot.keySet()) {
 			loc.getBlock().setType(Material.AIR, false);
 		}
+		// Announce only if we haven't already (early-explosion path announces before blocks are removed).
+		announceDestroyed();
+		// Blocks are gone and the section's items were already done — this is the true section-complete
+		// moment. Tell Goldor so it reports the section timing and advances to the next section.
+		Goldor.INSTANCE.onGateDestroyed(sectionIdx);
+		// Regen always fires exactly 100 ticks after blocks are removed from the world.
+		pendingRegen = Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), this::regenerate, 100L);
+	}
+
+	private void announceDestroyed() {
+		if(destroyedAnnounced) return;
+		destroyedAnnounced = true;
 		broadcastDestroyed();
 	}
 
@@ -105,15 +134,17 @@ public final class GoldorGate {
 		}
 		blocksRemoved = false;
 		explosionMarked = false;
+		destroyedAnnounced = false;
 	}
 
 	private void broadcastDestroyed() {
-		String msg = ChatColor.YELLOW + "The gate has been destroyed!";
+		String msg = ChatColor.GREEN + "The gate has been destroyed!";
 		Bukkit.broadcastMessage(msg);
 		for(Player pl : Bukkit.getOnlinePlayers()) {
 			pl.sendTitle("", msg, 0, 40, 0);
 		}
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
+		if(Utils.isVerbose()) Bukkit.broadcastMessage(Goldor.INSTANCE.gateDestroyedLine(sectionStartTick));
 	}
 
 	/** Called from resetState() — restore blocks, cancel pending tasks. */

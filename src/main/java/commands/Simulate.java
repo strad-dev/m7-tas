@@ -191,6 +191,38 @@ public class Simulate implements CommandExecutor {
 				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " hotbar slot changed to " + slot);
 				return true;
 			}
+			// Syntax: /simulate swapitems [player] [slotA] [slotB]
+			// Swaps the contents of the two given inventory slots (0-40).
+			case "swapitems" -> {
+				if(args.length < 2) {
+					p.sendMessage(ChatColor.RED + "Please specify a player to apply the swap to");
+					return true;
+				}
+				Player applyTo = FakePlayerManager.getFakePlayers().get(Character.toUpperCase(args[1].charAt(0)) + args[1].substring(1).toLowerCase());
+				if(applyTo == null) {
+					p.sendMessage(ChatColor.RED + "Player " + args[1] + " is not a fake player");
+					return true;
+				}
+				if(args.length < 4) {
+					p.sendMessage(ChatColor.RED + "Please specify two slots to swap");
+					return true;
+				}
+				int slotA, slotB;
+				try {
+					slotA = Integer.parseInt(args[2]);
+					slotB = Integer.parseInt(args[3]);
+				} catch(Exception exception) {
+					p.sendMessage(ChatColor.RED + "Slots must be integers");
+					return true;
+				}
+				if(slotA < 0 || slotA > 40 || slotB < 0 || slotB > 40) {
+					p.sendMessage(ChatColor.RED + "Slots must be between 0 and 40");
+					return true;
+				}
+				Actions.swapItems(applyTo, slotA, slotB);
+				p.sendMessage(ChatColor.GREEN + applyTo.getName() + " swapped slots " + slotA + " and " + slotB);
+				return true;
+			}
 		}
 		return false;
 	}

@@ -7,6 +7,7 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import commands.Spectate;
 import instructions.Server;
+import instructions.bosses.goldor.Goldor;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
@@ -192,6 +193,10 @@ public class CustomItems implements Listener {
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
+			if(Goldor.INSTANCE.isStonkImmune(e.getBlock())) {
+				e.setCancelled(true);
+				return;
+			}
 			stonk(e.getPlayer(), e.getBlock());
 		}
 	}
@@ -893,9 +898,7 @@ public class CustomItems implements Listener {
 	public static void superboom(Player p) {
 		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 		if(blockRay == null || blockRay.getHitBlock() == null) return;
-		Location center = blockRay.getHitBlock().getLocation();
-		instructions.bosses.goldor.Goldor.INSTANCE.notifyExplosionAt(center);
-		triggerSuperboomRadius(center, p);
+		triggerSuperboomRadius(blockRay.getHitBlock().getLocation(), p);
 	}
 
 	public static void triggerSuperboomRadius(Location center, Player p) {
@@ -903,6 +906,8 @@ public class CustomItems implements Listener {
 	}
 
 	public static void triggerSuperboomRadius(Location center, Player p, Set<Block> visited) {
+		// Notify Goldor of any explosion-style impact (Superboom, Explosive Shot, Guided Sheep all route through here).
+		instructions.bosses.goldor.Goldor.INSTANCE.notifyExplosionAt(center);
 		World world = center.getWorld();
 		int cx = center.getBlockX(), cy = center.getBlockY(), cz = center.getBlockZ();
 		for(int dx = -1; dx <= 1; dx++) {
@@ -955,6 +960,7 @@ public class CustomItems implements Listener {
 	}
 
 	public static void stonk(Player p, Block b) {
+		if(Goldor.INSTANCE.isStonkImmune(b)) return;
 		if(b.getType().getHardness() != -1) {
 			Material m = b.getType();
 			BlockData data = b.getBlockData().clone();
@@ -1532,6 +1538,13 @@ public class CustomItems implements Listener {
 		// Get NMS world and player
 		ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
+
+		// In creative mode, vanilla's BowItem.use() will start the bow-draw animation even with
+		// PlayerInteractEvent cancelled (creative bypasses the arrow check). Cancel the draw next
+		// tick — by then vanilla has run and we can release it cleanly.
+		Utils.scheduleTask(() -> {
+			if(nmsPlayer.isUsingItem()) nmsPlayer.stopUsingItem();
+		}, 1);
 
 		// Calculate directions
 		Vector baseDirection = p.getEyeLocation().getDirection().normalize();
