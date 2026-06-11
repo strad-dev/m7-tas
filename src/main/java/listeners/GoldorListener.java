@@ -24,11 +24,8 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import plugin.Utils;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 
 public class GoldorListener implements Listener {
 
@@ -41,8 +38,9 @@ public class GoldorListener implements Listener {
 
 	// ------ Per-device runtime state (cleared on each phase via Goldor's resetState by reference) ------
 
-	// Simon Says: cumulative click count per player (15 activates, no time limit)
-	private final Map<UUID, Integer> simonClicks = new HashMap<>();
+	// Simon Says: cumulative GLOBAL click count (15 activates, no time limit). NOT per-player — any players'
+	// clicks accumulate toward 15. Reset on device completion and on serverSetup (see resetSimon).
+	private int simonClicks = 0;
 	// Sharp Shooter: hit state on the 9 target blocks
 	private final boolean[][] sharpHits = new boolean[3][3]; // [xIdx 0..2 → 68/66/64][yIdx 0..2 → 130/128/126]
 	private int sharpHitCount = 0;
@@ -106,42 +104,33 @@ public class GoldorListener implements Listener {
 	// =================== Lever flip + Simon Says button + Lights levers ===================
 	@EventHandler(priority = EventPriority.LOW)
 	public void onInteract(PlayerInteractEvent e) {
-		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		// Only the main hand — a sneaking right-click fires a second (off-hand) event for the same click,
+		// which would otherwise double-count the Simon Says button.
+		if(e.getHand() != EquipmentSlot.HAND) return;
 		Block b = e.getClickedBlock();
 		if(b == null) return;
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
 		Player p = e.getPlayer();
 
-		// Simon Says button
+		// Simon Says button (S1 device) — not section-gated. Defer if the phase hasn't spun up yet so a
+		// click in a chained full run (players scheduled on start, Goldor only active when Storm dies) counts.
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) {
-			GoldorSection s1 = Goldor.INSTANCE.getSection(0);
-			if(s1 != null && !s1.device.isActivated()) {
-				int count = simonClicks.merge(p.getUniqueId(), 1, Integer::sum);
-				Utils.debug(Utils.DebugType.BOSS, "Button clicked by " + Utils.getRealName(p) + " " + count + "/15");
-				if(count >= 15) {
-					s1.device.markActivated();
-					Goldor.INSTANCE.onActivation(p, s1, "device");
-					simonClicks.remove(p.getUniqueId());
-				}
-			}
+			runWhenPhaseActive(deferred -> processSimonClick(p, deferred));
 			return;
 		}
 
-		// Lights levers (S2 device)
+		// Lights levers (S2 device) — not section-gated; defer too.
 		if(b.getType() == Material.LEVER
 				&& bx >= LIGHTS_X1 && bx <= LIGHTS_X2
 				&& by >= LIGHTS_Y1 && by <= LIGHTS_Y2
 				&& bz == LIGHTS_Z) {
-			GoldorSection s2 = Goldor.INSTANCE.getSection(1);
-			if(s2 != null && !s2.device.isActivated()) {
-				s2.device.markActivated();
-				Goldor.INSTANCE.onActivation(p, s2, "device");
-			}
+			runWhenPhaseActive(deferred -> processLightsClick(p, deferred));
 			return;
 		}
 
-		// Section levers
+		// Section levers — section-gated, so they only matter once the phase is active.
+		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(b.getType() == Material.LEVER) {
 			for(GoldorSection sec : new GoldorSection[]{
 					Goldor.INSTANCE.getSection(0),
@@ -162,23 +151,74 @@ public class GoldorListener implements Listener {
 		}
 	}
 
+	/** Register one Simon Says click (global counter). Safe to call from the deferred path — re-checks state. */
+	private void processSimonClick(Player p, boolean wasDeferred) {
+		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
+		if(s1 == null || s1.device.isActivated()) return;
+		simonClicks++;
+		Utils.debug(Utils.DebugType.BOSS, "Button clicked by " + Utils.getRealName(p) + " " + simonClicks + "/15");
+		if(simonClicks >= 15) {
+			s1.device.markActivated();
+			Goldor.INSTANCE.onActivation(p, s1, "device", wasDeferred);
+			simonClicks = 0;
+		}
+	}
+
+	/** Activate the S2 Lights device. Safe to call from the deferred path — re-checks state. */
+	private void processLightsClick(Player p, boolean wasDeferred) {
+		GoldorSection s2 = Goldor.INSTANCE.getSection(1);
+		if(s2 == null || s2.device.isActivated()) return;
+		s2.device.markActivated();
+		Goldor.INSTANCE.onActivation(p, s2, "device", wasDeferred);
+	}
+
+	/** Run the action now if the Goldor phase is active, else give it a one-tick grace and retry once. The only
+	 *  legitimate race is sub-tick ordering: an interaction can be processed the same tick the phase activates
+	 *  but before the activation task runs that tick, so it's active by the next tick. A larger window would
+	 *  just mask genuine mistimings, so if it's still inactive next tick the interaction is dropped. */
+	private void runWhenPhaseActive(java.util.function.Consumer<Boolean> action) {
+		if(!Goldor.INSTANCE.isPhaseInactive()) { action.accept(false); return; }
+		// Deferred: ran a tick late, so the action is told it was deferred (it credits the click's true tick).
+		Utils.scheduleTask(() -> { if(!Goldor.INSTANCE.isPhaseInactive()) action.accept(true); }, 1L);
+	}
+
 	// =================== Item frame rotation: only S3 frames affected (creative players bypass) ===================
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInteractEntity(PlayerInteractEntityEvent e) {
-		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
+		Player p = e.getPlayer();
+		if(Goldor.INSTANCE.isPhaseInactive()) {
+			// Defer an arrow-frame solve that lands before the phase spins up (full-run chain timing). Use a
+			// phase-independent bounds check since isProtectedFrame/getArrowAlignFrame need an active phase.
+			if(Goldor.INSTANCE.isInS3FrameRegion(frame)) runWhenPhaseActive(deferred -> processArrowFrame(frame, p, deferred));
+			return;
+		}
 		if(!Goldor.INSTANCE.isProtectedFrame(frame)) return; // frames outside S3 behave normally
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
 		if(arrow != null && frame.equals(arrow)) {
-			GoldorSection s3 = Goldor.INSTANCE.getSection(2);
-			if(s3 != null && !s3.device.isActivated()) {
-				s3.device.markActivated();
-				Goldor.INSTANCE.onActivation(e.getPlayer(), s3, "device");
-			}
+			// processArrowFrame rotates explicitly; cancel so vanilla doesn't ALSO rotate it (double-turn)
+			// when the held item happens to be exempt from CustomItems' interaction cancel.
+			if(processArrowFrame(frame, p, false)) e.setCancelled(true);
 			return;
 		}
-		if(e.getPlayer().getGameMode() == GameMode.CREATIVE) return; // creative bypass
+		if(p.getGameMode() == GameMode.CREATIVE) return; // creative bypass
 		e.setCancelled(true);
+	}
+
+	/** Solve the S3 Arrow Align device. Returns true if this call activated it (caller suppresses vanilla's
+	 *  rotation). Safe to call from the deferred path — re-checks all state. */
+	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
+		if(Goldor.INSTANCE.isPhaseInactive()) return false;
+		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
+		if(arrow == null || !frame.equals(arrow)) return false;
+		GoldorSection s3 = Goldor.INSTANCE.getSection(2);
+		if(s3 == null || s3.device.isActivated()) return false;
+		s3.device.markActivated();
+		Goldor.INSTANCE.onActivation(p, s3, "device", wasDeferred);
+		// CustomItems cancels this interaction when the fake player holds a non-exempt custom item, which skips
+		// vanilla's rotation — replicate the normal one-step turn here.
+		frame.setRotation(frame.getRotation().rotateClockwise());
+		return true;
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -231,29 +271,24 @@ public class GoldorListener implements Listener {
 		// is still true here and the hit (and the arrow, removed by MiscListener) would be lost. Defer the
 		// registration until the phase is active instead of dropping it.
 		if(Goldor.INSTANCE.isPhaseInactive()) {
-			deferSharpHit(world, xIdx, yIdx, shooter, 10);
+			deferSharpHit(world, xIdx, yIdx, shooter);
 			return;
 		}
-		registerSharpHit(world, xIdx, yIdx, shooter);
+		registerSharpHit(world, xIdx, yIdx, shooter, false);
 	}
 
-	/** A pre-fired arrow landed before the Goldor phase spun up. Retry the registration each tick until the
-	 *  phase is active (then register against it), giving up after {@code retries} ticks. Retrying — rather
-	 *  than a single fixed-delay defer — avoids the same-tick race where the deferred task could run just
-	 *  before the new phase's start() within the same tick. */
-	private void deferSharpHit(World world, int xIdx, int yIdx, Player shooter, int retries) {
+	/** A pre-fired arrow can land the same tick the phase activates but before the activation task runs that
+	 *  tick. Give it a one-tick grace and retry the registration once; if still inactive, drop it (so a real
+	 *  mistiming surfaces rather than being masked). */
+	private void deferSharpHit(World world, int xIdx, int yIdx, Player shooter) {
 		Utils.scheduleTask(() -> {
-			if(!Goldor.INSTANCE.isPhaseInactive()) {
-				registerSharpHit(world, xIdx, yIdx, shooter);
-			} else if(retries > 0) {
-				deferSharpHit(world, xIdx, yIdx, shooter, retries - 1);
-			}
+			if(!Goldor.INSTANCE.isPhaseInactive()) registerSharpHit(world, xIdx, yIdx, shooter, true);
 		}, 1L);
 	}
 
 	/** Register a single Sharp Shooter target hit (idempotent per target). Completes the S4 device on the
 	 *  ninth distinct hit. Re-checks all gates itself so it is safe to call from a deferred (next-tick) task. */
-	private void registerSharpHit(World world, int xIdx, int yIdx, Player shooter) {
+	private void registerSharpHit(World world, int xIdx, int yIdx, Player shooter, boolean wasDeferred) {
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
 		if(s4 == null || s4.device.isActivated()) return;
@@ -268,7 +303,7 @@ public class GoldorListener implements Listener {
 				for(Player pl : Bukkit.getOnlinePlayers()) { shooter = pl; break; }
 			}
 			s4.device.markActivated();
-			if(shooter != null) Goldor.INSTANCE.onActivation(shooter, s4, "device");
+			if(shooter != null) Goldor.INSTANCE.onActivation(shooter, s4, "device", wasDeferred);
 			resetSharpShooter(world);
 		}
 	}
@@ -289,6 +324,12 @@ public class GoldorListener implements Listener {
 	private void resetSharpHits() {
 		for(int i = 0; i < 3; i++) for(int j = 0; j < 3; j++) sharpHits[i][j] = false;
 		sharpHitCount = 0;
+	}
+
+	/** Reset the Simon Says global click counter. Invoked on server reset ({@link instructions.Server#serverSetup})
+	 *  so a new run never inherits clicks from a previous (possibly aborted) run. */
+	public void resetSimon() {
+		simonClicks = 0;
 	}
 
 	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit.

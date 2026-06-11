@@ -292,6 +292,13 @@ public final class Goldor extends WitherLord {
 		return S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
 	}
 
+	/** Phase-independent variant of {@link #isProtectedFrame}: is this frame within the S3 frame wall,
+	 *  regardless of whether the phase is active yet? Lets GoldorListener defer an arrow-frame solve that
+	 *  arrives before the phase spins up (the active-phase checks can't identify the frame yet). */
+	public boolean isInS3FrameRegion(ItemFrame frame) {
+		return S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
+	}
+
 	// ---------- Patrol ----------
 
 	private void startPatrolTask() {
@@ -392,7 +399,16 @@ public final class Goldor extends WitherLord {
 
 	/** Called from GoldorListener when a terminal/device/lever is activated. */
 	public void onActivation(Player p, GoldorSection ownSection, String thingLabel) {
+		onActivation(p, ownSection, thingLabel, false);
+	}
+
+	/** {@code wasDeferred} is true only for a device whose interaction landed before the phase spun up and was
+	 *  held by GoldorListener's one-tick grace — that grace runs the activation a tick late, so this single
+	 *  activation's displayed times are credited to the tick the click actually happened ({@code tick - 1}).
+	 *  Every non-deferred activation reads the live {@code tick}, which is already phase-relative-correct. */
+	public void onActivation(Player p, GoldorSection ownSection, String thingLabel, boolean wasDeferred) {
 		if(!phaseActive) return;
+		int now = wasDeferred ? Math.max(0, tick - 1) : tick;
 		GoldorSection cur = getCurrentSection();
 		if(cur == null) return;
 
@@ -411,19 +427,20 @@ public final class Goldor extends WitherLord {
 			}
 		}
 		broadcastActivation(p, thingLabel, order, total);
-		if(Utils.isVerbose()) Bukkit.broadcastMessage(verboseTimingLine());
+		if(Utils.isVerbose()) Bukkit.broadcastMessage(verboseTimingLine(now));
 
 		if(ownSection == cur && cur.completed >= cur.totalItems) {
-			onAllItemsComplete(cur);
+			onAllItemsComplete(cur, now);
 		}
 	}
 
 	/** Verbose per-activation timing: elapsed ticks within the current section and within the whole Goldor fight.
-	 *  Used after each terminal/device/lever activation (gated on {@link Utils#isVerbose()} by the caller). */
-	public String verboseTimingLine() {
-		int secTicks = tick - sectionStartTick;
+	 *  Used after each terminal/device/lever activation (gated on {@link Utils#isVerbose()} by the caller).
+	 *  {@code now} is the activation's effective tick (live {@code tick}, or {@code tick - 1} if grace-deferred). */
+	public String verboseTimingLine(int now) {
+		int secTicks = now - sectionStartTick;
 		return ChatColor.GREEN + String.format("S%d: %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
-				currentSectionIdx + 1, formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(tick), tick / 20.0);
+				currentSectionIdx + 1, formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(now), now / 20.0);
 	}
 
 	/** Verbose line for a destroyed gate: same shape as an activation line (section-relative + Goldor-relative),
@@ -438,12 +455,13 @@ public final class Goldor extends WitherLord {
 	 *  for S1–S3 it stays the current section (its terminals already done, the next section's still
 	 *  locked) until its gate is actually destroyed — {@link GoldorGate} calls {@link #onGateDestroyed}
 	 *  at that moment to finalize the timing and advance. S4 has no gate, so it completes immediately. */
-	private void onAllItemsComplete(GoldorSection s) {
+	private void onAllItemsComplete(GoldorSection s, int now) {
 		if(s.idx < 3) {
 			// Kick off the gate's destruction (immediate if already blown, else the 100t auto-destruct).
 			s.gate.onSectionComplete();
 		} else {
-			reportSectionFinished(s);
+			// S4 has no gate, so it completes the instant its items are done — credit the activation's tick.
+			reportSectionFinished(s, now);
 			onCoreOpen();
 		}
 	}
@@ -454,7 +472,8 @@ public final class Goldor extends WitherLord {
 	public void onGateDestroyed(int sectionIdx) {
 		GoldorSection s = getSection(sectionIdx);
 		if(s == null || sectionIdx != currentSectionIdx) return;
-		reportSectionFinished(s);
+		// Gate destruction is its own event at the live tick — not a grace-deferred activation.
+		reportSectionFinished(s, tick);
 		currentSectionIdx++;
 		sectionStartTick = tick;
 		// The next section is now active — stamp its gate so a later destruction reports time-into-that-section.
@@ -463,10 +482,10 @@ public final class Goldor extends WitherLord {
 	}
 
 	/** Broadcast this section's duration (measured to now), the cumulative terminal-phase time, and the run-overall time. */
-	private void reportSectionFinished(GoldorSection s) {
-		int sectionTicks = tick - sectionStartTick;
+	private void reportSectionFinished(GoldorSection s, int now) {
+		int sectionTicks = now - sectionStartTick;
 		Bukkit.broadcastMessage(ChatColor.GREEN + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
-				s.idx + 1, formatWithSpaces(sectionTicks), sectionTicks / 20.0) + formatTick(tick));
+				s.idx + 1, formatWithSpaces(sectionTicks), sectionTicks / 20.0) + formatTick(now));
 	}
 
 	public static void broadcastActivation(Player p, String thing, int order, int total) {
@@ -503,6 +522,14 @@ public final class Goldor extends WitherLord {
 			}
 		}
 		return false;
+	}
+
+	/** True if (x,y,z) is the Simon Says button while the Goldor phase is active. Fake players' rightClick
+	 *  normally suppresses stone-button presses across the boss arena; this lets the Simon button through
+	 *  so a right-click there actually registers (the button press is still cancelled by MiscListener, but
+	 *  GoldorListener counts it first). */
+	public boolean isSimonButton(int x, int y, int z) {
+		return phaseActive && x == SIMON_BX && y == SIMON_BY && z == SIMON_BZ;
 	}
 
 	/** Failsafe invoked from M7tas.onDisable() — immediately restore any gates whose blocks were removed,

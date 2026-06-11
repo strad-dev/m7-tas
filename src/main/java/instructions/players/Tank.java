@@ -595,10 +595,16 @@ public class Tank {
 		Actions.rightClick(tank); // complete i2
 		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 1);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 179f, 0f);
 			Actions.setHotbarSlot(tank, 5);
+			Actions.move(tank, "WAP", 0);
 		}, 2);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 3);
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, "N", 0);
+			Actions.turnHead(tank, -112f, -4f);
+		}, 3);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 4);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 5);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 6);
 //		/*
 //		 *  ██╗
 //		 * ███║

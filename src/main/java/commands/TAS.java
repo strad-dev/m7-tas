@@ -55,13 +55,17 @@ public class TAS implements CommandExecutor {
 
 		fakePlayers.values().forEach(p -> Utils.setSpeed(p, 400));
 
+		// Start the boss/world instructions BEFORE the player routines. Both schedule their work for the same
+		// tick (+60); submitting this first makes the boss phase activate before the players' tick-0 device
+		// interactions fire — e.g. Tank right-clicking the S3 arrow-align frame, which would otherwise hit an
+		// inactive phase and be dropped.
+		Server.serverInstructions(world, section);
+
 		Archer.archerInstructions(fakePlayers.get("Archer"), section);
 		Berserk.berserkInstructions(fakePlayers.get("Mage3"), section);
 		Healer.healerInstructions(fakePlayers.get("Mage4"), section);
 		Mage.mageInstructions(fakePlayers.get("Mage1"), section);
 		Tank.tankInstructions(fakePlayers.get("Mage2"), section);
-
-		Server.serverInstructions(world, section);
 
 		// Restart spectator sync so it runs AFTER all instruction tasks in each tick
 		Spectate.stopSpectatorSync();

@@ -77,20 +77,27 @@ public class MovementAudit {
 		airborneAudits.put(id, runnable);
 	}
 
+	/** Minecraft zeroes a horizontal velocity component once it falls below this (LivingEntity#aiStep),
+	 *  so below it there is no residual slide left to report. */
+	private static final double RESIDUAL_EPSILON = 0.003;
+
 	public static void auditMove(Player p, ServerPlayer npc, double dx, double dy, double dz) {
 		if(!Utils.isSuperVerbose()) return;
 
 		UUID id = p.getUniqueId();
-		String input = Actions.getActiveInput(id);
 
 		if(hasAirborneAudit(id)) {
-			return;
+			return; // the airborne audit reports its own per-tick movement
 		}
 
-		if(input.isEmpty()) return;
+		boolean hasInput = !Actions.getActiveInput(id).isEmpty();
+		// With active input, always report. Without input, keep reporting the residual slide that momentum
+		// carries after a move()/bonzo jump ends — until friction decays it below Minecraft's zeroing threshold.
+		if(!hasInput && Math.abs(dx) < RESIDUAL_EPSILON && Math.abs(dz) < RESIDUAL_EPSILON) return;
 
 		Vec3 pos = npc.position();
-		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " moved " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : "") + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
+		String verb = hasInput ? "moved" : "drifted";
+		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + verb + " " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : "") + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
 	}
 
 	public static void cancelAll() {
