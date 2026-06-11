@@ -321,7 +321,7 @@ public final class Storm extends WitherLord {
 		clearAggro();
 		setArmor(false);
 		sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
-		Bukkit.broadcastMessage(ChatColor.GREEN + "Storm crushed in " + formatTick(tick));
+		Utils.timer(ChatColor.GREEN + "Storm crushed in " + formatTick(displayTick()));
 
 		// Crush damage: 5% max HP, bypasses event (no recursion) — counted toward the 55% stun cap.
 		boss.setHealth(Math.max(0.0, currentHp - crushDmg));
@@ -400,7 +400,7 @@ public final class Storm extends WitherLord {
 
 		setArmor(true);
 		sendChatMessage(ENRAGE_MESSAGE[random.nextInt(ENRAGE_MESSAGE.length)]);
-		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Storm is enraged! ⚠\n" + formatTick(tick));
+		Utils.timer(ChatColor.RED + "⚠ Storm is enraged! ⚠\n" + formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
 		}
@@ -487,11 +487,10 @@ public final class Storm extends WitherLord {
 	private void playDeathDialogue() {
 		sendChatMessage("I should have known that I stand no chance.");
 		Server.playWitherDeathSound(boss);
-		Bukkit.broadcastMessage(ChatColor.GREEN + "Storm killed in " + formatTick(tick));
+		Utils.timer(ChatColor.GREEN + "Storm killed in " + formatTick(displayTick()));
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 60);
 		Utils.scheduleTask(() -> {
-			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Storm finished in " + formatTick(tick - 1));
+			Utils.timer(ChatColor.GREEN + "Storm finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);

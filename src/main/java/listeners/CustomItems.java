@@ -144,6 +144,12 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
+		// Right-clicking a button or a lever owns the click — the held item's right-click ability must not fire.
+		// Skip custom-item handling entirely so we also don't cancel the event (the block still actuates).
+		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null
+				&& (e.getClickedBlock().getType() == Material.LEVER || Tag.BUTTONS.isTagged(e.getClickedBlock().getType()))) {
+			return;
+		}
 		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer());
 	}
 
@@ -166,6 +172,8 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
+		// Right-clicking an item frame or an interaction entity must not fire the held item's right-click ability.
+		if(e.getRightClicked() instanceof ItemFrame || e.getRightClicked() instanceof Interaction) return;
 		handleCustomItems(e, e.getHand(), e.getPlayer().getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, e.getPlayer());
 	}
 

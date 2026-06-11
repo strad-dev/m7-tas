@@ -77,7 +77,7 @@ public class Utils {
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
-		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName() + (Utils.superVerbose ? (" at " + round(player.getLocation().getX(), 3) + " " + round(player.getLocation().getY(), 5) + " " + round(player.getLocation().getZ(), 3) + " " + player.getLocation().getYaw() + " " + player.getLocation().getPitch()) : ""));
+		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName() + (Utils.isSuperVerbose() ? (" at " + round(player.getLocation().getX(), 3) + " " + round(player.getLocation().getY(), 5) + " " + round(player.getLocation().getZ(), 3) + " " + player.getLocation().getYaw() + " " + player.getLocation().getPitch()) : ""));
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
 		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
 			((Packet) packet).handle(customConnection);
@@ -233,29 +233,43 @@ public class Utils {
 		CLIENT, SERVER, BOSS
 	}
 
-	private static boolean verbose = true;
-	private static boolean superVerbose = false;
+	/** Verbosity ladder, ascending. Each level is a superset of the one below:
+	 *  OFF — silent; TIMER — only tick-timer announcements; ON — timers + full [Client]/[Server]/[Game]
+	 *  debug + movement audit; SUPER — adds packet coordinates + movement residual tracking. */
+	public enum VerboseLevel { OFF, TIMER, ON, SUPER }
 
+	private static VerboseLevel verboseLevel = VerboseLevel.ON;
+
+	public static VerboseLevel getVerboseLevel() {
+		return verboseLevel;
+	}
+
+	public static void setVerboseLevel(VerboseLevel level) {
+		verboseLevel = level;
+	}
+
+	/** Full debug stream ([Client]/[Server]/[Game] packet logging, movement audit): ON and SUPER. */
 	public static boolean isVerbose() {
-		return verbose;
+		return verboseLevel.ordinal() >= VerboseLevel.ON.ordinal();
 	}
 
-	public static void setVerbose(boolean verbose) {
-		Utils.verbose = verbose;
-		if(!verbose) superVerbose = false;
+	/** Tick-timer announcements (section/boss timing lines): TIMER, ON, and SUPER. */
+	public static boolean showTimers() {
+		return verboseLevel.ordinal() >= VerboseLevel.TIMER.ordinal();
 	}
 
+	/** Packet coordinates + movement residual tracking: SUPER only. */
 	public static boolean isSuperVerbose() {
-		return superVerbose;
+		return verboseLevel == VerboseLevel.SUPER;
 	}
 
-	public static void setSuperVerbose(boolean superVerbose) {
-		Utils.superVerbose = superVerbose;
-		if(superVerbose) Utils.verbose = true;
+	/** Broadcast a tick-timer line — shown only at TIMER level and above (see {@link #showTimers()}). */
+	public static void timer(String message) {
+		if(showTimers()) Bukkit.broadcastMessage(message);
 	}
 
 	public static void debug(DebugType type, String message) {
-		if(!verbose) return;
+		if(!isVerbose()) return;
 		switch(type) {
 			case CLIENT -> Bukkit.broadcastMessage(ChatColor.DARK_AQUA + "[Client] " + message);
 			case SERVER -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Server] " + message);

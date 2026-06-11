@@ -48,7 +48,7 @@ public class Healer {
 			}
 			case "goldor" -> {
 				Utils.setSpeed(healer, 650);
-				Utils.teleport(healer, new Location(world, 107.523, 120, 93.705, -123f, 1f));
+				Utils.teleport(healer, new Location(world, 107.622, 120, 93.618, -123f, 1f));
 				Actions.swapItems(healer, 1, 28);
 				Actions.swapItems(healer, 3, 30);
 				Actions.swapItems(healer, 6, 33);
@@ -440,7 +440,7 @@ public class Healer {
 			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
 		}, 428);
 		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 497);
+			Utils.scheduleTask(() -> storm(true), 496);
 		}
 	}
 

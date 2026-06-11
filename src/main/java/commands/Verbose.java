@@ -7,6 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import plugin.Utils;
+import plugin.Utils.VerboseLevel;
 
 public class Verbose implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
@@ -16,19 +17,24 @@ public class Verbose implements CommandExecutor {
 		}
 
 		if(args.length < 1) {
-			p.sendMessage(ChatColor.RED + "Usage: /verbose <true|false|super>");
+			p.sendMessage(ChatColor.RED + "Usage: /verbose <off|timer|on|super>");
 			return true;
 		}
 
-		if(args[0].equalsIgnoreCase("super")) {
-			boolean newValue = !Utils.isSuperVerbose();
-			Utils.setSuperVerbose(newValue);
-			p.sendMessage(ChatColor.GREEN + "Super Verbose Mode: " + (newValue ? "ON" : "OFF"));
-		} else {
-			boolean value = Boolean.parseBoolean(args[0]);
-			Utils.setVerbose(value);
-			p.sendMessage(ChatColor.GREEN + "Verbose Mode: " + (value ? "ON" : "OFF"));
+		VerboseLevel level;
+		switch(args[0].toLowerCase()) {
+			case "off", "false" -> level = VerboseLevel.OFF;
+			case "timer" -> level = VerboseLevel.TIMER;
+			case "on", "true" -> level = VerboseLevel.ON; // from SUPER this drops back to normal, not a no-op
+			// `super` toggles: engage it, or fall back to normal verbosity if it's already on.
+			case "super" -> level = (Utils.getVerboseLevel() == VerboseLevel.SUPER) ? VerboseLevel.ON : VerboseLevel.SUPER;
+			default -> {
+				p.sendMessage(ChatColor.RED + "Usage: /verbose <off|timer|on|super>");
+				return true;
+			}
 		}
+		Utils.setVerboseLevel(level);
+		p.sendMessage(ChatColor.GREEN + "Verbose Mode: " + level);
 		return true;
 	}
 }

@@ -408,7 +408,7 @@ public final class Goldor extends WitherLord {
 	 *  Every non-deferred activation reads the live {@code tick}, which is already phase-relative-correct. */
 	public void onActivation(Player p, GoldorSection ownSection, String thingLabel, boolean wasDeferred) {
 		if(!phaseActive) return;
-		int now = wasDeferred ? Math.max(0, tick - 1) : tick;
+		int now = wasDeferred ? Math.max(0, displayTick() - 1) : displayTick();
 		GoldorSection cur = getCurrentSection();
 		if(cur == null) return;
 
@@ -427,7 +427,7 @@ public final class Goldor extends WitherLord {
 			}
 		}
 		broadcastActivation(p, thingLabel, order, total);
-		if(Utils.isVerbose()) Bukkit.broadcastMessage(verboseTimingLine(now));
+		Utils.timer(verboseTimingLine(now));
 
 		if(ownSection == cur && cur.completed >= cur.totalItems) {
 			onAllItemsComplete(cur, now);
@@ -446,9 +446,10 @@ public final class Goldor extends WitherLord {
 	/** Verbose line for a destroyed gate: same shape as an activation line (section-relative + Goldor-relative),
 	 *  but headed "Gate destroyed in" instead of an "S#:" label. Section time is measured from that gate's section. */
 	public String gateDestroyedLine(int gateSectionStartTick) {
-		int secTicks = tick - gateSectionStartTick;
+		int secTicks = displayTick() - gateSectionStartTick;
+		int termTicks = displayTick();
 		return ChatColor.GREEN + String.format("Gate destroyed in %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
-				formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(tick), tick / 20.0);
+				formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(termTicks), termTicks / 20.0);
 	}
 
 	/** Every terminal/device/lever in this section is now done. A section is NOT yet "complete":
@@ -473,18 +474,18 @@ public final class Goldor extends WitherLord {
 		GoldorSection s = getSection(sectionIdx);
 		if(s == null || sectionIdx != currentSectionIdx) return;
 		// Gate destruction is its own event at the live tick — not a grace-deferred activation.
-		reportSectionFinished(s, tick);
+		reportSectionFinished(s, displayTick());
 		currentSectionIdx++;
-		sectionStartTick = tick;
+		sectionStartTick = displayTick();
 		// The next section is now active — stamp its gate so a later destruction reports time-into-that-section.
 		GoldorSection next = getCurrentSection();
-		if(next != null && next.gate != null) next.gate.setSectionStartTick(tick);
+		if(next != null && next.gate != null) next.gate.setSectionStartTick(displayTick());
 	}
 
 	/** Broadcast this section's duration (measured to now), the cumulative terminal-phase time, and the run-overall time. */
 	private void reportSectionFinished(GoldorSection s, int now) {
 		int sectionTicks = now - sectionStartTick;
-		Bukkit.broadcastMessage(ChatColor.GREEN + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
+		Utils.timer(ChatColor.GREEN + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
 				s.idx + 1, formatWithSpaces(sectionTicks), sectionTicks / 20.0) + formatTick(now));
 	}
 
@@ -572,7 +573,7 @@ public final class Goldor extends WitherLord {
 
 	private void onCoreOpen() {
 		coreOpen = true;
-		coreOpenTick = tick;
+		coreOpenTick = displayTick();
 		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
 
 		sendChatMessage("You have done it, you destroyed the factory...");
@@ -709,13 +710,12 @@ public final class Goldor extends WitherLord {
 	private void playDeathDialogue() {
 		sendChatMessage("...");
 		// Three columns: time-since-core-opened (S4 complete), then the shared Terminals (Goldor) + Overall columns.
-		int coreTicks = tick - coreOpenTick;
-		Bukkit.broadcastMessage(ChatColor.GREEN + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
-				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(tick));
+		int coreTicks = displayTick() - coreOpenTick;
+		Utils.timer(ChatColor.GREEN + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
+				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
 		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 60);
 		Utils.scheduleTask(() -> {
-			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Goldor finished in " + formatTick(tick - 1));
+			Utils.timer(ChatColor.GREEN + "Goldor finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);

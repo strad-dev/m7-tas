@@ -10,6 +10,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitTask;
+import net.minecraft.server.MinecraftServer;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -29,6 +30,8 @@ public abstract class WitherLord {
 	protected Wither boss;
 	protected World world;
 	protected int tick;
+	/** Server tick count captured at phase start; the basis for {@link #displayTick()}. */
+	protected int phaseStartTick;
 	protected BukkitTask tickerTask;
 	protected boolean dying;
 	protected boolean doContinue;
@@ -54,6 +57,7 @@ public abstract class WitherLord {
 
 		// Reset base-class flags
 		this.tick = 0;
+		this.phaseStartTick = MinecraftServer.getServer().getTickCount();
 		this.dying = false;
 
 		spawn();
@@ -83,6 +87,23 @@ public abstract class WitherLord {
 
 	private void startTicker() {
 		tickerTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> tick++, 0L, 1L);
+	}
+
+	/**
+	 * Accurate, ordering-independent phase tick for DISPLAY ONLY.
+	 *
+	 * The {@link #tick} field is an increment counter advanced by a repeating task in the scheduler heartbeat.
+	 * A scheduled action (terminal click, crystal pickup, death dialogue) runs in that same heartbeat AFTER the
+	 * increment, so it reads {@code tick} already +1 for that tick; an entity-physics event (a sharpshooter
+	 * arrow hit) runs before the heartbeat and reads it un-incremented. That split is the off-by-one.
+	 *
+	 * This instead subtracts the phase-start server tick from the server's own tick counter, which is constant
+	 * across the whole server tick — so a scheduled action at phase-delay D and an entity event D ticks in BOTH
+	 * read exactly D, with no +1, in every boss fight. {@link #tick} is deliberately left untouched for
+	 * behavior/relative checks (Goldor patrol slow window, Storm crush poll) so this is purely a display fix.
+	 */
+	protected final int displayTick() {
+		return MinecraftServer.getServer().getTickCount() - phaseStartTick;
 	}
 
 	// --- Subclass hooks ---

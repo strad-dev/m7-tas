@@ -503,12 +503,12 @@ public class Tank {
 		}, 172);
 		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 197);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 199);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 204);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 205);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 211); // debuff
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 212);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 355); // hit 1, avoid insta-enrage
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 397); // hit 2 to kill
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 205);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 206);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 213); // debuff
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 214);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 354); // hit 1, avoid insta-enrage
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 396); // hit 2 to kill
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 398);
 		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 399);
 		Utils.scheduleTask(() -> {
@@ -518,7 +518,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 401);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 413);
 		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 497);
+			Utils.scheduleTask(() -> storm(true), 496);
 		}
 	}
 
@@ -592,66 +592,59 @@ public class Tank {
 	}
 
 	private static void goldor(boolean doContinue) {
+		/*
+		 *  ██╗
+		 * ███║
+		 * ╚██║
+		 *  ██║
+		 *  ██║
+		 *  ╚═╝
+		 */
 		Actions.rightClick(tank); // complete i2
 		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 1);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(tank, 5);
-			Actions.move(tank, "WAP", 0);
+			Actions.move(tank, "WAP", 0); // get out of the way
 		}, 2);
 		Utils.scheduleTask(() -> {
-			Actions.move(tank, "N", 0);
+			Actions.move(tank, "N", 0); // prevent fall
 			Actions.turnHead(tank, -112f, -4f);
 		}, 3);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 4);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 5);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 6);
-//		/*
-//		 *  ██╗
-//		 * ███║
-//		 * ╚██║
-//		 *  ██║
-//		 *  ██║
-//		 *  ╚═╝
-//		 */
-//		Actions.setHotbarSlot(tank, 5);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 1);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 2);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 3);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 4);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 5);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 6);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 7);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 8);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 9);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 10);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 11);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 12);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 13);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 14);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 15);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 179f, 0f), 16);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0245, 0, -1.4028), 6), 17);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.0049, 0, -0.2805), 2), 23);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -101f, 17.2f), 24);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 25);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 2, 7), 26);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -160f, 0f), 27);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.48, 0, -1.3184), 1), 28);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.096, 0, -0.2637), 4), 29);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -125f, 67.6f), 33);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 38);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 4, 7), 39);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 40);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 41);
-//
-//		/*
-//		 * ██████╗
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 * ██╔═══╝
-//		 * ███████╗
-//		 * ╚══════╝
-//		 */
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 6); // finish i1
+
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -5.5f, 80f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 7);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 8); // bonzo
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -155f, 0f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 9);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 4), 10);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -94f, 25f), 21);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 22); // s1 2
+		// tick 23: terminal completes
+
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -155f, 45f), 24);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 6), 25);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -101f, 69f), 31);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 34); // s1 1
+		// tick 35: terminal completes
+
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 36);
+		Utils.scheduleTask(() -> Actions.leap(tank, Berserk.get()), 37);
+
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(tank, -126.6f, 82f);
 //			Actions.setHotbarSlot(tank, 1);

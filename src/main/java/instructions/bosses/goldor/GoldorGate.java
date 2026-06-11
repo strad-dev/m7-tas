@@ -144,7 +144,7 @@ public final class GoldorGate {
 			pl.sendTitle("", msg, 0, 40, 0);
 		}
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
-		if(Utils.isVerbose()) Bukkit.broadcastMessage(Goldor.INSTANCE.gateDestroyedLine(sectionStartTick));
+		Utils.timer(Goldor.INSTANCE.gateDestroyedLine(sectionStartTick));
 	}
 
 	/** Called from resetState() — restore blocks, cancel pending tasks. */
