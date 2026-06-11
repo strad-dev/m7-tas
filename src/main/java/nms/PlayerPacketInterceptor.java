@@ -119,13 +119,22 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 		// Scheduled on the server executor (same queue as vanilla's packet handler) so it
 		// runs on the main thread immediately before vanilla processes the packet.
 		if(msg instanceof ServerboundUseItemOnPacket usePkt && usePkt.getHand() == InteractionHand.MAIN_HAND) {
-			MinecraftServer.getServer().execute(() ->
-					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
-							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player));
+			MinecraftServer.getServer().execute(() -> {
+				// Reset vanilla's interact dedupe so rapid repeat clicks on the same block keep firing
+				// PlayerInteractEvent (e.g. the Simon Says button) instead of reusing the cached
+				// (block,hand,item) result. Fake players do this in TASGamePacketListenerImpl#handleUseItemOn;
+				// real players use the vanilla listener, which doesn't — so reset it here, before vanilla
+				// processes the packet (same main-thread FIFO queue as super.channelRead below).
+				((CraftPlayer) player).getHandle().gameMode.firedInteract = false;
+				CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
+						player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
+			});
 		} else if(msg instanceof ServerboundUseItemPacket airPkt && airPkt.getHand() == InteractionHand.MAIN_HAND) {
-			MinecraftServer.getServer().execute(() ->
-					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
-							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, player));
+			MinecraftServer.getServer().execute(() -> {
+				((CraftPlayer) player).getHandle().gameMode.firedInteract = false;
+				CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
+						player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, player);
+			});
 		}
 		super.channelRead(ctx, msg);
 	}

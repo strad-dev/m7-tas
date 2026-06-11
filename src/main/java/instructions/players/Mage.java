@@ -467,8 +467,8 @@ public class Mage {
 			Actions.setHotbarSlot(mage, 4);
 			Actions.swapItems(mage, 12, 39);
 		}, 800);
-		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 801);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 802);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 811);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 812);
 		if(doContinue) {
 			Utils.scheduleTask(() -> goldor(true), 881);
 		}

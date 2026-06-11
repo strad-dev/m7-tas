@@ -813,8 +813,6 @@ public class Actions {
 
 			if(blockRay != null && blockRay.getHitBlock() != null) {
 				Block block = blockRay.getHitBlock();
-				if(block.getType() == Material.STONE_BUTTON) return;
-
 				BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
 				Direction direction = CraftBlock.blockFaceToNotch(blockRay.getHitBlockFace());
 

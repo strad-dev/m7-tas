@@ -48,7 +48,7 @@ public class Healer {
 			}
 			case "goldor" -> {
 				Utils.setSpeed(healer, 650);
-				Utils.teleport(healer, new Location(world, 107.729, 120, 93.816, -139.3f, 1.6f));
+				Utils.teleport(healer, new Location(world, 107.523, 120, 93.705, -123f, 1f));
 				Actions.swapItems(healer, 1, 28);
 				Actions.swapItems(healer, 3, 30);
 				Actions.swapItems(healer, 6, 33);
@@ -520,10 +520,13 @@ public class Healer {
 			Actions.move(healer, "WP", 12);
 		}, 784);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 785);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -47f, 0f), 786);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -47f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 786);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -141f, 1f), 800);
-		Utils.scheduleTask(() -> Actions.move(healer, "AN", 1), 802);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -126f, 1f), 803);
+		Utils.scheduleTask(() -> Actions.move(healer, "AN", 3), 812);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -123f, 1f), 814);
 		if(doContinue) {
 			Utils.scheduleTask(() -> goldor(true), 881);
 		}
