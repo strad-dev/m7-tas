@@ -463,7 +463,7 @@ public class Berserk {
 			Actions.setHotbarSlot(berserk, 3);
 		}, 377);
 		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 497);
+			Utils.scheduleTask(() -> storm(true), 496);
 		}
 	}
 

@@ -425,7 +425,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 9), 341); // move to storm clear spot
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -180f, 0f), 350);
 		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 497);
+			Utils.scheduleTask(() -> storm(true), 496);
 		}
 	}
 

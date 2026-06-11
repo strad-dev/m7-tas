@@ -183,7 +183,7 @@ public final class Maxor extends WitherLord {
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
 
-		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!\n" + formatTick(tick));
+		Utils.timer(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!\n" + formatTick(displayTick()));
 
 		// If the player is already standing on a plate, place immediately —
 		// no PHYSICAL interact fires until they re-step on the plate.
@@ -239,8 +239,8 @@ public final class Maxor extends WitherLord {
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;
 		ChatColor placedColor = bothPlaced ? ChatColor.GREEN : ChatColor.RED;
-		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!\n" + formatTick(tick);
-		Bukkit.broadcastMessage(activeMsg);
+		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!\n" + formatTick(displayTick());
+		Utils.timer(activeMsg);
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", activeMsg.split("\n")[0], 0, 40, 0);
 		}
@@ -255,8 +255,8 @@ public final class Maxor extends WitherLord {
 		Utils.scheduleTask(() -> {
 			if(boss == null || boss.isDead()) return;
 			if(plateLeftCrystal == null || plateRightCrystal == null) return;
-			String chargeMsg = ChatColor.GREEN + "The Energy Laser is charging up!\n" + formatTick(tick);
-			Bukkit.broadcastMessage(chargeMsg);
+			String chargeMsg = ChatColor.GREEN + "The Energy Laser is charging up!\n" + formatTick(displayTick());
+			Utils.timer(chargeMsg);
 			for(Player player : Bukkit.getOnlinePlayers()) {
 				player.sendTitle("", chargeMsg.split("\n")[0], 0, 40, 0);
 			}
@@ -320,7 +320,7 @@ public final class Maxor extends WitherLord {
 		clearAggro();
 		setArmor(false);
 		sendChatMessage(LASER_MESSAGE[random.nextInt(LASER_MESSAGE.length)]);
-		Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor stunned in " + formatTick(tick));
+		Utils.timer(ChatColor.GREEN + "Maxor stunned in " + formatTick(displayTick()));
 
 		// Laser hit: 5% max HP damage + wither hurt sound. Bypasses the damage event
 		// (no event recursion) and counts toward the stun's 75% damage cap.
@@ -370,7 +370,7 @@ public final class Maxor extends WitherLord {
 		cancelStunEnrageTask();
 
 		setArmor(true);
-		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is Enraged ⚠\n" + formatTick(tick));
+		Utils.timer(ChatColor.RED + "⚠ Maxor is Enraged ⚠\n" + formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", ChatColor.RED + "⚠ Maxor is Enraged ⚠", 0, 40, 0);
 		}
@@ -442,12 +442,11 @@ public final class Maxor extends WitherLord {
 
 	private void playDeathDialogue() {
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
-		Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor killed in " + formatTick(tick));
+		Utils.timer(ChatColor.GREEN + "Maxor killed in " + formatTick(displayTick()));
 		Server.playWitherDeathSound(boss);
 		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
 		Utils.scheduleTask(() -> {
-			// -1 because this is scheduled after the ticker, so there is an off-by-one without it
-			Bukkit.broadcastMessage(ChatColor.GREEN + "Maxor finished in " + formatTick(tick - 1));
+			Utils.timer(ChatColor.GREEN + "Maxor finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);

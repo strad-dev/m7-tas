@@ -400,7 +400,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 9), 341); // move to storm clear spot
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 350);
 		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 497);
+			Utils.scheduleTask(() -> storm(true), 496);
 		}
 	}
 

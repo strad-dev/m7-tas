@@ -55,7 +55,7 @@ public class TabCompletor implements TabCompleter {
 
 			case "verbose" -> {
 				if(args.length == 1) {
-					for(String val : new String[]{"true", "false", "super"}) {
+					for(String val : new String[]{"off", "timer", "on", "super", "true", "false"}) {
 						if(val.startsWith(args[0].toLowerCase())) {
 							completions.add(val);
 						}
