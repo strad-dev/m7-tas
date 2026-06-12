@@ -708,7 +708,15 @@ public class Actions {
 		ServerboundSwingPacket swingPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
 		Utils.simulatePacket(p, swingPacket);
 
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> {
+		// Vanilla's crosshair pick raytraces blocks first and caps the entity ray at the block
+		// hit, so entities occluded by a block can't be targeted.
+		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
+		double entityRange = p.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).getValue();
+		if(blockRay != null) {
+			entityRange = Math.min(entityRange, p.getEyeLocation().toVector().distance(blockRay.getHitPosition()));
+		}
+
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), entityRange, entity -> {
 			if(entity == p) return false;
 			if(entity.isDead()) return false;
 			// Only LivingEntity is attackable — TASGamePacketListenerImpl.handleInteract rejects
@@ -731,8 +739,6 @@ public class Actions {
 			Utils.simulatePacket(p, attackPacket);
 			return;
 		}
-
-		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
 			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) {
@@ -791,8 +797,15 @@ public class Actions {
 			return;
 		}
 
-		// Check for entity target first
-		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), 5.0, entity -> entity != p && !(entity instanceof Player target && (FakePlayerManager.getFakePlayers().containsValue(target) || Spectate.getSpectatingPlayers(p).contains(target))));
+		// Vanilla's crosshair pick raytraces blocks first and caps the entity ray at the block
+		// hit, so entities occluded by a block can't be targeted.
+		RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
+		double entityRange = p.getAttribute(Attribute.ENTITY_INTERACTION_RANGE).getValue();
+		if(blockRay != null) {
+			entityRange = Math.min(entityRange, p.getEyeLocation().toVector().distance(blockRay.getHitPosition()));
+		}
+
+		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), entityRange, entity -> entity != p && !(entity instanceof Player target && (FakePlayerManager.getFakePlayers().containsValue(target) || Spectate.getSpectatingPlayers(p).contains(target))));
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
 			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
@@ -806,11 +819,17 @@ public class Actions {
 			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
 			Utils.simulatePacket(p, interactPacket);
 			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
+
+			// Vanilla clients stop here when the entity interaction consumes the action and never
+			// send a UseItem packet, so the held item's right-click ability must not fire. Mirror the
+			// real-client exemption list at CustomItems#onPlayerInteractAtEntity (ItemFrame/Interaction)
+			// — without this, right-clicking a Goldor terminal would still trigger the ability.
+			if(entityRay.getHitEntity() instanceof ItemFrame || entityRay.getHitEntity() instanceof Interaction) {
+				return;
+			}
 		}
 		// Check for block target
 		else {
-			RayTraceResult blockRay = p.rayTraceBlocks(p.getAttribute(Attribute.BLOCK_INTERACTION_RANGE).getValue());
-
 			if(blockRay != null && blockRay.getHitBlock() != null) {
 				Block block = blockRay.getHitBlock();
 				BlockPos pos = new BlockPos(block.getX(), block.getY(), block.getZ());
@@ -1079,7 +1098,7 @@ public class Actions {
 		teleport(p, targetLoc);
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
-		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " leaped to " + target.getName() + " at " + targetLoc.getBlockX() + " " + targetLoc.getBlockY() + " " + targetLoc.getBlockZ());
+		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " leaped to " + target.getName() + " at " + Utils.round(targetLoc.getX(), 3) + " " + Utils.round(targetLoc.getY(), 5) + " " + Utils.round(targetLoc.getZ(), 3));
 	}
 
 	public static void mimicChest(Player p, Block b) {

@@ -475,76 +475,57 @@ public class Mage {
 	}
 
 	private static void goldor(boolean doContinue) {
+		/*
+		 *  ██╗
+		 * ███║
+		 * ╚██║
+		 *  ██║
+		 *  ██║
+		 *  ╚═╝
+		 */
 		Actions.rightClick(mage);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 1);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 2);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 3);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 4);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 5);
-//		/*
-//		 *  ██╗
-//		 * ███║
-//		 * ╚██║
-//		 *  ██║
-//		 *  ██║
-//		 *  ╚═╝
-//		 */
-//		Actions.setHotbarSlot(mage, 5);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 1);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 2);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 3);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 4);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 5);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 6);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 7);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 8);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 9);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 10);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 11);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 12);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 13);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 14);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 15);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 67.5f, 0f), 16);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.282, 0, 0.5707), 2), 17);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 67.5f, 82f);
-//			Actions.setHotbarSlot(mage, 1);
-//		}, 18);
-//		Utils.scheduleTask(() -> Actions.bonzo(mage, new Vector(-1.3936, 0.5, 0.6205)), 19);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 67.5f, 0f), 20);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 29);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.08, 0, 0), 3), 30);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 65.8f, 15.8f), 33);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(mage);
-//			Actions.move(mage, new Vector(0, 0, -1.08), 1);
-//		}, 34);
-//		Utils.scheduleTask(() -> {
-//			Goldor.broadcastTerminalComplete(mage, "terminal", 3, 7);
-//			// note: in real hypixel, momentum carries over even after a terminal is opened; as such this is a valid move sequence
-//			Actions.move(mage, new Vector(0, 0, -0.2806), 9);
-//		}, 35);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 180f, 0f);
-//		}, 36);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 17.1f), 45);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 50);
-//		Utils.scheduleTask(() -> {
-//			Goldor.broadcastTerminalComplete(mage, "terminal", 7, 7);
-//			Bukkit.broadcastMessage(ChatColor.GREEN + "S1 finished in 51 ticks (2.55 seconds) | Overall: 2 467 ticks (123.35 seconds)");
-//		}, 51);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 52);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 53);
-//
-//		/*
-//		 * ██████╗
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 * ██╔═══╝
-//		 * ███████╗
-//		 * ╚══════╝
-//		 */
+
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 65f, 80f);
+			Actions.setHotbarSlot(mage, 1);
+		}, 6);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 16), 7);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 8);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 90f, 5f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 16);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 87f, 5f), 22);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 23); // s1 4
+		// tick 24: terminal completes
+
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 0f), 25);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPD", 0), 26);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 1), 28);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPA", 13), 32);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 9f), 35);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 44); // s1 3
+		// tick 45: terminal completes
+
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 46);
+		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 48);
+
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 155f, 0f), 49);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 20), 69);
+
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(mage, -174f, 0f);
 //			Actions.setHotbarSlot(mage, 5);

@@ -533,6 +533,14 @@ public class Healer {
 	}
 
 	private static void goldor(boolean doContinue) {
+		/*
+		 *  ██╗
+		 * ███║
+		 * ╚██║
+		 *  ██║
+		 *  ██║
+		 *  ╚═╝
+		 */
 		Actions.rightClick(healer);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 1);
 		// tick 2: body-blocked by tank
@@ -541,93 +549,39 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 5);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 6);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 7);
-//		/*
-//		 *  ██╗
-//		 * ███║
-//		 * ╚██║
-//		 *  ██║
-//		 *  ██║
-//		 *  ╚═╝
-//		 */
-//		Actions.setHotbarSlot(healer, 5);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 1);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 2);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 3);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 121 93 minecraft:sea_lantern");
-//		}, 4);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 121 93 minecraft:obsidian");
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 121 94 minecraft:sea_lantern");
-//		}, 5);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 6);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 121 94 minecraft:obsidian");
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 122 94 minecraft:sea_lantern");
-//		}, 7);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 8);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 9);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 122 94 minecraft:obsidian");
-//		}, 10);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 122 93 minecraft:sea_lantern");
-//		}, 11);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 12);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 122 93 minecraft:obsidian");
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 123 93 minecraft:sea_lantern");
-//		}, 13);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 14);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(healer);
-//			Goldor.broadcastTerminalComplete(healer, "device", 1, 7);
-//			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 111 123 93 minecraft:obsidian");
-//		}, 15);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, 5.4f, 0f);
-//			Actions.setHotbarSlot(healer, 1);
-//		}, 16);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.132, 0, 1.397), 3), 17);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 5.4f, 82f), 19);
-//		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-0.1436, 0.5, 1.5188)), 20);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 5.4f, 0f), 21);
-//		Utils.scheduleTask(() -> {
-//			Actions.jump(healer);
-//			Actions.move(healer, new Vector(-0.132, 0, 1.397), 1);
-//			Actions.setHotbarSlot(healer, 5);
-//		}, 31);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.0264, 0, 0.2794), 3), 32);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 35);
-//		Utils.scheduleTask(() -> Actions.jump(healer), 40);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(healer);
-//			Goldor.broadcastTerminalComplete(healer, "lever", 5, 7);
-//		}, 41);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, -90f, 45f);
-//			Actions.setHotbarSlot(healer, 1);
-//		}, 42);
-//		final BukkitRunnable[] temp = new BukkitRunnable[1];
-//		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(healer, new Vector(-1.52552, 0, 0)), 43);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 0f), 44);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 64.6f, 27.9f), 49);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(healer);
-//			Goldor.broadcastTerminalComplete(healer, "lever", 6, 7);
-//		}, 50);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 51);
-//		Utils.scheduleTask(() -> {
-//			temp[0].cancel();
-//			Actions.leap(healer, Archer.get());
-//		}, 52);
-//
+		// tick 7: device completes
+
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 80f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 8);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 9);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 10);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 12), 12);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 14);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 15);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 18f, 1f), 24);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 25); // s1 left
+
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 75f, 90f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 26);
+		Utils.scheduleTask(() -> Actions.move(healer, "J", 0), 27);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 10), 29);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 31);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 83f, 35f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 40);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 41); //s1 right
+
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 42);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 51); // delay for better positioning
+
 //		/*
 //		 * ██████╗
 //		 * ╚════██╗
