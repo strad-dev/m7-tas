@@ -649,62 +649,49 @@ public class Tank {
 		// tick 47: terminal completes
 
 		Utils.scheduleTask(() -> Actions.leap(tank, Berserk.get()), 52);
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, "WP", 0);
+			Actions.setHotbarSlot(tank, 1);
+		}, 53);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 55);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 58f, 0f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 56);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 69);
+		Utils.scheduleTask(() -> Actions.move(tank, "WAP", 0), 70);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 3), 71);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -3f, 22.5f), 74);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 75); // s2 4
+		// tick 76: terminal completes
 
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(tank, -126.6f, 82f);
-//			Actions.setHotbarSlot(tank, 1);
-//		}, 42);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.1264, 0, -0.837), 1), 43);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.2247, 0.5, -0.91)), 44);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -126.6f, 0f), 45);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -180f, 90f), 57);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 58);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 1, 8), 59);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 60);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.1278, 0, 0.8345), 1), 61);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 62);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 63);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.1278, 0, 0.8345), 2), 76);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 82f), 77);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-1.2263, 0.5, 0.907)), 78);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 53.5f, 0f), 79);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 89f, 0f), 91);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.4028, 0, 0.0245), 4), 92);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 0f, 27f), 95);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 96);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 4, 8), 97);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 98);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.403, 0, 0), 2), 99);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 6), 101);
-//		Utils.scheduleTask(() -> Actions.lavaJump(tank, false), 108);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -15.5f, 0f), 109);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.4077, 0.5, -1.47)), 120);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 164.5f, 35f), 121);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(tank);
-//			Goldor.broadcastTerminalComplete(tank, "lever", 7, 8);
-//		}, 131);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 133);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.403, 0, 0), 2), 134);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2806, 0, 0), 15), 136);
-//		Utils.scheduleTask(() -> {
-//			for(int i = 0; i < 21; i += 5) {
-//				Utils.scheduleTask(() -> {
-//					world.playSound(tank.getLocation(), Sound.BLOCK_CROP_BREAK, 2.0f, 1.0f);
-//					world.playSound(tank.getLocation(), Sound.BLOCK_GRASS_BREAK, 2.0f, 1.0f);
-//				}, i);
-//			}
-//			Goldor.broadcastTerminalComplete(tank, "gate", 2, 3);
-//		}, 137);
-//
-//		/*
-//		 * ██████╗1
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 *  ╚═══██╗
-//		 * ██████╔╝
-//		 * ╚═════╝
-//		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 90f, 0f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 77);
+		Utils.scheduleTask(() -> Actions.move(tank, "W", 4), 78);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -20f, 0), 82);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 99);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 160f, 35f);
+			Actions.setHotbarSlot(tank, 4);
+		}, 100);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 9), 101);
+		Utils.scheduleTask(() -> Actions.swapItems(tank, 11, 39), 108); // equip mask for preleap
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 109); // s2 bottom
+
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 110);
+
+		/*
+		 * ██████╗1
+		 * ╚════██╗
+		 *  █████╔╝
+		 *  ╚═══██╗
+		 * ██████╔╝
+		 * ╚═════╝
+		 */
+
+
 //		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 150);
 //		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9018, 0, -1.0748), 5), 151);
 //		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 82f), 155);

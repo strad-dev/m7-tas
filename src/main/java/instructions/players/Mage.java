@@ -543,7 +543,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 155f, 25f), 92);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 93);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 94);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 56), 95);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 95);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.4f, 45f), 96);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 97);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 98);
@@ -554,6 +554,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 45f), 147);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 148);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 149);
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 3), 151);
 
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, -174f, 0f), 76);
 //		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 9), 77);

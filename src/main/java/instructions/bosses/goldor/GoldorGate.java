@@ -48,15 +48,17 @@ public final class GoldorGate {
 	}
 
 	private void snapshotBlocks() {
+		// Box max is exclusive (Goldor.makeBox stores blockMax+1, matching BoundingBox.contains),
+		// so iterate with strict < — inclusive <= grabbed an extra block layer on every max side.
 		int minX = (int) Math.floor(bounds.getMinX());
 		int minY = (int) Math.floor(bounds.getMinY());
 		int minZ = (int) Math.floor(bounds.getMinZ());
 		int maxX = (int) Math.floor(bounds.getMaxX());
 		int maxY = (int) Math.floor(bounds.getMaxY());
 		int maxZ = (int) Math.floor(bounds.getMaxZ());
-		for(int x = minX; x <= maxX; x++) {
-			for(int y = minY; y <= maxY; y++) {
-				for(int z = minZ; z <= maxZ; z++) {
+		for(int x = minX; x < maxX; x++) {
+			for(int y = minY; y < maxY; y++) {
+				for(int z = minZ; z < maxZ; z++) {
 					Block b = world.getBlockAt(x, y, z);
 					if(b.getType() != Material.AIR) {
 						snapshot.put(b.getLocation(), b.getBlockData().clone());

@@ -18,6 +18,14 @@ public class PearlHelper implements Listener {
 		if (!(e.getEntity() instanceof EnderPearl pearl)) return;
 		if (!(e.getEntity().getShooter() instanceof Player p)) return;
 
+		// Infinileap is an ender pearl item but must never be thrown — leaping is done by
+		// Actions.leap directly. Normally handleCustomItems cancels the interact event first;
+		// this is the hard backstop in case any use path slips through.
+		if("skyblock/utility/infinileap".equals(CustomItems.getID(p.getInventory().getItemInMainHand()))) {
+			e.setCancelled(true);
+			return;
+		}
+
 		Vector direction = p.getEyeLocation().getDirection();
 		pearl.setVelocity(direction.multiply(1.5));
 
