@@ -645,6 +645,11 @@ public class Tank {
 		 * ███████╗
 		 * ╚══════╝
 		 */
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 46); // s2 1
+		// tick 47: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(tank, Berserk.get()), 52);
+
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(tank, -126.6f, 82f);
 //			Actions.setHotbarSlot(tank, 1);

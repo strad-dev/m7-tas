@@ -14,6 +14,7 @@ import java.util.UUID;
 public class MovementAudit {
 
 	private static final Map<UUID, BukkitRunnable> airborneAudits = new HashMap<>();
+	private static boolean silentCancel = false;
 
 	public static boolean hasAirborneAudit(UUID id) {
 		return airborneAudits.containsKey(id);
@@ -66,9 +67,11 @@ public class MovementAudit {
 
 			@Override
 			public void cancel() {
-				net.minecraft.world.phys.Vec3 landPos = npc.position();
-				double distanceTraveled = landPos.distanceTo(startPos);
-				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " landed after " + tick + " ticks at " + Utils.round(landPos.x, 2) + " " + Utils.round(landPos.y, 2) + " " + Utils.round(landPos.z, 2) + ", distance traveled " + Utils.round(distanceTraveled, 2) + " blocks");
+				if(!silentCancel) {
+					net.minecraft.world.phys.Vec3 landPos = npc.position();
+					double distanceTraveled = landPos.distanceTo(startPos);
+					Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + source + " landed after " + tick + " ticks at " + Utils.round(landPos.x, 2) + " " + Utils.round(landPos.y, 2) + " " + Utils.round(landPos.z, 2) + ", distance traveled " + Utils.round(distanceTraveled, 2) + " blocks");
+				}
 				airborneAudits.remove(id);
 				super.cancel();
 			}
@@ -100,9 +103,16 @@ public class MovementAudit {
 		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + verb + " " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : "") + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
 	}
 
+	/** Cancels every active airborne audit without printing "landed" lines — the players didn't land,
+	 *  the run was restarted/reset out from under them. */
 	public static void cancelAll() {
-		for(BukkitRunnable runnable : airborneAudits.values()) {
-			runnable.cancel();
+		silentCancel = true;
+		try {
+			for(BukkitRunnable runnable : new java.util.ArrayList<>(airborneAudits.values())) {
+				runnable.cancel();
+			}
+		} finally {
+			silentCancel = false;
 		}
 		airborneAudits.clear();
 	}

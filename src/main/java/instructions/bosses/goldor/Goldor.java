@@ -37,7 +37,7 @@ import java.util.Map;
 public final class Goldor extends WitherLord {
 	public static final Goldor INSTANCE = new Goldor();
 
-	private static final int PRE_GOLDOR_TICKS = 2416;
+	private static final int PRE_GOLDOR_TICKS = 2415;
 
 	// Patrol waypoints (block-center XZ). Y stays at spawn Y = 118 during patrol.
 	private static final double WP_AX = 100.5, WP_AZ = 40.5;
@@ -503,7 +503,7 @@ public final class Goldor extends WitherLord {
 	/** True if this block must not be removed by stonk while the Goldor phase is active. Losing any of these
 	 *  mid-fight would soft-lock the phase (they're the only way to complete their sections) or knock an
 	 *  interactable off its mount. Covers: the Simon Says button (S1 device) and the block behind it; the
-	 *  S2 "Lights" lever mount blocks; the S4 Sharp Shooter pressure-plate support; and every section lever
+	 *  S2 "Lights" levers and their mount blocks; the S4 Sharp Shooter pressure-plate support; and every section lever
 	 *  plus the block directly beneath it. */
 	public boolean isStonkImmune(Block b) {
 		if(!phaseActive) return false;
@@ -511,8 +511,8 @@ public final class Goldor extends WitherLord {
 		// S1 Simon Says button and the block behind it.
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) return true;
 		if(bx == SIMON_BEHIND_BX && by == SIMON_BEHIND_BY && bz == SIMON_BEHIND_BZ) return true;
-		// S2 "Lights" lever mount blocks.
-		if(bz == LIGHTS_MOUNT_Z && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
+		// S2 "Lights" lever mount blocks, plus the levers themselves hanging on the z-142 face.
+		if((bz == LIGHTS_MOUNT_Z || bz == LIGHTS_MOUNT_Z - 1) && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
 		// S4 Sharp Shooter gold pressure-plate support block.
 		if(bx == PLATE_SUPPORT_BX && by == PLATE_SUPPORT_BY && bz == PLATE_SUPPORT_BZ) return true;
 		// Section levers and the support block directly beneath each.

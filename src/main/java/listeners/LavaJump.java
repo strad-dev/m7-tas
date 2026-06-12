@@ -6,6 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import commands.Spectate;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
@@ -60,6 +61,7 @@ public class LavaJump {
 
 	private static void check(Player p) {
 		if(p.getGameMode() == GameMode.SPECTATOR) return;
+		if(Spectate.getSpectatorMap().containsKey(p)) return;
 		Location loc = p.getLocation();
 		UUID id = p.getUniqueId();
 

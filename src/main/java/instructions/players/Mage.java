@@ -523,29 +523,38 @@ public class Mage {
 		 * ███████╗
 		 * ╚══════╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 155f, 0f), 49);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 155f, 0f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 49);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 20), 69);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -85f, 30), 89);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 90); // s2 2
+		// tick 91: terminal completes
 
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -174f, 0f);
-//			Actions.setHotbarSlot(mage, 5);
-//		}, 58);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1467, 0, -1.395), 1), 59);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 4), 60);
-//		Utils.scheduleTask(() -> Actions.lavaJump(mage, false), 67);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 6), 68);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -160f, -10.5f), 73);
-//		Utils.scheduleTask(() -> Actions.swingHand(mage), 74);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(mage, "terminal", 2, 8), 75);
-//
-//		/*
-//		 *  ██████╗ ██████╗ ██████╗ ███████╗
-//		 * ██╔════╝██╔═══██╗██╔══██╗██╔════╝
-//		 * ██║     ██║   ██║██████╔╝█████╗
-//		 * ██║     ██║   ██║██╔══██╗██╔══╝
-//		 * ╚██████╗╚██████╔╝██║  ██║███████╗
-//		 *  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
-//		 */
+		/*
+		 *  ██████╗ ██████╗ ██████╗ ███████╗
+		 * ██╔════╝██╔═══██╗██╔══██╗██╔════╝
+		 * ██║     ██║   ██║██████╔╝█████╗
+		 * ██║     ██║   ██║██╔══██╗██╔══╝
+		 * ╚██████╗╚██████╔╝██║  ██║███████╗
+		 *  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 155f, 25f), 92);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 93);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 94);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 56), 95);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.4f, 45f), 96);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 97);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 98);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 99);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 100);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 101);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 102);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 45f), 147);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 148);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 149);
+
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, -174f, 0f), 76);
 //		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 9), 77);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 90f), 93);

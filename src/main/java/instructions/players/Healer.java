@@ -582,14 +582,26 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 42);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 51); // delay for better positioning
 
-//		/*
-//		 * ██████╗
-//		 * ╚════██╗
-//		 *  █████╔╝
-//		 * ██╔═══╝
-//		 * ███████╗
-//		 * ╚══════╝
-//		 */
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 * ██╔═══╝
+		 * ███████╗
+		 * ╚══════╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, 90f);
+			Actions.setHotbarSlot(healer, 7);
+		}, 52);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 44), 53);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 59);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 0f, -10f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 60);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 99);
+
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(healer, 0f, 0f);
 //			Actions.setHotbarSlot(healer, 1);
