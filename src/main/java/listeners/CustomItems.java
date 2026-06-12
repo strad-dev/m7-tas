@@ -200,11 +200,12 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
+		// Protected blocks are unbreakable outright, no matter what the breaker is holding.
+		if(Goldor.INSTANCE.isStonkImmune(e.getBlock())) {
+			e.setCancelled(true);
+			return;
+		}
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
-			if(Goldor.INSTANCE.isStonkImmune(e.getBlock())) {
-				e.setCancelled(true);
-				return;
-			}
 			stonk(e.getPlayer(), e.getBlock());
 		}
 	}

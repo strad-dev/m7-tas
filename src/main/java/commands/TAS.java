@@ -1,5 +1,6 @@
 package commands;
 
+import instructions.Actions;
 import instructions.Server;
 import instructions.players.*;
 import org.bukkit.Bukkit;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import plugin.FakePlayerInventory;
 import plugin.FakePlayerManager;
+import plugin.MovementAudit;
 import plugin.Utils;
 
 import java.util.Map;
@@ -50,6 +52,8 @@ public class TAS implements CommandExecutor {
 			return;
 		}
 
+		MovementAudit.cancelAll();
+		Actions.cancelAllMovement();
 		FakePlayerInventory.setInventories();
 		Server.serverSetup(world);
 

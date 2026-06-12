@@ -61,6 +61,10 @@ public class Actions {
 
 	private static final Map<UUID, BukkitTask> jumpTasks = new HashMap<>();
 	private static final Map<UUID, String> activeInputs = new HashMap<>();
+	private static final Set<BukkitRunnable> forceMoveTasks = new HashSet<>();
+	/** Bumped by {@link #cancelAllMovement()}; move() cleanup tasks scheduled before the bump
+	 *  belong to a cancelled run and must not zero out inputs set by the new run. */
+	private static int movementGeneration = 0;
 	/** UUIDs of mobs already claimed by an in-flight Terminator arrow, mapped to the
 	 *  server tick when the claim expires (i.e. when the arrow should have landed). */
 	private static final Map<UUID, Integer> terminatorClaimedUntil = new HashMap<>();
@@ -172,7 +176,9 @@ public class Actions {
 			serverPlayer.setJumping(false);
 		}
 		if(durationTicks > 0) {
+			int generation = movementGeneration;
 			Utils.scheduleTask(() -> {
+				if(generation != movementGeneration) return; // stale cleanup from a cancelled run
 				if(entity.isValid()) {
 					serverPlayer.xxa = 0.0F;
 					serverPlayer.zza = 0.0F;
@@ -201,12 +207,13 @@ public class Actions {
 		// This variable stores the requested motion from the caller.
 		Vec3 motion = new Vec3(perTick.getX(), perTick.getY(), perTick.getZ());
 
-		new BukkitRunnable() {
+		BukkitRunnable runnable = new BukkitRunnable() {
 			int ticks = 0;
 
 			@Override
 			public void run() {
 				if(ticks++ >= durationTicks || nmsEntity.isRemoved()) {
+					forceMoveTasks.remove(this);
 					cancel();
 					return;
 				}
@@ -236,7 +243,36 @@ public class Actions {
 					Utils.broadcastPacket(teleportPacket);
 				}
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		};
+		forceMoveTasks.add(runnable);
+		runnable.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	/**
+	 * Hard-stops all fake-player movement: held input keys, jump tasks, forceMove runnables,
+	 * and momentum. Pending move() cleanup tasks from before this call become no-ops, so they
+	 * cannot zero out inputs set by a freshly started run. Called on TAS start and /reset.
+	 */
+	public static void cancelAllMovement() {
+		movementGeneration++;
+
+		for(BukkitTask task : jumpTasks.values()) task.cancel();
+		jumpTasks.clear();
+		for(BukkitRunnable runnable : new ArrayList<>(forceMoveTasks)) runnable.cancel();
+		forceMoveTasks.clear();
+		activeInputs.clear();
+
+		for(Player p : FakePlayerManager.getFakePlayers().values()) {
+			if(!(p instanceof CraftPlayer craftPlayer)) continue;
+			ServerPlayer serverPlayer = craftPlayer.getHandle();
+			serverPlayer.xxa = 0.0F;
+			serverPlayer.zza = 0.0F;
+			serverPlayer.setSprinting(false);
+			serverPlayer.setShiftKeyDown(false);
+			serverPlayer.setJumping(false);
+			serverPlayer.setDeltaMovement(Vec3.ZERO);
+			serverPlayer.hurtMarked = true;
+		}
 	}
 
 	/**
