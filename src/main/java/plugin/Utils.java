@@ -173,6 +173,55 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * Plays a sound by namespaced key for all players spectating this player if applicable
+	 *
+	 * @param p      The player causing the sound
+	 * @param s      The namespaced sound key (e.g. "minecraft:entity.wither.hurt")
+	 * @param volume Volume
+	 * @param pitch  Pitch
+	 */
+	public static void playLocalSound(Player p, String s, float volume, float pitch) {
+		if(FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
+			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
+				spectator.playSound(spectator.getLocation(), s, volume, pitch);
+			}
+		} else {
+			p.playSound(p.getLocation(), s, volume, pitch);
+		}
+	}
+
+	// LivingEntity#getHurtSound is protected — resolved lazily; Method.invoke dispatches
+	// virtually, so subclass overrides (wither, dragon, zombie...) return their own sounds.
+	private static java.lang.reflect.Method getHurtSoundMethod;
+
+	/**
+	 * Resolves the namespaced key of the sound an entity makes when hurt
+	 * (e.g. "minecraft:entity.wither.hurt"), or null if it cannot be resolved.
+	 */
+	@Nullable
+	public static String getHurtSoundKey(LivingEntity entity) {
+		try {
+			net.minecraft.world.entity.LivingEntity nmsEntity = ((CraftLivingEntity) entity).getHandle();
+			if(getHurtSoundMethod == null) {
+				getHurtSoundMethod = net.minecraft.world.entity.LivingEntity.class.getDeclaredMethod("getHurtSound", net.minecraft.world.damagesource.DamageSource.class);
+				getHurtSoundMethod.setAccessible(true);
+			}
+			Object soundEvent = getHurtSoundMethod.invoke(nmsEntity, nmsEntity.damageSources().genericKill());
+			if(soundEvent == null) return null;
+			// SoundEvent's ResourceLocation accessor is location() on record builds, getLocation() on older ones
+			for(String name : new String[]{"location", "getLocation"}) {
+				try {
+					return soundEvent.getClass().getMethod(name).invoke(soundEvent).toString();
+				} catch(NoSuchMethodException ignored) {
+				}
+			}
+			return null;
+		} catch(ReflectiveOperationException e) {
+			return null;
+		}
+	}
+
 	public enum SecretType {
 		CHEST, BLESSING_CHEST, ITEM, BAT, ESSENCE
 	}

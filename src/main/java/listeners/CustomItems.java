@@ -57,6 +57,9 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastWitherShieldSoundTick = new ConcurrentHashMap<>();
+	// True while mageBeam's hurtEntity call is on the stack — damage events fire synchronously, so
+	// onWitherHurtSound reads this to skip its at-location broadcast for beam hits (package-private).
+	static boolean beamDamageInProgress = false;
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
@@ -1908,17 +1911,28 @@ public class CustomItems implements Listener {
 			l.add(v);
 		}
 
+		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume —
+		// no at-location sound, so volume doesn't depend on how far the target is.
 		if(targetEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
-			wither.getWorld().playSound(wither.getLocation(), Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 			Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-			for(Player spectator : Spectate.getSpectatingPlayers(p)) {
-				Utils.playLocalSound(spectator, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-			}
 		} else if(targetEntity instanceof LivingEntity temp) {
 			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
-			Utils.hurtEntity(temp, damage, p);
+			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
+			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
+			// broadcast the same way (withers are permanently silent, so silence can't signal that).
+			boolean wasSilent = temp.isSilent();
+			temp.setSilent(true);
+			beamDamageInProgress = true;
+			try {
+				Utils.hurtEntity(temp, damage, p);
+			} finally {
+				beamDamageInProgress = false;
+				temp.setSilent(wasSilent);
+			}
 			temp.setNoDamageTicks(0);
 			Utils.changeName(temp);
+			String hurtSound = Utils.getHurtSoundKey(temp);
+			if(hurtSound != null) Utils.playLocalSound(p, hurtSound, 1.0f, 1.0f);
 		}
 	}
 

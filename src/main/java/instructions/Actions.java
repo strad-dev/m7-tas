@@ -49,6 +49,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import plugin.FakePlayerManager;
 import plugin.M7tas;
+import plugin.MovementAudit;
 import plugin.PlayerInventoryBackup;
 import plugin.Utils;
 
@@ -168,6 +169,7 @@ public class Actions {
 					if(serverPlayer.onGround()) {
 						serverPlayer.setJumping(true);
 						Utils.debug(Utils.DebugType.CLIENT, entity.getName() + " jumped at " + Utils.round(serverPlayer.getX(), 3) + " " + Utils.round(serverPlayer.getY(), 5) + " " + Utils.round(serverPlayer.getZ(), 3));
+						if(entity instanceof Player player) MovementAudit.startAirborneAudit(player, "jump");
 					}
 				}
 			}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
@@ -829,6 +831,8 @@ public class Actions {
 		// Terminator) go through the normal packet path so their ability dispatch still fires.
 		String heldId = CustomItems.getID(p.getInventory().getItemInMainHand());
 		if("skyblock/combat/last_breath".equals(heldId)) {
+			// Only click path that sends no packet at all, so simulatePacket never logs it — log the click here
+			Utils.debug(Utils.DebugType.CLIENT, p.getName() + " Right Clicked" + (Utils.isSuperVerbose() ? (" at " + Utils.round(p.getLocation().getX(), 3) + " " + Utils.round(p.getLocation().getY(), 5) + " " + Utils.round(p.getLocation().getZ(), 3) + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch()) : ""));
 			serverPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 			return;
 		}

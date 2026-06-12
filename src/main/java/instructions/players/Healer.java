@@ -548,8 +548,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 4);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 5);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 6);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 7);
-		// tick 7: device completes
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 7); // s1 dev
 
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 0f, 80f);
@@ -600,7 +599,27 @@ public class Healer {
 			Actions.turnHead(healer, 0f, -10f);
 			Actions.setHotbarSlot(healer, 5);
 		}, 60);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 99);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 99); // s2 dev
+
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 80f);
+			Actions.setHotbarSlot(healer, 1);
+		}, 100);
+		Utils.scheduleTask(() -> Actions.move(healer, "W", 0), 101);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 28), 102);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 108);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 0f);
+			Actions.setHotbarSlot(healer, 4);
+		}, 109);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 96f, 0f), 123);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 6f), 128);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 129); // s2 top
+
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 100f, -8f), 130);
+		// intentionally blow gate here to allow the massive tank timesave to actually be worth something + allow archer more time to get into position
+		Utils.scheduleTask(() -> Actions.dropItem(healer, true), 131);
+		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 137); // must wait for gate to blow otherwise sheep will go wonky on real hypixel
 
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(healer, 0f, 0f);

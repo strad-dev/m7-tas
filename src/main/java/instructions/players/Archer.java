@@ -548,6 +548,7 @@ public class Archer {
 		 * ██║     ██║
 		 * ╚═╝     ╚═╝
 		 */
+		Actions.swapItems(archer, 5, 32);
 		Actions.swapItems(archer, 18, 39);
 		Actions.swapItems(archer, 19, 38);
 		Actions.swapItems(archer, 20, 37);
@@ -561,7 +562,77 @@ public class Archer {
 		 * ███████╗███████╗██████╔╝
 		 * ╚══════╝╚══════╝╚═════╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 81f, 0f), 1);
+		// tick 4: device completes
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 5);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 7);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 9);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 22);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 24);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 81f, 80f);
+			Actions.setHotbarSlot(archer, 1);
+		}, 38);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 39);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 81f, 0f);
+			Actions.setHotbarSlot(archer, 5);
+		}, 40);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 59);
+		// tick 60: death tick
+		Utils.scheduleTask(() -> {
+			Utils.playLocalSound(archer, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
+			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(archer) + " used Spirit Mask!");
+		}, 60);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 61);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 30f), 66);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 67);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 69);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(archer);
+			Actions.move(archer, "WAP", 0);
+		}, 70);
+		Utils.scheduleTask(() -> {
+			Actions.leftClick(archer);
+			Actions.move(archer, "WP", 17);
+		}, 71);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 72);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 73);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 74);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 55f, 0f), 76);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 135f, 0f), 90);
+		// tick 110: tank leaps
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(archer, 10, 39);
+			Actions.setHotbarSlot(archer, 1);
+			Actions.turnHead(archer, 22.5f, 0f);
+		}, 111);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 14), 112);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 22.5f, 80f), 114);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 115);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 22.5f, 0f), 116);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 10, 39), 118);
+		// tick 120: death tick
+		Utils.scheduleTask(() -> {
+			Utils.playLocalSound(archer, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
+			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(archer) + " used Bonzo Mask!");
+		}, 120);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 10, 39), 121);
 
+		/*
+		 * ██████╗
+		 * ╚════██╗
+		 *  █████╔╝
+		 *  ╚═══██╗
+		 * ██████╔╝
+		 * ╚═════╝
+		 */
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -13f, 0f), 128);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 129);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, 80f);
+		}, 133);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 134);
 
 		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);

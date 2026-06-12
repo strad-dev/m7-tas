@@ -233,6 +233,9 @@ public class MiscListener implements Listener {
 		// While dying, only the death noise plays — no hurt sound.
 		WitherLord activeLord = WitherLord.activeFor(wither);
 		if(activeLord != null && activeLord.isDying()) return;
+		// Mage beam routes a constant-volume hurt sound to the beamer itself — skip the
+		// at-location broadcast so beam hits aren't distance-attenuated (or doubled up close).
+		if(CustomItems.beamDamageInProgress) return;
 
 		Location loc = wither.getLocation();
 		wither.getWorld().playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
