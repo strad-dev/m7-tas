@@ -177,7 +177,7 @@ public final class Goldor extends WitherLord {
 		List<GoldorLever> lev = new ArrayList<>();
 		lev.add(new GoldorLever(world, 0, 0, 106, 124, 113));
 		lev.add(new GoldorLever(world, 0, 1, 94, 124, 113));
-		GoldorGate gate = new GoldorGate(world, 0, makeBox(96, 115, 121, 104, 135, 123));
+		GoldorGate gate = new GoldorGate(world, 0, makeBox(96, 115, 121, 104, 135, 124));
 		return new GoldorSection(0, terms, dev, lev, gate);
 	}
 
@@ -192,7 +192,7 @@ public final class Goldor extends WitherLord {
 		List<GoldorLever> lev = new ArrayList<>();
 		lev.add(new GoldorLever(world, 1, 0, 27, 124, 127));
 		lev.add(new GoldorLever(world, 1, 1, 23, 132, 138));
-		GoldorGate gate = new GoldorGate(world, 1, makeBox(17, 115, 128, 19, 135, 136));
+		GoldorGate gate = new GoldorGate(world, 1, makeBox(16, 115, 128, 19, 135, 136));
 		return new GoldorSection(1, terms, dev, lev, gate);
 	}
 
@@ -206,7 +206,7 @@ public final class Goldor extends WitherLord {
 		List<GoldorLever> lev = new ArrayList<>();
 		lev.add(new GoldorLever(world, 2, 0, 2, 122, 55));
 		lev.add(new GoldorLever(world, 2, 1, 14, 122, 55));
-		GoldorGate gate = new GoldorGate(world, 2, makeBox(4, 115, 49, 12, 135, 51));
+		GoldorGate gate = new GoldorGate(world, 2, makeBox(4, 115, 48, 12, 135, 51));
 		return new GoldorSection(2, terms, dev, lev, gate);
 	}
 
