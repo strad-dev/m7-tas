@@ -5,6 +5,7 @@ import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.storm.Storm;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
@@ -159,8 +160,21 @@ public class MiscListener implements Listener {
 						direction.setZ(0);
 					}
 
-					serverPlayer.setOnGround(false);
-					p.setVelocity(direction);
+					// Fake players: queue the impulse so it's applied at the top of the next aiStep (see
+					// FakePlayerManager.launch) — setting it here, inside the windcharge's entity tick, lands after
+					// the fake ticker's aiStep already ran and the impulse gets clobbered before the next one, costing
+					// the full first-tick rise. Real players run authoritative client physics, so set them directly.
+					if(FakePlayerManager.getFakePlayers().containsValue(p)) {
+						FakePlayerManager.launch(p, direction);
+					} else {
+						serverPlayer.setOnGround(false);
+						p.setVelocity(direction);
+						// Send the motion packet immediately rather than waiting for hurtMarked to be serviced
+						// on the next aiStep — the deferral ships it a tick late and the client loses the full
+						// first-tick rise (off-by-one). Immediate send matches Hypixel (full 0.5 on tick 1).
+						serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
+						serverPlayer.hurtMarked = false;
+					}
 					Integer fireTick = CustomItems.bonzoFireTick.remove(windCharge.getEntityId());
 					int travelTicks = fireTick != null ? MinecraftServer.currentTick - fireTick : -1;
 					Location loc = p.getLocation();
