@@ -137,6 +137,16 @@ public class GetCustomItems implements CommandExecutor {
 		meta.setLore(lore);
 		lb.setItemMeta(meta);
 
+		ItemStack explosiveBow = new ItemStack(Material.BOW);
+		meta = explosiveBow.getItemMeta();
+		meta.setUnbreakable(true);
+		meta.setDisplayName(ChatColor.GOLD + "Explosive Bow");
+		meta.setItemName(ChatColor.GOLD + "Explosive Bow");
+		lore = new ArrayList<>();
+		lore.add("skyblock/combat/explosive_bow");
+		meta.setLore(lore);
+		explosiveBow.setItemMeta(meta);
+
 		ItemStack tac = new ItemStack(Material.BLAZE_ROD);
 		meta = tac.getItemMeta();
 		meta.setUnbreakable(true);
@@ -177,7 +187,7 @@ public class GetCustomItems implements CommandExecutor {
 		meta.setLore(lore);
 		springBoots.setItemMeta(meta);
 
-		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine);
+		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, explosiveBow, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine);
 		p.sendMessage(ChatColor.GREEN + "Here you go!");
 		return true;
 	}

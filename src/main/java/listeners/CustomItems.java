@@ -168,7 +168,8 @@ public class CustomItems implements Listener {
 				&& !id.equals("skyblock/combat/gyro")
 				&& !id.equals("skyblock/combat/dungeonbreaker")
 				&& !id.equals("skyblock/combat/stonk")
-				&& !id.equals("skyblock/combat/last_breath")) {
+				&& !id.equals("skyblock/combat/last_breath")
+				&& !id.equals("skyblock/combat/explosive_bow")) {
 			e.setCancelled(true);
 		}
 	}
@@ -264,6 +265,54 @@ public class CustomItems implements Listener {
 	public void onEntityShootBow(EntityShootBowEvent e) {
 		if(e.getEntity() instanceof Player p) {
 			String id = getID(p.getInventory().getItemInMainHand());
+			if(id != null && id.equals("skyblock/combat/explosive_bow")) {
+				if(e.getProjectile() instanceof Arrow arrow) {
+					arrow.setDamage(1.0);
+					arrow.addScoreboardTag("ExplosiveBowArrow");
+					arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+					boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
+					Vector launchVelocity = arrow.getVelocity().clone();
+					Location launchLoc = arrow.getLocation().clone();
+					Utils.scheduleTask(() -> {
+						Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
+						arrow2.setVelocity(launchVelocity);
+						arrow2.setDamage(1.0);
+						arrow2.setShooter(p);
+						arrow2.addScoreboardTag("ExplosiveBowArrow");
+						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+						arrow2.setWeapon(p.getInventory().getItemInMainHand());
+
+						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+					}, 3);
+
+					if(isArcher) {
+						Utils.scheduleTask(() -> {
+							Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
+							arrow2.setVelocity(launchVelocity);
+							arrow2.setDamage(1.0);
+							arrow2.setShooter(p);
+							arrow2.addScoreboardTag("ExplosiveBowArrow");
+							arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+							arrow2.setWeapon(p.getInventory().getItemInMainHand());
+
+							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
+						}, 5);
+
+						Utils.scheduleTask(() -> {
+							Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
+							arrow2.setVelocity(launchVelocity);
+							arrow2.setDamage(1.0);
+							arrow2.setShooter(p);
+							arrow2.addScoreboardTag("ExplosiveBowArrow");
+							arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+							arrow2.setWeapon(p.getInventory().getItemInMainHand());
+
+							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
+						}, 10);
+					}
+				}
+				return;
+			}
 			if(id != null && id.equals("skyblock/combat/last_breath")) {
 				Entity temp = e.getProjectile();
 				Arrow arrow;
@@ -277,8 +326,9 @@ public class CustomItems implements Listener {
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				Vector launchVelocity = arrow.getVelocity().clone();
+				Location launchLoc = arrow.getLocation().clone();
 				Utils.scheduleTask(() -> {
-					Arrow arrow2 = p.launchProjectile(Arrow.class);
+					Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
 					arrow2.setVelocity(launchVelocity);
 					arrow2.setDamage(isArcher ? 1.6 : 0.3);
 					arrow2.setShooter(p);
@@ -291,7 +341,7 @@ public class CustomItems implements Listener {
 
 				if(isArcher) {
 					Utils.scheduleTask(() -> {
-						Arrow arrow2 = p.launchProjectile(Arrow.class);
+						Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
 						arrow2.setVelocity(launchVelocity);
 						arrow2.setDamage(8.0);
 						arrow2.setShooter(p);
@@ -303,7 +353,7 @@ public class CustomItems implements Listener {
 					}, 5);
 
 					Utils.scheduleTask(() -> {
-						Arrow arrow2 = p.launchProjectile(Arrow.class);
+						Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
 						arrow2.setVelocity(launchVelocity);
 						arrow2.setDamage(8.0);
 						arrow2.setShooter(p);
@@ -403,7 +453,7 @@ public class CustomItems implements Listener {
 								jerrychine(p);
 								fired = true;
 							}
-							case "skyblock/combat/last_breath" -> {
+							case "skyblock/combat/last_breath", "skyblock/combat/explosive_bow" -> {
 								((CraftPlayer) p).getHandle().startUsingItem(InteractionHand.MAIN_HAND);
 								fired = true;
 							}
@@ -1539,6 +1589,19 @@ public class CustomItems implements Listener {
 		p.setVelocity(direction);
 		double horizSpeed = Math.hypot(direction.getX(), direction.getZ());
 		Utils.debug(Utils.DebugType.SERVER, "Jerry-chine moved " + p.getName() + " " + Utils.round(direction.getX(), 3) + " " + Utils.round(direction.getY(), 5) + " " + Utils.round(direction.getZ(), 3));
+	}
+
+	@EventHandler
+	public void onExplosiveBowArrowHit(ProjectileHitEvent e) {
+		if(!(e.getEntity() instanceof Arrow arrow)) return;
+		if(!arrow.getScoreboardTags().contains("ExplosiveBowArrow")) return;
+		if(e.getHitBlock() == null) return;
+		if(!(arrow.getShooter() instanceof Player p)) return;
+		Location impact = e.getHitBlock().getLocation();
+		impact.getWorld().spawnParticle(Particle.EXPLOSION, impact.clone().add(0.5, 0.5, 0.5), 10, 0.5, 0.5, 0.5, 0);
+		impact.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
+		triggerSuperboomRadius(impact, p);
+		arrow.remove();
 	}
 
 	public static void terminator(Player p) {

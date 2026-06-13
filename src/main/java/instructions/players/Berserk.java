@@ -56,6 +56,7 @@ public class Berserk {
 				Actions.swapItems(berserk, 7, 34);
 				Actions.swapItems(berserk, 12, 39);
 				Actions.setHotbarSlot(berserk, 1);
+				Utils.scheduleTask(() -> Actions.swapItems(berserk, 7, 35), 1);
 				Utils.scheduleTask(() -> Actions.dropItem(berserk, true), 49);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
@@ -523,7 +524,8 @@ public class Berserk {
 		Utils.scheduleTask(() -> {
 			Utils.setSpeed(berserk, 650);
 			Actions.setHotbarSlot(berserk, 4);
-			Actions.swapItems(berserk, 12, 39); // equip racing helmet and black cat
+			Actions.swapItems(berserk, 12, 39); // equip racing helmet, black cat, and prepare explosive bow
+			Actions.swapItems(berserk, 7, 35);
 		}, 682);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 683);
 		Utils.scheduleTask(() -> {
@@ -607,21 +609,32 @@ public class Berserk {
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 58f, 80f), 51);
 		// tick 52: tank leaps
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 53);
-		Utils.scheduleTask(() -> Actions.move(berserk, "W", 11), 54);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 10f), 65);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 24), 75);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 99); // s2 5
-		// tick 100: terminal completes
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -30f), 53);
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, "WP", 8);
+			Actions.setHotbarSlot(berserk, 7);
+		}, 54);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 58);
+		// holy shit nosethe clutch with the explosive bow idea
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 71);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -150f, 10f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 72);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WPD", 0), 73);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 26), 74);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 10f), 96);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 97); // s2 5
+		// tick 98: terminal completes
 
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -95f, 10f), 101);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WAP", 0), 102);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 10), 104);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 5), 119);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 123); // s2 3
-		// tick 124: terminal completes
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -95f, 10f), 99);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WAP", 0), 100);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 6), 102);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 5), 117);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 121); // s2 3
+		// tick 122: terminal completes
 
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 125);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 123);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 128); // better positioning
 
 		/*
@@ -633,11 +646,12 @@ public class Berserk {
 		 * ╚═════╝
 		 */
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(berserk, 70f, 5f);
-			Actions.setHotbarSlot(berserk, 5);
+			Actions.turnHead(berserk, -46.5f, 90f);
+			Actions.setHotbarSlot(berserk, 1);
 		}, 129);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 138); // s3 4
-		// terminal completes tick 139
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 20), 130);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 131);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 10), 160);
 
 //		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 140);
 //		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 1.403), 1), 141);
