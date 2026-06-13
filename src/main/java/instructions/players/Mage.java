@@ -554,70 +554,17 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 45f), 147);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 148);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 149);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 150);
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 3), 151);
 
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -174f, 0f), 76);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.022, 0, -0.2797), 9), 77);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 90f), 93);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 122)), 94);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -180f, 35f);
-//			Actions.move(mage, new Vector(0, 0, -1.12242), 5);
-//		}, 95);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 121)), 96);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 121)), 97);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 124, 120)), 98);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(58, 123, 120)), 99);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 134.99f, 55.7f); // 135f gets the wrong blockface
-//			Actions.stonk(mage, world.getBlockAt(58, 124, 119));
-//		}, 100);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(mage, world.getBlockAt(58, 123, 119));
-//			Actions.move(mage, new Vector(-0.9921, 0, -0.9921), 1);
-//		}, 101);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(57, 124, 119)), 102);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(mage, world.getBlockAt(57, 123, 119));
-//			Actions.move(mage, new Vector(-0.9921, 0, -0.9921), 1);
-//		}, 103);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 177.4f, 35f);
-//			Actions.stonk(mage, world.getBlockAt(57, 124, 118));
-//		}, 104);
-//		Utils.scheduleTask(() -> {
-//			Actions.stonk(mage, world.getBlockAt(57, 123, 118));
-//			Actions.move(mage, new Vector(-0.0636, 0, -1.4016), 2);
-//		}, 105);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.4f, 0f), 106);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.01273, 0, -0.2803), 16), 107);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.0636, 0, -1.4016), 33), 123);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 58f), 156);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 58)), 157);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(mage, new Vector(0, 0, -1.08), 8);
-//			Actions.stonk(mage, world.getBlockAt(54, 114, 57));
-//		}, 158);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 56)), 159);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 55)), 160);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 115, 54)), 161);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 54)), 162);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 53)), 163);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 52)), 164);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(54, 114, 51)), 165);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 180f, 0f);
-//			Actions.jump(mage);
-//		}, 166);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 66.5f, 0f), 198);
 //		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.99, 0, 0.4307), 2), 199);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 60f), 200);

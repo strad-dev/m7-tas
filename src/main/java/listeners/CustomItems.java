@@ -406,7 +406,7 @@ public class CustomItems implements Listener {
 				}
 				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
-					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0) || FakePlayerManager.getFakePlayers().containsValue(p)) {
+					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
 							case "skyblock/combat/scylla" -> {

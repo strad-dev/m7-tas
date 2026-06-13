@@ -53,6 +53,7 @@ public class Archer {
 				Actions.swapItems(archer, 7, 34);
 				Actions.swapItems(archer, 12, 39);
 				Actions.setHotbarSlot(archer, 5);
+				Utils.scheduleTask(() -> Actions.dropItem(archer, false), 1);
 				Utils.scheduleTask(() -> Actions.rightClick(archer), 19);
 				Utils.scheduleTask(() -> Actions.stopRightClick(archer), 26);
 				Utils.scheduleTask(() -> Actions.rightClick(archer), 27);
@@ -71,7 +72,6 @@ public class Archer {
 				}, 44);
 				Utils.scheduleTask(() -> Actions.dropItem(archer, true), 49);
 				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 50);
-				Utils.scheduleTask(() -> Actions.dropItem(archer, false), 53);
 				Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 54);
 				Utils.scheduleTask(() -> Actions.rightClick(archer), 55);
 				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 56);
@@ -510,6 +510,7 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 5);
 		}, 726);
 		if(doContinue) {
+			Utils.scheduleTask(() -> Actions.dropItem(archer, false), 822);
 			Utils.scheduleTask(() -> Actions.rightClick(archer), 840);
 			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 847);
 			Utils.scheduleTask(() -> Actions.rightClick(archer), 848);
@@ -528,7 +529,6 @@ public class Archer {
 			}, 865);
 			Utils.scheduleTask(() -> Actions.dropItem(archer, true), 870);
 			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 871);
-			Utils.scheduleTask(() -> Actions.dropItem(archer, false), 874);
 			Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 875);
 			Utils.scheduleTask(() -> Actions.rightClick(archer), 876);
 			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 877);
@@ -628,17 +628,39 @@ public class Archer {
 		 * ╚═════╝
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 122);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 105f, 10f), 137);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 138); // s3 4
-		// tick 139: terminal completes
-
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, 80f), 139);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 25), 140);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -25f, 0f), 128);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 26), 129);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 0f, -2f);
+			Actions.setHotbarSlot(archer, 5);
+		}, 132);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 133);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 134);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 135);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 0f, 80f);
 			Actions.setHotbarSlot(archer, 1);
-		}, 144);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 145);
+		}, 137);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 138);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 6f, 0f);
+			Actions.setHotbarSlot(archer, 4);
+		}, 139);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 55f, 2f), 155);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 156);
+		// tick 157: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 157);
+
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+
 
 		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
