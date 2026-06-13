@@ -141,6 +141,12 @@ public class Spectate implements CommandExecutor {
 		return reverseSpectatorMap.getOrDefault(player, new HashSet<>());
 	}
 
+	/** @return true if this player is currently spectating a fake player (so their position mirrors that fake
+	 *  player's and shouldn't be treated as the player's own presence — e.g. Storm pad occupancy). */
+	public static boolean isSpectating(Player player) {
+		return spectatorMap.containsKey(player);
+	}
+
 	public static void updateLastSentRotation(Player spectator, float yaw, float pitch) {
 		SpectatorState state = spectatorStates.get(spectator);
 		if(state != null) state.lastSentRotation = new float[]{yaw, pitch};

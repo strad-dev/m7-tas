@@ -42,6 +42,17 @@ public class MovementAudit {
 					return;
 				}
 
+				// Entering flight mode ends the ballistic arc this audit tracks — stop silently (no "landed").
+				if(p.isFlying()) {
+					silentCancel = true;
+					try {
+						cancel();
+					} finally {
+						silentCancel = false;
+					}
+					return;
+				}
+
 				Vec3 pos = npc.position();
 				double dx = pos.x - prev.x;
 				double dy = pos.y - prev.y;
@@ -86,6 +97,9 @@ public class MovementAudit {
 
 	public static void auditMove(Player p, ServerPlayer npc, double dx, double dy, double dz) {
 		if(!Utils.isSuperVerbose()) return;
+
+		// Suppress residual-movement spam while in flight mode; resumes automatically once flight ends.
+		if(p.isFlying()) return;
 
 		UUID id = p.getUniqueId();
 

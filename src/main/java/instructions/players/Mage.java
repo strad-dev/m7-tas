@@ -445,7 +445,7 @@ public class Mage {
 		}, 647);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 648);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -172f, -29f), 649);
-		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 668);
+		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 667);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 3);
 			Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss());
@@ -559,6 +559,11 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 150);
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 3), 151);
 
+		// turn head to save a tick on other players having to turn head
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 157);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -125f, 80f), 159);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -147f, 80f), 170);
+
 		/*
 		 * ██╗  ██╗
 		 * ██║  ██║
@@ -567,6 +572,8 @@ public class Mage {
 		 *      ██║
 		 *      ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 172);
+		Utils.scheduleTask(() -> Actions.move(mage, "S", 4), 173);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 66.5f, 0f), 198);
 //		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.99, 0, 0.4307), 2), 199);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 60f), 200);

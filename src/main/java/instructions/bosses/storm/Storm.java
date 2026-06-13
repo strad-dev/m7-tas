@@ -8,6 +8,7 @@ import instructions.bosses.MobSpawnSpec;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
 import instructions.players.Mage;
+import commands.Spectate;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
@@ -252,6 +253,9 @@ public final class Storm extends WitherLord {
 	private boolean padOccupied(BoundingBox padBox) {
 		for(Player p : world.getPlayers()) {
 			if(p.getGameMode() == GameMode.SPECTATOR) continue;
+			// A player spectating a fake player is teleported onto that fake's position every tick, so their
+			// location isn't their own — ignore them or they'd falsely register as standing on the pad.
+			if(Spectate.isSpectating(p)) continue;
 			int bx = p.getLocation().getBlockX();
 			int by = p.getLocation().getBlockY();
 			int bz = p.getLocation().getBlockZ();
