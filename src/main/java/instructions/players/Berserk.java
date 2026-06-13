@@ -646,46 +646,29 @@ public class Berserk {
 		 * ╚═════╝
 		 */
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(berserk, -46.5f, 90f);
+			Actions.turnHead(berserk, -47.5f, 90f);
 			Actions.setHotbarSlot(berserk, 1);
 		}, 129);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 20), 130);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 131);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 10), 160);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -47.5f, 28f);
+			Actions.setHotbarSlot(berserk, 4);
+		}, 132);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 22), 159);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 179);
+		// tick 180: terminal activates
 
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 140);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 1.403), 1), 141);
-//		Utils.scheduleTask(() -> Actions.lavaJump(berserk, false), 148);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, 0.2806), 14), 150);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -10.2f), 163);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.2806, 0, 0), 6), 164);
-//		Utils.scheduleTask(() -> {
-//			Actions.swingHand(berserk);
-//			Server.turnArrow(world, true);
-//			Goldor.broadcastTerminalComplete(berserk, "device", 4, 7);
-//			Actions.move(berserk, new Vector(1.08, 0, 0), 1);
-//		}, 170);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -5f, 0f), 171);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.1223, 0, 1.3977), 2), 172);
-//		Utils.scheduleTask(() -> Actions.jump(berserk), 173);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.02446, 0, -0.2795), 12), 174);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 22f, 0f), 185);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.5256, 0, 1.301), 2), 186);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.1051, 0, 0.2602), 2), 188);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 66.5f, 29f), 189);
-//		Utils.scheduleTask(() -> Actions.swingHand(berserk), 190);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(berserk, "terminal", 6, 7), 191);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 192);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 193);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 181);
+
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(berserk, 153f, 0f);
 //			Actions.setHotbarSlot(berserk, 1);
