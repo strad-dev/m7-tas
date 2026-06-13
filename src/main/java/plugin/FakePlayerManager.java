@@ -46,6 +46,19 @@ public class FakePlayerManager {
 	private static final Map<String, Player> fakePlayers = new HashMap<>();
 	private static boolean fakeTickerStarted = false;
 
+	// Launch impulses (e.g. Bonzo's Staff) queued from entity-tick events, applied at the top of the fake
+	// player's NEXT aiStep. Setting deltaMovement directly in the firing event is too early: the fake ticker's
+	// aiStep already ran this tick, and by the next one ground/jump/input re-assertion has clobbered the impulse,
+	// so the full first-tick displacement is lost. Applying it immediately before aiStep guarantees the launch
+	// integrates as a clean in-air first tick, matching real (client-physics) behaviour.
+	private static final Map<UUID, net.minecraft.world.phys.Vec3> pendingLaunches = new HashMap<>();
+
+	/** Queue a launch impulse to be applied to {@code fake}'s deltaMovement at the start of its next aiStep.
+	 *  Only meaningful for fake players (those driven by {@link #startFakePlayerTicker()}). */
+	public static void launch(Player fake, org.bukkit.util.Vector velocity) {
+		pendingLaunches.put(fake.getUniqueId(), new net.minecraft.world.phys.Vec3(velocity.getX(), velocity.getY(), velocity.getZ()));
+	}
+
 	private static final Map<String, String> SKIN_DATA = Map.of("Archer", "0b0fa6bc-69ee-4f6c-a4f8-7cac79f1871a", "Mage3", "f0b1d2e5-dfd2-4d33-9768-4d2b259a4743", "Mage4", "6715b245-be6e-496c-87eb-1d2c19066403", "Mage1", "cdb9e9c6-c096-4f58-9c49-35395d7b897c", "Mage2", "5d142c3a-bdf1-418b-b907-797bbaaed188");
 
 	public static Map<String, Player> getFakePlayers() {
@@ -279,6 +292,16 @@ public class FakePlayerManager {
 					}
 					npc.updateFluidHeightAndDoFluidPushing(net.minecraft.tags.FluidTags.WATER, 0.014);
 					npc.updateFluidHeightAndDoFluidPushing(net.minecraft.tags.FluidTags.LAVA, 0.007);
+					// Apply any queued launch impulse RIGHT before aiStep so it's the deltaMovement this tick's
+					// move() integrates — onGround/jumping cleared so a ground recompute or jumpFromGround can't
+					// overwrite the upward component before the move happens.
+					net.minecraft.world.phys.Vec3 launch = pendingLaunches.remove(fake.getUniqueId());
+					if(launch != null) {
+						npc.setOnGround(false);
+						npc.setJumping(false);
+						npc.setDeltaMovement(launch);
+						npc.hurtMarked = true;
+					}
 					if(Utils.isSuperVerbose()) {
 						net.minecraft.world.phys.Vec3 before = npc.position();
 						npc.aiStep();
