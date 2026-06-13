@@ -66,6 +66,17 @@ public final class Goldor extends WitherLord {
 	// S4 Sharp Shooter — the block supporting the gold pressure plate (plate at 63,127,35).
 	private static final int PLATE_SUPPORT_BX = 63, PLATE_SUPPORT_BY = 126, PLATE_SUPPORT_BZ = 35;
 
+	// Section lever block coords, indexed [sectionIdx][leverIdx] → {x, y, z}. Single source of truth for both
+	// the GoldorLever placements (buildS1..buildS4) and the run-start reset (resetSectionLevers). These are the
+	// per-section levers a player flips to clear a section — NOT the S2 "Lights" device levers (those live in the
+	// LIGHTS_MOUNT region and are reset separately in Server.serverSetup).
+	private static final int[][][] SECTION_LEVER_COORDS = {
+			{{106, 124, 113}, {94, 124, 113}},  // S1
+			{{27, 124, 127},  {23, 132, 138}},  // S2
+			{{2, 122, 55},    {14, 122, 55}},   // S3
+			{{84, 121, 34},   {86, 128, 46}},   // S4
+	};
+
 	// Per-fight state
 	private final List<GoldorSection> sections = new ArrayList<>(4);
 	private int currentSectionIdx = 0;
@@ -174,9 +185,7 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 0, 2, 90, 112, 92));
 		terms.add(new GoldorTerminal(world, 0, 3, 90, 122, 101));
 		GoldorDevice dev = new GoldorDevice(world, 0, 110, 121, 91, 1.0);
-		List<GoldorLever> lev = new ArrayList<>();
-		lev.add(new GoldorLever(world, 0, 0, 106, 124, 113));
-		lev.add(new GoldorLever(world, 0, 1, 94, 124, 113));
+		List<GoldorLever> lev = buildLevers(0);
 		GoldorGate gate = new GoldorGate(world, 0, makeBox(96, 115, 121, 104, 135, 124));
 		return new GoldorSection(0, terms, dev, lev, gate);
 	}
@@ -189,9 +198,7 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 1, 3, 39, 108, 142));
 		terms.add(new GoldorTerminal(world, 1, 4, 40, 124, 123));
 		GoldorDevice dev = new GoldorDevice(world, 1, 60, 131, 142);
-		List<GoldorLever> lev = new ArrayList<>();
-		lev.add(new GoldorLever(world, 1, 0, 27, 124, 127));
-		lev.add(new GoldorLever(world, 1, 1, 23, 132, 138));
+		List<GoldorLever> lev = buildLevers(1);
 		GoldorGate gate = new GoldorGate(world, 1, makeBox(16, 115, 128, 19, 135, 136));
 		return new GoldorSection(1, terms, dev, lev, gate);
 	}
@@ -203,9 +210,7 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 2, 2, 18, 123, 93));
 		terms.add(new GoldorTerminal(world, 2, 3, -2, 109, 77));
 		GoldorDevice dev = new GoldorDevice(world, 2, -2, 119, 74);
-		List<GoldorLever> lev = new ArrayList<>();
-		lev.add(new GoldorLever(world, 2, 0, 2, 122, 55));
-		lev.add(new GoldorLever(world, 2, 1, 14, 122, 55));
+		List<GoldorLever> lev = buildLevers(2);
 		GoldorGate gate = new GoldorGate(world, 2, makeBox(4, 115, 48, 12, 135, 51));
 		return new GoldorSection(2, terms, dev, lev, gate);
 	}
@@ -217,10 +222,20 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 3, 2, 67, 109, 30));
 		terms.add(new GoldorTerminal(world, 3, 3, 72, 115, 47));
 		GoldorDevice dev = new GoldorDevice(world, 3, 63, 126, 35);
-		List<GoldorLever> lev = new ArrayList<>();
-		lev.add(new GoldorLever(world, 3, 0, 84, 121, 34));
-		lev.add(new GoldorLever(world, 3, 1, 86, 128, 46));
+		List<GoldorLever> lev = buildLevers(3);
 		return new GoldorSection(3, terms, dev, lev, null);
+	}
+
+	/** Build the section's levers from {@link #SECTION_LEVER_COORDS} (single source of truth shared with
+	 *  {@link #resetSectionLevers}). */
+	private List<GoldorLever> buildLevers(int sectionIdx) {
+		List<GoldorLever> lev = new ArrayList<>();
+		int[][] coords = SECTION_LEVER_COORDS[sectionIdx];
+		for(int i = 0; i < coords.length; i++) {
+			int[] c = coords[i];
+			lev.add(new GoldorLever(world, sectionIdx, i, c[0], c[1], c[2]));
+		}
+		return lev;
 	}
 
 	private static BoundingBox makeBox(int x1, int y1, int z1, int x2, int y2, int z2) {
@@ -279,6 +294,21 @@ public final class Goldor extends WitherLord {
 			}
 		}
 		if(best != null) best.setRotation(Rotation.NONE);
+	}
+
+	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to
+	 *  powered=false so a new run starts with them all off. Preserves each lever's face/facing — only the
+	 *  powered state is flipped. Called from {@link instructions.Server#serverSetup} on each run start. */
+	public static void resetSectionLevers(World world) {
+		for(int[][] section : SECTION_LEVER_COORDS) {
+			for(int[] c : section) {
+				Block b = world.getBlockAt(c[0], c[1], c[2]);
+				if(b.getBlockData() instanceof org.bukkit.block.data.Powerable pw && pw.isPowered()) {
+					pw.setPowered(false);
+					b.setBlockData(pw, false);
+				}
+			}
+		}
 	}
 
 	public ItemFrame getArrowAlignFrame() {

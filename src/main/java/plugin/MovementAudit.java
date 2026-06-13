@@ -103,6 +103,19 @@ public class MovementAudit {
 		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + verb + " " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "") + (npc.onGround() ? " on ground" : "") + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
 	}
 
+	/** Cancels a single player's airborne audit without printing a "landed" line — used when the player
+	 *  is teleported mid-flight (e.g. a leap), so the audit shouldn't report the teleport as movement. */
+	public static void cancelAirborneAudit(UUID id) {
+		BukkitRunnable runnable = airborneAudits.get(id);
+		if(runnable == null) return;
+		silentCancel = true;
+		try {
+			runnable.cancel(); // the overridden cancel() removes it from airborneAudits
+		} finally {
+			silentCancel = false;
+		}
+	}
+
 	/** Cancels every active airborne audit without printing "landed" lines — the players didn't land,
 	 *  the run was restarted/reset out from under them. */
 	public static void cancelAll() {

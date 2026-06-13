@@ -600,7 +600,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 73);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 74);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 55f, 0f), 76);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 135f, 0f), 90);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 120f, 0f), 90);
 		// tick 110: tank leaps
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(archer, 10, 39);

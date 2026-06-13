@@ -321,7 +321,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 390);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 10);
-			Actions.turnHead(mage, 0f, -31f);
+			Actions.turnHead(mage, 0f, -35f);
 		}, 391);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 433);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 450);
@@ -350,6 +350,7 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
+			Actions.swapItems(mage, 4, 31);
 			Actions.swapItems(mage, 6, 33);
 			Actions.swapItems(mage, 7, 34);
 			Actions.swapItems(mage, 9, 36);
@@ -443,6 +444,7 @@ public class Mage {
 			Actions.swapItems(mage, 5, 32);
 		}, 647);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 648);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -172f, -29f), 649);
 		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 668);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 3);
