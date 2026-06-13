@@ -671,6 +671,20 @@ public class Berserk {
 		 *      ██║
 		 *      ╚═╝
 		 */
+		Utils.scheduleTask(() -> {
+			Actions.move(berserk, "WP", 24);
+			Actions.setHotbarSlot(berserk, 1);
+		}, 172);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 174);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -147f, 70f);
+			Actions.setHotbarSlot(berserk, 4);
+		}, 175);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 195);
+		// tick 196: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 197);
+
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(berserk, 153f, 0f);
 //			Actions.setHotbarSlot(berserk, 1);

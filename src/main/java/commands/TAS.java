@@ -52,6 +52,10 @@ public class TAS implements CommandExecutor {
 			return;
 		}
 
+		// Reset the verbose phase-tick counter immediately so carryover tasks from the previous phase
+		// count from 0; the run proper re-marks it again when it actually starts (see Server "Run started").
+		Utils.markPhaseStart();
+
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
 		FakePlayerInventory.setInventories();

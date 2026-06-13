@@ -645,42 +645,22 @@ public class Healer {
 
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 160);
 
-//		Utils.scheduleTask(() -> {
-//			Actions.move(healer, new Vector(-0.2677, 0, 1.377), 1);
-//			Actions.setHotbarSlot(healer, 1);
-//		}, 140);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.05354, 0, 0.2754), 2), 141);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 81.1f, 11.2f), 142);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.2992, 0, 0.127), 1), 143);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 144);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(healer, "terminal", 2, 7), 145);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -49f, 82f), 146);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(1.059, 0, 0.9205), 1), 147);
-//		Utils.scheduleTask(() -> temp[0] = Actions.bonzo(healer, new Vector(1.151, 0.5, 1.001)), 148);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -49f, 0f), 149);
-//		Utils.scheduleTask(() -> {
-//			temp[0].cancel();
-//			Actions.lavaJump(healer, false);
-//			Actions.turnHead(healer, -22f, 0f);
-//		}, 166);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.1051, 0, 0.2602), 27), 167);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 9.2f), 193);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 194);
-//		Utils.scheduleTask(() -> {howev
-//			Goldor.broadcastTerminalComplete(healer, "terminal", 7, 7);
-//			Bukkit.broadcastMessage(ChatColor.GREEN + "S3 finished in 57 ticks (2.85 seconds) | Terminals: 195 ticks (9.75 seconds) | Overall: 2 611 ticks (130.55 seconds)");
-//		}, 195);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 196);
-//		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 197);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.move(healer, "WP", 30);
+			Actions.setHotbarSlot(healer, 1);
+		}, 161);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 162);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -125f, 0f), 163);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 0f), 181);
+
 //		Utils.scheduleTask(() -> Actions.turnHead(healer, 145f, 82f), 198);
 //		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.8047, 0, -1.1493), 1), 199);
 //		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-0.875, 0.5, -1.25)), 200);

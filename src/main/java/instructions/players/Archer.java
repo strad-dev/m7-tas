@@ -611,7 +611,6 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 22.5f, 80f), 114);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 115);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 22.5f, 0f), 116);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 10, 39), 118);
 		// tick 120: death tick
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(archer, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
@@ -660,7 +659,9 @@ public class Archer {
 		 *      ██║
 		 *      ╚═╝
 		 */
-
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 158);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 80f), 160);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 161);
 
 		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);

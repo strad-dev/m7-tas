@@ -10,7 +10,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitTask;
-import net.minecraft.server.MinecraftServer;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -30,8 +29,6 @@ public abstract class WitherLord {
 	protected Wither boss;
 	protected World world;
 	protected int tick;
-	/** Server tick count captured at phase start; the basis for {@link #displayTick()}. */
-	protected int phaseStartTick;
 	protected BukkitTask tickerTask;
 	protected boolean dying;
 	protected boolean doContinue;
@@ -57,7 +54,7 @@ public abstract class WitherLord {
 
 		// Reset base-class flags
 		this.tick = 0;
-		this.phaseStartTick = MinecraftServer.getServer().getTickCount();
+		Utils.markPhaseStart();
 		this.dying = false;
 
 		spawn();
@@ -103,7 +100,7 @@ public abstract class WitherLord {
 	 * behavior/relative checks (Goldor patrol slow window, Storm crush poll) so this is purely a display fix.
 	 */
 	protected final int displayTick() {
-		return MinecraftServer.getServer().getTickCount() - phaseStartTick;
+		return Utils.phaseTick();
 	}
 
 	// --- Subclass hooks ---

@@ -3,6 +3,7 @@ package plugin;
 import commands.Spectate;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -312,6 +313,19 @@ public class Utils {
 		return verboseLevel == VerboseLevel.SUPER;
 	}
 
+	/** Server tick captured when the current phase began; basis for the {@code [tick: N]} prefix on verbose lines. */
+	private static int phaseStartTick = 0;
+
+	/** Mark the start of a new phase — resets the {@code [tick: N]} counter shown on every verbose line. */
+	public static void markPhaseStart() {
+		phaseStartTick = MinecraftServer.getServer().getTickCount();
+	}
+
+	/** Ticks elapsed since the last {@link #markPhaseStart()} — the value rendered in the verbose-line prefix. */
+	public static int phaseTick() {
+		return MinecraftServer.getServer().getTickCount() - phaseStartTick;
+	}
+
 	/** Broadcast a tick-timer line — shown only at TIMER level and above (see {@link #showTimers()}). */
 	public static void timer(String message) {
 		if(showTimers()) Bukkit.broadcastMessage(message);
@@ -319,10 +333,11 @@ public class Utils {
 
 	public static void debug(DebugType type, String message) {
 		if(!isVerbose()) return;
+		String prefix = isSuperVerbose() ? ChatColor.GRAY + "[tick: " + phaseTick() + "] " : "";
 		switch(type) {
-			case CLIENT -> Bukkit.broadcastMessage(ChatColor.DARK_AQUA + "[Client] " + message);
-			case SERVER -> Bukkit.broadcastMessage(ChatColor.GREEN + "[Server] " + message);
-			case BOSS -> Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "[Game] " + message);
+			case CLIENT -> Bukkit.broadcastMessage(prefix + ChatColor.DARK_AQUA + "[Client] " + message);
+			case SERVER -> Bukkit.broadcastMessage(prefix + ChatColor.GREEN + "[Server] " + message);
+			case BOSS -> Bukkit.broadcastMessage(prefix + ChatColor.LIGHT_PURPLE + "[Game] " + message);
 		}
 	}
 

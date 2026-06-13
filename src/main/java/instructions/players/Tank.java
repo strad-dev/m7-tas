@@ -725,7 +725,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 8), 134);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 142); // s3 right
 
-		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 154);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 151);
 
 		/*
 		 * ██╗  ██╗
@@ -735,6 +735,27 @@ public class Tank {
 		 *      ██║
 		 *      ╚═╝
 		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 151f, 80f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 152);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 22), 153);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 155);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 151f, 0f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 156);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 147f, 23f), 176);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 177);
+		// tick 178: terminal completes
+
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 188);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -106f, -30f), 189);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 190);
+		// tick 191: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 192);
+
 //		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 3), 183); // forceMove to get over the carpet
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(tank, -90f, 0f);

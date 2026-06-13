@@ -64,6 +64,7 @@ public class Server {
 					}, 106);
 					Utils.scheduleTask(() -> {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
+						Utils.markPhaseStart();
 						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
 						Watcher.watcherInstructions(world, section.equals("all"));
 						openFirstDoor();
