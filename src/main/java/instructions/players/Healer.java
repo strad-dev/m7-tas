@@ -634,8 +634,16 @@ public class Healer {
 		// tick 133: terminal completes
 
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -8f, 0f), 134);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 11), 135);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, 40f, 0f), 140);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 10), 135);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 55f, 0f), 142);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 53f, -8f);
+			Actions.setHotbarSlot(healer, 4);
+		}, 157);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 158); // s3 2
+		// tick 159: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 160);
 
 //		Utils.scheduleTask(() -> {
 //			Actions.move(healer, new Vector(-0.2677, 0, 1.377), 1);

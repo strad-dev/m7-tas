@@ -52,7 +52,7 @@ public class Tank {
 				Actions.swapItems(tank, 6, 33);
 				Actions.swapItems(tank, 7, 34);
 				Actions.swapItems(tank, 12, 39);
-				Actions.setHotbarSlot(tank, 4);
+				Actions.setHotbarSlot(tank, 3);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 //			case "necron" -> {
@@ -449,7 +449,7 @@ public class Tank {
 		}, 164);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, -75f, -55f);
-			 Actions.move(tank, "N", 0);
+			Actions.move(tank, "N", 0);
 		}, 165);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 166); // etherwarp up
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -104.5f, -5f), 167);
@@ -580,12 +580,13 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 714);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 724);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 734); // move for 22 ticks before landing
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 744); // move for 22 ticks before landing
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 72f, -25f);
 			Actions.setHotbarSlot(tank, 4);
-		}, 735);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 24), 736);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 4), 766); // move to in front of dev3
+		}, 745);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 24), 746);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 4), 776); // move to in front of dev3
 		if(doContinue) {
 			Utils.scheduleTask(() -> goldor(true), 881);
 		}
@@ -673,44 +674,67 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -20f, 0), 82);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 99);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 160f, 35f);
+			Actions.turnHead(tank, 160f, 25f);
 			Actions.setHotbarSlot(tank, 4);
 		}, 100);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 9), 101);
-		Utils.scheduleTask(() -> Actions.swapItems(tank, 11, 39), 108); // equip mask for preleap
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 109); // s2 bottom
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 6), 101);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(tank, 11, 39);
+			Utils.setSpeed(tank, 550);
+		}, 106); // equip mask for preleap
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 107); // s2 bottom
 
-		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 110);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 108);
 
 		/*
-		 * ██████╗1
+		 * ██████╗
 		 * ╚════██╗
 		 *  █████╔╝
 		 *  ╚═══██╗
 		 * ██████╔╝
 		 * ╚═════╝
 		 */
+		Utils.scheduleTask(() -> {
+			Actions.move(tank, "W", 2);
+			Actions.setHotbarSlot(tank, 5);
+		}, 111);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 9), 119);
+		// tick 120: death tick
+		Utils.scheduleTask(() -> {
+			Utils.playLocalSound(tank, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
+			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(tank) + " used Bonzo Mask!");
+		}, 120);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(tank, 11, 39);
+			Utils.setSpeed(tank, 650);
+		}, 121);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, -20f), 122);
+		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 123);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 108f, -8f), 129);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 130); // s3 left
 
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 112.5f, 80f);
+			Actions.setHotbarSlot(tank, 1);
+		}, 131);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 132);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, 78f);
+			Actions.setHotbarSlot(tank, 4);
+		}, 133);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 8), 134);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 142); // s3 right
 
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 150);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.9018, 0, -1.0748), 5), 151);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 82f), 155);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(-0.9806, 0.5, -1.169)), 156);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 140f, 0f), 157);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 70f, 16.2f), 178);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 179);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 5, 7), 180);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 181);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 182);
-//
-//		/*
-//		 * ██╗  ██╗
-//		 * ██║  ██║
-//		 * ███████║
-//		 * ╚════██║
-//		 *      ██║
-//		 *      ╚═╝
-//		 */
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 154);
+
+		/*
+		 * ██╗  ██╗
+		 * ██║  ██║
+		 * ███████║
+		 * ╚════██║
+		 *      ██║
+		 *      ╚═╝
+		 */
 //		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 3), 183); // forceMove to get over the carpet
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(tank, -90f, 0f);

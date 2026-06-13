@@ -1134,8 +1134,38 @@ public class Actions {
 	}
 
 	public static void leap(Player p, Player target) {
+		// A leap teleports the player, so any in-progress bonzo staff motion is void. Cancel the airborne
+		// audit (otherwise it reports the teleport as a giant delta and a bogus "landed" line) and remove
+		// any still-in-flight Bonzo wind charges this player fired so a late hit can't push them off course.
+		MovementAudit.cancelAirborneAudit(p.getUniqueId());
+		for(WindCharge windCharge : p.getWorld().getEntitiesByClass(WindCharge.class)) {
+			if(windCharge.getScoreboardTags().contains("Bonzo") && windCharge.getShooter() == p) {
+				CustomItems.bonzoFireTick.remove(windCharge.getEntityId());
+				windCharge.remove();
+			}
+		}
+
 		Location targetLoc = target.getLocation();
 		teleport(p, targetLoc);
+
+		if(p instanceof CraftPlayer cp) {
+			ServerPlayer npc = cp.getHandle();
+			npc.setDeltaMovement(Vec3.ZERO);
+			// A leap usually fires mid-air (out of a bonzo launch/jump) or lands on a mid-jump target, so the
+			// inherited onGround is unreliable: when false, the next move() runs travel() with air physics
+			// (~0.02/tick, ignoring the speed attribute) instead of the intended ground sprint. Force grounded
+			// so the following move() always accelerates off the ground — gravity still applies, so the player
+			// keeps falling if the landing spot is above the floor; onGround only governs horizontal friction.
+			npc.setOnGround(true);
+			npc.hurtMarked = true;
+			// teleport() relies on the vanilla entity tracker to inform observers, which lags a tick — long
+			// enough for their clients to keep extrapolating the pre-leap momentum and glide the entity
+			// forward before snapping. Broadcast the landed position with zero velocity so observer clients
+			// snap this tick and stop extrapolating.
+			PositionMoveRotation pmr = PositionMoveRotation.of(npc);
+			Utils.broadcastPacket(ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(net.minecraft.world.entity.Relative.class), npc.onGround()));
+			Utils.broadcastPacket(new ClientboundSetEntityMotionPacket(npc.getId(), Vec3.ZERO));
+		}
 
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ENDERMAN_TELEPORT, 1.0F, 1.0F);
 		Utils.debug(Utils.DebugType.CLIENT, p.getName() + " leaped to " + target.getName() + " at " + Utils.round(targetLoc.getX(), 3) + " " + Utils.round(targetLoc.getY(), 5) + " " + Utils.round(targetLoc.getZ(), 3));

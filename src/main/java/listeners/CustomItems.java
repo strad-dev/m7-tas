@@ -1476,7 +1476,7 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	static final Map<Integer, Integer> bonzoFireTick = new HashMap<>();
+	public static final Map<Integer, Integer> bonzoFireTick = new HashMap<>();
 
 	public static void bonzo(Player p) {
 		Location l = p.getEyeLocation();
@@ -1974,10 +1974,15 @@ public class CustomItems implements Listener {
 			l.add(v);
 		}
 
+		// A dead mob — or a boss wither pinned in its dying state (TASDying, HP frozen at 1, so isDead/health
+		// won't flag it) — takes no real damage, so the beam passing through it shouldn't emit a hurt sound.
+		boolean targetDead = targetEntity instanceof LivingEntity dead
+				&& (dead.isDead() || dead.getHealth() <= 0 || dead.getScoreboardTags().contains("TASDying"));
+
 		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume —
 		// no at-location sound, so volume doesn't depend on how far the target is.
 		if(targetEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
-			Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
+			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
 			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
@@ -1994,8 +1999,10 @@ public class CustomItems implements Listener {
 			}
 			temp.setNoDamageTicks(0);
 			Utils.changeName(temp);
-			String hurtSound = Utils.getHurtSoundKey(temp);
-			if(hurtSound != null) Utils.playLocalSound(p, hurtSound, 1.0f, 1.0f);
+			if(!targetDead) {
+				String hurtSound = Utils.getHurtSoundKey(temp);
+				if(hurtSound != null) Utils.playLocalSound(p, hurtSound, 1.0f, 1.0f);
+			}
 		}
 	}
 

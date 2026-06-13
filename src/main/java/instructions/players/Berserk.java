@@ -649,17 +649,19 @@ public class Berserk {
 			Actions.turnHead(berserk, -47.5f, 90f);
 			Actions.setHotbarSlot(berserk, 1);
 		}, 129);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 20), 130);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 131);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 130);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WPJ", 0), 131);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 133);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -47.5f, 28f);
 			Actions.setHotbarSlot(berserk, 4);
-		}, 132);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 22), 159);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 179);
-		// tick 180: terminal activates
+		}, 134);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 16), 135);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -30f, -45f), 149);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 169);
+		// tick 170: terminal activates
 
-		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 181);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 171);
 
 		/*
 		 * ██╗  ██╗
