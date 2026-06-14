@@ -2,9 +2,12 @@ package commands;
 
 import instructions.Actions;
 import instructions.Server;
+import instructions.bosses.Watcher;
+import instructions.bosses.maxor.Maxor;
 import instructions.players.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -74,6 +77,33 @@ public class TAS implements CommandExecutor {
 		Healer.healerInstructions(fakePlayers.get("Mage4"), section);
 		Mage.mageInstructions(fakePlayers.get("Mage1"), section);
 		Tank.tankInstructions(fakePlayers.get("Mage2"), section);
+
+		// Arm the Watcher with the run's continuation intent + the full Maxor handoff. The handoff fires when a fake
+		// steps into the Blood Room's nether portal: it teleports every actor to the boss spawn, spawns Maxor, and
+		// kicks off each player's maxor() routine (replacing the old hardcoded tick-742 teleport+maxor in each script).
+		if(section.equals("all") || section.equals("clear")) {
+			Location boss = new Location(world, 73.5, 221, 14.5, 0f, 0f);
+			Runnable maxorHandoff = () -> {
+				// Preserve the original handoff offset: the boss spawned 3 ticks before the players teleported in
+				// (Watcher tick 739 vs each script's tick 742), so the players' maxor() routines stay in sync with
+				// the boss's internal clock.
+				Maxor.maxorInstructions(world, true);
+				Utils.scheduleTask(() -> {
+					Map<String, Player> fakes = FakePlayerManager.getFakePlayers();
+					Utils.teleport(fakes.get("Archer"), boss);
+					Archer.maxor(true);
+					Utils.teleport(fakes.get("Mage3"), boss);
+					Berserk.maxor(true);
+					Utils.teleport(fakes.get("Mage4"), boss);
+					Healer.maxor(true);
+					Utils.teleport(fakes.get("Mage1"), boss);
+					Mage.maxor(true);
+					Utils.teleport(fakes.get("Mage2"), boss);
+					Tank.maxor(true);
+				}, 3);
+			};
+			Watcher.INSTANCE.arm(world, section.equals("all"), maxorHandoff);
+		}
 
 		// Restart spectator sync so it runs AFTER all instruction tasks in each tick
 		Spectate.stopSpectatorSync();

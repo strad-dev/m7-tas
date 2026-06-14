@@ -449,7 +449,7 @@ public class Tank {
 		}, 164);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, -75f, -55f);
-			Actions.move(tank, "N", 0);
+			Actions.move(tank, "N", 10);
 		}, 165);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 166); // etherwarp up
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -104.5f, -5f), 167);
@@ -472,13 +472,9 @@ public class Tank {
 			Actions.swapItems(tank, 6, 33);
 			Actions.swapItems(tank, 7, 34);
 			Actions.setHotbarSlot(tank, 3);
-		}, 179);
-		Utils.scheduleTask(() -> {
-			if(doContinue) {
-				Utils.teleport(tank, new Location(world, 73.5, 221, 14.5));
-				maxor(true);
-			}
-		}, 742);
+		}, 174);
+		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
+		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -694,6 +690,7 @@ public class Tank {
 		 * ██████╔╝
 		 * ╚═════╝
 		 */
+		// wait for better timing, going too early results in worse bonzos
 		Utils.scheduleTask(() -> {
 			Actions.move(tank, "W", 2);
 			Actions.setHotbarSlot(tank, 5);
@@ -725,7 +722,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 8), 134);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 142); // s3 right
 
-		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 151);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 158);
 
 		/*
 		 * ██╗  ██╗
@@ -735,26 +732,30 @@ public class Tank {
 		 *      ██║
 		 *      ╚═╝
 		 */
+
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 151f, 80f);
-			Actions.setHotbarSlot(tank, 1);
-		}, 152);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 22), 153);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 155);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 151f, 0f);
+			Actions.move(tank, "WP", 0);
 			Actions.setHotbarSlot(tank, 5);
-		}, 156);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 147f, 23f), 176);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 177);
-		// tick 178: terminal completes
+		}, 159);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 0f, 0f);
+			Actions.move(tank, "WAP", 0);
+		}, 168);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 40f, 5f);
+			Actions.move(tank, "A", 1);
+		}, 171);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 172); // s4 4
+		// tick 173: terminal completes
 
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 188);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -106f, -30f), 189);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 190);
-		// tick 191: terminal completes
-
-		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 192);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPA", 1), 173);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, 90f);
+			Actions.setHotbarSlot(tank, 7);
+		}, 174);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPD", 0), 175);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 14), 182);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 186);
 
 //		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 3), 183); // forceMove to get over the carpet
 //		Utils.scheduleTask(() -> {

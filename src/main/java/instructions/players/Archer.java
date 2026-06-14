@@ -392,12 +392,8 @@ public class Archer {
 			Actions.swapItems(archer, 9, 36);
 			Actions.setHotbarSlot(archer, 5);
 		}, 619);
-		Utils.scheduleTask(() -> {
-			if(doContinue) {
-				Utils.teleport(archer, new Location(world, 73.5, 221, 14.5));
-				maxor(true);
-			}
-		}, 742);
+		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
+		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -649,7 +645,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 156);
 		// tick 157: terminal completes
 
-		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 157);
+		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 158);
 
 		/*
 		 * ██╗  ██╗
@@ -659,9 +655,25 @@ public class Archer {
 		 *      ██║
 		 *      ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 158);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, 80f), 160);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 161);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, 90f), 159);
+//		Utils.scheduleTask(() -> {
+//			Actions.move(archer, "WP", 16);
+//			Actions.setHotbarSlot(archer, 1);
+//		}, 160);
+//		Utils.scheduleTask(() -> Actions.rightClick(archer), 166);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(archer, -82.5f, 0f);
+//			Actions.setHotbarSlot(archer, 5);
+//		}, 167);
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 20f), 175);
+//		Utils.scheduleTask(() -> Actions.rightClick(archer), 176); // s4 4
+//		// tick 177: terminal completes
+//
+//		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, 90f), 178);
+//		Utils.scheduleTask(() -> Actions.move(archer, "WP", 13), 179);
+//		Utils.scheduleTask(() -> Actions.leftClick(archer), 188); // GETTING FUCKED BY 0.02 BLOCKS
+//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 189);
+
 
 		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);

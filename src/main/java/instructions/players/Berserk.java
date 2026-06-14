@@ -427,13 +427,9 @@ public class Berserk {
 			Actions.swapItems(berserk, 7, 34);
 			Actions.setHotbarSlot(berserk, 5);
 		}, 248);
-		Utils.scheduleTask(() -> {
-			Server.IceFill.stopIceFillTask();
-			if(doContinue) {
-				Utils.teleport(berserk, new Location(world, 73.5, 221, 14.5));
-				maxor(true);
-			}
-		}, 742);
+		Utils.scheduleTask(Server.IceFill::stopIceFillTask, 742);
+		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
+		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -671,19 +667,19 @@ public class Berserk {
 		 *      ██║
 		 *      ╚═╝
 		 */
-		Utils.scheduleTask(() -> {
-			Actions.move(berserk, "WP", 24);
-			Actions.setHotbarSlot(berserk, 1);
-		}, 172);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 174);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(berserk, -147f, 70f);
-			Actions.setHotbarSlot(berserk, 4);
-		}, 175);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 195);
-		// tick 196: terminal completes
-
-		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 197);
+//		Utils.scheduleTask(() -> {
+//			Actions.move(berserk, "WP", 24);
+//			Actions.setHotbarSlot(berserk, 1);
+//		}, 172);
+//		Utils.scheduleTask(() -> Actions.rightClick(berserk), 174);
+//		Utils.scheduleTask(() -> {
+//			Actions.turnHead(berserk, -147f, 70f);
+//			Actions.setHotbarSlot(berserk, 4);
+//		}, 175);
+//		Utils.scheduleTask(() -> Actions.rightClick(berserk), 195); // s4 3
+//		// tick 196: terminal completes
+//
+//		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 197);
 
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(berserk, 153f, 0f);

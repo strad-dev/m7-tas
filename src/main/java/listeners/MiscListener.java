@@ -1,6 +1,7 @@
 package listeners;
 
 import commands.Spectate;
+import instructions.bosses.Watcher;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
@@ -18,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
@@ -29,6 +31,8 @@ import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerPickupArrowEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import plugin.FakePlayerManager;
@@ -214,6 +218,21 @@ public class MiscListener implements Listener {
 		Maxor.INSTANCE.handleDamage(e);
 		Storm.INSTANCE.handleDamage(e);
 		Goldor.INSTANCE.handleDamage(e);
+	}
+
+	// Blood-Mob deaths drive the Watcher's kill lines + portal progression.
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onWatcherMobDeath(EntityDeathEvent e) {
+		Watcher.INSTANCE.handleMobDeath(e);
+	}
+
+	// The Watcher's nether_portal is a teleport trigger, not real nether travel — never let vanilla relocate
+	// the player to the Nether (single-world TAS server). Our portal-detection handles the intended teleport.
+	@EventHandler(ignoreCancelled = true)
+	public void onWatcherPortal(PlayerPortalEvent e) {
+		if(e.getCause() == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) {
+			e.setCancelled(true);
+		}
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

@@ -42,9 +42,10 @@ public class MovementAudit {
 		UUID id = p.getUniqueId();
 		ServerPlayer npc = ((CraftPlayer) p).getHandle();
 
-		// Fake players: drive the audit from the fake ticker's aiStep (auditMove), which is SUPER-only.
+		// Fake players: drive the audit from the fake ticker's aiStep (auditMove). The session is tracked under
+		// plain verbose so the "landed" summary prints at ON/TIMER (as it did before); only the per-tick arc
+		// detail inside auditMove is gated to SUPER.
 		if(FakePlayerManager.getFakePlayers().containsValue(p)) {
-			if(!Utils.isSuperVerbose()) return;
 			endFakeSession(p, npc, fakeAirborne.get(id), true); // supersede a prior arc → report it as landed
 			fakeAirborne.put(id, new AirborneSession(source, npc.position()));
 			return;
@@ -133,7 +134,7 @@ public class MovementAudit {
 	private static final double RESIDUAL_EPSILON = 0.003;
 
 	public static void auditMove(Player p, ServerPlayer npc, double dx, double dy, double dz) {
-		if(!Utils.isSuperVerbose()) return;
+		if(!Utils.isVerbose()) return;
 
 		UUID id = p.getUniqueId();
 
@@ -144,20 +145,26 @@ public class MovementAudit {
 		}
 
 		// Airborne (launch/jump arc): the dx/dy/dz handed in is this tick's actual post-aiStep displacement,
-		// so the FIRST call (s.tick == 0) reports the full launch tick — nothing hidden or merged.
+		// so the FIRST call (s.tick == 0) reports the full launch tick — nothing hidden or merged. The "landed"
+		// summary (endFakeSession) prints under plain verbose; the per-tick arc detail is SUPER-only.
 		AirborneSession s = fakeAirborne.get(id);
 		if(s != null) {
 			if(npc.onGround() && s.tick > 0) {
 				endFakeSession(p, npc, s, true);
 				return;
 			}
-			Vec3 pos = npc.position();
-			String input = Actions.getActiveInput(id);
-			String sprintSneak = input.isEmpty() ? "" : (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "");
-			Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + s.source + "ed " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + sprintSneak + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
+			if(Utils.isSuperVerbose()) {
+				Vec3 pos = npc.position();
+				String input = Actions.getActiveInput(id);
+				String sprintSneak = input.isEmpty() ? "" : (npc.isSprinting() ? " sprinting" : npc.isShiftKeyDown() ? " sneaking" : "");
+				Utils.debug(Utils.DebugType.CLIENT, p.getName() + " " + s.source + "ed " + Utils.round(dx, 4) + " " + Utils.round(dy, 4) + " " + Utils.round(dz, 4) + sprintSneak + " @ " + Utils.round(pos.x, 3) + " " + Utils.round(pos.y, 5) + " " + Utils.round(pos.z, 3));
+			}
 			s.tick++;
 			return;
 		}
+
+		// Residual drift / loose-move spam below: SUPER-only.
+		if(!Utils.isSuperVerbose()) return;
 
 		boolean hasInput = !Actions.getActiveInput(id).isEmpty();
 		// With active input, always report. Without input, keep reporting the residual slide that momentum
