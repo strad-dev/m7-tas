@@ -645,20 +645,19 @@ public class Healer {
 		 *      ██║
 		 *      ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 0f), 161);
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "WP", 0);
 			Actions.setHotbarSlot(healer, 1);
-		}, 162);
-		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 12), 171);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 80f), 173);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 174);
+		}, 161);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 12), 170);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 80f), 172);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 173);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -100f, 0f);
 			Actions.setHotbarSlot(healer, 4);
-		}, 175);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -151f, -22f), 181);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 182); // s4 bottom
+		}, 174);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -151f, -22f), 180);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 181); // s4 bottom
 
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 191);
 
