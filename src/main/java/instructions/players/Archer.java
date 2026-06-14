@@ -655,10 +655,10 @@ public class Archer {
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 130f, 0f), 159);
 		Utils.scheduleTask(() -> {
-			Actions.move(archer, "WP", 14);
+			Actions.move(archer, "WP", 15);
 			Actions.setHotbarSlot(archer, 5);
-		}, 161); // 160/161 doesnt matter i dont think, same result and i'm at my wit's end so leaving as-is
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 121f, 44f), 174);
+		}, 160);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 138f, 32f), 174);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 175); // s4 1
 		// tick 176: terminal completes
 
