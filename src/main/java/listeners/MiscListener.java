@@ -5,6 +5,7 @@ import instructions.bosses.Watcher;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
+import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.MinecraftServer;
@@ -218,6 +219,7 @@ public class MiscListener implements Listener {
 		Maxor.INSTANCE.handleDamage(e);
 		Storm.INSTANCE.handleDamage(e);
 		Goldor.INSTANCE.handleDamage(e);
+		Necron.INSTANCE.handleDamage(e);
 	}
 
 	// Blood-Mob deaths drive the Watcher's kill lines + portal progression.

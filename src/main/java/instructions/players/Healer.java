@@ -824,6 +824,13 @@ public class Healer {
 //		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 956);
 //	}
 
+	/**
+	 * Necron DPS routine — started via the Goldor → Necron player handoff (Goldor.chainNext → runPlayerHandoff,
+	 * armed in TAS.runTAS) the tick Necron spawns. TODO: port the hand-tuned choreography (see commented reference above).
+	 */
+	public static void necron(boolean doContinue) {
+	}
+
 	@SuppressWarnings("unused")
 	public static Player get() {
 		return healer;
