@@ -60,14 +60,14 @@ public class Mage {
 				Actions.setHotbarSlot(mage, 5);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
-//			case "necron" -> {
-//				Utils.teleport(mage, new Location(world, 56.488, 64, 111.700, -180f, 0f));
-//				Actions.swapItems(mage, 1, 28);
-//				Actions.swapItems(mage, 3, 30);
-//				Actions.swapItems(mage, 5, 32);
-//				Actions.swapItems(mage, 6, 33);
-//				Utils.scheduleTask(() -> necron(false), 60);
-//			}
+			case "necron" -> {
+				Utils.teleport(mage, new Location(world, 54.524, 64, 100.707, 180f, -6f));
+				Actions.swapItems(mage, 1, 28);
+				Actions.swapItems(mage, 3, 30);
+				Actions.swapItems(mage, 6, 33);
+				Actions.swapItems(mage, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 //			case "witherking" -> {
 //				Utils.teleport(mage, new Location(world, 89.7, 6, 94.406, -75.6f, 18.8f));
 //				Actions.swapItems(mage, 1, 28);
@@ -309,43 +309,43 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Server.openBloodDoor();
-		}, 351);
-		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 372);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 373);
-		Utils.scheduleTask(() -> snapHead("Bonzo"), 374);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 378);
-		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 379);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 383);
-		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 384);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 388);
+		}, 350);
+		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 371);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 372);
+		Utils.scheduleTask(() -> snapHead("Bonzo"), 373);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 377);
+		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 378);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 382);
+		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 383);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 387);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 10);
 			Actions.turnHead(mage, 0f, -35f);
-		}, 389);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 431);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 448);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 473);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 487);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 504);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 517);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 530);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 543);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 560);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 576);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 601);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 615);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 632);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 645);
+		}, 388);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 430);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 447);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 472);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 486);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 503);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 516);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 529);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 542);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 559);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 575);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 600);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 614);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 631);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 644);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 659 Ticks (32.95 seconds)");
-		}, 659);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 658 Ticks (32.90 seconds)");
+		}, 658);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 3.5f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
-		}, 660);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 661); // etherwarp to portal
+		}, 659);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 660); // etherwarp to portal
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
@@ -354,9 +354,9 @@ public class Mage {
 			Actions.swapItems(mage, 7, 34);
 			Actions.swapItems(mage, 9, 36);
 			Actions.setHotbarSlot(mage, 5);
-		}, 662);
+		}, 661);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 740 Ticks (37.00 seconds)");
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 739 Ticks (36.95 seconds)");
 			// these are not picked up as boss is entered immediately
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(mage, Utils.BlessingType.POWER, 5);
@@ -364,7 +364,7 @@ public class Mage {
 			}, 200);
 			// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
 			// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
-		}, 740);
+		}, 739);
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -389,7 +389,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 239);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 0f), 240);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 241);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 242);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 242);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 339);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -121f, 0f);
@@ -591,13 +591,9 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 246);
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 287);
 		Utils.scheduleTask(() -> Actions.move(mage, "N", 10), 297);
-
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> necron(true), 350);
-//		}
 	}
 
-	//	private static void necron(boolean doContinue) {
+	public static void necron(boolean doContinue) {
 //		Actions.setHotbarSlot(mage, 5);
 //		Utils.scheduleTask(() -> Actions.rag(mage), 59);
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 120);
@@ -631,8 +627,8 @@ public class Mage {
 //		if(doContinue) {
 //			Utils.scheduleTask(Mage::witherKing, 609);
 //		}
-//	}
-//
+	}
+
 //	private static void witherKing() {
 //		Utils.scheduleTask(() -> WitherKing.pickUpRelic(mage), 1);
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 2);
@@ -760,13 +756,6 @@ public class Mage {
 			// Turn the player's head
 			Actions.turnHead(mage, yaw, pitch);
 		}
-	}
-
-	/**
-	 * Necron DPS routine — started via the Goldor → Necron player handoff (Goldor.chainNext → runPlayerHandoff,
-	 * armed in TAS.runTAS) the tick Necron spawns. TODO: port the hand-tuned choreography (see commented reference above).
-	 */
-	public static void necron(boolean doContinue) {
 	}
 
 	@SuppressWarnings("unused")

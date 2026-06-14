@@ -57,14 +57,14 @@ public class Healer {
 				Actions.setHotbarSlot(healer, 5);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
-//			case "necron" -> {
-//				Utils.teleport(healer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
-//				Actions.swapItems(healer, 1, 28);
-//				Actions.swapItems(healer, 3, 30);
-//				Actions.swapItems(healer, 6, 33);
-//				Actions.swapItems(healer, 7, 34);
-//				Utils.scheduleTask(() -> necron(false), 60);
-//			}
+			case "necron" -> {
+				Utils.teleport(healer, new Location(world, 54.524, 64, 100.707, 180f, -6f));
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 3, 30);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 //			case "witherking" -> {
 //				Utils.teleport(healer, new Location(world, 56.326, 8, 130.7, -16.2f, 18.8f));
 //				Actions.swapItems(healer, 1, 28);
@@ -685,12 +685,9 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 246);
 		Utils.scheduleTask(() -> Actions.move(healer, "WN", 0), 287);
 		Utils.scheduleTask(() -> Actions.move(healer, "N", 10), 297);
-//		if(doContinue) {
-//			Utils.scheduleTask(() -> necron(true), 350);
-//		}
 	}
 
-//	private static void necron(boolean doContinue) {
+	public static void necron(boolean doContinue) {
 //		Actions.setHotbarSlot(healer, 3);
 //		Utils.scheduleTask(() -> Actions.leap(healer, Tank.get()), 121);
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 122);
@@ -725,8 +722,8 @@ public class Healer {
 //		if(doContinue) {
 //			Utils.scheduleTask(Healer::witherKing, 609);
 //		}
-//	}
-//
+	}
+
 //	private static void witherKing() {
 //		Utils.scheduleTask(() -> WitherKing.pickUpRelic(healer), 1);
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 2);
@@ -823,13 +820,6 @@ public class Healer {
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 5), 955);
 //		Utils.scheduleTask(() -> Actions.flamingFlay(healer), 956);
 //	}
-
-	/**
-	 * Necron DPS routine — started via the Goldor → Necron player handoff (Goldor.chainNext → runPlayerHandoff,
-	 * armed in TAS.runTAS) the tick Necron spawns. TODO: port the hand-tuned choreography (see commented reference above).
-	 */
-	public static void necron(boolean doContinue) {
-	}
 
 	@SuppressWarnings("unused")
 	public static Player get() {

@@ -80,14 +80,14 @@ public class Archer {
 				Utils.scheduleTask(() -> Actions.rightClick(archer), 59);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
-//			case "necron" -> {
-//				Utils.teleport(archer, new Location(world, 56.488, 64, 111.700, -180f, 0f));
-//				Actions.swapItems(archer, 1, 28);
-//				Actions.swapItems(archer, 5, 32);
-//				Actions.swapItems(archer, 6, 33);
-//				Actions.swapItems(archer, 7, 35);
-//				Utils.scheduleTask(() -> necron(false), 60);
-//			}
+			case "necron" -> {
+				Utils.teleport(archer, new Location(world, 54.524, 64, 100.707, 180f, -6f));
+				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 5, 32);
+				Actions.swapItems(archer, 6, 33);
+				Actions.swapItems(archer, 7, 35);
+				Utils.scheduleTask(() -> necron(false), 60);
+			}
 //			case "witherking" -> {
 //				Utils.teleport(archer, new Location(world, 22.3, 6, 59.408, 65.6f, 29.3f));
 //				Actions.swapItems(archer, 1, 28);
@@ -684,7 +684,8 @@ public class Archer {
 		}, 193);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 42f), 227);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 228);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 42f), 240);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 0f), 229);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, -6f), 240);
 		// lands at tick 271
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 42f, 66f), 272);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 273);
@@ -702,13 +703,9 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 298);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 299);
 		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 300);
-
-		if(doContinue) {
-//			Utils.scheduleTask(() -> necron(true), 350);
-		}
 	}
 
-//	private static void necron(boolean doContinue) {
+	public static void necron(boolean doContinue) {
 //		Actions.setHotbarSlot(archer, 2);
 //		Utils.scheduleTask(() -> Actions.swapItems(archer, 3, 30), 1);
 //		Utils.scheduleTask(() -> Actions.leap(archer, Tank.get()), 121);
@@ -742,8 +739,8 @@ public class Archer {
 //		if(doContinue) {
 //			Utils.scheduleTask(Archer::witherKing, 609);
 //		}
-//	}
-//
+	}
+
 //	private static void witherKing() {
 //		Utils.scheduleTask(() -> WitherKing.pickUpRelic(archer), 1);
 //		Utils.scheduleTask(() -> Actions.turnHead(archer, -115f, 0f), 2);
@@ -910,14 +907,6 @@ public class Archer {
 //			arrow.addScoreboardTag("TerminatorArrow");
 //		}, 10);
 //	}
-//
-
-	/**
-	 * Necron DPS routine — started via the Goldor → Necron player handoff (Goldor.chainNext → runPlayerHandoff,
-	 * armed in TAS.runTAS) the tick Necron spawns. TODO: port the hand-tuned choreography (see commented reference above).
-	 */
-	public static void necron(boolean doContinue) {
-	}
 
 	public static Player get() {
 		return archer;

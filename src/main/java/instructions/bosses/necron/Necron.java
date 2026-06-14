@@ -118,7 +118,7 @@ public final class Necron extends WitherLord {
 		sendChatMessage("You went further than any human before, congratulations.");
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I'm afraid your journey ends now.");
-			destroyPlatform();
+			destroyPlatform(true); // intro salvo — may destroy the platform (guarded by platformIntact)
 		}, 60);
 		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), 120);
 
@@ -205,7 +205,7 @@ public final class Necron extends WitherLord {
 			// 25% — fireball attack in place (no teleport, no blindness).
 			duration = FIREBALL_DURATION_TICKS;
 			Utils.timer(ChatColor.GREEN + "Necron fireball attack at " + formatTick(displayTick()));
-			destroyPlatform();
+			destroyPlatform(false); // 25% replay — fireballs only, never destroy the platform
 		} else {
 			// 80% / 5% — frenzy: teleport to the middle, blind players, hold still.
 			duration = FRENZY_DURATION_TICKS;
@@ -229,7 +229,9 @@ public final class Necron extends WitherLord {
 		setArmor(false);
 		CustomBossBar.removeStunIndicator();
 		if(idx != 1) sendChatMessage(FRENZY_END_MESSAGES[random.nextInt(FRENZY_END_MESSAGES.length)]);
-		setAggro(target(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+		// After the FIRST frenzy (idx 0) Necron stays planted at the middle with AI off, so the upcoming 25%
+		// fireball attack finds him already at the correct spot. He resumes the chase after the other interludes.
+		if(idx != 0) setAggro(target(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 	}
 
 	private void cancelInterludeEndTask() {
@@ -281,11 +283,15 @@ public final class Necron extends WitherLord {
 
 	// ---------- Platform destroy / fireball attack ----------
 
-	/** Fireball salvo. During the intro this also swaps the platform to its destroyed variant, but only if the
-	 *  platform is still intact when called — a pre-destroyed platform is left alone (the 25% replay naturally
-	 *  no-ops the clone, leaving just the fireball visual). The intact check is captured at call time. */
-	private void destroyPlatform() {
-		boolean intact = platformIntact();
+	/** Fireball salvo. Only the intro salvo ({@code allowDestroy=true}) may swap the platform to its destroyed
+	 *  variant, and only if it's still intact when called (a pre-destroyed platform is left alone). The 25% replay
+	 *  ({@code allowDestroy=false}) is fireballs only — it never touches the platform, which may still be intact
+	 *  (e.g. restored by stonk). The intact check is captured at call time. */
+	private void destroyPlatform(boolean allowDestroy) {
+		// Necron is already stationary at the correct spot for both salvos — the intro one fires from his spawn,
+		// and the 25% one fires from the middle where the first frenzy planted him (AI is not re-enabled after
+		// that frenzy), so there's no chase momentum to cancel here.
+		boolean doClone = allowDestroy && platformIntact();
 		shootFireball();
 		Utils.scheduleTask(this::shootFireball, 10);
 		Utils.scheduleTask(this::shootFireball, 20);
@@ -293,7 +299,7 @@ public final class Necron extends WitherLord {
 		Utils.scheduleTask(() -> {
 			shootFireball();
 			// destroyed variant lives at y -10..-6 (correct variant at y -5..-1); clone it up to the live platform.
-			if(intact) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -10 120 38 -6 99 38 59 99");
+			if(doClone) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -10 120 38 -6 99 38 59 99");
 		}, 40);
 		Utils.scheduleTask(this::shootFireball, 50);
 		Utils.scheduleTask(this::shootFireball, 60);
