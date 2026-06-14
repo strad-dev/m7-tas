@@ -240,7 +240,7 @@ public class Healer {
 		}, 145);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 90f, -90f);
-			Actions.move(healer, "N", 0);
+			Actions.move(healer, "N", 30);
 		}, 146);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 147); // etherwarp to prince
 		Utils.scheduleTask(() -> {
@@ -324,12 +324,8 @@ public class Healer {
 			Actions.swapItems(healer, 12, 39);
 			Actions.setHotbarSlot(healer, 5);
 		}, 175);
-		Utils.scheduleTask(() -> {
-			if(doContinue) {
-				Utils.teleport(healer, new Location(world, 73.5, 221, 14.5));
-				maxor(true);
-			}
-		}, 742);
+		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
+		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -654,33 +650,29 @@ public class Healer {
 		 *      ╚═╝
 		 */
 		Utils.scheduleTask(() -> {
-			Actions.move(healer, "WP", 30);
+			Actions.move(healer, "WP", 0);
 			Actions.setHotbarSlot(healer, 1);
 		}, 161);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 162);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -125f, 0f), 163);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -90f, 0f), 181);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 12), 170);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 80f), 172);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 173);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -100f, 0f);
+			Actions.setHotbarSlot(healer, 4);
+		}, 174);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -151f, -22f), 180);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 181); // s4 bottom
 
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 145f, 82f), 198);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.8047, 0, -1.1493), 1), 199);
-//		Utils.scheduleTask(() -> Actions.bonzo(healer, new Vector(-0.875, 0.5, -1.25)), 200);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 145f, 0f), 201);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.8047, 0, -1.1493), 1), 218);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(-0.161, 0, -0.23), 6), 219);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 42.2f), 224);
-//		Utils.scheduleTask(() -> Actions.swingHand(healer), 225);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(healer, "terminal", 4, 7), 226);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 227);
-//		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 228);
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
+		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 191);
+
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(healer, -1.9f, 0f);
 //			Actions.setHotbarSlot(healer, 5);

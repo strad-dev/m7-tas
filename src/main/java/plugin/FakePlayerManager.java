@@ -221,7 +221,7 @@ public class FakePlayerManager {
 		}
 	}
 
-	private static void kickAllFakes() {
+	public static void kickAllFakes() {
 		fakePlayers.values().forEach(p -> {
 			if(p.isOnline()) {
 				p.kickPlayer("");
@@ -302,7 +302,9 @@ public class FakePlayerManager {
 						npc.setDeltaMovement(launch);
 						npc.hurtMarked = true;
 					}
-					if(Utils.isSuperVerbose()) {
+					// Verbose (ON/TIMER): capture the per-tick displacement so MovementAudit can detect landings and
+					// print "landed" summaries; the per-tick arc detail it prints is gated to SUPER internally.
+					if(Utils.isVerbose()) {
 						net.minecraft.world.phys.Vec3 before = npc.position();
 						npc.aiStep();
 						net.minecraft.world.phys.Vec3 after = npc.position();

@@ -66,7 +66,9 @@ public class Server {
 						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
 						Utils.markPhaseStart();
 						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
-						Watcher.watcherInstructions(world, section.equals("all"));
+						// Arm the one-shot Blood-Room detection at clear-tick 0; the Watcher spawns the first tick a
+						// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
+						Watcher.INSTANCE.beginDetection(world);
 						openFirstDoor();
 					}, 126);
 				}

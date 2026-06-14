@@ -129,7 +129,6 @@ public class Mage {
 		 */
 		// tick 1: tac TP back
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 2);
-		// tick 3: blood opens
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 4);
 		Utils.scheduleTask(() -> Actions.leap(mage, Tank.get()), 50);
 		Utils.scheduleTask(() -> {
@@ -310,43 +309,43 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Server.openBloodDoor();
-		}, 353);
-		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 374);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 375);
-		Utils.scheduleTask(() -> snapHead("Bonzo"), 376);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 380);
-		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 381);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 385);
-		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 386);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 390);
+		}, 351);
+		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 372);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 373);
+		Utils.scheduleTask(() -> snapHead("Bonzo"), 374);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 378);
+		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 379);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 383);
+		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 384);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 388);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 10);
 			Actions.turnHead(mage, 0f, -35f);
-		}, 391);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 433);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 450);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 475);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 489);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 506);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 519);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 532);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 545);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 562);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 578);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 603);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 617);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 634);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 647);
+		}, 389);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 431);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 448);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 473);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 487);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 504);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 517);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 530);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 543);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 560);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 576);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 601);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 615);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 632);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 645);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 661 Ticks (33.05 seconds)");
-		}, 661);
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 659 Ticks (32.95 seconds)");
+		}, 659);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 3.5f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
-		}, 662);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 663); // etherwarp to portal
+		}, 660);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 661); // etherwarp to portal
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
@@ -355,19 +354,17 @@ public class Mage {
 			Actions.swapItems(mage, 7, 34);
 			Actions.swapItems(mage, 9, 36);
 			Actions.setHotbarSlot(mage, 5);
-		}, 664);
+		}, 662);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 742 Ticks (37.10 seconds)");
+			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 740 Ticks (37.00 seconds)");
 			// these are not picked up as boss is entered immediately
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(mage, Utils.BlessingType.POWER, 5);
 				Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 5);
 			}, 200);
-			if(doContinue) {
-				Utils.teleport(mage, new Location(world, 73.5, 221, 14.5));
-				maxor(true);
-			}
-		}, 742);
+			// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
+			// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
+		}, 740);
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -545,7 +542,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 155f, 25f), 92);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 93);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 94);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 95);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 62), 95);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 177.4f, 45f), 96);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 97);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 98);
@@ -557,11 +554,10 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 148);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 149);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 150);
-		Utils.scheduleTask(() -> Actions.move(mage, "WN", 3), 151);
 
 		// turn head to save a tick on other players having to turn head
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 157);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -125f, 80f), 159);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -91f, 0f), 157);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -96f, 80f), 159);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -147f, 80f), 170);
 
 		/*
@@ -572,8 +568,9 @@ public class Mage {
 		 *      ██║
 		 *      ╚═╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 172);
-		Utils.scheduleTask(() -> Actions.move(mage, "S", 4), 173);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 172);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 8), 173);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 181);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 66.5f, 0f), 198);
 //		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.99, 0, 0.4307), 2), 199);
 //		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 60f), 200);

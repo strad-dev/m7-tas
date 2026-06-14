@@ -50,7 +50,7 @@ public final class M7tas extends JavaPlugin {
 
 		PlayerCollision.setupNoCollisionTeam();
 
-		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset", "getcustomitems", "verbose", "setspeed")) {
+		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "simulate", "reset", "getcustomitems", "verbose", "setspeed", "kickallfakes")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
@@ -61,6 +61,7 @@ public final class M7tas extends JavaPlugin {
 				case "getcustomitems" -> command.setExecutor(new GetCustomItems());
 				case "verbose" -> command.setExecutor(new Verbose());
 				case "setspeed" -> command.setExecutor(new SetSpeed());
+				case "kickallfakes" -> command.setExecutor(new KickAllFakes());
 			}
 			command.setTabCompleter(new TabCompletor());
 		}

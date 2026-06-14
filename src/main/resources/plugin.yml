@@ -31,6 +31,9 @@ commands:
   setspeed:
     description: Set movement speed (100 = default); target self or a named player (fake or real)
     usage: /setspeed [player] [speed]
+  kickallfakes:
+    description: Kick all fake players
+    usage: /kickallfakes
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>
