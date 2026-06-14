@@ -513,9 +513,7 @@ public class Tank {
 		}, 400);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 401);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 413);
-		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 496);
-		}
+		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
 	public static void storm(boolean doContinue) {
@@ -583,12 +581,10 @@ public class Tank {
 		}, 745);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 24), 746);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 4), 776); // move to in front of dev3
-		if(doContinue) {
-			Utils.scheduleTask(() -> goldor(true), 881);
-		}
+		// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 	}
 
-	private static void goldor(boolean doContinue) {
+	public static void goldor(boolean doContinue) {
 		/*
 		 *  ██╗
 		 * ███║
@@ -738,57 +734,35 @@ public class Tank {
 			Actions.setHotbarSlot(tank, 5);
 		}, 159);
 		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 0f, 0f);
+			Actions.turnHead(tank, -5f, 10f);
 			Actions.move(tank, "WAP", 0);
 		}, 168);
-		Utils.scheduleTask(() -> {
-			Actions.turnHead(tank, 40f, 5f);
-			Actions.move(tank, "A", 1);
-		}, 171);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 2), 169);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 172); // s4 4
 		// tick 173: terminal completes
 
-		Utils.scheduleTask(() -> Actions.move(tank, "WPA", 1), 173);
 		Utils.scheduleTask(() -> {
+			Actions.move(tank, "WP", 8);
 			Actions.turnHead(tank, -90f, 90f);
 			Actions.setHotbarSlot(tank, 7);
 		}, 174);
-		Utils.scheduleTask(() -> Actions.move(tank, "WPD", 0), 175);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 14), 182);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 186);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 190);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -90f, -43f);
+			Actions.setHotbarSlot(tank, 4);
+		}, 191);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 200); // s4 top FUCK THIS STUPID FUCKING LEVER
 
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 3), 183); // forceMove to get over the carpet
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(tank, -90f, 0f);
-//			Actions.setHotbarSlot(tank, 1);
-//		}, 185);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.403, 0, 0), 3), 186);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 82f), 188);
-//		Utils.scheduleTask(() -> Actions.bonzo(tank, new Vector(1.52552, 0.5, 0)), 189);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 190);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -56.1f, 19.8f), 203);
-//		Utils.scheduleTask(() -> Actions.swingHand(tank), 204);
-//		Utils.scheduleTask(() -> Goldor.broadcastTerminalComplete(tank, "terminal", 3, 7), 205);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 206);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(1.403, 0, 0), 2), 207);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0.2806, 0, 0), 15), 209);
-//		Utils.scheduleTask(() -> Actions.lavaJump(tank, true), 223);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -108.2f, -32.3f), 224);
-//		Utils.scheduleTask(() -> {
-//			Actions.rightClickLever(tank);
-//			Goldor.broadcastTerminalComplete(tank, "lever", 6, 7);
-//		}, 229);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 230);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 231);
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 201);
+
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
 //		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 232);
 //		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 11), 256);
 //		Utils.scheduleTask(() -> Actions.turnHead(tank, -82.5f, -10f), 266);

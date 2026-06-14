@@ -32,6 +32,8 @@ public abstract class WitherLord {
 	protected BukkitTask tickerTask;
 	protected boolean dying;
 	protected boolean doContinue;
+	/** Player-side transition to the next phase, run from {@link #chainNext} the tick this boss chains. Armed by TAS.runTAS. */
+	protected Runnable playerHandoff;
 
 	/**
 	 * Entry point for a fresh fight. Cleans previous state, spawns the boss with the
@@ -164,6 +166,16 @@ public abstract class WitherLord {
 
 	protected final void clearAggro() {
 		WitherActions.clearWitherAggro(boss);
+	}
+
+	/** Arm the player-side transition fired when this boss chains to the next (see {@link #runPlayerHandoff}). Armed by TAS.runTAS. */
+	public final void armPlayerHandoff(Runnable handoff) {
+		this.playerHandoff = handoff;
+	}
+
+	/** Run the armed player-side transition, if any. Called from subclass {@link #chainNext} the tick the next boss spawns. */
+	protected final void runPlayerHandoff() {
+		if(playerHandoff != null) playerHandoff.run();
 	}
 
 	// --- Generic-listener helper: find the WitherLord that owns this wither entity ---

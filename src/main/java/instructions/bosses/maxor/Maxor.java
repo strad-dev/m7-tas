@@ -137,6 +137,7 @@ public final class Maxor extends WitherLord {
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
 			Storm.stormInstructions(world, doContinue);
+			runPlayerHandoff(); // start each player's storm() routine the same tick Storm spawns
 		}
 	}
 

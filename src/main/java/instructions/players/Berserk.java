@@ -459,9 +459,7 @@ public class Berserk {
 			Actions.turnHead(berserk, 154f, 0f);
 			Actions.setHotbarSlot(berserk, 3);
 		}, 377);
-		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 496);
-		}
+		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
 	public static void storm(boolean doContinue) {
@@ -568,11 +566,11 @@ public class Berserk {
 		}, 845);
 		if(doContinue) {
 			Utils.scheduleTask(() -> Actions.dropItem(berserk, true), 870);
-			Utils.scheduleTask(() -> goldor(true), 881);
+			// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 		}
 	}
 
-	private static void goldor(boolean doContinue) {
+	public static void goldor(boolean doContinue) {
 		/*
 		 *  ██╗
 		 * ███║
@@ -667,19 +665,11 @@ public class Berserk {
 		 *      ██║
 		 *      ╚═╝
 		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.move(berserk, "WP", 24);
-//			Actions.setHotbarSlot(berserk, 1);
-//		}, 172);
-//		Utils.scheduleTask(() -> Actions.rightClick(berserk), 174);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, -147f, 70f);
-//			Actions.setHotbarSlot(berserk, 4);
-//		}, 175);
-//		Utils.scheduleTask(() -> Actions.rightClick(berserk), 195); // s4 3
-//		// tick 196: terminal completes
-//
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 197);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 15), 172);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 187); // s4 3
+		// tick 188: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 191);
 
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(berserk, 153f, 0f);
