@@ -3,6 +3,7 @@ package commands;
 import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.Watcher;
+import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.storm.Storm;
 import instructions.players.*;
@@ -112,6 +113,13 @@ public class TAS implements CommandExecutor {
 				Healer.goldor(true);
 				Mage.goldor(true);
 				Tank.goldor(true);
+			});
+			Goldor.INSTANCE.armPlayerHandoff(() -> {
+				Archer.necron(true);
+				Berserk.necron(true);
+				Healer.necron(true);
+				Mage.necron(true);
+				Tank.necron(true);
 			});
 		}
 

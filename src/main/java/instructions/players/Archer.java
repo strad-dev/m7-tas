@@ -912,6 +912,13 @@ public class Archer {
 //	}
 //
 
+	/**
+	 * Necron DPS routine — started via the Goldor → Necron player handoff (Goldor.chainNext → runPlayerHandoff,
+	 * armed in TAS.runTAS) the tick Necron spawns. TODO: port the hand-tuned choreography (see commented reference above).
+	 */
+	public static void necron(boolean doContinue) {
+	}
+
 	public static Player get() {
 		return archer;
 	}

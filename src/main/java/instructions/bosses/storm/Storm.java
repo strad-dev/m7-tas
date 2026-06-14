@@ -519,8 +519,8 @@ public final class Storm extends WitherLord {
 	 * damage/knockback events sourced by Storm's crush even when the event doesn't carry
 	 * the wither entity explicitly.
 	 */
-	public boolean isCrushExplosionActive() {
-		return crushExplosionActive;
+	public boolean crushExplosionNotActive() {
+		return !crushExplosionActive;
 	}
 
 	/**
@@ -584,16 +584,16 @@ public final class Storm extends WitherLord {
 		mobGroups.add(new MobGroup(minerSpec("Center", 40, MobSpawnSpec.uniformIn(65, 165, 41, 81, 165, 65), minerName, stonePickaxe, facingCenter, 80)));
 
 		mobGroups.add(new MobGroup(minerSpec("Pad NE", 10, MobSpawnSpec.uniformIn(108, 170, 88, 120, 170, 100), minerName, stonePickaxe, facingCenter, 80)));
-		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow NE", 120.5, 170, 100.5, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow NE", 120.5, 100.5)));
 
 		mobGroups.add(new MobGroup(minerSpec("Pad NW", 10, MobSpawnSpec.uniformIn(26, 170, 88, 38, 170, 100), minerName, stonePickaxe, facingCenter, 80)));
-		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow NW", 26.5, 170, 100.5, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow NW", 26.5, 100.5)));
 
 		mobGroups.add(new MobGroup(minerSpec("Pad SW", 10, MobSpawnSpec.uniformIn(26, 170, 6, 38, 170, 18), minerName, stonePickaxe, facingCenter, 80)));
-		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SW", 26.5, 170, 6.5, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SW", 26.5, 6.5)));
 
 		mobGroups.add(new MobGroup(minerSpec("Pad SE", 10, MobSpawnSpec.uniformIn(108, 170, 6, 120, 170, 18), minerName, stonePickaxe, facingCenter, 80)));
-		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SE", 120.5, 170, 6.5, 80)));
+		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SE", 120.5, 6.5)));
 
 		// Sentries — deterministic locations, spawned inline (44 separate fixed-location entities).
 		spawnSentries();
@@ -611,14 +611,14 @@ public final class Storm extends WitherLord {
 				Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f);
 	}
 
-	private static MobSpawnSpec shadowAssassinSpec(String groupName, double x, double y, double z, int startTick) {
+	private static MobSpawnSpec shadowAssassinSpec(String groupName, double x, double z) {
 		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
 		List<ItemStack> armor = Arrays.asList(new ItemStack(Material.AIR), new ItemStack(Material.AIR), new ItemStack(Material.AIR), boots);
 		List<PotionEffect> effects = List.of(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
-		return new MobSpawnSpec(groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, y, z), 15.0, -30, -20, ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤", new ItemStack(Material.STONE_SWORD),
+		return new MobSpawnSpec(groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, 170, z), 15.0, -30, -20, ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤", new ItemStack(Material.STONE_SWORD),
 				/* aiEnabled */ false, /* aggressive */ false, /* adult */ true,
 				/* silent */ true, /* persistent */ true,
-				/* facingTarget */ null, effects, armor, startTick,
+				/* facingTarget */ null, effects, armor, 80,
 				null, 1.0f);
 	}
 

@@ -80,7 +80,7 @@ public class StormCrushExplosion implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onAnyKnockback(EntityKnockbackEvent event) {
 		if(event.getCause() != EntityKnockbackEvent.KnockbackCause.EXPLOSION) return;
-		if(!Storm.INSTANCE.isCrushExplosionActive()) return;
+		if(Storm.INSTANCE.crushExplosionNotActive()) return;
 		event.setCancelled(true);
 	}
 
@@ -95,7 +95,7 @@ public class StormCrushExplosion implements Listener {
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onAnyHangingBreak(HangingBreakEvent event) {
 		if(event.getCause() != HangingBreakEvent.RemoveCause.EXPLOSION) return;
-		if(!Storm.INSTANCE.isCrushExplosionActive()) return;
+		if(Storm.INSTANCE.crushExplosionNotActive()) return;
 		event.setCancelled(true);
 	}
 

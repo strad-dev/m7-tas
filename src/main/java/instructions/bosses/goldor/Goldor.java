@@ -148,6 +148,7 @@ public final class Goldor extends WitherLord {
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
 			Necron.necronInstructions(world, true);
+			runPlayerHandoff(); // start each player's necron() routine the same tick Necron spawns
 		}
 	}
 
