@@ -22,7 +22,7 @@ public class TabCompletor implements TabCompleter {
 		String cmdName = command.getName().toLowerCase();
 
 		switch(cmdName) {
-			case "tas" -> {
+			case "tas", "practice" -> {
 				if(args.length == 1) {
 					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking"};
 					String input = args[0].toLowerCase();

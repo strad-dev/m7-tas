@@ -127,4 +127,21 @@ public class TAS implements CommandExecutor {
 		Spectate.stopSpectatorSync();
 		Spectate.startSpectatorSync();
 	}
+
+	/**
+	 * Like {@link #runTAS} but runs ONLY the boss/server instructions — no fake-player routines, no player
+	 * handoffs, no spectator sync — so real players can practice the boss fights and mechanics. Bosses still
+	 * chain (e.g. {@code /practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
+	 * chainNext spawns the next; runPlayerHandoff is simply a no-op since no handoff is armed here.
+	 *
+	 * <p>Note: Maxor/Storm/Necron aggro a fake player (e.g. {@code Tank.get()}), so those expect the fake
+	 * actors to be spawned (idle is fine). Goldor (terminals/patrol) needs no actors.
+	 */
+	public static void runPractice(World world, String section) {
+		Utils.markPhaseStart();
+		MovementAudit.cancelAll();
+		Actions.cancelAllMovement();
+		Server.serverSetup(world);
+		Server.serverInstructions(world, section);
+	}
 }

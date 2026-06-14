@@ -16,6 +16,9 @@ commands:
   tas:
     description: Begin TAS
     usage: /tas <section>
+  practice:
+    description: Begin practice (boss instructions only, for real players)
+    usage: /practice <section>
   reset:
     description: Resets all classes to their spawn locations
     usage: /reset

@@ -4,6 +4,7 @@ import instructions.bosses.CustomBossBar;
 import instructions.bosses.Watcher;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
+import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
 import listeners.CustomItems;
 import listeners.GoldorListener;
@@ -80,7 +81,7 @@ public class Server {
 					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
 					Goldor.goldorInstructions(world, false);
 				}
-//				case "necron" -> Necron.necronInstructions(world, false);
+				case "necron" -> Necron.necronInstructions(world, false);
 //				case "witherking" -> WitherKing.witherKingInstructions(world);
 			}
 		}, 60);
