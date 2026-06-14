@@ -669,21 +669,20 @@ public class Healer {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, -1.9f, 0f);
-//			Actions.setHotbarSlot(healer, 5);
-//		}, 229);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.04652, 0, 1.4022), 3), 230);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0093, 0, 0.2805), 5), 233);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.04652, 0, 1.4022), 32), 238);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.0108, 0, 0.3248), 4), 270);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -1.9f, 85.1f), 271);
-//		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(56, 113, 110)), 272);
-//		Utils.scheduleTask(() -> Actions.stonk(healer, world.getBlockAt(56, 113, 111)), 273);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 274);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, 1.08), 1), 275);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 276);
-//		Utils.scheduleTask(() -> Actions.swapItems(healer, 6, 33), 277);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 180f, 0f);
+			Actions.setHotbarSlot(healer, 3);
+		}, 200);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 5), 219);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(healer, 400);
+			Actions.turnHead(healer, -111f, -2f);
+			Actions.swapItems(healer, 12, 39);
+		}, 223);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 224);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 225);
+		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 245);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 40), 246);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}

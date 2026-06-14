@@ -671,6 +671,29 @@ public class Berserk {
 
 		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 191);
 
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 180f, 0f);
+			Actions.setHotbarSlot(berserk, 3);
+		}, 200);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 5), 219);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(berserk, 400);
+			Actions.turnHead(berserk, -111f, -2f);
+			Actions.swapItems(berserk, 12, 39);
+		}, 223);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 224);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 225);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 245);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 40), 246);
+
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(berserk, 153f, 0f);
 //			Actions.setHotbarSlot(berserk, 1);

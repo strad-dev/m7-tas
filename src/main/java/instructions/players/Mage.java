@@ -566,45 +566,30 @@ public class Mage {
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 172);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 8), 173);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 181);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 66.5f, 0f), 198);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.99, 0, 0.4307), 2), 199);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 60f), 200);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 52)), 201);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(mage, new Vector(0, 0, 1.08), 5);
-//			Actions.stonk(mage, world.getBlockAt(52, 114, 53));
-//		}, 202);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 115, 54)), 203);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 54)), 204);
-//		Utils.scheduleTask(() -> Actions.stonk(mage, world.getBlockAt(52, 114, 55)), 205);
-//		Utils.scheduleTask(() -> {
-//			Actions.jump(mage);
-//			Actions.turnHead(mage, -90f, 0f);
-//		}, 207);
-//		Utils.scheduleTask(() -> Actions.swapItems(mage, 5, 32), 208);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 209);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 210);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.08, 0, 0), 2), 213);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 180f, 0f), 215);
-//		// swap to gdrag
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, -1.403), 11), 256);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 261);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -82.5f, -5f), 262);
-//		Utils.scheduleTask(Mage::mageBeam, 280); // wait for debuff
-//		Utils.scheduleTask(Mage::mageBeam, 285);
-//		Utils.scheduleTask(Mage::mageBeam, 290);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 291);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 292);
+
+		/*
+		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
+		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
+		 * █████╗  ██║██║  ███╗███████║   ██║
+		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
+		 * ██║     ██║╚██████╔╝██║  ██║   ██║
+		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
+		 */
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 180f, 0f);
+			Actions.setHotbarSlot(mage, 3);
+		}, 200);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 5), 219);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(mage, 400);
+			Actions.turnHead(mage, -111f, -2f);
+			Actions.swapItems(mage, 12, 39);
+		}, 223);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 224);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 225);
+		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 245);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 40), 246);
+
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}

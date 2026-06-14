@@ -748,7 +748,7 @@ public final class Goldor extends WitherLord {
 			Utils.timer(ChatColor.GREEN + "Goldor finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
-		}, 100);
+		}, 80);
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.remove();
 		}, 160);
