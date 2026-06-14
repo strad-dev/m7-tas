@@ -553,7 +553,7 @@ public class Mage {
 
 		// turn head to save a tick on other players having to turn head
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -91f, 0f), 157);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, 130f, 0f), 159);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -96f, 80f), 159);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 10f), 170);
 
 		/*
