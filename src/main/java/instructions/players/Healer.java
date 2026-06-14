@@ -682,7 +682,9 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 224);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 225);
 		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 245);
-		Utils.scheduleTask(() -> Actions.move(healer, "WP", 40), 246);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 246);
+		Utils.scheduleTask(() -> Actions.move(healer, "WN", 0), 287);
+		Utils.scheduleTask(() -> Actions.move(healer, "N", 10), 297);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}
