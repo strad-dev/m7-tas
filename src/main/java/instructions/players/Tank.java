@@ -776,7 +776,9 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 224);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 225);
 		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 245);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 40), 246);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 246);
+		Utils.scheduleTask(() -> Actions.move(tank, "WN", 0), 287);
+		Utils.scheduleTask(() -> Actions.move(tank, "N", 10), 297);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}

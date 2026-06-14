@@ -588,7 +588,9 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 224);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 225);
 		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 245);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 40), 246);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 246);
+		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 287);
+		Utils.scheduleTask(() -> Actions.move(mage, "N", 10), 297);
 
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);

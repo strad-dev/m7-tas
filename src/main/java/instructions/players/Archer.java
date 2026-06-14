@@ -684,6 +684,7 @@ public class Archer {
 		}, 193);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 42f), 227);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 228);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 42f), 240);
 		// lands at tick 271
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 42f, 66f), 272);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 273);
@@ -698,9 +699,9 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 283);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 284);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -180f, 90f), 285);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 286);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 287);
-		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 288);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 298);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 299);
+		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 300);
 
 		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
