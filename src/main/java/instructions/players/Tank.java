@@ -763,34 +763,20 @@ public class Tank {
 		 * ██║     ██║╚██████╔╝██║  ██║   ██║
 		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 		 */
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 232);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(0, 0, -1.403), 11), 256);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, -82.5f, -10f), 266);
-//		// tick 267: switch to baby yeti
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 10), 268);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 26.6f, 0f), 278);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.5026, 0, 1.004), 4), 279);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.1256, 0, 0.251), 15), 283);
-//		Utils.scheduleTask(() -> Actions.lavaJump(tank, true), 298);
-//		Utils.scheduleTask(() -> {
-//			Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2f, 0.5f);
-//			Bukkit.broadcastMessage(ChatColor.RED + " ☠ " + ChatColor.GOLD + "cookiethebald" + ChatColor.GRAY + " burned to death and became a ghost.");
-//			tank.setGameMode(GameMode.SPECTATOR);
-//			tank.setFlying(true);
-//		}, 314);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 315);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 316);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(tank, 176f, 0f);
-//			Actions.move(tank, new Vector(0, 0.42, 0), 4);
-//		}, 317);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.07534, 0.001, -1.0774), 26), 321);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, -10f), 347);
-//		Utils.scheduleTask(() -> {
-//			Bukkit.broadcastMessage(ChatColor.GREEN + " ❣ " + ChatColor.GOLD + "cookiethebald" + ChatColor.GREEN + " was revived by " + ChatColor.GOLD + "cookiethebald" + ChatColor.GREEN + "!");
-//			tank.setGameMode(GameMode.SURVIVAL);
-//			tank.setFlying(false);
-//		}, 414);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 180f, 0f);
+			Actions.setHotbarSlot(tank, 3);
+		}, 200);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 5), 219);
+		Utils.scheduleTask(() -> {
+			Utils.setSpeed(tank, 400);
+			Actions.turnHead(tank, -111f, -2f);
+			Actions.swapItems(tank, 12, 39);
+		}, 223);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 224);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 225);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 245);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 40), 246);
 //		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);
 //		}
