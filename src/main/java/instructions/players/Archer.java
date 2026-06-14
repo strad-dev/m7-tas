@@ -420,9 +420,7 @@ public class Archer {
 		}, 340);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 9), 341); // move to storm clear spot
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -180f, 0f), 350);
-		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 496);
-		}
+		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
 	public static void storm(boolean doContinue) {
@@ -531,11 +529,11 @@ public class Archer {
 			// rapid fire #2 at 878
 			Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 879);
 			Utils.scheduleTask(() -> Actions.rightClick(archer), 880);
-			Utils.scheduleTask(() -> goldor(true), 881);
+			// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 		}
 	}
 
-	private static void goldor(boolean doContinue) {
+	public static void goldor(boolean doContinue) {
 		/*
 		 * ██╗██╗  ██╗
 		 * ╚═╝██║  ██║
@@ -655,25 +653,21 @@ public class Archer {
 		 *      ██║
 		 *      ╚═╝
 		 */
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, 90f), 159);
-//		Utils.scheduleTask(() -> {
-//			Actions.move(archer, "WP", 16);
-//			Actions.setHotbarSlot(archer, 1);
-//		}, 160);
-//		Utils.scheduleTask(() -> Actions.rightClick(archer), 166);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(archer, -82.5f, 0f);
-//			Actions.setHotbarSlot(archer, 5);
-//		}, 167);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 20f), 175);
-//		Utils.scheduleTask(() -> Actions.rightClick(archer), 176); // s4 4
-//		// tick 177: terminal completes
-//
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, -82.5f, 90f), 178);
-//		Utils.scheduleTask(() -> Actions.move(archer, "WP", 13), 179);
-//		Utils.scheduleTask(() -> Actions.leftClick(archer), 188); // GETTING FUCKED BY 0.02 BLOCKS
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 189);
+		Utils.scheduleTask(() -> {
+			Actions.move(archer, "WP", 14);
+			Actions.setHotbarSlot(archer, 5);
+		}, 161);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 121f, 44f), 174);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 175); // s4 1
+		// tick 176: terminal completes
 
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, -4f), 177);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 5), 178);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 189);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 190); // s4 2
+		// tick 191: terminal completes
+
+		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 192);
 
 		if(doContinue) {
 //			Utils.scheduleTask(() -> necron(true), 350);

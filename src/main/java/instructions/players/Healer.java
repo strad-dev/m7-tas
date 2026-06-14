@@ -435,9 +435,7 @@ public class Healer {
 			Actions.setHotbarSlot(healer, 3);
 			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
 		}, 428);
-		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 496);
-		}
+		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
 	public static void storm(boolean doContinue) {
@@ -523,12 +521,10 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -141f, 1f), 800);
 		Utils.scheduleTask(() -> Actions.move(healer, "AN", 3), 812);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -123f, 1f), 814);
-		if(doContinue) {
-			Utils.scheduleTask(() -> goldor(true), 881);
-		}
+		// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 	}
 
-	private static void goldor(boolean doContinue) {
+	public static void goldor(boolean doContinue) {
 		/*
 		 *  ██╗
 		 * ███║
@@ -649,19 +645,20 @@ public class Healer {
 		 *      ██║
 		 *      ╚═╝
 		 */
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 0f), 161);
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "WP", 0);
 			Actions.setHotbarSlot(healer, 1);
-		}, 161);
-		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 12), 170);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 80f), 172);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 173);
+		}, 162);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 12), 171);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -100f, 80f), 173);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 174);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -100f, 0f);
 			Actions.setHotbarSlot(healer, 4);
-		}, 174);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -151f, -22f), 180);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 181); // s4 bottom
+		}, 175);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -151f, -22f), 181);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 182); // s4 bottom
 
 		Utils.scheduleTask(() -> Actions.leap(healer, Mage.get()), 191);
 

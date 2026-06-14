@@ -397,9 +397,7 @@ public class Mage {
 		}, 340);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 9), 341); // move to storm clear spot
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 90f, 0f), 350);
-		if(doContinue) {
-			Utils.scheduleTask(() -> storm(true), 496);
-		}
+		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
 	public static void storm(boolean doContinue) {
@@ -468,12 +466,10 @@ public class Mage {
 		}, 800);
 		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 811);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 812);
-		if(doContinue) {
-			Utils.scheduleTask(() -> goldor(true), 881);
-		}
+		// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 	}
 
-	private static void goldor(boolean doContinue) {
+	public static void goldor(boolean doContinue) {
 		/*
 		 *  ██╗
 		 * ███║
@@ -557,8 +553,8 @@ public class Mage {
 
 		// turn head to save a tick on other players having to turn head
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -91f, 0f), 157);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -96f, 80f), 159);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -147f, 80f), 170);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, 130f, 0f), 159);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 10f), 170);
 
 		/*
 		 * ██╗  ██╗

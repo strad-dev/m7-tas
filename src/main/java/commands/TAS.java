@@ -4,10 +4,10 @@ import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.Watcher;
 import instructions.bosses.maxor.Maxor;
+import instructions.bosses.storm.Storm;
 import instructions.players.*;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -82,27 +82,37 @@ public class TAS implements CommandExecutor {
 		// steps into the Blood Room's nether portal: it teleports every actor to the boss spawn, spawns Maxor, and
 		// kicks off each player's maxor() routine (replacing the old hardcoded tick-742 teleport+maxor in each script).
 		if(section.equals("all") || section.equals("clear")) {
-			Location boss = new Location(world, 73.5, 221, 14.5, 0f, 0f);
+			// The Watcher teleports the actors to the boss spawn the tick a fake enters the portal, then runs this
+			// handoff the next tick — so Maxor and every player's maxor() routine start together.
 			Runnable maxorHandoff = () -> {
-				// Preserve the original handoff offset: the boss spawned 3 ticks before the players teleported in
-				// (Watcher tick 739 vs each script's tick 742), so the players' maxor() routines stay in sync with
-				// the boss's internal clock.
 				Maxor.maxorInstructions(world, true);
-				Utils.scheduleTask(() -> {
-					Map<String, Player> fakes = FakePlayerManager.getFakePlayers();
-					Utils.teleport(fakes.get("Archer"), boss);
-					Archer.maxor(true);
-					Utils.teleport(fakes.get("Mage3"), boss);
-					Berserk.maxor(true);
-					Utils.teleport(fakes.get("Mage4"), boss);
-					Healer.maxor(true);
-					Utils.teleport(fakes.get("Mage1"), boss);
-					Mage.maxor(true);
-					Utils.teleport(fakes.get("Mage2"), boss);
-					Tank.maxor(true);
-				}, 3);
+				Archer.maxor(true);
+				Berserk.maxor(true);
+				Healer.maxor(true);
+				Mage.maxor(true);
+				Tank.maxor(true);
 			};
 			Watcher.INSTANCE.arm(world, section.equals("all"), maxorHandoff);
+		}
+
+		// Arm the boss-to-boss player handoffs: when Maxor/Storm die and spawn the next boss (chainNext), each
+		// player's storm()/goldor() routine starts that same tick — replacing the old hardcoded transition ticks
+		// (storm(true)@496, goldor(true)@881) in the player scripts.
+		if(section.equals("all") || section.equals("boss")) {
+			Maxor.INSTANCE.armPlayerHandoff(() -> {
+				Archer.storm(true);
+				Berserk.storm(true);
+				Healer.storm(true);
+				Mage.storm(true);
+				Tank.storm(true);
+			});
+			Storm.INSTANCE.armPlayerHandoff(() -> {
+				Archer.goldor(true);
+				Berserk.goldor(true);
+				Healer.goldor(true);
+				Mage.goldor(true);
+				Tank.goldor(true);
+			});
 		}
 
 		// Restart spectator sync so it runs AFTER all instruction tasks in each tick

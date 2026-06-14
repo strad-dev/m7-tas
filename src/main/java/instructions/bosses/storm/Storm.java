@@ -153,6 +153,7 @@ public final class Storm extends WitherLord {
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
 			Goldor.goldorInstructions(world, true);
+			runPlayerHandoff(); // start each player's goldor() routine the same tick Goldor spawns
 		}
 	}
 

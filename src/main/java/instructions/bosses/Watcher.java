@@ -266,11 +266,11 @@ public class Watcher {
 		boss.setWorld(world);
 		Utils.debug(Utils.DebugType.BOSS, "Portal entered by " + Utils.getRealName(p) + " → teleporting " + (tasActive ? "fakes" : "all players"));
 
+		// Teleport the actors THIS tick; the boss + player routines start together on the NEXT tick.
 		if(tasActive) {
+			FakePlayerManager.getFakePlayers().values().forEach(f -> Utils.teleport(f, boss));
 			if(doContinue && maxorHandoff != null) {
-				maxorHandoff.run(); // teleports fakes + spawns Maxor + each player's maxor(true)
-			} else {
-				FakePlayerManager.getFakePlayers().values().forEach(f -> Utils.teleport(f, boss));
+				Utils.scheduleTask(maxorHandoff, 1); // spawns Maxor + starts each player's maxor(true) together
 			}
 		} else {
 			for(Player pl : world.getPlayers()) {
@@ -278,7 +278,7 @@ public class Watcher {
 				if(pl.getGameMode() == GameMode.SPECTATOR) continue;
 				Utils.teleport(pl, boss);
 			}
-			Maxor.maxorInstructions(world, false);
+			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, false), 1);
 		}
 
 		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -43 -122 72 -43 minecraft:air");
