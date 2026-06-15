@@ -2,6 +2,7 @@ package instructions.bosses;
 
 import instructions.bosses.maxor.Maxor;
 import instructions.players.Mage;
+import plugin.BossScheduler;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -20,12 +21,9 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
 import plugin.FakePlayerManager;
-import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.*;
@@ -64,8 +62,11 @@ public class Watcher {
 	private boolean doContinue = false;        // chain into Maxor on portal entry (set by arm())
 	private Runnable maxorHandoff = null;      // full Maxor handoff supplied by TAS.runTAS
 	private int triggerPhaseTick = 0;          // Utils.phaseTick() captured at spawn — overall-column basis
-	private BukkitTask detectTask;
-	private BukkitTask portalDetectTask;
+	// Per-tick scans run as boss tickers (BossScheduler.addTicker) so the Watcher is a "boss" for tick ordering —
+	// its detection/spawn/portal logic runs at the START of the tick, before any player action. Values are the
+	// registered ticker handles, used to unregister.
+	private Runnable detectTask;
+	private Runnable portalDetectTask;
 
 	// Blood Room bounds: (-136,66,-72) -> (-106,99,-42)
 	private static final double BR_MIN_X = -136, BR_MAX_X = -106;
@@ -93,25 +94,25 @@ public class Watcher {
 	 */
 	public void beginDetection(World w) {
 		this.world = w;
-		if(detectTask != null && !detectTask.isCancelled()) {
-			detectTask.cancel();
-		}
-		detectTask = new BukkitRunnable() {
-			@Override
-			public void run() {
-				if(active) {
-					cancel();
-					return;
-				}
-				Player fake = firstInBounds(true);
-				Player trigger = fake != null ? fake : firstInBounds(false);
-				if(trigger != null) {
-					tasActive = (fake != null);
-					spawnEncounter(trigger);
-					cancel();
-				}
+		if(detectTask != null) BossScheduler.removeTicker(detectTask);
+		final Runnable[] handle = new Runnable[1];
+		handle[0] = () -> {
+			if(active) {
+				BossScheduler.removeTicker(handle[0]);
+				detectTask = null;
+				return;
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+			Player fake = firstInBounds(true);
+			Player trigger = fake != null ? fake : firstInBounds(false);
+			if(trigger != null) {
+				tasActive = (fake != null);
+				BossScheduler.removeTicker(handle[0]);
+				detectTask = null;
+				spawnEncounter(trigger);
+			}
+		};
+		detectTask = handle[0];
+		BossScheduler.addTicker(detectTask);
 	}
 
 	/**
@@ -122,9 +123,10 @@ public class Watcher {
 	 */
 	public void startOnBloodDoor() {
 		if(active) return;
-		if(detectTask == null || detectTask.isCancelled()) return; // not armed/waiting this run
+		if(detectTask == null) return; // not armed/waiting this run
 		tasActive = !FakePlayerManager.getFakePlayers().isEmpty();
-		detectTask.cancel();
+		BossScheduler.removeTicker(detectTask);
+		detectTask = null;
 		spawnEncounter(null); // trigger param is unused by spawnEncounter (only sets tasActive, done above)
 	}
 
@@ -214,9 +216,9 @@ public class Watcher {
 
 		// Choreography start (anchored to the real entry tick — replaces the old hardcoded 3-tick "time to bounds")
 		sendChatMessage("Things feel a little more roomy now, eh?");
-		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
-		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
-		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
+		BossScheduler.schedule(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
+		BossScheduler.schedule(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
+		BossScheduler.schedule(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
 	}
 
 	// ============================== Event-driven kills ==============================
@@ -235,7 +237,7 @@ public class Watcher {
 		} else {
 			sendChatMessage("You have proven yourself.  You may pass.");
 			Utils.timer(ChatColor.GREEN + "Watcher cleared in " + formatTick(phaseRel()));
-			Utils.scheduleTask(this::openPortal, 80);
+			BossScheduler.schedule(this::openPortal, 80);
 		}
 	}
 
@@ -252,21 +254,20 @@ public class Watcher {
 		Utils.timer(ChatColor.GREEN + "Blood Room portal opened | " + formatTick(phaseRel()));
 		Utils.debug(Utils.DebugType.BOSS, "Lightning struck, nether portal opened" + (Utils.isSuperVerbose() ? " at -120..-122 / 69..72 / -43" : ""));
 
-		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
-			portalDetectTask.cancel();
-		}
-		portalDetectTask = new BukkitRunnable() {
-			@Override
-			public void run() {
-				for(Player p : world.getPlayers()) {
-					if(inPortal(p.getLocation())) {
-						enterPortal(p);
-						cancel();
-						return;
-					}
+		if(portalDetectTask != null) BossScheduler.removeTicker(portalDetectTask);
+		final Runnable[] handle = new Runnable[1];
+		handle[0] = () -> {
+			for(Player p : world.getPlayers()) {
+				if(inPortal(p.getLocation())) {
+					BossScheduler.removeTicker(handle[0]);
+					portalDetectTask = null;
+					enterPortal(p);
+					return;
 				}
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		};
+		portalDetectTask = handle[0];
+		BossScheduler.addTicker(portalDetectTask);
 	}
 
 	/** Portal block region: x [-122,-120], y [69,72], z = -43. */
@@ -288,12 +289,12 @@ public class Watcher {
 			// Blood-room blessings: normally collected as item drops, but the TAS enters the boss immediately, so
 			// there's no time to walk over them — broadcast them manually 200 ticks in. Owned here (the Watcher-driven
 			// portal entry) rather than in the Mage routine.
-			Utils.scheduleTask(() -> {
+			BossScheduler.schedule(() -> {
 				Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.POWER, 5);
 				Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.LIFE, 5);
 			}, 200);
 			if(doContinue && maxorHandoff != null) {
-				Utils.scheduleTask(maxorHandoff, 1); // spawns Maxor + starts each player's maxor(true) together
+				BossScheduler.schedule(maxorHandoff, 1); // spawns Maxor + starts each player's maxor(true) together
 			}
 		} else {
 			for(Player pl : world.getPlayers()) {
@@ -301,7 +302,7 @@ public class Watcher {
 				if(pl.getGameMode() == GameMode.SPECTATOR) continue;
 				Utils.teleport(pl, boss);
 			}
-			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, false), 1);
+			BossScheduler.schedule(() -> Maxor.maxorInstructions(world, false), 1);
 		}
 
 		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
@@ -400,7 +401,8 @@ public class Watcher {
 		final int movementTicks = accelTicks + cruiseTicks + decelTicks;
 		entity.teleport(start.clone());
 
-		new BukkitRunnable() {
+		final Runnable[] animHandle = new Runnable[1];
+		animHandle[0] = new Runnable() {
 			int tick = 0;
 			double currentSpeed = 0;
 			final Location currentLoc = start.clone();
@@ -408,7 +410,7 @@ public class Watcher {
 			@Override
 			public void run() {
 				if(!entity.isValid()) {
-					cancel();
+					BossScheduler.removeTicker(animHandle[0]);
 					return;
 				}
 
@@ -452,10 +454,10 @@ public class Watcher {
 							finalLoc2.setYaw(ORIGINAL_POSITION.getYaw());
 							finalLoc2.setPitch(ORIGINAL_POSITION.getPitch());
 							watcher.teleport(finalLoc2);
+							BossScheduler.removeTicker(animHandle[0]);
 							if(onComplete != null) {
 								onComplete.run();
 							}
-							cancel();
 							return;
 						} else {
 							lookVec.normalize();
@@ -465,13 +467,14 @@ public class Watcher {
 						watcher.teleport(finalLoc);
 					}
 
+					BossScheduler.removeTicker(animHandle[0]);
 					if(onComplete != null) {
 						onComplete.run();
 					}
-					cancel();
 				}
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		};
+		BossScheduler.addTicker(animHandle[0]);
 	}
 
 	private void spawnMob(Location location, String mobName) {
@@ -490,7 +493,7 @@ public class Watcher {
 		mob.setCustomNameVisible(true);
 		mob.addScoreboardTag("WatcherMob");
 		mob.setAI(true);
-		Utils.scheduleTask(() -> mob.setAI(false), 20);
+		BossScheduler.schedule(() -> mob.setAI(false), 20);
 		mob.setGravity(true);
 		mob.setSilent(true);
 		mob.setPersistent(true);
@@ -533,7 +536,7 @@ public class Watcher {
 		if(watcher != null && world != null) {
 			if(mobCount != 19) {
 				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, () -> sendChatMessage("Let's see how you can handle this."));
-				Utils.scheduleTask(() -> {
+				BossScheduler.schedule(() -> {
 					Utils.debug(Utils.DebugType.BOSS, "Watcher moved");
 					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
 				}, 60);
@@ -554,9 +557,7 @@ public class Watcher {
 		mobCount = 0;
 		mobsKilled = 0;
 		MOB_SPAWN_LOCATIONS.clear();
-		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
-			portalDetectTask.cancel();
-		}
+		if(portalDetectTask != null) BossScheduler.removeTicker(portalDetectTask);
 		portalDetectTask = null;
 		// Drop any stale Blood Mobs from an aborted previous fight so they can't miscount.
 		if(world != null) {
@@ -579,13 +580,9 @@ public class Watcher {
 
 	private void cleanup() {
 		removeWatcherEntity();
-		if(detectTask != null && !detectTask.isCancelled()) {
-			detectTask.cancel();
-		}
+		if(detectTask != null) BossScheduler.removeTicker(detectTask);
 		detectTask = null;
-		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
-			portalDetectTask.cancel();
-		}
+		if(portalDetectTask != null) BossScheduler.removeTicker(portalDetectTask);
 		portalDetectTask = null;
 		active = false;
 		mobsKilled = 0;
