@@ -339,7 +339,10 @@ public final class Maxor extends WitherLord {
 
 		CustomBossBar.spawnAnimatedStunnedIndicator(boss, Integer.MAX_VALUE);
 
-		Utils.scheduleTask(() -> {
+		// Boss-lane: respawn the crystals at the START of their tick (before player choreography) so a right-click
+		// on that same tick sees the crystal entity. A raw scheduleTask here gets a higher task-id than the run-start
+		// right-click and would run AFTER it that tick, leaving nothing to pick up.
+		BossScheduler.schedule(() -> {
 			resetCrystals();
 			Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
 		}, CRYSTAL_RESPAWN_DELAY_TICKS);

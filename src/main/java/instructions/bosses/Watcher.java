@@ -24,6 +24,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
+import plugin.BossScheduler;
 import plugin.FakePlayerManager;
 import plugin.M7tas;
 import plugin.Utils;
@@ -234,9 +235,17 @@ public class Watcher {
 			sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 		} else {
 			sendChatMessage("You have proven yourself.  You may pass.");
-			Utils.timer(ChatColor.GREEN + "Watcher cleared in " + formatTick(phaseRel()));
+			bloodCampFinished();
 			Utils.scheduleTask(this::openPortal, 80);
 		}
+	}
+
+	/**
+	 * "Blood Camp finished" milestone — owned here so it reports on the Watcher phase clock (like "Entered Boss"),
+	 * but triggered by the Mage's final blood-camp left click (see the Mage blood-camp choreography).
+	 */
+	public void bloodCampFinished() {
+		Utils.timer(ChatColor.GREEN + "Blood Camp finished in " + formatTick(phaseRel()));
 	}
 
 	// ============================== Portal sequence ==============================
@@ -249,7 +258,7 @@ public class Watcher {
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
 		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:nether_portal[axis=x]");
-		Utils.timer(ChatColor.GREEN + "Blood Room portal opened | " + formatTick(phaseRel()));
+		Utils.timer(ChatColor.GREEN + "Boss Portal Opened in " + formatTick(phaseRel()));
 		Utils.debug(Utils.DebugType.BOSS, "Lightning struck, nether portal opened" + (Utils.isSuperVerbose() ? " at -120..-122 / 69..72 / -43" : ""));
 
 		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
@@ -305,7 +314,6 @@ public class Watcher {
 		}
 
 		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
-		Utils.timer(ChatColor.GREEN + "Watcher finished in " + formatTick(phaseRel()));
 		active = false;
 	}
 
@@ -359,9 +367,15 @@ public class Watcher {
 
 			if(Utils.isSuperVerbose()) Utils.debug(Utils.DebugType.BOSS, "Begin spawning " + mobName + " (" + fmt(l) + ")");
 			moveEntitySmooth(stand, headStart.clone().add(0, 1, 0), endLoc, 0.4, () -> {
-				spawnMob(endLoc, mobName);
-				Utils.timer(ChatColor.GREEN + "Blood Mob " + idx + "/19 spawned (" + mobName + ") | " + formatTick(phaseRel()));
-				stand.remove(); // Remove armor stand after reaching destination
+				// Only the actual world-spawn is migrated onto the boss ticker — the travel/animation above stays on
+				// the old raw schedule (unchanged Watcher movement). schedule(...,1) fires at the START of the next
+				// tick (boss lane, before all player choreography), so the mob exists before the mage's same-tick
+				// beam instead of after it (the old mid-tick spawn lost the task-id race to the run-start beam).
+				BossScheduler.schedule(() -> {
+					spawnMob(endLoc, mobName);
+					Utils.timer(ChatColor.GREEN + "Blood Mob " + idx + "/19 spawned (" + mobName + ") | " + formatTick(phaseRel()));
+					stand.remove(); // Remove armor stand after reaching destination
+				}, 1);
 			});
 
 			sendChatMessage(SPAWN_LINES.get(random.nextInt(5)));
@@ -610,7 +624,7 @@ public class Watcher {
 	/** Phase column = ticks since the Watcher engaged; overall = run clock (triggerPhaseTick + t). */
 	private String formatTick(int t) {
 		int overall = t + triggerPhaseTick;
-		return ChatColor.GREEN + String.format("%s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
+		return ChatColor.GREEN + String.format("Watcher: %s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
 	}
 

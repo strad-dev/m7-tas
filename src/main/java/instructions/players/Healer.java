@@ -2,7 +2,6 @@ package instructions.players;
 
 import instructions.Actions;
 import instructions.bosses.storm.Storm;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -416,22 +415,22 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, "WP", 0);
-		}, 400);
+		}, 403);
 		Utils.scheduleTask(() -> {
 			Actions.move(healer, "WPJ", 0);
 			Actions.turnHead(healer, 34f, 80f);
-		}, 405);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 407); // bonzo to yellow pad
+		}, 408);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 410); // bonzo to yellow pad
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, 34f, 0f);
 			Actions.move(healer, "WP", 19);
 			Actions.setHotbarSlot(healer, 0);
-		}, 408);
+		}, 411);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -155f, 0f);
 			Actions.swapItems(healer, 12, 39); // rod swap off of black cat, remove racing helmet -> speed auto-set to 400
 			Actions.setHotbarSlot(healer, 3);
-		}, 428);
+		}, 431);
 		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
@@ -498,12 +497,12 @@ public class Healer {
 		}, 703);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -144f, 0f), 723);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 4), 741);
-		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 779);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 780);
+		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 759);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 760);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 4);
 			Actions.swapItems(healer, 12, 39); // put on racing helmet -> speed auto-set to 650
-		}, 781);
+		}, 761);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 782);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
