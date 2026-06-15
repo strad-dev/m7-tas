@@ -11,10 +11,8 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
+import plugin.BossScheduler;
 import plugin.FakePlayerInventory;
-import plugin.M7tas;
 import plugin.Utils;
 
 import java.util.*;
@@ -49,8 +47,11 @@ public final class Maxor extends WitherLord {
 	private final WitherSkeleton[] miners = new WitherSkeleton[10];
 
 	// Laser/stun cycle state.
-	private BukkitTask laserScanTask;
-	private BukkitTask stunEnrageTask;
+	// The laser scan runs as a boss ticker (BossScheduler.addTicker) so the stun is detected/applied every tick
+	// BEFORE the players' beam choreography — letting a beam hit on the stun tick read the post-stun state.
+	private Runnable laserTicker;
+	// Auto-enrage one-shot, run as a boss-lane task (BossScheduler.schedule) so it fires at the start of its tick.
+	private Runnable stunEnrageTask;
 	private boolean platesActive;
 	private boolean stunCooldownActive;
 	private boolean inStun;
@@ -268,12 +269,12 @@ public final class Maxor extends WitherLord {
 
 	private void startLaserScan() {
 		cancelLaserScan();
-		laserScanTask = new BukkitRunnable() {
+		laserTicker = new Runnable() {
 			@Override
 			public void run() {
 				if(boss == null || boss.isDead()) {
-					cancel();
-					laserScanTask = null;
+					BossScheduler.removeTicker(this);
+					laserTicker = null;
 					return;
 				}
 				if(stunCooldownActive) return;
@@ -282,18 +283,19 @@ public final class Maxor extends WitherLord {
 				double dz = boss.getLocation().getZ() - LASER_CENTER_Z;
 				if(dx * dx + dz * dz <= LASER_RADIUS_SQ) {
 					triggerStun();
-					cancel();
-					laserScanTask = null;
+					BossScheduler.removeTicker(this);
+					laserTicker = null;
 				}
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		};
+		BossScheduler.addTicker(laserTicker);
 	}
 
 	private void cancelLaserScan() {
-		if(laserScanTask != null && !laserScanTask.isCancelled()) {
-			laserScanTask.cancel();
+		if(laserTicker != null) {
+			BossScheduler.removeTicker(laserTicker);
+			laserTicker = null;
 		}
-		laserScanTask = null;
 	}
 
 	private void triggerStun() {
@@ -314,7 +316,9 @@ public final class Maxor extends WitherLord {
 		}
 
 		stunCooldownActive = true;
-		Utils.scheduleTask(() -> stunCooldownActive = false, STUN_COOLDOWN_TICKS);
+		// Boss-lane: the cooldown must lift at the START of its tick so the laser ticker (also start-of-tick) sees
+		// it cleared the same tick, not a tick late.
+		BossScheduler.schedule(() -> stunCooldownActive = false, STUN_COOLDOWN_TICKS);
 		inStun = true;
 		stunDamageDealt = 0;
 
@@ -337,9 +341,10 @@ public final class Maxor extends WitherLord {
 			Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
 		}, CRYSTAL_RESPAWN_DELAY_TICKS);
 
-		// Auto-enrage 160 ticks after the stun, regardless of damage taken.
+		// Auto-enrage exactly 160 ticks after the stun (start of tick), regardless of damage taken: stun at the start
+		// of tick T → enrage at the start of tick T+160, so a beam on the enrage tick sees the re-armored boss.
 		cancelStunEnrageTask();
-		stunEnrageTask = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), this::enrageMaxor, 160L);
+		stunEnrageTask = BossScheduler.schedule(this::enrageMaxor, 160L);
 	}
 
 	private void enterDyingState() {
@@ -359,8 +364,8 @@ public final class Maxor extends WitherLord {
 	}
 
 	private void cancelStunEnrageTask() {
-		if(stunEnrageTask != null && !stunEnrageTask.isCancelled()) {
-			stunEnrageTask.cancel();
+		if(stunEnrageTask != null) {
+			BossScheduler.removeTicker(stunEnrageTask);
 		}
 		stunEnrageTask = null;
 	}

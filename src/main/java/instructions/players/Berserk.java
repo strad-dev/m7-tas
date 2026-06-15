@@ -508,35 +508,35 @@ public class Berserk {
 			Actions.setHotbarSlot(berserk, 6);
 			Actions.swapItems(berserk, 5, 32);
 		}, 607); // last breath
-		int lbFor = 9;
-		for(int i = 608; i <= 679 - lbFor - 1; i += lbFor + 1) {
+		int lbFor = 8;
+		for(int i = 608; i <= 678 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
 		}
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(berserk, 3);
 			Actions.snapHeadAtEntity(berserk, Storm.INSTANCE.getBoss());
-		}, 680);
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 681);
+		}, 679);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 680);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(berserk, 4);
 			Actions.swapItems(berserk, 12, 39); // equip racing helmet (speed auto-set to 650), black cat, and prepare explosive bow
 			Actions.swapItems(berserk, 7, 35);
-		}, 682);
-		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 683);
+		}, 681);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 682);
 		Utils.scheduleTask(() -> {
 			Actions.move(berserk, "AWP", 0);
 			Actions.setHotbarSlot(berserk, 1);
-		}, 684);
-		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 686);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 12f, 80f), 708);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 709); // bonzo staff here because there is less time to build up momentum | lands in 12 ticks
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 710);
+		}, 683);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 685);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 12f, 80f), 707);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 708); // bonzo staff here because there is less time to build up momentum | lands in 12 ticks
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 709);
 		Utils.scheduleTask(() -> {
 			Actions.move(berserk, "WPJ", 1);
 			Actions.turnHead(berserk, -10f, 80f);
-		}, 730);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 731);
+		}, 729);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 730);
 		// pause to allow time to leap
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 745);
 		Utils.scheduleTask(() -> Actions.move(berserk, "SN", 0), 746);
@@ -703,29 +703,25 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 1);
 		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 151);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 152);
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 161);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 162);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 163);
-		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 184);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 185);
-		for(int i = 186; i < 300; i += 5) {
+
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 160);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 161);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 162);
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 183);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 184);
+		for(int i = 185; i <= 360; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
 		}
-		for(int i = 302; i < 360; i += 5) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 361);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 362);
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 383);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 384);
+		for(int i = 385; i <= 500; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
 		}
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 363);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 364);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 365);
-		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 386);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 387);
-		for(int i = 388; i < 500; i += 5) {
-			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
-		}
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 504);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 505);
-		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 506);
-		Utils.scheduleTask(() -> Actions.swapItems(berserk, 13, 39), 507);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 501);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 502);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 13, 39), 503);
 	}
 
 //	private static void witherKing() {

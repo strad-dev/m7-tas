@@ -40,6 +40,10 @@ public final class M7tas extends JavaPlugin {
 	public void onEnable() {
 		plugin = this;
 
+		// Start the boss-priority heartbeat FIRST so its scheduler task id is the lowest of anything created at
+		// runtime — every registered boss ticker then runs each tick before any per-run choreography (see BossScheduler).
+		BossScheduler.start();
+
 		// Suppress Paper's deprecated-event registration warnings (EntityKnockbackEvent / EntityKnockbackByEntityEvent).
 		// Must be set before registerEvents() below, since the warning is logged there.
 		getLogger().setFilter(record -> {
@@ -88,6 +92,7 @@ public final class M7tas extends JavaPlugin {
 		Spectate.stopSpectatorSync();
 		SpringBoots.stop();
 		LavaJump.stop();
+		BossScheduler.stop();
 
 		CustomItems.flushStonkRestorations();
 

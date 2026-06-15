@@ -307,43 +307,43 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Server.openBloodDoor();
-		}, 350);
-		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 371);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 372);
-		Utils.scheduleTask(() -> snapHead("Bonzo"), 373);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 377);
-		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 378);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 382);
-		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 383);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 387);
+		}, 349);
+		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 370);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 371);
+		Utils.scheduleTask(() -> snapHead("Bonzo"), 372);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 376);
+		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 377);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 381);
+		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 382);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 386);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 10);
 			Actions.turnHead(mage, 0f, -35f);
-		}, 388);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 430);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 447);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 472);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 486);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 503);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 516);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 529);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 542);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 559);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 575);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 600);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 614);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 631);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 644);
+		}, 387);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 429);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 446);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 471);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 485);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 502);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 515);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 528);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 541);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 558);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 574);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 599);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 613);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 630);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 643);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Utils.timer(ChatColor.AQUA + "Mage: Blood Camp Finished in 658 Ticks (32.90 seconds)");
-		}, 658);
+			Utils.timer(ChatColor.AQUA + "Mage: Blood Camp Finished in 657 Ticks (32.85 seconds)");
+		}, 657);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 3.5f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
-		}, 659);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 660); // etherwarp to portal
+		}, 658);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 659); // etherwarp to portal
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
@@ -352,17 +352,10 @@ public class Mage {
 			Actions.swapItems(mage, 7, 34);
 			Actions.swapItems(mage, 9, 36);
 			Actions.setHotbarSlot(mage, 5);
-		}, 661);
-		Utils.scheduleTask(() -> {
-			Utils.timer(ChatColor.AQUA + "Mage: Entered Boss in 739 Ticks (36.95 seconds)");
-			// these are not picked up as boss is entered immediately
-			Utils.scheduleTask(() -> {
-				Utils.broadcastBlessing(mage, Utils.BlessingType.POWER, 5);
-				Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 5);
-			}, 200);
-			// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
-			// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
-		}, 739);
+		}, 660);
+		// The "Entered Boss" milestone + blood-room blessings, and the Maxor handoff (teleport to boss spawn +
+		// maxor(true)), are all owned by the Watcher's portal entry — see Watcher.enterPortal / the maxorHandoff
+		// armed in TAS.runTAS.
 	}
 
 	public static void maxor(boolean doContinue) {
@@ -442,21 +435,21 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 3);
 			Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss());
-		}, 680);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 681);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 682);
-		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 683);
+		}, 679);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 680);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 681);
+		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 682);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "S", 29);
 			Actions.setHotbarSlot(mage, 3);
-		}, 684);
-		for(int i = 686; i <= 781; i += 5) {
+		}, 683);
+		for(int i = 685; i <= 780; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss()), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
-		} // man wish i could have gotten an earlier kill but whatever
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 751);
-		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 756);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 759);
+		} // man wish i could have gotten an 38s kill but whatever
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 750);
+		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 755);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 758);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 4);
 			Actions.swapItems(mage, 12, 39); // put on racing helmet -> speed auto-set to 650
@@ -594,19 +587,12 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 1);
 		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 151);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 152);
-		for(int i = 161; i < 300; i += 5) {
+		for(int i = 160; i <= 500; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
 		}
-		for(int i = 302; i < 360; i += 5) {
-			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
-		}
-		for(int i = 363; i < 500; i += 5) {
-			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
-		}
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 504);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 505);
-		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 506);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 13, 39), 507);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 501);
+		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 502);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 13, 39), 503);
 	}
 
 //	private static void witherKing() {

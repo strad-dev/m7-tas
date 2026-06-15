@@ -502,16 +502,16 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 206);
 		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 213); // debuff
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 214);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 354); // hit 1, avoid insta-enrage
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 396); // hit 2 to kill
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 398);
-		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 399);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 215); // hit 1, avoid insta-enrage
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 395); // hit 2 to kill
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 396);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 397);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 156f, 0f);
 			Actions.setHotbarSlot(tank, 0);
-		}, 400);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 401);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 413);
+		}, 398);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 399);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 411);
 		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
@@ -782,29 +782,24 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 1);
 		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 151);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 152);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 161);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 162);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 163);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 184);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 185);
-		for(int i = 186; i < 300; i += 5) {
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 160);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 161);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 162);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 183);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 184);
+		for(int i = 185; i <= 360; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
 		}
-		for(int i = 302; i < 360; i += 5) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 361);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 362);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 383);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 384);
+		for(int i = 385; i <= 500; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
 		}
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 363);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 364);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 365);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 386);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 387);
-		for(int i = 388; i < 500; i += 5) {
-			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
-		}
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 504);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 505);
-		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 506);
-		Utils.scheduleTask(() -> Actions.swapItems(tank, 13, 39), 507);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 501);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 502);
+		Utils.scheduleTask(() -> Actions.swapItems(tank, 13, 39), 503);
 	}
 
 //	private static void witherKing() {
