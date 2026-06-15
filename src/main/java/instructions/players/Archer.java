@@ -408,10 +408,10 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 162);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 22), 173);
 		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 36), 200);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 239);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 128f, 0f), 240);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 241);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 242);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 240);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 128f, 0f), 241);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 242);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 243);
 		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 339);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -76f, 0f);
@@ -450,7 +450,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(archer, 5);
 			Actions.swapItems(archer, 12, 39); // put on racing helmet -> speed auto-set to 650
-		}, 537);
+		}, 545);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 95), 546); // go to goldor
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 576);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 577);
@@ -502,31 +502,31 @@ public class Archer {
 			Actions.setHotbarSlot(archer, 5);
 		}, 726);
 		if(doContinue) {
-			Utils.scheduleTask(() -> Actions.dropItem(archer, false), 822);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 840);
-			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 847);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 848);
-			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 855);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 856);
-			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 863);
+			Utils.scheduleTask(() -> Actions.dropItem(archer, false), 802);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 820);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 827);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 828);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 835);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 836);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), 843);
 			Utils.scheduleTask(() -> {
 				Actions.turnHead(archer, -10.5f, -15.5f);
 				Actions.setHotbarSlot(archer, 4);
-			}, 864);
+			}, 844);
 			Utils.scheduleTask(() -> {
 				Actions.swapItems(archer, 18, 39);
 				Actions.swapItems(archer, 19, 38);
 				Actions.swapItems(archer, 20, 37);
 				Actions.swapItems(archer, 21, 36);
-			}, 865);
-			Utils.scheduleTask(() -> Actions.dropItem(archer, true), 870);
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 871);
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 875);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 876);
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 877);
-			// rapid fire #2 at 878
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 879);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 880);
+			}, 845);
+			Utils.scheduleTask(() -> Actions.dropItem(archer, true), 849);
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 850);
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 854);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 855);
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 856);
+			// rapid fire #2 at 857
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 858);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 859);
 			// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 		}
 	}

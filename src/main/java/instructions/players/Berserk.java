@@ -567,7 +567,7 @@ public class Berserk {
 			Actions.setHotbarSlot(berserk, 1);
 		}, 845);
 		if(doContinue) {
-			Utils.scheduleTask(() -> Actions.dropItem(berserk, true), 870);
+			Utils.scheduleTask(() -> Actions.dropItem(berserk, true), 849);
 			// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 		}
 	}

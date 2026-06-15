@@ -307,43 +307,40 @@ public class Mage {
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
 			Server.openBloodDoor();
-		}, 349);
-		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 370);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 371);
-		Utils.scheduleTask(() -> snapHead("Bonzo"), 372);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 376);
-		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 377);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 381);
-		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 382);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 386);
+		}, 350);
+		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 371);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 372);
+		Utils.scheduleTask(() -> snapHead("Bonzo"), 373);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 377);
+		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 378);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 382);
+		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 383);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 387);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 10);
 			Actions.turnHead(mage, 0f, -35f);
-		}, 387);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 429);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 446);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 471);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 485);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 502);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 515);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 528);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 541);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 558);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 574);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 599);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 613);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 630);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 643);
-		Utils.scheduleTask(() -> {
-			Actions.leftClick(mage);
-			Utils.timer(ChatColor.AQUA + "Mage: Blood Camp Finished in 657 Ticks (32.85 seconds)");
-		}, 657);
+		}, 388);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 430);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 447);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 472);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 486);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 503);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 516);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 529);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 542);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 559);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 575);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 600);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 614);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 631);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 644);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 658);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 3.5f);
 			Actions.setHotbarSlot(mage, 1);
 			Actions.move(mage, "N", 2);
-		}, 658);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 659); // etherwarp to portal
+		}, 659);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 660); // etherwarp to portal
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 1, 28);
 			Actions.swapItems(mage, 3, 30);
@@ -352,7 +349,7 @@ public class Mage {
 			Actions.swapItems(mage, 7, 34);
 			Actions.swapItems(mage, 9, 36);
 			Actions.setHotbarSlot(mage, 5);
-		}, 660);
+		}, 661);
 		// The "Entered Boss" milestone + blood-room blessings, and the Maxor handoff (teleport to boss spawn +
 		// maxor(true)), are all owned by the Watcher's portal entry — see Watcher.enterPortal / the maxorHandoff
 		// armed in TAS.runTAS.
@@ -377,10 +374,10 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 162); // spring boots to left crystal
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 22), 173);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 200);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 239);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 0f), 240);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 241);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 242);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 240);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 0f), 241);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 242);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 243);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 339);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -121f, 0f);
@@ -431,7 +428,7 @@ public class Mage {
 		}, 647);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 648);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -172f, -29f), 649);
-		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 667);
+		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 668);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 3);
 			Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss());
@@ -443,13 +440,13 @@ public class Mage {
 			Actions.move(mage, "S", 29);
 			Actions.setHotbarSlot(mage, 3);
 		}, 683);
-		for(int i = 685; i <= 780; i += 5) {
+		for(int i = 685; i <= 760; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss()), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
 		}
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 754);
-		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 755);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 758);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 734);
+		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 735);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 738);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 4);
 			Actions.swapItems(mage, 12, 39); // put on racing helmet -> speed auto-set to 650
