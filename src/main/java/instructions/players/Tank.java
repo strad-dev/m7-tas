@@ -503,15 +503,15 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 213); // debuff
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 214);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 215); // hit 1, avoid insta-enrage
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 395); // hit 2 to kill
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 396);
-		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 397);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 396); // hit 2 to kill
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 397);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 398);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 156f, 0f);
 			Actions.setHotbarSlot(tank, 0);
-		}, 398);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 399);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 411);
+		}, 399);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 400);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 412);
 		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 

@@ -51,7 +51,7 @@ public final class Storm extends WitherLord {
 	// Aggro parameters (post-intro and post-enrage).
 	private static final double AGGRO_STOP_DISTANCE = 6.0;
 	private static final double AGGRO_Y_OFFSET = 2.0;
-	private static final double AGGRO_MAX_SPEED = 0.6;
+	private static final double AGGRO_MAX_SPEED = 0.66666;
 
 	// Center the miners and sentries face toward.
 	private static final Location FACING_CENTER = new Location(null, 73.5, 0, 53.5);
@@ -225,37 +225,29 @@ public final class Storm extends WitherLord {
 
 	private void startCycleTask() {
 		cancelCycleTask();
-		// Runs every tick in the boss heartbeat; the internal counter preserves the original 20-tick cadence
-		// (matching runTaskTimer(0L, 20L)) while ensuring the crush check beats the player beam each cycle tick.
-		cycleTicker = new Runnable() {
-			int sinceLast = 0;
+		// Runs every tick in the boss heartbeat, but the poll body only fires on phase ticks divisible by 20
+		// (0, 20, 40, ...). Gating on the absolute phase tick — not a registration-relative counter — keeps the
+		// cadence locked to the 20-grid regardless of when the ticker was registered or first ran.
+		cycleTicker = () -> {
+			if(boss == null || boss.isDead()) {
+				cancelCycleTask();
+				return;
+			}
+			if(displayTick() % 20 != 0) return;
 
-			@Override
-			public void run() {
-				if(boss == null || boss.isDead()) {
-					cancelCycleTask();
-					return;
+			// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
+			// Used (already-crushed) pillars are skipped — their pad is dead.
+			for(PillarOscillator osc : pillars) {
+				if(osc.isUsed()) continue;
+				if(padOccupied(osc.getPillar().padBox())) {
+					osc.runCycle(tick);
 				}
-				if(sinceLast > 0) {
-					sinceLast--;
-					return;
-				}
-				sinceLast = 19;
+			}
 
-				// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
-				// Used (already-crushed) pillars are skipped — their pad is dead.
-				for(PillarOscillator osc : pillars) {
-					if(osc.isUsed()) continue;
-					if(padOccupied(osc.getPillar().padBox())) {
-						osc.runCycle(tick);
-					}
-				}
-
-				// Crush detection — only after intro ends, only while not already stunned, and only
-				// within the 60-tick window after any pillar's most recent movement.
-				if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
-					triggerCrush();
-				}
+			// Crush detection — only after intro ends, only while not already stunned, and only
+			// within the 60-tick window after any pillar's most recent movement.
+			if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
+				triggerCrush();
 			}
 		};
 		BossScheduler.addTicker(cycleTicker);
