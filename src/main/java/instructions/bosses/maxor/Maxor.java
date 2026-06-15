@@ -277,6 +277,9 @@ public final class Maxor extends WitherLord {
 					laserTicker = null;
 					return;
 				}
+				// On real Hypixel the laser check is a 20-tick cycle (like Storm's crush detection), not every tick.
+				// Anchor to phase ticks divisible by 20 so the stun can only trigger on the 20-tick grid.
+				if(displayTick() % 20 != 0) return;
 				if(stunCooldownActive) return;
 
 				double dx = boss.getLocation().getX() - LASER_CENTER_X;

@@ -446,8 +446,8 @@ public class Mage {
 		for(int i = 685; i <= 780; i += 5) {
 			Utils.scheduleTask(() -> Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss()), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
-		} // man wish i could have gotten an 38s kill but whatever
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 750);
+		}
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 754);
 		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 755);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 758);
 		Utils.scheduleTask(() -> {

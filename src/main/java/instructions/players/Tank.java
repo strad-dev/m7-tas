@@ -496,22 +496,22 @@ public class Tank {
 			Actions.turnHead(tank, 180f, -20f);
 			Actions.rightClick(tank);
 		}, 172);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 197);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 199);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 205);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 206);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 213); // debuff
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 214);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 215); // hit 1, avoid insta-enrage
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 396); // hit 2 to kill
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 397);
-		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 398);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 199);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 200);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 207);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 208);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 215); // debuff
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 216);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 217); // hit 1, avoid insta-enrage
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 400); // hit 2 to kill
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 401);
+		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 402);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 156f, 0f);
 			Actions.setHotbarSlot(tank, 0);
-		}, 399);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 400);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 412);
+		}, 403);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 12), 404);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 416);
 		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
 
