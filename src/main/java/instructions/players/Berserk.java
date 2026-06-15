@@ -48,7 +48,6 @@ public class Berserk {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Utils.setSpeed(berserk, 650);
 				Utils.teleport(berserk, new Location(world, 91.351, 115, 133.781, -145f, -5f));
 				Actions.swapItems(berserk, 1, 28);
 				Actions.swapItems(berserk, 3, 30);
@@ -65,7 +64,8 @@ public class Berserk {
 				Actions.swapItems(berserk, 1, 28);
 				Actions.swapItems(berserk, 3, 30);
 				Actions.swapItems(berserk, 6, 33);
-				Actions.swapItems(berserk, 7, 35);
+				Actions.swapItems(berserk, 7, 34);
+				Utils.scheduleTask(() -> Actions.swapItems(berserk, 7, 35), 1);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 //			case "witherking" -> {
@@ -152,7 +152,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 45f, 45f), 17);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk found a Special Crystal!");
+			Utils.timer(ChatColor.RED + "Berserk found a Special Crystal!");
 		}, 18); // pick up crystal
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, 180f, -25f);
@@ -166,7 +166,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 0f, 0f), 25);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 1/4 (Opened Chest)");
+			Utils.timer(ChatColor.RED + "Berserk: Wizard 1/4 (Opened Chest)");
 			Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 2);
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
 		}, 26); // obtain secret 1/4
@@ -183,7 +183,7 @@ public class Berserk {
 		}, 31);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 2/4 (Killed Bat)");
+			Utils.timer(ChatColor.RED + "Berserk: Wizard 2/4 (Killed Bat)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.BAT);
 		}, 32); // kill bat
 		Utils.scheduleTask(() -> {
@@ -226,7 +226,7 @@ public class Berserk {
 			Actions.turnHead(berserk, -90f, -90f);
 			Actions.setHotbarSlot(berserk, 1);
 			Actions.move(berserk, "N", 0);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 3/4 (Picked Up Item)");
+			Utils.timer(ChatColor.RED + "Berserk: Wizard 3/4 (Picked Up Item)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.ITEM);
 		}, 51);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 52); // etherwarp up
@@ -263,7 +263,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -10f, 13f), 64);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Wizard 4/4 (Opened Chest)");
+			Utils.timer(ChatColor.RED + "Berserk: Wizard 4/4 (Opened Chest)");
 			Utils.broadcastBlessing(berserk, Utils.BlessingType.WISDOM, 1);
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.BLESSING_CHEST);
 		}, 65);
@@ -284,7 +284,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, -36f), 70);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 1/7 (Opened Chest)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 1/7 (Opened Chest)");
 			Utils.playLocalSound(berserk, Sound.BLOCK_CHEST_OPEN);
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
 		}, 71);
@@ -294,7 +294,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 75); // etherwarp to secret
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -96.3f, 3.1f);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 2/7 (Picked Up Item)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 2/7 (Picked Up Item)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.ITEM);
 		}, 76);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 77); // etherwarp out
@@ -310,7 +310,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(berserk, 7);
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 3/7 (Opened Chest)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 3/7 (Opened Chest)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
 		}, 84);
 		Utils.scheduleTask(() -> {
@@ -343,13 +343,13 @@ public class Berserk {
 		}, 94);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 4/7 (Obtained Wither Essence)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 4/7 (Obtained Wither Essence)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.ESSENCE);
 		}, 95);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 56f, 22f), 96);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 5/7 (Obtained Wither Essence)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 5/7 (Obtained Wither Essence)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.ESSENCE);
 		}, 97);
 		Utils.scheduleTask(() -> {
@@ -367,13 +367,13 @@ public class Berserk {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(berserk, 3);
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 6/7 (Opened Chest)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 6/7 (Opened Chest)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.CHEST);
 		}, 104);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, -45f, 0f), 105); // pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(berserk);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well Cleared");
+			Utils.timer(ChatColor.RED + "Berserk: Well Cleared");
 		}, 106);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(berserk, -4, 1f);
@@ -404,7 +404,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 117);
 		Utils.scheduleTask(() -> {
 			Actions.move(berserk, "N", 3);
-			Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Well 7/7 (Picked Up Item)");
+			Utils.timer(ChatColor.RED + "Berserk: Well 7/7 (Picked Up Item)");
 			Utils.playSecretFoundSound(berserk, Utils.SecretType.ITEM);
 		}, 118);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 105.5f, 5f), 119); // pearl lands
@@ -425,6 +425,7 @@ public class Berserk {
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(berserk, 1, 28);
 			Actions.swapItems(berserk, 3, 30);
+			Actions.swapItems(berserk, 4, 31);
 			Actions.swapItems(berserk, 6, 33);
 			Actions.swapItems(berserk, 7, 34);
 			Actions.setHotbarSlot(berserk, 5);
@@ -518,9 +519,8 @@ public class Berserk {
 		}, 680);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 681);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(berserk, 650);
 			Actions.setHotbarSlot(berserk, 4);
-			Actions.swapItems(berserk, 12, 39); // equip racing helmet, black cat, and prepare explosive bow
+			Actions.swapItems(berserk, 12, 39); // equip racing helmet (speed auto-set to 650), black cat, and prepare explosive bow
 			Actions.swapItems(berserk, 7, 35);
 		}, 682);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 683);
@@ -687,7 +687,6 @@ public class Berserk {
 		}, 200);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 5), 219);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(berserk, 400);
 			Actions.turnHead(berserk, -111f, -2f);
 			Actions.swapItems(berserk, 12, 39);
 		}, 223);
@@ -697,76 +696,36 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 246);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WN", 0), 287);
 		Utils.scheduleTask(() -> Actions.move(berserk, "N", 10), 297);
-
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(berserk, 153f, 0f);
-//			Actions.setHotbarSlot(berserk, 1);
-//		}, 194);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(-0.637, 0, -1.25), 3), 195);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 82f), 197);
-//		Utils.scheduleTask(() -> Actions.bonzo(berserk, new Vector(-0.6926, 0.5, -1.359)), 198);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 153f, 0f), 199);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 180f, 0f), 219);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.403), 1), 220);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -0.2806), 3), 221);
-//		Utils.scheduleTask(() -> Actions.lavaJump(berserk, false), 227);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 228);
-//		Utils.scheduleTask(() -> Actions.swingHand(berserk), 235);
-//		Utils.scheduleTask(() -> {
-//			Goldor.broadcastTerminalComplete(berserk, "terminal", 7, 7);
-//			Bukkit.broadcastMessage(ChatColor.GREEN + "S4 finished in 41 ticks (2.05 seconds) | Terminals: 236 ticks (11.80 seconds) | Overall: 2 652 ticks (132.60 seconds)");
-//			Server.openCore();
-//		}, 236);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 237);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 238);
-//
-//
-//		/*
-//		 * ███████╗██╗ ██████╗ ██╗  ██╗████████╗
-//		 * ██╔════╝██║██╔════╝ ██║  ██║╚══██╔══╝
-//		 * █████╗  ██║██║  ███╗███████║   ██║
-//		 * ██╔══╝  ██║██║   ██║██╔══██║   ██║
-//		 * ██║     ██║╚██████╔╝██║  ██║   ██║
-//		 * ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝
-//		 */
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 239);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0, 0, -1.403), 11), 256);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -82.5f, -5f), 266);
-//		// tick 267: swap to gdrag
-//		Utils.scheduleTask(Berserk::shoot, 268);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 272);
-//		Utils.scheduleTask(Berserk::shoot, 273);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 277);
-//		Utils.scheduleTask(Berserk::shoot, 278);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 282);
-//		Utils.scheduleTask(Berserk::shoot, 283);
-//		Utils.scheduleTask(() -> Actions.salvation(berserk), 287);
-//		Utils.scheduleTask(Berserk::shoot, 288);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 289);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 290);
 	}
 
 	public static void necron(boolean doContinue) {
-//		Actions.setHotbarSlot(berserk, 2);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Tank.get()), 121);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 122);
-//		for(int i = 161; i < 510; i += 5) {
-//			Utils.scheduleTask(Berserk::shoot, i);
-//			Utils.scheduleTask(() -> Actions.salvation(berserk), i + 4);
-//		}
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 2), 507);
-//		Utils.scheduleTask(() -> Actions.leap(berserk, Healer.get()), 508);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -122f, 0f), 509);
-//		// tick 510: equip black cat
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.1898, 0, -0.7435), 20), 511);
-//		Utils.scheduleTask(() -> Actions.jump(berserk), 530);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(0.238, 0, -0.1487), 9), 531);
-//		Utils.scheduleTask(() -> Actions.move(berserk, new Vector(1.1898, 0, -0.7435), 5), 540);
-//		Utils.scheduleTask(() -> Actions.turnHead(berserk, -79.7f, 19.1f), 544);
-//		Utils.scheduleTask(() -> Actions.swapItems(berserk, 12, 39), 545);
-//		if(doContinue) {
-//			Utils.scheduleTask(Berserk::witherKing, 609);
-//		}
+		Actions.setHotbarSlot(berserk, 6);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 1);
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 151);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 152);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 161);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 162);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 163);
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 184);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 185);
+		for(int i = 186; i < 300; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+		}
+		for(int i = 302; i < 360; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 363);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 364);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 365);
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 386);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 387);
+		for(int i = 388; i < 500; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(berserk), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 504);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 505);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 506);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 13, 39), 507);
 	}
 
 //	private static void witherKing() {

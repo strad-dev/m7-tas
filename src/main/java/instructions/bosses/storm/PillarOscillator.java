@@ -1,6 +1,5 @@
 package instructions.bosses.storm;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import plugin.Utils;
 
@@ -99,14 +98,14 @@ public final class PillarOscillator {
 			// new bottom row. If Storm is already at the floor the push no-ops
 			// and the next 20-tick poll's crush detector handles him.
 			Storm.INSTANCE.tryPushBelowDescendingPillar(pillar, bottomY - 1);
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+			Utils.runCommand(
 					String.format("clone %d %d %d %d %d %d %d %d %d",
 							pillar.pillarX1(), bottomY, pillar.pillarZ1(),
 							pillar.pillarX2(), bottomY, pillar.pillarZ2(),
 							pillar.pillarX1(), bottomY - 1, pillar.pillarZ1()));
 			bottomY--;
 		} else {
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+			Utils.runCommand(
 					String.format("fill %d %d %d %d %d %d minecraft:air",
 							pillar.pillarX1(), bottomY, pillar.pillarZ1(),
 							pillar.pillarX2(), bottomY, pillar.pillarZ2()));

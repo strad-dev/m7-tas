@@ -47,7 +47,6 @@ public class Healer {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Utils.setSpeed(healer, 650);
 				Utils.teleport(healer, new Location(world, 107.622, 120, 93.618, -123f, 1f));
 				Actions.swapItems(healer, 1, 28);
 				Actions.swapItems(healer, 3, 30);
@@ -62,7 +61,7 @@ public class Healer {
 				Actions.swapItems(healer, 1, 28);
 				Actions.swapItems(healer, 3, 30);
 				Actions.swapItems(healer, 6, 33);
-				Actions.swapItems(healer, 7, 35);
+				Actions.swapItems(healer, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 //			case "witherking" -> {
@@ -127,7 +126,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -160f, 55f), 41);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 1/3 (Opened Chest)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Trap 1/3 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 42);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 109.5f, -68f), 43);
@@ -148,7 +147,7 @@ public class Healer {
 		}, 87);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 2/3 (Killed Bat)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Trap 2/3 (Killed Bat)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BAT);
 		}, 88);
 		Utils.scheduleTask(() -> {
@@ -175,7 +174,7 @@ public class Healer {
 		// Tick 104: pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Trap 3/3 (Opened Chest)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Trap 3/3 (Opened Chest)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 2);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
 		}, 105);
@@ -235,7 +234,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.leftClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 1/4 (Opened Chest)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Red Blue 1/4 (Opened Chest)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.CHEST);
 		}, 145);
 		Utils.scheduleTask(() -> {
@@ -260,13 +259,13 @@ public class Healer {
 		}, 152);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Prince Killed | Crypt 5/5");
+			Utils.timer(ChatColor.YELLOW + "Healer: Prince Killed | Crypt 5/5");
 		}, 153); // etherwarp across
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 100f, 10f), 154);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 155); // etherwarp to item
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -97f, -4f);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 2/4 (Picked Up Item)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Red Blue 2/4 (Picked Up Item)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.ITEM);
 		}, 156);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 157); // etherwarp to chest
@@ -279,7 +278,7 @@ public class Healer {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.leftClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 3/4 (Opened Chest)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Red Blue 3/4 (Opened Chest)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.POWER, 2);
 			Utils.playSecretFoundSound(healer, Utils.SecretType.BLESSING_CHEST);
 		}, 161);
@@ -290,7 +289,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 23f, 30f), 166);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Red Blue 4/4 (Opened Wither Essence)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Red Blue 4/4 (Opened Wither Essence)");
 			Utils.playSecretFoundSound(healer, Utils.SecretType.ESSENCE);
 		}, 167);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 176f, 44.4f), 168);
@@ -310,8 +309,8 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 172);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 173);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Yellow Cleared");
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Clear Finished in 174 ticks (8.70d seconds)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Yellow Cleared");
+			Utils.timer(ChatColor.YELLOW + "Healer: Clear Finished in 174 ticks (8.70d seconds)");
 			Utils.broadcastBlessing(healer, Utils.BlessingType.WISDOM, 5);
 		}, 174);
 		// Yellow: 10 ticks
@@ -329,7 +328,6 @@ public class Healer {
 	}
 
 	public static void maxor(boolean doContinue) {
-		Utils.setSpeed(healer, 650); // change pet to black cat (autopet)
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -14.5f, 37.5f), 1);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 11), 2);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 12);
@@ -411,7 +409,7 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 66f, -43f), 283);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(healer);
-			Bukkit.broadcastMessage(ChatColor.YELLOW + "Healer: Predev Finished in 284 Ticks (14.20 seconds) | Overall: 1 026 ticks (51.30 seconds)");
+			Utils.timer(ChatColor.YELLOW + "Healer: Predev Finished in 284 Ticks (14.20 seconds) | Overall: 1 026 ticks (51.30 seconds)");
 		}, 284);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 285);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 286); // leap to bers
@@ -431,9 +429,8 @@ public class Healer {
 		}, 408);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -155f, 0f);
-			Actions.swapItems(healer, 12, 39);
+			Actions.swapItems(healer, 12, 39); // rod swap off of black cat, remove racing helmet -> speed auto-set to 400
 			Actions.setHotbarSlot(healer, 3);
-			Utils.setSpeed(healer, 400); // rod swap off of black cat, remove racing helmet
 		}, 428);
 		// storm() is now started by Maxor.chainNext (player handoff armed in TAS.runTAS).
 	}
@@ -504,9 +501,8 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 780);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 781);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(healer, 650);
 			Actions.setHotbarSlot(healer, 4);
-			Actions.swapItems(healer, 12, 39);
+			Actions.swapItems(healer, 12, 39); // put on racing helmet -> speed auto-set to 650
 		}, 782);
 		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 783);
 		Utils.scheduleTask(() -> {
@@ -675,7 +671,6 @@ public class Healer {
 		}, 200);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 5), 219);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(healer, 400);
 			Actions.turnHead(healer, -111f, -2f);
 			Actions.swapItems(healer, 12, 39);
 		}, 223);
@@ -688,40 +683,33 @@ public class Healer {
 	}
 
 	public static void necron(boolean doContinue) {
-//		Actions.setHotbarSlot(healer, 3);
-//		Utils.scheduleTask(() -> Actions.leap(healer, Tank.get()), 121);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 122);
-//		Utils.scheduleTask(() -> Actions.lastBreath(healer, 36), 123);
-//		Utils.scheduleTask(() -> {
-//			Actions.setHotbarSlot(healer, 7);
-//			Actions.move(healer, new Vector(0, 0, -1.12242), 2);
-//		}, 160);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 40f), 161);
-//		Utils.scheduleTask(() -> Actions.ghostPick(healer, world.getBlockAt(54, 64, 80)), 162);
-//		Utils.scheduleTask(() -> Actions.ghostPick(healer, world.getBlockAt(54, 64, 79)), 163);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0, 0, -1.12242), 2), 164);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(healer, 180f, 90f);
-//			Actions.setHotbarSlot(healer, 5);
-//		}, 165);
-//		Utils.scheduleTask(() -> Actions.ghostPick(healer, world.getBlockAt(54, 63, 79)), 166);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, 180f, 0f), 167);
-//		// tick 168: equip black cat
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -2f, 0f), 512);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 11), 513);
-//		Utils.scheduleTask(() -> Actions.jump(healer), 523);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 524);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 3), 533);
-//		Utils.scheduleTask(() -> Actions.jump(healer), 535);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 536);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 2), 545);
-//		Utils.scheduleTask(() -> Actions.jump(healer), 546);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.00979, 0, 0.2804), 9), 547);
-//		Utils.scheduleTask(() -> Actions.move(healer, new Vector(0.049, 0, 1.4022), 4), 556);
-//		Utils.scheduleTask(() -> Actions.turnHead(healer, -16.2f, 18.8f), 559);
-//		if(doContinue) {
-//			Utils.scheduleTask(Healer::witherKing, 609);
-//		}
+		Actions.setHotbarSlot(healer, 6);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 1);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 151);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 152);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 161);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 162);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 163);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 184);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 185);
+		for(int i = 186; i < 300; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+		}
+		for(int i = 302; i < 360; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 363);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 364);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 365);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 386);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 387);
+		for(int i = 388; i < 500; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 504);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 505);
+		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 506);
+		Utils.scheduleTask(() -> Actions.swapItems(healer, 13, 39), 507);
 	}
 
 //	private static void witherKing() {

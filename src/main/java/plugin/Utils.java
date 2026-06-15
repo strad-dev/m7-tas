@@ -1,6 +1,7 @@
 package plugin;
 
 import commands.Spectate;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.MinecraftServer;
@@ -34,9 +35,23 @@ public class Utils {
 	 * @param task  The task to run later.
 	 * @param delay In how many ticks this task should be run.
 	 */
+	/** Every one-shot task handed to {@link #scheduleTask} — so {@link #cancelAllScheduled()} can clear a previous
+	 *  run's lingering choreography. Repeating tasks (boss tickers, aggro, spectator sync) use runTaskTimer and are
+	 *  intentionally NOT tracked here. */
+	private static final List<org.bukkit.scheduler.BukkitTask> scheduledTasks = new ArrayList<>();
+
 	public static void scheduleTask(Runnable task, long delay) {
 		if(!M7tas.getInstance().isEnabled()) return;
-		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay);
+		scheduledTasks.add(Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay));
+	}
+
+	/** Cancel every pending one-shot task scheduled via {@link #scheduleTask}. Called at the start of a run so a
+	 *  previous run's still-queued dialogue/choreography (e.g. a player routine's broadcasts) can't fire into it. */
+	public static void cancelAllScheduled() {
+		for(org.bukkit.scheduler.BukkitTask t : scheduledTasks) {
+			if(t != null && !t.isCancelled()) t.cancel();
+		}
+		scheduledTasks.clear();
 	}
 
 	public static void setSpeed(Player p, int speed) {
@@ -96,6 +111,22 @@ public class Utils {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			((CraftPlayer) p).getHandle().connection.send(pkt);
 		}
+	}
+
+	/**
+	 * Runs a server command without any output. Vanilla normally broadcasts a command's success
+	 * to every op as "[Server: ...]" chat spam; {@code withSuppressedOutput()} sets the source
+	 * silent so {@code sendSuccess}/{@code sendFailure} short-circuit before that broadcast (this
+	 * works regardless of the logAdminCommands gamerule, which doesn't reliably suppress it).
+	 * Use this in place of {@code Bukkit.dispatchCommand(Bukkit.getConsoleSender(), ...)} for the
+	 * plugin's own world edits (setblock/fill/clone) and entity commands (tag/kill).
+	 *
+	 * @param command Command to run, without a leading slash
+	 */
+	public static void runCommand(String command) {
+		MinecraftServer server = MinecraftServer.getServer();
+		CommandSourceStack source = server.createCommandSourceStack().withSuppressedOutput();
+		server.getCommands().performPrefixedCommand(source, command);
 	}
 
 	/**
@@ -280,7 +311,7 @@ public class Utils {
 	}
 
 	public enum DebugType {
-		CLIENT, SERVER, BOSS
+		CLIENT, SERVER, BOSS, ERROR
 	}
 
 	/** Verbosity ladder, ascending. Each level is a superset of the one below:
@@ -315,10 +346,31 @@ public class Utils {
 
 	/** Server tick captured when the current phase began; basis for the {@code [tick: N]} prefix on verbose lines. */
 	private static int phaseStartTick = 0;
+	/** Server tick the live overall-run timer was anchored at (see {@link #markRunStart()}). */
+	private static int runStartTick = 0;
+	/** False once {@link #markRunStart()} arms the run timer, until the next {@link #markPhaseStart()} anchors it. */
+	private static boolean runStarted = false;
 
-	/** Mark the start of a new phase — resets the {@code [tick: N]} counter shown on every verbose line. */
+	/** Mark the start of a new phase — resets the {@code [tick: N]} counter shown on every verbose line. The first
+	 *  phase start after {@link #markRunStart()} also anchors the live overall-run timer. */
 	public static void markPhaseStart() {
-		phaseStartTick = MinecraftServer.getServer().getTickCount();
+		int now = MinecraftServer.getServer().getTickCount();
+		phaseStartTick = now;
+		if(!runStarted) {
+			runStartTick = now;
+			runStarted = true;
+		}
+	}
+
+	/** Arm a fresh live overall-run timer: the next {@link #markPhaseStart()} (the run's first phase) anchors it.
+	 *  Used by /practice, whose "Overall" timer is live rather than the hardcoded per-phase cumulative offset. */
+	public static void markRunStart() {
+		runStarted = false;
+	}
+
+	/** Ticks elapsed since the live overall-run timer was anchored (see {@link #markRunStart()}). */
+	public static int runTick() {
+		return MinecraftServer.getServer().getTickCount() - runStartTick;
 	}
 
 	/** Ticks elapsed since the last {@link #markPhaseStart()} — the value rendered in the verbose-line prefix. */
@@ -332,12 +384,19 @@ public class Utils {
 	}
 
 	public static void debug(DebugType type, String message) {
+		// ERROR always fires — it flags a misuse/bug, not routine debug output, so it ignores the verbosity gate.
+		if(type == DebugType.ERROR) {
+			// Errors always carry a [tick: #] stamp regardless of verbosity, so the misuse can be pinpointed.
+			Bukkit.broadcastMessage(ChatColor.GRAY + "[tick: " + phaseTick() + "] " + ChatColor.RED + "[Error] " + message);
+			return;
+		}
 		if(!isVerbose()) return;
 		String prefix = isSuperVerbose() ? ChatColor.GRAY + "[tick: " + phaseTick() + "] " : "";
 		switch(type) {
 			case CLIENT -> Bukkit.broadcastMessage(prefix + ChatColor.DARK_AQUA + "[Client] " + message);
 			case SERVER -> Bukkit.broadcastMessage(prefix + ChatColor.GREEN + "[Server] " + message);
 			case BOSS -> Bukkit.broadcastMessage(prefix + ChatColor.LIGHT_PURPLE + "[Game] " + message);
+			case ERROR -> { /* handled above */ }
 		}
 	}
 

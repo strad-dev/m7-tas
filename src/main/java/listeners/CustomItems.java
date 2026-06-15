@@ -1595,9 +1595,19 @@ public class CustomItems implements Listener {
 	public void onExplosiveBowArrowHit(ProjectileHitEvent e) {
 		if(!(e.getEntity() instanceof Arrow arrow)) return;
 		if(!arrow.getScoreboardTags().contains("ExplosiveBowArrow")) return;
-		if(e.getHitBlock() == null) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
-		Location impact = e.getHitBlock().getLocation();
+
+		// On entity contact the arrow behaves like a normal arrow — its arrow damage + the hit ding are applied
+		// by the normal damage path (WithersNotImmuneToArrows for a vulnerable wither). On EITHER an entity or a
+		// block hit it then detonates an added explosion bonus at the point of impact.
+		Location impact;
+		if(e.getHitEntity() != null) {
+			impact = e.getHitEntity().getLocation().add(0, e.getHitEntity().getHeight() / 2.0, 0);
+		} else if(e.getHitBlock() != null) {
+			impact = e.getHitBlock().getLocation();
+		} else {
+			return;
+		}
 		impact.getWorld().spawnParticle(Particle.EXPLOSION, impact.clone().add(0.5, 0.5, 0.5), 10, 0.5, 0.5, 0.5, 0);
 		impact.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 		triggerSuperboomRadius(impact, p);

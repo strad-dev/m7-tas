@@ -141,9 +141,15 @@ public abstract class WitherLord {
 	}
 
 	protected final String formatTick(int t) {
-		int overall = t + previousTicks();
+		int overall = overallTick(t);
 		return ChatColor.GREEN + String.format("%s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
+	}
+
+	/** Overall run tick for display: the live overall-run timer in practice mode (no prior phases actually ran),
+	 *  otherwise the hardcoded per-phase cumulative offset {@code phaseT + previousTicks()}. */
+	protected final int overallTick(int phaseT) {
+		return WitherActions.isPracticeMode() ? Utils.runTick() : phaseT + previousTicks();
 	}
 
 	protected static String formatWithSpaces(int n) {

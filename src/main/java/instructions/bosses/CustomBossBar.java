@@ -162,9 +162,11 @@ public class CustomBossBar {
 		indicator.setSeeThrough(true);
 		indicator.setShadowed(true);
 
-		// Color rotation animation
+		// Follow-the-wither + color rotation animation. Runs every tick so the indicator tracks a MOVING boss
+		// (e.g. Necron mid-chase); colors still rotate only every 5 ticks.
 		new BukkitRunnable() {
 			int colorOffset = 0;
+			int tickCount = 0;
 
 			@Override
 			public void run() {
@@ -174,22 +176,22 @@ public class CustomBossBar {
 					return;
 				}
 
-				// Update colors
-				ChatColor[] colors = {ChatColor.RED, ChatColor.YELLOW, ChatColor.BLUE};
+				// Keep the indicator above the boss's head wherever he moves.
+				indicator.teleport(wither.getLocation().add(0, wither.getHeight() + 0.5, 0));
 
-				// Build the text with rotating colors
-				StringBuilder text = new StringBuilder();
-				for(int i = 0; i < 3; i++) {
-					int colorIndex = (i + colorOffset) % 3;
-					text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
+				// Rotate the colors every 5 ticks.
+				if(tickCount++ % 5 == 0) {
+					ChatColor[] colors = {ChatColor.RED, ChatColor.YELLOW, ChatColor.BLUE};
+					StringBuilder text = new StringBuilder();
+					for(int i = 0; i < 3; i++) {
+						int colorIndex = (i + colorOffset) % 3;
+						text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
+					}
+					indicator.setText(text.toString().trim());
+					colorOffset = (colorOffset + 1) % 3;
 				}
-
-				indicator.setText(text.toString().trim());
-
-				// Shift colors for next update
-				colorOffset = (colorOffset + 1) % 3;
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 5L); // Run every 5 ticks instead of every tick
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 
 		Utils.scheduleTask(() -> {
 			if(activeStunIndicator == indicator) activeStunIndicator = null;

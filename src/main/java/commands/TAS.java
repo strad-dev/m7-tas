@@ -3,8 +3,10 @@ package commands;
 import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.Watcher;
+import instructions.bosses.WitherActions;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
+import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
 import instructions.players.*;
 import org.bukkit.Bukkit;
@@ -55,6 +57,11 @@ public class TAS implements CommandExecutor {
 			Bukkit.broadcastMessage(ChatColor.RED + "Could not run TAS!  There are no actors.");
 			return;
 		}
+
+		// A prior /practice may have left practice-mode aggro on — turn it back off for a real TAS run.
+		WitherActions.setPracticeMode(false);
+		// Clear any one-shot choreography still queued from a previous run before this one schedules its own.
+		Utils.cancelAllScheduled();
 
 		// Reset the verbose phase-tick counter immediately so carryover tasks from the previous phase
 		// count from 0; the run proper re-marks it again when it actually starts (see Server "Run started").
@@ -138,7 +145,23 @@ public class TAS implements CommandExecutor {
 	 * actors to be spawned (idle is fine). Goldor (terminals/patrol) needs no actors.
 	 */
 	public static void runPractice(World world, String section) {
-		Utils.markPhaseStart();
+		// Kick all fake actors — practice is for real players, who become the boss's aggro target.
+		FakePlayerManager.stopCustomConnection();
+		FakePlayerManager.kickAllFakes();
+		WitherActions.setPracticeMode(true);
+
+		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
+		// disarm every player-side handoff + the Watcher so the boss chain spawns each boss WITHOUT starting a
+		// fake-player routine (the source of stray lines like "… used Spirit Mask!" and broken phase gating).
+		Utils.cancelAllScheduled();
+		Maxor.INSTANCE.armPlayerHandoff(null);
+		Storm.INSTANCE.armPlayerHandoff(null);
+		Goldor.INSTANCE.armPlayerHandoff(null);
+		Necron.INSTANCE.armPlayerHandoff(null);
+		Watcher.INSTANCE.arm(world, false, null);
+
+		// Anchor the live overall-run timer at the first boss spawn (the "Overall" column reads it in practice).
+		Utils.markRunStart();
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
 		Server.serverSetup(world);

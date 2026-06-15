@@ -2,6 +2,7 @@ package listeners;
 
 import commands.Spectate;
 import instructions.bosses.Watcher;
+import instructions.bosses.WitherActions;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
@@ -220,6 +221,22 @@ public class MiscListener implements Listener {
 		Storm.INSTANCE.handleDamage(e);
 		Goldor.INSTANCE.handleDamage(e);
 		Necron.INSTANCE.handleDamage(e);
+	}
+
+	// In practice mode, remember the real player who last damaged a TAS boss — bosses chase that player (or the
+	// closest) instead of the kicked fake actors. MONITOR (no ignoreCancelled) so the damager is recorded even
+	// when the boss clamps/cancels the hit (e.g. during an immune window).
+	@EventHandler(priority = EventPriority.MONITOR)
+	public void onBossPracticeDamager(EntityDamageByEntityEvent e) {
+		if(!WitherActions.isPracticeMode()) return;
+		if(!(e.getEntity() instanceof Wither w)) return;
+		if(!w.getScoreboardTags().contains("TASWither")) return;
+		Player damager = null;
+		if(e.getDamager() instanceof Player pl) damager = pl;
+		else if(e.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player sp) damager = sp;
+		if(damager != null && !FakePlayerManager.getFakePlayers().containsValue(damager)) {
+			WitherActions.notePracticeDamager(damager);
+		}
 	}
 
 	// Blood-Mob deaths drive the Watcher's kill lines + portal progression.

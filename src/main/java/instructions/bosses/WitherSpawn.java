@@ -1,8 +1,8 @@
 package instructions.bosses;
 
 import instructions.bosses.storm.PadAndPillar;
-import org.bukkit.Bukkit;
 import org.bukkit.World;
+import plugin.Utils;
 
 /**
  * Static helpers shared across wither bosses that aren't owned by any single
@@ -33,7 +33,7 @@ public final class WitherSpawn {
 	public static void restoreStormPillars(World world) {
 		for(PadAndPillar p : PadAndPillar.ACTIVE) {
 			// Step 1: air-clear the lower extension (y169..y175 inclusive)
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+			Utils.runCommand(
 					String.format("fill %d %d %d %d %d %d minecraft:air",
 							p.pillarX1(), PadAndPillar.PILLAR_BOTTOM_MIN, p.pillarZ1(),
 							p.pillarX2(), PadAndPillar.PILLAR_BOTTOM_INITIAL, p.pillarZ2()));
@@ -48,7 +48,7 @@ public final class WitherSpawn {
 				int srcY1 = bottom;
 				int srcY2 = bottom + rowsToAdd - 1;
 				int dstY1 = bottom - rowsToAdd;
-				Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+				Utils.runCommand(
 						String.format("clone %d %d %d %d %d %d %d %d %d",
 								p.pillarX1(), srcY1, p.pillarZ1(),
 								p.pillarX2(), srcY2, p.pillarZ2(),
