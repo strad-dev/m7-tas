@@ -11,6 +11,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
 import plugin.FakePlayerManager;
+import plugin.BossScheduler;
 import commands.Spectate;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -25,7 +26,10 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class WitherActions {
 
-	private static final Map<UUID, BukkitTask> witherAggroTasks = new HashMap<>();
+	// Aggro movers now run as boss tickers (BossScheduler.addTicker) rather than their own runTaskTimer, so the boss
+	// is repositioned every tick BEFORE the players' beam choreography — see BossScheduler. The value is the
+	// registered ticker handle, used to unregister in clearWitherAggro.
+	private static final Map<UUID, Runnable> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
 
 	// --- Practice mode: bosses chase the real player who last hit (or the closest), not the fake actors. ---
@@ -76,7 +80,9 @@ public class WitherActions {
 		// See class doc above for derivation: move_steady = A * 1.5723 → A = maxSpeed / 1.5723.
 		final double A = maxSpeed * 0.636;
 
-		BukkitTask task = new BukkitRunnable() {
+		// Self-reference so the ticker can unregister itself from the boss heartbeat on teardown.
+		final Runnable[] handle = new Runnable[1];
+		Runnable task = new Runnable() {
 			// Persistent velocity state across ticks (the PD's "v"). Reset to 0 on every snap-to-goal.
 			double vxState = 0, vzState = 0;
 
@@ -93,7 +99,7 @@ public class WitherActions {
 					if(practiceMode && !w.isRemoved()) return;
 					witherAggroTasks.remove(wither.getUniqueId());
 					w.noPhysics = false;
-					cancel();
+					BossScheduler.removeTicker(handle[0]);
 					return;
 				}
 
@@ -182,8 +188,10 @@ public class WitherActions {
 				vxState *= 0.91;
 				vzState *= 0.91;
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+		};
 
+		handle[0] = task;
+		BossScheduler.addTicker(task);
 		witherAggroTasks.put(wither.getUniqueId(), task);
 	}
 
@@ -192,9 +200,9 @@ public class WitherActions {
 	 * Remaining delta movement is left as-is; vanilla aiStep will continue to dampen it.
 	 */
 	public static void clearWitherAggro(Wither wither) {
-		BukkitTask prior = witherAggroTasks.remove(wither.getUniqueId());
-		if(prior != null && !prior.isCancelled()) {
-			prior.cancel();
+		Runnable prior = witherAggroTasks.remove(wither.getUniqueId());
+		if(prior != null) {
+			BossScheduler.removeTicker(prior);
 		}
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
 		w.noPhysics = false;

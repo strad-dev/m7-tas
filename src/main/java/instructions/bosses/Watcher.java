@@ -1,6 +1,7 @@
 package instructions.bosses;
 
 import instructions.bosses.maxor.Maxor;
+import instructions.players.Mage;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -283,6 +284,14 @@ public class Watcher {
 		// Teleport the actors THIS tick; the boss + player routines start together on the NEXT tick.
 		if(tasActive) {
 			FakePlayerManager.getFakePlayers().values().forEach(f -> Utils.teleport(f, boss));
+			Utils.timer(ChatColor.GREEN + "Entered Boss in " + formatTick(phaseRel()));
+			// Blood-room blessings: normally collected as item drops, but the TAS enters the boss immediately, so
+			// there's no time to walk over them — broadcast them manually 200 ticks in. Owned here (the Watcher-driven
+			// portal entry) rather than in the Mage routine.
+			Utils.scheduleTask(() -> {
+				Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.POWER, 5);
+				Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.LIFE, 5);
+			}, 200);
 			if(doContinue && maxorHandoff != null) {
 				Utils.scheduleTask(maxorHandoff, 1); // spawns Maxor + starts each player's maxor(true) together
 			}

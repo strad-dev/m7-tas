@@ -16,10 +16,9 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
-import plugin.M7tas;
+import plugin.BossScheduler;
 import plugin.Utils;
 
 import java.util.ArrayList;
@@ -70,8 +69,11 @@ public final class Storm extends WitherLord {
 	private final List<MobGroup> mobGroups = new ArrayList<>();
 	private final List<WitherSkeleton> sentries = new ArrayList<>();
 
-	private BukkitTask cycleTask;
-	private BukkitTask stunEnrageTask;
+	// The pad/crush poll runs as a boss ticker (BossScheduler.addTicker) so crush detection + its state mutation
+	// happen at the start of the tick, before the players' beam choreography — see BossScheduler.
+	private Runnable cycleTicker;
+	// Auto-enrage one-shot, run as a boss-lane task (BossScheduler.schedule) so it fires at the start of its tick.
+	private Runnable stunEnrageTask;
 	private boolean crushEnabled;
 	private boolean inStun;
 	private double stunDamageDealt;
@@ -223,32 +225,47 @@ public final class Storm extends WitherLord {
 
 	private void startCycleTask() {
 		cancelCycleTask();
-		cycleTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
-			if(boss == null || boss.isDead()) {
-				cancelCycleTask();
-				return;
-			}
+		// Runs every tick in the boss heartbeat; the internal counter preserves the original 20-tick cadence
+		// (matching runTaskTimer(0L, 20L)) while ensuring the crush check beats the player beam each cycle tick.
+		cycleTicker = new Runnable() {
+			int sinceLast = 0;
 
-			// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
-			// Used (already-crushed) pillars are skipped — their pad is dead.
-			for(PillarOscillator osc : pillars) {
-				if(osc.isUsed()) continue;
-				if(padOccupied(osc.getPillar().padBox())) {
-					osc.runCycle(tick);
+			@Override
+			public void run() {
+				if(boss == null || boss.isDead()) {
+					cancelCycleTask();
+					return;
+				}
+				if(sinceLast > 0) {
+					sinceLast--;
+					return;
+				}
+				sinceLast = 19;
+
+				// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
+				// Used (already-crushed) pillars are skipped — their pad is dead.
+				for(PillarOscillator osc : pillars) {
+					if(osc.isUsed()) continue;
+					if(padOccupied(osc.getPillar().padBox())) {
+						osc.runCycle(tick);
+					}
+				}
+
+				// Crush detection — only after intro ends, only while not already stunned, and only
+				// within the 60-tick window after any pillar's most recent movement.
+				if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
+					triggerCrush();
 				}
 			}
-
-			// Crush detection — only after intro ends, only while not already stunned, and only
-			// within the 60-tick window after any pillar's most recent movement.
-			if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
-				triggerCrush();
-			}
-		}, 0L, 20L);
+		};
+		BossScheduler.addTicker(cycleTicker);
 	}
 
 	private void cancelCycleTask() {
-		if(cycleTask != null && !cycleTask.isCancelled()) cycleTask.cancel();
-		cycleTask = null;
+		if(cycleTicker != null) {
+			BossScheduler.removeTicker(cycleTicker);
+			cycleTicker = null;
+		}
 	}
 
 	private boolean padOccupied(BoundingBox padBox) {
@@ -336,9 +353,9 @@ public final class Storm extends WitherLord {
 
 		CustomBossBar.spawnAnimatedStunnedIndicator(boss, Integer.MAX_VALUE);
 
-		// Auto-enrage 160 ticks after the crush (subject to in-game research per the plan).
+		// Auto-enrage N ticks after the crush (start of tick), so a beam on the enrage tick sees the re-armored boss.
 		cancelStunEnrageTask();
-		stunEnrageTask = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), this::enrageStorm, STUN_AUTO_ENRAGE_TICKS);
+		stunEnrageTask = BossScheduler.schedule(this::enrageStorm, STUN_AUTO_ENRAGE_TICKS);
 
 		// Pillar destruction explosion fires 20 ticks after Storm is damaged.
 		Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
@@ -415,7 +432,7 @@ public final class Storm extends WitherLord {
 	}
 
 	private void cancelStunEnrageTask() {
-		if(stunEnrageTask != null && !stunEnrageTask.isCancelled()) stunEnrageTask.cancel();
+		if(stunEnrageTask != null) BossScheduler.removeTicker(stunEnrageTask);
 		stunEnrageTask = null;
 	}
 

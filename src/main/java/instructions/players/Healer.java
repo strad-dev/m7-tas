@@ -498,22 +498,22 @@ public class Healer {
 		}, 703);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -144f, 0f), 723);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 4), 741);
-		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 780);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 781);
+		Utils.scheduleTask(() -> Actions.snapHeadAtEntity(healer, Storm.INSTANCE.getBoss()), 779);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 780);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 4);
 			Actions.swapItems(healer, 12, 39); // put on racing helmet -> speed auto-set to 650
-		}, 782);
-		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 783);
+		}, 781);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 782);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(healer, 1);
 			Actions.move(healer, "WP", 12);
-		}, 784);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 785);
+		}, 783);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 784);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(healer, -47f, 0f);
 			Actions.setHotbarSlot(healer, 5);
-		}, 786);
+		}, 785);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -141f, 1f), 800);
 		Utils.scheduleTask(() -> Actions.move(healer, "AN", 3), 812);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, -123f, 1f), 814);
@@ -687,29 +687,24 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 1);
 		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 151);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 152);
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 161);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 162);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 163);
-		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 184);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 185);
-		for(int i = 186; i < 300; i += 5) {
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 160);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 161);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 162);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 183);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 184);
+		for(int i = 185; i <= 360; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
 		}
-		for(int i = 302; i < 360; i += 5) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 361);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 362);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 383);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 384);
+		for(int i = 385; i <= 500; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
 		}
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 363);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 364);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 365);
-		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 386);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 387);
-		for(int i = 388; i < 500; i += 5) {
-			Utils.scheduleTask(() -> Actions.leftClick(healer), i);
-		}
-		Utils.scheduleTask(() -> Actions.leftClick(healer), 504);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 505);
-		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 506);
-		Utils.scheduleTask(() -> Actions.swapItems(healer, 13, 39), 507);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 501);
+		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 502);
+		Utils.scheduleTask(() -> Actions.swapItems(healer, 13, 39), 503);
 	}
 
 //	private static void witherKing() {

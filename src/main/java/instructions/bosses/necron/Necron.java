@@ -24,9 +24,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
-import plugin.M7tas;
+import plugin.BossScheduler;
 import plugin.Utils;
 
 import java.util.Collections;
@@ -86,7 +85,9 @@ public final class Necron extends WitherLord {
 	private int eventsDone;          // 0 → 80% pending, 1 → 25% pending, 2 → 5% pending, 3 → none left (death only)
 	private boolean inInterlude;     // immune window (frenzy or fireball) — damage is rejected
 	private boolean damageable;      // false during the intro and during any interlude
-	private BukkitTask interludeEndTask;
+	// Immune-interlude end one-shot, run as a boss-lane task (BossScheduler.schedule) so damageability is restored
+	// at the start of its tick — a beam on that tick sees the boss damageable again, not a tick late.
+	private Runnable interludeEndTask;
 
 	private Necron() {
 		register(this);
@@ -235,7 +236,7 @@ public final class Necron extends WitherLord {
 		}
 
 		cancelInterludeEndTask();
-		interludeEndTask = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> endInterlude(idx), duration);
+		interludeEndTask = BossScheduler.schedule(() -> endInterlude(idx), duration);
 	}
 
 	/** Interlude over — resume the chase and become damageable again. */
@@ -256,7 +257,7 @@ public final class Necron extends WitherLord {
 	}
 
 	private void cancelInterludeEndTask() {
-		if(interludeEndTask != null && !interludeEndTask.isCancelled()) interludeEndTask.cancel();
+		if(interludeEndTask != null) BossScheduler.removeTicker(interludeEndTask);
 		interludeEndTask = null;
 	}
 
