@@ -79,7 +79,7 @@ public class WitherKing {
 			witherKing.setCustomNameVisible(true);
 			witherKing.getAttribute(Attribute.MAX_HEALTH).setBaseValue(5);
 			witherKing.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-		witherKing.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
+			witherKing.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			witherKing.getAttribute(Attribute.SCALE).setBaseValue(4);
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");
@@ -91,9 +91,6 @@ public class WitherKing {
 			sendChatMessage("I no longer wish to fight, but I know that will not stop you.");
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
 		}, 160);
-		for(int i = 200; i <= 261; i += 5) {
-			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f), i);
-		}
 		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), 220);
 		// non-deterministic piece of shit
 		// will take the lowest time seen across all testing (30/9/6/6/6)
@@ -302,7 +299,7 @@ public class WitherKing {
 			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
 			Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
-			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f,1f), 1);
+			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
 		}, 70);
 	}
 

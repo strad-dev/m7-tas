@@ -113,6 +113,20 @@ public class Watcher {
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 	}
 
+	/**
+	 * Start the encounter the instant the Blood Door opens (faithful to F7 — the Watcher appears on door-open,
+	 * not on walking into the room). Only fires if detection was armed this run ({@link #beginDetection}) and the
+	 * Watcher hasn't already spawned; cancels the bounds scan and spawns immediately. {@code tasActive} follows
+	 * whether any fake actor exists (TAS) vs real players (practice).
+	 */
+	public void startOnBloodDoor() {
+		if(active) return;
+		if(detectTask == null || detectTask.isCancelled()) return; // not armed/waiting this run
+		tasActive = !FakePlayerManager.getFakePlayers().isEmpty();
+		detectTask.cancel();
+		spawnEncounter(null); // trigger param is unused by spawnEncounter (only sets tasActive, done above)
+	}
+
 	/** First in-bounds fake (wantFake=true) or genuine real non-spectator player (wantFake=false), else null. */
 	private Player firstInBounds(boolean wantFake) {
 		if(world == null) return null;
@@ -233,7 +247,7 @@ public class Watcher {
 		world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -43 -122 72 -43 minecraft:nether_portal[axis=x]");
+		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:nether_portal[axis=x]");
 		Utils.timer(ChatColor.GREEN + "Blood Room portal opened | " + formatTick(phaseRel()));
 		Utils.debug(Utils.DebugType.BOSS, "Lightning struck, nether portal opened" + (Utils.isSuperVerbose() ? " at -120..-122 / 69..72 / -43" : ""));
 
@@ -281,7 +295,7 @@ public class Watcher {
 			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, false), 1);
 		}
 
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -43 -122 72 -43 minecraft:air");
+		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
 		Utils.timer(ChatColor.GREEN + "Watcher finished in " + formatTick(phaseRel()));
 		active = false;
 	}

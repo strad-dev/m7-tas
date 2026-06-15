@@ -27,7 +27,6 @@ package plugin;
 import commands.*;
 import instructions.bosses.goldor.Goldor;
 import listeners.*;
-import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -96,8 +95,8 @@ public final class M7tas extends JavaPlugin {
 
 		PlayerCollision.cleanup();
 
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "tag @e[type=wither] remove TASWither");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kill @e[type=!item_frame,type=!player,type=!villager]");
+		Utils.runCommand("tag @e[type=wither] remove TASWither");
+		Utils.runCommand("kill @e[type=!item_frame,type=!player,type=!villager]");
 
 		PlayerInventoryBackup.clearAll();
 	}

@@ -77,11 +77,14 @@ public class Server {
 				case "maxor" -> Maxor.maxorInstructions(world, false);
 				case "storm" -> Storm.stormInstructions(world, false);
 				case "goldor" -> {
-					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
-					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
+					Utils.runCommand("fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
+					Utils.runCommand("fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
 					Goldor.goldorInstructions(world, false);
 				}
-				case "necron" -> Necron.necronInstructions(world, false);
+				case "necron" -> {
+					Utils.scheduleTask(() -> Utils.runCommand("fill 53 63 113 55 63 115 minecraft:air"), 1);
+					Necron.necronInstructions(world, false);
+				}
 //				case "witherking" -> WitherKing.witherKingInstructions(world);
 			}
 		}, 60);
@@ -90,18 +93,18 @@ public class Server {
 	public static void serverSetup(World world) {
 		CustomItems.flushStonkRestorations();
 		spawnMinibosses(world);
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:coal_block");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill 56 121 54 52 115 54 minecraft:gold_block");
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -5 120 38 -1 99 38 59 99");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 64 79 minecraft:jungle_planks");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 64 80 minecraft:jungle_stairs");
-//		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 54 63 79 minecraft:stone_brick_slab[type=top]");
+		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
+		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
+		Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:coal_block");
+		Utils.runCommand("fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
+		Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
+		Utils.runCommand("fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=false]");
+		Utils.runCommand("fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
+		Utils.runCommand("fill 56 121 54 52 115 54 minecraft:gold_block");
+		Utils.runCommand("clone 70 -5 120 38 -1 99 38 59 99");
+//		Utils.runCommand("setblock 54 64 79 minecraft:jungle_planks");
+//		Utils.runCommand("setblock 54 64 80 minecraft:jungle_stairs");
+//		Utils.runCommand("setblock 54 63 79 minecraft:stone_brick_slab[type=top]");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
 		Storm.INSTANCE.cleanupMobs();
@@ -186,28 +189,31 @@ public class Server {
 	}
 
 	public static void openFirstDoor() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:glass");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -170 -120 72 -168 minecraft:air"), 20);
+		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:glass");
+		Utils.scheduleTask(() -> Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:air"), 20);
 	}
 
 	public static void openWitherDoor(Player p) {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:glass");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
+		Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:glass");
+		Utils.scheduleTask(() -> Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " opend a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
 	}
 
 	public static void openBloodDoor() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:glass");
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -122 69 -74 -120 72 -72 minecraft:air"), 20);
+		Utils.runCommand("fill -122 69 -74 -120 72 -72 minecraft:glass");
+		Utils.scheduleTask(() -> Utils.runCommand("fill -122 69 -74 -120 72 -72 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 1.0F, 0.5F);
 		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
 		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
+		// The Watcher encounter begins the moment the Blood Door opens (if it was armed this run and hasn't
+		// already spawned from a player walking into the Blood Room).
+		Watcher.INSTANCE.startOnBloodDoor();
 	}
 
 	public static void openIceFillRewards() {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:iron_bars");
+		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:iron_bars");
 	}
 
 	public static void playWitherDeathSound(Wither wither) {

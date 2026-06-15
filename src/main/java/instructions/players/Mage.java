@@ -3,7 +3,6 @@ package instructions.players;
 import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.storm.Storm;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -50,7 +49,6 @@ public class Mage {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Utils.setSpeed(mage, 650);
 				Utils.teleport(mage, new Location(world, 108.5, 120, 94.496, -141f, 1f));
 				Actions.swapItems(mage, 1, 28);
 				Actions.swapItems(mage, 3, 30);
@@ -65,7 +63,7 @@ public class Mage {
 				Actions.swapItems(mage, 1, 28);
 				Actions.swapItems(mage, 3, 30);
 				Actions.swapItems(mage, 6, 33);
-				Actions.swapItems(mage, 7, 35);
+				Actions.swapItems(mage, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 //			case "witherking" -> {
@@ -148,7 +146,7 @@ public class Mage {
 		}, 56); // blow up wall with Guided Sheep | cooldown for 300 ticks
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(mage, 4, 31);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 1/6 (Obtained Item)");
+			Utils.timer(ChatColor.AQUA + "Mage: Deathmite 1/6 (Obtained Item)");
 			Utils.playSecretFoundSound(mage, Utils.SecretType.ITEM);
 		}, 59);
 		Utils.scheduleTask(() -> {
@@ -167,7 +165,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 67); // aotv down
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 2/6 (Opened Chest)");
+			Utils.timer(ChatColor.AQUA + "Mage: Deathmite 2/6 (Opened Chest)");
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
 			Utils.playSecretFoundSound(mage, Utils.SecretType.BLESSING_CHEST);
 		}, 68);
@@ -176,7 +174,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 74);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 3/6 (Opened Chest)");
+			Utils.timer(ChatColor.AQUA + "Mage: Deathmite 3/6 (Opened Chest)");
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
 			Utils.playSecretFoundSound(mage, Utils.SecretType.BLESSING_CHEST);
 		}, 75);
@@ -202,13 +200,13 @@ public class Mage {
 		}, 82);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 4/6 (Killed Bat)");
+			Utils.timer(ChatColor.AQUA + "Mage: Deathmite 4/6 (Killed Bat)");
 			Utils.playSecretFoundSound(mage, Utils.SecretType.BAT);
 		}, 83); // kill bat
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, 30f), 84);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Deathmite 5/6 (Opened Chest)");
+			Utils.timer(ChatColor.AQUA + "Mage: Deathmite 5/6 (Opened Chest)");
 			Utils.broadcastBlessing(mage, Utils.BlessingType.LIFE, 2);
 			Utils.playSecretFoundSound(mage, Utils.SecretType.BLESSING_CHEST);
 		}, 85);
@@ -228,7 +226,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 92);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 2/5");
+			Utils.timer(ChatColor.AQUA + "Mage: Crypt 2/5");
 		}, 93);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 120f, 10f);
@@ -240,7 +238,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 96);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Crypt 3/5");
+			Utils.timer(ChatColor.AQUA + "Mage: Crypt 3/5");
 		}, 98); // mage beam cooldown is 5 ticks with max attack speed
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -5f, 16f);
@@ -280,7 +278,7 @@ public class Mage {
 		}, 110);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Mimic Killed!");
+			Utils.timer(ChatColor.AQUA + "Mage: Mimic Killed!");
 		}, 111); // kill mimic
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 68f, 11.5f);
@@ -338,7 +336,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 644);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(mage);
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Blood Camp Finished in 658 Ticks (32.90 seconds)");
+			Utils.timer(ChatColor.AQUA + "Mage: Blood Camp Finished in 658 Ticks (32.90 seconds)");
 		}, 658);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, 0f, 3.5f);
@@ -356,7 +354,7 @@ public class Mage {
 			Actions.setHotbarSlot(mage, 5);
 		}, 661);
 		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.AQUA + "Mage: Entered Boss in 739 Ticks (36.95 seconds)");
+			Utils.timer(ChatColor.AQUA + "Mage: Entered Boss in 739 Ticks (36.95 seconds)");
 			// these are not picked up as boss is entered immediately
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(mage, Utils.BlessingType.POWER, 5);
@@ -460,9 +458,8 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 756);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 759);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(mage, 650);
 			Actions.setHotbarSlot(mage, 4);
-			Actions.swapItems(mage, 12, 39);
+			Actions.swapItems(mage, 12, 39); // put on racing helmet -> speed auto-set to 650
 		}, 800);
 		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 811);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 812);
@@ -581,7 +578,6 @@ public class Mage {
 		}, 200);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 5), 219);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(mage, 400);
 			Actions.turnHead(mage, -111f, -2f);
 			Actions.swapItems(mage, 12, 39);
 		}, 223);
@@ -594,39 +590,23 @@ public class Mage {
 	}
 
 	public static void necron(boolean doContinue) {
-//		Actions.setHotbarSlot(mage, 5);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 59);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 120);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Tank.get()), 121);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 122);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 36), 123);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 160);
-//		for(int i = 161; i < 295; i += 5) {
-//			Utils.scheduleTask(Mage::mageBeam, i);
-//		}
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 5), 239);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 240);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 301);
-//		for(int i = 302; i < 360; i += 5) {
-//			Utils.scheduleTask(Mage::mageBeam, i);
-//		}
-//		for(int i = 368; i < 500; i += 5) {
-//			Utils.scheduleTask(Mage::mageBeam, i);
-//		}
-//		Utils.scheduleTask(Mage::mageBeam, 509);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 510);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Healer.get()), 511);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -67f, 0f), 512);
-//		// tick 513: equip black cat
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.2915, 0, 0.5482), 19), 514);
-//		Utils.scheduleTask(() -> Actions.jump(mage), 532);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.2583, 0, 0.1096), 9), 533);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(1.2915, 0, 0.5482), 3), 542);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -75.6f, 18.8f), 544);
-//		Utils.scheduleTask(() -> Actions.swapItems(mage, 3, 30), 545);
-//		if(doContinue) {
-//			Utils.scheduleTask(Mage::witherKing, 609);
-//		}
+		Actions.setHotbarSlot(mage, 6);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 1);
+		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 151);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 152);
+		for(int i = 161; i < 300; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+		}
+		for(int i = 302; i < 360; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+		}
+		for(int i = 363; i < 500; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 504);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 505);
+		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 506);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 13, 39), 507);
 	}
 
 //	private static void witherKing() {

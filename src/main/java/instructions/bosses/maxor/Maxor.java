@@ -23,7 +23,7 @@ import java.util.*;
 public final class Maxor extends WitherLord {
 	public static final Maxor INSTANCE = new Maxor();
 
-	private static final int PRE_MAXOR_TICKS = 742;
+	private static final int PRE_MAXOR_TICKS = 739;
 	private static final String ENERGY_CRYSTAL_ID = "skyblock/game/energy_crystal";
 	private static final String ENERGY_CRYSTAL_NAME = ChatColor.GOLD + "" + ChatColor.BOLD + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Energy Crystal" + ChatColor.GOLD + ChatColor.BOLD + " ﴿";
 	private static final String[] LASER_MESSAGE = {"YOU TRICKED ME!", "THAT BEAM!  IT HURTS!  IT HURTS!"};
@@ -261,7 +261,7 @@ public final class Maxor extends WitherLord {
 			for(Player player : Bukkit.getOnlinePlayers()) {
 				player.sendTitle("", chargeMsg.split("\n")[0], 0, 40, 0);
 			}
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:red_stained_glass");
+			Utils.runCommand("setblock 73 224 73 minecraft:red_stained_glass");
 			startLaserScan();
 		}, CHARGE_DELAY_TICKS);
 	}
@@ -334,7 +334,7 @@ public final class Maxor extends WitherLord {
 
 		Utils.scheduleTask(() -> {
 			resetCrystals();
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "setblock 73 224 73 minecraft:black_stained_glass");
+			Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
 		}, CRYSTAL_RESPAWN_DELAY_TICKS);
 
 		// Auto-enrage 160 ticks after the stun, regardless of damage taken.

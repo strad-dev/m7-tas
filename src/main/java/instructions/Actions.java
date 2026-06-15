@@ -345,6 +345,12 @@ public class Actions {
 		ServerPlayer npc = cp.getHandle();
 		Inventory inv = npc.getInventory();
 
+		// Which speed-granting helmet was worn before this swap? (captured pre-swap so we can detect a transition)
+		boolean racingHelmetBefore = (slotA == 39 || slotB == 39)
+				&& plugin.FakePlayerInventory.isRacingHelmet(p.getInventory().getHelmet());
+		boolean cowHatBefore = (slotA == 39 || slotB == 39)
+				&& plugin.FakePlayerInventory.isCowHat(p.getInventory().getHelmet());
+
 		// Swap internally
 		net.minecraft.world.item.ItemStack a = inv.getItem(slotA);
 		net.minecraft.world.item.ItemStack b = inv.getItem(slotB);
@@ -367,6 +373,23 @@ public class Actions {
 			equipmentList.add(new Pair<>(EquipmentSlot.FEET, inv.getItem(36)));
 			ClientboundSetEquipmentPacket equipmentPkt = new ClientboundSetEquipmentPacket(npc.getId(), equipmentList);
 			Utils.broadcastPacket(equipmentPkt);
+		}
+
+		// Auto-manage speed on speed-helmet transitions: Racing Helmet → 650, Cow Hat → 550, neither → 400.
+		// Swaps between two non-speed helmets (Bonzo/Spirit masks, armor sets) leave speed untouched. Same-tick
+		// as the swap, so it's frame-accurate; a manual setSpeed() placed AFTER the swap call still wins
+		// (e.g. Tank's 550 preleap with the Bonzo Mask on).
+		if(slotA == 39 || slotB == 39) {
+			boolean racingHelmetAfter = plugin.FakePlayerInventory.isRacingHelmet(p.getInventory().getHelmet());
+			boolean cowHatAfter = plugin.FakePlayerInventory.isCowHat(p.getInventory().getHelmet());
+			if(racingHelmetAfter && !racingHelmetBefore) {
+				Utils.setSpeed(p, 650);
+			} else if(cowHatAfter && !cowHatBefore) {
+				Utils.setSpeed(p, 550);
+			} else if((racingHelmetBefore && !racingHelmetAfter) || (cowHatBefore && !cowHatAfter)) {
+				// A speed helmet came off (and neither is now on) — drop back to base speed.
+				Utils.setSpeed(p, 400);
+			}
 		}
 	}
 
@@ -1088,9 +1111,9 @@ public class Actions {
 	 */
 	@Deprecated(forRemoval = true, since = "2.0.0<br>Use new rightClick() while holding the correct item")
 	public static void superboom(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
+		Utils.runCommand("fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air replace minecraft:cracked_stone_bricks");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Utils.scheduleTask(() -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 21);
+		Utils.scheduleTask(() -> Utils.runCommand("fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:cracked_stone_bricks replace minecraft:air"), 21);
 	}
 
 	/**
@@ -1108,7 +1131,7 @@ public class Actions {
 	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
 	 */
 	public static void crypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
+		Utils.runCommand("fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
 		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) (x1 + x2) / 2, Math.min(y1, y2), (double) (z1 + z2) / 2), EntityType.ZOMBIE);
 		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.YELLOW + "2M" + ChatColor.RED + "❤");
@@ -1124,7 +1147,7 @@ public class Actions {
 		assert zombie.getEquipment() != null;
 		zombie.getEquipment().setItemInMainHand(new org.bukkit.inventory.ItemStack(Material.BONE));
 		Utils.scheduleTask(() -> {
-			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + Math.abs(y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
+			Utils.runCommand("clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + Math.abs(y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
 			try {
 				zombie.remove();
 			} catch(Exception exception) {
@@ -1134,6 +1157,16 @@ public class Actions {
 	}
 
 	public static void leap(Player p, Player target) {
+		// Spirit Leap requires the Infinileap (ender pearl) in hand — bail if the player isn't holding it.
+		ItemStack held = p.getInventory().getItemInMainHand();
+		if(!"skyblock/utility/infinileap".equals(CustomItems.getID(held))) {
+			String heldDesc = held.getType().isAir() ? "an empty hand"
+					: held.getType() + (held.hasItemMeta() && held.getItemMeta().hasDisplayName() ? " (" + held.getItemMeta().getDisplayName() + ")" : "")
+					+ (CustomItems.getID(held) != null ? " [id=" + CustomItems.getID(held) + "]" : "");
+			Utils.debug(Utils.DebugType.ERROR, p.getName() + " tried to leap while holding " + heldDesc + " instead of an Infinileap");
+			return;
+		}
+
 		// A leap teleports the player, so any in-progress bonzo staff motion is void. Cancel the airborne
 		// audit (otherwise it reports the teleport as a giant delta and a bogus "landed" line) and remove
 		// any still-in-flight Bonzo wind charges this player fired so a late hit can't push them off course.

@@ -45,14 +45,13 @@ public class Tank {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Utils.setSpeed(tank, 650);
 				Utils.teleport(tank, new Location(world, -0.240, 120, 76.775, 72f, -25f));
 				Actions.swapItems(tank, 1, 28);
 				Actions.swapItems(tank, 3, 30);
 				Actions.swapItems(tank, 6, 33);
 				Actions.swapItems(tank, 7, 34);
 				Actions.swapItems(tank, 12, 39);
-				Actions.setHotbarSlot(tank, 3);
+				Actions.setHotbarSlot(tank, 4);
 				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
@@ -60,7 +59,7 @@ public class Tank {
 				Actions.swapItems(tank, 1, 28);
 				Actions.swapItems(tank, 3, 30);
 				Actions.swapItems(tank, 6, 33);
-				Actions.swapItems(tank, 7, 35);
+				Actions.swapItems(tank, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 //			case "witherking" -> {
@@ -95,7 +94,7 @@ public class Tank {
 		 */
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Red Blue Cleared");
+			Utils.timer(ChatColor.GRAY + "Tank: Red Blue Cleared");
 		}, 21); // kill miniboss instantly
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 0f, 3.98f);
@@ -104,7 +103,7 @@ public class Tank {
 		}, 22);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 23); // etherwarp to miniboss death location
 		Utils.scheduleTask(() -> {
-			Actions.setHotbarSlot(tank, 2);
+			Actions.setHotbarSlot(tank, 4);
 			Utils.broadcastBlessing(tank, Utils.BlessingType.POWER, 5);
 			Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
 			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] cookiethebald " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!");
@@ -117,7 +116,7 @@ public class Tank {
 		}, 26);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Deathmite Cleared");
+			Utils.timer(ChatColor.GRAY + "Tank: Deathmite Cleared");
 		}, 46); // kill miniboss instantly
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(tank, 1);
@@ -151,7 +150,7 @@ public class Tank {
 		}, 54);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum Cleared");
+			Utils.timer(ChatColor.GRAY + "Tank: Museum Cleared");
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(tank, Utils.BlessingType.WISDOM, 5);
 				Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
@@ -165,7 +164,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 58); // blow up wall | cooldown for 255 ticks
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum 1/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Museum 1/5 (Opened Chest)");
 			Utils.broadcastBlessing(tank, Utils.BlessingType.STONE, 2);
 			Utils.playSecretFoundSound(tank, Utils.SecretType.BLESSING_CHEST);
 		}, 59);
@@ -176,7 +175,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -147f, 20f), 64);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum 2/5 (Obtained Wither Essence)");
+			Utils.timer(ChatColor.GRAY + "Tank: Museum 2/5 (Obtained Wither Essence)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.ESSENCE);
 		}, 65);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -26f, 64f), 66);
@@ -194,7 +193,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -90f, 0f), 75);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum 3/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Museum 3/5 (Opened Chest)");
 			Utils.broadcastBlessing(tank, Utils.BlessingType.STONE, 2);
 			Utils.playSecretFoundSound(tank, Utils.SecretType.BLESSING_CHEST);
 		}, 76);
@@ -214,7 +213,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -66f, 0f), 82);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum 4/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Museum 4/5 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 83);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 75f, 0f), 84);
@@ -244,7 +243,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 165f, 0f), 94);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Museum 5/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Museum 5/5 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 95);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 27f, 7f), 96); // pearl lands
@@ -277,7 +276,7 @@ public class Tank {
 		}, 104);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market 1/5 (Killed Bat)");
+			Utils.timer(ChatColor.GRAY + "Tank: Market 1/5 (Killed Bat)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.BAT);
 		}, 105);
 		Utils.scheduleTask(() -> {
@@ -286,7 +285,7 @@ public class Tank {
 		}, 106);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market: 2/5 (Obtain Wither Essence)");
+			Utils.timer(ChatColor.GRAY + "Tank: Market: 2/5 (Obtain Wither Essence)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.ESSENCE);
 		}, 107);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -12f, -3.5f), 108);
@@ -311,7 +310,7 @@ public class Tank {
 		}, 117);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market 3/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Market 3/5 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 118);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 15f, 6f), 119); // pearl lands
@@ -331,7 +330,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 66f, -8f), 127);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market 4/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Market 4/5 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 128);
 		Utils.scheduleTask(() -> {
@@ -340,7 +339,7 @@ public class Tank {
 		}, 129); // pearl lands
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market Cleared");
+			Utils.timer(ChatColor.GRAY + "Tank: Market Cleared");
 		}, 130); // kill miniboss
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, -10f, 4f);
@@ -352,7 +351,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 133);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Crypt 4/5");
+			Utils.timer(ChatColor.GRAY + "Tank: Crypt 4/5");
 		}, 134);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, -45f, -70f);
@@ -368,7 +367,7 @@ public class Tank {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(tank, 1);
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Market 5/5 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Market 5/5 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 139);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, -71.5f, 23f), 140);
@@ -391,7 +390,7 @@ public class Tank {
 		}, 144);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway Cleared");
+			Utils.timer(ChatColor.GRAY + "Tank: Hallway Cleared");
 			Utils.scheduleTask(() -> {
 				Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
 				Utils.broadcastBlessing(tank, Utils.BlessingType.LIFE, 5);
@@ -418,7 +417,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 166f, 15f), 154);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway 1/3 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Hallway 1/3 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 155);
 		Utils.scheduleTask(() -> {
@@ -443,7 +442,7 @@ public class Tank {
 		}, 163);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway 2/3 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Hallway 2/3 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
 		}, 164);
 		Utils.scheduleTask(() -> {
@@ -459,15 +458,16 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 172); // etherwarp to secret
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(tank);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Hallway 3/3 (Opened Chest)");
+			Utils.timer(ChatColor.GRAY + "Tank: Hallway 3/3 (Opened Chest)");
 			Utils.playSecretFoundSound(tank, Utils.SecretType.CHEST);
-			Bukkit.broadcastMessage(ChatColor.GRAY + "Tank: Clear Finished in 173 ticks (8.65 seconds)");
+			Utils.timer(ChatColor.GRAY + "Tank: Clear Finished in 173 ticks (8.65 seconds)");
 		}, 173);
 		// Hallway: 32 ticks
 
 		Utils.scheduleTask(() -> {
 			Actions.swapItems(tank, 1, 28);
 			Actions.swapItems(tank, 3, 30);
+			Actions.swapItems(tank, 4, 31);
 			Actions.swapItems(tank, 6, 33);
 			Actions.swapItems(tank, 7, 34);
 			Actions.setHotbarSlot(tank, 3);
@@ -527,10 +527,9 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 531);
 		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 532);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(tank, 650);
 			Actions.turnHead(tank, 73f, 0f);
 			Actions.setHotbarSlot(tank, 5);
-			Actions.swapItems(tank, 12, 39); // swap to black cat racing helmet
+			Actions.swapItems(tank, 12, 39); // swap to black cat racing helmet -> speed auto-set to 650
 		}, 533);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 546);
 		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 554);
@@ -697,8 +696,7 @@ public class Tank {
 			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(tank) + " used Bonzo Mask!");
 		}, 120);
 		Utils.scheduleTask(() -> {
-			Actions.swapItems(tank, 11, 39);
-			Utils.setSpeed(tank, 650);
+			Actions.swapItems(tank, 11, 39); // racing helmet back on -> speed auto-set to 650
 		}, 121);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, -20f), 122);
 		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 123);
@@ -765,10 +763,9 @@ public class Tank {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(tank, 180f, 0f);
 			Actions.setHotbarSlot(tank, 3);
-		}, 200);
+		}, 202);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 5), 219);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(tank, 400);
 			Actions.turnHead(tank, -111f, -2f);
 			Actions.swapItems(tank, 12, 39);
 		}, 223);
@@ -781,57 +778,33 @@ public class Tank {
 	}
 
 	public static void necron(boolean doContinue) {
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 71);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 39), 120);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 160);
-//		Utils.scheduleTask(() -> Actions.iceSpray(tank), 161);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 162);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 163);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 183);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 203);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 226);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 238);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 250);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 262);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 274);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 277);
-//		Utils.scheduleTask(() -> Actions.iceSpray(tank), 278);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 279);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 286);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 298);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 310);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 322);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 334);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 346);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 358);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 370);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 371);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 372);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 392);
-//		Utils.scheduleTask(() -> Actions.lastBreath(tank, 19), 412);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 413);
-//		Utils.scheduleTask(() -> Actions.iceSpray(tank), 414);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 415);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 416);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 428);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 440);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 452);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 464);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 476);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 488);
-//		Utils.scheduleTask(() -> Actions.flamingFlay(tank), 500);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 2), 501);
-//		Utils.scheduleTask(() -> Actions.leap(tank, Healer.get()), 502);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 65f, 0f), 503);
-//		// tick 504: equip black cat
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.2716, 0, 0.5929), 16), 505);
-//		Utils.scheduleTask(() -> Actions.jump(tank), 530);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-0.2543, 0, 0.1186), 9), 531);
-//		Utils.scheduleTask(() -> Actions.move(tank, new Vector(-1.2716, 0, 0.5929), 4), 540);
-//		Utils.scheduleTask(() -> Actions.turnHead(tank, 67.3f, 29.7f), 543);
-//		if(doContinue) {
-//			Utils.scheduleTask(Tank::witherKing, 609);
-//		}
+		Actions.setHotbarSlot(tank, 6);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 1);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 151);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 152);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 161);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 162);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 163);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 184);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 185);
+		for(int i = 186; i < 300; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
+		}
+		for(int i = 302; i < 360; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 363);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 364);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 365);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 386);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 387);
+		for(int i = 388; i < 500; i += 5) {
+			Utils.scheduleTask(() -> Actions.leftClick(tank), i);
+		}
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 504);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 505);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 506);
+		Utils.scheduleTask(() -> Actions.swapItems(tank, 13, 39), 507);
 	}
 
 //	private static void witherKing() {

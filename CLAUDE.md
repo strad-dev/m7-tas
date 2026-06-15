@@ -4,7 +4,7 @@
 Spigot-NMS plugin (Java 21, Minecraft 1.21.11) that simulates Hypixel SkyBlock Master Mode Floor 7 dungeon runs using server-side fake players. Fake players are real `ServerPlayer` instances with dummy network connections — NOT Citizens NPCs.
 This project aims to find the fastest theoretical limit to this floor while sending packets theoretically possible with a vanilla client.  The plugin is run LOCALLY - it is NOT the real Hypixel server and you can safely disregard Hypixel anticheat concerns (although you should mimic real client behaviour as closely as possible).
 
-In the current refactor, Berserk.java and Tank.java are cosplaying the Mage class (named Mage3 and Mage2, respectively).  Berserk.java executes the clear tasks previously done by the Healer (Wizard, Well, Ice Fill rooms) on the Mage3 player.  Tank.java executes Tank tasks on the Mage2 player.  Healer.java runs on an actual Healer-class player named "Healer".
+In the current refactor, Berserk.java, Tank.java, and Healer.java are all cosplaying the Mage class (running on players named Mage3, Mage2, and Mage4, respectively — all of which use the Mage inventory).  Berserk.java executes the clear tasks previously done by the Healer (Wizard, Well, Ice Fill rooms) on the Mage3 player.  Tank.java executes Tank tasks on the Mage2 player.  Healer.java runs on the Mage4 player.  Mage.java itself runs on Mage1.  Only Archer.java runs on a player ("Archer") with its own distinct inventory.
 
 ## Architecture
 
@@ -13,7 +13,7 @@ In the current refactor, Berserk.java and Tank.java are cosplaying the Mage clas
 - Added to the server's `PlayerList` so Bukkit sees them as `Player`
 - No real network connection — packets are simulated server-side, not sent over the wire
 - Skin layers set via `Player.DATA_PLAYER_MODE_CUSTOMISATION` with `(byte) 0x7F`
-- Fake player name → role mapping: `"Archer"` = Archer, `"Mage3"` = Berserk (Mage class), `"Healer"` = Healer, `"Mage1"` = Mage, `"Mage2"` = Tank (Mage class)
+- Fake player name → role mapping: `"Archer"` = Archer, `"Mage1"` = Mage, `"Mage2"` = Tank (Mage class), `"Mage3"` = Berserk (Mage class), `"Mage4"` = Healer (Mage class). Only `"Archer"` has its own inventory; all four `MageN` players share the Mage inventory (the `"Healer"`/`"Berserk"`/`"Tank"` cases in `FakePlayerInventory.setInventories()` are dead code — no fake player has those names)
 
 ### Fake Player Lifecycle
 - `startFakePlayerTicker()` runs a repeating task every tick that calls `setNoGravity(false)`, `updatePlayerPose()` (via reflection), and `aiStep()` on each fake player to keep them physically simulated

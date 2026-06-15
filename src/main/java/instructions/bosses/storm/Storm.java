@@ -31,7 +31,7 @@ import java.util.Random;
 public final class Storm extends WitherLord {
 	public static final Storm INSTANCE = new Storm();
 
-	private static final int PRE_STORM_TICKS = 1238;
+	private static final int PRE_STORM_TICKS = 1235;
 
 	// Intro ends at this tick; aggro + crush detection enable here.
 	private static final int INTRO_END_TICK = 665;

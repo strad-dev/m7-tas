@@ -45,7 +45,6 @@ public class Archer {
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
-				Utils.setSpeed(archer, 650);
 				Utils.teleport(archer, new Location(world, 63.811, 127, 35.940, -74.5f, -46f));
 				Actions.swapItems(archer, 1, 28);
 				Actions.swapItems(archer, 5, 32);
@@ -85,7 +84,7 @@ public class Archer {
 				Actions.swapItems(archer, 1, 28);
 				Actions.swapItems(archer, 5, 32);
 				Actions.swapItems(archer, 6, 33);
-				Actions.swapItems(archer, 7, 35);
+				Actions.swapItems(archer, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
 //			case "witherking" -> {
@@ -157,7 +156,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -44f, 8.5f), 54);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Crypt 1/5");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Crypt 1/5");
 		}, 55); // reposition for secret
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -106f, 3.3f), 56);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 57); // etherwarp to secret
@@ -169,7 +168,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(archer, 1);
 			Actions.leftClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 1/6 (Opened Chest)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel 1/6 (Opened Chest)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.CHEST);
 		}, 60);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 28.7f, -56f), 61);
@@ -180,7 +179,7 @@ public class Archer {
 		}, 63);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel 2/6 (Killed Bat)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
 		}, 64); // wither impact, kill bat
 		Utils.scheduleTask(() -> {
@@ -198,7 +197,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -85f, 2.25f);
 			Actions.setHotbarSlot(archer, 1);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel Cleared");
 			// archer teleports away before the server can register that they were there to pick up the blessing, so auto-pickup it is
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(archer, Utils.BlessingType.LIFE, 5);
@@ -228,14 +227,14 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 82); // etherwarp to item
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, -141f, 10f);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 3/6 (Picked Up Item)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel 3/6 (Picked Up Item)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.ITEM);
 		}, 83);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 84); // etherwarp to wither essence
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 55f), 85);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 4/6 (Obtained Wither Essence)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel 4/6 (Obtained Wither Essence)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.ESSENCE);
 		}, 86);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, -23.5f), 87);
@@ -254,12 +253,12 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 97); // aotv down
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 90f, 36f);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 5/6 (Picked Up Item)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel 5/6 (Picked Up Item)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.ITEM);
 		}, 98);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Gravel 6/6 (Obtained Wither Essence)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Gravel 6/6 (Obtained Wither Essence)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.ESSENCE);
 		}, 99);
 		Utils.scheduleTask(() -> {
@@ -296,7 +295,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 13f, 9f);
 			Actions.setHotbarSlot(archer, 3);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Dino Dig Site Cleared");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Dino Dig Site Cleared");
 			// archer teleports away before the server can register that they were there to pick up the blessing, so auto-pickup it is
 			Utils.scheduleTask(() -> {
 				Utils.broadcastBlessing(archer, Utils.BlessingType.LIFE, 5);
@@ -309,7 +308,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 13f), 112);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 1/4 (Opened Chest)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 1/4 (Opened Chest)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.CHEST);
 		}, 113);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -180f, 24.8f), 114);
@@ -327,7 +326,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 135.1f, 30.7f);
 			Actions.move(archer, "N", 2);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 2/4 (Picked Up Item)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 2/4 (Picked Up Item)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.ITEM);
 		}, 120);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 121);
@@ -339,7 +338,7 @@ public class Archer {
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(archer, 1);
 			Actions.leftClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 3/4 (Opened Chest)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 3/4 (Opened Chest)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.CHEST);
 		}, 124);
 		Utils.scheduleTask(() -> {
@@ -360,7 +359,7 @@ public class Archer {
 		}, 130);
 		Utils.scheduleTask(() -> {
 			Actions.rightClick(archer);
-			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 4/4 (Killed Bat)");
+			Utils.timer(ChatColor.DARK_GREEN + "Archer: Dino Dig Site 4/4 (Killed Bat)");
 			Utils.playSecretFoundSound(archer, Utils.SecretType.BAT);
 		}, 131); // kill bat
 		Utils.scheduleTask(() -> {
@@ -449,9 +448,8 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "D", 0), 526);
 		Utils.scheduleTask(() -> Actions.move(archer, "DN", 2), 536);
 		Utils.scheduleTask(() -> {
-			Utils.setSpeed(archer, 650); // change pet to black cat
 			Actions.setHotbarSlot(archer, 5);
-			Actions.swapItems(archer, 12, 39); // put on racing helmet
+			Actions.swapItems(archer, 12, 39); // put on racing helmet -> speed auto-set to 650
 		}, 537);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 95), 546); // go to goldor
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 576);
@@ -597,7 +595,6 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 120f, 0f), 90);
 		// tick 110: tank leaps
 		Utils.scheduleTask(() -> {
-			Actions.swapItems(archer, 10, 39);
 			Actions.setHotbarSlot(archer, 1);
 			Actions.turnHead(archer, 22.5f, 0f);
 		}, 111);
@@ -605,6 +602,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 22.5f, 80f), 114);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 115);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 22.5f, 0f), 116);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 10, 39), 119);
 		// tick 120: death tick
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(archer, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
@@ -637,7 +635,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 138);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 6f, 0f);
-			Actions.setHotbarSlot(archer, 4);
+			Actions.setHotbarSlot(archer, 2);
 		}, 139);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 55f, 2f), 155);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 156);
@@ -664,7 +662,7 @@ public class Archer {
 
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -90f, -4f), 177);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 5), 178);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 189);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 189);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 190); // s4 2
 		// tick 191: terminal completes
 
@@ -703,42 +701,29 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 298);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 299);
 		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 300);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(archer, 5, 32);
+			Actions.swapItems(archer, 12, 39);
+		}, 301);
 	}
 
 	public static void necron(boolean doContinue) {
-//		Actions.setHotbarSlot(archer, 2);
-//		Utils.scheduleTask(() -> Actions.swapItems(archer, 3, 30), 1);
-//		Utils.scheduleTask(() -> Actions.leap(archer, Tank.get()), 121);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 122);
-//		Utils.scheduleTask(() -> Actions.lastBreath(archer, 36), 123);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 160);
-//		for(int i = 161; i < 368; i += 5) {
-//			Utils.scheduleTask(Archer::shoot, i);
-//			Utils.scheduleTask(() -> Actions.salvation(archer), i + 4);
-//		}
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 3), 368);
-//		Utils.scheduleTask(() -> Actions.swingHand(archer), 369);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 4), 410);
-//		for(int i = 411; i < 507; i += 5) {
-//			Utils.scheduleTask(Archer::shoot, i);
-//			Utils.scheduleTask(() -> Actions.salvation(archer), i + 4);
-//		}
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 507);
-//		Utils.scheduleTask(() -> Actions.leap(archer, Healer.get()), 508);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 121.3f, 0f), 509);
-//		// tick 510: equip black cat
-//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.198, 0, -0.729), 20), 511);
-//		Utils.scheduleTask(() -> Actions.jump(archer), 530);
-//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-0.2398, 0, -0.1458), 9), 531);
-//		Utils.scheduleTask(() -> Actions.move(archer, new Vector(-1.198, 0, -0.729), 2), 540);
-//		Utils.scheduleTask(() -> Actions.turnHead(archer, 65.6f, 29.3f), 541);
-//		Utils.scheduleTask(() -> {
-//			Actions.swapItems(archer, 5, 32);
-//			Actions.swapItems(archer, 11, 39);
-//		}, 542);
-//		if(doContinue) {
-//			Utils.scheduleTask(Archer::witherKing, 609);
-//		}
+		Actions.setHotbarSlot(archer, 5);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 1);
+		Utils.scheduleTask(() -> Actions.stopRightClick(archer), 151);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 5, 32), 152);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(archer, 180f, 62f);
+			Actions.move(archer, "WP", 0);
+			Actions.setHotbarSlot(archer, 5);
+		}, 153);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 154);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 59), 156);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 214);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 215);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 216);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 0f), 217);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 13, 39), 218);
 	}
 
 //	private static void witherKing() {

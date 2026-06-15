@@ -6,6 +6,7 @@ import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherLord;
 import instructions.bosses.witherking.WitherKing;
 import instructions.players.Tank;
+import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
@@ -53,7 +54,7 @@ import java.util.Random;
 public final class Necron extends WitherLord {
 	public static final Necron INSTANCE = new Necron();
 
-	private static final int PRE_NECRON_TICKS = 2766;
+	private static final int PRE_NECRON_TICKS = 2420;
 	private static final Random random = new Random();
 	private static final String[] FRENZY_START_MESSAGES = {"Sometimes when you have a problem, you just need to destroy it all and start again.", "WITNESS MY RAW NUCLEAR POWER!"};
 	private static final String[] FRENZY_END_MESSAGES = {"ARGH!", "Let's make some space!"};
@@ -67,13 +68,14 @@ public final class Necron extends WitherLord {
 	private static final double[] THRESHOLD_FRACTIONS = {0.80, 0.25, 0.05};
 
 	private static final int INTRO_END_TICK = 160;       // intro dialogue is exactly 160t; aggro + damageability begin here
-	private static final int FRENZY_DURATION_TICKS = 120;
+	private static final int FRENZY_DURATION_TICKS = 140;
 	private static final int FIREBALL_DURATION_TICKS = 60;
 	private static final int DEATH_TO_WK_TICKS = 100;
 
 	// Middle of the arena Necron snaps to for a frenzy (his spawn point).
 	private static final double MIDDLE_X = 54.5, MIDDLE_Y = 66, MIDDLE_Z = 76.5;
 	private static final float MIDDLE_YAW = 0f;
+	private static final float MIDDLE_PITCH = 0f;
 
 	// Platform top-center blocks (y=63). If all AIR the platform is already destroyed — guards the intro destroy.
 	private static final int PLATFORM_Y = 63;
@@ -127,6 +129,8 @@ public final class Necron extends WitherLord {
 			setArmor(false);
 			damageable = true;
 			setAggro(target(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+			// The ??? "damageable" indicator is shown ONLY after a frenzy ends — never after the intro nor after
+			// the fireball attack (see endInterlude).
 			sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself.");
 		}, INTRO_END_TICK);
 	}
@@ -157,13 +161,24 @@ public final class Necron extends WitherLord {
 			e.setCancelled(true);
 			return;
 		}
-		if(inInterlude || !damageable) {
-			e.setCancelled(true);
-			return;
-		}
 
 		double finalDmg = e.getFinalDamage();
 		if(finalDmg <= 0) return;
+
+		if(inInterlude) {
+			// Like Goldor on patrol: Necron stays "damageable" during a frenzy / fireball interlude — arrows
+			// connect (the terminator ding fires in WithersNotImmuneToArrows since his shield is down) and the
+			// hurt flash shows — but the hit never reduces his health. Cancelling suppresses the vanilla flash,
+			// so render the hurt animation ourselves.
+			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
+			e.setCancelled(true);
+			return;
+		}
+		if(!damageable) {
+			// Intro (pre-fight): fully immune, no feedback.
+			e.setCancelled(true);
+			return;
+		}
 
 		double currentHp = boss.getHealth();
 		double threshold = nextThreshold();
@@ -198,7 +213,10 @@ public final class Necron extends WitherLord {
 		eventsDone++;
 
 		clearAggro();
-		setArmor(true);
+		// Keep the wither shield DOWN during the interlude (like Goldor on patrol) so arrows still connect for
+		// feedback — handleDamage cancels the damage so no health is actually lost.
+		setArmor(false);
+		CustomBossBar.removeStunIndicator(); // immune now — drop the "damageable" ??? indicator
 
 		int duration;
 		if(idx == 1) {
@@ -209,11 +227,10 @@ public final class Necron extends WitherLord {
 		} else {
 			// 80% / 5% — frenzy: teleport to the middle, blind players, hold still.
 			duration = FRENZY_DURATION_TICKS;
-			moveBossTo(MIDDLE_X, MIDDLE_Y, MIDDLE_Z, MIDDLE_YAW);
+			moveBossTo(MIDDLE_X, MIDDLE_Y, MIDDLE_Z, MIDDLE_YAW, MIDDLE_PITCH);
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
 			applyBlindness(duration);
 			frenzySounds(duration);
-			CustomBossBar.spawnAnimatedStunnedIndicator(boss, duration);
 			Utils.timer(ChatColor.GREEN + "Necron frenzy at " + formatTick(displayTick()));
 		}
 
@@ -227,8 +244,12 @@ public final class Necron extends WitherLord {
 		inInterlude = false;
 		damageable = true;
 		setArmor(false);
-		CustomBossBar.removeStunIndicator();
-		if(idx != 1) sendChatMessage(FRENZY_END_MESSAGES[random.nextInt(FRENZY_END_MESSAGES.length)]);
+		if(idx != 1) {
+			// ??? "damageable" indicator + the frenzy-end line are shown ONLY after a frenzy (idx 0 / 2) — never
+			// after the fireball attack (idx 1) or the intro.
+			CustomBossBar.spawnAnimatedStunnedIndicator(boss, Integer.MAX_VALUE);
+			sendChatMessage(FRENZY_END_MESSAGES[random.nextInt(FRENZY_END_MESSAGES.length)]);
+		}
 		// After the FIRST frenzy (idx 0) Necron stays planted at the middle with AI off, so the upcoming 25%
 		// fireball attack finds him already at the correct spot. He resumes the chase after the other interludes.
 		if(idx != 0) setAggro(target(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
@@ -249,12 +270,13 @@ public final class Necron extends WitherLord {
 
 	// ---------- Movement (snap to middle for a frenzy) ----------
 
-	private void moveBossTo(double x, double y, double z, float yaw) {
+	private void moveBossTo(double x, double y, double z, float yaw, float pitch) {
 		net.minecraft.world.entity.LivingEntity nms = ((CraftWither) boss).getHandle();
-		nms.absSnapTo(x, y, z, yaw, nms.getXRot());
+		nms.absSnapTo(x, y, z, yaw, pitch);
+		nms.setYHeadRot(yaw); // undo the aggro look-control so the frenzy faces cleanly forward
 		nms.setDeltaMovement(Vec3.ZERO);
 		nms.hurtMarked = true;
-		PositionMoveRotation pmr = new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yaw, nms.getXRot());
+		PositionMoveRotation pmr = new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yaw, pitch);
 		ClientboundTeleportEntityPacket pkt = ClientboundTeleportEntityPacket.teleport(nms.getId(), pmr, Collections.emptySet(), nms.onGround());
 		Utils.broadcastPacket(pkt);
 	}
@@ -299,7 +321,7 @@ public final class Necron extends WitherLord {
 		Utils.scheduleTask(() -> {
 			shootFireball();
 			// destroyed variant lives at y -10..-6 (correct variant at y -5..-1); clone it up to the live platform.
-			if(doClone) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "clone 70 -10 120 38 -6 99 38 59 99");
+			if(doClone) Utils.runCommand("clone 70 -10 120 38 -6 99 38 59 99");
 		}, 40);
 		Utils.scheduleTask(this::shootFireball, 50);
 		Utils.scheduleTask(this::shootFireball, 60);
@@ -345,18 +367,34 @@ public final class Necron extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
+		final int deathTick = displayTick(); // Necron-relative tick of the final blow (t=0 of the death sequence)
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
 		Utils.timer(ChatColor.GREEN + "Necron killed in " + formatTick(displayTick()));
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 60);
-		// note: in skytils, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
-		// This TAS fixes that. To compare to Skytils, subtract 2 seconds here and add 2 seconds to Wither King time.
+		// note: In most mods, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
+		// This TAS fixes that. To compare to those timers, subtract 2 seconds here and add 2 seconds to Wither King time.
 		Utils.scheduleTask(() -> {
 			Utils.timer(ChatColor.GREEN + "Necron finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, DEATH_TO_WK_TICKS);
 		Utils.scheduleTask(() -> sendChatMessage("The Catacombs... are no more."), DEATH_TO_WK_TICKS + 20);
+
+		/*
+		 * note: all of the wither partitions are one-ticked in this TAS, matching DPS achieved in normal f7
+		 * thus, there are no timesaves available in normal f7 VS master mode m7
+		 */
+		// A normal F7 completes 140t after the final blow — 40t after the t=100 phase transition (matches the
+		// DEATH_TO_WK_TICKS + 40 print delay below), not on the death tick itself.
+		final int normalF7Overall = overallTick(deathTick + DEATH_TO_WK_TICKS + 40);
+		Utils.scheduleTask(() -> {
+			double secs = normalF7Overall / 20.0;
+			int mins = (int) (secs / 60);
+			double rem = secs - mins * 60.0;
+			Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in " + formatWithSpaces(normalF7Overall)
+					+ " ticks (" + String.format("%.2f", secs) + " seconds | " + mins + ":" + String.format("%05.2f", rem) + ")");
+		}, DEATH_TO_WK_TICKS + 40);
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.remove();
 		}, DEATH_TO_WK_TICKS + 60);
