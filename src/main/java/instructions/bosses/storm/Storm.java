@@ -233,24 +233,32 @@ public final class Storm extends WitherLord {
 				cancelCycleTask();
 				return;
 			}
-			if(displayTick() % 20 != 0) return;
-
-			// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
-			// Used (already-crushed) pillars are skipped — their pad is dead.
-			for(PillarOscillator osc : pillars) {
-				if(osc.isUsed()) continue;
-				if(padOccupied(osc.getPillar().padBox())) {
-					osc.runCycle(tick);
-				}
-			}
-
-			// Crush detection — only after intro ends, only while not already stunned, and only
-			// within the 60-tick window after any pillar's most recent movement.
-			if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
-				triggerCrush();
-			}
+			if(displayTick() % 20 == 0) pollCycle();
 		};
 		BossScheduler.addTicker(cycleTicker);
+		// The ticker's first heartbeat run is phase tick 1 (registration is deferred a tick), so it would miss the
+		// tick-0 poll. Run it once now (we're at phase tick 0) so a player already standing on a pad advances it
+		// immediately on tick 0 instead of waiting until tick 20.
+		pollCycle();
+	}
+
+	/** One 20-tick poll: advance each occupied pad's pillar, then run crush detection. Called by the cycle ticker
+	 *  on every phase tick divisible by 20, plus once synchronously at phase tick 0 (see {@link #startCycleTask}). */
+	private void pollCycle() {
+		// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
+		// Used (already-crushed) pillars are skipped — their pad is dead.
+		for(PillarOscillator osc : pillars) {
+			if(osc.isUsed()) continue;
+			if(padOccupied(osc.getPillar().padBox())) {
+				osc.runCycle(tick);
+			}
+		}
+
+		// Crush detection — only after intro ends, only while not already stunned, and only
+		// within the 60-tick window after any pillar's most recent movement.
+		if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
+			triggerCrush();
+		}
 	}
 
 	private void cancelCycleTask() {

@@ -32,6 +32,11 @@ public final class BossScheduler {
 	private BossScheduler() {}
 
 	private static final List<Runnable> tickers = new CopyOnWriteArrayList<>();
+	// Movement lane: boss ENTITY movement (aggro movers). Driven from the fake-player ticker AFTER fake aiStep
+	// (see FakePlayerManager), so a boss moves at the same point in the tick as the fakes — "where movement
+	// normally happens" — rather than at the start of the tick. Start-of-tick scans (the `tickers` lane above)
+	// therefore read the boss's PRE-move position, a deliberate one-tick lag matching vanilla entity ticking.
+	private static final List<Runnable> movementTickers = new CopyOnWriteArrayList<>();
 	private static BukkitTask heartbeat;
 	// Monotonic heartbeat counter, advanced once per tick at the START of the heartbeat (see start()). schedule()
 	// uses it to fire a one-shot at the START of an exact future tick.
@@ -61,6 +66,7 @@ public final class BossScheduler {
 		if(heartbeat != null && !heartbeat.isCancelled()) heartbeat.cancel();
 		heartbeat = null;
 		tickers.clear();
+		movementTickers.clear();
 	}
 
 	/** Register a per-tick boss simulation step. Runs every tick, in registration order, before all player
@@ -74,6 +80,30 @@ public final class BossScheduler {
 	 *  the ticker. */
 	public static void removeTicker(Runnable ticker) {
 		if(ticker != null) tickers.remove(ticker);
+	}
+
+	/** Register a per-tick boss ENTITY-MOVEMENT step (an aggro mover). Runs in the movement phase — from the
+	 *  fake-player ticker, after fake aiStep — NOT at the start of the tick. Returns the handle for {@link #removeMovementTicker}. */
+	public static Runnable addMovementTicker(Runnable ticker) {
+		movementTickers.add(ticker);
+		return ticker;
+	}
+
+	/** Unregister a mover previously returned by {@link #addMovementTicker}. Safe to call from inside the mover. */
+	public static void removeMovementTicker(Runnable ticker) {
+		if(ticker != null) movementTickers.remove(ticker);
+	}
+
+	/** Run all movement tickers. Called once per tick from the fake-player ticker, after fake aiStep, so boss
+	 *  movement lands at the same point as fake movement. */
+	public static void runMovementTickers() {
+		for(Runnable ticker : movementTickers) {
+			try {
+				ticker.run();
+			} catch(Throwable t) {
+				M7tas.getInstance().getLogger().warning("Boss movement ticker threw: " + t);
+			}
+		}
 	}
 
 	/**

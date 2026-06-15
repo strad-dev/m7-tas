@@ -26,9 +26,10 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class WitherActions {
 
-	// Aggro movers now run as boss tickers (BossScheduler.addTicker) rather than their own runTaskTimer, so the boss
-	// is repositioned every tick BEFORE the players' beam choreography — see BossScheduler. The value is the
-	// registered ticker handle, used to unregister in clearWitherAggro.
+	// Aggro movers run in BossScheduler's MOVEMENT lane (BossScheduler.addMovementTicker), driven from the
+	// fake-player ticker after fake aiStep — so the boss moves at the same point in the tick as the fakes
+	// ("where movement normally happens"), not at the start of the tick. The value is the registered mover
+	// handle, used to unregister in clearWitherAggro.
 	private static final Map<UUID, Runnable> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
 
@@ -99,7 +100,7 @@ public class WitherActions {
 					if(practiceMode && !w.isRemoved()) return;
 					witherAggroTasks.remove(wither.getUniqueId());
 					w.noPhysics = false;
-					BossScheduler.removeTicker(handle[0]);
+					BossScheduler.removeMovementTicker(handle[0]);
 					return;
 				}
 
@@ -191,7 +192,7 @@ public class WitherActions {
 		};
 
 		handle[0] = task;
-		BossScheduler.addTicker(task);
+		BossScheduler.addMovementTicker(task);
 		witherAggroTasks.put(wither.getUniqueId(), task);
 	}
 
@@ -202,7 +203,7 @@ public class WitherActions {
 	public static void clearWitherAggro(Wither wither) {
 		Runnable prior = witherAggroTasks.remove(wither.getUniqueId());
 		if(prior != null) {
-			BossScheduler.removeTicker(prior);
+			BossScheduler.removeMovementTicker(prior);
 		}
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
 		w.noPhysics = false;
