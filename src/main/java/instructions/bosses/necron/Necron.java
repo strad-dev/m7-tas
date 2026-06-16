@@ -5,21 +5,14 @@ import instructions.Server;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherLord;
 import instructions.bosses.witherking.WitherKing;
-import instructions.players.Tank;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffect;
@@ -131,7 +124,7 @@ public final class Necron extends WitherLord {
 		Utils.scheduleTask(() -> {
 			setArmor(false);
 			damageable = true;
-			setAggro(target(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 			// The ??? "damageable" indicator is shown ONLY after a frenzy ends — never after the intro nor after
 			// the fireball attack (see endInterlude).
 			sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself.");
@@ -144,11 +137,6 @@ public final class Necron extends WitherLord {
 			WitherKing.witherKingInstructions(world, false);
 			runPlayerHandoff();
 		}
-	}
-
-	/** Aggro/leap target for the fight — mirrors Maxor (Tank). */
-	private LivingEntity target() {
-		return Tank.get();
 	}
 
 	// ---------- Damage / interludes ----------
@@ -230,7 +218,7 @@ public final class Necron extends WitherLord {
 		} else {
 			// 80% / 5% — frenzy: teleport to the middle, blind players, hold still.
 			duration = FRENZY_DURATION_TICKS;
-			moveBossTo(MIDDLE_X, MIDDLE_Y, MIDDLE_Z, MIDDLE_YAW, MIDDLE_PITCH);
+			moveBossToCenter();
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
 			applyBlindness(duration);
 			frenzySounds(duration);
@@ -255,7 +243,7 @@ public final class Necron extends WitherLord {
 		}
 		// After the FIRST frenzy (idx 0) Necron stays planted at the middle with AI off, so the upcoming 25%
 		// fireball attack finds him already at the correct spot. He resumes the chase after the other interludes.
-		if(idx != 0) setAggro(target(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+		if(idx != 0) setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 	}
 
 	private void cancelInterludeEndTask() {
@@ -273,13 +261,13 @@ public final class Necron extends WitherLord {
 
 	// ---------- Movement (snap to middle for a frenzy) ----------
 
-	private void moveBossTo(double x, double y, double z, float yaw, float pitch) {
+	private void moveBossToCenter() {
 		net.minecraft.world.entity.LivingEntity nms = ((CraftWither) boss).getHandle();
-		nms.absSnapTo(x, y, z, yaw, pitch);
-		nms.setYHeadRot(yaw); // undo the aggro look-control so the frenzy faces cleanly forward
+		nms.absSnapTo(Necron.MIDDLE_X, Necron.MIDDLE_Y, Necron.MIDDLE_Z, Necron.MIDDLE_YAW, Necron.MIDDLE_PITCH);
+		nms.setYHeadRot(Necron.MIDDLE_YAW); // undo the aggro look-control so the frenzy faces cleanly forward
 		nms.setDeltaMovement(Vec3.ZERO);
 		nms.hurtMarked = true;
-		PositionMoveRotation pmr = new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yaw, pitch);
+		PositionMoveRotation pmr = new PositionMoveRotation(new Vec3(Necron.MIDDLE_X, Necron.MIDDLE_Y, Necron.MIDDLE_Z), Vec3.ZERO, Necron.MIDDLE_YAW, Necron.MIDDLE_PITCH);
 		ClientboundTeleportEntityPacket pkt = ClientboundTeleportEntityPacket.teleport(nms.getId(), pmr, Collections.emptySet(), nms.onGround());
 		Utils.broadcastPacket(pkt);
 	}

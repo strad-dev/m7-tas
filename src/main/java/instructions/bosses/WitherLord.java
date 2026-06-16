@@ -1,13 +1,8 @@
 package instructions.bosses;
 
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Sound;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
@@ -42,6 +37,9 @@ public abstract class WitherLord {
 	public final void start(World w, boolean doContinue) {
 		this.world = w;
 		this.doContinue = doContinue;
+
+		// Class-ability cooldowns reset upon entering a boss fight.
+		listeners.CustomItems.resetAbilityCooldowns();
 
 		// Clean previous fight's entity + ticker
 		if(boss != null) {
@@ -166,8 +164,8 @@ public abstract class WitherLord {
 		WitherActions.setWitherArmor(boss, on);
 	}
 
-	protected final void setAggro(LivingEntity target, double stopDistance, double yOffset, double maxSpeed) {
-		WitherActions.setWitherAggro(boss, target, stopDistance, yOffset, maxSpeed);
+	protected final void setAggro(double stopDistance, double yOffset, double maxSpeed) {
+		WitherActions.setWitherAggro(boss, stopDistance, yOffset, maxSpeed);
 	}
 
 	protected final void clearAggro() {

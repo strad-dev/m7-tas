@@ -65,6 +65,16 @@ public class CustomItems implements Listener {
 	// Keyed player → (mob → number of prior hits). Different terminator arrows from one shot land as separate hits,
 	// so each ramps further. Reset at the start of every /tas and /practice run (CustomItems.resetBerserkDamage()).
 	private static final Map<UUID, Map<UUID, Integer>> berserkHitCounts = new HashMap<>();
+	// Terminator firing is poller-driven (NOT fired directly on the right-click packet). A right-click records the
+	// packet tick; pollTerminators() fires on the first tick where a new packet exists AND the cooldown has elapsed
+	// (5 ticks, or 4 with 4/4 Thermodynamic armor). This caps the rate at 1 shot / cooldown regardless of spam.
+	private static final Map<UUID, Integer> termLastPacketTick = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> termLastFireTick = new ConcurrentHashMap<>();
+	// Class-ability (drop-triggered) cooldowns — store the tick each ability is next usable. Reset on entering a
+	// boss fight (WitherLord.start) and at run start. Guided Sheep 300t, Rapid Fire 2000t, Explosive Shot 400t.
+	private static final Map<UUID, Integer> guidedSheepReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> rapidFireReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> explosiveShotReady = new ConcurrentHashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
@@ -249,15 +259,23 @@ public class CustomItems implements Listener {
 	}
 
 	private static boolean dispatchDrop(Player p, boolean ultimate) {
+		int now = MinecraftServer.currentTick;
+		UUID id = p.getUniqueId();
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
+				if(now < rapidFireReady.getOrDefault(id, 0)) return false;       // Rapid Fire: 100s cooldown
+				rapidFireReady.put(id, now + 2000);
 				rapidFire(p);
 			} else {
+				if(now < explosiveShotReady.getOrDefault(id, 0)) return false;   // Explosive Shot: 20s cooldown
+				explosiveShotReady.put(id, now + 400);
 				explosiveShot(p);
 			}
 			return true;
 		} else if(p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage")) {
 			if(!ultimate) {
+				if(now < guidedSheepReady.getOrDefault(id, 0)) return false;     // Guided Sheep: 15s cooldown
+				guidedSheepReady.put(id, now + 300);
 				guidedSheep(p);
 			}
 			return true;
@@ -450,7 +468,9 @@ public class CustomItems implements Listener {
 								fired = true;
 							}
 							case "skyblock/combat/terminator" -> {
-								terminator(p);
+								// Don't fire here — just record the right-click. pollTerminators() decides whether a
+								// shot fires this/next tick based on the 5-tick (or Thermo 4-tick) cooldown.
+								termLastPacketTick.put(p.getUniqueId(), MinecraftServer.currentTick);
 								fired = true;
 							}
 							case "skyblock/combat/tac" -> {
@@ -674,6 +694,8 @@ public class CustomItems implements Listener {
 	}
 
 	public static void aotv(Player p) {
+		// Aspect of the Void / etherwarp is disabled in adventure mode (the practice default) — no teleporting.
+		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE) return;
 		Utils.debug(Utils.DebugType.SERVER, "Starting at " + Utils.round(p.getLocation().getX(), 2) + " " + Utils.round(p.getLocation().getY(), 2) + " " + Utils.round(p.getLocation().getZ(), 2) + " " + Utils.round(p.getLocation().getYaw(), 2) + " " + Utils.round(p.getLocation().getPitch(), 2));
 		if(p.isSneaking()) {
 			RayTraceResult result = p.rayTraceBlocks(61);
@@ -1695,10 +1717,14 @@ public class CustomItems implements Listener {
 		}
 
 		double add = powerBonus + strengthBonus;
+		// 4/4 Thermodynamic armor grants the 4-tick cooldown but a 97.5% terminator damage penalty (it isn't a
+		// dungeon item, so it carries no dungeon stats). Spring Boots add a 20% reduction. Bake both into every
+		// arrow's damage at fire time.
+		final double dmgMult = (isThermoSet(p) ? 0.025 : 1.0) * springBootsMultiplier(p);
 
 		// Set Bukkit properties
 		for(Arrow arrow : Arrays.asList(left, middle, right)) {
-			arrow.setDamage(2.5 + add);
+			arrow.setDamage((2.5 + add) * dmgMult);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
@@ -1717,7 +1743,7 @@ public class CustomItems implements Listener {
 		// Duplex Arrow
 		Utils.scheduleTask(() -> {
 			Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
-			arrow.setDamage(0.5 + add * 0.2);
+			arrow.setDamage((0.5 + add * 0.2) * dmgMult);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
@@ -1732,7 +1758,7 @@ public class CustomItems implements Listener {
 		if(p.getName().startsWith("Archer") || p.getScoreboardTags().contains("Archer")) {
 			Utils.scheduleTask(() -> {
 				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
-				arrow.setDamage(2.5 + add);
+				arrow.setDamage((2.5 + add) * dmgMult);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
@@ -1746,7 +1772,7 @@ public class CustomItems implements Listener {
 
 			Utils.scheduleTask(() -> {
 				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
-				arrow.setDamage(2.5 + add);
+				arrow.setDamage((2.5 + add) * dmgMult);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
@@ -1793,6 +1819,64 @@ public class CustomItems implements Listener {
 	/** Clear all Berserk per-mob hit counts — called at the start of every /tas and /practice run. */
 	public static void resetBerserkDamage() {
 		berserkHitCounts.clear();
+	}
+
+	/** Clear terminator cooldown state — called at the start of every /tas and /practice run. */
+	public static void resetTerminatorCooldowns() {
+		termLastPacketTick.clear();
+		termLastFireTick.clear();
+	}
+
+	/** Reset all class-ability drop cooldowns (Guided Sheep / Rapid Fire / Explosive Shot) — called on entering a
+	 *  boss fight (WitherLord.start) and at run start. */
+	public static void resetAbilityCooldowns() {
+		guidedSheepReady.clear();
+		rapidFireReady.clear();
+		explosiveShotReady.clear();
+	}
+
+	/** Outgoing-damage multiplier from Spring Boots: a 20% reduction (×0.8) while the boots are worn, else 1.0. */
+	public static double springBootsMultiplier(Player p) {
+		ItemStack boots = p.getInventory().getBoots();
+		return boots != null && boots.getType() == Material.CHAINMAIL_BOOTS && boots.hasItemMeta()
+				&& boots.getItemMeta().hasDisplayName() && boots.getItemMeta().getDisplayName().contains("Spring Boots")
+				? 0.8 : 1.0;
+	}
+
+	/** True if the player is wearing the full (4/4) Thermodynamic armor set. */
+	public static boolean isThermoSet(Player p) {
+		org.bukkit.inventory.PlayerInventory inv = p.getInventory();
+		return isThermoPiece(inv.getHelmet()) && isThermoPiece(inv.getChestplate())
+				&& isThermoPiece(inv.getLeggings()) && isThermoPiece(inv.getBoots());
+	}
+
+	private static boolean isThermoPiece(ItemStack item) {
+		return item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()
+				&& item.getItemMeta().getDisplayName().contains("Thermodynamic");
+	}
+
+	/**
+	 * Per-tick terminator cooldown poller. For each player who has recorded a terminator right-click since their
+	 * last shot, fires a bow shot on the first tick at/after {@code lastFire + cooldown} (5 ticks, or 4 with the
+	 * full Thermodynamic set). Shots are anchored to the first shot and clamp to one per cooldown — spamming the
+	 * right-click can't exceed it. Started from {@link plugin.M7tas}.
+	 */
+	public static void pollTerminators() {
+		int now = MinecraftServer.currentTick;
+		for(Map.Entry<UUID, Integer> entry : termLastPacketTick.entrySet()) {
+			UUID id = entry.getKey();
+			int lastPacket = entry.getValue();
+			int lastFire = termLastFireTick.getOrDefault(id, Integer.MIN_VALUE / 2);
+			if(lastPacket <= lastFire) continue;                 // no new right-click since the last shot
+			Player p = Bukkit.getPlayer(id);
+			if(p == null || !p.isOnline()) continue;
+			if(!"skyblock/combat/terminator".equals(getID(p.getInventory().getItemInMainHand()))) continue; // must hold it
+			int cooldown = isThermoSet(p) ? 4 : 5;
+			if(now >= lastFire + cooldown) {
+				terminator(p);
+				termLastFireTick.put(id, now);
+			}
+		}
 	}
 
 	public static void tac(Player p) {
@@ -2024,6 +2108,7 @@ public class CustomItems implements Listener {
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
 			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
+			damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
 			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
 			// broadcast the same way (withers are permanently silent, so silence can't signal that).

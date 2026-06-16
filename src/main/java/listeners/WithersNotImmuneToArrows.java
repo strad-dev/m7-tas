@@ -1,5 +1,7 @@
 package listeners;
 
+import instructions.bosses.WitherActions;
+import instructions.bosses.WitherLord;
 import org.bukkit.Sound;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
@@ -8,8 +10,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import instructions.bosses.WitherActions;
-import instructions.bosses.WitherLord;
 import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
@@ -53,6 +53,7 @@ public class WithersNotImmuneToArrows implements Listener {
 		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.
 		// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
 		wither.damage(CustomItems.scaleBerserkDamage(p, wither, arrow.getDamage()));
+		WitherActions.noteDamager(p); // bosses aggro whoever last damaged them
 		wither.setNoDamageTicks(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		Utils.changeName(wither);

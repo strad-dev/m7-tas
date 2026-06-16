@@ -1,5 +1,6 @@
 package instructions.bosses.storm;
 
+import commands.Spectate;
 import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.CustomBossBar;
@@ -7,8 +8,6 @@ import instructions.bosses.MobGroup;
 import instructions.bosses.MobSpawnSpec;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
-import instructions.players.Mage;
-import commands.Spectate;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
@@ -147,7 +146,7 @@ public final class Storm extends WitherLord {
 
 		Utils.scheduleTask(() -> {
 			crushEnabled = true;
-			setAggro(Mage.get(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 		}, INTRO_END_TICK);
 
 		startCycleTask();
@@ -436,7 +435,7 @@ public final class Storm extends WitherLord {
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
-		setAggro(Mage.get(), AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+		setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 	}
 
 	private void cancelStunEnrageTask() {

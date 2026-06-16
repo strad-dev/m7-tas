@@ -6,19 +6,12 @@ import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import plugin.M7tas;
-import plugin.FakePlayerManager;
 import plugin.BossScheduler;
-import commands.Spectate;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.entity.Player;
+import plugin.M7tas;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,14 +32,17 @@ public class WitherActions {
 	// then re-closed within the same tick — see that method and WithersNotImmuneToArrows.
 	private static final Map<UUID, Integer> lastVulnerableTick = new HashMap<>();
 
-	// --- Practice mode: bosses chase the real player who last hit (or the closest), not the fake actors. ---
+	// --- Aggro target: bosses chase whoever last damaged them (fake or real). Among players that hit on the same
+	// tick, the alphabetically-first name wins. The target persists until a later tick's hit. ---
 	private static volatile boolean practiceMode = false;
-	private static volatile Player practiceLastDamager = null;
+	private static volatile Player lastDamager = null;
+	private static volatile int lastDamageTick = Integer.MIN_VALUE;
 
-	/** Toggle practice mode (set by {@code TAS.runPractice}/{@code TAS.runTAS}). Clears the last-damager on exit. */
+	/** Toggle practice mode (set by {@code TAS.runPractice}/{@code TAS.runTAS}). Resets the aggro damager. */
 	public static void setPracticeMode(boolean on) {
 		practiceMode = on;
-		if(!on) practiceLastDamager = null;
+		lastDamager = null;
+		lastDamageTick = Integer.MIN_VALUE;
 	}
 
 	public static boolean isPracticeMode() { return practiceMode; }
@@ -65,8 +61,18 @@ public class WitherActions {
 	/** Clear all recorded splits — called at the start of every /tas and /practice run. */
 	public static void clearSplits() { splitEnds.clear(); }
 
-	/** Record the real player who most recently damaged a boss (used as the practice aggro target). */
-	public static void notePracticeDamager(Player p) { practiceLastDamager = p; }
+	/** Record a player that just damaged a boss — the aggro target. Same-tick ties go to the alphabetically-first
+	 *  name; a later tick's hit always takes over. */
+	public static void noteDamager(Player p) {
+		if(p == null) return;
+		int now = MinecraftServer.currentTick;
+		if(now > lastDamageTick) {
+			lastDamager = p;
+			lastDamageTick = now;
+		} else if(now == lastDamageTick && (lastDamager == null || p.getName().compareTo(lastDamager.getName()) < 0)) {
+			lastDamager = p;
+		}
+	}
 
 	/** Hard cap on per-tick vertical displacement so a large goalY-wy gap doesn't snap-teleport. */
 	private static final double AGGRO_SPEED_VERTICAL_MAX = 0.5;
@@ -84,17 +90,18 @@ public class WitherActions {
 	 * <br>
 	 * Also enables {@code noPhysics} so the wither phases through walls while chasing.
 	 *
+	 * <p>The chase target is whoever last damaged the boss (see {@link #noteDamager}); the boss holds position until
+	 * something hits it. Works identically for fake actors (TAS) and real players (practice).
+	 *
 	 * @param wither       The Wither. Must have setAI(false).
-	 * @param target       LivingEntity to chase.
 	 * @param stopDistance Horizontal distance (blocks) at which the wither stops chasing.
 	 * @param yOffset      Vertical offset above the target the wither hovers at.
 	 * @param maxSpeed     Steady-state horizontal displacement per tick along the XZ wither-to-target vector.
 	 */
-	public static void setWitherAggro(Wither wither, LivingEntity target, double stopDistance, double yOffset, double maxSpeed) {
+	public static void setWitherAggro(Wither wither, double stopDistance, double yOffset, double maxSpeed) {
 		clearWitherAggro(wither);
 
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
-		net.minecraft.world.entity.LivingEntity t = target == null ? null : ((CraftLivingEntity) target).getHandle();
 		w.noPhysics = true;
 
 		// Scale vanilla's A=0.3 so steady-state move-per-tick equals maxSpeed instead of ~0.4717.
@@ -109,15 +116,16 @@ public class WitherActions {
 
 			@Override
 			public void run() {
-				// In practice mode chase the real player who last hit the boss (or the closest one) instead of
-				// the fixed (fake) target — the fakes are kicked by /practice, so `t` may be a stale/removed
-				// reference. Re-resolve each tick.
-				net.minecraft.world.entity.LivingEntity active = practiceMode ? resolvePracticeTarget(wither) : t;
+				// Chase whoever last damaged the boss (fake or real), re-resolved each tick. The boss holds until
+				// something hits it.
+				Player damager = lastDamager;
+				net.minecraft.world.entity.LivingEntity active = (damager != null && damager.isOnline() && !damager.isDead()
+						&& damager.getWorld() == wither.getWorld()) ? ((CraftLivingEntity) damager).getHandle() : null;
 
 				if(w.isRemoved() || active == null || active.isRemoved() || !active.isAlive()) {
-					// A momentarily-absent practice target shouldn't end the chase — hold this tick instead of
-					// cancelling (only the boss disappearing tears the task down).
-					if(practiceMode && !w.isRemoved()) return;
+					// No valid damager yet (or it momentarily went away) — hold position this tick. Only the boss
+					// itself disappearing tears the chase task down.
+					if(!w.isRemoved()) return;
 					witherAggroTasks.remove(wither.getUniqueId());
 					w.noPhysics = false;
 					BossScheduler.removeMovementTicker(handle[0]);
@@ -270,34 +278,4 @@ public class WitherActions {
 		return lastVulnerableTick.getOrDefault(wither.getUniqueId(), Integer.MIN_VALUE) == MinecraftServer.currentTick;
 	}
 
-	// --- Practice-mode target resolution ---
-
-	/** NMS handle of the practice target (last damager, else closest valid real player), or null if none. */
-	private static net.minecraft.world.entity.LivingEntity resolvePracticeTarget(Wither bukkitWither) {
-		Player p = pickPracticePlayer(bukkitWither);
-		return p == null ? null : ((CraftLivingEntity) p).getHandle();
-	}
-
-	private static Player pickPracticePlayer(Wither bukkitWither) {
-		World world = bukkitWither.getWorld();
-		Player last = practiceLastDamager;
-		if(isValidPracticeTarget(last, world)) return last;
-		// Fall back to the closest valid real player.
-		Player closest = null;
-		double best = Double.MAX_VALUE;
-		Location bl = bukkitWither.getLocation();
-		for(Player pl : Bukkit.getOnlinePlayers()) {
-			if(!isValidPracticeTarget(pl, world)) continue;
-			double d = pl.getLocation().distanceSquared(bl);
-			if(d < best) { best = d; closest = pl; }
-		}
-		return closest;
-	}
-
-	/** A valid practice target is an online, alive, same-world, non-spectating REAL player (not a fake actor). */
-	private static boolean isValidPracticeTarget(Player p, World world) {
-		return p != null && p.isOnline() && !p.isDead() && p.getWorld() == world
-				&& p.getGameMode() != GameMode.SPECTATOR && !Spectate.isSpectating(p)
-				&& !FakePlayerManager.getFakePlayers().containsValue(p);
-	}
 }

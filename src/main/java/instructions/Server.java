@@ -21,12 +21,73 @@ import org.bukkit.scheduler.BukkitTask;
 import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 public class Server {
 	private static final Zombie[] archaeologists = new Zombie[10];
 	private static Zombie yellowShadowAssassin = null;
 	private static final LivingEntity[] trashMobs = new LivingEntity[18]; // each 1x1 has 6 mobs spawned
+
+	// --- Clear-phase keys & doors ---
+	// Global keys: killing the matching Angry Archaeologist grants the key, which lets ANY player open the
+	// corresponding door by left/right-clicking a block within its bounds (detection + open in MiscListener).
+	private static boolean hasWitherKey = false;
+	private static boolean hasBloodKey = false;
+	private static boolean witherDoorOpened = false;
+	private static boolean bloodDoorOpened = false;
+
+	// Door bounds as {minX, minY, minZ, maxX, maxY, maxZ} (inclusive). Match the openXxxDoor() fill regions.
+	private static final int[] WITHER_DOOR = {-122, 69, -106, -120, 72, -104};
+	private static final int[] BLOOD_DOOR = {-122, 69, -74, -120, 72, -72};
+
+	public static void resetClearState() {
+		hasWitherKey = false;
+		hasBloodKey = false;
+		witherDoorOpened = false;
+		bloodDoorOpened = false;
+	}
+
+	public static boolean hasWitherKey() { return hasWitherKey; }
+	public static boolean hasBloodKey() { return hasBloodKey; }
+
+	public static void grantWitherKey(Player picker) {
+		if(hasWitherKey) return;
+		hasWitherKey = true;
+		String name = picker != null ? Utils.getRealName(picker) : "Someone";
+		Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] " + name + " " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!");
+		if(picker != null) Utils.playLocalSound(picker, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+	}
+
+	public static void grantBloodKey(Player picker) {
+		if(hasBloodKey) return;
+		hasBloodKey = true;
+		String name = picker != null ? Utils.getRealName(picker) : "Someone";
+		Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] " + name + " " + ChatColor.GREEN + "has obtained " + ChatColor.RED + "Blood Key" + ChatColor.GREEN + "!");
+		if(picker != null) Utils.playLocalSound(picker, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+	}
+
+	private static boolean inBounds(Block b, int[] d) {
+		return b.getX() >= d[0] && b.getX() <= d[3] && b.getY() >= d[1] && b.getY() <= d[4] && b.getZ() >= d[2] && b.getZ() <= d[5];
+	}
+
+	public static boolean inWitherDoor(Block b) { return inBounds(b, WITHER_DOOR); }
+	public static boolean inBloodDoor(Block b) { return inBounds(b, BLOOD_DOOR); }
+
+	/** Open the Wither Door if the player has the key and it isn't already open (one-shot). Called on a door click. */
+	public static void tryOpenWitherDoor(Player p) {
+		if(!hasWitherKey || witherDoorOpened) return;
+		witherDoorOpened = true;
+		openWitherDoor(p);
+	}
+
+	/** Open the Blood Door if the player has the key and it isn't already open (one-shot). Called on a door click. */
+	public static void tryOpenBloodDoor() {
+		if(!hasBloodKey || bloodDoorOpened) return;
+		bloodDoorOpened = true;
+		openBloodDoor();
+	}
 
 	public static void serverInstructions(World world, String section) {
 		// Tear down any lingering Goldor phase from a previous run immediately, before this run's pre-fired
@@ -34,7 +95,7 @@ public class Server {
 		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
 		Goldor.INSTANCE.forceEndPhase();
 		// Begin with 3 seconds of delay
-		Bukkit.broadcastMessage("TAS starts in 3 seconds");
+		Bukkit.broadcastMessage((instructions.bosses.WitherActions.isPracticeMode() ? "Run" : "TAS") + " starts in 3 seconds");
 
 		Utils.scheduleTask(() -> {
 			switch(section) {
@@ -121,6 +182,7 @@ public class Server {
 	}
 
 	private static void spawnMinibosses(World world) {
+		resetClearState(); // fresh run — keys not yet obtained, doors closed
 		for(Zombie zombie : archaeologists) {
 			if(zombie != null) {
 				zombie.remove();
@@ -159,6 +221,10 @@ public class Server {
 			zombie.getEquipment().setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
 			zombie.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			zombie.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
+
+			// The first archaeologist (-120.5,69,-152.5) drops the Wither Key; the next one the Blood Key.
+			if(i == 0) zombie.addScoreboardTag("WitherKeyMob");
+			else if(i == 1) zombie.addScoreboardTag("BloodKeyMob");
 
 			archaeologists[i] = zombie;
 		}
@@ -199,7 +265,7 @@ public class Server {
 		Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:glass");
 		Utils.scheduleTask(() -> Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " opend a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
+		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " opened a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
 	}
 
 	public static void openBloodDoor() {

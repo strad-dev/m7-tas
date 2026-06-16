@@ -1,13 +1,12 @@
 package instructions.bosses;
 
-import instructions.bosses.maxor.Maxor;
-import instructions.players.Mage;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
+import instructions.bosses.maxor.Maxor;
+import instructions.players.Mage;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
@@ -288,6 +287,8 @@ public class Watcher {
 	private void enterPortal(Player p) {
 		Location boss = BOSS_SPAWN.clone();
 		boss.setWorld(world);
+		// Clear ends as the boss portal is entered — record its end tick for the Wither-King practice scoreboard.
+		WitherActions.recordSplit("Clear", Utils.runTick());
 		Utils.debug(Utils.DebugType.BOSS, "Portal entered by " + Utils.getRealName(p) + " → teleporting " + (tasActive ? "fakes" : "all players"));
 
 		// Teleport the actors THIS tick; the boss + player routines start together on the NEXT tick.
@@ -310,7 +311,9 @@ public class Watcher {
 				if(pl.getGameMode() == GameMode.SPECTATOR) continue;
 				Utils.teleport(pl, boss);
 			}
-			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, false), 1);
+			// Chain the rest of the boss gauntlet in practice too (e.g. /practice all) — doContinue is armed from
+			// the section (true for "all"), so Maxor → Storm → … chains without fake-player routines.
+			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, doContinue), 1);
 		}
 
 		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
@@ -503,6 +506,13 @@ public class Watcher {
 		}
 		mob.setCustomNameVisible(true);
 		mob.addScoreboardTag("WatcherMob");
+		// In practice, briefly shield a freshly-spawned blood mob so an arrow landing the exact spawn tick can't
+		// kill it before it's fully registered (which would lose the kill / not count toward progress). Skipped in
+		// the TAS, whose blood-camp timing is exact.
+		if(WitherActions.isPracticeMode()) {
+			mob.addScoreboardTag("WatcherMobSpawning");
+			Utils.scheduleTask(() -> { if(mob.isValid()) mob.removeScoreboardTag("WatcherMobSpawning"); }, 2);
+		}
 		mob.setAI(true);
 		Utils.scheduleTask(() -> mob.setAI(false), 20);
 		mob.setGravity(true);
