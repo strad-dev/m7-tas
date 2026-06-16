@@ -19,7 +19,7 @@ import java.util.*;
  * placed in the four corners (top-left, top-right, bottom-left, bottom-right), ordered by class alphabetically then
  * by name. Each teammate "owns" a quadrant filled with their class-colored stained glass (Archer green, Berserk red,
  * Healer yellow, Mage light blue, Tank gray) with their head in the corner; clicking anywhere in a quadrant leaps to
- * that teammate. The middle row + middle column are plain glass dividers that do nothing.
+ * that teammate. The middle row + middle column are white stained glass dividers that do nothing.
  *
  * <p>The instance is the inventory's {@link InventoryHolder}, carrying the slot→teammate map so the click handler
  * ({@link SpiritLeapListener}) can resolve the target.
@@ -66,7 +66,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 	}
 
 	private void build(Player viewer) {
-		ItemStack divider = pane(Material.GLASS_PANE, " ");
+		ItemStack divider = pane(Material.WHITE_STAINED_GLASS_PANE, " ");
 		for(int s : CROSS) inv.setItem(s, divider);
 
 		List<Player> targets = candidates(viewer);

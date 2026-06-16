@@ -45,10 +45,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import plugin.FakePlayerManager;
-import plugin.M7tas;
-import plugin.PlayerCollision;
-import plugin.Utils;
+import plugin.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,6 +72,10 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> guidedSheepReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> rapidFireReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> explosiveShotReady = new ConcurrentHashMap<>();
+	// Salvation (Terminator left-click) cooldown — stores the tick the next Salvation beam is usable. The shared
+	// left-click guard only caps to 1/tick; this enforces the ability's own 5-tick cooldown.
+	private static final int SALVATION_COOLDOWN_TICKS = 5;
+	private static final Map<UUID, Integer> salvationReady = new ConcurrentHashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
@@ -416,8 +417,11 @@ public class CustomItems implements Listener {
 						} else {
 							switch(id) {
 								case "skyblock/combat/terminator" -> {
-									salvation(p);
-									fired = true;
+									if(currentTick >= salvationReady.getOrDefault(p.getUniqueId(), 0)) {
+										salvation(p);
+										salvationReady.put(p.getUniqueId(), currentTick + SALVATION_COOLDOWN_TICKS);
+										fired = true;
+									}
 								}
 								case "skyblock/combat/gyro" -> {
 									gyro(p);
@@ -511,7 +515,7 @@ public class CustomItems implements Listener {
 		int damaged = 0;
 		double damage = 0;
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) && !FakePlayerManager.getFakePlayers().containsValue(entity)) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) && !(entity instanceof Player pl && FakePlayerManager.getFakePlayers().containsValue(pl))) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
@@ -1718,9 +1722,9 @@ public class CustomItems implements Listener {
 
 		double add = powerBonus + strengthBonus;
 		// 4/4 Thermodynamic armor grants the 4-tick cooldown but a 97.5% terminator damage penalty (it isn't a
-		// dungeon item, so it carries no dungeon stats). Spring Boots add a 20% reduction. Bake both into every
-		// arrow's damage at fire time.
-		final double dmgMult = (isThermoSet(p) ? 0.025 : 1.0) * springBootsMultiplier(p);
+		// dungeon item, so it carries no dungeon stats). Spring Boots add a 20% reduction and the Racing Helmet a
+		// 30% reduction (stacking multiplicatively). Bake them all into every arrow's damage at fire time.
+		final double dmgMult = (isThermoSet(p) ? 0.025 : 1.0) * springBootsMultiplier(p) * racingHelmetMultiplier(p);
 
 		// Set Bukkit properties
 		for(Arrow arrow : Arrays.asList(left, middle, right)) {
@@ -1825,6 +1829,7 @@ public class CustomItems implements Listener {
 	public static void resetTerminatorCooldowns() {
 		termLastPacketTick.clear();
 		termLastFireTick.clear();
+		salvationReady.clear();
 	}
 
 	/** Reset all class-ability drop cooldowns (Guided Sheep / Rapid Fire / Explosive Shot) — called on entering a
@@ -1841,6 +1846,12 @@ public class CustomItems implements Listener {
 		return boots != null && boots.getType() == Material.CHAINMAIL_BOOTS && boots.hasItemMeta()
 				&& boots.getItemMeta().hasDisplayName() && boots.getItemMeta().getDisplayName().contains("Spring Boots")
 				? 0.8 : 1.0;
+	}
+
+	/** Outgoing-damage multiplier from the Racing Helmet: a 30% reduction (×0.7) while worn, else 1.0. Stacks
+	 *  multiplicatively with {@link #springBootsMultiplier} (both are folded into the same damage multiplier). */
+	public static double racingHelmetMultiplier(Player p) {
+		return FakePlayerInventory.isRacingHelmet(p.getInventory().getHelmet()) ? 0.7 : 1.0;
 	}
 
 	/** True if the player is wearing the full (4/4) Thermodynamic armor set. */
@@ -2105,10 +2116,14 @@ public class CustomItems implements Listener {
 		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume —
 		// no at-location sound, so volume doesn't depend on how far the target is.
 		if(targetEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
+			// Armored (e.g. mid-intro, before the fight is live): no damage lands, but still record the damager so
+			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.
+			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
 			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
 			damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
+			damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
 			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
 			// broadcast the same way (withers are permanently silent, so silence can't signal that).

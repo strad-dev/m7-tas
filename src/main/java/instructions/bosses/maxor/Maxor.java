@@ -55,6 +55,10 @@ public final class Maxor extends WitherLord {
 	private boolean stunCooldownActive;
 	private boolean inStun;
 	private double stunDamageDealt;
+	// Latched true the moment the stun's 75% damage cap is reached. Once set, handleDamage rejects ALL further
+	// damage until the next stun — this is what stops same-tick arrows that land AFTER the cap-enrage from over-DPSing
+	// (enrage flips inStun=false mid-tick, which would otherwise re-open the uncapped path for the rest of the tick).
+	private boolean stunCapReached;
 	private final List<Runnable> pendingPlateChecks = new ArrayList<>();
 
 	private Maxor() {
@@ -105,6 +109,7 @@ public final class Maxor extends WitherLord {
 		CustomBossBar.removeStunIndicator();
 		inStun = false;
 		stunDamageDealt = 0;
+		stunCapReached = false;
 		stunCooldownActive = false;
 		platesActive = false;
 		pendingPlateChecks.clear();
@@ -325,6 +330,7 @@ public final class Maxor extends WitherLord {
 		BossScheduler.schedule(() -> stunCooldownActive = false, STUN_COOLDOWN_TICKS);
 		inStun = true;
 		stunDamageDealt = 0;
+		stunCapReached = false;
 
 		clearAggro();
 		setArmor(false);
@@ -408,6 +414,13 @@ public final class Maxor extends WitherLord {
 			return;
 		}
 
+		// Stun cap already hit this stun → Maxor has enraged (or is enraging this very tick). Reject everything,
+		// including same-tick arrows that resolved after the cap-hitting event, so the 75% cap can't be exceeded.
+		if(stunCapReached) {
+			e.setCancelled(true);
+			return;
+		}
+
 		double finalDmg = e.getFinalDamage();
 		if(finalDmg <= 0) return;
 
@@ -444,7 +457,11 @@ public final class Maxor extends WitherLord {
 			enterDyingState();
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * 0.75, stunDamageDealt + cappedDmg);
-			if(willEnrage) enrageMaxor();
+			if(willEnrage) {
+				// Latch BEFORE enraging so any further same-tick damage event is rejected at the top of handleDamage.
+				stunCapReached = true;
+				enrageMaxor();
+			}
 		}
 	}
 

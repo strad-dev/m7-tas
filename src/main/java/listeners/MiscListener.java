@@ -9,6 +9,7 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
+import instructions.bosses.witherking.WitherKing;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -189,10 +190,16 @@ public class MiscListener implements Listener {
 				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither)) {
 					e.setCancelled(true);
 					hitEntity.setNoDamageTicks(0);
+					// Capture dead/dying state BEFORE applying damage: a killing-blow arrow SHOULD still ding (the
+					// target was alive when hit), but an arrow striking an ALREADY dead/dying target should not. A
+					// Wither-King dragon in its death animation keeps HP pinned to 1 (isDead()/getHealth() won't catch
+					// it), so consult WitherKing's dying set too.
+					boolean targetDead = hitEntity.isDead() || hitEntity.getHealth() <= 0
+							|| hitEntity.getScoreboardTags().contains("TASDying") || WitherKing.isDyingDragon(hitEntity);
 					// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
 					Utils.hurtEntity(hitEntity, (float) CustomItems.scaleBerserkDamage(p, hitEntity, arrow.getDamage()), p);
 					hitEntity.setNoDamageTicks(0);
-					Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
+					if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					Utils.changeName(hitEntity);
 					int newPierce = arrow.getPierceLevel() - 1;
 					if(newPierce <= 0) arrow.remove();
@@ -255,7 +262,9 @@ public class MiscListener implements Listener {
 	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent e) {
 		if(e.getBlockPlaced().getType() != Material.SOUL_SAND) return;
-		if(e.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
+		// Revert in survival AND adventure (the dungeon play modes) — only creative may place freely (setup/building).
+		GameMode gm = e.getPlayer().getGameMode();
+		if(gm != GameMode.SURVIVAL && gm != GameMode.ADVENTURE) return;
 		Location loc = e.getBlockPlaced().getLocation();
 		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {

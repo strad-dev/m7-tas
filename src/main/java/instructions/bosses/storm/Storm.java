@@ -76,6 +76,10 @@ public final class Storm extends WitherLord {
 	private boolean crushEnabled;
 	private boolean inStun;
 	private double stunDamageDealt;
+	// Latched true the moment the crush's 55% damage cap is reached. Once set, handleDamage rejects ALL further
+	// damage until the next crush — stops same-tick arrows landing after the cap-enrage from over-DPSing (enrage
+	// flips inStun=false mid-tick, which would otherwise re-open the uncapped path for the rest of the tick).
+	private boolean stunCapReached;
 	private PadAndPillar currentCrushPillar;
 	private boolean crushExplosionActive;
 
@@ -128,6 +132,7 @@ public final class Storm extends WitherLord {
 		crushEnabled = false;
 		inStun = false;
 		stunDamageDealt = 0;
+		stunCapReached = false;
 		currentCrushPillar = null;
 		cleanupMobs();
 		pillars.clear();
@@ -346,6 +351,7 @@ public final class Storm extends WitherLord {
 
 		inStun = true;
 		stunDamageDealt = 0;
+		stunCapReached = false;
 
 		clearAggro();
 		setArmor(false);
@@ -456,6 +462,13 @@ public final class Storm extends WitherLord {
 			return;
 		}
 
+		// Crush cap already hit this stun → Storm has enraged (or is enraging this very tick). Reject everything,
+		// including same-tick arrows that resolved after the cap-hitting event, so the 55% cap can't be exceeded.
+		if(stunCapReached) {
+			e.setCancelled(true);
+			return;
+		}
+
 		double finalDmg = e.getFinalDamage();
 		if(finalDmg <= 0) return;
 
@@ -489,7 +502,11 @@ public final class Storm extends WitherLord {
 			enterDyingState();
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * STUN_DAMAGE_CAP_FRACTION, stunDamageDealt + cappedDmg);
-			if(willEnrage) enrageStorm();
+			if(willEnrage) {
+				// Latch BEFORE enraging so any further same-tick damage event is rejected at the top of handleDamage.
+				stunCapReached = true;
+				enrageStorm();
+			}
 		}
 	}
 

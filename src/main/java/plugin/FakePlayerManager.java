@@ -316,7 +316,9 @@ public class FakePlayerManager {
 				// Boss entity movement runs here -- the movement phase, AFTER fake aiStep -- so a boss moves at
 				// the same point as the fakes (vanilla-consistent), not at the start of the tick. Start-of-tick
 				// boss scans therefore read the boss pre-move position (a deliberate one-tick lag). See BossScheduler.
-				BossScheduler.runMovementTickers();
+				// In PRACTICE there are no fakes here and this ticker may not even be running, so the practice
+				// movement driver (M7tas) handles the lane instead — gate this off to avoid double-driving.
+				if(!instructions.bosses.WitherActions.isPracticeMode()) BossScheduler.runMovementTickers();
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0, 1);
 	}

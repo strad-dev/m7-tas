@@ -513,11 +513,11 @@ public class Actions {
 		double dh = Math.sqrt(dx * dx + dz * dz);
 
 		final double speed = 3.175;
-		Double angle = solveLaunchAngle(speed, dh, dy);
+		Double angle = solveLaunchAngle(dh, dy);
 		if(angle == null) return; // out of ballistic range
 
 		int now = MinecraftServer.currentTick;
-		int flightTicks = simulateArrowFlightTicks(speed, angle, dh);
+		int flightTicks = simulateArrowFlightTicks(angle, dh);
 		terminatorClaimedUntil.put(target.getUniqueId(), now + flightTicks + 3);
 
 		float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
@@ -553,7 +553,7 @@ public class Actions {
 	 * mage beam fired from the player's current facing direction would actually intercept
 	 * a damageable entity within {@link #MAGE_BEAM_RANGE}. Avoids the thousands of no-op
 	 * swing/dispatch packets that would otherwise be sent during Storm-phase beam spam.
-	 *
+	 * <br>
 	 * Mirrors the raytrace logic in {@code CustomItems.mageBeam}: ignores Players and dead
 	 * or resistance-255 living entities, but DOES include Withers (the boss is a valid
 	 * target — the beam plays a stun sound even when the wither is invulnerable). Also
@@ -590,13 +590,13 @@ public class Actions {
 	 * intercept a valid living entity before hitting terrain or running out of horizontal
 	 * range. Mirrors {@link #loopLeftClick}'s purpose: avoid the per-tick arrow-spawn cost
 	 * when no target is in the line of fire.
-	 *
+	 * <br>
 	 * Uses the same entity filter as {@link #mageBeamWouldHit} (skips Players, dead, and
 	 * resistance-255 mobs; includes Withers so Storm/etc. count as valid targets). The
 	 * trajectory is walked tick-by-tick with Minecraft arrow physics ({@code v.xz *= 0.99},
 	 * {@code v.y = v.y * 0.99 - 0.05}); the walk bails when horizontal distance exceeds
 	 * {@link #TERMINATOR_MAX_RANGE} or horizontal velocity collapses.
-	 *
+	 * <br>
 	 * Only checks the middle arrow of the 3-arrow spread — left/right are ±5° and rarely
 	 * matter when the middle misses.
 	 */
@@ -673,7 +673,7 @@ public class Actions {
 		if(dh < 1e-6) return hasLineOfSight(p, target);
 
 		final double speed = 3.175;
-		Double angle = solveLaunchAngle(speed, dh, dy);
+		Double angle = solveLaunchAngle(dh, dy);
 		if(angle == null) return false;
 
 		// Walk the trajectory tick-by-tick in world coords; abort if a block intervenes
@@ -718,11 +718,11 @@ public class Actions {
 
 	/** Iteratively solves the upward launch angle (radians) that hits offset (dh, dy) given
 	 *  the projectile's 3D speed. Returns null if no feasible angle was found. */
-	private static Double solveLaunchAngle(double speed, double dh, double dy) {
+	private static Double solveLaunchAngle(double dh, double dy) {
 		double aimY = dy;
 		double angle = Math.atan2(aimY, dh);
 		for(int i = 0; i < 12; i++) {
-			Double yHit = simulateArrowYAtDistance(speed, angle, dh);
+			Double yHit = simulateArrowYAtDistance(angle, dh);
 			if(yHit == null) return null;
 			double err = dy - yHit;
 			if(Math.abs(err) < 0.01) return angle;
@@ -735,9 +735,9 @@ public class Actions {
 	/** Returns the number of ticks an arrow launched at {@code angleRad} (radians above horizontal)
 	 *  with the given 3D speed takes to travel {@code targetH} horizontal distance under Minecraft
 	 *  arrow physics. Returns 60 as a conservative fallback if the arrow can't reach. */
-	private static int simulateArrowFlightTicks(double speed, double angleRad, double targetH) {
-		double vh = speed * Math.cos(angleRad);
-		double vy = speed * Math.sin(angleRad);
+	private static int simulateArrowFlightTicks(double angleRad, double targetH) {
+		double vh = 3.175 * Math.cos(angleRad);
+		double vy = 3.175 * Math.sin(angleRad);
 		double h = 0;
 		for(int t = 1; t <= 400; t++) {
 			h += vh;
@@ -752,9 +752,9 @@ public class Actions {
 	/** Simulates a Minecraft arrow launched at {@code angleRad} above horizontal with the given
 	 *  3D speed; returns its Y offset (relative to spawn) when it crosses {@code targetH}
 	 *  horizontal distance, or null if it never reaches that distance. */
-	private static Double simulateArrowYAtDistance(double speed, double angleRad, double targetH) {
-		double vh = speed * Math.cos(angleRad);
-		double vy = speed * Math.sin(angleRad);
+	private static Double simulateArrowYAtDistance(double angleRad, double targetH) {
+		double vh = 3.175 * Math.cos(angleRad);
+		double vy = 3.175 * Math.sin(angleRad);
 		double h = 0, y = 0;
 		double prevH, prevY;
 		for(int t = 0; t < 400; t++) {
@@ -1563,7 +1563,7 @@ public class Actions {
 	 * inaccuracy=1.0F (consuming RNG and stamping a spread-direction rotation on the arrow
 	 * that we'd then have to overwrite). Goes directly through NMS with {@code shoot(..., 0)}
 	 * for a perfectly clean trajectory — mirrors the pattern used by {@code CustomItems.terminator}.
-	 *
+	 * <br>
 	 * Spawns at the player's current eye location (with the vanilla -0.1 Y offset that
 	 * {@code launchProjectile} applies); uses {@code aimFrom.getDirection()} for the flight
 	 * direction, so the caller can capture the aim at draw-start and have it survive any

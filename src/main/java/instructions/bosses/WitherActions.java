@@ -1,9 +1,13 @@
 package instructions.bosses;
 
+import commands.Spectate;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
 import org.bukkit.entity.Player;
@@ -11,6 +15,7 @@ import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.BossScheduler;
+import plugin.FakePlayerManager;
 import plugin.M7tas;
 
 import java.util.HashMap;
@@ -47,6 +52,14 @@ public class WitherActions {
 
 	public static boolean isPracticeMode() { return practiceMode; }
 
+	/** Whether {@code p} can aggro a boss in the current mode. During a TAS (non-practice) the withers ignore all
+	 *  real players — they are not part of the run — so only fake players are eligible. In practice mode the real
+	 *  players ARE the runners (no fakes are spawned), so the opposite holds. */
+	private static boolean isAggroEligible(Player p) {
+		boolean fake = FakePlayerManager.getFakePlayers().containsValue(p);
+		return practiceMode != fake;
+	}
+
 	// --- Live section splits (for the Wither-King practice scoreboard) ---
 	// Overall tick (Utils.runTick()) recorded at each section's finish. Populated as the boss chain progresses;
 	// the WitherKing practice scoreboard reads these to show the real per-section times from a /practice run.
@@ -65,6 +78,9 @@ public class WitherActions {
 	 *  name; a later tick's hit always takes over. */
 	public static void noteDamager(Player p) {
 		if(p == null) return;
+		// During a TAS the run is driven entirely by the fake players — a real player hitting a boss must never
+		// steal its aggro. (In practice mode it's the reverse: only real players count.)
+		if(!isAggroEligible(p)) return;
 		int now = MinecraftServer.currentTick;
 		if(now > lastDamageTick) {
 			lastDamager = p;
@@ -72,6 +88,7 @@ public class WitherActions {
 		} else if(now == lastDamageTick && (lastDamager == null || p.getName().compareTo(lastDamager.getName()) < 0)) {
 			lastDamager = p;
 		}
+		org.bukkit.Bukkit.getLogger().info("[aggro] noteDamager: " + p.getName() + " (tick " + now + ") -> lastDamager=" + (lastDamager == null ? "null" : lastDamager.getName()));
 	}
 
 	/** Hard cap on per-tick vertical displacement so a large goalY-wy gap doesn't snap-teleport. */
@@ -113,19 +130,29 @@ public class WitherActions {
 		Runnable task = new Runnable() {
 			// Persistent velocity state across ticks (the PD's "v"). Reset to 0 on every snap-to-goal.
 			double vxState = 0, vzState = 0;
+			int dbg = 0;
 
 			@Override
 			public void run() {
-				// Chase whoever last damaged the boss (fake or real), re-resolved each tick. The boss holds until
-				// something hits it.
+				// Chase whoever last beam/melee-damaged the boss (NOT arrows); until someone does, auto-aggro the
+				// closest player so the boss actively pursues instead of sitting at spawn. Re-resolved each tick.
 				Player damager = lastDamager;
-				net.minecraft.world.entity.LivingEntity active = (damager != null && damager.isOnline() && !damager.isDead()
-						&& damager.getWorld() == wither.getWorld()) ? ((CraftLivingEntity) damager).getHandle() : null;
+				if(damager == null || !damager.isOnline() || damager.isDead() || damager.getWorld() != wither.getWorld()) {
+					damager = closestPlayer(wither);
+				}
+				net.minecraft.world.entity.LivingEntity active = damager == null ? null : ((CraftLivingEntity) damager).getHandle();
+
+				if(dbg++ % 20 == 0) {
+					org.bukkit.Bukkit.getLogger().info("[aggro] run: damager=" + (damager == null ? "null" : damager.getName())
+							+ " active=" + (active == null ? "null" : "ok") + " practiceMode=" + practiceMode
+							+ " pos=" + (int) w.getX() + "/" + (int) w.getY() + "/" + (int) w.getZ());
+				}
 
 				if(w.isRemoved() || active == null || active.isRemoved() || !active.isAlive()) {
 					// No valid damager yet (or it momentarily went away) — hold position this tick. Only the boss
 					// itself disappearing tears the chase task down.
 					if(!w.isRemoved()) return;
+					org.bukkit.Bukkit.getLogger().info("[aggro] task torn down (boss removed)");
 					witherAggroTasks.remove(wither.getUniqueId());
 					w.noPhysics = false;
 					BossScheduler.removeMovementTicker(handle[0]);
@@ -222,6 +249,7 @@ public class WitherActions {
 		handle[0] = task;
 		BossScheduler.addMovementTicker(task);
 		witherAggroTasks.put(wither.getUniqueId(), task);
+		org.bukkit.Bukkit.getLogger().info("[aggro] setWitherAggro registered (movementTickers now active); practiceMode=" + practiceMode);
 	}
 
 	/**
@@ -237,6 +265,23 @@ public class WitherActions {
 		w.noPhysics = false;
 	}
 
+	/** Closest valid player to the boss — the auto-aggro fallback used until someone beam/melee-damages it.
+	 *  Only fakes are considered during a TAS, only real players in practice (see {@link #isAggroEligible});
+	 *  excludes spectators and dead/cross-world players. */
+	private static Player closestPlayer(Wither wither) {
+		Player closest = null;
+		double best = Double.MAX_VALUE;
+		Location loc = wither.getLocation();
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(!isAggroEligible(p)) continue;
+			if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) continue;
+			if(p.isDead() || p.getWorld() != wither.getWorld()) continue;
+			double d = p.getLocation().distanceSquared(loc);
+			if(d < best) { best = d; closest = p; }
+		}
+		return closest;
+	}
+
 	public static void setWitherArmor(Wither wither, boolean showArmor) {
 
 		// Cancel any existing task
@@ -246,6 +291,10 @@ public class WitherActions {
 		}
 
 		if(showArmor) {
+			// Assert the shield THIS tick — the maintenance task's first run is only next tick (0-tick delay = next
+			// scheduler pass), so without this an enrage mid-tick would leave the boss unshielded for the rest of the
+			// tick, letting same-tick beams/arrows land after it re-armored (over-DPS).
+			wither.setInvulnerabilityTicks(3);
 			// Start the armor maintenance task
 			armorTask = new BukkitRunnable() {
 				@Override

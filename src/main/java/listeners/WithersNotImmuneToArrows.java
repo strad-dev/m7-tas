@@ -26,9 +26,7 @@ public class WithersNotImmuneToArrows implements Listener {
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
-		// Aggro the shooter on ANY attempted hit — bosses are armored most of the time, so waiting for damage to
-		// actually land would leave them with no target. (Recorded before the shield-bounce early-return below.)
-		WitherActions.noteDamager(p);
+		// NOTE: arrows deliberately do NOT set the aggro target — only melee/mage-beam hits do (see WitherActions).
 
 		// Shield up (invulnerability ticks active) → bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow
 		// landing on a tick the boss was made vulnerable then re-armored within that same tick — the live counter
