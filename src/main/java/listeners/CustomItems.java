@@ -324,6 +324,7 @@ public class CustomItems implements Listener {
 				boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
 				arrow.setDamage(isArcher ? 8.0 : 1.5);
 				arrow.addScoreboardTag("TerminatorArrow");
+				arrow.addScoreboardTag("LastBreathArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				Vector launchVelocity = arrow.getVelocity().clone();
 				Location launchLoc = arrow.getLocation().clone();
@@ -333,6 +334,7 @@ public class CustomItems implements Listener {
 					arrow2.setDamage(isArcher ? 1.6 : 0.3);
 					arrow2.setShooter(p);
 					arrow2.addScoreboardTag("TerminatorArrow");
+					arrow2.addScoreboardTag("LastBreathArrow");
 					arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 					arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
@@ -346,6 +348,7 @@ public class CustomItems implements Listener {
 						arrow2.setDamage(8.0);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
+						arrow2.addScoreboardTag("LastBreathArrow");
 						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
@@ -358,6 +361,7 @@ public class CustomItems implements Listener {
 						arrow2.setDamage(8.0);
 						arrow2.setShooter(p);
 						arrow2.addScoreboardTag("TerminatorArrow");
+						arrow2.addScoreboardTag("LastBreathArrow");
 						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 

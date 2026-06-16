@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import instructions.bosses.WitherActions;
 import instructions.bosses.WitherLord;
 import plugin.Utils;
 
@@ -25,8 +26,14 @@ public class WithersNotImmuneToArrows implements Listener {
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
-		// Shield up (invulnerability ticks active) → bounce, no damage.
-		if(wither.getInvulnerabilityTicks() != 0) return;
+		// Shield up (invulnerability ticks active) → bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow
+		// landing on a tick the boss was made vulnerable then re-armored within that same tick — the live counter
+		// already reads "shielded" because the arrow hit resolves after the start-of-tick boss scans, but the boss
+		// WAS intended vulnerable this tick (a same-tick mage beam would connect). Honor that heartbeat-time intent.
+		if(wither.getInvulnerabilityTicks() != 0
+				&& !(arrow.getScoreboardTags().contains("TerminatorArrow") && WitherActions.wasMadeVulnerableThisTick(wither))) {
+			return;
+		}
 
 		// Dying wither (any WitherLord): phase the arrow through silently — no ding, no damage, no pierce loss.
 		WitherLord activeLord = WitherLord.activeFor(wither);
@@ -37,6 +44,10 @@ public class WithersNotImmuneToArrows implements Listener {
 
 		event.setCancelled(true);
 		wither.setNoDamageTicks(0);
+		// Clear the spawn-shield counter before damaging: vanilla WitherBoss.hurt() rejects all damage while
+		// invulnerabilityTicks > 0, so on the same-tick-re-armored exception above the hit would otherwise no-op.
+		// A re-armored boss's armorTask re-asserts the shield next tick, so this only lets THIS hit land.
+		wither.setInvulnerabilityTicks(0);
 		// Bukkit's no-source damage() uses a non-projectile cause, so the vanilla wither
 		// "powered" projectile shield doesn't apply. The fired EntityDamageEvent still reaches
 		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.

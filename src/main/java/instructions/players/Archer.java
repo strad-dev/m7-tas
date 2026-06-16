@@ -729,7 +729,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 121.3f, 0f), 503);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 504);
 		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 522);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 8), 524);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 9), 524);
 	}
 
 //	private static void witherKing() {

@@ -427,8 +427,8 @@ public class Mage {
 			Actions.swapItems(mage, 5, 32);
 		}, 647);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 648);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -172f, -29f), 649);
-		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 668);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -173f, -29f), 649);
+		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 667);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 3);
 			Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss());
