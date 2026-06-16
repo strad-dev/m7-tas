@@ -464,6 +464,12 @@ public class Utils {
 			// the check but causes infinite recursion via EntityDamageByEntityEvent → handleCustomItems.
 			// Direct health manipulation avoids both issues.
 			entity.setHealth(Math.max(0, (float)(entity.getHealth() - damage)));
+			// Wither-King dragon kill chokepoint: dragon damage never fires an EntityDamageEvent (we setHealth
+			// directly), so detect the kill here and hand off to the death/spawn-next logic (idempotent).
+			if(entity instanceof org.bukkit.entity.EnderDragon dragon
+					&& dragon.getScoreboardTags().contains("WitherKingDragon") && entity.getHealth() <= 0) {
+				instructions.bosses.witherking.WitherKing.handleDragonKilled(dragon);
+			}
 		} else {
 			nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
 		}

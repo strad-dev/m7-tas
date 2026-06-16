@@ -51,7 +51,8 @@ public class WithersNotImmuneToArrows implements Listener {
 		// Bukkit's no-source damage() uses a non-projectile cause, so the vanilla wither
 		// "powered" projectile shield doesn't apply. The fired EntityDamageEvent still reaches
 		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.
-		wither.damage((double) arrow.getDamage());
+		// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
+		wither.damage(CustomItems.scaleBerserkDamage(p, wither, arrow.getDamage()));
 		wither.setNoDamageTicks(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		Utils.changeName(wither);

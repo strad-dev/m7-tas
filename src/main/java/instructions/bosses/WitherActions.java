@@ -51,6 +51,20 @@ public class WitherActions {
 
 	public static boolean isPracticeMode() { return practiceMode; }
 
+	// --- Live section splits (for the Wither-King practice scoreboard) ---
+	// Overall tick (Utils.runTick()) recorded at each section's finish. Populated as the boss chain progresses;
+	// the WitherKing practice scoreboard reads these to show the real per-section times from a /practice run.
+	private static final Map<String, Integer> splitEnds = new java.util.LinkedHashMap<>();
+
+	/** Record the overall tick at which the named section finished. */
+	public static void recordSplit(String section, int overallTick) { splitEnds.put(section, overallTick); }
+
+	/** Overall tick at which the named section finished, or null if it wasn't run this session. */
+	public static Integer getSplitEnd(String section) { return splitEnds.get(section); }
+
+	/** Clear all recorded splits — called at the start of every /tas and /practice run. */
+	public static void clearSplits() { splitEnds.clear(); }
+
 	/** Record the real player who most recently damaged a boss (used as the practice aggro target). */
 	public static void notePracticeDamager(Player p) { practiceLastDamager = p; }
 

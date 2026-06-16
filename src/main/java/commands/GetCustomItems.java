@@ -39,6 +39,21 @@ public class GetCustomItems implements CommandExecutor {
 			}
 			String role = Character.toUpperCase(section.charAt(0)) + section.substring(1);
 			FakePlayerInventory.applyClassLoadout(p, role);
+
+			// Apply the class scoreboard tag (removing any other class tag) so class-gated behaviour (mage beam,
+			// archer/berserk damage paths, etc.) treats this real player as that class — mirrors how the named
+			// fake players are identified.
+			for(String tag : new String[]{"Archer", "Berserk", "Healer", "Mage", "Tank"}) p.removeScoreboardTag(tag);
+			p.addScoreboardTag(role);
+
+			// Pre-enchant the terminator (slot 4) with the same Power level the TAS uses for that class, so a real
+			// player testing as that class has a correctly-powered bow without running the full TAS.
+			int power = terminatorPower(role);
+			if(power > 0) {
+				ItemStack term = p.getInventory().getItem(4);
+				if(term != null && term.getType() == Material.BOW) term.addUnsafeEnchantment(Enchantment.POWER, power);
+			}
+
 			p.sendMessage(ChatColor.GREEN + "Set your inventory to the " + role + " loadout!");
 			return true;
 		}
@@ -210,5 +225,15 @@ public class GetCustomItems implements CommandExecutor {
 		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, explosiveBow, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine);
 		p.sendMessage(ChatColor.GREEN + "Here you go!");
 		return true;
+	}
+
+	/** Terminator Power enchant level per class, matching the TAS (Archer 66, Berserk/Healer/Tank 16). Mage uses
+	 *  no terminator → 0. */
+	private static int terminatorPower(String role) {
+		return switch(role) {
+			case "Archer" -> 66;
+			case "Berserk", "Healer", "Tank" -> 16;
+			default -> 0;
+		};
 	}
 }

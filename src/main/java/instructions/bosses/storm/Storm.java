@@ -139,6 +139,8 @@ public final class Storm extends WitherLord {
 
 	@Override
 	protected void onStart() {
+		// Maxor's section ends as Storm spawns — record its end tick for the Wither-King practice scoreboard.
+		instructions.bosses.WitherActions.recordSplit("Maxor", plugin.Utils.runTick());
 		spawnMobGroups();
 		initialMovement();
 		scheduleIntroDialogue();

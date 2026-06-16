@@ -117,6 +117,8 @@ public final class Necron extends WitherLord {
 
 	@Override
 	protected void onStart() {
+		// Goldor's section ends as Necron spawns — record its end tick for the Wither-King practice scoreboard.
+		instructions.bosses.WitherActions.recordSplit("Goldor", Utils.runTick());
 		// --- Intro (160t): dialogue + a guarded platform destroy. Necron is not yet damageable and does not fly. ---
 		sendChatMessage("You went further than any human before, congratulations.");
 		Utils.scheduleTask(() -> {
@@ -139,7 +141,7 @@ public final class Necron extends WitherLord {
 	@Override
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
-			WitherKing.witherKingInstructions(world);
+			WitherKing.witherKingInstructions(world, false);
 			runPlayerHandoff();
 		}
 	}

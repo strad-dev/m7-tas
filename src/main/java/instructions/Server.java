@@ -6,6 +6,7 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
+import instructions.bosses.witherking.WitherKing;
 import listeners.CustomItems;
 import listeners.GoldorListener;
 import org.bukkit.*;
@@ -85,7 +86,7 @@ public class Server {
 					Utils.scheduleTask(() -> Utils.runCommand("fill 53 63 113 55 63 115 minecraft:air"), 1);
 					Necron.necronInstructions(world, false);
 				}
-//				case "witherking" -> WitherKing.witherKingInstructions(world);
+					case "witherking" -> WitherKing.witherKingInstructions(world, true);
 			}
 		}, 60);
 	}
@@ -107,6 +108,7 @@ public class Server {
 //		Utils.runCommand("setblock 54 63 79 minecraft:stone_brick_slab[type=top]");
 		CustomBossBar.forceCleanup();
 		Watcher.forceCleanup();
+		WitherKing.forceCleanup(world);
 		Storm.INSTANCE.cleanupMobs();
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 		Goldor.resetS3Device(world);

@@ -1,6 +1,5 @@
 package instructions.bosses.witherking;
 
-import instructions.Actions;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherActions;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonDeathPhase;
@@ -9,48 +8,241 @@ import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEnderDragon;
 import org.bukkit.entity.EnderDragon;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Interaction;
+import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.Transformation;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 import plugin.FakePlayerInventory;
 import plugin.Utils;
 
 import java.lang.reflect.Field;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
 
+/**
+ * The Wither King — the final encounter, run AFTER Necron (chained via {@link instructions.bosses.necron.Necron#chainNext})
+ * or standalone via {@code /tas witherking} / {@code /practice witherking}.
+ *
+ * <p>Two stages:
+ * <ol>
+ *   <li><b>Summon phase</b> — five relics spawn (ItemDisplay + Interaction) at the dragon statues. A player
+ *       right-clicks a relic's Interaction entity to pick it up (→ hotbar slot 8), then right-clicks the
+ *       matching altar block (Y 6/7) to place it (wool ItemDisplay appears at y=8). When all five are placed
+ *       the Wither King intro fires.</li>
+ *   <li><b>Dragon phase</b> — the Wither King (5 HP) spawns; five dragons must be killed (each removes 1 HP).
+ *       The first three spawn on timers (Soul/Ice together, then Flame); the last two (Power, then Apex) begin
+ *       their spawn animation the tick the last living dragon is killed. Dragon kills are detected
+ *       automatically via {@link #handleDragonKilled} (called from {@code Utils.hurtEntity}'s EnderDragon
+ *       chokepoint) and fire {@link #instaKillDragon} + {@link #playDragonDeathSound}.</li>
+ * </ol>
+ *
+ * <p>Kept standalone (not a {@code WitherLord} — its 5-HP scale, MAGIC name and dragon-driven HP don't fit),
+ * but it reuses the same tick machinery: {@link Utils#markPhaseStart()} / {@link Utils#phaseTick()} /
+ * {@link Utils#runTick()} + {@link WitherActions#isPracticeMode()}.
+ */
 @SuppressWarnings({"unused", "DataFlowIssue"})
 public class WitherKing {
 	private static World world;
 	private static Wither witherKing;
-	private static BossBar witherKingBossBar;
-	private static BukkitTask bossBarUpdateTask;
-	private static final EnderDragon[] dragons = new EnderDragon[5];
+	/** True only when reached via {@code /tas|/practice witherking} (Server case); the Necron→WK chain passes false. */
+	private static boolean standalone;
 	private static final Random random = new Random();
 	private static final String[] dragonDieMessage = {"Oh, this one hurts!", "I have more of those.", "My soul is disposable."};
 
-	public static void witherKingInstructions(World temp) {
-		world = temp;
+	/** Cumulative ticks before the Wither-King phase, for the TAS overall column (overall 4404 − WK split 1029). */
+	private static final int PRE_WITHERKING_TICKS = 3375;
+	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − Apex kill 959). */
+	private static final int END_DELAY_TICKS = 70;
 
-		if(witherKing != null) {
-			witherKing.remove();
+	// --- Summon-phase relics ---
+	/** Each relic: wool material + chat color + label, its dragon-statue spawn point, and its altar block (X,Z). */
+	private enum Relic {
+		RED(Material.RED_WOOL, ChatColor.RED, "Red", 20.5, 6.8125, 59.5, 51, 42),
+		GREEN(Material.GREEN_WOOL, ChatColor.DARK_GREEN, "Green", 20.5, 6.8125, 95.5, 49, 44),
+		PURPLE(Material.PURPLE_WOOL, ChatColor.LIGHT_PURPLE, "Purple", 56.5, 8.8125, 132.5, 54, 41),
+		BLUE(Material.BLUE_WOOL, ChatColor.BLUE, "Blue", 91.5, 6.8125, 95.5, 59, 44),
+		ORANGE(Material.ORANGE_WOOL, ChatColor.GOLD, "Orange", 92.5, 6.8125, 56.5, 57, 42);
+
+		final Material wool;
+		final ChatColor chatColor;
+		final String label;
+		final double x, y, z;     // statue: center X/Z, bottom Y
+		final int altarX, altarZ; // altar pillar (Y 6 & 7)
+
+		Relic(Material wool, ChatColor chatColor, String label, double x, double y, double z, int altarX, int altarZ) {
+			this.wool = wool;
+			this.chatColor = chatColor;
+			this.label = label;
+			this.x = x; this.y = y; this.z = z;
+			this.altarX = altarX; this.altarZ = altarZ;
 		}
 
-		for(EnderDragon dragon : dragons) {
-			if(dragon != null) {
-				dragon.remove();
-			}
+		String itemName() { return chatColor + label + " Relic"; }
+
+		static Relic fromWool(Material m) {
+			for(Relic r : values()) if(r.wool == m) return r;
+			return null;
 		}
 
-		Utils.scheduleTask(WitherKing::startWitherKingSequence, 41);
+		static Relic altarAt(int x, int z) {
+			for(Relic r : values()) if(r.altarX == x && r.altarZ == z) return r;
+			return null;
+		}
 	}
 
-	public static void startWitherKingSequence() {
+	private static final List<ItemDisplay> relicDisplays = new ArrayList<>();
+	private static final List<Interaction> relicInteractions = new ArrayList<>();
+	private static final Map<UUID, Relic> interactionRelic = new HashMap<>();
+	private static final List<ItemDisplay> altarWoolDisplays = new ArrayList<>();
+	private static final Set<Relic> placedRelics = new HashSet<>();
+
+	// --- Dragon phase ---
+	private static final Map<String, EnderDragon> dragons = new HashMap<>();
+	private static final Set<UUID> dyingDragons = new HashSet<>();
+	private static int aliveCount = 0;
+	/** True once the last TIMER dragon (Flame) has spawned — gates the event-driven Power/Apex spawns so the
+	 *  early death of Soul/Ice (before Flame appears) can't trigger them. */
+	private static boolean flameSpawned = false;
+	/** Event-spawned dragons, in order: Power then Apex. Spawned when the last living dragon is killed. */
+	private static final Deque<String> eventQueue = new ArrayDeque<>();
+
+	// ============================== Entry / summon phase ==============================
+
+	public static void witherKingInstructions(World temp, boolean isStandalone) {
+		world = temp;
+		standalone = isStandalone;
+
+		forceCleanup(temp);
+		Utils.markPhaseStart();
+		// Record the Necron section's end for the practice scoreboard (overall tick at WK phase start).
+		WitherActions.recordSplit("Necron", Utils.runTick());
+
+		eventQueue.clear();
+		eventQueue.add("red");   // Power
+		eventQueue.add("green"); // Apex
+		aliveCount = 0;
+		flameSpawned = false;
+
+		spawnRelics();
+	}
+
+	/** Spawn the five relics as an ItemDisplay (0.5³ wool) + an Interaction (1 × 1.1875 × 1 hitbox) per statue. */
+	private static void spawnRelics() {
+		for(Relic relic : Relic.values()) {
+			Location loc = new Location(world, relic.x, relic.y, relic.z);
+
+			ItemDisplay display = world.spawn(loc, ItemDisplay.class, d -> {
+				d.setItemStack(new ItemStack(relic.wool));
+				// 0.5³ cube, seated so its bottom sits on the statue (translate up half of the 0.5 height).
+				d.setTransformation(new Transformation(
+						new Vector3f(0f, 0.25f, 0f),
+						new AxisAngle4f(0f, 0f, 0f, 1f),
+						new Vector3f(0.5f, 0.5f, 0.5f),
+						new AxisAngle4f(0f, 0f, 0f, 1f)));
+				d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
+				d.setPersistent(true);
+				d.addScoreboardTag("TASWitherKingRelic");
+				d.addScoreboardTag("TASNoName");
+			});
+
+			Interaction interaction = world.spawn(loc, Interaction.class, i -> {
+				i.setInteractionWidth(1.0f);
+				i.setInteractionHeight(1.1875f);
+				i.setResponsive(true);
+				i.setPersistent(true);
+				i.addScoreboardTag("TASWitherKingRelic");
+				i.addScoreboardTag("TASNoName");
+			});
+
+			relicDisplays.add(display);
+			relicInteractions.add(interaction);
+			interactionRelic.put(interaction.getUniqueId(), relic);
+		}
+	}
+
+	/** The relic this Interaction entity represents, or null if it's not a (still-present) relic interaction. */
+	public static String relicColorForInteraction(Interaction interaction) {
+		Relic r = interactionRelic.get(interaction.getUniqueId());
+		return r == null ? null : r.name();
+	}
+
+	/** The relic placed by right-clicking the altar block at (x,z), or null if not an altar block. */
+	public static String altarColorAt(int x, int z) {
+		Relic r = Relic.altarAt(x, z);
+		return r == null ? null : r.name();
+	}
+
+	/** The relic color of a held wool item, or null if it isn't a relic wool. */
+	public static String relicColorOfItem(ItemStack item) {
+		if(item == null) return null;
+		Relic r = Relic.fromWool(item.getType());
+		return r == null ? null : r.name();
+	}
+
+	/** Picks up the given relic (by {@link Relic} name) — called from the relic Interaction right-click. */
+	public static void pickUpRelic(Player p, String color) {
+		Relic relic = Relic.valueOf(color);
+
+		ItemStack itemStack = new ItemStack(relic.wool);
+		ItemMeta meta = itemStack.getItemMeta();
+		meta.setDisplayName(relic.itemName());
+		itemStack.setItemMeta(meta);
+
+		// Remove this relic's display + interaction so it can't be picked up twice.
+		removeRelicEntities(relic);
+
+		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up the " + relic.itemName() + ChatColor.GREEN + "!");
+		p.getInventory().setItem(8, itemStack);
+		instructions.Actions.setHotbarSlot(p, 8);
+		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
+	}
+
+	/** Places the held relic on its altar (by {@link Relic} name) — called from the altar block right-click. */
+	public static void placeRelic(Player p, String color) {
+		Relic relic = Relic.valueOf(color);
+		if(placedRelics.contains(relic)) return;
+		placedRelics.add(relic);
+
+		// Wool ItemDisplay at the altar's center, y=8.
+		Location woolLoc = new Location(world, relic.altarX + 0.5, 8, relic.altarZ + 0.5);
+		ItemDisplay wool = world.spawn(woolLoc, ItemDisplay.class, d -> {
+			d.setItemStack(new ItemStack(relic.wool));
+			d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
+			d.setPersistent(true);
+			d.addScoreboardTag("TASWitherKingRelic");
+			d.addScoreboardTag("TASNoName");
+		});
+		altarWoolDisplays.add(wool);
+
+		// Clear the relic out of hand (back to the SkyBlock-menu nether star).
+		p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
+		instructions.Actions.setHotbarSlot(p, 8);
+		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
+
+		if(placedRelics.size() == 5) {
+			startWitherKingIntro();
+		}
+	}
+
+	// ============================== Wither King intro ==============================
+
+	private static void startWitherKingIntro() {
 		for(int i = 20; i <= 101; i += 20) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_IRON_GOLEM_REPAIR, 2.0f, 0.5f), i);
 		}
@@ -60,16 +252,6 @@ public class WitherKing {
 		}
 		Utils.scheduleTask(() -> sendChatMessage("You... again?"), 100);
 		Utils.scheduleTask(() -> {
-			if(witherKingBossBar != null) {
-				witherKingBossBar.removeAll();
-				witherKingBossBar = null;
-			}
-
-			if(bossBarUpdateTask != null) {
-				bossBarUpdateTask.cancel();
-				bossBarUpdateTask = null;
-			}
-
 			witherKing = (Wither) world.spawnEntity(new Location(world, 54.5, 6, 32.5, 0f, 0f), EntityType.WITHER);
 			witherKing.setAI(false);
 			witherKing.setSilent(true);
@@ -92,14 +274,11 @@ public class WitherKing {
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
 		}, 160);
 		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), 220);
-		// non-deterministic piece of shit
-		// will take the lowest time seen across all testing (30/9/6/6/6)
-		Utils.scheduleTask(() -> spawnDragon("purple"), 260); // tick after start: 301; dragon spawns 401
-		Utils.scheduleTask(() -> spawnDragon("blue"), 260); // tick after start: 301; dragon spawns 401
-		Utils.scheduleTask(() -> spawnDragon("orange"), 600); // tick after start: 641; dragon spawns 741
-		Utils.scheduleTask(() -> spawnDragon("red"), 706); // tick after start: 747; dragon spawns: 847
-		Utils.scheduleTask(() -> spawnDragon("green"), 812); // tick after start: 853; dragon spawns: 953
-		// end happens 70 ticks after last dragon dies
+		// First three dragons spawn on predetermined timers (Soul + Ice together, then Flame).
+		// Power and Apex are NOT timer-spawned — they fire from handleDragonKilled when the last living dragon dies.
+		Utils.scheduleTask(() -> spawnDragon("purple"), 260); // Soul
+		Utils.scheduleTask(() -> spawnDragon("blue"), 260);   // Ice
+		Utils.scheduleTask(() -> spawnDragon("orange"), 600); // Flame (last timer dragon)
 	}
 
 	public static void spawnDragon(String color) {
@@ -109,36 +288,29 @@ public class WitherKing {
 		}
 		String dragonName;
 		Location spawnLocation;
-		int loc;
 		switch(color) {
 			case "orange" -> {
 				dragonName = ChatColor.GOLD + "" + ChatColor.BOLD + "Flame Dragon";
 				spawnLocation = new Location(world, 86.5, 15, 56.5, 180f, 0f);
-				loc = 0;
 			}
 			case "green" -> {
 				dragonName = ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Apex Dragon";
 				spawnLocation = new Location(world, 26.5, 15, 94.5, 0f, 0f);
-				loc = 1;
 			}
 			case "red" -> {
 				dragonName = ChatColor.RED + "" + ChatColor.BOLD + "Power Dragon";
 				spawnLocation = new Location(world, 26.5, 15, 59.5, 45f, 0f);
-				loc = 2;
 			}
 			case "blue" -> {
 				dragonName = ChatColor.BLUE + "" + ChatColor.BOLD + "Ice Dragon";
 				spawnLocation = new Location(world, 85.5, 15, 94.5, 180f, 0f);
-				loc = 3;
 			}
 			case "purple" -> {
 				dragonName = ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Soul Dragon";
 				spawnLocation = new Location(world, 56.5, 14, 126.5, 0f, 0f);
-				loc = 4;
 			}
 			default -> {
 				dragonName = ChatColor.GRAY + "" + ChatColor.BOLD + "Unknown Dragon";
-				loc = 0;
 				spawnLocation = new Location(world, 54.5, 15, 76.5);
 			}
 		}
@@ -147,7 +319,7 @@ public class WitherKing {
 
 		Utils.scheduleTask(() -> {
 			EnderDragon dragon = (EnderDragon) world.spawnEntity(spawnLocation, EntityType.ENDER_DRAGON);
-			dragons[loc] = dragon;
+			dragons.put(color, dragon);
 			dragon.setSilent(true);
 			dragon.setPersistent(true);
 			dragon.setRemoveWhenFarAway(false);
@@ -157,11 +329,39 @@ public class WitherKing {
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);
 			dragon.setHealth(800);
 			dragon.addScoreboardTag("WitherKingDragon");
+			aliveCount++;
+			if(color.equals("orange")) flameSpawned = true; // last timer dragon is now alive
 			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0f, 1.0f);
 		}, 100);
+	}
+
+	/**
+	 * Called the tick a Wither-King dragon's HP reaches 0 (from {@code Utils.hurtEntity}'s EnderDragon chokepoint).
+	 * Forces the death animation in place, decrements the Wither King's HP, and — once all timer dragons have
+	 * spawned and the arena is clear — begins the next event dragon's spawn animation (Power, then Apex). When the
+	 * final dragon (Apex) dies, kicks off the death sequence.
+	 */
+	public static void handleDragonKilled(EnderDragon dragon) {
+		if(dragon == null || dyingDragons.contains(dragon.getUniqueId())) return;
+		dyingDragons.add(dragon.getUniqueId());
+		instaKillDragon(dragon);
+		aliveCount--;
+
+		boolean isFinalDragon = eventQueue.isEmpty() && aliveCount <= 0;
+		if(isFinalDragon) {
+			playDragonDeathSound(false);
+			deathSequence();
+		} else {
+			playDragonDeathSound(true);
+			// Begin the next event dragon the tick the last living dragon is killed (guarded on all timer
+			// dragons having spawned, so an early Soul/Ice death before Flame appears can't trigger it).
+			if(flameSpawned && aliveCount <= 0 && !eventQueue.isEmpty()) {
+				spawnDragon(eventQueue.poll());
+			}
+		}
 	}
 
 	/**
@@ -211,65 +411,7 @@ public class WitherKing {
 		}
 	}
 
-	public static void pickUpRelic(Player p) {
-		ItemStack itemStack;
-		String name = Utils.getRealName(p);
-		switch(p.getName()) {
-			case "Archer" -> {
-				itemStack = new ItemStack(Material.RED_WOOL);
-				ItemMeta meta = itemStack.getItemMeta();
-				assert meta != null;
-				meta.setDisplayName(ChatColor.RED + "Corrupted Red Relic");
-				itemStack.setItemMeta(meta);
-			}
-			case "Berserk" -> {
-				itemStack = new ItemStack(Material.ORANGE_WOOL);
-				ItemMeta meta = itemStack.getItemMeta();
-				assert meta != null;
-				meta.setDisplayName(ChatColor.GOLD + "Corrupted Orange Relic");
-				itemStack.setItemMeta(meta);
-			}
-			case "Mage4" -> {
-				itemStack = new ItemStack(Material.PURPLE_WOOL);
-				ItemMeta meta = itemStack.getItemMeta();
-				assert meta != null;
-				meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Corrupted Purple Relic");
-				itemStack.setItemMeta(meta);
-			}
-			case "Mage" -> {
-				itemStack = new ItemStack(Material.BLUE_WOOL);
-				ItemMeta meta = itemStack.getItemMeta();
-				assert meta != null;
-				meta.setDisplayName(ChatColor.BLUE + "Corrupted Blue Relic");
-				itemStack.setItemMeta(meta);
-			}
-			case "Tank" -> {
-				itemStack = new ItemStack(Material.GREEN_WOOL);
-				ItemMeta meta = itemStack.getItemMeta();
-				assert meta != null;
-				meta.setDisplayName(ChatColor.DARK_GREEN + "Corrupted Green Relic");
-				itemStack.setItemMeta(meta);
-			}
-			default -> {
-				itemStack = new ItemStack(Material.BLACK_WOOL);
-				ItemMeta meta = itemStack.getItemMeta();
-				assert meta != null;
-				meta.setDisplayName(ChatColor.BLACK + "Corrupted Unknown Relic");
-				itemStack.setItemMeta(meta);
-			}
-		}
-		Bukkit.broadcastMessage(ChatColor.GOLD + name + ChatColor.GREEN + " picked up the " + itemStack.getItemMeta().getDisplayName() + ChatColor.GREEN + "!");
-		p.getInventory().setItem(8, itemStack);
-		Actions.setHotbarSlot(p, 8);
-		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
-	}
-
-	public static void placeRelic(Player player) {
-		Actions.leftClick(player);
-		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
-		player.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
-		Actions.setHotbarSlot(player, 8);
-	}
+	// ============================== Death / end ==============================
 
 	public static void deathSequence() {
 		sendChatMessage("Incredible.  You did what I couldn't do myself.");
@@ -277,30 +419,165 @@ public class WitherKing {
 		Utils.scheduleTask(() -> sendChatMessage("I hope you'll become the Heroes I could never be."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("So long champions of this mad world!"), 180);
 		Utils.scheduleTask(() -> sendChatMessage("My strengths are depleting.  This... this is it."), 240);
-		Utils.scheduleTask(() -> witherKing.remove(), 300);
+		Utils.scheduleTask(() -> { if(witherKing != null && witherKing.isValid()) witherKing.remove(); }, 300);
 
-		Utils.scheduleTask(() -> {
-			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
-			Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
-			Bukkit.broadcastMessage("");
-			Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "306 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
-			Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4 404 ticks");
-			Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "220.20 seconds | 3:40.20");
-			Bukkit.broadcastMessage("");
-			Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
-			Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
-			Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1 027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
-			Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
-			Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1 029 ticks");
-			Bukkit.broadcastMessage("");
-			Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
-			Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
-			Bukkit.broadcastMessage("               " + ChatColor.BLUE + ChatColor.BOLD + "DISCORD" + ChatColor.AQUA + ": https://discord.gg/gNfPwa8");
-			Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+		Utils.scheduleTask(WitherKing::printFinalMessage, END_DELAY_TICKS);
+	}
 
+	/** Final congratulation: hardcoded splits for a TAS run, live ticks for a practice run, a short line for
+	 *  a standalone Wither-King practice. */
+	private static void printFinalMessage() {
+		WitherActions.recordSplit("WitherKing", Utils.runTick());
+
+		if(!WitherActions.isPracticeMode()) {
+			printTasScoreboard();
+		} else if(standalone) {
+			Bukkit.broadcastMessage(ChatColor.GREEN + "You defeated the " + ChatColor.RED + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.GREEN
+					+ " in " + formatWithSpaces(Utils.phaseTick()) + " ticks!  Try doing the full run to see how you fare.");
 			Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
-		}, 70);
+		} else {
+			printPracticeScoreboard();
+		}
+	}
+
+	/** The hardcoded TAS victory screen. */
+	private static void printTasScoreboard() {
+		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "306 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
+		Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4 404 ticks");
+		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "220.20 seconds | 3:40.20");
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
+		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
+		Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1 027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
+		Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
+		Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1 029 ticks");
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
+		Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
+		Bukkit.broadcastMessage("               " + ChatColor.BLUE + ChatColor.BOLD + "DISCORD" + ChatColor.AQUA + ": https://discord.gg/gNfPwa8");
+		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+
+		Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
+		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
+	}
+
+	/** The victory screen for a chained practice run (full boss / full run): real splits from this run. */
+	private static void printPracticeScoreboard() {
+		int overall = Utils.runTick();
+
+		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + formatWithSpaces(overall) + " ticks");
+		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + formatTime(overall));
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
+		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
+		for(String line : buildPracticeSplitLines()) Bukkit.broadcastMessage(line);
+		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
+
+		Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
+		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
+	}
+
+	/** One "Label: N ticks" line per section that was actually recorded this run, split = end − previous end. */
+	private static List<String> buildPracticeSplitLines() {
+		String[][] sections = {
+				{"Clear", ChatColor.BLUE + ""}, {"Maxor", ChatColor.AQUA + ""}, {"Storm", ChatColor.RED + ""},
+				{"Terminals", ChatColor.YELLOW + ""}, {"Goldor", ChatColor.GOLD + ""}, {"Necron", ChatColor.DARK_RED + ""},
+				{"WitherKing", ChatColor.GRAY + ""}
+		};
+		List<String> lines = new ArrayList<>();
+		int prev = 0;
+		for(String[] s : sections) {
+			Integer end = WitherActions.getSplitEnd(s[0]);
+			if(end == null) continue;
+			int split = end - prev;
+			prev = end;
+			String label = s[0].equals("WitherKing") ? "Wither King" : s[0];
+			lines.add("    " + s[1] + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + formatWithSpaces(split) + " ticks");
+		}
+		return lines;
+	}
+
+	// ============================== Cleanup / helpers ==============================
+
+	/** Remove all relic/altar entities + any stray Wither-King / dragon entities, and reset all per-fight state. */
+	public static void forceCleanup(World w) {
+		world = w;
+		if(witherKing != null) {
+			witherKing.remove();
+			witherKing = null;
+		}
+		for(EnderDragon dragon : dragons.values()) {
+			if(dragon != null && dragon.isValid()) dragon.remove();
+		}
+		dragons.clear();
+		dyingDragons.clear();
+
+		for(ItemDisplay d : relicDisplays) if(d != null && d.isValid()) d.remove();
+		for(Interaction i : relicInteractions) if(i != null && i.isValid()) i.remove();
+		for(ItemDisplay d : altarWoolDisplays) if(d != null && d.isValid()) d.remove();
+		relicDisplays.clear();
+		relicInteractions.clear();
+		altarWoolDisplays.clear();
+		interactionRelic.clear();
+		placedRelics.clear();
+
+		// Sweep any orphaned relic/dragon entities a prior run may have left behind.
+		if(world != null) {
+			for(org.bukkit.entity.Entity e : world.getEntities()) {
+				if(e.getScoreboardTags().contains("TASWitherKingRelic") || e.getScoreboardTags().contains("WitherKingDragon")) {
+					e.remove();
+				}
+			}
+		}
+
+		aliveCount = 0;
+		flameSpawned = false;
+		eventQueue.clear();
+	}
+
+	private static void removeRelicEntities(Relic relic) {
+		// Remove this relic's display + interaction (matched by their spawn location).
+		relicDisplays.removeIf(d -> {
+			if(d != null && d.isValid() && sameSpot(d.getLocation(), relic)) { d.remove(); return true; }
+			return false;
+		});
+		relicInteractions.removeIf(i -> {
+			if(i != null && i.isValid() && sameSpot(i.getLocation(), relic)) {
+				interactionRelic.remove(i.getUniqueId());
+				i.remove();
+				return true;
+			}
+			return false;
+		});
+	}
+
+	private static boolean sameSpot(Location loc, Relic relic) {
+		return Math.abs(loc.getX() - relic.x) < 0.01 && Math.abs(loc.getY() - relic.y) < 0.01 && Math.abs(loc.getZ() - relic.z) < 0.01;
+	}
+
+	private static String formatTime(int ticks) {
+		double secs = ticks / 20.0;
+		int mins = (int) (secs / 60);
+		double rem = secs - mins * 60.0;
+		return String.format("%.2f seconds | %d:%05.2f", secs, mins, rem);
+	}
+
+	/** Render an int with space thousands separators, e.g. 4404 → "4 404". */
+	private static String formatWithSpaces(int n) {
+		StringBuilder sb = new StringBuilder();
+		String s = String.valueOf(n);
+		for(int i = 0; i < s.length(); i++) {
+			if(i > 0 && (s.length() - i) % 3 == 0) sb.append(' ');
+			sb.append(s.charAt(i));
+		}
+		return sb.toString();
 	}
 
 	private static void sendChatMessage(String message) {

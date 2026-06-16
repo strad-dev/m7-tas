@@ -462,6 +462,27 @@ public class Actions {
 	}
 
 	/**
+	 * Turns the given player's head toward the nearest living entity whose custom name contains
+	 * {@code nameContains} (case-insensitive) within a 32-block cube. No LOS or boss/player filtering —
+	 * the caller is naming a specific mob. No-op if none match. Aim math delegates to
+	 * {@link #snapHeadAtEntity}.
+	 */
+	public static void snapHeadAtNearestNamed(Player p, String nameContains) {
+		LivingEntity nearest = null;
+		double nearestDistance = Double.MAX_VALUE;
+		for(Entity entity : p.getNearbyEntities(32, 32, 32)) {
+			if(!(entity instanceof LivingEntity living)) continue;
+			if(living.getCustomName() == null || !living.getCustomName().toLowerCase().contains(nameContains.toLowerCase())) continue;
+			double distance = p.getLocation().distance(living.getLocation());
+			if(distance < nearestDistance) {
+				nearestDistance = distance;
+				nearest = living;
+			}
+		}
+		if(nearest != null) snapHeadAtEntity(p, nearest);
+	}
+
+	/**
 	 * Turns the given player's head so that an arrow shot from a Terminator (spawn pos
 	 * {@code eyeLocation + (0, -0.1, 0)}, speed 3.175) would land on the center of the
 	 * nearest non-Player, non-Boss living entity reachable by ballistic trajectory.

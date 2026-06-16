@@ -61,6 +61,10 @@ public class CustomItems implements Listener {
 	// onWitherHurtSound reads this to skip its at-location broadcast for beam hits (package-private).
 	static boolean beamDamageInProgress = false;
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
+	// Berserk-exclusive damage ramp: each successive hit on the SAME mob deals +10% damage, capped at 3x (+200%).
+	// Keyed player → (mob → number of prior hits). Different terminator arrows from one shot land as separate hits,
+	// so each ramps further. Reset at the start of every /tas and /practice run (CustomItems.resetBerserkDamage()).
+	private static final Map<UUID, Map<UUID, Integer>> berserkHitCounts = new HashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
@@ -1768,6 +1772,27 @@ public class CustomItems implements Listener {
 			p.removePotionEffect(PotionEffectType.STRENGTH);
 			p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, newAmplifier));
 		}
+	}
+
+	/**
+	 * Berserk-exclusive damage ramp. Each successive hit a Berserk lands on the SAME mob deals +10% damage
+	 * (1.0×, 1.1×, 1.2×, …) capped at 3× (+200%). Each call counts as one hit — so the separate terminator
+	 * arrows from a single right-click each ramp the multiplier further. Returns {@code base} unchanged for
+	 * non-Berserk shooters. Per-mob counts are cleared at run start via {@link #resetBerserkDamage()}.
+	 */
+	public static double scaleBerserkDamage(Player p, LivingEntity target, double base) {
+		if(p == null || target == null) return base;
+		if(!(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk"))) return base;
+		Map<UUID, Integer> perMob = berserkHitCounts.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
+		int hits = perMob.getOrDefault(target.getUniqueId(), 0);
+		double multiplier = Math.min(1.0 + 0.1 * hits, 3.0);
+		perMob.put(target.getUniqueId(), hits + 1);
+		return base * multiplier;
+	}
+
+	/** Clear all Berserk per-mob hit counts — called at the start of every /tas and /practice run. */
+	public static void resetBerserkDamage() {
+		berserkHitCounts.clear();
 	}
 
 	public static void tac(Player p) {

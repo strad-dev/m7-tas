@@ -60,6 +60,10 @@ public class TAS implements CommandExecutor {
 
 		// A prior /practice may have left practice-mode aggro on — turn it back off for a real TAS run.
 		WitherActions.setPracticeMode(false);
+		// Clear any section splits recorded by a previous run (used by the Wither-King practice scoreboard).
+		WitherActions.clearSplits();
+		// Reset Berserk's per-mob damage-ramp counters.
+		listeners.CustomItems.resetBerserkDamage();
 		// Clear any one-shot choreography still queued from a previous run before this one schedules its own.
 		Utils.cancelAllScheduled();
 
@@ -149,6 +153,10 @@ public class TAS implements CommandExecutor {
 		FakePlayerManager.stopCustomConnection();
 		FakePlayerManager.kickAllFakes();
 		WitherActions.setPracticeMode(true);
+		// Clear any section splits from a previous run; this run records its own for the Wither-King scoreboard.
+		WitherActions.clearSplits();
+		// Reset Berserk's per-mob damage-ramp counters.
+		listeners.CustomItems.resetBerserkDamage();
 
 		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
 		// disarm every player-side handoff + the Watcher so the boss chain spawns each boss WITHOUT starting a
