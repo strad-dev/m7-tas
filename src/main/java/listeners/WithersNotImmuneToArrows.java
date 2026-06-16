@@ -26,6 +26,10 @@ public class WithersNotImmuneToArrows implements Listener {
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
+		// Aggro the shooter on ANY attempted hit — bosses are armored most of the time, so waiting for damage to
+		// actually land would leave them with no target. (Recorded before the shield-bounce early-return below.)
+		WitherActions.noteDamager(p);
+
 		// Shield up (invulnerability ticks active) → bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow
 		// landing on a tick the boss was made vulnerable then re-armored within that same tick — the live counter
 		// already reads "shielded" because the arrow hit resolves after the start-of-tick boss scans, but the boss
@@ -53,7 +57,6 @@ public class WithersNotImmuneToArrows implements Listener {
 		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.
 		// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
 		wither.damage(CustomItems.scaleBerserkDamage(p, wither, arrow.getDamage()));
-		WitherActions.noteDamager(p); // bosses aggro whoever last damaged them
 		wither.setNoDamageTicks(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 		Utils.changeName(wither);

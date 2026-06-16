@@ -135,7 +135,7 @@ public class FakePlayerInventory {
 		inventory.setItem(26, getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, ChatColor.GOLD + "Heroic Jerry-chine Gun", "skyblock/combat/jerrychine"));
 		inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, ChatColor.DARK_PURPLE + "Bonzo Staff", "skyblock/combat/bonzo"));
 		inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.DARK_PURPLE + "Tactical Insertion", "skyblock/combat/tac"));
-		inventory.setItem(34, new ItemStack(Material.SOUL_SAND));
+		inventory.setItem(34, Utils.placeOnStoneBricksInAdventure(new ItemStack(Material.SOUL_SAND)));
 
 		switch(role) {
 			case "Archer" -> {
