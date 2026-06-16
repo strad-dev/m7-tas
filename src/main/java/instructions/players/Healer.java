@@ -704,6 +704,14 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(healer, 13, 39), 503);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -2f, 0f), 504);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 505);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 515);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 517);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 527);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 529);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 539);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 10), 541);
 	}
 
 //	private static void witherKing() {

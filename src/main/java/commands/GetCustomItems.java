@@ -36,6 +36,8 @@ public class GetCustomItems implements CommandExecutor {
 		lore.add("skyblock/combat/stonk");
 		meta.setLore(lore);
 		stonk.setItemMeta(meta);
+		// Lets Dungeonbreaker break any block while the holder is in adventure mode (matches Hypixel behaviour).
+		stonk = plugin.Utils.breakAnyBlockInAdventure(stonk);
 
 		ItemStack term = new ItemStack(Material.BOW);
 		meta = term.getItemMeta();

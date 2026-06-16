@@ -722,6 +722,10 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(berserk, 13, 39), 503);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -122f, 0f), 504);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 505);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WPJ", 0), 523);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 12), 525);
 	}
 
 //	private static void witherKing() {
