@@ -62,22 +62,24 @@ public class Archer {
 				Utils.scheduleTask(() -> {
 					Actions.turnHead(archer, -10.5f, -15.5f);
 					Actions.setHotbarSlot(archer, 4);
-				}, 43);
+				}, 45);
 				Utils.scheduleTask(() -> {
 					Actions.swapItems(archer, 18, 39);
 					Actions.swapItems(archer, 19, 38);
 					Actions.swapItems(archer, 20, 37);
 					Actions.swapItems(archer, 21, 36);
-				}, 44);
-				Utils.scheduleTask(() -> Actions.dropItem(archer, true), 49);
-				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 50);
-				Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 54);
-				Utils.scheduleTask(() -> Actions.rightClick(archer), 55);
-				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 56);
-				// rapid fire #2 at 57
-				Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 58);
-				Utils.scheduleTask(() -> Actions.rightClick(archer), 59);
-				Utils.scheduleTask(() -> goldor(false), 60);
+				}, 46);
+				Utils.scheduleTask(() -> Actions.dropItem(archer, true), 50);
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 51);
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 55);
+				Utils.scheduleTask(() -> Actions.rightClick(archer), 56);
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 57);
+				// rapid fire #2 at 58
+				Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 59);
+				Utils.scheduleTask(() -> {
+					goldor(false);
+					Actions.rightClick(archer);
+				}, 60);
 			}
 			case "necron" -> {
 				Utils.teleport(archer, new Location(world, 54.524, 64, 100.707, 180f, -6f));
@@ -519,14 +521,14 @@ public class Archer {
 				Actions.swapItems(archer, 20, 37);
 				Actions.swapItems(archer, 21, 36);
 			}, 845);
-			Utils.scheduleTask(() -> Actions.dropItem(archer, true), 849);
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 850);
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 854);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 855);
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 856);
-			// rapid fire #2 at 857
-			Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 858);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 859);
+			Utils.scheduleTask(() -> Actions.dropItem(archer, true), 850);
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -4f), 851);
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -15f, -2.5f), 855);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 856);
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 857);
+			// rapid fire #2 at 858
+			Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 859);
+			Utils.scheduleTask(() -> Actions.rightClick(archer), 860);
 			// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 		}
 	}
@@ -556,43 +558,43 @@ public class Archer {
 		 */
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 81f, 0f), 1);
 		// tick 4: device completes
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 5);
-		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 7);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 9);
-		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 22);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 24);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 6);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 8);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 10);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 23);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 25);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 81f, 80f);
 			Actions.setHotbarSlot(archer, 1);
-		}, 38);
-		Utils.scheduleTask(() -> Actions.rightClick(archer), 39);
+		}, 39);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 40);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 81f, 0f);
 			Actions.setHotbarSlot(archer, 5);
-		}, 40);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 59);
+		}, 41);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 60);
 		// tick 60: death tick
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(archer, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
 			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(archer) + " used Spirit Mask!");
-		}, 60);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 61);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 30f), 66);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 67);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 69);
+		}, 61);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 62);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 30f), 67);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 68);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 70);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(archer);
 			Actions.move(archer, "WAP", 0);
-		}, 70);
+		}, 71);
 		Utils.scheduleTask(() -> {
 			Actions.leftClick(archer);
 			Actions.move(archer, "WP", 17);
-		}, 71);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 72);
+		}, 72);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 73);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 74);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 55f, 0f), 76);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 120f, 0f), 90);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 75);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 55f, 0f), 77);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 120f, 0f), 91);
 		// tick 110: tank leaps
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(archer, 1);
