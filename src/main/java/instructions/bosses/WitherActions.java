@@ -1,6 +1,7 @@
 package instructions.bosses;
 
 import net.minecraft.commands.arguments.EntityAnchorArgument;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
@@ -32,6 +33,11 @@ public class WitherActions {
 	// handle, used to unregister in clearWitherAggro.
 	private static final Map<UUID, Runnable> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
+
+	// Server tick on which each wither last had its armor DROPPED (became vulnerable). Read by
+	// wasMadeVulnerableThisTick so a Terminator/Last Breath arrow can register on a one-tick window that opened
+	// then re-closed within the same tick — see that method and WithersNotImmuneToArrows.
+	private static final Map<UUID, Integer> lastVulnerableTick = new HashMap<>();
 
 	// --- Practice mode: bosses chase the real player who last hit (or the closest), not the fake actors. ---
 	private static volatile boolean practiceMode = false;
@@ -229,7 +235,25 @@ public class WitherActions {
 		} else {
 			// Remove armor immediately
 			wither.setInvulnerabilityTicks(0);
+			// Record the tick the window opened so a same-tick re-arm (e.g. a stun whose cap-enrage fires in the
+			// same tick's damage handler) still lets a Terminator/Last Breath arrow through this tick.
+			lastVulnerableTick.put(wither.getUniqueId(), MinecraftServer.currentTick);
 		}
+	}
+
+	/**
+	 * True if {@code wither} was made vulnerable (armor dropped) on the CURRENT server tick — even if it has since
+	 * been re-armored within the same tick.
+	 *
+	 * <p>The arrow damage gate ({@link listeners.WithersNotImmuneToArrows}) normally reads the live invulnerability
+	 * counter, but a Terminator/Last Breath arrow's hit resolves in the entity-physics lane, AFTER the start-of-tick
+	 * boss scans (see CLAUDE.md "Boss Tick Ordering"). So a one-tick vulnerability window that opens and re-closes
+	 * within a single tick is invisible to that arrow — the counter already reads "shielded" by the time the hit
+	 * lands, even though a same-tick mage beam (player lane) would connect. This captures the heartbeat-time intent
+	 * so the arrow honors it too.
+	 */
+	public static boolean wasMadeVulnerableThisTick(Wither wither) {
+		return lastVulnerableTick.getOrDefault(wither.getUniqueId(), Integer.MIN_VALUE) == MinecraftServer.currentTick;
 	}
 
 	// --- Practice-mode target resolution ---

@@ -108,6 +108,20 @@ public class MiscListener implements Listener {
 	public void onProjectileHit(ProjectileHitEvent e) {
 		// Handle arrows hitting blocks - remove Terminator arrows
 		if(e.getEntity() instanceof Arrow arrow) {
+			// SUPER-verbose diagnostic: report when a Last Breath arrow hits a boss — a WITHER or the Wither King's
+			// ENDER DRAGON (hits register on an EnderDragonPart, resolved to its parent) — so its hit timing can be
+			// correlated against the boss vulnerability window, separate from ordinary Terminator arrows. Read-only;
+			// uses the event's own hit reference so it's accurate even if the LOWEST-priority handler
+			// (WithersNotImmuneToArrows) already processed/removed the arrow for the boss hit.
+			if(Utils.isSuperVerbose() && arrow.getScoreboardTags().contains("LastBreathArrow")) {
+				Entity rawHit = e.getHitEntity();
+				Entity boss = rawHit instanceof Wither || rawHit instanceof EnderDragon ? rawHit
+						: rawHit instanceof EnderDragonPart part ? part.getParent() : null;
+				if(boss != null) {
+					String shooter = arrow.getShooter() instanceof Player sp ? sp.getName() : "?";
+					Utils.debug(Utils.DebugType.SERVER, "Last Breath arrow (" + shooter + ") hit " + boss.getName());
+				}
+			}
 			if(e.getHitBlock() != null) {
 				if(arrow.getScoreboardTags().contains("TerminatorArrow")) {
 					arrow.remove();

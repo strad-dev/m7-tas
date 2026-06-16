@@ -480,7 +480,7 @@ public class Healer {
 			Actions.swapItems(healer, 5, 32);
 		}, 607);
 		Utils.scheduleTask(() -> Actions.rightClick(healer), 608);
-		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 665);
+		Utils.scheduleTask(() -> Actions.stopRightClick(healer), 664);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 90f, 0f), 684);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 685);
 		Utils.scheduleTask(() -> Actions.turnHead(healer, 36f, 0f), 691);
