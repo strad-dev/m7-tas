@@ -308,13 +308,13 @@ public class Mage {
 			Actions.leftClick(mage);
 			Server.openBloodDoor();
 		}, 350);
-		Utils.scheduleTask(() -> snapHead("Diamante Giant"), 371);
+		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Diamante Giant"), 371);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 372);
-		Utils.scheduleTask(() -> snapHead("Bonzo"), 373);
+		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Bonzo"), 373);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 377);
-		Utils.scheduleTask(() -> snapHead("Nucleararmadillo"), 378);
+		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Nucleararmadillo"), 378);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 382);
-		Utils.scheduleTask(() -> snapHead("Jamie_2013"), 383);
+		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Jamie_2013"), 383);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 387);
 		Utils.scheduleTask(() -> {
 			Actions.move(mage, "WP", 10);
@@ -596,133 +596,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 12), 522);
 	}
 
-//	private static void witherKing() {
-//		Utils.scheduleTask(() -> WitherKing.pickUpRelic(mage), 1);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 2);
-//		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 25);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 74f, 0f);
-//			Actions.setHotbarSlot(mage, 8);
-//		}, 26);
-//		Utils.scheduleTask(() -> WitherKing.placeRelic(mage), 27);
-//		// tick 28: equip greg
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, -21.2f, 0f);
-//			Actions.setHotbarSlot(mage, 5);
-//		}, 29);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.406, 0, 1.0465), 4), 30);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1015, 0, 0.2616), 5), 35);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.406, 0, 1.0465), 35), 40);
-//		Utils.scheduleTask(() -> Actions.jump(mage), 74);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.1015, 0, 0.2616), 9), 75);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.406, 0, 1.0465), 3), 84);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -90f), 81);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 160);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 221);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 350);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 360);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 370);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 380);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 390);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 401);
-//		Utils.scheduleTask(Mage::mageBeam, 402);
-//		Utils.scheduleTask(Mage::mageBeam, 407);
-//		Utils.scheduleTask(Mage::mageBeam, 412);
-//		Utils.scheduleTask(Mage::mageBeam, 417);
-//		Utils.scheduleTask(() -> {
-//			Actions.setHotbarSlot(mage, 5);
-//			Actions.turnHead(mage, -176.5f, 0f);
-//		}, 418);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0685, 0, -1.12), 15), 419);
-//		Utils.scheduleTask(() -> Actions.jump(mage), 433);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0171, 0, -0.2801), 11), 434);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0.0685, 0, -1.12), 12), 445);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, -90f), 457);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 495);
-//		// wears off tick 755
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 556);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 690);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 700);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 710);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 720);
-//		Utils.scheduleTask(() -> Actions.lastBreath(mage, 10), 730);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 741);
-//		Utils.scheduleTask(Mage::mageBeam, 742);
-//		Utils.scheduleTask(() -> {
-//			Mage.mageBeam();
-//			WitherKing.playDragonDeathSound(true);
-//			Bukkit.broadcastMessage(ChatColor.GOLD + "Flame Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 747 ticks (37.35 seconds) | Overall: 4 122 ticks (206.10 seconds)");
-//		}, 747);
-//		Utils.scheduleTask(() -> {
-//			Actions.turnHead(mage, 91f, 0f);
-//			Actions.setHotbarSlot(mage, 5);
-//		}, 748);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.1223, 0, -0.0196), 6), 749);
-//		Utils.scheduleTask(() -> Actions.rag(mage), 750);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2805, 0, -0.049), 5), 755);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-1.1223, 0, -0.0196), 38), 760);
-//		Utils.scheduleTask(() -> Actions.jump(mage), 797);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(-0.2805, 0, -0.049), 5), 798);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -135f, -90f), 803);
-//		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 811);
-//		Utils.scheduleTask(Mage::mageBeam, 848);
-//		Utils.scheduleTask(() -> {
-//			Mage.mageBeam();
-//			WitherKing.playDragonDeathSound(true);
-//			Bukkit.broadcastMessage(ChatColor.RED + "Power Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 853 ticks (42.65 seconds) | Overall: 4 228 ticks (211.40 seconds)");
-//		}, 853);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, 0f, 0f), 854);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 5), 855);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.2806), 5), 860);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 10), 865);
-//		Utils.scheduleTask(() -> Actions.jump(mage), 874);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 0.2806), 9), 875);
-//		Utils.scheduleTask(() -> Actions.move(mage, new Vector(0, 0, 1.12242), 7), 884);
-//		Utils.scheduleTask(() -> Actions.turnHead(mage, -180f, -90f), 891);
-//		Utils.scheduleTask(Mage::mageBeam, 954);
-//		Utils.scheduleTask(() -> {
-//			Mage.mageBeam();
-//			WitherKing.playDragonDeathSound(false);
-//			Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Apex Dragon " + ChatColor.GREEN + "killed in 6 ticks (0.30 seconds) | Wither King: 959 ticks (47.95 seconds) | Overall: 4 334 ticks (216.70 seconds)");
-//			WitherKing.deathSequence();
-//		}, 959);
-//	}
-//
-	private static void snapHead(String target) {
-		// Find the nearest mob with the target name
-		Entity nearestMob = null;
-		double nearestDistance = Double.MAX_VALUE;
-
-		// Search through all nearby entities
-		for(Entity entity : mage.getNearbyEntities(32, 32, 32)) { // 50 block search radius
-			// Check if entity is a living entity (mob)
-			if(entity instanceof LivingEntity) {
-				// Check if the entity has a custom name containing the target
-				if(entity.getCustomName() != null && entity.getCustomName().toLowerCase().contains(target.toLowerCase())) {
-					double distance = mage.getLocation().distance(entity.getLocation());
-					if(distance < nearestDistance) {
-						nearestDistance = distance;
-						nearestMob = entity;
-					}
-				}
-			}
-		}
-
-		// If we found a target, turn the player's head to face it
-		if(nearestMob != null) {
-			Location playerLoc = mage.getEyeLocation();
-			Location targetLoc = nearestMob.getLocation().add(0, nearestMob.getHeight() / 2, 0); // Aim at center of mob
-
-			// Calculate the direction vector
-			Vector direction = targetLoc.subtract(playerLoc).toVector().normalize();
-
-			// Convert to yaw and pitch
-			float yaw = (float) Math.toDegrees(Math.atan2(-direction.getX(), direction.getZ()));
-			float pitch = (float) Math.toDegrees(Math.asin(-direction.getY()));
-
-			// Turn the player's head
-			Actions.turnHead(mage, yaw, pitch);
-		}
+	private static void witherKing() {
 	}
 
 	@SuppressWarnings("unused")

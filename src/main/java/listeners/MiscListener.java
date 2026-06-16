@@ -143,7 +143,8 @@ public class MiscListener implements Listener {
 				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither)) {
 					e.setCancelled(true);
 					hitEntity.setNoDamageTicks(0);
-					Utils.hurtEntity(hitEntity, (float) arrow.getDamage(), p);
+					// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
+					Utils.hurtEntity(hitEntity, (float) CustomItems.scaleBerserkDamage(p, hitEntity, arrow.getDamage()), p);
 					hitEntity.setNoDamageTicks(0);
 					Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					Utils.changeName(hitEntity);

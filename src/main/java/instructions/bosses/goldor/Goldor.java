@@ -140,6 +140,8 @@ public final class Goldor extends WitherLord {
 
 	@Override
 	protected void onStart() {
+		// Storm's section ends as the Goldor (terminals) phase begins — record its end for the practice scoreboard.
+		instructions.bosses.WitherActions.recordSplit("Storm", plugin.Utils.runTick());
 		startPhase();
 		scheduleIntroDialogue();
 	}
@@ -605,6 +607,8 @@ public final class Goldor extends WitherLord {
 	private void onCoreOpen() {
 		coreOpen = true;
 		coreOpenTick = displayTick();
+		// Terminals are done (core just opened) — record the Terminals section end for the practice scoreboard.
+		instructions.bosses.WitherActions.recordSplit("Terminals", plugin.Utils.runTick());
 		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
 
 		sendChatMessage("You have done it, you destroyed the factory...");
