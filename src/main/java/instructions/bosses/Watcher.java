@@ -221,10 +221,25 @@ public class Watcher {
 
 	// ============================== Event-driven kills ==============================
 
+	// Blood-Mob kills already counted, by UUID — a single kill can surface twice (EntityDeathEvent AND the
+	// hurtEntity kill chokepoint), so dedupe to count each mob exactly once.
+	private final Set<UUID> countedMobKills = new HashSet<>();
+
 	/** Dispatched from the EntityDeathEvent listener. Counts Blood-Mob deaths, drives kill lines + portal. */
 	public void handleMobDeath(EntityDeathEvent e) {
+		registerMobKill(e.getEntity());
+	}
+
+	/**
+	 * Count one Blood-Mob kill — exactly once, whether it arrives via {@link #handleMobDeath} (EntityDeathEvent) or
+	 * the {@code Utils.hurtEntity} kill chokepoint. The chokepoint is the backstop for an instakill on the SAME tick
+	 * the mob spawns: that death is unreliable through the EntityDeathEvent path (the entity dies before it has been
+	 * fully ticked into the world), so it would otherwise be lost and the kill never count toward the 19.
+	 */
+	public void registerMobKill(LivingEntity mob) {
 		if(!active) return;
-		if(!e.getEntity().getScoreboardTags().contains("WatcherMob")) return;
+		if(!mob.getScoreboardTags().contains("WatcherMob")) return;
+		if(!countedMobKills.add(mob.getUniqueId())) return; // already counted via the other path this tick
 
 		mobsKilled++;
 		updateWatcherBossBar();
@@ -577,6 +592,7 @@ public class Watcher {
 	private void resetState() {
 		mobCount = 0;
 		mobsKilled = 0;
+		countedMobKills.clear();
 		MOB_SPAWN_LOCATIONS.clear();
 		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
 			portalDetectTask.cancel();
@@ -614,6 +630,7 @@ public class Watcher {
 		active = false;
 		mobsKilled = 0;
 		mobCount = 0;
+		countedMobKills.clear();
 	}
 
 	// Force cleanup for /setup and /tas reset

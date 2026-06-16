@@ -35,23 +35,28 @@ import java.util.*;
 
 public class Utils {
 	/**
+	 * Every one-shot task handed to {@link #scheduleTask} — so {@link #cancelAllScheduled()} can clear a previous
+	 * run's lingering choreography. Repeating tasks (boss tickers, aggro, spectator sync) use runTaskTimer and are
+	 * intentionally NOT tracked here.
+	 */
+	private static final List<org.bukkit.scheduler.BukkitTask> scheduledTasks = new ArrayList<>();
+
+
+	/**
 	 * Wrapper for Bukkit.getScheduler().runTaskLater(Plugin, Runnable, long)
 	 *
 	 * @param task  The task to run later.
 	 * @param delay In how many ticks this task should be run.
 	 */
-	/** Every one-shot task handed to {@link #scheduleTask} — so {@link #cancelAllScheduled()} can clear a previous
-	 *  run's lingering choreography. Repeating tasks (boss tickers, aggro, spectator sync) use runTaskTimer and are
-	 *  intentionally NOT tracked here. */
-	private static final List<org.bukkit.scheduler.BukkitTask> scheduledTasks = new ArrayList<>();
-
 	public static void scheduleTask(Runnable task, long delay) {
 		if(!M7tas.getInstance().isEnabled()) return;
 		scheduledTasks.add(Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay));
 	}
 
-	/** Cancel every pending one-shot task scheduled via {@link #scheduleTask}. Called at the start of a run so a
-	 *  previous run's still-queued dialogue/choreography (e.g. a player routine's broadcasts) can't fire into it. */
+	/**
+	 * Cancel every pending one-shot task scheduled via {@link #scheduleTask}. Called at the start of a run so a
+	 * previous run's still-queued dialogue/choreography (e.g. a player routine's broadcasts) can't fire into it.
+	 */
 	public static void cancelAllScheduled() {
 		for(org.bukkit.scheduler.BukkitTask t : scheduledTasks) {
 			if(t != null && !t.isCancelled()) t.cancel();
@@ -118,6 +123,12 @@ public class Utils {
 		}
 	}
 
+	/** The NMS server via the non-deprecated CraftServer bridge ({@code MinecraftServer.getServer()} is deprecated).
+	 *  Returns the same instance, so callers (tick counters, command source) are behaviour-identical. */
+	private static MinecraftServer nmsServer() {
+		return ((org.bukkit.craftbukkit.v1_21_R7.CraftServer) Bukkit.getServer()).getServer();
+	}
+
 	/**
 	 * Runs a server command without any output. Vanilla normally broadcasts a command's success
 	 * to every op as "[Server: ...]" chat spam; {@code withSuppressedOutput()} sets the source
@@ -129,7 +140,7 @@ public class Utils {
 	 * @param command Command to run, without a leading slash
 	 */
 	public static void runCommand(String command) {
-		MinecraftServer server = MinecraftServer.getServer();
+		MinecraftServer server = nmsServer();
 		CommandSourceStack source = server.createCommandSourceStack().withSuppressedOutput();
 		server.getCommands().performPrefixedCommand(source, command);
 	}
@@ -155,10 +166,12 @@ public class Utils {
 		return item;
 	}
 
-	/** Return a copy of {@code item} that can break ANY block while its holder is in adventure mode. Stamps the
-	 *  vanilla {@code minecraft:can_break} component with a single empty block-predicate — no block/state/nbt filter,
-	 *  so it matches every block. Mirrors how SkyBlock's Dungeonbreaker bypasses adventure-mode block protection.
-	 *  Apply LAST (after any setItemMeta), since this mutates the NMS copy directly. */
+	/**
+	 * Return a copy of {@code item} that can break ANY block while its holder is in adventure mode. Stamps the
+	 * vanilla {@code minecraft:can_break} component with a single empty block-predicate — no block/state/nbt filter,
+	 * so it matches every block. Mirrors how SkyBlock's Dungeonbreaker bypasses adventure-mode block protection.
+	 * Apply LAST (after any setItemMeta), since this mutates the NMS copy directly.
+	 */
 	public static ItemStack breakAnyBlockInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
 		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
@@ -168,16 +181,18 @@ public class Utils {
 		return CraftItemStack.asBukkitCopy(nms);
 	}
 
-	/** Return a copy of {@code item} that can be placed on Stone Bricks while its holder is in adventure mode
-	 *  (the practice default). Stamps the vanilla {@code minecraft:can_place_on} component — renders a
-	 *  "Can be placed on: Stone Bricks" tooltip. Apply LAST (after any setItemMeta), since it mutates the NMS copy. */
+	/**
+	 * Return a copy of {@code item} that can be placed on Stone Bricks while its holder is in adventure mode
+	 * (the practice default). Stamps the vanilla {@code minecraft:can_place_on} component — renders a
+	 * "Can be placed on: Stone Bricks" tooltip. Apply LAST (after any setItemMeta), since it mutates the NMS copy.
+	 */
 	public static ItemStack placeOnStoneBricksInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
-		net.minecraft.core.HolderGetter<net.minecraft.world.level.block.Block> blocks =
-				net.minecraft.server.MinecraftServer.getServer().registryAccess()
-						.lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+		// Use the static built-in block registry as the HolderGetter — avoids RegistryAccess.lookupOrThrow, whose
+		// signature differs between the Spigot-mojang compile target and the Paper runtime (NoSuchMethodError).
 		BlockPredicate stoneBricks = BlockPredicate.Builder.block()
-				.of(blocks, net.minecraft.world.level.block.Blocks.STONE_BRICKS).build();
+				.of(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.world.level.block.Blocks.STONE_BRICKS)
+				.build();
 		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(stoneBricks)));
 		return CraftItemStack.asBukkitCopy(nms);
 	}
@@ -346,10 +361,12 @@ public class Utils {
 		CLIENT, SERVER, BOSS, ERROR
 	}
 
-	/** Verbosity ladder, ascending. Each level is a superset of the one below:
-	 *  OFF — silent; TIMER — only tick-timer announcements; ON — timers + full [Client]/[Server]/[Game]
-	 *  debug + movement audit; SUPER — adds packet coordinates + movement residual tracking. */
-	public enum VerboseLevel { OFF, TIMER, ON, SUPER }
+	/**
+	 * Verbosity ladder, ascending. Each level is a superset of the one below:
+	 * OFF — silent; TIMER — only tick-timer announcements; ON — timers + full [Client]/[Server]/[Game]
+	 * debug + movement audit; SUPER — adds packet coordinates + movement residual tracking.
+	 */
+	public enum VerboseLevel {OFF, TIMER, ON, SUPER}
 
 	private static VerboseLevel verboseLevel = VerboseLevel.ON;
 
@@ -361,32 +378,46 @@ public class Utils {
 		verboseLevel = level;
 	}
 
-	/** Full debug stream ([Client]/[Server]/[Game] packet logging, movement audit): ON and SUPER. */
+	/**
+	 * Full debug stream ([Client]/[Server]/[Game] packet logging, movement audit): ON and SUPER.
+	 */
 	public static boolean isVerbose() {
 		return verboseLevel.ordinal() >= VerboseLevel.ON.ordinal();
 	}
 
-	/** Tick-timer announcements (section/boss timing lines): TIMER, ON, and SUPER. */
+	/**
+	 * Tick-timer announcements (section/boss timing lines): TIMER, ON, and SUPER.
+	 */
 	public static boolean showTimers() {
 		return verboseLevel.ordinal() >= VerboseLevel.TIMER.ordinal();
 	}
 
-	/** Packet coordinates + movement residual tracking: SUPER only. */
+	/**
+	 * Packet coordinates + movement residual tracking: SUPER only.
+	 */
 	public static boolean isSuperVerbose() {
 		return verboseLevel == VerboseLevel.SUPER;
 	}
 
-	/** Server tick captured when the current phase began; basis for the {@code [tick: N]} prefix on verbose lines. */
+	/**
+	 * Server tick captured when the current phase began; basis for the {@code [tick: N]} prefix on verbose lines.
+	 */
 	private static int phaseStartTick = 0;
-	/** Server tick the live overall-run timer was anchored at (see {@link #markRunStart()}). */
+	/**
+	 * Server tick the live overall-run timer was anchored at (see {@link #markRunStart()}).
+	 */
 	private static int runStartTick = 0;
-	/** False once {@link #markRunStart()} arms the run timer, until the next {@link #markPhaseStart()} anchors it. */
+	/**
+	 * False once {@link #markRunStart()} arms the run timer, until the next {@link #markPhaseStart()} anchors it.
+	 */
 	private static boolean runStarted = false;
 
-	/** Mark the start of a new phase — resets the {@code [tick: N]} counter shown on every verbose line. The first
-	 *  phase start after {@link #markRunStart()} also anchors the live overall-run timer. */
+	/**
+	 * Mark the start of a new phase — resets the {@code [tick: N]} counter shown on every verbose line. The first
+	 * phase start after {@link #markRunStart()} also anchors the live overall-run timer.
+	 */
 	public static void markPhaseStart() {
-		int now = MinecraftServer.getServer().getTickCount();
+		int now = nmsServer().getTickCount();
 		phaseStartTick = now;
 		if(!runStarted) {
 			runStartTick = now;
@@ -394,23 +425,31 @@ public class Utils {
 		}
 	}
 
-	/** Arm a fresh live overall-run timer: the next {@link #markPhaseStart()} (the run's first phase) anchors it.
-	 *  Used by /practice, whose "Overall" timer is live rather than the hardcoded per-phase cumulative offset. */
+	/**
+	 * Arm a fresh live overall-run timer: the next {@link #markPhaseStart()} (the run's first phase) anchors it.
+	 * Used by /practice, whose "Overall" timer is live rather than the hardcoded per-phase cumulative offset.
+	 */
 	public static void markRunStart() {
 		runStarted = false;
 	}
 
-	/** Ticks elapsed since the live overall-run timer was anchored (see {@link #markRunStart()}). */
+	/**
+	 * Ticks elapsed since the live overall-run timer was anchored (see {@link #markRunStart()}).
+	 */
 	public static int runTick() {
-		return MinecraftServer.getServer().getTickCount() - runStartTick;
+		return nmsServer().getTickCount() - runStartTick;
 	}
 
-	/** Ticks elapsed since the last {@link #markPhaseStart()} — the value rendered in the verbose-line prefix. */
+	/**
+	 * Ticks elapsed since the last {@link #markPhaseStart()} — the value rendered in the verbose-line prefix.
+	 */
 	public static int phaseTick() {
-		return MinecraftServer.getServer().getTickCount() - phaseStartTick;
+		return nmsServer().getTickCount() - phaseStartTick;
 	}
 
-	/** Broadcast a tick-timer line — shown only at TIMER level and above (see {@link #showTimers()}). */
+	/**
+	 * Broadcast a tick-timer line — shown only at TIMER level and above (see {@link #showTimers()}).
+	 */
 	public static void timer(String message) {
 		if(showTimers()) Bukkit.broadcastMessage(message);
 	}
@@ -482,7 +521,7 @@ public class Utils {
 			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
 			// the check but causes infinite recursion via EntityDamageByEntityEvent → handleCustomItems.
 			// Direct health manipulation avoids both issues.
-			entity.setHealth(Math.max(0, (float)(entity.getHealth() - damage)));
+			entity.setHealth(Math.max(0, (float) (entity.getHealth() - damage)));
 			// Wither-King dragon kill chokepoint: dragon damage never fires an EntityDamageEvent (we setHealth
 			// directly), so detect the kill here and hand off to the death/spawn-next logic (idempotent).
 			if(entity instanceof org.bukkit.entity.EnderDragon dragon
@@ -491,6 +530,11 @@ public class Utils {
 			}
 		} else {
 			nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
+			// Blood-Mob kill chokepoint: an instakill on the SAME tick a Watcher mob spawns can lose its
+			// EntityDeathEvent, so register the kill here too once its HP hits 0 (deduped in Watcher by UUID).
+			if(entity.getScoreboardTags().contains("WatcherMob") && entity.getHealth() <= 0) {
+				instructions.bosses.Watcher.INSTANCE.registerMobKill(entity);
+			}
 		}
 	}
 

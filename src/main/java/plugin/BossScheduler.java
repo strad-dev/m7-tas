@@ -96,7 +96,12 @@ public final class BossScheduler {
 
 	/** Run all movement tickers. Called once per tick from the fake-player ticker, after fake aiStep, so boss
 	 *  movement lands at the same point as fake movement. */
+	private static int movementDbg = 0;
+
 	public static void runMovementTickers() {
+		if(!movementTickers.isEmpty() && movementDbg++ % 20 == 0) {
+			org.bukkit.Bukkit.getLogger().info("[aggro] runMovementTickers: " + movementTickers.size() + " ticker(s) running");
+		}
 		for(Runnable ticker : movementTickers) {
 			try {
 				ticker.run();

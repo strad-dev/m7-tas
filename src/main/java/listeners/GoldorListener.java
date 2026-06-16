@@ -66,6 +66,9 @@ public class GoldorListener implements Listener {
 	private static final int LIGHTS_X1 = 58, LIGHTS_X2 = 62;
 	private static final int LIGHTS_Y1 = 133, LIGHTS_Y2 = 136;
 	private static final int LIGHTS_Z = 142;
+	// The redstone lamps sit one block behind the levers (the blocks the levers are mounted on) — the device is
+	// only solved when EVERY lamp in this grid is lit.
+	private static final int LIGHTS_LAMP_Z = 143;
 
 	// =================== Terminal click (right-click) ===================
 	@EventHandler(priority = EventPriority.LOW)
@@ -132,7 +135,7 @@ public class GoldorListener implements Listener {
 				&& bx >= LIGHTS_X1 && bx <= LIGHTS_X2
 				&& by >= LIGHTS_Y1 && by <= LIGHTS_Y2
 				&& bz == LIGHTS_Z) {
-			runWhenPhaseActive(deferred -> processLightsClick(p, deferred));
+			runWhenPhaseActive(deferred -> processLightsClick(p));
 			return;
 		}
 
@@ -193,12 +196,33 @@ public class GoldorListener implements Listener {
 		}
 	}
 
-	/** Activate the S2 Lights device. Safe to call from the deferred path — re-checks state. */
-	private void processLightsClick(Player p, boolean wasDeferred) {
+	/** Activate the S2 Lights device — but ONLY once every redstone lamp is lit. The clicked lever hasn't toggled
+	 *  yet (vanilla flips it AFTER this PlayerInteractEvent) and its lamp won't relight until the resulting block
+	 *  update settles, so the lamp grid is read on the NEXT tick; a flip that doesn't complete the puzzle is a no-op.
+	 *  The activation is credited to the completing click's own tick (the lamp lit this tick; we just observe it one
+	 *  tick later — hence wasDeferred=true). */
+	private void processLightsClick(Player p) {
 		GoldorSection s2 = Goldor.INSTANCE.getSection(1);
 		if(s2 == null || s2.device.isActivated()) return;
-		s2.device.markActivated();
-		Goldor.INSTANCE.onActivation(p, s2, "device", wasDeferred);
+		World w = p.getWorld();
+		Utils.scheduleTask(() -> {
+			if(s2.device.isActivated()) return;
+			if(!allLightsLit(w)) return;
+			s2.device.markActivated();
+			Goldor.INSTANCE.onActivation(p, s2, "device", true);
+		}, 1L);
+	}
+
+	/** True only if EVERY redstone lamp of the S2 Lights device (the lever mount blocks at z=143) is lit. */
+	private static boolean allLightsLit(World w) {
+		for(int x = LIGHTS_X1; x <= LIGHTS_X2; x++) {
+			for(int y = LIGHTS_Y1; y <= LIGHTS_Y2; y++) {
+				Block b = w.getBlockAt(x, y, LIGHTS_LAMP_Z);
+				if(b.getType() != Material.REDSTONE_LAMP) return false;
+				if(!(b.getBlockData() instanceof org.bukkit.block.data.Lightable lamp) || !lamp.isLit()) return false;
+			}
+		}
+		return true;
 	}
 
 	/** Run the action now if the Goldor phase is active, else give it a one-tick grace and retry once. The only

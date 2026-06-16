@@ -85,6 +85,11 @@ public final class M7tas extends JavaPlugin {
 		HelmetSpeedSync.start();
 		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic) — runs every tick.
 		getServer().getScheduler().runTaskTimer(this, listeners.CustomItems::pollTerminators, 1L, 1L);
+		// Practice-only boss-movement driver: in practice the fake ticker gates its own runMovementTickers call off
+		// (and may not be running at all, since fakes are kicked), so drive the lane here. In a TAS this is a no-op
+		// (practiceMode is false → the fake ticker drives it), so the TAS tick ordering is untouched.
+		getServer().getScheduler().runTaskTimer(this,
+				() -> { if(instructions.bosses.WitherActions.isPracticeMode()) BossScheduler.runMovementTickers(); }, 1L, 1L);
 		Spectate.startSpectatorSync();
 		SpringBoots.start();
 		LavaJump.start();

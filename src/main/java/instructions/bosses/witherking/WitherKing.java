@@ -64,7 +64,7 @@ public class WitherKing {
 		RED(Material.RED_WOOL, ChatColor.RED, "Red", 20.5, 6.8125, 59.5, 51, 42),
 		GREEN(Material.GREEN_WOOL, ChatColor.DARK_GREEN, "Green", 20.5, 6.8125, 94.5, 49, 44),
 		PURPLE(Material.PURPLE_WOOL, ChatColor.LIGHT_PURPLE, "Purple", 56.5, 8.8125, 132.5, 54, 41),
-		BLUE(Material.BLUE_WOOL, ChatColor.BLUE, "Blue", 91.5, 6.8125, 94.5, 59, 44),
+		BLUE(Material.LIGHT_BLUE_WOOL, ChatColor.BLUE, "Blue", 91.5, 6.8125, 94.5, 59, 44),
 		ORANGE(Material.ORANGE_WOOL, ChatColor.GOLD, "Orange", 92.5, 6.8125, 56.5, 57, 42);
 
 		final Material wool;
@@ -391,9 +391,14 @@ public class WitherKing {
 	 * to 0,0,0 (the default portal target of DragonDeathPhase). Reflects
 	 * DragonDeathPhase.targetLocation to the dragon's current position and kicks
 	 * dragonDeathTime to 1 so the death animation starts this tick.
-	 */
+	 * true if {@code e} is a Wither-King dragon currently playing its death animation. instaKillDragon pins the
+	 * dragon's HP to 1 for the animation, so isDead()/getHealth() can't detect this — the UUID set is authoritative. */
+	public static boolean isDyingDragon(Entity e) {
+		return e != null && dyingDragons.contains(e.getUniqueId());
+	}
+
 	public static void instaKillDragon(EnderDragon dragon) {
-		if(dragon == null || !(dragon instanceof CraftEnderDragon craftDragon)) return;
+		if(!(dragon instanceof CraftEnderDragon craftDragon)) return;
 		net.minecraft.world.entity.boss.enderdragon.EnderDragon nmsDragon = craftDragon.getHandle();
 		nmsDragon.getPhaseManager().setPhase(EnderDragonPhase.DYING);
 		DragonPhaseInstance phase = nmsDragon.getPhaseManager().getCurrentPhase();
@@ -469,14 +474,14 @@ public class WitherKing {
 		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "306 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
-		Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4 404 ticks");
+		Bukkit.broadcastMessage(" " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4404 ticks");
 		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "220.20 seconds | 3:40.20");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
-		Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1 027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
-		Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
-		Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1 029 ticks");
+		Bukkit.broadcastMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
+		Bukkit.broadcastMessage(ChatColor.YELLOW + "" + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
+		Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1029 ticks");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
 		Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
@@ -507,22 +512,22 @@ public class WitherKing {
 		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
 		Bukkit.broadcastMessage("");
-		Bukkit.broadcastMessage("  " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + formatWithSpaces(overall) + " ticks");
+		Bukkit.broadcastMessage(" " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + overall + " ticks");
 		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + formatTime(overall));
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
 		if(clearRan) {
-			Bukkit.broadcastMessage("    " + seg(ChatColor.BLUE, "Clear", sp.get("Clear")) + " | " + seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")));
-			Bukkit.broadcastMessage(" " + seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")) + " | " + seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")));
+			Bukkit.broadcastMessage(seg(ChatColor.BLUE, "Clear", sp.get("Clear")) + " | " + seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")));
+			Bukkit.broadcastMessage(seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")) + " | " + seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")));
 			Bukkit.broadcastMessage("                         " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
 		} else {
-			Bukkit.broadcastMessage("    " + seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")) + " | " + seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")));
-			Bukkit.broadcastMessage("    " + seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")) + " | " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
+			Bukkit.broadcastMessage(seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")) + " | " + seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")));
+			Bukkit.broadcastMessage(seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")) + " | " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
 			Bukkit.broadcastMessage("                              " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": Skipped");
 		}
 		Bukkit.broadcastMessage("");
-		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
+		Bukkit.broadcastMessage("   " + ChatColor.GREEN + ChatColor.BOLD + "Plugin by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
 		Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
 		Bukkit.broadcastMessage("               " + ChatColor.BLUE + ChatColor.BOLD + "DISCORD" + ChatColor.AQUA + ": https://discord.gg/gNfPwa8");
 		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
@@ -533,7 +538,7 @@ public class WitherKing {
 
 	/** "<color><b>Label</b></color>: N ticks" split segment for the practice scoreboard. */
 	private static String seg(ChatColor color, String label, Integer ticks) {
-		return color + "" + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + (ticks == null ? "—" : formatWithSpaces(ticks)) + " ticks";
+		return color + "" + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + (ticks == null ? "—" : String.valueOf(ticks)) + " ticks";
 	}
 
 	// ============================== Cleanup / helpers ==============================
