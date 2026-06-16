@@ -313,6 +313,12 @@ public final class Storm extends WitherLord {
 	// --- Crush mechanic (mirror Maxor.triggerStun / handleDamage with 0.55 cap and 20t-delayed explosion) ---
 
 	private void triggerCrush() {
+		// SUPER-verbose diagnostic: Storm's exact position at the moment the crush triggers (x/z to 3 dp, y to 5 dp,
+		// matching the packet-coordinate convention) so the crush location can be inspected against the pillar grid.
+		if(Utils.isSuperVerbose()) {
+			org.bukkit.Location loc = boss.getLocation();
+			Utils.debug(Utils.DebugType.BOSS, "Storm crushed at " + Utils.round(loc.getX(), 3) + " " + Utils.round(loc.getY(), 5) + " " + Utils.round(loc.getZ(), 3));
+		}
 		// Consume the pillar Storm is currently inside so its pad goes dead, and
 		// record it so the T+20 explosion listener can scope block destruction
 		// to that pillar's column only (no collateral damage to other pillars).

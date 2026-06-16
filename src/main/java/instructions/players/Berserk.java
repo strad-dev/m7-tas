@@ -500,16 +500,14 @@ public class Berserk {
 			Actions.setHotbarSlot(berserk, 5);
 			Actions.swapItems(berserk, 5, 32);
 		}, 533);
-		Utils.scheduleTask(() -> {
-			Actions.move(berserk, "WP", 2);
-			Actions.rightClick(berserk); // rag buff
-		}, 546);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 534);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 2), 546);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(berserk, 6);
 			Actions.swapItems(berserk, 5, 32);
-		}, 607); // last breath
+		}, 595); // last breath
 		int lbFor = 8;
-		for(int i = 608; i <= 678 - lbFor - 1; i += lbFor + 1) {
+		for(int i = 597; i <= 678 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
 		}
@@ -701,9 +699,8 @@ public class Berserk {
 	public static void necron(boolean doContinue) {
 		Actions.setHotbarSlot(berserk, 6);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 1);
-		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 151);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 152);
-
+		Utils.scheduleTask(() -> Actions.stopRightClick(berserk), 152);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 153);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 160);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 161);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 162);

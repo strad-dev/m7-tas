@@ -5,6 +5,7 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.goldor.GoldorLever;
 import instructions.bosses.goldor.GoldorSection;
 import instructions.bosses.goldor.GoldorTerminal;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -27,6 +28,10 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import plugin.Utils;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 public class GoldorListener implements Listener {
 
 	/** Single registered instance (see M7tas.onEnable). Lets static reset paths reach instance state. */
@@ -41,6 +46,12 @@ public class GoldorListener implements Listener {
 	// Simon Says: cumulative GLOBAL click count (15 activates, no time limit). NOT per-player — any players'
 	// clicks accumulate toward 15. Reset on device completion and on serverSetup (see resetSimon).
 	private int simonClicks = 0;
+	// Last server tick each player registered a Simon Says click on. A single physical right-click can surface as
+	// TWO PlayerInteractEvents on the same tick (the off-hand event while sneaking, and/or vanilla re-firing after
+	// PlayerPacketInterceptor resets its interact-dedupe). One click cannot span two ticks, so we collapse any
+	// repeat from the same player within the same tick — fixes the same-tick double-count without rate-limiting
+	// genuine clicks (those land on different ticks). Stale entries self-expire via the tick comparison.
+	private final Map<UUID, Integer> lastSimonClickTick = new HashMap<>();
 	// Sharp Shooter: hit state on the 9 target blocks
 	private final boolean[][] sharpHits = new boolean[3][3]; // [xIdx 0..2 → 68/66/64][yIdx 0..2 → 130/128/126]
 	private int sharpHitCount = 0;
@@ -116,7 +127,7 @@ public class GoldorListener implements Listener {
 		// Simon Says button (S1 device) — not section-gated. Defer if the phase hasn't spun up yet so a
 		// click in a chained full run (players scheduled on start, Goldor only active when Storm dies) counts.
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) {
-			runWhenPhaseActive(deferred -> processSimonClick(p, deferred));
+			tryRegisterSimonClick(p, bx, by, bz);
 			return;
 		}
 
@@ -149,6 +160,28 @@ public class GoldorListener implements Listener {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Register a Simon Says button click from {@code p} when (bx,by,bz) is the button, deduped to once per player
+	 * per server tick. A single physical click can surface twice on the same tick — the off-hand event while
+	 * sneaking, and/or vanilla re-firing the interact after {@code PlayerPacketInterceptor} resets its dedupe — and
+	 * one click cannot span two ticks, so any same-tick repeat from a player is dropped.
+	 *
+	 * <p>Called from two places, both main-thread and both funneling through this single guard:
+	 * <ul>
+	 *   <li>the vanilla {@link #onInteract} PlayerInteractEvent — the path fake players take (simulated packets);
+	 *   <li>the raw {@code ServerboundUseItemOnPacket} in {@code PlayerPacketInterceptor} — real players, which
+	 *       bypasses vanilla's interact-event suppression so rapid clicks aren't throttled to a few per second.
+	 * </ul>
+	 */
+	public static void tryRegisterSimonClick(Player p, int bx, int by, int bz) {
+		if(INSTANCE == null) return;
+		if(bx != SIMON_BX || by != SIMON_BY || bz != SIMON_BZ) return;
+		int now = MinecraftServer.currentTick;
+		if(INSTANCE.lastSimonClickTick.getOrDefault(p.getUniqueId(), -1) == now) return;
+		INSTANCE.lastSimonClickTick.put(p.getUniqueId(), now);
+		INSTANCE.runWhenPhaseActive(deferred -> INSTANCE.processSimonClick(p, deferred));
 	}
 
 	/** Register one Simon Says click (global counter). Safe to call from the deferred path — re-checks state. */

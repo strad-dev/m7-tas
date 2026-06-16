@@ -780,8 +780,8 @@ public class Tank {
 	public static void necron(boolean doContinue) {
 		Actions.setHotbarSlot(tank, 6);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 1);
-		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 151);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 152);
+		Utils.scheduleTask(() -> Actions.stopRightClick(tank), 152);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 153);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 160);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 161);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 162);

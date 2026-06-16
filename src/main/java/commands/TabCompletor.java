@@ -53,6 +53,16 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
+			case "getcustomitems" -> {
+				if(args.length == 1) {
+					for(String val : new String[]{"all", "archer", "berserk", "healer", "mage", "tank"}) {
+						if(val.startsWith(args[0].toLowerCase())) {
+							completions.add(val);
+						}
+					}
+				}
+			}
+
 			case "verbose" -> {
 				if(args.length == 1) {
 					for(String val : new String[]{"off", "timer", "on", "super", "true", "false"}) {
