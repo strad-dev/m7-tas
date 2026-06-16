@@ -230,10 +230,7 @@ public class FakePlayerManager {
 		fakePlayers.clear();
 	}
 
-	/** Starts the per-tick fake-player ticker, which also drives the boss-movement lane
-	 *  ({@link BossScheduler#runMovementTickers()}). Idempotent. Called at plugin enable so boss aggro movement
-	 *  runs even in practice (where fakes are kicked and {@code spawnAllFakes} isn't called). */
-	public static void startFakePlayerTicker() {
+	private static void startFakePlayerTicker() {
 		if(fakeTickerStarted) {
 			return;
 		}

@@ -256,10 +256,6 @@ public class MiscListener implements Listener {
 	public void onBlockPlace(BlockPlaceEvent e) {
 		if(e.getBlockPlaced().getType() != Material.SOUL_SAND) return;
 		if(e.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
-		// Soul sand placed on stone bricks is allowed to stay (not reverted) — whether clicked directly against a
-		// stone-brick face or resting on top of a stone-brick block.
-		if(e.getBlockAgainst().getType() == Material.STONE_BRICKS
-				|| e.getBlockPlaced().getRelative(org.bukkit.block.BlockFace.DOWN).getType() == Material.STONE_BRICKS) return;
 		Location loc = e.getBlockPlaced().getLocation();
 		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {

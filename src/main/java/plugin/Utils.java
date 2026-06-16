@@ -168,6 +168,20 @@ public class Utils {
 		return CraftItemStack.asBukkitCopy(nms);
 	}
 
+	/** Return a copy of {@code item} that can be placed on Stone Bricks while its holder is in adventure mode
+	 *  (the practice default). Stamps the vanilla {@code minecraft:can_place_on} component — renders a
+	 *  "Can be placed on: Stone Bricks" tooltip. Apply LAST (after any setItemMeta), since it mutates the NMS copy. */
+	public static ItemStack placeOnStoneBricksInAdventure(ItemStack item) {
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+		net.minecraft.core.HolderGetter<net.minecraft.world.level.block.Block> blocks =
+				net.minecraft.server.MinecraftServer.getServer().registryAccess()
+						.lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK);
+		BlockPredicate stoneBricks = BlockPredicate.Builder.block()
+				.of(blocks, net.minecraft.world.level.block.Blocks.STONE_BRICKS).build();
+		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(stoneBricks)));
+		return CraftItemStack.asBukkitCopy(nms);
+	}
+
 	/**
 	 * Plays a sound for every player on the server
 	 *
