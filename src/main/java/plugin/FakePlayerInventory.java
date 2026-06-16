@@ -56,6 +56,8 @@ public class FakePlayerInventory {
 			ItemMeta meta = pickaxe.getItemMeta();
 			meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
 			pickaxe.setItemMeta(meta);
+			// Lets Dungeonbreaker break any block while the holder is in adventure mode (matches Hypixel behaviour).
+			pickaxe = Utils.breakAnyBlockInAdventure(pickaxe);
 			PlayerInventory inventory = p.getInventory();
 			inventory.clear();
 

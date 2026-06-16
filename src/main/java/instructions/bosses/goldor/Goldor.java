@@ -37,7 +37,7 @@ import java.util.Map;
 public final class Goldor extends WitherLord {
 	public static final Goldor INSTANCE = new Goldor();
 
-	private static final int PRE_GOLDOR_TICKS = 2116;
+	private static final int PRE_GOLDOR_TICKS = 2098;
 
 	// Patrol waypoints (block-center XZ). Y stays at spawn Y = 118 during patrol.
 	private static final double WP_AX = 100.5, WP_AZ = 40.5;

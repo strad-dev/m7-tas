@@ -590,6 +590,10 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 13, 39), 503);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -67f, 0f), 504);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 505);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 521);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 12), 522);
 	}
 
 //	private static void witherKing() {

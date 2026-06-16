@@ -1,7 +1,9 @@
 package plugin;
 
 import commands.Spectate;
+import net.minecraft.advancements.criterion.BlockPredicate;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.MinecraftServer;
@@ -9,12 +11,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
+import net.minecraft.world.item.AdventureModePredicate;
+import net.minecraft.world.item.component.TooltipDisplay;
 import nms.TASGamePacketListenerImpl;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -148,6 +153,19 @@ public class Utils {
 		item.setItemMeta(meta);
 		item.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
 		return item;
+	}
+
+	/** Return a copy of {@code item} that can break ANY block while its holder is in adventure mode. Stamps the
+	 *  vanilla {@code minecraft:can_break} component with a single empty block-predicate — no block/state/nbt filter,
+	 *  so it matches every block. Mirrors how SkyBlock's Dungeonbreaker bypasses adventure-mode block protection.
+	 *  Apply LAST (after any setItemMeta), since this mutates the NMS copy directly. */
+	public static ItemStack breakAnyBlockInAdventure(ItemStack item) {
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
+		// The empty predicate has no concrete block to name, so the client renders a "Can Break: Unknown"
+		// tooltip line. Hide the CAN_BREAK component from the tooltip to suppress it.
+		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT.withHidden(DataComponents.CAN_BREAK, true));
+		return CraftItemStack.asBukkitCopy(nms);
 	}
 
 	/**

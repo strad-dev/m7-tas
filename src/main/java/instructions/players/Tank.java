@@ -800,6 +800,10 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(tank, 13, 39), 503);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 65f, 0f), 504);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 505);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 520);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 10), 522);
 	}
 
 //	private static void witherKing() {

@@ -53,7 +53,7 @@ import java.util.Random;
 public final class Necron extends WitherLord {
 	public static final Necron INSTANCE = new Necron();
 
-	private static final int PRE_NECRON_TICKS = 2420;
+	private static final int PRE_NECRON_TICKS = 2402;
 	private static final Random random = new Random();
 	private static final String[] FRENZY_START_MESSAGES = {"Sometimes when you have a problem, you just need to destroy it all and start again.", "WITNESS MY RAW NUCLEAR POWER!"};
 	private static final String[] FRENZY_END_MESSAGES = {"ARGH!", "Let's make some space!"};

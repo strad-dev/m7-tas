@@ -21,7 +21,7 @@ import java.util.*;
 public final class Maxor extends WitherLord {
 	public static final Maxor INSTANCE = new Maxor();
 
-	private static final int PRE_MAXOR_TICKS = 739;
+	private static final int PRE_MAXOR_TICKS = 738;
 	private static final String ENERGY_CRYSTAL_ID = "skyblock/game/energy_crystal";
 	private static final String ENERGY_CRYSTAL_NAME = ChatColor.GOLD + "" + ChatColor.BOLD + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Energy Crystal" + ChatColor.GOLD + ChatColor.BOLD + " ﴿";
 	private static final String[] LASER_MESSAGE = {"YOU TRICKED ME!", "THAT BEAM!  IT HURTS!  IT HURTS!"};
