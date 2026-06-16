@@ -64,6 +64,10 @@ public class TAS implements CommandExecutor {
 		WitherActions.clearSplits();
 		// Reset Berserk's per-mob damage-ramp counters.
 		listeners.CustomItems.resetBerserkDamage();
+		// Reset terminator firing cooldown state.
+		listeners.CustomItems.resetTerminatorCooldowns();
+		// Reset class-ability (drop) cooldowns.
+		listeners.CustomItems.resetAbilityCooldowns();
 		// Clear any one-shot choreography still queued from a previous run before this one schedules its own.
 		Utils.cancelAllScheduled();
 
@@ -157,6 +161,10 @@ public class TAS implements CommandExecutor {
 		WitherActions.clearSplits();
 		// Reset Berserk's per-mob damage-ramp counters.
 		listeners.CustomItems.resetBerserkDamage();
+		// Reset terminator firing cooldown state.
+		listeners.CustomItems.resetTerminatorCooldowns();
+		// Reset class-ability (drop) cooldowns.
+		listeners.CustomItems.resetAbilityCooldowns();
 
 		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
 		// disarm every player-side handoff + the Watcher so the boss chain spawns each boss WITHOUT starting a
@@ -166,7 +174,7 @@ public class TAS implements CommandExecutor {
 		Storm.INSTANCE.armPlayerHandoff(null);
 		Goldor.INSTANCE.armPlayerHandoff(null);
 		Necron.INSTANCE.armPlayerHandoff(null);
-		Watcher.INSTANCE.arm(world, false, null);
+		Watcher.INSTANCE.arm(world, section.equals("all"), null);
 
 		// Anchor the live overall-run timer at the first boss spawn (the "Overall" column reads it in practice).
 		Utils.markRunStart();

@@ -47,11 +47,7 @@ import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import plugin.FakePlayerManager;
-import plugin.M7tas;
-import plugin.MovementAudit;
-import plugin.PlayerInventoryBackup;
-import plugin.Utils;
+import plugin.*;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -823,6 +819,12 @@ public class Actions {
 		}
 
 		if(blockRay != null && blockRay.getHitBlock() != null) {
+			// Wither/Blood door: left-clicking a door block opens it (a no-op without the matching key). Handled
+			// here because a fake's non-pickaxe left-click routes through handleCustomItems, not a PlayerInteractEvent.
+			Block hitBlock = blockRay.getHitBlock();
+			if(Server.inWitherDoor(hitBlock)) { Server.tryOpenWitherDoor(p); return; }
+			if(Server.inBloodDoor(hitBlock)) { Server.tryOpenBloodDoor(); return; }
+
 			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) {
 				// No entity hit, block hit but not a pickaxe — dispatch left-click ability
 				CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_BLOCK, p);

@@ -9,31 +9,19 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEnderDragon;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Interaction;
-import org.bukkit.entity.ItemDisplay;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Wither;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
 import plugin.FakePlayerInventory;
+import plugin.M7tas;
 import plugin.Utils;
 
 import java.lang.reflect.Field;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The Wither King — the final encounter, run AFTER Necron (chained via {@link instructions.bosses.necron.Necron#chainNext})
@@ -74,9 +62,9 @@ public class WitherKing {
 	/** Each relic: wool material + chat color + label, its dragon-statue spawn point, and its altar block (X,Z). */
 	private enum Relic {
 		RED(Material.RED_WOOL, ChatColor.RED, "Red", 20.5, 6.8125, 59.5, 51, 42),
-		GREEN(Material.GREEN_WOOL, ChatColor.DARK_GREEN, "Green", 20.5, 6.8125, 95.5, 49, 44),
+		GREEN(Material.GREEN_WOOL, ChatColor.DARK_GREEN, "Green", 20.5, 6.8125, 94.5, 49, 44),
 		PURPLE(Material.PURPLE_WOOL, ChatColor.LIGHT_PURPLE, "Purple", 56.5, 8.8125, 132.5, 54, 41),
-		BLUE(Material.BLUE_WOOL, ChatColor.BLUE, "Blue", 91.5, 6.8125, 95.5, 59, 44),
+		BLUE(Material.BLUE_WOOL, ChatColor.BLUE, "Blue", 91.5, 6.8125, 94.5, 59, 44),
 		ORANGE(Material.ORANGE_WOOL, ChatColor.GOLD, "Orange", 92.5, 6.8125, 56.5, 57, 42);
 
 		final Material wool;
@@ -95,6 +83,9 @@ public class WitherKing {
 
 		String itemName() { return chatColor + label + " Relic"; }
 
+		/** Center Y of the floating wool ItemDisplay above the statue (Purple's statue sits 2 blocks higher). */
+		double displayY() { return this == PURPLE ? 9.5 : 7.5; }
+
 		static Relic fromWool(Material m) {
 			for(Relic r : values()) if(r.wool == m) return r;
 			return null;
@@ -106,11 +97,17 @@ public class WitherKing {
 		}
 	}
 
-	private static final List<ItemDisplay> relicDisplays = new ArrayList<>();
-	private static final List<Interaction> relicInteractions = new ArrayList<>();
+	private static final Map<Relic, ItemDisplay> statueDisplays = new HashMap<>();
+	private static final Map<Relic, Interaction> statueInteractions = new HashMap<>();
 	private static final Map<UUID, Relic> interactionRelic = new HashMap<>();
 	private static final List<ItemDisplay> altarWoolDisplays = new ArrayList<>();
 	private static final Set<Relic> placedRelics = new HashSet<>();
+
+	// Slow Y-axis spin shared by every relic + altar wool display.
+	private static BukkitTask rotationTask;
+	private static float rotationAngle = 0f;
+	private static final float ROTATION_STEP = (float) (Math.PI / 40); // full turn every 80 ticks (4s)
+	private static final Vector3f DISPLAY_SCALE = new Vector3f(0.75f, 0.75f, 0.75f); // 0.75³ wool cube
 
 	// --- Dragon phase ---
 	private static final Map<String, EnderDragon> dragons = new HashMap<>();
@@ -145,23 +142,17 @@ public class WitherKing {
 	/** Spawn the five relics as an ItemDisplay (0.5³ wool) + an Interaction (1 × 1.1875 × 1 hitbox) per statue. */
 	private static void spawnRelics() {
 		for(Relic relic : Relic.values()) {
-			Location loc = new Location(world, relic.x, relic.y, relic.z);
-
-			ItemDisplay display = world.spawn(loc, ItemDisplay.class, d -> {
+			// Floating wool sits at displayY (7.25, or 9.25 for Purple); the Interaction hitbox stays on the statue.
+			ItemDisplay display = world.spawn(new Location(world, relic.x, relic.displayY(), relic.z), ItemDisplay.class, d -> {
 				d.setItemStack(new ItemStack(relic.wool));
-				// 0.5³ cube, seated so its bottom sits on the statue (translate up half of the 0.5 height).
-				d.setTransformation(new Transformation(
-						new Vector3f(0f, 0.25f, 0f),
-						new AxisAngle4f(0f, 0f, 0f, 1f),
-						new Vector3f(0.5f, 0.5f, 0.5f),
-						new AxisAngle4f(0f, 0f, 0f, 1f)));
+				d.setTransformation(rotationTransform(0f)); // 0.5³ cube; the rotation task animates the spin (per-tick snap)
 				d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
 				d.setPersistent(true);
 				d.addScoreboardTag("TASWitherKingRelic");
 				d.addScoreboardTag("TASNoName");
 			});
 
-			Interaction interaction = world.spawn(loc, Interaction.class, i -> {
+			Interaction interaction = world.spawn(new Location(world, relic.x, relic.y, relic.z), Interaction.class, i -> {
 				i.setInteractionWidth(1.0f);
 				i.setInteractionHeight(1.1875f);
 				i.setResponsive(true);
@@ -170,10 +161,32 @@ public class WitherKing {
 				i.addScoreboardTag("TASNoName");
 			});
 
-			relicDisplays.add(display);
-			relicInteractions.add(interaction);
+			statueDisplays.put(relic, display);
+			statueInteractions.put(relic, interaction);
 			interactionRelic.put(interaction.getUniqueId(), relic);
 		}
+		startRotation();
+	}
+
+	/** A 0.5³-scale transform rotated {@code angle} radians about the Y axis (translation zero — spins in place). */
+	private static Transformation rotationTransform(float angle) {
+		return new Transformation(
+				new Vector3f(0f, 0f, 0f),
+				new AxisAngle4f(angle, 0f, 1f, 0f),
+				DISPLAY_SCALE,
+				new AxisAngle4f(0f, 0f, 0f, 1f));
+	}
+
+	/** Slowly spin every relic + altar wool display about the Y axis. Runs until {@link #forceCleanup}. */
+	private static void startRotation() {
+		if(rotationTask != null && !rotationTask.isCancelled()) return;
+		rotationTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
+			rotationAngle += ROTATION_STEP;
+			if(rotationAngle > (float) (2 * Math.PI)) rotationAngle -= (float) (2 * Math.PI);
+			Transformation t = rotationTransform(rotationAngle);
+			for(ItemDisplay d : statueDisplays.values()) if(d != null && d.isValid()) d.setTransformation(t);
+			for(ItemDisplay d : altarWoolDisplays) if(d != null && d.isValid()) d.setTransformation(t);
+		}, 1L, 1L);
 	}
 
 	/** The relic this Interaction entity represents, or null if it's not a (still-present) relic interaction. */
@@ -188,15 +201,23 @@ public class WitherKing {
 		return r == null ? null : r.name();
 	}
 
-	/** The relic color of a held wool item, or null if it isn't a relic wool. */
+	/** The relic color of an item that is genuinely a relic (correct wool AND "[Color] Relic" name), else null. */
 	public static String relicColorOfItem(ItemStack item) {
 		if(item == null) return null;
 		Relic r = Relic.fromWool(item.getType());
-		return r == null ? null : r.name();
+		if(r == null || !item.hasItemMeta() || !item.getItemMeta().hasDisplayName()) return null;
+		return r.itemName().equals(item.getItemMeta().getDisplayName()) ? r.name() : null;
+	}
+
+	/** True if the player is already carrying a relic in slot 8 — used to block picking up a second. */
+	public static boolean isHoldingRelic(Player p) {
+		return relicColorOfItem(p.getInventory().getItem(8)) != null;
 	}
 
 	/** Picks up the given relic (by {@link Relic} name) — called from the relic Interaction right-click. */
 	public static void pickUpRelic(Player p, String color) {
+		// One relic at a time — ignore if this player is already carrying one (and hasn't placed it).
+		if(isHoldingRelic(p)) return;
 		Relic relic = Relic.valueOf(color);
 
 		ItemStack itemStack = new ItemStack(relic.wool);
@@ -219,10 +240,11 @@ public class WitherKing {
 		if(placedRelics.contains(relic)) return;
 		placedRelics.add(relic);
 
-		// Wool ItemDisplay at the altar's center, y=8.
-		Location woolLoc = new Location(world, relic.altarX + 0.5, 8, relic.altarZ + 0.5);
+		// Wool ItemDisplay centered on the altar at y=8.5 — same 0.75³ cube, same spin as the statue relics.
+		Location woolLoc = new Location(world, relic.altarX + 0.5, 8.5, relic.altarZ + 0.5);
 		ItemDisplay wool = world.spawn(woolLoc, ItemDisplay.class, d -> {
 			d.setItemStack(new ItemStack(relic.wool));
+			d.setTransformation(rotationTransform(rotationAngle));
 			d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
 			d.setPersistent(true);
 			d.addScoreboardTag("TASWitherKingRelic");
@@ -465,9 +487,22 @@ public class WitherKing {
 		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
 	}
 
-	/** The victory screen for a chained practice run (full boss / full run): real splits from this run. */
+	/** The victory screen for a chained practice run (full boss / full run): real splits from this run, in the same
+	 *  layout as the TAS scoreboard. Full run → Clear/Maxor/Storm, Terminals/Goldor/Necron, Wither King. Boss-only →
+	 *  Maxor/Storm/Terminals, Goldor/Necron/Wither King, then "Clear: Skipped". */
 	private static void printPracticeScoreboard() {
 		int overall = Utils.runTick();
+		boolean clearRan = WitherActions.getSplitEnd("Clear") != null;
+
+		// Compute each section's split (end − previous end) in run order.
+		Map<String, Integer> sp = new HashMap<>();
+		int prev = 0;
+		for(String s : new String[]{"Clear", "Maxor", "Storm", "Terminals", "Goldor", "Necron", "WitherKing"}) {
+			Integer end = WitherActions.getSplitEnd(s);
+			if(end == null) continue;
+			sp.put(s, end - prev);
+			prev = end;
+		}
 
 		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
@@ -477,31 +512,28 @@ public class WitherKing {
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
-		for(String line : buildPracticeSplitLines()) Bukkit.broadcastMessage(line);
+		if(clearRan) {
+			Bukkit.broadcastMessage("    " + seg(ChatColor.BLUE, "Clear", sp.get("Clear")) + " | " + seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")));
+			Bukkit.broadcastMessage(" " + seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")) + " | " + seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")));
+			Bukkit.broadcastMessage("                         " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
+		} else {
+			Bukkit.broadcastMessage("    " + seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")) + " | " + seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")));
+			Bukkit.broadcastMessage("    " + seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")) + " | " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
+			Bukkit.broadcastMessage("                              " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": Skipped");
+		}
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
+		Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
+		Bukkit.broadcastMessage("               " + ChatColor.BLUE + ChatColor.BOLD + "DISCORD" + ChatColor.AQUA + ": https://discord.gg/gNfPwa8");
 		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 
 		Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);
 		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
 	}
 
-	/** One "Label: N ticks" line per section that was actually recorded this run, split = end − previous end. */
-	private static List<String> buildPracticeSplitLines() {
-		String[][] sections = {
-				{"Clear", ChatColor.BLUE + ""}, {"Maxor", ChatColor.AQUA + ""}, {"Storm", ChatColor.RED + ""},
-				{"Terminals", ChatColor.YELLOW + ""}, {"Goldor", ChatColor.GOLD + ""}, {"Necron", ChatColor.DARK_RED + ""},
-				{"WitherKing", ChatColor.GRAY + ""}
-		};
-		List<String> lines = new ArrayList<>();
-		int prev = 0;
-		for(String[] s : sections) {
-			Integer end = WitherActions.getSplitEnd(s[0]);
-			if(end == null) continue;
-			int split = end - prev;
-			prev = end;
-			String label = s[0].equals("WitherKing") ? "Wither King" : s[0];
-			lines.add("    " + s[1] + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + formatWithSpaces(split) + " ticks");
-		}
-		return lines;
+	/** "<color><b>Label</b></color>: N ticks" split segment for the practice scoreboard. */
+	private static String seg(ChatColor color, String label, Integer ticks) {
+		return color + "" + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + (ticks == null ? "—" : formatWithSpaces(ticks)) + " ticks";
 	}
 
 	// ============================== Cleanup / helpers ==============================
@@ -509,6 +541,11 @@ public class WitherKing {
 	/** Remove all relic/altar entities + any stray Wither-King / dragon entities, and reset all per-fight state. */
 	public static void forceCleanup(World w) {
 		world = w;
+		if(rotationTask != null && !rotationTask.isCancelled()) {
+			rotationTask.cancel();
+			rotationTask = null;
+		}
+		rotationAngle = 0f;
 		if(witherKing != null) {
 			witherKing.remove();
 			witherKing = null;
@@ -519,11 +556,11 @@ public class WitherKing {
 		dragons.clear();
 		dyingDragons.clear();
 
-		for(ItemDisplay d : relicDisplays) if(d != null && d.isValid()) d.remove();
-		for(Interaction i : relicInteractions) if(i != null && i.isValid()) i.remove();
+		for(ItemDisplay d : statueDisplays.values()) if(d != null && d.isValid()) d.remove();
+		for(Interaction i : statueInteractions.values()) if(i != null && i.isValid()) i.remove();
 		for(ItemDisplay d : altarWoolDisplays) if(d != null && d.isValid()) d.remove();
-		relicDisplays.clear();
-		relicInteractions.clear();
+		statueDisplays.clear();
+		statueInteractions.clear();
 		altarWoolDisplays.clear();
 		interactionRelic.clear();
 		placedRelics.clear();
@@ -543,23 +580,13 @@ public class WitherKing {
 	}
 
 	private static void removeRelicEntities(Relic relic) {
-		// Remove this relic's display + interaction (matched by their spawn location).
-		relicDisplays.removeIf(d -> {
-			if(d != null && d.isValid() && sameSpot(d.getLocation(), relic)) { d.remove(); return true; }
-			return false;
-		});
-		relicInteractions.removeIf(i -> {
-			if(i != null && i.isValid() && sameSpot(i.getLocation(), relic)) {
-				interactionRelic.remove(i.getUniqueId());
-				i.remove();
-				return true;
-			}
-			return false;
-		});
-	}
-
-	private static boolean sameSpot(Location loc, Relic relic) {
-		return Math.abs(loc.getX() - relic.x) < 0.01 && Math.abs(loc.getY() - relic.y) < 0.01 && Math.abs(loc.getZ() - relic.z) < 0.01;
+		ItemDisplay display = statueDisplays.remove(relic);
+		if(display != null && display.isValid()) display.remove();
+		Interaction interaction = statueInteractions.remove(relic);
+		if(interaction != null) {
+			interactionRelic.remove(interaction.getUniqueId());
+			if(interaction.isValid()) interaction.remove();
+		}
 	}
 
 	private static String formatTime(int ticks) {

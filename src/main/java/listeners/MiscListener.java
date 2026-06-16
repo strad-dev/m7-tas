@@ -1,6 +1,7 @@
 package listeners;
 
 import commands.Spectate;
+import instructions.Server;
 import instructions.bosses.Watcher;
 import instructions.bosses.WitherActions;
 import instructions.bosses.WitherLord;
@@ -18,23 +19,10 @@ import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
-import org.bukkit.event.entity.EntityKnockbackEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerInteractAtEntityEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerPickupArrowEvent;
-import org.bukkit.event.player.PlayerPortalEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.*;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import plugin.FakePlayerManager;
@@ -49,6 +37,64 @@ public class MiscListener implements Listener {
 		if(LavaJump.isInBossArena(e.getClickedBlock().getLocation())) {
 			e.setCancelled(true);
 		}
+	}
+
+	// The Watcher is a pre-boss you never damage (you kill its 19 blood mobs). It relies on RESISTANCE 255, but
+	// genericKill (mage beam / hurtEntity) bypasses potion effects — so cancel ALL damage to it outright.
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onWatcherDamage(EntityDamageEvent e) {
+		// The Watcher is never damageable; a freshly-spawned blood mob is shielded for ~2 ticks (practice) so a
+		// spawn-tick arrow can't prematurely kill it before it registers toward progress.
+		if(e.getEntity().getScoreboardTags().contains("TASWatcher")
+				|| e.getEntity().getScoreboardTags().contains("WatcherMobSpawning")) e.setCancelled(true);
+	}
+
+	// Killing the key archaeologists grants the global Wither / Blood keys (which gate the doors).
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onKeyMobDeath(EntityDeathEvent e) {
+		boolean witherMob = e.getEntity().getScoreboardTags().contains("WitherKeyMob");
+		boolean bloodMob = e.getEntity().getScoreboardTags().contains("BloodKeyMob");
+		if(!witherMob && !bloodMob) return;
+		// The key goes to (and the message names) the player closest to the mob when it died, excluding spectators.
+		Player picker = null;
+		double best = Double.MAX_VALUE;
+		Location deathLoc = e.getEntity().getLocation();
+		for(Player pl : Bukkit.getOnlinePlayers()) {
+			if(pl.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(pl)) continue;
+			double d = pl.getLocation().distanceSquared(deathLoc);
+			if(d < best) { best = d; picker = pl; }
+		}
+		if(witherMob) Server.grantWitherKey(picker);
+		else Server.grantBloodKey(picker);
+	}
+
+	// Left/right-clicking a Wither/Blood door block opens it — if the matching key has been obtained. The click
+	// is always cancelled within the door bounds so the block can't be broken; opening is a no-op without the key.
+	@EventHandler
+	public void onDoorClick(PlayerInteractEvent e) {
+		if(e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) return;
+		Block b = e.getClickedBlock();
+		if(b == null) return;
+		if(Server.inWitherDoor(b)) {
+			e.setCancelled(true);
+			Server.tryOpenWitherDoor(e.getPlayer());
+		} else if(Server.inBloodDoor(b)) {
+			e.setCancelled(true);
+			Server.tryOpenBloodDoor();
+		}
+	}
+
+	// Vanilla ender pearls can't be thrown inside the boss arena (prevents pearl-skipping mechanics). The Infinileap
+	// class ability (a named ender pearl) is exempt; fake players use simulated pearls + scripted teleports, so they
+	// are excluded to avoid breaking choreography.
+	@EventHandler
+	public void onPearlInBossArena(PlayerInteractEvent e) {
+		if(e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		ItemStack item = e.getItem();
+		if(item == null || item.getType() != Material.ENDER_PEARL) return;
+		if(CustomItems.getID(item).equals("skyblock/utility/infinileap")) return; // leap ability is allowed
+		if(FakePlayerManager.getFakePlayers().containsValue(e.getPlayer())) return;
+		if(LavaJump.isInBossArena(e.getPlayer().getLocation())) e.setCancelled(true);
 	}
 
 	@EventHandler
@@ -210,6 +256,10 @@ public class MiscListener implements Listener {
 	public void onBlockPlace(BlockPlaceEvent e) {
 		if(e.getBlockPlaced().getType() != Material.SOUL_SAND) return;
 		if(e.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
+		// Soul sand placed on stone bricks is allowed to stay (not reverted) — whether clicked directly against a
+		// stone-brick face or resting on top of a stone-brick block.
+		if(e.getBlockAgainst().getType() == Material.STONE_BRICKS
+				|| e.getBlockPlaced().getRelative(org.bukkit.block.BlockFace.DOWN).getType() == Material.STONE_BRICKS) return;
 		Location loc = e.getBlockPlaced().getLocation();
 		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {
@@ -238,20 +288,17 @@ public class MiscListener implements Listener {
 		Necron.INSTANCE.handleDamage(e);
 	}
 
-	// In practice mode, remember the real player who last damaged a TAS boss — bosses chase that player (or the
-	// closest) instead of the kicked fake actors. MONITOR (no ignoreCancelled) so the damager is recorded even
-	// when the boss clamps/cancels the hit (e.g. during an immune window).
+	// Remember whoever last damaged a TAS boss (fake or real) — bosses aggro that player. MONITOR (no
+	// ignoreCancelled) so the damager is recorded even when the boss clamps/cancels the hit (immune window). This
+	// catches melee / by-entity hits; mage-beam and terminator use no-source damage and note the damager directly.
 	@EventHandler(priority = EventPriority.MONITOR)
-	public void onBossPracticeDamager(EntityDamageByEntityEvent e) {
-		if(!WitherActions.isPracticeMode()) return;
+	public void onBossDamager(EntityDamageByEntityEvent e) {
 		if(!(e.getEntity() instanceof Wither w)) return;
 		if(!w.getScoreboardTags().contains("TASWither")) return;
 		Player damager = null;
 		if(e.getDamager() instanceof Player pl) damager = pl;
 		else if(e.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player sp) damager = sp;
-		if(damager != null && !FakePlayerManager.getFakePlayers().containsValue(damager)) {
-			WitherActions.notePracticeDamager(damager);
-		}
+		if(damager != null) WitherActions.noteDamager(damager);
 	}
 
 	// Blood-Mob deaths drive the Watcher's kill lines + portal progression.

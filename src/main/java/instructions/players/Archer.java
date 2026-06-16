@@ -123,10 +123,9 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 21); // etherwarp into fairy
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 4f, 24f), 22);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 23); // etherwarp to wither door
-		Utils.scheduleTask(() -> {
-			Actions.leftClick(archer);
-			Server.openWitherDoor(archer);
-		}, 25); // open door (waits 1 tick after pickup to ensure no race conditions) | opens tick 45
+		// Left-click the wither door to open it — requires the Wither Key from killing archaeologist I (handled by
+		// Actions.leftClick's door detection; the old hard openWitherDoor() call is gone).
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 25); // opens tick 45
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 10f, 6.5f);
 			Actions.move(archer, "N", 0);

@@ -4,7 +4,6 @@ import instructions.Server;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherLord;
 import instructions.bosses.storm.Storm;
-import instructions.players.Tank;
 import listeners.CustomItems;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -127,7 +126,7 @@ public final class Maxor extends WitherLord {
 		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
 		Utils.scheduleTask(() -> {
-			setAggro(Tank.get(), 3.0, 1.0, 0.5);
+			setAggro(3.0, 1.0, 0.5);
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
@@ -185,7 +184,8 @@ public final class Maxor extends WitherLord {
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
 
-		Utils.timer(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!\n" + formatTick(displayTick()));
+		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
+		Utils.timer(formatTick(displayTick()));
 
 		// If the player is already standing on a plate, place immediately —
 		// no PHYSICAL interact fires until they re-step on the plate.
@@ -241,10 +241,11 @@ public final class Maxor extends WitherLord {
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;
 		ChatColor placedColor = bothPlaced ? ChatColor.GREEN : ChatColor.RED;
-		String activeMsg = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!\n" + formatTick(displayTick());
-		Utils.timer(activeMsg);
+		String activeGame = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!";
+		Bukkit.broadcastMessage(activeGame);
+		Utils.timer(formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.sendTitle("", activeMsg.split("\n")[0], 0, 40, 0);
+			player.sendTitle("", activeGame, 0, 40, 0);
 		}
 
 		if(bothPlaced) {
@@ -382,13 +383,14 @@ public final class Maxor extends WitherLord {
 		cancelStunEnrageTask();
 
 		setArmor(true);
-		Utils.timer(ChatColor.RED + "⚠ Maxor is Enraged ⚠\n" + formatTick(displayTick()));
+		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is Enraged ⚠");
+		Utils.timer(formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			player.sendTitle("", ChatColor.RED + "⚠ Maxor is Enraged ⚠", 0, 40, 0);
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
-		setAggro(Tank.get(), 3.0, 1.0, 0.5);
+		setAggro(3.0, 1.0, 0.5);
 	}
 
 	/**

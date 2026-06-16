@@ -79,9 +79,15 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new StormCrushExplosion(), this);
 		getServer().getPluginManager().registerEvents(new GoldorListener(), this);
 		getServer().getPluginManager().registerEvents(new WitherKingListener(), this);
+		getServer().getPluginManager().registerEvents(new SpiritLeapListener(), this);
 
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();
+		// Start the fake-player ticker now so the boss-movement lane (aggro) runs even in practice, where fakes
+		// are kicked and spawnAllFakes is never called. Idempotent — spawnAllFakes' later call is a no-op.
+		FakePlayerManager.startFakePlayerTicker();
+		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic) — runs every tick.
+		getServer().getScheduler().runTaskTimer(this, listeners.CustomItems::pollTerminators, 1L, 1L);
 		Spectate.startSpectatorSync();
 		SpringBoots.start();
 		LavaJump.start();

@@ -106,7 +106,7 @@ public class Tank {
 			Actions.setHotbarSlot(tank, 4);
 			Utils.broadcastBlessing(tank, Utils.BlessingType.POWER, 5);
 			Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
-			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] cookiethebald " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!");
+			// Wither Key message + pickup sound now fire from Server.grantWitherKey() when the archaeologist dies.
 		}, 24);
 		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 25);
 		Utils.scheduleTask(() -> {
@@ -127,7 +127,7 @@ public class Tank {
 		Utils.scheduleTask(() -> {
 			Utils.broadcastBlessing(tank, Utils.BlessingType.POWER, 5);
 			Utils.playLocalSound(tank, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
-			Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] cookiethebald " + ChatColor.GREEN + "has obtained " + ChatColor.RED + "Blood Key" + ChatColor.GREEN + "!");
+			// Blood Key message + pickup sound now fire from Server.grantBloodKey() when the archaeologist dies.
 			Actions.turnHead(tank, 94f, -6f);
 			Actions.move(tank, "N", 0);
 		}, 50);

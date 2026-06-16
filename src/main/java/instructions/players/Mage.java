@@ -1,15 +1,11 @@
 package instructions.players;
 
 import instructions.Actions;
-import instructions.Server;
 import instructions.bosses.storm.Storm;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-import org.bukkit.util.Vector;
 import plugin.Utils;
 
 public class Mage {
@@ -304,10 +300,9 @@ public class Mage {
 		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ╚██████╗██║  ██║██║ ╚═╝ ██║██║
 		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝      ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 		 */
-		Utils.scheduleTask(() -> {
-			Actions.leftClick(mage);
-			Server.openBloodDoor();
-		}, 350);
+		// Left-click the blood door to open it — requires the Blood Key (handled by Actions.leftClick's door
+		// detection; the old hard openBloodDoor() call is gone).
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 350);
 		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Diamante Giant"), 371);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 372);
 		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Bonzo"), 373);

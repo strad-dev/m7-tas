@@ -458,6 +458,11 @@ public class Utils {
 		CraftLivingEntity craftEntity = (CraftLivingEntity) entity;
 		net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
 		ServerLevel level = (ServerLevel) nmsEntity.level();
+		// Boss aggro: a mage beam / hurtEntity hit uses a no-source damage type (no EntityDamageByEntityEvent), so
+		// record the attacker here for the last-damager aggro target.
+		if(attacker != null && entity instanceof org.bukkit.entity.Wither && entity.getScoreboardTags().contains("TASWither")) {
+			instructions.bosses.WitherActions.noteDamager(attacker);
+		}
 		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
 			// EnderDragon.hurtServer() delegates to hurt() which rejects damage sources without
 			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
