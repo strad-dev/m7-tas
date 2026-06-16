@@ -49,109 +49,9 @@ public class FakePlayerInventory {
 			Objects.requireNonNull(p.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
 			p.setHealth(40);
 
-			ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
-			pearls.setAmount(16);
-			ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.RED + "Dungeonbreaker", "skyblock/combat/stonk");
-			pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
-			ItemMeta meta = pickaxe.getItemMeta();
-			meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
-			pickaxe.setItemMeta(meta);
-			// Lets Dungeonbreaker break any block while the holder is in adventure mode (matches Hypixel behaviour).
-			pickaxe = Utils.breakAnyBlockInAdventure(pickaxe);
+			applyClassLoadout(p, entry);
+
 			PlayerInventory inventory = p.getInventory();
-			inventory.clear();
-
-			switch(entry) {
-				case "Archer", "Berserk", "Healer", "Tank" -> {
-					ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
-					ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Leggings");
-					ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Boots");
-
-					inventory.setHelmet(getDiamondHead());
-					inventory.setChestplate(chestplate);
-					inventory.setLeggings(leggings);
-					inventory.setBoots(boots);
-				}
-				case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
-					ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Chestplate");
-					ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Leggings");
-					ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Ancient Storm's Boots");
-
-					inventory.setHelmet(getStormHelmet());
-					inventory.setChestplate(chestplate);
-					inventory.setLeggings(leggings);
-					inventory.setBoots(boots);
-				}
-			}
-
-			inventory.setItem(0, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Heroic Hyperion", "skyblock/combat/scylla"));
-			inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, ChatColor.GOLD + "Warped Aspect of the Void", "skyblock/combat/aotv"));
-			inventory.setItem(5, pickaxe);
-			inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.GOLD + "Gyrokinetic Wand", "skyblock/combat/gyro"));
-			inventory.setItem(7, pearls);
-			inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
-			inventory.setItem(9, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", "skyblock/combat/spring_boots"));
-			inventory.setItem(10, getBonzoMask());
-			inventory.setItem(11, getSpiritMask());
-			inventory.setItem(12, getRacingHelmet());
-			inventory.setItem(13, getCowHat());
-			inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, ChatColor.DARK_PURPLE + "Bonzo Staff", "skyblock/combat/bonzo"));
-			inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.DARK_PURPLE + "Tactical Insertion", "skyblock/combat/tac"));
-			inventory.setItem(34, new ItemStack(Material.SOUL_SAND));
-
-			switch(entry) {
-				case "Archer" -> {
-					//noinspection DuplicatedCode
-					inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
-					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
-					inventory.setItem(18, getThermodynamicHelmet());
-					inventory.setItem(19, Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Chestplate"));
-					inventory.setItem(20, Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Leggings"));
-					inventory.setItem(21, Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Boots"));
-					inventory.setItem(30, getSkyBlockItem(Material.BONE, ChatColor.LIGHT_PURPLE + "Rapid Bonemerang", ""));
-					inventory.setItem(32, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
-					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
-					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
-				}
-				case "Berserk" -> {
-					//noinspection DuplicatedCode
-					inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
-					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
-					inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
-					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
-				}
-				case "Healer" -> {
-					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
-					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
-					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
-					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
-					inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
-				}
-				case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
-					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-					inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", "skyblock/combat/claymore"));
-					inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-					inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
-					inventory.setItem(31, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
-					inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
-					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
-					inventory.setItem(35, getSkyBlockItem(Material.BOW, ChatColor.GOLD + "Precise Explosive Bow", "skyblock/combat/explosive_bow"));
-				}
-				case "Tank" -> {
-					inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-					inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
-					inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
-					inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-					inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded", "skyblock/combat/aots"));
-					inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
-					inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
-				}
-			}
-
 			CraftPlayer player = (CraftPlayer) p;
 			ServerPlayer nmsPlayer = player.getHandle();
 
@@ -175,6 +75,118 @@ public class FakePlayerInventory {
 
 			PlayerInventoryBackup.syncInventory(p);
 			PlayerInventoryBackup.syncHand(p);
+		}
+	}
+
+	/**
+	 * Populate {@code p}'s inventory with the full loadout for a class/role: armor set, shared hotbar/utility items,
+	 * and class-specific weapons in their fixed slots. Clears the inventory first. {@code role} accepts a class name
+	 * ({@code Archer}/{@code Berserk}/{@code Healer}/{@code Mage}/{@code Tank}) or a fake-player name
+	 * ({@code Mage1}–{@code Mage4}, mapped to the Mage loadout). This is the single source of truth shared by
+	 * {@link #setInventories()} (which layers on the fake-player buffs + equipment packets) and {@code /getcustomitems}.
+	 */
+	public static void applyClassLoadout(Player p, String role) {
+		ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
+		pearls.setAmount(16);
+		ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, ChatColor.RED + "Dungeonbreaker", "skyblock/combat/stonk");
+		pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
+		ItemMeta meta = pickaxe.getItemMeta();
+		meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
+		pickaxe.setItemMeta(meta);
+		// Lets Dungeonbreaker break any block while the holder is in adventure mode (matches Hypixel behaviour).
+		pickaxe = Utils.breakAnyBlockInAdventure(pickaxe);
+		PlayerInventory inventory = p.getInventory();
+		inventory.clear();
+
+		switch(role) {
+			case "Archer", "Berserk", "Healer", "Tank" -> {
+				ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
+				ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Leggings");
+				ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), ChatColor.LIGHT_PURPLE + "Ancient Necron's Boots");
+
+				inventory.setHelmet(getDiamondHead());
+				inventory.setChestplate(chestplate);
+				inventory.setLeggings(leggings);
+				inventory.setBoots(boots);
+			}
+			case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
+				ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Chestplate");
+				ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), ChatColor.LIGHT_PURPLE + "Ancient Storm's Leggings");
+				ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), ChatColor.LIGHT_PURPLE + "Ancient Storm's Boots");
+
+				inventory.setHelmet(getStormHelmet());
+				inventory.setChestplate(chestplate);
+				inventory.setLeggings(leggings);
+				inventory.setBoots(boots);
+			}
+		}
+
+		inventory.setItem(0, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Heroic Hyperion", "skyblock/combat/scylla"));
+		inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, ChatColor.GOLD + "Warped Aspect of the Void", "skyblock/combat/aotv"));
+		inventory.setItem(5, pickaxe);
+		inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.GOLD + "Gyrokinetic Wand", "skyblock/combat/gyro"));
+		inventory.setItem(7, pearls);
+		inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
+		inventory.setItem(9, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", "skyblock/combat/spring_boots"));
+		inventory.setItem(10, getBonzoMask());
+		inventory.setItem(11, getSpiritMask());
+		inventory.setItem(12, getRacingHelmet());
+		inventory.setItem(13, getCowHat());
+		inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, ChatColor.DARK_PURPLE + "Bonzo Staff", "skyblock/combat/bonzo"));
+		inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.DARK_PURPLE + "Tactical Insertion", "skyblock/combat/tac"));
+		inventory.setItem(34, new ItemStack(Material.SOUL_SAND));
+
+		switch(role) {
+			case "Archer" -> {
+				//noinspection DuplicatedCode
+				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
+				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+				inventory.setItem(18, getThermodynamicHelmet());
+				inventory.setItem(19, Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Chestplate"));
+				inventory.setItem(20, Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Leggings"));
+				inventory.setItem(21, Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Boots"));
+				inventory.setItem(30, getSkyBlockItem(Material.BONE, ChatColor.LIGHT_PURPLE + "Rapid Bonemerang", ""));
+				inventory.setItem(32, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
+				inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
+				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
+			}
+			case "Berserk" -> {
+				//noinspection DuplicatedCode
+				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
+				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+				inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
+				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
+			}
+			case "Healer" -> {
+				inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
+				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
+				inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
+				inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
+				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
+			}
+			case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
+				inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
+				inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", "skyblock/combat/claymore"));
+				inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
+				inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
+				inventory.setItem(31, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
+				inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
+				inventory.setItem(35, getSkyBlockItem(Material.BOW, ChatColor.GOLD + "Precise Explosive Bow", "skyblock/combat/explosive_bow"));
+			}
+			case "Tank" -> {
+				inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
+				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
+				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
+				inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded", "skyblock/combat/aots"));
+				inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
+				inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
+			}
 		}
 	}
 

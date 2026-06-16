@@ -712,20 +712,20 @@ public class Archer {
 	public static void necron(boolean doContinue) {
 		Actions.setHotbarSlot(archer, 5);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 1);
-		Utils.scheduleTask(() -> Actions.stopRightClick(archer), 151);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 5, 32), 152);
+		Utils.scheduleTask(() -> Actions.stopRightClick(archer), 152);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 5, 32), 153);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(archer, 180f, 62f);
 			Actions.move(archer, "WP", 0);
 			Actions.setHotbarSlot(archer, 5);
-		}, 153);
-		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 154);
-		Utils.scheduleTask(() -> Actions.move(archer, "WP", 59), 156);
-		Utils.scheduleTask(() -> Actions.leftClick(archer), 214);
+		}, 154);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 155);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 59), 157);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 215);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 216);
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 0f), 217);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 13, 39), 218);
+		Utils.scheduleTask(() -> Actions.leftClick(archer), 217);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 180f, 0f), 218);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 13, 39), 219);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 121.3f, 0f), 503);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 504);
 		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 522);

@@ -427,7 +427,7 @@ public class Mage {
 			Actions.swapItems(mage, 5, 32);
 		}, 647);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 648);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -173f, -29f), 649);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -171.5f, -29f), 649);
 		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 667);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 3);
@@ -582,9 +582,9 @@ public class Mage {
 	public static void necron(boolean doContinue) {
 		Actions.setHotbarSlot(mage, 6);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 1);
-		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 151);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 152);
-		for(int i = 160; i <= 500; i += 5) {
+		Utils.scheduleTask(() -> Actions.stopRightClick(mage), 152);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 153);
+		for(int i = 155; i <= 500; i += 5) {
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 501);

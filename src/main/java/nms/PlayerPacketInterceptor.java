@@ -5,6 +5,7 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import listeners.CustomItems;
+import listeners.GoldorListener;
 import net.minecraft.network.protocol.game.ClientboundContainerSetContentPacket;
 import net.minecraft.network.protocol.game.ClientboundSetHeldSlotPacket;
 import net.minecraft.network.protocol.game.ServerboundInteractPacket;
@@ -119,6 +120,8 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 		// Scheduled on the server executor (same queue as vanilla's packet handler) so it
 		// runs on the main thread immediately before vanilla processes the packet.
 		if(msg instanceof ServerboundUseItemOnPacket usePkt && usePkt.getHand() == InteractionHand.MAIN_HAND) {
+			net.minecraft.core.BlockPos bp = usePkt.getHitResult().getBlockPos();
+			int bx = bp.getX(), by = bp.getY(), bz = bp.getZ();
 			MinecraftServer.getServer().execute(() -> {
 				// Reset vanilla's interact dedupe so rapid repeat clicks on the same block keep firing
 				// PlayerInteractEvent (e.g. the Simon Says button) instead of reusing the cached
@@ -126,6 +129,9 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				// real players use the vanilla listener, which doesn't — so reset it here, before vanilla
 				// processes the packet (same main-thread FIFO queue as super.channelRead below).
 				((CraftPlayer) player).getHandle().gameMode.firedInteract = false;
+				// Count Simon Says button clicks straight from the packet, bypassing vanilla's interact-event
+				// suppression so rapid real-player clicks all register (deduped to one per tick in GoldorListener).
+				GoldorListener.tryRegisterSimonClick(player, bx, by, bz);
 				CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
 						player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
 			});

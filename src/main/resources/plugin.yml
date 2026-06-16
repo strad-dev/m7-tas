@@ -27,7 +27,7 @@ commands:
     usage: /simulate <move|click|hotbar|turnhead|allblessings|undo>
   getcustomitems:
     description: Get custom items
-    usage: /getcustomitems
+    usage: /getcustomitems [all|archer|berserk|healer|mage|tank]
   verbose:
     description: Toggle verbose debug messages
     usage: /verbose <true|false>

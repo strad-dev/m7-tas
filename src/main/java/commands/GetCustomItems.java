@@ -14,6 +14,7 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jspecify.annotations.NonNull;
+import plugin.FakePlayerInventory;
 import plugin.M7tas;
 
 import java.util.ArrayList;
@@ -25,6 +26,23 @@ public class GetCustomItems implements CommandExecutor {
 			sender.sendMessage("Only players can run this");
 			return true;
 		}
+
+		// A class name sets the player's inventory to that class's exact loadout (shared with the fake-player
+		// setup via FakePlayerInventory.applyClassLoadout). "all" or no argument falls through to the full
+		// custom-item pile below.
+		String section = args.length >= 1 ? args[0].toLowerCase() : "all";
+		if(!section.equals("all")) {
+			boolean isClass = section.equals("archer") || section.equals("berserk") || section.equals("healer") || section.equals("mage") || section.equals("tank");
+			if(!isClass) {
+				p.sendMessage(ChatColor.RED + "Invalid class. Valid: archer berserk healer mage tank all");
+				return true;
+			}
+			String role = Character.toUpperCase(section.charAt(0)) + section.substring(1);
+			FakePlayerInventory.applyClassLoadout(p, role);
+			p.sendMessage(ChatColor.GREEN + "Set your inventory to the " + role + " loadout!");
+			return true;
+		}
+
 		ItemStack stonk = new ItemStack(Material.DIAMOND_PICKAXE);
 		stonk.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
 		ItemMeta meta = stonk.getItemMeta();
