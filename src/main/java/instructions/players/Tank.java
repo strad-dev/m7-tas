@@ -41,7 +41,6 @@ public class Tank {
 				Actions.swapItems(tank, 3, 30);
 				Actions.swapItems(tank, 6, 33);
 				Actions.swapItems(tank, 7, 34);
-				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
 				Utils.scheduleTask(() -> storm(false), 60);
 			}
 			case "goldor" -> {
@@ -811,7 +810,7 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.swapItems(tank, 3, 30), 533);
 	}
 
-	private static void witherKing() {
+	public static void witherKing() {
 		Actions.rightClick(tank);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 1);
 		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 23);
@@ -826,8 +825,36 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 62);
 		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 71);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 73);
-		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 83);
-		Utils.scheduleTask(() -> Actions.move(tank, "WP", 1), 85);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 2), 83);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(tank, 5, 32);
+			Actions.swapItems(tank, 13, 39);
+		}, 85);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(tank, 5);
+			Actions.turnHead(tank, 180f, -90f);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 200);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 261);
+		int lbFor = 8;
+		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 397);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 398);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 403);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 404);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 500);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 501);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 576);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 638);
+		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 737);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 738);
 	}
 
 	@SuppressWarnings("unused")

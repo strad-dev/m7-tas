@@ -90,7 +90,7 @@ public class Archer {
 				Utils.teleport(archer, new Location(world, 22.3, 6, 59.361, 90f, 0f));
 				Actions.swapItems(archer, 1, 28);
 				Actions.swapItems(archer, 6, 33);
-				Actions.swapItems(archer, 7, 35);
+				Actions.swapItems(archer, 7, 34);
 				Actions.swapItems(archer, 13, 39);
 				Actions.setHotbarSlot(archer, 5);
 				Utils.scheduleTask(Archer::witherKing, 60);
@@ -730,11 +730,36 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 533);
 	}
 
-	private static void witherKing() {
+	public static void witherKing() {
 		Actions.rightClick(archer);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, -120f, -7f), 1);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 22), 2);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 24);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(archer, 5, 32);
+			Actions.swapItems(archer, 13, 39);
+		}, 25);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 26);
+		Utils.scheduleTask(() -> Actions.leap(archer, Tank.get()), 100);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(archer, 6);
+			Actions.turnHead(archer, 180f, -90f);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 200);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 261);
+		int lbFor = 8;
+		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 404);
+		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 500);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 576);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 638);
+		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), i + lbFor);
+		}
 	}
 
 	public static Player get() {

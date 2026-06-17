@@ -107,6 +107,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 2), 63);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 67); // activate tac, procs in 60 ticks (127)
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 7), 68);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 2, 29), 69);
 		// tick 80: get teleported back
 		Utils.scheduleTask(() -> Utils.teleport(mage, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
 		// tick 120: dodged
@@ -598,7 +599,7 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 3, 30), 535);
 	}
 
-	private static void witherKing() {
+	public static void witherKing() {
 		Actions.rightClick(mage);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 1);
 		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 22);
@@ -610,7 +611,40 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -20f, 0f), 25);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 26);
 		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 59);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 7), 61);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 8), 61);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(mage, 5, 32);
+			Actions.swapItems(mage, 13, 39);
+		}, 69);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(mage, 5);
+			Actions.turnHead(mage, 180f, -90f);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 200);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 261);
+		int lbFor = 10;
+		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 397);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 398);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 403);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -177.5f, -90f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 404);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 405);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 421);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 21), 423);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 576);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 638);
+		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 737);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 738);
 	}
 
 	@SuppressWarnings("unused")

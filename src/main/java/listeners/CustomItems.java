@@ -78,6 +78,10 @@ public class CustomItems implements Listener {
 	// and Salvation are weapons, NOT abilities, so they are deliberately exempt from the Mage cooldown reduction.
 	private static final int SALVATION_COOLDOWN_TICKS = 5;
 	private static final Map<UUID, Integer> salvationReady = new ConcurrentHashMap<>();
+	// Mage beam (Mage-class left-click) cooldown — the shared left-click guard only caps to 1/tick; this enforces
+	// the beam's own 5-tick cooldown (fired on tick N → next usable on tick N+5).
+	private static final int MAGE_BEAM_COOLDOWN_TICKS = 5;
+	private static final Map<UUID, Integer> mageBeamReady = new ConcurrentHashMap<>();
 	// Per-ability cooldowns (base ticks before the Mage class's 50% reduction — see effectiveCooldown). Each map
 	// stores the tick that ability is next usable, keyed by player. Reset in resetAbilityCooldowns().
 	private static final int GYRO_COOLDOWN_TICKS = 600;       // Gyrokinetic Wand: 30s
@@ -89,6 +93,9 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> ragReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> iceSprayReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> tacReady = new ConcurrentHashMap<>();
+	// Server tick the RagBuff currently expires at, per player. Each cast's buff lands at +60 and lasts 200 ticks
+	// (10s); a re-cast while still active pushes this out so the earlier cast's removal no-ops (see rag()).
+	private static final Map<UUID, Integer> ragBuffExpiry = new ConcurrentHashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
@@ -396,8 +403,11 @@ public class CustomItems implements Listener {
 					int currentTick = MinecraftServer.currentTick;
 					if(currentTick > lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1)) {
 						if(isMageBeamItem) {
-							mageBeam(p);
-							fired = true;
+							if(currentTick >= mageBeamReady.getOrDefault(p.getUniqueId(), 0)) {
+								mageBeam(p);
+								mageBeamReady.put(p.getUniqueId(), currentTick + MAGE_BEAM_COOLDOWN_TICKS);
+								fired = true;
+							}
 						} else {
 							switch(id) {
 								case "skyblock/combat/terminator" -> {
@@ -1105,13 +1115,22 @@ public class CustomItems implements Listener {
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(p, Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
 			p.addScoreboardTag("RagBuff");
+			// Buff expires 200 ticks (10s) after THIS application; a later cast overwrites this, extending the buff.
+			ragBuffExpiry.put(p.getUniqueId(), MinecraftServer.currentTick + 200);
 			if(p.getName().equals("Archer")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 3));
 			} else if(p.getName().equals("Berserk")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 0));
 			}
 		}, 60);
-		Utils.scheduleTask(() -> p.removeScoreboardTag("RagBuff"), 260);
+		// Remove only once the latest expiry is reached: a second cast refreshes ragBuffExpiry, so this earlier
+		// cast's removal sees currentTick < expiry and no-ops, leaving the tag for the later cast's removal to clear.
+		Utils.scheduleTask(() -> {
+			if(MinecraftServer.currentTick >= ragBuffExpiry.getOrDefault(p.getUniqueId(), 0)) {
+				p.removeScoreboardTag("RagBuff");
+				ragBuffExpiry.remove(p.getUniqueId());
+			}
+		}, 260);
 	}
 
 	public static void salvation(Player p) {
@@ -1858,6 +1877,7 @@ public class CustomItems implements Listener {
 		termLastPacketTick.clear();
 		termLastFireTick.clear();
 		salvationReady.clear();
+		mageBeamReady.clear();
 	}
 
 	/** Reset all class-ability + weapon-ability cooldowns (Guided Sheep / Rapid Fire / Explosive Shot, plus Gyro /
@@ -1868,6 +1888,7 @@ public class CustomItems implements Listener {
 		explosiveShotReady.clear();
 		gyroReady.clear();
 		ragReady.clear();
+		ragBuffExpiry.clear();
 		iceSprayReady.clear();
 		tacReady.clear();
 	}
@@ -1884,10 +1905,17 @@ public class CustomItems implements Listener {
 		return n.equals("Mage") || n.equals("Mage1");
 	}
 
-	/** A base ability cooldown after the Mage class's 50% reduction (halved for Mage-class players, unchanged for
-	 *  everyone else). NOT used for the Terminator/Salvation — those are weapons, not abilities. */
+	/** A base ability cooldown after the Mage class's cooldown reduction: a SOLO mage gets −75% (quarter cooldown),
+	 *  but with two or more Mage-class players it's the standard −50% (half). Non-mages are unchanged. NOT used for
+	 *  the Terminator/Salvation — those are weapons, not abilities. */
 	public static int effectiveCooldown(Player p, int baseTicks) {
-		return isMageClass(p) ? baseTicks / 2 : baseTicks;
+		if(!isMageClass(p)) return baseTicks;
+		return mageCount() <= 1 ? baseTicks / 4 : baseTicks / 2;
+	}
+
+	/** Number of Mage-class players currently online (see {@link #isMageClass}). */
+	private static long mageCount() {
+		return Bukkit.getOnlinePlayers().stream().filter(CustomItems::isMageClass).count();
 	}
 
 	/** Tell {@code p} their ability is on cooldown, showing the remaining time in seconds (e.g. "...for 3.45
@@ -2180,13 +2208,19 @@ public class CustomItems implements Listener {
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
-			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
+			boolean ragBuff = p.getScoreboardTags().contains("RagBuff");
+			// Per-weapon mage-beam damage (ID "...scylla" is the Hyperion, "...claymore" the Dark Claymore):
+			//   Hyperion: 195 (225 RagBuffed) — full vs minecraft:wither ONLY; −33% against any other mob type.
+			//   Dark Claymore (and any other mage-beam item): 170 (200 RagBuffed) on ALL entities.
+			float damage;
+			if("skyblock/combat/scylla".equals(getID(p.getInventory().getItemInMainHand()))) {
+				damage = ragBuff ? 225 : 195;
+				if(!(temp instanceof Wither)) damage *= (1f - 0.33f);
+			} else {
+				damage = ragBuff ? 200 : 170;
+			}
 			damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
 			damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)
-			// Hyperion's mage beam deals 33% less to non-wither entities (ID "...scylla" is the Hyperion here).
-			if(!(temp instanceof Wither) && "skyblock/combat/scylla".equals(getID(p.getInventory().getItemInMainHand()))) {
-				damage *= (1f - 0.33f);
-			}
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
 			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
 			// broadcast the same way (withers are permanently silent, so silence can't signal that).

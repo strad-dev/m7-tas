@@ -139,11 +139,11 @@ public class TAS implements CommandExecutor {
 				Tank.necron(true);
 			});
 			Necron.INSTANCE.armPlayerHandoff(() -> {
-				Archer.necron(true);
-				Berserk.necron(true);
-				Healer.necron(true);
-				Mage.necron(true);
-				Tank.necron(true);
+				Archer.witherKing();
+				Berserk.witherKing();
+				Healer.witherKing();
+				Mage.witherKing();
+				Tank.witherKing();
 			});
 		}
 

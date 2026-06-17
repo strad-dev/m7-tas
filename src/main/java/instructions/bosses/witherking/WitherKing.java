@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
+import plugin.BossScheduler;
 import plugin.ChatFont;
 import plugin.FakePlayerInventory;
 import plugin.M7tas;
@@ -377,11 +378,15 @@ public class WitherKing {
 		};
 
 		Bukkit.broadcastMessage(ChatColor.YELLOW + "The " + dragonName + ChatColor.RESET + ChatColor.YELLOW + " is spawning!");
+		Utils.timer(ChatColor.YELLOW + "Triggered in " + formatTick());
 
-		Utils.scheduleTask(() -> {
+		// Spawn on the boss lane (start of the target tick, before player choreography) — NOT a raw scheduleTask,
+		// which fires mid-tick AFTER the players' beams, eating the spawn-tick of damage. This lets a beam on the
+		// same tick the dragon appears actually hit it.
+		BossScheduler.schedule(() -> {
 			// Time the dragon from when it actually spawns in, not when the spawn animation began.
 			dragonSpawnTick.put(color, Utils.phaseTick());
-			Utils.timer(ChatColor.YELLOW + "Spawned in " + formatTick());
+			Utils.timer(ChatColor.YELLOW + dragonName + ChatColor.RESET + ChatColor.YELLOW + " spawned in " + formatTick());
 			EnderDragon dragon = (EnderDragon) world.spawnEntity(spawnLocation, EntityType.ENDER_DRAGON);
 			dragons.put(color, dragon);
 			dragon.setSilent(true);
@@ -413,7 +418,7 @@ public class WitherKing {
 		dyingDragons.add(dragon.getUniqueId());
 		String color = colorOf(dragon);
 		int elapsed = Utils.phaseTick() - dragonSpawnTick.getOrDefault(color, Utils.phaseTick());
-		Utils.timer(ChatColor.YELLOW + "The " + dragonName(color) + ChatColor.RESET + ChatColor.YELLOW + " was killed in " + formatDragonKillTick(elapsed));
+		Utils.timer(ChatColor.YELLOW + dragonName(color) + ChatColor.RESET + ChatColor.YELLOW + " killed in " + formatDragonKillTick(elapsed));
 		instaKillDragon(dragon);
 		aliveCount--;
 
