@@ -6,6 +6,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import commands.Spectate;
+import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.goldor.Goldor;
 import net.minecraft.core.particles.ParticleTypes;
@@ -301,47 +302,32 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof Player p) {
 			String id = getID(p.getInventory().getItemInMainHand());
 			if(id != null && id.equals("skyblock/combat/explosive_bow")) {
-				if(e.getProjectile() instanceof Arrow arrow) {
-					arrow.setDamage(1.0);
-					arrow.addScoreboardTag("ExplosiveBowArrow");
-					arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+				if(e.getProjectile() instanceof Arrow primary) {
+					// Re-aim the vanilla primary IN PLACE (no cancel, no second entity) — just override its velocity
+					// with the clean eye direction to strip the random spread (inaccuracy 1.0). The bonus arrows are
+					// new entities, so they go through the deterministic spawner. aimFrom/speed captured once so the
+					// staggered bonus arrows spawn at the same point/direction (matching the old launchLoc/velocity).
+					Location aimFrom = p.getEyeLocation().clone();
+					float speed = (float) primary.getVelocity().length();
+					primary.setVelocity(aimFrom.getDirection().multiply(speed));
+					primary.setDamage(1.0);
+					primary.addScoreboardTag("ExplosiveBowArrow");
+					primary.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 					boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
-					Vector launchVelocity = arrow.getVelocity().clone();
-					Location launchLoc = arrow.getLocation().clone();
-					Utils.scheduleTask(() -> {
-						Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
-						arrow2.setVelocity(launchVelocity);
-						arrow2.setDamage(1.0);
-						arrow2.setShooter(p);
-						arrow2.addScoreboardTag("ExplosiveBowArrow");
-						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-						arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
+					Utils.scheduleTask(() -> {
+						Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0).addScoreboardTag("ExplosiveBowArrow");
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 					}, 3);
 
 					if(isArcher) {
 						Utils.scheduleTask(() -> {
-							Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
-							arrow2.setVelocity(launchVelocity);
-							arrow2.setDamage(1.0);
-							arrow2.setShooter(p);
-							arrow2.addScoreboardTag("ExplosiveBowArrow");
-							arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-							arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
+							Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0).addScoreboardTag("ExplosiveBowArrow");
 							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 						}, 5);
 
 						Utils.scheduleTask(() -> {
-							Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
-							arrow2.setVelocity(launchVelocity);
-							arrow2.setDamage(1.0);
-							arrow2.setShooter(p);
-							arrow2.addScoreboardTag("ExplosiveBowArrow");
-							arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-							arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
+							Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0).addScoreboardTag("ExplosiveBowArrow");
 							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 						}, 10);
 					}
@@ -349,57 +335,39 @@ public class CustomItems implements Listener {
 				return;
 			}
 			if(id != null && id.equals("skyblock/combat/last_breath")) {
-				Entity temp = e.getProjectile();
-				Arrow arrow;
-				if(temp instanceof Arrow) {
-					arrow = (Arrow) temp;
-				} else {
-					return;
-				}
+				if(!(e.getProjectile() instanceof Arrow primary)) return;
+				// Re-aim the vanilla primary IN PLACE (no cancel, no second entity) — override its velocity with the
+				// clean eye direction to strip the random spread. Bonus arrows are new entities → deterministic
+				// spawner. aimFrom/speed captured once so the staggered bonus arrows spawn at the same point/dir.
+				Location aimFrom = p.getEyeLocation().clone();
+				float speed = (float) primary.getVelocity().length();
 				boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
-				arrow.setDamage(isArcher ? 8.0 : 1.5);
-				arrow.addScoreboardTag("TerminatorArrow");
-				arrow.addScoreboardTag("LastBreathArrow");
-				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-				Vector launchVelocity = arrow.getVelocity().clone();
-				Location launchLoc = arrow.getLocation().clone();
-				Utils.scheduleTask(() -> {
-					Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
-					arrow2.setVelocity(launchVelocity);
-					arrow2.setDamage(isArcher ? 1.6 : 0.3);
-					arrow2.setShooter(p);
-					arrow2.addScoreboardTag("TerminatorArrow");
-					arrow2.addScoreboardTag("LastBreathArrow");
-					arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-					arrow2.setWeapon(p.getInventory().getItemInMainHand());
 
+				primary.setVelocity(aimFrom.getDirection().multiply(speed));
+				primary.setDamage(isArcher ? 8.0 : 1.5);
+				primary.addScoreboardTag("TerminatorArrow");
+				primary.addScoreboardTag("LastBreathArrow");
+				primary.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+
+				Utils.scheduleTask(() -> {
+					Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, isArcher ? 1.6 : 0.3);
+					a.addScoreboardTag("TerminatorArrow");
+					a.addScoreboardTag("LastBreathArrow");
 					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 				}, 3);
 
 				if(isArcher) {
 					Utils.scheduleTask(() -> {
-						Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
-						arrow2.setVelocity(launchVelocity);
-						arrow2.setDamage(8.0);
-						arrow2.setShooter(p);
-						arrow2.addScoreboardTag("TerminatorArrow");
-						arrow2.addScoreboardTag("LastBreathArrow");
-						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-						arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
+						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 8.0);
+						a.addScoreboardTag("TerminatorArrow");
+						a.addScoreboardTag("LastBreathArrow");
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 5);
 
 					Utils.scheduleTask(() -> {
-						Arrow arrow2 = p.getWorld().spawn(launchLoc, Arrow.class);
-						arrow2.setVelocity(launchVelocity);
-						arrow2.setDamage(8.0);
-						arrow2.setShooter(p);
-						arrow2.addScoreboardTag("TerminatorArrow");
-						arrow2.addScoreboardTag("LastBreathArrow");
-						arrow2.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-						arrow2.setWeapon(p.getInventory().getItemInMainHand());
-
+						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 8.0);
+						a.addScoreboardTag("TerminatorArrow");
+						a.addScoreboardTag("LastBreathArrow");
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 10);
 				}
@@ -2215,6 +2183,10 @@ public class CustomItems implements Listener {
 			float damage = p.getScoreboardTags().contains("RagBuff") ? (temp instanceof Wither ? 225 : 200) : (temp instanceof Wither ? 195 : 170);
 			damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
 			damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)
+			// Hyperion's mage beam deals 33% less to non-wither entities (ID "...scylla" is the Hyperion here).
+			if(!(temp instanceof Wither) && "skyblock/combat/scylla".equals(getID(p.getInventory().getItemInMainHand()))) {
+				damage *= (1f - 0.33f);
+			}
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
 			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
 			// broadcast the same way (withers are permanently silent, so silence can't signal that).

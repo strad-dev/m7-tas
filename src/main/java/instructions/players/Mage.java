@@ -62,13 +62,15 @@ public class Mage {
 				Actions.swapItems(mage, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
-//			case "witherking" -> {
-//				Utils.teleport(mage, new Location(world, 89.7, 6, 94.406, -75.6f, 18.8f));
-//				Actions.swapItems(mage, 1, 28);
-//				Actions.swapItems(mage, 5, 32);
-//				Actions.swapItems(mage, 6, 33);
-//				Utils.scheduleTask(Mage::witherKing, 60);
-//			}
+			case "witherking" -> {
+				Utils.teleport(mage, new Location(world, 89.7, 6, 94.296, -90f, 0f));
+				Actions.swapItems(mage, 1, 28);
+				Actions.swapItems(mage, 6, 33);
+				Actions.swapItems(mage, 7, 34);
+				Actions.swapItems(mage, 13, 39);
+				Actions.setHotbarSlot(mage, 5);
+				Utils.scheduleTask(Mage::witherKing, 60);
+			}
 		}
 	}
 
@@ -585,13 +587,19 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(mage, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(mage, 13, 39), 503);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -67f, 0f), 504);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -67f, 0f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 504);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 505);
 		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 521);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 12), 522);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -90f, 0f), 534);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 3, 30), 535);
 	}
 
 	private static void witherKing() {
+		Actions.rightClick(mage);
 	}
 
 	@SuppressWarnings("unused")

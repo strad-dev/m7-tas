@@ -811,21 +811,6 @@ public class Actions {
 	}
 
 	/**
-	 * Swings the fake player's hand
-	 * DO NOT USE unless you are obtaining a secret while holding Dungeonbreaker or some other action that should swing the main hand without triggering an interaction
-	 *
-	 * @param p The fake player performing the swing
-	 */
-	public static void swingHand(Player p) {
-		if(!(p instanceof CraftPlayer cp)) return;
-
-		ServerPlayer serverPlayer = cp.getHandle();
-
-		ServerboundSwingPacket swingPacket = new ServerboundSwingPacket(InteractionHand.MAIN_HAND);
-		Utils.simulatePacket(p, swingPacket);
-	}
-
-	/**
 	 * Simulates a fake player performing a right click.
 	 *
 	 * @param p The fake player performing the right click
@@ -922,46 +907,6 @@ public class Actions {
 		Utils.simulatePacket(p, packet);
 	}
 
-	/**
-	 * Simulates a "Blow Up Crypt" action within a specified cuboid area. The method performs
-	 * a sequence of operations: simulating a left-click air interaction, clearing
-	 * the specified area by filling it with air, playing a sound effect, and then
-	 * cloning a specified structure after a short delay.
-	 *
-	 * @param p  The player for whom the crypt simulation is performed.
-	 * @param x1 The x-coordinate of the first corner of the cuboid area.
-	 * @param y1 The y-coordinate of the first corner of the cuboid area.
-	 * @param z1 The z-coordinate of the first corner of the cuboid area.
-	 * @param x2 The x-coordinate of the opposite corner of the cuboid area.
-	 * @param y2 The y-coordinate of the opposite corner of the cuboid area.
-	 * @param z2 The z-coordinate of the opposite corner of the cuboid area.
-	 */
-	public static void crypt(Player p, int x1, int y1, int z1, int x2, int y2, int z2) {
-		Utils.runCommand("fill " + x1 + " " + y1 + " " + z1 + " " + x2 + " " + y2 + " " + z2 + " minecraft:air");
-		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 2.0F, 1.0F);
-		Zombie zombie = (Zombie) p.getWorld().spawnEntity(new Location(p.getWorld(), (double) (x1 + x2) / 2, Math.min(y1, y2), (double) (z1 + z2) / 2), EntityType.ZOMBIE);
-		zombie.setCustomName("Crypt Undead " + ChatColor.RESET + ChatColor.YELLOW + "2M" + ChatColor.RED + "❤");
-		zombie.setCustomNameVisible(true);
-		zombie.setAI(false);
-		zombie.setSilent(true);
-		zombie.setAdult();
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
-		zombie.setHealth(1);
-
-		assert zombie.getEquipment() != null;
-		zombie.getEquipment().setItemInMainHand(new org.bukkit.inventory.ItemStack(Material.BONE));
-		Utils.scheduleTask(() -> {
-			Utils.runCommand("clone " + x1 + " " + 0 + " " + z1 + " " + x2 + " " + Math.abs(y2 - y1) + " " + z2 + " " + Math.min(x1, x2) + " " + Math.min(y1, y2) + " " + Math.min(z1, z2));
-			try {
-				zombie.remove();
-			} catch(Exception exception) {
-				// nothing here
-			}
-		}, 21);
-	}
-
 	public static void leap(Player p, Player target) {
 		// Spirit Leap requires the Infinileap (ender pearl) in hand — bail if the player isn't holding it.
 		ItemStack held = p.getInventory().getItemInMainHand();
@@ -1036,51 +981,26 @@ public class Actions {
 		}, 21);
 	}
 
-	public static void springBoots(Player p) {
-		p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.7087F), 2);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 4);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 6);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 8);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 10);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 12);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8428F), 14);
-		Utils.scheduleTask(() -> p.getWorld().playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 0.8929F), 16);
-		Utils.scheduleTask(() -> {
-			if(!(p instanceof CraftPlayer cp)) {
-				return;
-			}
-
-			ServerPlayer npc = cp.getHandle();
-
-			if(npc.onGround()) { // onGround check
-				Vec3 motion = npc.getDeltaMovement();
-				npc.setDeltaMovement(new Vec3(motion.x(), 2.045D, motion.z()));
-			}
-		}, 17);
-	}
-
 	/**
-	 * Spawns a deterministic Last-Breath arrow. Bypasses {@code Player.launchProjectile},
-	 * whose CraftBukkit implementation internally calls {@code Arrow.shootFromRotation} with
-	 * inaccuracy=1.0F (consuming RNG and stamping a spread-direction rotation on the arrow
-	 * that we'd then have to overwrite). Goes directly through NMS with {@code shoot(..., 0)}
-	 * for a perfectly clean trajectory — mirrors the pattern used by {@code CustomItems.terminator}.
+	 * Spawns a deterministic arrow — no random spread — and returns the Bukkit {@link Arrow} for the caller to
+	 * tag/configure. Bypasses {@code Player.launchProjectile} / vanilla bow release, whose CraftBukkit path calls
+	 * {@code Arrow.shootFromRotation} with inaccuracy=1.0F (a random, run-to-run-varying spread direction). Goes
+	 * directly through NMS {@code shoot(..., 0)} for a perfectly clean, repeatable trajectory — the same pattern
+	 * as {@code CustomItems.terminator}'s shotgun arrows.
 	 * <br>
-	 * Spawns at the player's current eye location (with the vanilla -0.1 Y offset that
-	 * {@code launchProjectile} applies); uses {@code aimFrom.getDirection()} for the flight
-	 * direction, so the caller can capture the aim at draw-start and have it survive any
-	 * head movement between draw and release.
+	 * Both the spawn position (with the vanilla -0.1 Y offset {@code launchProjectile} applies) and the flight
+	 * direction come from {@code aimFrom}, so a caller can capture one aim {@link Location} at fire time and reuse
+	 * it for delayed bonus arrows — those then spawn at the same point and direction, not wherever the shooter has
+	 * since moved.
 	 */
-	private static void fireLastBreathArrow(Player p, Location aimFrom, float speed, double damage) {
+	public static Arrow fireDeterministicArrow(Player p, Location aimFrom, float speed, double damage) {
 		ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
 		Vector dir = aimFrom.getDirection();
-		Location spawn = p.getEyeLocation().add(0, -0.1, 0);
 
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(
 				net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
-		nmsArrow.setPos(spawn.getX(), spawn.getY(), spawn.getZ());
+		nmsArrow.setPos(aimFrom.getX(), aimFrom.getY() - 0.1, aimFrom.getZ());
 		nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), speed, 0);
 		nmsArrow.setOwner(nmsPlayer);
 		nmsWorld.addFreshEntity(nmsArrow);
@@ -1088,8 +1008,9 @@ public class Actions {
 		Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
 		arrow.setDamage(damage);
 		arrow.setShooter(p);
-		arrow.addScoreboardTag("TerminatorArrow");
+		arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		arrow.setWeapon(p.getInventory().getItemInMainHand());
+		return arrow;
 	}
 
 /**

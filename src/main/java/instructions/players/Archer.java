@@ -86,16 +86,15 @@ public class Archer {
 				Actions.swapItems(archer, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
-//			case "witherking" -> {
-//				Utils.teleport(archer, new Location(world, 22.3, 6, 59.408, 65.6f, 29.3f));
-//				Actions.swapItems(archer, 1, 28);
-//				Actions.swapItems(archer, 3, 30);
-//				Actions.swapItems(archer, 5, 32);
-//				Actions.swapItems(archer, 6, 33);
-//				Actions.swapItems(archer, 7, 35);
-//				Actions.swapItems(archer, 9, 39);
-//				Utils.scheduleTask(Archer::witherKing, 60);
-//			}
+			case "witherking" -> {
+				Utils.teleport(archer, new Location(world, 22.3, 6, 59.361, 90f, 0f));
+				Actions.swapItems(archer, 1, 28);
+				Actions.swapItems(archer, 6, 33);
+				Actions.swapItems(archer, 7, 35);
+				Actions.swapItems(archer, 13, 39);
+				Actions.setHotbarSlot(archer, 5);
+				Utils.scheduleTask(Archer::witherKing, 60);
+			}
 		}
 	}
 
@@ -728,9 +727,11 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 504);
 		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 522);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 9), 524);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 90f, 0f), 533);
 	}
 
 	private static void witherKing() {
+		Actions.rightClick(archer);
 	}
 
 	public static Player get() {

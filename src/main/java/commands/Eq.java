@@ -8,7 +8,13 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
@@ -58,23 +64,39 @@ public class Eq implements CommandExecutor, Listener {
 		holder.setInventory(gui);
 		refresh(p, gui);
 		p.openInventory(gui);
+		applySpeedCane(p); // must run after the menu exists — writes the cane via NMS (see below)
 	}
 
-	/** Mirror the player's worn armor into slots 0-3 and the speed cane into slot 8. */
+	/** Mirror the player's worn armor into slots 0-3. The speed cane (slot 8) is set separately via NMS. */
 	private static void refresh(Player p, Inventory gui) {
 		for(int i = 0; i < 4; i++) {
 			ItemStack worn = getArmor(p, i);
 			gui.setItem(i, worn == null ? null : worn.clone());
 		}
-		gui.setItem(SPEED_SLOT, speedItem(p));
+	}
+
+	/**
+	 * Write the speed cane into the open /eq menu's slot 8 via NMS. The cane's count is speed/10 (e.g. 650 -> 65),
+	 * since the client renders a stack count clamped to the item's max_stack_size and that component is itself
+	 * hard-capped at 99 — so a literal 3-digit speed can't be a count. The exact speed stays on the tooltip.
+	 * We still raise MAX_STACK_SIZE to the count because sugar cane's default cap (64) would otherwise clamp
+	 * counts of 65..99. Done via NMS because the Bukkit ItemStack path clamps the count to the item's max stack.
+	 */
+	private static void applySpeedCane(Player p) {
+		ServerPlayer sp = ((CraftPlayer) p).getHandle();
+		AbstractContainerMenu menu = sp.containerMenu;
+		if(menu == null || SPEED_SLOT >= menu.slots.size()) return;
+		int amount = Math.max(1, Math.min(99, currentSpeed(p) / 10)); // speed/10, within the 99 stack-count ceiling
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(speedItem(p));
+		nms.set(DataComponents.MAX_STACK_SIZE, amount); // raise the cap so the client renders counts of 65..99
+		nms.setCount(amount);
+		menu.getSlot(SPEED_SLOT).set(nms);
+		sp.connection.send(new ClientboundContainerSetSlotPacket(menu.containerId, menu.incrementStateId(), SPEED_SLOT, nms));
 	}
 
 	private static ItemStack speedItem(Player p) {
 		int speed = currentSpeed(p);
-		// The cane's stack count IS the speed (a read-only display item — its count is sent as an int, so the client
-		// renders the exact number even though it exceeds a normal max stack). Clamped to the renderable 1..999.
-		int amount = Math.max(1, Math.min(999, speed));
-		ItemStack cane = new ItemStack(Material.SUGAR_CANE, amount);
+		ItemStack cane = new ItemStack(Material.SUGAR_CANE);
 		ItemMeta meta = cane.getItemMeta();
 		if(meta != null) {
 			meta.setDisplayName(ChatColor.AQUA + "Speed: " + ChatColor.WHITE + speed);
@@ -119,7 +141,7 @@ public class Eq implements CommandExecutor, Listener {
 		gui.setItem(idx, item.clone());
 		// A helmet swap changes speed next tick (HelmetSpeedSync poll), so refresh the cane afterwards.
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			if(p.getOpenInventory().getTopInventory().getHolder() instanceof EqHolder) refresh(p, gui);
+			if(p.getOpenInventory().getTopInventory().getHolder() instanceof EqHolder) applySpeedCane(p);
 		}, 2L);
 	}
 
