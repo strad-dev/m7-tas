@@ -71,7 +71,9 @@ public class Eq implements CommandExecutor, Listener {
 
 	private static ItemStack speedItem(Player p) {
 		int speed = currentSpeed(p);
-		int amount = Math.max(1, Math.min(64, speed / 100));
+		// The cane's stack count IS the speed (a read-only display item — its count is sent as an int, so the client
+		// renders the exact number even though it exceeds a normal max stack). Clamped to the renderable 1..999.
+		int amount = Math.max(1, Math.min(999, speed));
 		ItemStack cane = new ItemStack(Material.SUGAR_CANE, amount);
 		ItemMeta meta = cane.getItemMeta();
 		if(meta != null) {

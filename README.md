@@ -46,7 +46,7 @@ If you are practicing a section that is NOT clear or maxor, the plugin will, by 
 
 ### General
 
-- `/eq` is supported
+- `/eq` is supported, and will also show your speed
 - Your speed automatically assumes Black Cat w/ Unalloyed Speed when equipping Racing Helmet or Cow Hat
 - You can shift + left click an item in your inventory to swap it with whatever is in the hotbar slot directly below it.  Exception: items in the right-most column will be swapped with whatever is in your 8th slot
 
