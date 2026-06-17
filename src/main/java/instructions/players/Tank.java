@@ -813,6 +813,13 @@ public class Tank {
 
 	private static void witherKing() {
 		Actions.rightClick(tank);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 1);
+		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 23);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -105f, -10f);
+			Actions.setHotbarSlot(tank, 8);
+		}, 24);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 25);
 	}
 
 	@SuppressWarnings("unused")

@@ -732,6 +732,9 @@ public class Archer {
 
 	private static void witherKing() {
 		Actions.rightClick(archer);
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -120f, -7f), 1);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 22), 2);
+		Utils.scheduleTask(() -> Actions.rightClick(archer), 24);
 	}
 
 	public static Player get() {

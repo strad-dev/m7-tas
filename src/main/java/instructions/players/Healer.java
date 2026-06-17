@@ -10,6 +10,7 @@ import plugin.Utils;
 
 public class Healer {
 	private static Player healer;
+	@SuppressWarnings("FieldCanBeLocal")
 	private static World world;
 
 	// Healer --> Mage4
@@ -722,6 +723,15 @@ public class Healer {
 
 	private static void witherKing() {
 		Actions.rightClick(healer);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 1);
+		Utils.scheduleTask(() -> Actions.leap(healer, Berserk.get()), 25);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 90f, 0f);
+			Actions.move(healer, "WDP", 0);
+			Actions.setHotbarSlot(healer, 8);
+		}, 26);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 1), 27);
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 28);
 	}
 
 	@SuppressWarnings("unused")

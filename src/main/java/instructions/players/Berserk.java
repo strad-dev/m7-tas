@@ -735,6 +735,11 @@ public class Berserk {
 
 	private static void witherKing() {
 		Actions.rightClick(berserk);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 115f, 0f), 1);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 2);
+		Utils.scheduleTask(() -> Actions.move(berserk, "A", 1), 25);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 26);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 27);
 	}
 
 	@SuppressWarnings("unused")

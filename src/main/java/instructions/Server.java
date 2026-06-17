@@ -49,8 +49,13 @@ public class Server {
 		bloodDoorOpened = false;
 	}
 
-	public static boolean hasWitherKey() { return hasWitherKey; }
-	public static boolean hasBloodKey() { return hasBloodKey; }
+	public static boolean hasWitherKey() {
+		return hasWitherKey;
+	}
+
+	public static boolean hasBloodKey() {
+		return hasBloodKey;
+	}
 
 	public static void grantWitherKey(Player picker) {
 		if(hasWitherKey) return;
@@ -72,17 +77,26 @@ public class Server {
 		return b.getX() >= d[0] && b.getX() <= d[3] && b.getY() >= d[1] && b.getY() <= d[4] && b.getZ() >= d[2] && b.getZ() <= d[5];
 	}
 
-	public static boolean inWitherDoor(Block b) { return inBounds(b, WITHER_DOOR); }
-	public static boolean inBloodDoor(Block b) { return inBounds(b, BLOOD_DOOR); }
+	public static boolean inWitherDoor(Block b) {
+		return inBounds(b, WITHER_DOOR);
+	}
 
-	/** Open the Wither Door if the player has the key and it isn't already open (one-shot). Called on a door click. */
+	public static boolean inBloodDoor(Block b) {
+		return inBounds(b, BLOOD_DOOR);
+	}
+
+	/**
+	 * Open the Wither Door if the player has the key and it isn't already open (one-shot). Called on a door click.
+	 */
 	public static void tryOpenWitherDoor(Player p) {
 		if(!hasWitherKey || witherDoorOpened) return;
 		witherDoorOpened = true;
 		openWitherDoor(p);
 	}
 
-	/** Open the Blood Door if the player has the key and it isn't already open (one-shot). Called on a door click. */
+	/**
+	 * Open the Blood Door if the player has the key and it isn't already open (one-shot). Called on a door click.
+	 */
 	public static void tryOpenBloodDoor() {
 		if(!hasBloodKey || bloodDoorOpened) return;
 		bloodDoorOpened = true;
@@ -147,7 +161,7 @@ public class Server {
 					Utils.scheduleTask(() -> Utils.runCommand("fill 53 63 113 55 63 115 minecraft:air"), 1);
 					Necron.necronInstructions(world, false);
 				}
-					case "witherking" -> WitherKing.witherKingInstructions(world, true);
+				case "witherking" -> WitherKing.witherKingInstructions(world, true);
 			}
 		}, 60);
 	}
@@ -313,8 +327,7 @@ public class Server {
 	}
 
 	public static Zombie spawnCryptLurker(Location loc, boolean isPrince) {
-		Zombie zombie = (Zombie) Objects.requireNonNull(loc.getWorld())
-				.spawnEntity(loc, EntityType.ZOMBIE);
+		Zombie zombie = (Zombie) Objects.requireNonNull(loc.getWorld()).spawnEntity(loc, EntityType.ZOMBIE);
 		zombie.setAdult();
 		// Clear random armor and prevent chicken jockey from finalizeSpawn
 		assert zombie.getEquipment() != null;
@@ -338,8 +351,7 @@ public class Server {
 		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
-		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET
-				+ ChatColor.RED + " ❤" + ChatColor.YELLOW + "2M");
+		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "2M");
 		return zombie;
 	}
 

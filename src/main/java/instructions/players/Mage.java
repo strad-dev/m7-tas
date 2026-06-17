@@ -600,6 +600,13 @@ public class Mage {
 
 	private static void witherKing() {
 		Actions.rightClick(mage);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 4), 1);
+		Utils.scheduleTask(() -> Actions.leap(mage, Berserk.get()), 22);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 90f, 0f);
+			Actions.setHotbarSlot(mage, 8);
+		}, 23);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 24);
 	}
 
 	@SuppressWarnings("unused")
