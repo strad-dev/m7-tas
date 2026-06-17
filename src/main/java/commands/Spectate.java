@@ -194,7 +194,8 @@ public class Spectate implements CommandExecutor {
 	}
 
 	private static void restorePlayerCollision(Player player) {
-		PlayerCollision.removeFromNoCollisionTeam(player);
+		// Intentionally NOT removed from the no-collision team — every real player stays no-collide for their whole
+		// session (added on join); the team rule, not setCollidable, is what suppresses player-vs-player pushing.
 		player.setCollidable(true);
 		player.removePotionEffect(PotionEffectType.INVISIBILITY);
 		if(player instanceof CraftPlayer craftPlayer) {

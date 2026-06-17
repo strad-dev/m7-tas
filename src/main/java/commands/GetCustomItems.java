@@ -201,6 +201,8 @@ public class GetCustomItems implements CommandExecutor {
 		lore.add("skyblock/combat/infinityboom");
 		meta.setLore(lore);
 		infinityboom.setItemMeta(meta);
+		// Placeable on any block in adventure mode (the practice default), like the fake-player loadout.
+		infinityboom = plugin.Utils.placeOnAnythingInAdventure(infinityboom);
 
 		ItemStack jerrychine = new ItemStack(Material.GOLDEN_HORSE_ARMOR);
 		meta = jerrychine.getItemMeta();

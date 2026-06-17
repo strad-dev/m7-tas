@@ -98,6 +98,9 @@ public class FakePlayerInventory {
 		PlayerInventory inventory = p.getInventory();
 		inventory.clear();
 
+		// Applying a kit gives the player the TAS movement speed (400).
+		Utils.setSpeed(p, 400);
+
 		switch(role) {
 			case "Archer", "Berserk", "Healer", "Tank" -> {
 				ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), ChatColor.LIGHT_PURPLE + "Ancient Necron's Chestplate");
@@ -141,7 +144,7 @@ public class FakePlayerInventory {
 			case "Archer" -> {
 				//noinspection DuplicatedCode
 				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(18, getThermodynamicHelmet());
 				inventory.setItem(19, Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  ChatColor.LIGHT_PURPLE + "Renowned Thermodynamic Chestplate"));
@@ -155,14 +158,14 @@ public class FakePlayerInventory {
 			case "Berserk" -> {
 				//noinspection DuplicatedCode
 				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
 				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Pitchin' Rod of the Sea", ""));
 			}
 			case "Healer" -> {
 				inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, ChatColor.LIGHT_PURPLE + "Withered Flaming Flay", "skyblock/combat/flaming_flay"));
@@ -174,14 +177,14 @@ public class FakePlayerInventory {
 				inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, ChatColor.LIGHT_PURPLE + "Withered Dark Claymore", "skyblock/combat/claymore"));
 				inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, ChatColor.LIGHT_PURPLE + "Withered Hyperion", "skyblock/combat/scylla"));
-				inventory.setItem(31, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(31, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, ChatColor.DARK_PURPLE + "Withered Ragnarok Axe", "skyblock/combat/rag"));
 				inventory.setItem(33, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Last Breath", "skyblock/combat/last_breath"));
 				inventory.setItem(35, getSkyBlockItem(Material.BOW, ChatColor.GOLD + "Precise Explosive Bow", "skyblock/combat/explosive_bow"));
 			}
 			case "Tank" -> {
 				inventory.setItem(2, getSkyBlockItem(Material.STICK, ChatColor.GOLD + "Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom"));
+				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, ChatColor.GOLD + "Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, ChatColor.LIGHT_PURPLE + "Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, ChatColor.GOLD + "Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded", "skyblock/combat/aots"));
@@ -231,14 +234,31 @@ public class FakePlayerInventory {
 	}
 
 	public static final String COW_HAT_NAME = ChatColor.GREEN + "Renowned Cow Hat";
+	public static final String SPIRIT_MASK_NAME = ChatColor.LIGHT_PURPLE + "Ancient Spirit Mask";
+	public static final String BONZO_MASK_NAME = ChatColor.DARK_PURPLE + "Ancient Bonzo's Mask";
 
-	/** True if the given item is the Renowned Cow Hat (identified by display name — it carries no lore ID). */
-	public static boolean isCowHat(ItemStack item) {
+	/** True if the head item's display name matches {@code name} (these heads carry no lore ID). */
+	private static boolean isNamedHead(ItemStack item, String name) {
 		if(item == null || item.getType() != Material.PLAYER_HEAD || !item.hasItemMeta()) {
 			return false;
 		}
 		ItemMeta meta = item.getItemMeta();
-		return meta.hasDisplayName() && COW_HAT_NAME.equals(meta.getDisplayName());
+		return meta.hasDisplayName() && name.equals(meta.getDisplayName());
+	}
+
+	/** True if the given item is the Renowned Cow Hat (identified by display name — it carries no lore ID). */
+	public static boolean isCowHat(ItemStack item) {
+		return isNamedHead(item, COW_HAT_NAME);
+	}
+
+	/** True if the given item is the Ancient Spirit Mask (identified by display name — it carries no lore ID). */
+	public static boolean isSpiritMask(ItemStack item) {
+		return isNamedHead(item, SPIRIT_MASK_NAME);
+	}
+
+	/** True if the given item is the Ancient Bonzo's Mask (identified by display name — it carries no lore ID). */
+	public static boolean isBonzoMask(ItemStack item) {
+		return isNamedHead(item, BONZO_MASK_NAME);
 	}
 
 	public static ItemStack getRacingHelmet() {
@@ -246,11 +266,11 @@ public class FakePlayerInventory {
 	}
 
 	public static ItemStack getBonzoMask() {
-		return getCustomHead(ChatColor.DARK_PURPLE + "Ancient Bonzo's Mask", "bonzoMask", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjgxMDU3MDM4NCwKICAicHJvZmlsZUlkIiA6ICJhZTg3MzEyNjBmMzY0ZWE2YjU3YTRkYjI5Mjk1YTA1OCIsCiAgInByb2ZpbGVOYW1lIiA6ICJGdW50aW1lX0ZveHlfMTkiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQ2MDFmNzM2YmQ0MmE3Zjg0YzU4ZGUzY2YxMjBhZTRhZTYwZmViODJiMDM3ZThjYjBkMjhhMWUyMTYxODc5ZiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "MBSY1gYYDruisd3+61+sS9xWwBABXOkLgcNwhZOhSNMyAE4yyhEGomaMT5hNckff6KyKBerAMJkWBK8i6kmmEyYKcQfb2jVSFWzQOCZmreGr7n/PEs4hXsGTGXLI1NCEqRpyv2kxUjsnjpDsmJQicSXd2Q/z5NpuC9VwG1mnz7+nzzJxxIx5QtzoLDKrXjpfJtNwGgq+0k0m7lJYIeyjXOCvCgnZO1VyAvmYLIo1DD/4IXCVqErAlRouLhzjJrBNSz95rMr/sQ0T5qFsclzcMTydeti9Pb5j+OhXDavkGFkrsfEpiXzQnW82ZqQ+2ZL8FYVyIEV+0z4kbrbXf4bcLtxQZskKNe/8xN5+UE9KdBcFQ0nF1EEM8Ia+9ChpcGggMqJAq/Zs3Vd1L37/JA5ahZtZqyXS3azKw6Lfh0UWkh+c64svuJI0XJVNNG1cTdGg6CVV37D2UkfHk6dAIlP/7XybHj0ZB3Ew8hThCi48EK0RH37fQvbbujRBjuxFGvU8l5ON4iZRkV+7qyCgLmnhYXGDMsEoGcfAT3m0m2i0+CVH6jitRz6PlbWKhdhT3TW5lBF82TO2QF+muzDD9yTpT7v6YUTQOmISHm/svXnbCp2+du79iijYbW2iQaM8r8ahkC83Owbuhhkgd+SgbTY7JwyBlR7U9j4TBzL+h+Advqw=");
+		return getCustomHead(BONZO_MASK_NAME, "bonzoMask", "ewogICJ0aW1lc3RhbXAiIDogMTc0NjgxMDU3MDM4NCwKICAicHJvZmlsZUlkIiA6ICJhZTg3MzEyNjBmMzY0ZWE2YjU3YTRkYjI5Mjk1YTA1OCIsCiAgInByb2ZpbGVOYW1lIiA6ICJGdW50aW1lX0ZveHlfMTkiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNmQ2MDFmNzM2YmQ0MmE3Zjg0YzU4ZGUzY2YxMjBhZTRhZTYwZmViODJiMDM3ZThjYjBkMjhhMWUyMTYxODc5ZiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "MBSY1gYYDruisd3+61+sS9xWwBABXOkLgcNwhZOhSNMyAE4yyhEGomaMT5hNckff6KyKBerAMJkWBK8i6kmmEyYKcQfb2jVSFWzQOCZmreGr7n/PEs4hXsGTGXLI1NCEqRpyv2kxUjsnjpDsmJQicSXd2Q/z5NpuC9VwG1mnz7+nzzJxxIx5QtzoLDKrXjpfJtNwGgq+0k0m7lJYIeyjXOCvCgnZO1VyAvmYLIo1DD/4IXCVqErAlRouLhzjJrBNSz95rMr/sQ0T5qFsclzcMTydeti9Pb5j+OhXDavkGFkrsfEpiXzQnW82ZqQ+2ZL8FYVyIEV+0z4kbrbXf4bcLtxQZskKNe/8xN5+UE9KdBcFQ0nF1EEM8Ia+9ChpcGggMqJAq/Zs3Vd1L37/JA5ahZtZqyXS3azKw6Lfh0UWkh+c64svuJI0XJVNNG1cTdGg6CVV37D2UkfHk6dAIlP/7XybHj0ZB3Ew8hThCi48EK0RH37fQvbbujRBjuxFGvU8l5ON4iZRkV+7qyCgLmnhYXGDMsEoGcfAT3m0m2i0+CVH6jitRz6PlbWKhdhT3TW5lBF82TO2QF+muzDD9yTpT7v6YUTQOmISHm/svXnbCp2+du79iijYbW2iQaM8r8ahkC83Owbuhhkgd+SgbTY7JwyBlR7U9j4TBzL+h+Advqw=");
 	}
 
 	public static ItemStack getSpiritMask() {
-		return getCustomHead(ChatColor.LIGHT_PURPLE + "Ancient Spirit Mask", "spiritMask", "ewogICJ0aW1lc3RhbXAiIDogMTYxNDYyNDQzODQxMywKICAicHJvZmlsZUlkIiA6ICIzMmQ0YzJmN2NlODg0OTAxOGIyZjA3OWM5ZmFiODQxYSIsCiAgInByb2ZpbGVOYW1lIiA6ICJQbHV0byIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS83Y2JhOTAyYzhiZGE0NTA2MDlmZGU0OTE4ODgzNDc2MmE3ODA5ZjY1ZjlkZjI2ODQ1ZTM1MWU4MGUxMmJlODMxIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=", "v3AvlOspp/7rzGxKdoNj56ZldCLMP0ntaKeHNwjAZA1Ai0WtSsM0j8PIf3YgYIGDs+To5WetlTtgxCp2Mj6fSY6OWeGW2n3Jz+08FkXFUterwfAuqguF90ktROcMG4sEZTOESItehng/LSVShHSwtg5IekQgi8mr07mntH6CGy/xhVu1SMuTIthLBBUbOI6NwfsqZe60BvBPv899C8k5zGzRAVYsDD4cdjXC6ALbMVfIIspyHM6vUuqo7MlNmOJxrr1HfhNXqlFbwDdP9CaL3DmGbHBfTLk8dhLxE89+SNI9HGbvn3YUP5M4f5K4mnire6kIwgXzVNrjXwNR0wkD86dC5ridVRFP6f5VUKLoNSbdQqnAhWhpS2PyV653609dCWR7ES5T2GNxqGv+XufDBqSNSDQc0w/Bhavd0SA3evDX4tc33t3ho6z/XUUYYP5lF8lXtAZmq64MvJB3NOj9XQMBr46b0Zjf986nZKpfmi5hhL/ddXsigl5HszR3EvAQj0M/OHZ0IAu3LRWm9bqwNdPS+soF5n+hOuDAWv0/fh5Dzy8O8PqCUWE0sOkwzB3on3ih7qt8nduCS0kkkCZRvd1eE0Xh1KxnHlKR0QdIIYkM2R2Y3RNDM1mI45NcCTxoIg1I6F/FmXI+aKWDibTHNCK6ix9Nc5We1z6S6vccRHw=");
+		return getCustomHead(SPIRIT_MASK_NAME, "spiritMask", "ewogICJ0aW1lc3RhbXAiIDogMTYxNDYyNDQzODQxMywKICAicHJvZmlsZUlkIiA6ICIzMmQ0YzJmN2NlODg0OTAxOGIyZjA3OWM5ZmFiODQxYSIsCiAgInByb2ZpbGVOYW1lIiA6ICJQbHV0byIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS83Y2JhOTAyYzhiZGE0NTA2MDlmZGU0OTE4ODgzNDc2MmE3ODA5ZjY1ZjlkZjI2ODQ1ZTM1MWU4MGUxMmJlODMxIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=", "v3AvlOspp/7rzGxKdoNj56ZldCLMP0ntaKeHNwjAZA1Ai0WtSsM0j8PIf3YgYIGDs+To5WetlTtgxCp2Mj6fSY6OWeGW2n3Jz+08FkXFUterwfAuqguF90ktROcMG4sEZTOESItehng/LSVShHSwtg5IekQgi8mr07mntH6CGy/xhVu1SMuTIthLBBUbOI6NwfsqZe60BvBPv899C8k5zGzRAVYsDD4cdjXC6ALbMVfIIspyHM6vUuqo7MlNmOJxrr1HfhNXqlFbwDdP9CaL3DmGbHBfTLk8dhLxE89+SNI9HGbvn3YUP5M4f5K4mnire6kIwgXzVNrjXwNR0wkD86dC5ridVRFP6f5VUKLoNSbdQqnAhWhpS2PyV653609dCWR7ES5T2GNxqGv+XufDBqSNSDQc0w/Bhavd0SA3evDX4tc33t3ho6z/XUUYYP5lF8lXtAZmq64MvJB3NOj9XQMBr46b0Zjf986nZKpfmi5hhL/ddXsigl5HszR3EvAQj0M/OHZ0IAu3LRWm9bqwNdPS+soF5n+hOuDAWv0/fh5Dzy8O8PqCUWE0sOkwzB3on3ih7qt8nduCS0kkkCZRvd1eE0Xh1KxnHlKR0QdIIYkM2R2Y3RNDM1mI45NcCTxoIg1I6F/FmXI+aKWDibTHNCK6ix9Nc5We1z6S6vccRHw=");
 	}
 
 	public static ItemStack getCowHat() {

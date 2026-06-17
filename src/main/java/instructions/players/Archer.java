@@ -76,10 +76,7 @@ public class Archer {
 				Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 57);
 				// rapid fire #2 at 58
 				Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 59);
-				Utils.scheduleTask(() -> {
-					goldor(false);
-					Actions.rightClick(archer);
-				}, 60);
+				Utils.scheduleTask(() -> goldor(false), 60);
 			}
 			case "necron" -> {
 				Utils.teleport(archer, new Location(world, 54.524, 64, 100.707, 180f, -6f));
@@ -527,7 +524,6 @@ public class Archer {
 			Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, 4f), 857);
 			// rapid fire #2 at 858
 			Utils.scheduleTask(() -> Actions.turnHead(archer, -14.5f, 5f), 859);
-			Utils.scheduleTask(() -> Actions.rightClick(archer), 860);
 			// goldor() is now started by Storm.chainNext (player handoff armed in TAS.runTAS).
 		}
 	}
@@ -541,11 +537,14 @@ public class Archer {
 		 * ██║     ██║
 		 * ╚═╝     ╚═╝
 		 */
-		Actions.swapItems(archer, 5, 32);
-		Actions.swapItems(archer, 18, 39);
-		Actions.swapItems(archer, 19, 38);
-		Actions.swapItems(archer, 20, 37);
-		Actions.swapItems(archer, 21, 36);
+		Actions.rightClick(archer);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(archer, 5, 32);
+			Actions.swapItems(archer, 18, 39);
+			Actions.swapItems(archer, 19, 38);
+			Actions.swapItems(archer, 20, 37);
+			Actions.swapItems(archer, 21, 36);
+		}, 1);
 
 		/*
 		 * ███████╗███████╗██████╗
@@ -555,8 +554,8 @@ public class Archer {
 		 * ███████╗███████╗██████╔╝
 		 * ╚══════╝╚══════╝╚═════╝
 		 */
-		Utils.scheduleTask(() -> Actions.turnHead(archer, 81f, 0f), 1);
-		// tick 4: device completes
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 81f, 0f), 2);
+		// tick 5: device completes
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 6);
 		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 8);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 10);

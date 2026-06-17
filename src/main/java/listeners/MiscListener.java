@@ -47,7 +47,9 @@ public class MiscListener implements Listener {
 		// The Watcher is never damageable; a freshly-spawned blood mob is shielded for ~2 ticks (practice) so a
 		// spawn-tick arrow can't prematurely kill it before it registers toward progress.
 		if(e.getEntity().getScoreboardTags().contains("TASWatcher")
-				|| e.getEntity().getScoreboardTags().contains("WatcherMobSpawning")) e.setCancelled(true);
+				|| e.getEntity().getScoreboardTags().contains("WatcherMobSpawning")) {
+			e.setCancelled(true);
+		}
 	}
 
 	// Killing the key archaeologists grants the global Wither / Blood keys (which gate the doors).
@@ -121,13 +123,19 @@ public class MiscListener implements Listener {
 	}
 
 	@EventHandler
-	public void onWitherSpawn(EntitySpawnEvent e) {
-		if(e.getEntity() instanceof Wither wither) {
-			// Don't call setCollidable(false) — CraftBukkit makes canBeCollidedWith() return false
-			// when collides=false, which causes vanilla's projectile sweep to skip the entity
-			// (arrows phase through the wither). The scoreboard team below handles no-push collision.
-			plugin.PlayerCollision.addEntityToNoCollisionTeam(wither);
-		}
+	public void onEntitySpawn(EntitySpawnEvent e) {
+		// Every spawned entity joins the shared no-collision team so nothing push-collides with the players
+		// (or each other). NOT setCollidable(false) — CraftBukkit makes canBeCollidedWith() return false when
+		// collides=false, so vanilla's projectile sweep skips the entity and arrows phase through it. The
+		// scoreboard team gives no-push collision while keeping the entity arrow-hittable.
+		plugin.PlayerCollision.addEntityToNoCollisionTeam(e.getEntity());
+	}
+
+	// Prune the no-collision team when an entity leaves the world (death, despawn, chunk removal) — the symmetric
+	// counterpart to onEntitySpawn's add, so the team's UUID entries don't accumulate unbounded over a run.
+	@EventHandler
+	public void onEntityRemove(EntityRemoveEvent e) {
+		plugin.PlayerCollision.removeEntityFromNoCollisionTeam(e.getEntity());
 	}
 
 	@EventHandler
@@ -257,6 +265,13 @@ public class MiscListener implements Listener {
 				}
 			}
 		}
+	}
+
+	// Track game-mode changes during a run so the practice scoreboard shows golden names only for players who
+	// stayed in Adventure Mode the whole time (a minor anti-cheat — any change disqualifies the gold name).
+	@EventHandler
+	public void onGameModeChange(PlayerGameModeChangeEvent e) {
+		WitherActions.noteGameModeChange(e.getPlayer().getUniqueId());
 	}
 
 	@EventHandler

@@ -16,6 +16,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
+import plugin.ChatFont;
 import plugin.FakePlayerInventory;
 import plugin.M7tas;
 import plugin.Utils;
@@ -24,7 +25,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 /**
- * The Wither King — the final encounter, run AFTER Necron (chained via {@link instructions.bosses.necron.Necron#chainNext})
+ * The Wither King — the final encounter, run AFTER Necron (chained via {@code Necron#chainNext})
  * or standalone via {@code /tas witherking} / {@code /practice witherking}.
  *
  * <p>Two stages:
@@ -64,7 +65,7 @@ public class WitherKing {
 		RED(Material.RED_WOOL, ChatColor.RED, "Red", 20.5, 6.8125, 59.5, 51, 42),
 		GREEN(Material.GREEN_WOOL, ChatColor.DARK_GREEN, "Green", 20.5, 6.8125, 94.5, 49, 44),
 		PURPLE(Material.PURPLE_WOOL, ChatColor.LIGHT_PURPLE, "Purple", 56.5, 8.8125, 132.5, 54, 41),
-		BLUE(Material.LIGHT_BLUE_WOOL, ChatColor.BLUE, "Blue", 91.5, 6.8125, 94.5, 59, 44),
+		BLUE(Material.LIGHT_BLUE_WOOL, ChatColor.AQUA, "Blue", 91.5, 6.8125, 94.5, 59, 44),
 		ORANGE(Material.ORANGE_WOOL, ChatColor.GOLD, "Orange", 92.5, 6.8125, 56.5, 57, 42);
 
 		final Material wool;
@@ -107,7 +108,7 @@ public class WitherKing {
 	private static BukkitTask rotationTask;
 	private static float rotationAngle = 0f;
 	private static final float ROTATION_STEP = (float) (Math.PI / 40); // full turn every 80 ticks (4s)
-	private static final Vector3f DISPLAY_SCALE = new Vector3f(0.75f, 0.75f, 0.75f); // 0.75³ wool cube
+	private static final Vector3f DISPLAY_SCALE = new Vector3f(0.66666f, 0.66666f, 0.66666f); // 0.66666³ wool cube
 
 	// --- Dragon phase ---
 	private static final Map<String, EnderDragon> dragons = new HashMap<>();
@@ -139,13 +140,13 @@ public class WitherKing {
 		spawnRelics();
 	}
 
-	/** Spawn the five relics as an ItemDisplay (0.5³ wool) + an Interaction (1 × 1.1875 × 1 hitbox) per statue. */
+	/** Spawn the five relics as an ItemDisplay (0.66666³ wool) + an Interaction (1 × 1.1875 × 1 hitbox) per statue. */
 	private static void spawnRelics() {
 		for(Relic relic : Relic.values()) {
 			// Floating wool sits at displayY (7.25, or 9.25 for Purple); the Interaction hitbox stays on the statue.
 			ItemDisplay display = world.spawn(new Location(world, relic.x, relic.displayY(), relic.z), ItemDisplay.class, d -> {
 				d.setItemStack(new ItemStack(relic.wool));
-				d.setTransformation(rotationTransform(0f)); // 0.5³ cube; the rotation task animates the spin (per-tick snap)
+				d.setTransformation(rotationTransform(0f)); // 0.66666³ cube; the rotation task animates the spin (per-tick snap)
 				d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
 				d.setPersistent(true);
 				d.addScoreboardTag("TASWitherKingRelic");
@@ -168,7 +169,7 @@ public class WitherKing {
 		startRotation();
 	}
 
-	/** A 0.5³-scale transform rotated {@code angle} radians about the Y axis (translation zero — spins in place). */
+	/** A 0.66666³-scale transform rotated {@code angle} radians about the Y axis (translation zero — spins in place). */
 	private static Transformation rotationTransform(float angle) {
 		return new Transformation(
 				new Vector3f(0f, 0f, 0f),
@@ -240,7 +241,7 @@ public class WitherKing {
 		if(placedRelics.contains(relic)) return;
 		placedRelics.add(relic);
 
-		// Wool ItemDisplay centered on the altar at y=8.5 — same 0.75³ cube, same spin as the statue relics.
+		// Wool ItemDisplay centered on the altar at y=8.5 — same 0.66666³ cube, same spin as the statue relics.
 		Location woolLoc = new Location(world, relic.altarX + 0.5, 8.5, relic.altarZ + 0.5);
 		ItemDisplay wool = world.spawn(woolLoc, ItemDisplay.class, d -> {
 			d.setItemStack(new ItemStack(relic.wool));
@@ -324,7 +325,7 @@ public class WitherKing {
 				spawnLocation = new Location(world, 26.5, 15, 59.5, 45f, 0f);
 			}
 			case "blue" -> {
-				dragonName = ChatColor.BLUE + "" + ChatColor.BOLD + "Ice Dragon";
+				dragonName = ChatColor.AQUA + "" + ChatColor.BOLD + "Ice Dragon";
 				spawnLocation = new Location(world, 85.5, 15, 94.5, 180f, 0f);
 			}
 			case "purple" -> {
@@ -479,8 +480,8 @@ public class WitherKing {
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
-		Bukkit.broadcastMessage(ChatColor.BLUE + "" + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
-		Bukkit.broadcastMessage(ChatColor.YELLOW + "" + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
+		Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
+		Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
 		Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1029 ticks");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
@@ -517,14 +518,32 @@ public class WitherKing {
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
+		// Build the ordered split segments, then pack them onto as many centered lines as the chat width allows.
+		List<String> segs = new ArrayList<>();
 		if(clearRan) {
-			Bukkit.broadcastMessage(seg(ChatColor.BLUE, "Clear", sp.get("Clear")) + " | " + seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")));
-			Bukkit.broadcastMessage(seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")) + " | " + seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")));
-			Bukkit.broadcastMessage("                         " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
+			segs.add(seg(ChatColor.BLUE, "Clear", sp.get("Clear")));
+			segs.add(seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")));
+			segs.add(seg(ChatColor.RED, "Storm", sp.get("Storm")));
+			segs.add(seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")));
+			segs.add(seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")));
+			segs.add(seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")));
+			segs.add(seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
 		} else {
-			Bukkit.broadcastMessage(seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")) + " | " + seg(ChatColor.RED, "Storm", sp.get("Storm")) + " | " + seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")));
-			Bukkit.broadcastMessage(seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")) + " | " + seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")) + " | " + seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
-			Bukkit.broadcastMessage("                              " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": Skipped");
+			segs.add(seg(ChatColor.AQUA, "Maxor", sp.get("Maxor")));
+			segs.add(seg(ChatColor.RED, "Storm", sp.get("Storm")));
+			segs.add(seg(ChatColor.YELLOW, "Terminals", sp.get("Terminals")));
+			segs.add(seg(ChatColor.GOLD, "Goldor", sp.get("Goldor")));
+			segs.add(seg(ChatColor.DARK_RED, "Necron", sp.get("Necron")));
+			segs.add(seg(ChatColor.GRAY, "Wither King", sp.get("WitherKing")));
+			segs.add(ChatColor.BLUE + "" + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": Skipped");
+		}
+		for(String line : packLines(segs)) {
+			Bukkit.broadcastMessage(ChatFont.centerPad(line));
+		}
+		Bukkit.broadcastMessage("");
+		Bukkit.broadcastMessage(ChatFont.centerPad(ChatColor.GREEN + "" + ChatColor.BOLD + "PLAYERS"));
+		for(String line : packPlayerLines()) {
+			Bukkit.broadcastMessage(ChatFont.centerPad(line));
 		}
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("   " + ChatColor.GREEN + ChatColor.BOLD + "Plugin by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
@@ -538,7 +557,44 @@ public class WitherKing {
 
 	/** "<color><b>Label</b></color>: N ticks" split segment for the practice scoreboard. */
 	private static String seg(ChatColor color, String label, Integer ticks) {
-		return color + "" + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + (ticks == null ? "—" : String.valueOf(ticks)) + " ticks";
+		return color + "" + ChatColor.BOLD + label + ChatColor.RESET + ChatColor.WHITE + ": " + (ticks == null ? "—" : formatWithSpaces(ticks)) + " ticks";
+	}
+
+	/** White " | " separator between scoreboard segments. */
+	private static final String SEG_SEP = ChatColor.WHITE + " | ";
+
+	/** Greedily pack segments onto centered lines: as many per line as fit {@link ChatFont#MAX_WIDTH}, then wrap. */
+	private static List<String> packLines(List<String> segments) {
+		List<String> lines = new ArrayList<>();
+		StringBuilder line = new StringBuilder();
+		for(String s : segments) {
+			if(line.isEmpty()) {
+				line.append(s);
+				continue;
+			}
+			String candidate = line + SEG_SEP + s;
+			if(ChatFont.width(candidate) > ChatFont.MAX_WIDTH) {
+				lines.add(line.toString());
+				line = new StringBuilder(s);
+			} else {
+				line = new StringBuilder(candidate);
+			}
+		}
+		if(!line.isEmpty()) lines.add(line.toString());
+		return lines;
+	}
+
+	/** One name per online player (spectators excluded) — gold only if they stayed in Adventure Mode the whole run
+	 *  (a minor anti-cheat), white if they changed game mode at any point. */
+	private static List<String> packPlayerLines() {
+		List<String> names = new ArrayList<>();
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(p.getGameMode() == GameMode.SPECTATOR || commands.Spectate.isSpectating(p)) continue;
+			ChatColor color = WitherActions.stayedAdventure(p) ? ChatColor.GOLD : ChatColor.WHITE;
+			names.add(color + Utils.getRealName(p));
+		}
+		if(names.isEmpty()) names.add(ChatColor.GRAY + "(none)");
+		return packLines(names);
 	}
 
 	// ============================== Cleanup / helpers ==============================

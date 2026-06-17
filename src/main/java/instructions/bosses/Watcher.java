@@ -239,7 +239,7 @@ public class Watcher {
 	public void registerMobKill(LivingEntity mob) {
 		if(!active) return;
 		if(!mob.getScoreboardTags().contains("WatcherMob")) return;
-		if(!countedMobKills.add(mob.getUniqueId())) return; // already counted via the other path this tick
+		if(!countedMobKills.add(mob.getUniqueId())) return;
 
 		mobsKilled++;
 		updateWatcherBossBar();
@@ -324,7 +324,10 @@ public class Watcher {
 			for(Player pl : world.getPlayers()) {
 				if(FakePlayerManager.getFakePlayers().containsValue(pl)) continue;
 				if(pl.getGameMode() == GameMode.SPECTATOR) continue;
-				Utils.teleport(pl, boss);
+				// Real players need the vanilla teleport (which sends them their own position packet); Utils.teleport
+				// is the fake-player path — it only updates OTHER viewers, so a real player would snap back to the
+				// blood room, never reach Maxor, and the boss gauntlet (Storm, …) would never chain.
+				pl.teleport(boss);
 			}
 			// Chain the rest of the boss gauntlet in practice too (e.g. /practice all) — doContinue is armed from
 			// the section (true for "all"), so Maxor → Storm → … chains without fake-player routines.
@@ -379,6 +382,11 @@ public class Watcher {
 			stand.setVisible(false);
 			stand.setCustomNameVisible(false);
 			stand.setInvulnerable(true);
+			// Marker = zero hitbox: the head-travel stand drifts through the room right where players aim, so a
+			// normal hitbox lets arrows hit it — and genericKill (hurtEntity) ignores setInvulnerable, killing it,
+			// while even a cancelled hit still eats the arrow's pierce. A marker has no AABB, so the projectile
+			// sweep can't register a hit at all (head equipment + pose still render).
+			stand.setMarker(true);
 			stand.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255));
 			ItemStack zombieHead = new ItemStack(Material.ZOMBIE_HEAD);
 			Objects.requireNonNull(stand.getEquipment()).setHelmet(zombieHead);
