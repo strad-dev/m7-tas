@@ -82,6 +82,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new WitherKingListener(), this);
 		getServer().getPluginManager().registerEvents(new SpiritLeapListener(), this);
 		getServer().getPluginManager().registerEvents(new Eq(), this);
+		getServer().getPluginManager().registerEvents(new LinkedSlots(), this);
 
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();

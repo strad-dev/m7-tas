@@ -27,7 +27,7 @@ public class Mage {
 				Actions.swapItems(mage, 3, 30);
 				Actions.swapItems(mage, 6, 33);
 				Actions.swapItems(mage, 7, 34);
-				Actions.swapItems(mage, 9, 36);
+				Actions.swapItems(mage, 11, 36);
 				Actions.setHotbarSlot(mage, 5);
 				if(section.equals("maxor")) {
 					Utils.scheduleTask(() -> maxor(false), 60);
@@ -342,7 +342,7 @@ public class Mage {
 			Actions.swapItems(mage, 4, 31);
 			Actions.swapItems(mage, 6, 33);
 			Actions.swapItems(mage, 7, 34);
-			Actions.swapItems(mage, 9, 36);
+			Actions.swapItems(mage, 11, 36);
 			Actions.setHotbarSlot(mage, 5);
 		}, 661);
 		// The "Entered Boss" milestone + blood-room blessings, and the Maxor handoff (teleport to boss spawn +
@@ -361,14 +361,14 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 45f), 67); // minor repositioning to avoid bonking
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 68); // stonk block to avoid bonking
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -132f, 0f), 69);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 86); // temporarily remove spring boots so that pos readjustment doesnt trigger ability
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 11, 36), 86); // temporarily remove spring boots so that pos readjustment doesnt trigger ability
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 1), 87);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, 52f, 0f), 88);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 89);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 11, 36), 89);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 161);
 		Utils.scheduleTask(() -> Actions.move(mage, "WN", 0), 162); // spring boots to left crystal
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 22), 173);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 200);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 11, 36), 200);
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 240);
 		Utils.scheduleTask(() -> Actions.turnHead(mage, -128f, 0f), 241);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 24), 242);
@@ -439,9 +439,9 @@ public class Mage {
 			Utils.scheduleTask(() -> Actions.snapHeadAtEntity(mage, Storm.INSTANCE.getBoss()), i - 1);
 			Utils.scheduleTask(() -> Actions.leftClick(mage), i);
 		}
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 734);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 11, 36), 734);
 		Utils.scheduleTask(() -> Actions.move(mage, "N", 2), 735);
-		Utils.scheduleTask(() -> Actions.swapItems(mage, 9, 36), 738);
+		Utils.scheduleTask(() -> Actions.swapItems(mage, 11, 36), 738);
 		Utils.scheduleTask(() -> {
 			Actions.setHotbarSlot(mage, 4);
 			Actions.swapItems(mage, 12, 39); // put on racing helmet -> speed auto-set to 650

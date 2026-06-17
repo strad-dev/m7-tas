@@ -8,8 +8,10 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import net.minecraft.server.MinecraftServer;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
@@ -19,6 +21,10 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /*
  * Eq (/eq) — a real Hypixel command.
@@ -34,6 +40,8 @@ public class Eq implements CommandExecutor, Listener {
 
 	private static final String TITLE = ChatColor.DARK_GRAY + "Equipment";
 	private static final int SPEED_SLOT = 8;
+	/** Last server tick a swap ran per player — collapses a double-click's burst of events into one swap. */
+	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
@@ -86,6 +94,7 @@ public class Eq implements CommandExecutor, Listener {
 	public void onInventoryClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof EqHolder)) return;
 		e.setCancelled(true); // the GUI is fully controlled — only the armor swap below mutates anything
+		if(e.getClick() == ClickType.DOUBLE_CLICK) return; // collect-to-cursor, not a swap
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		Inventory clicked = e.getClickedInventory();
 		if(clicked == null || !clicked.equals(p.getInventory())) return; // only bottom-inventory clicks act
@@ -94,6 +103,11 @@ public class Eq implements CommandExecutor, Listener {
 		if(item == null || item.getType() == Material.AIR) return;
 		int idx = armorSlotIndex(item.getType());
 		if(idx < 0) return;
+
+		// A double-click fires several events in the same tick — perform at most one swap per player per tick.
+		int now = MinecraftServer.currentTick;
+		if(lastSwapTick.getOrDefault(p.getUniqueId(), -1) == now) return;
+		lastSwapTick.put(p.getUniqueId(), now);
 
 		// Swap: equip the clicked piece, returning the previously-worn piece to the clicked slot.
 		ItemStack worn = getArmor(p, idx);
