@@ -669,7 +669,7 @@ public class Tank {
 		}, 100);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 6), 101);
 		Utils.scheduleTask(() -> {
-			Actions.swapItems(tank, 11, 39);
+			Actions.swapItems(tank, 9, 39);
 			Utils.setSpeed(tank, 550);
 		}, 106); // equip mask for preleap
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 107); // s2 bottom
@@ -696,7 +696,7 @@ public class Tank {
 			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(tank) + " used Bonzo Mask!");
 		}, 120);
 		Utils.scheduleTask(() -> {
-			Actions.swapItems(tank, 11, 39); // racing helmet back on -> speed auto-set to 650
+			Actions.swapItems(tank, 9, 39); // racing helmet back on -> speed auto-set to 650
 		}, 121);
 		Utils.scheduleTask(() -> Actions.turnHead(tank, 180f, -20f), 122);
 		Utils.scheduleTask(() -> Actions.dropItem(tank, true), 123);

@@ -28,7 +28,7 @@ public class Archer {
 				Actions.swapItems(archer, 1, 28);
 				Actions.swapItems(archer, 6, 33);
 				Actions.swapItems(archer, 7, 34);
-				Actions.swapItems(archer, 9, 36);
+				Actions.swapItems(archer, 11, 36);
 				Actions.setHotbarSlot(archer, 5);
 				if(section.equals("maxor")) {
 					Utils.scheduleTask(() -> maxor(false), 60);
@@ -93,7 +93,7 @@ public class Archer {
 //				Actions.swapItems(archer, 5, 32);
 //				Actions.swapItems(archer, 6, 33);
 //				Actions.swapItems(archer, 7, 35);
-//				Actions.swapItems(archer, 11, 39);
+//				Actions.swapItems(archer, 9, 39);
 //				Utils.scheduleTask(Archer::witherKing, 60);
 //			}
 		}
@@ -386,7 +386,7 @@ public class Archer {
 			Actions.swapItems(archer, 1, 28);
 			Actions.swapItems(archer, 6, 33);
 			Actions.swapItems(archer, 7, 34);
-			Actions.swapItems(archer, 9, 36);
+			Actions.swapItems(archer, 11, 36);
 			Actions.setHotbarSlot(archer, 5);
 		}, 619);
 		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
@@ -405,7 +405,7 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 161); // spring boots again to right crystal
 		Utils.scheduleTask(() -> Actions.move(archer, "WN", 0), 162);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 22), 173);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 36), 200);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 36), 200);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 240);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 128f, 0f), 241);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 24), 242);
@@ -570,13 +570,13 @@ public class Archer {
 			Actions.turnHead(archer, 81f, 0f);
 			Actions.setHotbarSlot(archer, 5);
 		}, 41);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 60);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 39), 60);
 		// tick 60: death tick
 		Utils.scheduleTask(() -> {
 			Utils.playLocalSound(archer, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 2.0f, 2.0f);
 			Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(archer) + " used Spirit Mask!");
 		}, 61);
-		Utils.scheduleTask(() -> Actions.swapItems(archer, 11, 39), 62);
+		Utils.scheduleTask(() -> Actions.swapItems(archer, 9, 39), 62);
 		Utils.scheduleTask(() -> Actions.turnHead(archer, 0f, 30f), 67);
 		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 68);
 		Utils.scheduleTask(() -> Actions.leftClick(archer), 70);

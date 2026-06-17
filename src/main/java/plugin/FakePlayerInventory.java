@@ -129,10 +129,10 @@ public class FakePlayerInventory {
 		inventory.setItem(5, pickaxe);
 		inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, ChatColor.GOLD + "Gyrokinetic Wand", "skyblock/combat/gyro"));
 		inventory.setItem(7, pearls);
-		inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
-		inventory.setItem(9, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", "skyblock/combat/spring_boots"));
+		inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, SKYBLOCK_MENU_NAME, ""));
+		inventory.setItem(9, getSpiritMask());
 		inventory.setItem(10, getBonzoMask());
-		inventory.setItem(11, getSpiritMask());
+		inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, ChatColor.LIGHT_PURPLE + "Renowned Spring Boots", "skyblock/combat/spring_boots"));
 		inventory.setItem(12, getRacingHelmet());
 		inventory.setItem(13, getCowHat());
 		inventory.setItem(26, getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, ChatColor.GOLD + "Heroic Jerry-chine Gun", "skyblock/combat/jerrychine"));
@@ -236,6 +236,13 @@ public class FakePlayerInventory {
 	public static final String COW_HAT_NAME = ChatColor.GREEN + "Renowned Cow Hat";
 	public static final String SPIRIT_MASK_NAME = ChatColor.LIGHT_PURPLE + "Ancient Spirit Mask";
 	public static final String BONZO_MASK_NAME = ChatColor.DARK_PURPLE + "Ancient Bonzo's Mask";
+	public static final String SKYBLOCK_MENU_NAME = ChatColor.GREEN + "SkyBlock Menu (Click)";
+
+	/** True if the given item is the SkyBlock Menu (the nether star kept in hotbar slot 8). */
+	public static boolean isSkyblockMenu(ItemStack item) {
+		return item != null && item.getType() == Material.NETHER_STAR && item.hasItemMeta()
+				&& item.getItemMeta().hasDisplayName() && SKYBLOCK_MENU_NAME.equals(item.getItemMeta().getDisplayName());
+	}
 
 	/** True if the head item's display name matches {@code name} (these heads carry no lore ID). */
 	private static boolean isNamedHead(ItemStack item, String name) {

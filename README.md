@@ -42,6 +42,28 @@ You can also specify a specific section (`clear` `boss` `maxor` `storm` `goldor`
 
 If you are practicing a section that is NOT clear or maxor, the plugin will, by default, teleport you to the spawn location for that section.  You can bypass this by including the `--no-teleport` flag, but beware that it is up to you to start at the correct location!
 
+## Quality of Life
+
+### General
+
+- `/eq` is supported
+- Your speed automatically assumes Black Cat w/ Unalloyed Speed when equipping Racing Helmet or Cow Hat
+- You can shift + left click an item in your inventory to swap it with whatever is in the hotbar slot directly below it.  Exception: items in the right-most column will be swapped with whatever is in your 8th slot
+
+### Verbose Mode
+
+**TIMER Mode**
+
+Displays the amount of time in ticks and seconds it took for important boss progress to be made.
+
+**VERBOSE Mode (On)**
+
+Also shows what packets are being sent by Fake Players and standard information about how ability results are calculated
+
+**SUPER VERBOSE Mode**
+
+Sends a tick-by-tick replay of most things in addition to adding location data and marking the tick each item was sent
+
 ### Main Differences from Hypixel
 
 **Aggro**
@@ -55,6 +77,7 @@ Lightning will not actually kill you.
 **Goldor**
 
 - Goldor has no death ticks.
+- Goldor will not chase you around at his maximum speed even if you complete a section early
 - Terminals will automatically complete 1 tick after you click on them
 - SS: You need to click the button 15 times total (i1 but very generous timing)
 - i4: You just need to hit each of the 9 spots at least once with arrows while on the pressure plate
