@@ -138,6 +138,13 @@ public class TAS implements CommandExecutor {
 				Mage.necron(true);
 				Tank.necron(true);
 			});
+			Necron.INSTANCE.armPlayerHandoff(() -> {
+				Archer.necron(true);
+				Berserk.necron(true);
+				Healer.necron(true);
+				Mage.necron(true);
+				Tank.necron(true);
+			});
 		}
 
 		// Restart spectator sync so it runs AFTER all instruction tasks in each tick

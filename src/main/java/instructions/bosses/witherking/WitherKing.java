@@ -54,8 +54,9 @@ public class WitherKing {
 	private static final Random random = new Random();
 	private static final String[] dragonDieMessage = {"Oh, this one hurts!", "I have more of those.", "My soul is disposable."};
 
-	/** Cumulative ticks before the Wither-King phase, for the TAS overall column (overall 4404 − WK split 1029). */
-	private static final int PRE_WITHERKING_TICKS = 3375;
+	/** Cumulative ticks before the Wither-King phase, for the TAS overall column
+	 *  (Clear 738 + Maxor 500 + Storm 860 + Goldor 304 + Necron 600). */
+	private static final int PRE_WITHERKING_TICKS = 3002;
 	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − Apex kill 959). */
 	private static final int END_DELAY_TICKS = 70;
 
@@ -104,6 +105,11 @@ public class WitherKing {
 	private static final List<ItemDisplay> altarWoolDisplays = new ArrayList<>();
 	private static final Set<Relic> placedRelics = new HashSet<>();
 
+	// Wither-King scale-up: grows 0.1 scale/tick from 0.1 to its full scale of 4 (rises into existence).
+	private static BukkitTask growthTask;
+	/** Full scale the Wither King grows to. */
+	private static final double WITHER_KING_SCALE = 4.0;
+
 	// Slow Y-axis spin shared by every relic + altar wool display.
 	private static BukkitTask rotationTask;
 	private static float rotationAngle = 0f;
@@ -113,6 +119,8 @@ public class WitherKing {
 	// --- Dragon phase ---
 	private static final Map<String, EnderDragon> dragons = new HashMap<>();
 	private static final Set<UUID> dyingDragons = new HashSet<>();
+	/** Phase tick at which each dragon's spawn was announced — used to time its kill relative to its own spawn. */
+	private static final Map<String, Integer> dragonSpawnTick = new HashMap<>();
 	private static int aliveCount = 0;
 	/** True once the last TIMER dragon (Flame) has spawned — gates the event-driven Power/Apex spawns so the
 	 *  early death of Soul/Ice (before Flame appears) can't trigger them. */
@@ -190,6 +198,26 @@ public class WitherKing {
 		}, 1L, 1L);
 	}
 
+	/** Grow the Wither King 0.1 scale/tick from its spawn scale (0.1) up to {@link #WITHER_KING_SCALE}, then stop. */
+	private static void startWitherKingGrowth() {
+		if(growthTask != null && !growthTask.isCancelled()) growthTask.cancel();
+		growthTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
+			if(witherKing == null || !witherKing.isValid()) {
+				if(growthTask != null) growthTask.cancel();
+				growthTask = null;
+				return;
+			}
+			double scale = witherKing.getAttribute(Attribute.SCALE).getBaseValue();
+			if(scale >= WITHER_KING_SCALE) {
+				witherKing.getAttribute(Attribute.SCALE).setBaseValue(WITHER_KING_SCALE);
+				growthTask.cancel();
+				growthTask = null;
+				return;
+			}
+			witherKing.getAttribute(Attribute.SCALE).setBaseValue(Math.min(WITHER_KING_SCALE, scale + 0.1));
+		}, 1L, 1L);
+	}
+
 	/** The relic this Interaction entity represents, or null if it's not a (still-present) relic interaction. */
 	public static String relicColorForInteraction(Interaction interaction) {
 		Relic r = interactionRelic.get(interaction.getUniqueId());
@@ -230,6 +258,7 @@ public class WitherKing {
 		removeRelicEntities(relic);
 
 		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up the " + relic.itemName() + ChatColor.GREEN + "!");
+		Utils.timer(ChatColor.GREEN + "Picked up in " + formatTick());
 		p.getInventory().setItem(8, itemStack);
 		instructions.Actions.setHotbarSlot(p, 8);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
@@ -259,7 +288,11 @@ public class WitherKing {
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 
 		if(placedRelics.size() == 5) {
-			startWitherKingIntro();
+			Utils.timer(ChatColor.GOLD + "" + ChatColor.BOLD + "All Relics Placed " + ChatColor.RESET + "in " + formatTick());
+			// Delay the intro 10 ticks after the last relic is placed.
+			Utils.scheduleTask(WitherKing::startWitherKingIntro, 10);
+		} else {
+			Utils.timer(relic.chatColor + relic.label + " Relic placed (" + placedRelics.size() + "/5) in " + formatTick());
 		}
 	}
 
@@ -274,6 +307,8 @@ public class WitherKing {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.0f), i);
 		}
 		Utils.scheduleTask(() -> sendChatMessage("You... again?"), 100);
+		// Spawn the Wither King 20 ticks before its "I no longer wish to fight" line, at scale 0.1, and grow it
+		// 0.1 scale/tick up to its full scale of 4 — it rises into existence over the lead-up to the line.
 		Utils.scheduleTask(() -> {
 			witherKing = (Wither) world.spawnEntity(new Location(world, 54.5, 6, 32.5, 0f, 0f), EntityType.WITHER);
 			witherKing.setAI(false);
@@ -285,14 +320,16 @@ public class WitherKing {
 			witherKing.getAttribute(Attribute.MAX_HEALTH).setBaseValue(5);
 			witherKing.getAttribute(Attribute.ARMOR).setBaseValue(-30);
 			witherKing.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
-			witherKing.getAttribute(Attribute.SCALE).setBaseValue(4);
+			witherKing.getAttribute(Attribute.SCALE).setBaseValue(0.1);
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");
 			witherKing.addScoreboardTag("TASWitherKing");
 			WitherActions.setWitherArmor(witherKing, true);
+			startWitherKingGrowth();
 
 			Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(witherKing, ChatColor.MAGIC + "Wither-King"), 1);
-
+		}, 140);
+		Utils.scheduleTask(() -> {
 			sendChatMessage("I no longer wish to fight, but I know that will not stop you.");
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
 		}, 160);
@@ -304,43 +341,47 @@ public class WitherKing {
 		Utils.scheduleTask(() -> spawnDragon("orange"), 600); // Flame (last timer dragon)
 	}
 
+	/** Colored bold display name for a dragon color key (e.g. "orange" → gold-bold "Flame Dragon"). */
+	private static String dragonName(String color) {
+		return switch(color) {
+			case "orange" -> ChatColor.GOLD + "" + ChatColor.BOLD + "Flame Dragon";
+			case "green" -> ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Apex Dragon";
+			case "red" -> ChatColor.RED + "" + ChatColor.BOLD + "Power Dragon";
+			case "blue" -> ChatColor.AQUA + "" + ChatColor.BOLD + "Ice Dragon";
+			case "purple" -> ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Soul Dragon";
+			default -> ChatColor.GRAY + "" + ChatColor.BOLD + "Unknown Dragon";
+		};
+	}
+
+	/** The color key for a spawned dragon entity (reverse lookup of {@link #dragons}), or "" if unknown. */
+	private static String colorOf(EnderDragon dragon) {
+		for(Map.Entry<String, EnderDragon> en : dragons.entrySet()) {
+			if(en.getValue() != null && en.getValue().getUniqueId().equals(dragon.getUniqueId())) return en.getKey();
+		}
+		return "";
+	}
+
 	public static void spawnDragon(String color) {
 		for(int i = 0; i < 81; i += 20) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 1.0f, 1.0f), i);
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_FLAP, 1.0f, 1.0f), i);
 		}
-		String dragonName;
-		Location spawnLocation;
-		switch(color) {
-			case "orange" -> {
-				dragonName = ChatColor.GOLD + "" + ChatColor.BOLD + "Flame Dragon";
-				spawnLocation = new Location(world, 86.5, 15, 56.5, 180f, 0f);
-			}
-			case "green" -> {
-				dragonName = ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Apex Dragon";
-				spawnLocation = new Location(world, 26.5, 15, 94.5, 0f, 0f);
-			}
-			case "red" -> {
-				dragonName = ChatColor.RED + "" + ChatColor.BOLD + "Power Dragon";
-				spawnLocation = new Location(world, 26.5, 15, 59.5, 45f, 0f);
-			}
-			case "blue" -> {
-				dragonName = ChatColor.AQUA + "" + ChatColor.BOLD + "Ice Dragon";
-				spawnLocation = new Location(world, 85.5, 15, 94.5, 180f, 0f);
-			}
-			case "purple" -> {
-				dragonName = ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Soul Dragon";
-				spawnLocation = new Location(world, 56.5, 14, 126.5, 0f, 0f);
-			}
-			default -> {
-				dragonName = ChatColor.GRAY + "" + ChatColor.BOLD + "Unknown Dragon";
-				spawnLocation = new Location(world, 54.5, 15, 76.5);
-			}
-		}
+		String dragonName = dragonName(color);
+		Location spawnLocation = switch(color) {
+			case "orange" -> new Location(world, 86.5, 15, 56.5, 180f, 0f);
+			case "green" -> new Location(world, 26.5, 15, 94.5, 0f, 0f);
+			case "red" -> new Location(world, 26.5, 15, 59.5, 45f, 0f);
+			case "blue" -> new Location(world, 85.5, 15, 94.5, 180f, 0f);
+			case "purple" -> new Location(world, 56.5, 14, 126.5, 0f, 0f);
+			default -> new Location(world, 54.5, 15, 76.5);
+		};
 
 		Bukkit.broadcastMessage(ChatColor.YELLOW + "The " + dragonName + ChatColor.RESET + ChatColor.YELLOW + " is spawning!");
 
 		Utils.scheduleTask(() -> {
+			// Time the dragon from when it actually spawns in, not when the spawn animation began.
+			dragonSpawnTick.put(color, Utils.phaseTick());
+			Utils.timer(ChatColor.YELLOW + "Spawned in " + formatTick());
 			EnderDragon dragon = (EnderDragon) world.spawnEntity(spawnLocation, EntityType.ENDER_DRAGON);
 			dragons.put(color, dragon);
 			dragon.setSilent(true);
@@ -370,6 +411,9 @@ public class WitherKing {
 	public static void handleDragonKilled(EnderDragon dragon) {
 		if(dragon == null || dyingDragons.contains(dragon.getUniqueId())) return;
 		dyingDragons.add(dragon.getUniqueId());
+		String color = colorOf(dragon);
+		int elapsed = Utils.phaseTick() - dragonSpawnTick.getOrDefault(color, Utils.phaseTick());
+		Utils.timer(ChatColor.YELLOW + "The " + dragonName(color) + ChatColor.RESET + ChatColor.YELLOW + " was killed in " + formatDragonKillTick(elapsed));
 		instaKillDragon(dragon);
 		aliveCount--;
 
@@ -474,14 +518,14 @@ public class WitherKing {
 		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
 		Bukkit.broadcastMessage("");
-		Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "306 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
+		Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "308 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
 		Bukkit.broadcastMessage(" " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4404 ticks");
 		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "220.20 seconds | 3:40.20");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
-		Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 1027 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 499 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 890 ticks");
-		Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 236 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 114 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 609 ticks");
+		Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 738 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 500 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 860 ticks");
+		Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 200 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 104 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 600 ticks");
 		Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1029 ticks");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
@@ -607,6 +651,10 @@ public class WitherKing {
 			rotationTask = null;
 		}
 		rotationAngle = 0f;
+		if(growthTask != null && !growthTask.isCancelled()) {
+			growthTask.cancel();
+			growthTask = null;
+		}
 		if(witherKing != null) {
 			witherKing.remove();
 			witherKing = null;
@@ -616,6 +664,7 @@ public class WitherKing {
 		}
 		dragons.clear();
 		dyingDragons.clear();
+		dragonSpawnTick.clear();
 
 		for(ItemDisplay d : statueDisplays.values()) if(d != null && d.isValid()) d.remove();
 		for(Interaction i : statueInteractions.values()) if(i != null && i.isValid()) i.remove();
@@ -666,6 +715,24 @@ public class WitherKing {
 			sb.append(s.charAt(i));
 		}
 		return sb.toString();
+	}
+
+	/** Timer line tick suffix: phase ticks since the WK phase start + the overall-run column (live in practice). */
+	private static String formatTick() {
+		int t = Utils.phaseTick();
+		int overall = WitherActions.isPracticeMode() ? Utils.runTick() : PRE_WITHERKING_TICKS + t;
+		return ChatColor.GREEN + String.format("%s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
+				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
+	}
+
+	/** Dragon-kill tick suffix: ticks since that dragon spawned, then the Wither-King section clock, then overall. */
+	private static String formatDragonKillTick(int dragonElapsed) {
+		int phase = Utils.phaseTick();
+		int overall = WitherActions.isPracticeMode() ? Utils.runTick() : PRE_WITHERKING_TICKS + phase;
+		return ChatColor.GREEN + String.format("%s ticks (%.2f seconds) | Wither King: %s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
+				formatWithSpaces(dragonElapsed), dragonElapsed / 20.0,
+				formatWithSpaces(phase), phase / 20.0,
+				formatWithSpaces(overall), overall / 20.0);
 	}
 
 	private static void sendChatMessage(String message) {

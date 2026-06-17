@@ -12,6 +12,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.jspecify.annotations.NonNull;
 import plugin.FakePlayerManager;
 import plugin.MovementAudit;
+import plugin.Utils;
 
 public class Reset implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
@@ -22,6 +23,7 @@ public class Reset implements CommandExecutor {
 
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
+		Utils.cancelAllScheduled();
 		Location hide = new Location(Bukkit.getWorld("world"), -120.5, 71, -183.5);
 		FakePlayerManager.getFakePlayers().values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
 		Server.serverSetup(Bukkit.getWorld("world"));

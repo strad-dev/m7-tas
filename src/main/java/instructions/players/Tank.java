@@ -820,6 +820,14 @@ public class Tank {
 			Actions.setHotbarSlot(tank, 8);
 		}, 24);
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 25);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -6.25f, 0f), 26);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 27);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 60);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 62);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 71);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 73);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 83);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 1), 85);
 	}
 
 	@SuppressWarnings("unused")
