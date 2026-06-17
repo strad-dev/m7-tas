@@ -289,11 +289,11 @@ public class WitherKing {
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 
 		if(placedRelics.size() == 5) {
-			Utils.timer(ChatColor.GOLD + "" + ChatColor.BOLD + "All Relics Placed " + ChatColor.RESET + "in " + formatTick());
+			Utils.timer(ChatColor.GOLD + "" + ChatColor.BOLD + "All Relics " + ChatColor.GREEN + "placed in " + formatTick());
 			// Delay the intro 10 ticks after the last relic is placed.
-			Utils.scheduleTask(WitherKing::startWitherKingIntro, 10);
+			startWitherKingIntro();
 		} else {
-			Utils.timer(relic.chatColor + relic.label + " Relic placed (" + placedRelics.size() + "/5) in " + formatTick());
+			Utils.timer(relic.chatColor + relic.label + " Relic (" + placedRelics.size() + "/5)" + ChatColor.GREEN + " placed in " + formatTick());
 		}
 	}
 

@@ -623,28 +623,28 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.rightClick(mage), 200);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 261);
 		int lbFor = 10;
-		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+		for(int i = 290; i <= 386 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
 		}
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 397);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 398);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 403);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 387);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 388);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 393);
 		Utils.scheduleTask(() -> {
 			Actions.turnHead(mage, -177.5f, -90f);
 			Actions.setHotbarSlot(mage, 5);
-		}, 404);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 405);
-		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 421);
-		Utils.scheduleTask(() -> Actions.move(mage, "WP", 21), 423);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 576);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 638);
-		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+		}, 394);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 395);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 411);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 21), 413);
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 566);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 628);
+		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
 		}
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 737);
-		Utils.scheduleTask(() -> Actions.leftClick(mage), 738);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 727);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 728);
 	}
 
 	@SuppressWarnings("unused")
