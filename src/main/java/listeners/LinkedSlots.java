@@ -47,6 +47,17 @@ public class LinkedSlots implements Listener {
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		PlayerInventory inv = p.getInventory();
 
+		p.sendMessage("[LinkedSlots] t=" + MinecraftServer.currentTick
+				+ " evt=" + e.getClass().getSimpleName()
+				+ " click=" + e.getClick()
+				+ " action=" + e.getAction()
+				+ " slot=" + e.getSlot()
+				+ " rawSlot=" + e.getRawSlot()
+				+ " slotType=" + e.getSlotType()
+				+ " clickedInv=" + (e.getClickedInventory() == null ? "null" : e.getClickedInventory().getType())
+				+ " top=" + e.getView().getTopInventory().getType()
+				+ " gamemode=" + p.getGameMode());
+
 		// --- SkyBlock-menu lock: block any click that would move the menu out of slot 8 ---
 		if(FakePlayerInventory.isSkyblockMenu(inv.getItem(MENU_SLOT))) {
 			boolean clicksMenuSlot = e.getClickedInventory() != null && e.getClickedInventory().equals(inv) && e.getSlot() == MENU_SLOT;
@@ -76,7 +87,9 @@ public class LinkedSlots implements Listener {
 		// --- Linked slots: shift+left-click a backpack slot swaps with its hotbar column ---
 		// The top row (slots 9-17) is ignored; only the middle/bottom rows (18-35) link.
 		if(e.getClick() != ClickType.SHIFT_LEFT) return;
-		if(e.getView().getTopInventory().getType() != InventoryType.CRAFTING) return; // only the E inventory
+		// Only the E inventory: CRAFTING in survival/adventure, CREATIVE when opened in creative mode.
+		InventoryType topType = e.getView().getTopInventory().getType();
+		if(topType != InventoryType.CRAFTING && topType != InventoryType.CREATIVE) return;
 		if(e.getClickedInventory() == null || !e.getClickedInventory().equals(inv)) return;
 		int slot = e.getSlot();
 		if(slot < 18 || slot > 35) return; // middle + bottom backpack rows only (top row excluded) → vanilla otherwise

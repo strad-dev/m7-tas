@@ -62,15 +62,15 @@ public class Tank {
 				Actions.swapItems(tank, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
-//			case "witherking" -> {
-//				Utils.teleport(tank, new Location(world, 22.3, 6, 94.452, 67.3f, 29.7f));
-//				Actions.swapItems(tank, 1, 28);
-//				Actions.swapItems(tank, 3, 30);
-//				Actions.swapItems(tank, 5, 32);
-//				Actions.swapItems(tank, 6, 33);
-//				Utils.scheduleTask(() -> Actions.swapItems(tank, 7, 33), 1);
-//				Utils.scheduleTask(Tank::witherKing, 60);
-//			}
+			case "witherking" -> {
+				Utils.teleport(tank, new Location(world, 22.531, 6, 94.222, 90f, 0f));
+				Actions.swapItems(tank, 1, 28);
+				Actions.swapItems(tank, 6, 33);
+				Actions.swapItems(tank, 7, 34);
+				Actions.swapItems(tank, 13, 39);
+				Actions.setHotbarSlot(tank, 5);
+				Utils.scheduleTask(Tank::witherKing, 60);
+			}
 		}
 	}
 
@@ -800,13 +800,19 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(tank, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(tank, 13, 39), 503);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, 65f, 0f), 504);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 65f, 0f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 504);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 505);
 		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 520);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 10), 522);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, 90f, 0f), 532);
+		Utils.scheduleTask(() -> Actions.swapItems(tank, 3, 30), 533);
 	}
 
 	private static void witherKing() {
+		Actions.rightClick(tank);
 	}
 
 	@SuppressWarnings("unused")

@@ -63,14 +63,15 @@ public class Healer {
 				Actions.swapItems(healer, 7, 34);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
-//			case "witherking" -> {
-//				Utils.teleport(healer, new Location(world, 56.326, 8, 130.7, -16.2f, 18.8f));
-//				Actions.swapItems(healer, 1, 28);
-//				Actions.swapItems(healer, 3, 30);
-//				Actions.swapItems(healer, 6, 33);
-//				Actions.swapItems(healer, 7, 34);
-//				Utils.scheduleTask(Healer::witherKing, 60);
-//			}
+			case "witherking" -> {
+				Utils.teleport(healer, new Location(world, 56.321, 8, 130.7, 0f, 0f));
+				Actions.swapItems(healer, 1, 28);
+				Actions.swapItems(healer, 6, 33);
+				Actions.swapItems(healer, 7, 34);
+				Actions.swapItems(healer, 13, 39);
+				Actions.setHotbarSlot(healer, 5);
+				Utils.scheduleTask(Healer::witherKing, 60);
+			}
 		}
 	}
 
@@ -704,7 +705,10 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(healer, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(healer, 13, 39), 503);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -2f, 0f), 504);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -2f, 0f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 504);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 505);
 		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 515);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 517);
@@ -712,9 +716,12 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 529);
 		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 539);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 10), 541);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, 0f, 0f), 551);
+		Utils.scheduleTask(() -> Actions.swapItems(healer, 3, 30), 552);
 	}
 
 	private static void witherKing() {
+		Actions.rightClick(healer);
 	}
 
 	@SuppressWarnings("unused")

@@ -68,13 +68,16 @@ public class Berserk {
 				Utils.scheduleTask(() -> Actions.swapItems(berserk, 7, 35), 1);
 				Utils.scheduleTask(() -> necron(false), 60);
 			}
-//			case "witherking" -> {
-//				Utils.teleport(berserk, new Location(world, 90.7, 6, 56.581, -79.7f, 19.1f));
-//				Actions.swapItems(berserk, 1, 28);
-//				Actions.swapItems(berserk, 7, 35);
-//				Actions.swapItems(berserk, 12, 39);
-//				Utils.scheduleTask(Berserk::witherKing, 60);
-//			}
+			case "witherking" -> {
+				Utils.teleport(berserk, new Location(world, 90.7, 6, 56.507, -90f, 0f));
+				Actions.swapItems(berserk, 1, 28);
+				Actions.swapItems(berserk, 6, 33);
+				Actions.swapItems(berserk, 7, 35);
+				Actions.swapItems(berserk, 13, 39);
+				Actions.setHotbarSlot(berserk, 5);
+				Utils.scheduleTask(() -> Actions.swapItems(berserk, 7, 35), 1);
+				Utils.scheduleTask(Berserk::witherKing, 60);
+			}
 		}
 	}
 
@@ -719,13 +722,19 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 501);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Archer.get()), 502);
 		Utils.scheduleTask(() -> Actions.swapItems(berserk, 13, 39), 503);
-		Utils.scheduleTask(() -> Actions.turnHead(berserk, -122f, 0f), 504);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, -122f, 0f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 504);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 505);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WPJ", 0), 523);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 12), 525);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -90f, 0f), 537);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 3, 30), 538);
 	}
 
 	private static void witherKing() {
+		Actions.rightClick(berserk);
 	}
 
 	@SuppressWarnings("unused")
