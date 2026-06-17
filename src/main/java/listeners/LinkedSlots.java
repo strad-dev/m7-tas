@@ -55,6 +55,15 @@ public class LinkedSlots implements Listener {
 			}
 		}
 
+		// A shift+double-click fires a trailing DOUBLE_CLICK after our SHIFT_LEFT swap. If we just swapped
+		// this tick, swallow it so vanilla doesn't gather/move the items we already placed.
+		if(e.getClick() == ClickType.DOUBLE_CLICK
+				&& e.getView().getTopInventory().getType() == InventoryType.CRAFTING
+				&& lastSwapTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick) {
+			e.setCancelled(true);
+			return;
+		}
+
 		// --- Linked slots: shift+left-click a backpack slot swaps with its hotbar column ---
 		// The top row (slots 9-17) is ignored; only the middle/bottom rows (18-35) link.
 		if(e.getClick() != ClickType.SHIFT_LEFT) return;
