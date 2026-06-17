@@ -35,8 +35,12 @@ import java.util.UUID;
 public class LinkedSlots implements Listener {
 
 	private static final int MENU_SLOT = 8;
+	/** A double-click's pickup-all event can trail its first click by up to the click window (~5 ticks). */
+	private static final int DOUBLE_CLICK_WINDOW = 10;
 	/** Last server tick a linked swap ran per player — collapses a double-click's burst of events into one swap. */
 	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
+	/** Hotbar slot the most recent linked swap moved an item INTO — a trailing double-click on it is ignored. */
+	private static final Map<UUID, Integer> lastSwapHotbar = new HashMap<>();
 
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent e) {
@@ -55,13 +59,18 @@ public class LinkedSlots implements Listener {
 			}
 		}
 
-		// A shift+double-click fires a trailing DOUBLE_CLICK after our SHIFT_LEFT swap. If we just swapped
-		// this tick, swallow it so vanilla doesn't gather/move the items we already placed.
-		if(e.getClick() == ClickType.DOUBLE_CLICK
-				&& e.getView().getTopInventory().getType() == InventoryType.CRAFTING
-				&& lastSwapTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick) {
-			e.setCancelled(true);
-			return;
+		// A shift+double-click's second physical click trails ~5 ticks later as another SHIFT_LEFT, but landing
+		// on the hotbar slot we just swapped the item INTO (slotType QUICKBAR). Vanilla would shift-move that
+		// item back out, undoing our swap — so swallow a trailing quickbar shift/double-click on that slot.
+		if((e.getClick() == ClickType.SHIFT_LEFT || e.getClick() == ClickType.DOUBLE_CLICK)
+				&& e.getSlotType() == InventoryType.SlotType.QUICKBAR) {
+			Integer swapTick = lastSwapTick.get(p.getUniqueId());
+			Integer swapHotbar = lastSwapHotbar.get(p.getUniqueId());
+			if(swapTick != null && swapHotbar != null && swapHotbar == e.getSlot()
+					&& MinecraftServer.currentTick - swapTick <= DOUBLE_CLICK_WINDOW) {
+				e.setCancelled(true);
+				return;
+			}
 		}
 
 		// --- Linked slots: shift+left-click a backpack slot swaps with its hotbar column ---
@@ -83,6 +92,7 @@ public class LinkedSlots implements Listener {
 		int now = MinecraftServer.currentTick;
 		if(lastSwapTick.getOrDefault(p.getUniqueId(), -1) == now) return;
 		lastSwapTick.put(p.getUniqueId(), now);
+		lastSwapHotbar.put(p.getUniqueId(), hotbar);
 
 		inv.setItem(slot, bar);
 		inv.setItem(hotbar, back);
