@@ -1,5 +1,7 @@
 package listeners;
 
+import net.minecraft.server.MinecraftServer;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -8,10 +10,15 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import plugin.FakePlayerInventory;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  * Two inventory conveniences for real players:
@@ -28,6 +35,8 @@ import plugin.FakePlayerInventory;
 public class LinkedSlots implements Listener {
 
 	private static final int MENU_SLOT = 8;
+	/** Last server tick a linked swap ran per player — collapses a double-click's burst of events into one swap. */
+	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
 
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent e) {
@@ -47,19 +56,32 @@ public class LinkedSlots implements Listener {
 		}
 
 		// --- Linked slots: shift+left-click a backpack slot swaps with its hotbar column ---
+		// The top row (slots 9-17) is ignored; only the middle/bottom rows (18-35) link.
 		if(e.getClick() != ClickType.SHIFT_LEFT) return;
 		if(e.getView().getTopInventory().getType() != InventoryType.CRAFTING) return; // only the E inventory
 		if(e.getClickedInventory() == null || !e.getClickedInventory().equals(inv)) return;
 		int slot = e.getSlot();
-		if(slot < 9 || slot > 35) return; // backpack rows only
+		if(slot < 18 || slot > 35) return; // middle + bottom backpack rows only (top row excluded) → vanilla otherwise
 		int hotbar = Math.min((slot - 9) % 9, 7); // column, but the 9th column maps to 7 (slot 8 is the menu)
 
-		e.setCancelled(true);
 		ItemStack back = inv.getItem(slot);
 		ItemStack bar = inv.getItem(hotbar);
+		// Only swap two real items — if either slot is empty, let vanilla handle the click instead.
+		if(isEmpty(back) || isEmpty(bar)) return;
+
+		e.setCancelled(true); // we own this gesture now — suppress the vanilla shift-move
+		// Double-click guard: its burst of events lands in one tick, so swap at most once per player per tick.
+		int now = MinecraftServer.currentTick;
+		if(lastSwapTick.getOrDefault(p.getUniqueId(), -1) == now) return;
+		lastSwapTick.put(p.getUniqueId(), now);
+
 		inv.setItem(slot, bar);
 		inv.setItem(hotbar, back);
 		p.updateInventory();
+	}
+
+	private static boolean isEmpty(ItemStack item) {
+		return item == null || item.getType() == Material.AIR;
 	}
 
 	@EventHandler
@@ -78,6 +100,14 @@ public class LinkedSlots implements Listener {
 	@EventHandler
 	public void onDrop(PlayerDropItemEvent e) {
 		if(FakePlayerInventory.isSkyblockMenu(e.getItemDrop().getItemStack())) {
+			e.setCancelled(true);
+		}
+	}
+
+	// Pressing F with no inventory open fires this (not an InventoryClickEvent) — block swapping the menu to offhand.
+	@EventHandler
+	public void onSwapHands(PlayerSwapHandItemsEvent e) {
+		if(FakePlayerInventory.isSkyblockMenu(e.getMainHandItem()) || FakePlayerInventory.isSkyblockMenu(e.getOffHandItem())) {
 			e.setCancelled(true);
 		}
 	}
