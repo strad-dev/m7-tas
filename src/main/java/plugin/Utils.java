@@ -563,13 +563,8 @@ public class Utils {
 			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
 			// the check but causes infinite recursion via EntityDamageByEntityEvent → handleCustomItems.
 			// Direct health manipulation avoids both issues.
-			double hpBefore = entity.getHealth();
-			entity.setHealth(Math.max(0, (float) (hpBefore - damage)));
+			entity.setHealth(Math.max(0, (float) (entity.getHealth() - damage)));
 			if(entity instanceof org.bukkit.entity.EnderDragon dragon && dragon.getScoreboardTags().contains("WitherKingDragon")) {
-				// TEMP diagnostic: log every Wither-King dragon hit (tick + attacker + RagBuff state + HP before/after).
-				boolean ragBuff = attacker != null && attacker.getScoreboardTags().contains("RagBuff");
-				Bukkit.getLogger().info("[DragonDmg] tick=" + phaseTick() + " by " + (attacker != null ? attacker.getName() : "?")
-						+ " ragBuff=" + ragBuff + " dmg=" + damage + " hp " + hpBefore + " -> " + entity.getHealth());
 				// Wither-King dragon kill chokepoint: dragon damage never fires an EntityDamageEvent (we setHealth
 				// directly), so detect the kill here and hand off to the death/spawn-next logic (idempotent).
 				if(entity.getHealth() <= 0) {

@@ -755,8 +755,24 @@ public class Archer {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 2), 394);
 		Utils.scheduleTask(() -> Actions.leap(archer, Mage.get()), 490);
 		Utils.scheduleTask(() -> Actions.rightClick(archer), 566);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 628);
-		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(archer, 5), 629);
+		lbFor = 10;
+		for(int i = 630; i <= 726 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.turnHead(archer, 92.5f, -90f), 729);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 730);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 2), 780);
+		for(int i = 792; i <= 826 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(archer), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.turnHead(archer, -3f, -90f), 829);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 0), 830);
+		Utils.scheduleTask(() -> Actions.move(archer, "WPJ", 0), 851);
+		Utils.scheduleTask(() -> Actions.move(archer, "WP", 14), 853);
+		for(int i = 858; i <= 926 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(archer), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(archer), i + lbFor);
 		}

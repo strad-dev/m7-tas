@@ -847,14 +847,41 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 394);
 		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 490);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 491);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 566);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 628);
-		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 529);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 590);
+		lbFor = 10;
+		for(int i = 630; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 727);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 728);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, 92.5f, -90f);
+			Actions.setHotbarSlot(tank, 5);
+		}, 729);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(tank);
+			Actions.move(tank, "WP", 0);
+		}, 730);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 2), 780);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 791);
+		for(int i = 792; i <= 826 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 827);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 828);
+		Utils.scheduleTask(() -> Actions.turnHead(tank, -3f, -90f), 829);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 830);
+		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 851);
+		Utils.scheduleTask(() -> Actions.move(tank, "WP", 14), 853);
+		for(int i = 858; i <= 926 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 927);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 928);
 	}
 
 	@SuppressWarnings("unused")

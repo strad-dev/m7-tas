@@ -520,18 +520,19 @@ public class WitherKing {
 
 	/** The hardcoded TAS victory screen. */
 	private static void printTasScoreboard() {
+		Utils.timer(ChatColor.GREEN + "Wither King finished in " + formatWithSpaces(Utils.phaseTick()) + " ticks!");
 		Bukkit.broadcastMessage(ChatColor.GREEN + "" + ChatColor.BOLD + "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬");
 		Bukkit.broadcastMessage("                " + ChatColor.RED + "Master Mode The Catacombs " + ChatColor.DARK_GRAY + "- " + ChatColor.YELLOW + "Floor VII");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                           " + ChatColor.WHITE + "Team Score: " + ChatColor.GREEN + "308 " + ChatColor.WHITE + "(" + ChatColor.AQUA + ChatColor.BOLD + "S+" + ChatColor.RESET + ChatColor.WHITE + ")");
-		Bukkit.broadcastMessage(" " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4404 ticks");
-		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "220.20 seconds | 3:40.20");
+		Bukkit.broadcastMessage(" " + ChatColor.RED + "☠ " + ChatColor.YELLOW + "Defeated " + ChatColor.RED + "Maxor, Storm, Goldor, and Necron " + ChatColor.YELLOW + "in " + ChatColor.GREEN + "4000 ticks");
+		Bukkit.broadcastMessage("                         " + ChatColor.GREEN + "200.00 seconds | 3:20.00");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("                              " + ChatColor.GOLD + "> " + ChatColor.YELLOW + ChatColor.BOLD + "EXTRA INFO " + ChatColor.RESET + ChatColor.GOLD + "<");
 		Bukkit.broadcastMessage("                                   " + ChatColor.GREEN + ChatColor.BOLD + "SPLITS");
 		Bukkit.broadcastMessage("    " + ChatColor.BLUE + ChatColor.BOLD + "Clear" + ChatColor.RESET + ChatColor.WHITE + ": 738 ticks | " + ChatColor.AQUA + ChatColor.BOLD + "Maxor" + ChatColor.RESET + ChatColor.WHITE + ": 500 ticks | " + ChatColor.RED + ChatColor.BOLD + "Storm" + ChatColor.RESET + ChatColor.WHITE + ": 860 ticks");
 		Bukkit.broadcastMessage(" " + ChatColor.YELLOW + ChatColor.BOLD + "Terminals" + ChatColor.RESET + ChatColor.WHITE + ": 200 ticks | " + ChatColor.GOLD + ChatColor.BOLD + "Goldor" + ChatColor.RESET + ChatColor.WHITE + ": 104 ticks | " + ChatColor.DARK_RED + ChatColor.BOLD + "Necron" + ChatColor.RESET + ChatColor.WHITE + ": 600 ticks");
-		Bukkit.broadcastMessage("                         " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 1029 ticks");
+		Bukkit.broadcastMessage("                          " + ChatColor.GRAY + ChatColor.BOLD + "Wither King" + ChatColor.RESET + ChatColor.WHITE + ": 998 ticks");
 		Bukkit.broadcastMessage("");
 		Bukkit.broadcastMessage("     " + ChatColor.GREEN + ChatColor.BOLD + "TAS by " + ChatColor.RESET + ChatColor.AQUA + "Stradivarius Violin" + ChatColor.GREEN + ", also known as " + ChatColor.AQUA + "Beethoven_");
 		Bukkit.broadcastMessage("    " + ChatColor.RED + ChatColor.BOLD + "YOUTUBE" + ChatColor.AQUA + ": https://www.youtube.com/@Stradivarius_Violin");
