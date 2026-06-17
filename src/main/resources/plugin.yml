@@ -18,7 +18,7 @@ commands:
     usage: /tas <section>
   practice:
     description: Begin practice (boss instructions only, for real players)
-    usage: /practice <section>
+    usage: /practice <section> [--no-teleport]
   reset:
     description: Resets all classes to their spawn locations
     usage: /reset

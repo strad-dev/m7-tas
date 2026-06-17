@@ -114,7 +114,9 @@ public class GoldorListener implements Listener {
 	// =================== Lever flip + Simon Says button + Lights levers ===================
 	@EventHandler(priority = EventPriority.LOW)
 	public void onInteract(PlayerInteractEvent e) {
-		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		boolean rightClick = e.getAction() == Action.RIGHT_CLICK_BLOCK;
+		boolean leftClick = e.getAction() == Action.LEFT_CLICK_BLOCK;
+		if(!rightClick && !leftClick) return;
 		// Only the main hand — a sneaking right-click fires a second (off-hand) event for the same click,
 		// which would otherwise double-count the Simon Says button.
 		if(e.getHand() != EquipmentSlot.HAND) return;
@@ -123,19 +125,19 @@ public class GoldorListener implements Listener {
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
 		Player p = e.getPlayer();
 
-		// Simon Says button (S1 device) — not section-gated. Defer if the phase hasn't spun up yet so a
+		// Simon Says button (S1 device) — right-click only (it's a button). Defer if the phase hasn't spun up yet so a
 		// click in a chained full run (players scheduled on start, Goldor only active when Storm dies) counts.
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) {
-			tryRegisterSimonClick(p, bx, by, bz);
+			if(rightClick) tryRegisterSimonClick(p, bx, by, bz);
 			return;
 		}
 
-		// Lights levers (S2 device) — not section-gated; defer too.
+		// Lights levers (S2 device) — right-click only (the puzzle reads the lever's physical toggled state).
 		if(b.getType() == Material.LEVER
 				&& bx >= LIGHTS_X1 && bx <= LIGHTS_X2
 				&& by >= LIGHTS_Y1 && by <= LIGHTS_Y2
 				&& bz == LIGHTS_Z) {
-			runWhenPhaseActive(deferred -> processLightsClick(p));
+			if(rightClick) runWhenPhaseActive(deferred -> processLightsClick(p));
 			return;
 		}
 

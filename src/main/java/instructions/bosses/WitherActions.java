@@ -19,7 +19,9 @@ import plugin.FakePlayerManager;
 import plugin.M7tas;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @SuppressWarnings("unused")
@@ -56,6 +58,7 @@ public class WitherActions {
 	 *  real players — they are not part of the run — so only fake players are eligible. In practice mode the real
 	 *  players ARE the runners (no fakes are spawned), so the opposite holds. */
 	private static boolean isAggroEligible(Player p) {
+		if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) return false; // spectators never aggro
 		boolean fake = FakePlayerManager.getFakePlayers().containsValue(p);
 		return practiceMode != fake;
 	}
@@ -74,6 +77,21 @@ public class WitherActions {
 	/** Clear all recorded splits — called at the start of every /tas and /practice run. */
 	public static void clearSplits() { splitEnds.clear(); }
 
+	// --- Game-mode tracking for the practice scoreboard's golden-name anti-cheat ---
+	// Players who changed game mode at any point during the current run; their scoreboard name shows white, not gold.
+	private static final Set<UUID> gameModeChanged = new HashSet<>();
+
+	/** Clear recorded game-mode changes — called at the start of every /tas and /practice run. */
+	public static void clearGameModeChanges() { gameModeChanged.clear(); }
+
+	/** Record that a player changed game mode during the run (disqualifies their golden name). */
+	public static void noteGameModeChange(UUID id) { gameModeChanged.add(id); }
+
+	/** True only if the player has stayed in Adventure Mode for the entire run (never changed game mode). */
+	public static boolean stayedAdventure(Player p) {
+		return p.getGameMode() == GameMode.ADVENTURE && !gameModeChanged.contains(p.getUniqueId());
+	}
+
 	/** Record a player that just damaged a boss — the aggro target. Same-tick ties go to the alphabetically-first
 	 *  name; a later tick's hit always takes over. */
 	public static void noteDamager(Player p) {
@@ -88,7 +106,6 @@ public class WitherActions {
 		} else if(now == lastDamageTick && (lastDamager == null || p.getName().compareTo(lastDamager.getName()) < 0)) {
 			lastDamager = p;
 		}
-		org.bukkit.Bukkit.getLogger().info("[aggro] noteDamager: " + p.getName() + " (tick " + now + ") -> lastDamager=" + (lastDamager == null ? "null" : lastDamager.getName()));
 	}
 
 	/** Hard cap on per-tick vertical displacement so a large goalY-wy gap doesn't snap-teleport. */
@@ -130,29 +147,23 @@ public class WitherActions {
 		Runnable task = new Runnable() {
 			// Persistent velocity state across ticks (the PD's "v"). Reset to 0 on every snap-to-goal.
 			double vxState = 0, vzState = 0;
-			int dbg = 0;
 
 			@Override
 			public void run() {
 				// Chase whoever last beam/melee-damaged the boss (NOT arrows); until someone does, auto-aggro the
 				// closest player so the boss actively pursues instead of sitting at spawn. Re-resolved each tick.
+				// A damager who went offline/died/changed world OR slipped into spectator falls back to auto-aggro.
 				Player damager = lastDamager;
-				if(damager == null || !damager.isOnline() || damager.isDead() || damager.getWorld() != wither.getWorld()) {
+				if(damager == null || !damager.isOnline() || damager.isDead() || damager.getWorld() != wither.getWorld()
+						|| damager.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(damager)) {
 					damager = closestPlayer(wither);
 				}
 				net.minecraft.world.entity.LivingEntity active = damager == null ? null : ((CraftLivingEntity) damager).getHandle();
-
-				if(dbg++ % 20 == 0) {
-					org.bukkit.Bukkit.getLogger().info("[aggro] run: damager=" + (damager == null ? "null" : damager.getName())
-							+ " active=" + (active == null ? "null" : "ok") + " practiceMode=" + practiceMode
-							+ " pos=" + (int) w.getX() + "/" + (int) w.getY() + "/" + (int) w.getZ());
-				}
 
 				if(w.isRemoved() || active == null || active.isRemoved() || !active.isAlive()) {
 					// No valid damager yet (or it momentarily went away) — hold position this tick. Only the boss
 					// itself disappearing tears the chase task down.
 					if(!w.isRemoved()) return;
-					org.bukkit.Bukkit.getLogger().info("[aggro] task torn down (boss removed)");
 					witherAggroTasks.remove(wither.getUniqueId());
 					w.noPhysics = false;
 					BossScheduler.removeMovementTicker(handle[0]);
@@ -249,7 +260,6 @@ public class WitherActions {
 		handle[0] = task;
 		BossScheduler.addMovementTicker(task);
 		witherAggroTasks.put(wither.getUniqueId(), task);
-		org.bukkit.Bukkit.getLogger().info("[aggro] setWitherAggro registered (movementTickers now active); practiceMode=" + practiceMode);
 	}
 
 	/**

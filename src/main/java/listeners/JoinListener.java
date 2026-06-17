@@ -18,6 +18,7 @@ import nms.PlayerPacketInterceptor;
 import org.bukkit.Bukkit;
 import org.bukkit.boss.BossBar;
 import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
 import org.bukkit.entity.Player;
@@ -48,6 +49,21 @@ public class JoinListener implements Listener {
 	public void onJoin(PlayerJoinEvent ev) {
 		Utils.scheduleTask(() -> {
 			Player joiningPlayer = ev.getPlayer();
+
+			// Remove the vanilla attack cooldown for every joining player (instant re-attack).
+			var attackSpeed = joiningPlayer.getAttribute(Attribute.ATTACK_SPEED);
+			if(attackSpeed != null) attackSpeed.setBaseValue(100);
+
+			// Full knockback resistance for every joining player (so no armor needs to grant it).
+			var knockback = joiningPlayer.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
+			if(knockback != null) knockback.setBaseValue(1);
+
+			// Large safe-fall distance so players don't take fall damage during practice.
+			var safeFall = joiningPlayer.getAttribute(Attribute.SAFE_FALL_DISTANCE);
+			if(safeFall != null) safeFall.setBaseValue(1024);
+
+			// Put every player in the no-collision team so real players don't push each other (or the fakes).
+			plugin.PlayerCollision.addToNoCollisionTeam(joiningPlayer);
 
 			if (!FakePlayerManager.getFakePlayers().containsValue(joiningPlayer)) {
 				try {

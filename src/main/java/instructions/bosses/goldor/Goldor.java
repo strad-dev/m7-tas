@@ -738,6 +738,8 @@ public final class Goldor extends WitherLord {
 		Utils.timer(ChatColor.GREEN + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
 				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
 		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 60);
+		// Open the floor to Necron's arena 100t after the killing blow (restored on the next /reset).
+		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, 100);
 		Utils.scheduleTask(() -> {
 			Utils.timer(ChatColor.GREEN + "Goldor finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();

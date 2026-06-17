@@ -164,6 +164,8 @@ public class Server {
 		Utils.runCommand("fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=false]");
 		Utils.runCommand("fill 56 121 54 52 115 54 minecraft:gold_block");
 		Utils.runCommand("clone 70 -5 120 38 -1 99 38 59 99");
+		// Restore every boss-to-boss transition wall opened during a previous run.
+		instructions.bosses.BossTransition.resetAll();
 //		Utils.runCommand("setblock 54 64 79 minecraft:jungle_planks");
 //		Utils.runCommand("setblock 54 64 80 minecraft:jungle_stairs");
 //		Utils.runCommand("setblock 54 63 79 minecraft:stone_brick_slab[type=top]");

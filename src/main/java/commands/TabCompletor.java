@@ -33,9 +33,11 @@ public class TabCompletor implements TabCompleter {
 							completions.add(section);
 						}
 					}
-				} else if(args.length > 1) {
-					// TAS command only accepts one argument, return empty list for any additional arguments
-					return completions;
+				} else if(cmdName.equals("practice") && args.length == 2) {
+					// /practice <section> [--no-teleport]
+					if("--no-teleport".startsWith(args[1].toLowerCase())) {
+						completions.add("--no-teleport");
+					}
 				}
 			}
 

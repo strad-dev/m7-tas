@@ -198,6 +198,21 @@ public class Utils {
 	}
 
 	/**
+	 * Return a copy of {@code item} that can be placed on ANY block while its holder is in adventure mode. Stamps the
+	 * vanilla {@code minecraft:can_place_on} component with a single empty block-predicate (no filter → matches every
+	 * block), the same trick as {@link #breakAnyBlockInAdventure}. Apply LAST (after any setItemMeta), since it mutates
+	 * the NMS copy directly.
+	 */
+	public static ItemStack placeOnAnythingInAdventure(ItemStack item) {
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
+		// The empty predicate has no concrete block to name, so the client renders a "Can be placed on: Unknown"
+		// tooltip line. Hide the CAN_PLACE_ON component from the tooltip to suppress it.
+		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT.withHidden(DataComponents.CAN_PLACE_ON, true));
+		return CraftItemStack.asBukkitCopy(nms);
+	}
+
+	/**
 	 * Plays a sound for every player on the server
 	 *
 	 * @param s The sound to play
@@ -507,7 +522,19 @@ public class Utils {
 		return (int) Math.round(displayM) + "M"; // round to nearest 1M
 	}
 
+	/** Outgoing-damage multiplier from the player's worn head item: Cow Hat 0.70, Spirit/Bonzo Mask 0.85, else 1.0. */
+	private static float helmetDamageMultiplier(Player p) {
+		ItemStack helmet = p.getInventory().getHelmet();
+		if(helmet == null) return 1.0f;
+		if(FakePlayerInventory.isCowHat(helmet)) return 0.70f;
+		if(FakePlayerInventory.isSpiritMask(helmet) || FakePlayerInventory.isBonzoMask(helmet)) return 0.85f;
+		return 1.0f;
+	}
+
 	public static void hurtEntity(LivingEntity entity, float damage, Player attacker) {
+		// Cosmetic head items cut the wearer's outgoing damage: Cow Hat −30%, Spirit/Bonzo Mask −15%. Fake players
+		// wear the diamond/storm head, so this only penalises a real player who equips a mask as a helmet.
+		if(attacker != null) damage *= helmetDamageMultiplier(attacker);
 		CraftLivingEntity craftEntity = (CraftLivingEntity) entity;
 		net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
 		ServerLevel level = (ServerLevel) nmsEntity.level();
@@ -522,11 +549,16 @@ public class Utils {
 			// the check but causes infinite recursion via EntityDamageByEntityEvent → handleCustomItems.
 			// Direct health manipulation avoids both issues.
 			entity.setHealth(Math.max(0, (float) (entity.getHealth() - damage)));
-			// Wither-King dragon kill chokepoint: dragon damage never fires an EntityDamageEvent (we setHealth
-			// directly), so detect the kill here and hand off to the death/spawn-next logic (idempotent).
-			if(entity instanceof org.bukkit.entity.EnderDragon dragon
-					&& dragon.getScoreboardTags().contains("WitherKingDragon") && entity.getHealth() <= 0) {
-				instructions.bosses.witherking.WitherKing.handleDragonKilled(dragon);
+			if(entity instanceof org.bukkit.entity.EnderDragon dragon && dragon.getScoreboardTags().contains("WitherKingDragon")) {
+				// Wither-King dragon kill chokepoint: dragon damage never fires an EntityDamageEvent (we setHealth
+				// directly), so detect the kill here and hand off to the death/spawn-next logic (idempotent).
+				if(entity.getHealth() <= 0) {
+					instructions.bosses.witherking.WitherKing.handleDragonKilled(dragon);
+				} else if(damage > 0) {
+					// setHealth bypasses the vanilla damage path, so the red hurt flash never plays — send it
+					// manually so a dragon flashes red when hit, like the withers do.
+					broadcastPacket(new net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket(nmsEntity));
+				}
 			}
 		} else {
 			nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);

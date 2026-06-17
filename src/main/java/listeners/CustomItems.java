@@ -68,14 +68,26 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> termLastPacketTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> termLastFireTick = new ConcurrentHashMap<>();
 	// Class-ability (drop-triggered) cooldowns — store the tick each ability is next usable. Reset on entering a
-	// boss fight (WitherLord.start) and at run start. Guided Sheep 300t, Rapid Fire 2000t, Explosive Shot 400t.
+	// boss fight (WitherLord.start) and at run start. Guided Sheep 600t, Rapid Fire 2000t, Explosive Shot 400t.
 	private static final Map<UUID, Integer> guidedSheepReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> rapidFireReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> explosiveShotReady = new ConcurrentHashMap<>();
 	// Salvation (Terminator left-click) cooldown — stores the tick the next Salvation beam is usable. The shared
-	// left-click guard only caps to 1/tick; this enforces the ability's own 5-tick cooldown.
+	// left-click guard only caps to 1/tick; this enforces the ability's own 5-tick cooldown. NOTE: the Terminator
+	// and Salvation are weapons, NOT abilities, so they are deliberately exempt from the Mage cooldown reduction.
 	private static final int SALVATION_COOLDOWN_TICKS = 5;
 	private static final Map<UUID, Integer> salvationReady = new ConcurrentHashMap<>();
+	// Per-ability cooldowns (base ticks before the Mage class's 50% reduction — see effectiveCooldown). Each map
+	// stores the tick that ability is next usable, keyed by player. Reset in resetAbilityCooldowns().
+	private static final int GYRO_COOLDOWN_TICKS = 600;       // Gyrokinetic Wand: 30s
+	private static final int RAG_COOLDOWN_TICKS = 400;        // Ragnarok Axe: 20s
+	private static final int ICE_SPRAY_COOLDOWN_TICKS = 100;  // Ice Spray Wand: 5s
+	private static final int TAC_COOLDOWN_TICKS = 400;        // Tactical Insertion: 20s
+	private static final int GUIDED_SHEEP_COOLDOWN_TICKS = 600; // Guided Sheep: 30s
+	private static final Map<UUID, Integer> gyroReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> ragReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> iceSprayReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> tacReady = new ConcurrentHashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
@@ -264,19 +276,19 @@ public class CustomItems implements Listener {
 		UUID id = p.getUniqueId();
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
-				if(now < rapidFireReady.getOrDefault(id, 0)) return false;       // Rapid Fire: 100s cooldown
+				if(now < rapidFireReady.getOrDefault(id, 0)) { sendCooldownMessage(p, rapidFireReady.getOrDefault(id, now) - now); return false; } // Rapid Fire: 100s
 				rapidFireReady.put(id, now + 2000);
 				rapidFire(p);
 			} else {
-				if(now < explosiveShotReady.getOrDefault(id, 0)) return false;   // Explosive Shot: 20s cooldown
+				if(now < explosiveShotReady.getOrDefault(id, 0)) { sendCooldownMessage(p, explosiveShotReady.getOrDefault(id, now) - now); return false; } // Explosive Shot: 20s
 				explosiveShotReady.put(id, now + 400);
 				explosiveShot(p);
 			}
 			return true;
 		} else if(p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage")) {
 			if(!ultimate) {
-				if(now < guidedSheepReady.getOrDefault(id, 0)) return false;     // Guided Sheep: 15s cooldown
-				guidedSheepReady.put(id, now + 300);
+				if(now < guidedSheepReady.getOrDefault(id, 0)) { sendCooldownMessage(p, guidedSheepReady.getOrDefault(id, now) - now); return false; } // Guided Sheep: 30s
+				guidedSheepReady.put(id, now + effectiveCooldown(p, GUIDED_SHEEP_COOLDOWN_TICKS));
 				guidedSheep(p);
 			}
 			return true;
@@ -409,9 +421,13 @@ public class CustomItems implements Listener {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
+					boolean isMageBeamItem = (item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"));
+					// Items whose left-click is an ability are weapons/wands, never pickaxes — their left-click must
+					// NEVER break a block, even when the ability is on cooldown or capped by the 1/tick guard.
+					boolean leftClickAbilityItem = isMageBeamItem || id.equals("skyblock/combat/terminator") || id.equals("skyblock/combat/gyro") || id.equals("skyblock/combat/infinityboom");
 					int currentTick = MinecraftServer.currentTick;
 					if(currentTick > lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1)) {
-						if((item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"))) {
+						if(isMageBeamItem) {
 							mageBeam(p);
 							fired = true;
 						} else {
@@ -424,7 +440,17 @@ public class CustomItems implements Listener {
 									}
 								}
 								case "skyblock/combat/gyro" -> {
-									gyro(p);
+									UUID uid = p.getUniqueId();
+									if(currentTick >= gyroReady.getOrDefault(uid, 0)) {
+										gyro(p);
+										gyroReady.put(uid, currentTick + effectiveCooldown(p, GYRO_COOLDOWN_TICKS));
+										fired = true;
+									} else {
+										sendCooldownMessage(p, gyroReady.getOrDefault(uid, currentTick) - currentTick);
+									}
+								}
+								case "skyblock/combat/infinityboom" -> {
+									superboom(p);
 									fired = true;
 								}
 							}
@@ -433,6 +459,8 @@ public class CustomItems implements Listener {
 							lastLeftClickAbilityTick.put(p.getUniqueId(), currentTick);
 						}
 					}
+					// Suppress vanilla block-breaking for these ability items regardless of fire/cooldown state.
+					if(e != null && leftClickAbilityItem) e.setCancelled(true);
 				}
 				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
@@ -452,16 +480,28 @@ public class CustomItems implements Listener {
 								fired = true;
 							}
 							case "skyblock/combat/rag" -> {
-								rag(p);
-								fired = true;
+								UUID uid = p.getUniqueId();
+								if(currentTick >= ragReady.getOrDefault(uid, 0)) {
+									rag(p);
+									ragReady.put(uid, currentTick + effectiveCooldown(p, RAG_COOLDOWN_TICKS));
+									fired = true;
+								} else {
+									sendCooldownMessage(p, ragReady.getOrDefault(uid, currentTick) - currentTick);
+								}
 							}
 							case "skyblock/combat/aots" -> {
 								aots(p);
 								fired = true;
 							}
 							case "skyblock/combat/ice_spray" -> {
-								iceSpray(p);
-								fired = true;
+								UUID uid = p.getUniqueId();
+								if(currentTick >= iceSprayReady.getOrDefault(uid, 0)) {
+									iceSpray(p);
+									iceSprayReady.put(uid, currentTick + effectiveCooldown(p, ICE_SPRAY_COOLDOWN_TICKS));
+									fired = true;
+								} else {
+									sendCooldownMessage(p, iceSprayReady.getOrDefault(uid, currentTick) - currentTick);
+								}
 							}
 							case "skyblock/combat/flaming_flay" -> {
 								flamingFlay(p);
@@ -478,8 +518,14 @@ public class CustomItems implements Listener {
 								fired = true;
 							}
 							case "skyblock/combat/tac" -> {
-								tac(p);
-								fired = true;
+								UUID uid = p.getUniqueId();
+								if(currentTick >= tacReady.getOrDefault(uid, 0)) {
+									tac(p);
+									tacReady.put(uid, currentTick + effectiveCooldown(p, TAC_COOLDOWN_TICKS));
+									fired = true;
+								} else {
+									sendCooldownMessage(p, tacReady.getOrDefault(uid, currentTick) - currentTick);
+								}
 							}
 							case "skyblock/combat/jerrychine" -> {
 								jerrychine(p);
@@ -698,8 +744,9 @@ public class CustomItems implements Listener {
 	}
 
 	public static void aotv(Player p) {
-		// Aspect of the Void / etherwarp is disabled in adventure mode (the practice default) — no teleporting.
-		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE) return;
+		// Aspect of the Void / etherwarp is disabled only inside the boss room while in adventure mode (the practice
+		// default) — so it can't be used to skip boss mechanics, but still works freely everywhere else.
+		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE && LavaJump.isInBossArena(p.getLocation())) return;
 		Utils.debug(Utils.DebugType.SERVER, "Starting at " + Utils.round(p.getLocation().getX(), 2) + " " + Utils.round(p.getLocation().getY(), 2) + " " + Utils.round(p.getLocation().getZ(), 2) + " " + Utils.round(p.getLocation().getYaw(), 2) + " " + Utils.round(p.getLocation().getPitch(), 2));
 		if(p.isSneaking()) {
 			RayTraceResult result = p.rayTraceBlocks(61);
@@ -1184,6 +1231,7 @@ public class CustomItems implements Listener {
 			int distance = 0;
 			Location currentLoc = startLoc.clone();
 			float spinRotation = 0;
+			boolean notedAggro = false;
 
 			@Override
 			public void run() {
@@ -1203,6 +1251,18 @@ public class CustomItems implements Listener {
 
 				// Move 1 block per tick
 				currentLoc = nextLoc;
+
+				// The thrown axe doesn't damage the wither, but travelling through it still counts as aggro —
+				// note the thrower as the boss's damager the first tick the axe overlaps a wither boss.
+				if(!notedAggro) {
+					for(Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 2.0, 1.0)) {
+						if(e instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
+							instructions.bosses.WitherActions.noteDamager(p);
+							notedAggro = true;
+							break;
+						}
+					}
+				}
 
 				// Update spin rotation
 				spinRotation += 36; // Positive for forward spin
@@ -1832,12 +1892,40 @@ public class CustomItems implements Listener {
 		salvationReady.clear();
 	}
 
-	/** Reset all class-ability drop cooldowns (Guided Sheep / Rapid Fire / Explosive Shot) — called on entering a
-	 *  boss fight (WitherLord.start) and at run start. */
+	/** Reset all class-ability + weapon-ability cooldowns (Guided Sheep / Rapid Fire / Explosive Shot, plus Gyro /
+	 *  Ragnarok / Ice Spray / Tactical Insertion) — called on entering a boss fight (WitherLord.start) and at run start. */
 	public static void resetAbilityCooldowns() {
 		guidedSheepReady.clear();
 		rapidFireReady.clear();
 		explosiveShotReady.clear();
+		gyroReady.clear();
+		ragReady.clear();
+		iceSprayReady.clear();
+		tacReady.clear();
+	}
+
+	/** True if {@code p} is the Mage CLASS. Real players carry an exclusive class scoreboard tag (set by
+	 *  /getcustomitems); fake players carry none and are identified by name — only "Mage1" is the Mage, while
+	 *  "Mage2"/"Mage3"/"Mage4" cosplay Tank/Berserk/Healer and must NOT count as Mage. */
+	public static boolean isMageClass(Player p) {
+		if(p.getScoreboardTags().contains("Mage")) return true;
+		for(String other : new String[]{"Archer", "Berserk", "Healer", "Tank"}) {
+			if(p.getScoreboardTags().contains(other)) return false;
+		}
+		String n = p.getName();
+		return n.equals("Mage") || n.equals("Mage1");
+	}
+
+	/** A base ability cooldown after the Mage class's 50% reduction (halved for Mage-class players, unchanged for
+	 *  everyone else). NOT used for the Terminator/Salvation — those are weapons, not abilities. */
+	public static int effectiveCooldown(Player p, int baseTicks) {
+		return isMageClass(p) ? baseTicks / 2 : baseTicks;
+	}
+
+	/** Tell {@code p} their ability is on cooldown, showing the remaining time in seconds (e.g. "...for 3.45
+	 *  seconds!"). {@code ticksRemaining} is the ticks left until the ability is usable again. */
+	private static void sendCooldownMessage(Player p, int ticksRemaining) {
+		p.sendMessage(ChatColor.RED + "This ability is on cooldown for " + String.format("%.2f", Math.max(0, ticksRemaining) / 20.0) + " seconds!");
 	}
 
 	/** Outgoing-damage multiplier from Spring Boots: a 20% reduction (×0.8) while the boots are worn, else 1.0. */
@@ -1891,6 +1979,9 @@ public class CustomItems implements Listener {
 	}
 
 	public static void tac(Player p) {
+		// Tactical Insertion is disabled inside the boss room while in adventure mode (the practice default) — so it
+		// can't be used to cheat boss mechanics, but still works freely everywhere else.
+		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE && LavaJump.isInBossArena(p.getLocation())) return;
 		Location l = p.getLocation();
 		Utils.debug(Utils.DebugType.SERVER, "Activating Tactical Insertion at " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 		Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HAT, 1.0F, 0.707107F);

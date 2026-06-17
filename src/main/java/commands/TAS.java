@@ -62,6 +62,8 @@ public class TAS implements CommandExecutor {
 		WitherActions.setPracticeMode(false);
 		// Clear any section splits recorded by a previous run (used by the Wither-King practice scoreboard).
 		WitherActions.clearSplits();
+		// Clear game-mode-change tracking (the practice scoreboard's golden-name anti-cheat).
+		WitherActions.clearGameModeChanges();
 		// Reset Berserk's per-mob damage-ramp counters.
 		listeners.CustomItems.resetBerserkDamage();
 		// Reset terminator firing cooldown state.
@@ -159,6 +161,8 @@ public class TAS implements CommandExecutor {
 		WitherActions.setPracticeMode(true);
 		// Clear any section splits from a previous run; this run records its own for the Wither-King scoreboard.
 		WitherActions.clearSplits();
+		// Clear game-mode-change tracking (the practice scoreboard's golden-name anti-cheat).
+		WitherActions.clearGameModeChanges();
 		// Reset Berserk's per-mob damage-ramp counters.
 		listeners.CustomItems.resetBerserkDamage();
 		// Reset terminator firing cooldown state.

@@ -220,7 +220,7 @@ public final class Necron extends WitherLord {
 			duration = FRENZY_DURATION_TICKS;
 			moveBossToCenter();
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
-			applyBlindness(duration);
+			applyBlindness();
 			frenzySounds(duration);
 			Utils.timer(ChatColor.GREEN + "Necron frenzy at " + formatTick(displayTick()));
 		}
@@ -274,12 +274,12 @@ public final class Necron extends WitherLord {
 
 	// ---------- Frenzy effects ----------
 
-	/** Blind every real, non-spectating player for the frenzy duration. Fake players are client-less (no-op);
-	 *  spectating viewers are skipped so the spectated view isn't disrupted. */
-	private void applyBlindness(int duration) {
+	/** Blind every real, non-spectating player for 1 second at the start of a frenzy. Fake players are client-less
+	 *  (no-op); spectating viewers are skipped so the spectated view isn't disrupted. */
+	private void applyBlindness() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(Spectate.isSpectating(p)) continue;
-			p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, duration, 0, false, false));
+			p.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 20, 0, false, false)); // 1 second
 		}
 	}
 
@@ -362,6 +362,8 @@ public final class Necron extends WitherLord {
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
 		Utils.timer(ChatColor.GREEN + "Necron killed in " + formatTick(displayTick()));
+		// Open the wall to the Wither King's arena 200t after the killing blow (restored on the next /reset).
+		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, 200);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 60);
 		// note: In most mods, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
 		// This TAS fixes that. To compare to those timers, subtract 2 seconds here and add 2 seconds to Wither King time.
