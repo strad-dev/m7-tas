@@ -12,6 +12,10 @@ This plugin also allows players to practice M7 with perfect RNG and deterministi
 - If you found a time save or an error, open an issue and describe the error/timesave you found, or make a PR if you can understand my spaghetti code.
 - ⚠️⚠️ **IMPORTANT** ⚠️⚠️ If you open a PR that changes any underlying mechanics, run through the entire TAS to make sure it still works properly.  If it doesn't, please try to fix it without time loss, OR notify me to help.  If the TAS gets in the way of maintaining correctness, then I will drop support for it until TAS v3.
 
+### Intra-Tick Notes
+
+- On the same tick, boss-related actions will ALWAYS run before player actions.
+
 ## TAS
 
 ### Getting Started

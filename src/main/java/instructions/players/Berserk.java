@@ -72,7 +72,7 @@ public class Berserk {
 				Utils.teleport(berserk, new Location(world, 90.7, 6, 56.507, -90f, 0f));
 				Actions.swapItems(berserk, 1, 28);
 				Actions.swapItems(berserk, 6, 33);
-				Actions.swapItems(berserk, 7, 35);
+				Actions.swapItems(berserk, 7, 34);
 				Actions.swapItems(berserk, 13, 39);
 				Actions.setHotbarSlot(berserk, 5);
 				Utils.scheduleTask(() -> Actions.swapItems(berserk, 7, 35), 1);
@@ -118,6 +118,7 @@ public class Berserk {
 		}, 63);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 68); // activate tac, procs in 60 ticks (128)
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 1), 69);
+		Utils.scheduleTask(() -> Actions.swapItems(berserk, 2, 29), 70);
 		// tick 80: get teleported back
 		Utils.scheduleTask(() -> Utils.teleport(berserk, new Location(world, -120.5, 71, -183.5, 0.0f, 0.0f)), 80);
 		// tick 120: dodged
@@ -733,13 +734,44 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.swapItems(berserk, 3, 30), 538);
 	}
 
-	private static void witherKing() {
+	public static void witherKing() {
 		Actions.rightClick(berserk);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 115f, 0f), 1);
 		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 2);
 		Utils.scheduleTask(() -> Actions.move(berserk, "A", 1), 25);
 		Utils.scheduleTask(() -> Actions.turnHead(berserk, 90f, 0f), 26);
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 27);
+		Utils.scheduleTask(() -> {
+			Actions.swapItems(berserk, 5, 32);
+			Actions.swapItems(berserk, 13, 39);
+		}, 28);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 29);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Tank.get()), 100);
+		Utils.scheduleTask(() -> {
+			Actions.setHotbarSlot(berserk, 5);
+			Actions.turnHead(berserk, 180f, -90f);
+		}, 101);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 200);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 261);
+		int lbFor = 8;
+		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 397);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 398);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 403);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 404);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 500);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 5), 501);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 576);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 638);
+		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 737);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 738);
 	}
 
 	@SuppressWarnings("unused")
