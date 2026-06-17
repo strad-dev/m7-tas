@@ -637,14 +637,40 @@ public class Mage {
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 395);
 		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 411);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 21), 413);
-		Utils.scheduleTask(() -> Actions.rightClick(mage), 566);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 628);
-		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.rightClick(mage), 529);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 590);
+		for(int i = 630; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 727);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 728);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, 92.5f, -90f);
+			Actions.setHotbarSlot(mage, 5);
+		}, 729);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(mage);
+			Actions.move(mage, "WP", 0);
+		}, 730);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 2), 780);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 6), 791);
+		for(int i = 792; i <= 826 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 827);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 828);
+		Utils.scheduleTask(() -> Actions.turnHead(mage, -3f, -90f), 829);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 830);
+		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 851);
+		Utils.scheduleTask(() -> Actions.move(mage, "WP", 14), 853);
+		for(int i = 858; i <= 926 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(mage), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(mage), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 927);
+		Utils.scheduleTask(() -> Actions.leftClick(mage), 928);
 	}
 
 	@SuppressWarnings("unused")

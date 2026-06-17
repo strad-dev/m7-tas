@@ -53,6 +53,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
+	// Tick of the last RIGHT_CLICK_BLOCK dispatch per player. A physical right-click on a block sends UseItemOn
+	// (RIGHT_CLICK_BLOCK) immediately followed by UseItem (RIGHT_CLICK_AIR); this lets the right-click handler drop
+	// the trailing AIR so the ability fires once even when the pair straddles a tick boundary (see handleCustomItems).
+	private static final Map<UUID, Integer> lastRightBlockTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastWitherShieldSoundTick = new ConcurrentHashMap<>();
 	// True while mageBeam's hurtEntity call is on the stack — damage events fire synchronously, so
@@ -442,6 +446,18 @@ public class CustomItems implements Listener {
 				}
 				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
+					// A single physical right-click on a block sends UseItemOn (RIGHT_CLICK_BLOCK) immediately
+					// followed by UseItem (RIGHT_CLICK_AIR). These normally land on the same tick and collapse via
+					// the 1/tick `cooldowns` gate below, but the first click after a server restart can straddle a
+					// tick boundary (one-time warmup lag) — then the trailing AIR fires the ability a second time.
+					// Drop an AIR that trails a BLOCK click by at most one tick. Genuine standalone air-clicks carry
+					// no recent BLOCK so they still fire, and fake-player air-spam is unaffected (it sends no BLOCK).
+					if(action.equals(Action.RIGHT_CLICK_BLOCK)) {
+						lastRightBlockTick.put(p.getUniqueId(), currentTick);
+					} else {
+						int blockTick = lastRightBlockTick.getOrDefault(p.getUniqueId(), Integer.MIN_VALUE);
+						if(currentTick == blockTick || currentTick == blockTick + 1) return;
+					}
 					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0)) {
 						cooldowns.put(p.getUniqueId(), currentTick + 1);
 						switch(id) {
@@ -1117,6 +1133,7 @@ public class CustomItems implements Listener {
 			p.addScoreboardTag("RagBuff");
 			// Buff expires 200 ticks (10s) after THIS application; a later cast overwrites this, extending the buff.
 			ragBuffExpiry.put(p.getUniqueId(), MinecraftServer.currentTick + 200);
+			Utils.debug(Utils.DebugType.SERVER, "Rag Buff applied to " + Utils.getRealName(p));
 			if(p.getName().equals("Archer")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 3));
 			} else if(p.getName().equals("Berserk")) {
@@ -1129,6 +1146,7 @@ public class CustomItems implements Listener {
 			if(MinecraftServer.currentTick >= ragBuffExpiry.getOrDefault(p.getUniqueId(), 0)) {
 				p.removeScoreboardTag("RagBuff");
 				ragBuffExpiry.remove(p.getUniqueId());
+				Utils.debug(Utils.DebugType.SERVER, "Rag Buff expired for " + Utils.getRealName(p));
 			}
 		}, 260);
 	}
@@ -1893,16 +1911,16 @@ public class CustomItems implements Listener {
 		tacReady.clear();
 	}
 
-	/** True if {@code p} is the Mage CLASS. Real players carry an exclusive class scoreboard tag (set by
-	 *  /getcustomitems); fake players carry none and are identified by name — only "Mage1" is the Mage, while
-	 *  "Mage2"/"Mage3"/"Mage4" cosplay Tank/Berserk/Healer and must NOT count as Mage. */
+	/** True if {@code p} is the Mage CLASS (drives ability-cooldown reduction). Real players carry an exclusive class
+	 *  scoreboard tag (set by /getcustomitems); fake players carry none and are identified by name. All four fake
+	 *  "MageN" players run the Mage inventory and cast Mage abilities, so every "Mage*"-named fake counts as a Mage
+	 *  (Mage2/3/4 cosplay Tank/Berserk/Healer's ROLE but are mechanically mages). */
 	public static boolean isMageClass(Player p) {
 		if(p.getScoreboardTags().contains("Mage")) return true;
 		for(String other : new String[]{"Archer", "Berserk", "Healer", "Tank"}) {
 			if(p.getScoreboardTags().contains(other)) return false;
 		}
-		String n = p.getName();
-		return n.equals("Mage") || n.equals("Mage1");
+		return p.getName().startsWith("Mage");
 	}
 
 	/** A base ability cooldown after the Mage class's cooldown reduction: a SOLO mage gets −75% (quarter cooldown),
@@ -1922,6 +1940,15 @@ public class CustomItems implements Listener {
 	 *  seconds!"). {@code ticksRemaining} is the ticks left until the ability is usable again. */
 	private static void sendCooldownMessage(Player p, int ticksRemaining) {
 		p.sendMessage(ChatColor.RED + "This ability is on cooldown for " + String.format("%.2f", Math.max(0, ticksRemaining) / 20.0) + " seconds!");
+		// During a TAS run (not practice) an ability fired on cooldown means the choreography mistimed it — flag it
+		// loudly so the offending tick/player is visible. (ERROR always prints with a [tick: N] stamp.)
+		if(!instructions.bosses.WitherActions.isPracticeMode()) {
+			ItemStack held = p.getInventory().getItemInMainHand();
+			String ability = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
+					? held.getItemMeta().getDisplayName() : String.valueOf(held.getType());
+			Utils.debug(Utils.DebugType.ERROR, Utils.getRealName(p) + " tried to use " + ability + ChatColor.RED
+					+ " on cooldown (" + Math.max(0, ticksRemaining) + "t / " + String.format("%.2f", Math.max(0, ticksRemaining) / 20.0) + "s left)");
+		}
 	}
 
 	/** Outgoing-damage multiplier from Spring Boots: a 20% reduction (×0.8) while the boots are worn, else 1.0. */

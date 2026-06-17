@@ -759,14 +759,40 @@ public class Healer {
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 395);
 		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 411);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 21), 413);
-		Utils.scheduleTask(() -> Actions.rightClick(healer), 566);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 628);
-		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.rightClick(healer), 529);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 590);
+		for(int i = 630; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(healer), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(healer), i + lbFor);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 727);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 728);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, 92.5f, -90f);
+			Actions.setHotbarSlot(healer, 5);
+		}, 729);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(healer);
+			Actions.move(healer, "WP", 0);
+		}, 730);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 2), 780);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 6), 791);
+		for(int i = 792; i <= 826 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(healer), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(healer), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 827);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 828);
+		Utils.scheduleTask(() -> Actions.turnHead(healer, -3f, -90f), 829);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 830);
+		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 851);
+		Utils.scheduleTask(() -> Actions.move(healer, "WP", 14), 853);
+		for(int i = 858; i <= 926 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(healer), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(healer), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 927);
+		Utils.scheduleTask(() -> Actions.leftClick(healer), 928);
 	}
 
 	@SuppressWarnings("unused")

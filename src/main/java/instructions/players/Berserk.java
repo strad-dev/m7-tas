@@ -764,14 +764,41 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 394);
 		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 490);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 5), 491);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 566);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 628);
-		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 529);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 590);
+		lbFor = 10;
+		for(int i = 630; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 727);
 		Utils.scheduleTask(() -> Actions.leftClick(berserk), 728);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(berserk, 92.5f, -90f);
+			Actions.setHotbarSlot(berserk, 5);
+		}, 729);
+		Utils.scheduleTask(() -> {
+			Actions.rightClick(berserk);
+			Actions.move(berserk, "WP", 0);
+		}, 730);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WPJ", 2), 780);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 791);
+		for(int i = 792; i <= 826 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 827);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 828);
+		Utils.scheduleTask(() -> Actions.turnHead(berserk, -3f, -90f), 829);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 0), 830);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WPJ", 0), 851);
+		Utils.scheduleTask(() -> Actions.move(berserk, "WP", 14), 853);
+		for(int i = 858; i <= 926 - lbFor - 1; i += lbFor + 1) {
+			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
+			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
+		}
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 927);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 928);
 	}
 
 	@SuppressWarnings("unused")
