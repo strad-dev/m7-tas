@@ -754,24 +754,24 @@ public class Berserk {
 		Utils.scheduleTask(() -> Actions.rightClick(berserk), 200);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 261);
 		int lbFor = 8;
-		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+		for(int i = 290; i <= 386 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
 		}
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 397);
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 398);
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 403);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 404);
-		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 500);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 5), 501);
-		Utils.scheduleTask(() -> Actions.rightClick(berserk), 576);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 638);
-		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 387);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 388);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 393);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 4), 394);
+		Utils.scheduleTask(() -> Actions.leap(berserk, Mage.get()), 490);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 5), 491);
+		Utils.scheduleTask(() -> Actions.rightClick(berserk), 566);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 6), 628);
+		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(berserk), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(berserk), i + lbFor);
 		}
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 737);
-		Utils.scheduleTask(() -> Actions.leftClick(berserk), 738);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(berserk, 3), 727);
+		Utils.scheduleTask(() -> Actions.leftClick(berserk), 728);
 	}
 
 	@SuppressWarnings("unused")

@@ -837,24 +837,24 @@ public class Tank {
 		Utils.scheduleTask(() -> Actions.rightClick(tank), 200);
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 261);
 		int lbFor = 8;
-		for(int i = 300; i <= 396 - lbFor - 1; i += lbFor + 1) {
+		for(int i = 290; i <= 386 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
 		}
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 397);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 398);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 403);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 404);
-		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 500);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 501);
-		Utils.scheduleTask(() -> Actions.rightClick(tank), 576);
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 638);
-		for(int i = 639; i <= 736 - lbFor - 1; i += lbFor + 1) {
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 387);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 388);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 393);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 4), 394);
+		Utils.scheduleTask(() -> Actions.leap(tank, Mage.get()), 490);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 5), 491);
+		Utils.scheduleTask(() -> Actions.rightClick(tank), 566);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 6), 628);
+		for(int i = 629; i <= 726 - lbFor - 1; i += lbFor + 1) {
 			Utils.scheduleTask(() -> Actions.rightClick(tank), i);
 			Utils.scheduleTask(() -> Actions.stopRightClick(tank), i + lbFor);
 		}
-		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 737);
-		Utils.scheduleTask(() -> Actions.leftClick(tank), 738);
+		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 727);
+		Utils.scheduleTask(() -> Actions.leftClick(tank), 728);
 	}
 
 	@SuppressWarnings("unused")
