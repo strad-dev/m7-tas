@@ -19,6 +19,9 @@ commands:
   practice:
     description: Begin practice (boss instructions only, for real players)
     usage: /practice <section> [--no-teleport]
+  eq:
+    description: View your equipment and current speed
+    usage: /eq
   reset:
     description: Resets all classes to their spawn locations
     usage: /reset

@@ -65,6 +65,12 @@ public class JoinListener implements Listener {
 			// Put every player in the no-collision team so real players don't push each other (or the fakes).
 			plugin.PlayerCollision.addToNoCollisionTeam(joiningPlayer);
 
+			// Default real players to 400 speed, bumped if their helmet entitles them (Cow Hat 550 / Racing 650).
+			// Fakes are script-managed, so leave their speed alone.
+			if(!FakePlayerManager.getFakePlayers().containsValue(joiningPlayer)) {
+				plugin.HelmetSpeedSync.initSpeed(joiningPlayer);
+			}
+
 			if (!FakePlayerManager.getFakePlayers().containsValue(joiningPlayer)) {
 				try {
 					Channel ch = getChannel(joiningPlayer);
@@ -155,6 +161,8 @@ public class JoinListener implements Listener {
 	public void onQuit(PlayerQuitEvent ev) {
 		Player p = ev.getPlayer();
 		if (FakePlayerManager.getFakePlayers().containsValue(p)) return;
+		// Drop cached helmet-speed / relic-debuff transition state so a relog re-evaluates cleanly.
+		plugin.HelmetSpeedSync.forget(p.getUniqueId());
 		try {
 			Channel ch = getChannel(p);
 			if (ch.pipeline().get("tas_interceptor") != null)
