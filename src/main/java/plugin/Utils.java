@@ -395,7 +395,7 @@ public class Utils {
 	 */
 	public enum VerboseLevel {OFF, TIMER, ON, SUPER}
 
-	private static VerboseLevel verboseLevel = VerboseLevel.ON;
+	private static VerboseLevel verboseLevel = VerboseLevel.TIMER;
 
 	public static VerboseLevel getVerboseLevel() {
 		return verboseLevel;

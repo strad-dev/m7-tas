@@ -52,7 +52,7 @@ If you are practicing a section that is NOT clear or maxor, the plugin will, by 
 
 ### Verbose Mode
 
-**TIMER Mode**
+**TIMER Mode (Default)**
 
 Displays the amount of time in ticks and seconds it took for important boss progress to be made.
 
