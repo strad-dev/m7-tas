@@ -53,13 +53,14 @@ public final class M7tas extends JavaPlugin {
 
 		PlayerCollision.setupNoCollisionTeam();
 
-		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "practice", "simulate", "reset", "getcustomitems", "verbose", "setspeed", "kickallfakes")) {
+		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "practice", "eq", "simulate", "reset", "getcustomitems", "verbose", "setspeed", "kickallfakes")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
 				case "spectate", "unspectate" -> command.setExecutor(new Spectate());
 				case "tas" -> command.setExecutor(new TAS());
 				case "practice" -> command.setExecutor(new Practice());
+				case "eq" -> command.setExecutor(new Eq());
 				case "simulate" -> command.setExecutor(new Simulate());
 				case "reset" -> command.setExecutor(new Reset());
 				case "getcustomitems" -> command.setExecutor(new GetCustomItems());
@@ -80,6 +81,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new GoldorListener(), this);
 		getServer().getPluginManager().registerEvents(new WitherKingListener(), this);
 		getServer().getPluginManager().registerEvents(new SpiritLeapListener(), this);
+		getServer().getPluginManager().registerEvents(new Eq(), this);
 
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();

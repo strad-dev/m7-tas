@@ -72,6 +72,18 @@ public class Utils {
 		instance.addModifier(new AttributeModifier(key, modifier, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
 	}
 
+	/** Toggle a 50% movement-speed debuff (a separate modifier that composes with {@link #setSpeed}). Used while a
+	 *  player carries a Wither-King relic without a Cow Hat equipped. */
+	public static void setRelicDebuff(Player p, boolean active) {
+		var instance = p.getAttribute(Attribute.MOVEMENT_SPEED);
+		if(instance == null) return;
+		NamespacedKey key = new NamespacedKey(M7tas.getInstance(), "relic_debuff");
+		instance.removeModifier(new AttributeModifier(key, 0, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
+		if(active) {
+			instance.addModifier(new AttributeModifier(key, -0.5, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
+		}
+	}
+
 	public static void teleport(Player p, Location to) {
 		if(!(p instanceof CraftPlayer cp)) {
 			return;
