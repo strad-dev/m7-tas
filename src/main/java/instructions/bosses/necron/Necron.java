@@ -297,22 +297,21 @@ public final class Necron extends WitherLord {
 	// ---------- Platform destroy / fireball attack ----------
 
 	/** Fireball salvo. Only the intro salvo ({@code allowDestroy=true}) may swap the platform to its destroyed
-	 *  variant, and only if it's still intact when called (a pre-destroyed platform is left alone). The 25% replay
-	 *  ({@code allowDestroy=false}) is fireballs only — it never touches the platform, which may still be intact
-	 *  (e.g. restored by stonk). The intact check is captured at call time. */
+	 *  variant, and only if it's still intact at the destroy tick (a platform the players broke open before then is
+	 *  left alone). The 25% replay ({@code allowDestroy=false}) is fireballs only — it never touches the platform. */
 	private void destroyPlatform(boolean allowDestroy) {
 		// Necron is already stationary at the correct spot for both salvos — the intro one fires from his spawn,
 		// and the 25% one fires from the middle where the first frenzy planted him (AI is not re-enabled after
 		// that frenzy), so there's no chase momentum to cancel here.
-		boolean doClone = allowDestroy && platformIntact();
 		shootFireball();
 		Utils.scheduleTask(this::shootFireball, 10);
 		Utils.scheduleTask(this::shootFireball, 20);
 		Utils.scheduleTask(this::shootFireball, 30);
 		Utils.scheduleTask(() -> {
 			shootFireball();
-			// destroyed variant lives at y -10..-6 (correct variant at y -5..-1); clone it up to the live platform.
-			if(doClone) Utils.runCommand("clone 70 -10 120 38 -6 99 38 59 99");
+			// Evaluate intactness HERE, on the destroy tick, so blocks broken any time before this are honoured.
+			// Destroyed variant lives at y -10..-6 (correct variant at y -5..-1); clone it up to the live platform.
+			if(allowDestroy && platformIntact()) Utils.runCommand("clone 70 -10 120 38 -6 99 38 59 99");
 		}, 40);
 		Utils.scheduleTask(this::shootFireball, 50);
 		Utils.scheduleTask(this::shootFireball, 60);

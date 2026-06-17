@@ -13,6 +13,9 @@ public final class ChatFont {
 	/** Rendered width of a standard (unscaled) chat line. */
 	public static final int MAX_WIDTH = 320;
 
+	/** Wrap threshold for packing lines — a 10px buffer under {@link #MAX_WIDTH} so the client never wraps a line itself. */
+	public static final int WRAP_WIDTH = 310;
+
 	/** Rendered pixel width of {@code text} — skips §-colour/format codes and accounts for bold (§l, reset by §r/colours). */
 	public static int width(String text) {
 		int px = 0;

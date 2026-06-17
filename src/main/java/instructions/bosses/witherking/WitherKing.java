@@ -573,7 +573,7 @@ public class WitherKing {
 				continue;
 			}
 			String candidate = line + SEG_SEP + s;
-			if(ChatFont.width(candidate) > ChatFont.MAX_WIDTH) {
+			if(ChatFont.width(candidate) > ChatFont.WRAP_WIDTH) {
 				lines.add(line.toString());
 				line = new StringBuilder(s);
 			} else {
