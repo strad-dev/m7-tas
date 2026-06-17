@@ -555,6 +555,9 @@ public class Utils {
 		if(attacker != null && entity instanceof org.bukkit.entity.Wither && entity.getScoreboardTags().contains("TASWither")) {
 			instructions.bosses.WitherActions.noteDamager(attacker);
 		}
+		// The Wither King is immune to all direct player damage (mage beam, AOTS, etc.) — its HP is driven solely
+		// by dragon kills (each removes 1 via setHealth in WitherKing#playDragonDeathSound). Aggro is still noted above.
+		if(entity.getScoreboardTags().contains("TASWitherKing")) return;
 		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
 			// EnderDragon.hurtServer() delegates to hurt() which rejects damage sources without
 			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
