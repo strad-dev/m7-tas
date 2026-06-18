@@ -433,7 +433,7 @@ public class Berserk {
 			Actions.swapItems(berserk, 6, 33);
 			Actions.swapItems(berserk, 7, 34);
 			Actions.setHotbarSlot(berserk, 5);
-		}, 248);
+		}, 251);
 		Utils.scheduleTask(Server.IceFill::stopIceFillTask, 742);
 		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
 		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
