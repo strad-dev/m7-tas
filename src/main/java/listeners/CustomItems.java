@@ -102,6 +102,13 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> ragBuffExpiry = new ConcurrentHashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
+	// Crypt + Superboom-wall restorations. Mirrors the stonk maps above: a crypt/wall is temporarily set to AIR and
+	// restored after 40 ticks via a raw scheduler task (NOT Utils.scheduleTask), so /reset and /setup can flush them
+	// immediately via flushBlockRestorations(). Using Utils.scheduleTask here would let Reset's cancelAllScheduled()
+	// kill the pending restoration, leaving permanent AIR holes and orphaned crypt mobs.
+	private static final Map<Location, BlockData> pendingBlockRestorations = new HashMap<>();
+	private static final List<BukkitTask> pendingBlockTasks = new ArrayList<>();
+	private static final List<Zombie> pendingCryptMobs = new ArrayList<>();
 
 	public static boolean abilityFiredThisTick(Player p) {
 		return lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick;
@@ -1022,12 +1029,19 @@ public class CustomItems implements Listener {
 		Location spawnLoc = new Location(world, centerX, slabY - 1, centerZ);
 		Zombie mob = Server.spawnCryptLurker(spawnLoc, isPrince);
 
-		Utils.scheduleTask(() -> {
+		pendingBlockRestorations.putAll(stored);
+		pendingCryptMobs.add(mob);
+		BukkitTask[] holder = new BukkitTask[1];
+		holder[0] = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			for(Map.Entry<Location, BlockData> entry : stored.entrySet()) {
 				entry.getKey().getBlock().setBlockData(entry.getValue(), false);
+				pendingBlockRestorations.remove(entry.getKey());
 			}
 			if(mob.isValid()) mob.remove();
+			pendingCryptMobs.remove(mob);
+			pendingBlockTasks.remove(holder[0]);
 		}, 40);
+		pendingBlockTasks.add(holder[0]);
 
 		return true;
 	}
@@ -1089,11 +1103,16 @@ public class CustomItems implements Listener {
 			b.setType(Material.AIR, false);
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
-		Utils.scheduleTask(() -> {
+		pendingBlockRestorations.putAll(original);
+		BukkitTask[] holder = new BukkitTask[1];
+		holder[0] = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			for(Map.Entry<Location, BlockData> entry : original.entrySet()) {
 				entry.getKey().getBlock().setBlockData(entry.getValue(), false);
+				pendingBlockRestorations.remove(entry.getKey());
 			}
+			pendingBlockTasks.remove(holder[0]);
 		}, 40);
+		pendingBlockTasks.add(holder[0]);
 	}
 
 	public static void stonk(Player p, Block b) {
@@ -1122,6 +1141,24 @@ public class CustomItems implements Listener {
 			entry.getKey().getBlock().setBlockData(entry.getValue(), false);
 		}
 		pendingStonkRestorations.clear();
+	}
+
+	/**
+	 * Immediately restore every superboomed wall / crypt currently set to AIR and despawn any active crypt mobs,
+	 * cancelling their pending 40-tick restorations. Mirrors {@link #flushStonkRestorations()}; called from
+	 * Server.serverSetup so /reset and /setup replace all crypts and walls at once.
+	 */
+	public static void flushBlockRestorations() {
+		pendingBlockTasks.forEach(BukkitTask::cancel);
+		pendingBlockTasks.clear();
+		for(Map.Entry<Location, BlockData> entry : pendingBlockRestorations.entrySet()) {
+			entry.getKey().getBlock().setBlockData(entry.getValue(), false);
+		}
+		pendingBlockRestorations.clear();
+		for(Zombie mob : pendingCryptMobs) {
+			if(mob.isValid()) mob.remove();
+		}
+		pendingCryptMobs.clear();
 	}
 
 	public static void rag(Player p) {

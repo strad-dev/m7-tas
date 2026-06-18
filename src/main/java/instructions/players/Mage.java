@@ -661,7 +661,10 @@ public class Mage {
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(mage, 3), 827);
 		Utils.scheduleTask(() -> Actions.leftClick(mage), 828);
-		Utils.scheduleTask(() -> Actions.turnHead(mage, -3f, -90f), 829);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(mage, -3f, -90f);
+			Actions.setHotbarSlot(mage, 6);
+		}, 829);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 0), 830);
 		Utils.scheduleTask(() -> Actions.move(mage, "WPJ", 0), 851);
 		Utils.scheduleTask(() -> Actions.move(mage, "WP", 14), 853);

@@ -168,6 +168,12 @@ public class Server {
 
 	public static void serverSetup(World world) {
 		CustomItems.flushStonkRestorations();
+		// Replace every superboomed wall / crypt still set to AIR and despawn active crypt mobs, then clear ender pearl
+		// cooldowns so a fresh run/setup starts from a clean state.
+		CustomItems.flushBlockRestorations();
+		for(Player pl : Bukkit.getOnlinePlayers()) {
+			pl.setCooldown(Material.ENDER_PEARL, 0);
+		}
 		spawnMinibosses(world);
 		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
 		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");

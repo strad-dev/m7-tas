@@ -783,7 +783,10 @@ public class Healer {
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(healer, 3), 827);
 		Utils.scheduleTask(() -> Actions.leftClick(healer), 828);
-		Utils.scheduleTask(() -> Actions.turnHead(healer, -3f, -90f), 829);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(healer, -3f, -90f);
+			Actions.setHotbarSlot(healer, 6);
+		}, 829);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 0), 830);
 		Utils.scheduleTask(() -> Actions.move(healer, "WPJ", 0), 851);
 		Utils.scheduleTask(() -> Actions.move(healer, "WP", 14), 853);
