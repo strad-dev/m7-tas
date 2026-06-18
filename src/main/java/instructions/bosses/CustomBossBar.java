@@ -9,7 +9,7 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftWither;
+import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -25,6 +25,7 @@ public class CustomBossBar {
 	private static BossBar activeWitherBossBar;
 	private static Wither activeWither;
 	private static BukkitTask bossBarUpdateTask;
+	private static TextDisplay activeStunIndicator;
 
 	// Generic method to handle any Wither boss bar
 	public static void setupWitherBossBar(Wither wither, String witherName) {
@@ -58,8 +59,10 @@ public class CustomBossBar {
 		}
 
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
+		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
+		String healthStr = exempt ? String.valueOf((int) maxHealth) : Utils.formatHealthM(activeWither);
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + (int) maxHealth + "/" + (int) maxHealth;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + healthStr + ChatColor.RED + "❤";
 
 		activeWitherBossBar = Bukkit.createBossBar(title, BarColor.PURPLE, BarStyle.SOLID);
 		activeWitherBossBar.setProgress(1.0);
@@ -96,9 +99,11 @@ public class CustomBossBar {
 
 		double currentHealth = activeWither.getHealth();
 		double maxHealth = activeWither.getAttribute(Attribute.MAX_HEALTH).getValue();
+		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
+		String healthStr = exempt ? String.valueOf((int) Math.floor(currentHealth)) : Utils.formatHealthM(activeWither);
 
 		// Update title with current health
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.RED + "❤ " + ChatColor.YELLOW + (int) Math.floor(currentHealth) + "/" + (int) maxHealth;
+		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + healthStr + ChatColor.RED + "❤";
 
 		activeWitherBossBar.setTitle(title);
 
@@ -146,17 +151,22 @@ public class CustomBossBar {
 	}
 
 	public static void spawnAnimatedStunnedIndicator(Wither wither, int duration) {
+		removeStunIndicator();
+
 		Location loc = wither.getLocation().add(0, wither.getHeight() + 0.5, 0);
 		TextDisplay indicator = wither.getWorld().spawn(loc, TextDisplay.class);
+		activeStunIndicator = indicator;
 
 		indicator.setBillboard(Display.Billboard.CENTER);
 		indicator.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
 		indicator.setSeeThrough(true);
 		indicator.setShadowed(true);
 
-		// Color rotation animation
+		// Follow-the-wither + color rotation animation. Runs every tick so the indicator tracks a MOVING boss
+		// (e.g. Necron mid-chase); colors still rotate only every 5 ticks.
 		new BukkitRunnable() {
 			int colorOffset = 0;
+			int tickCount = 0;
 
 			@Override
 			public void run() {
@@ -166,24 +176,34 @@ public class CustomBossBar {
 					return;
 				}
 
-				// Update colors
-				ChatColor[] colors = {ChatColor.RED, ChatColor.YELLOW, ChatColor.BLUE};
+				// Keep the indicator above the boss's head wherever he moves.
+				indicator.teleport(wither.getLocation().add(0, wither.getHeight() + 0.5, 0));
 
-				// Build the text with rotating colors
-				StringBuilder text = new StringBuilder();
-				for(int i = 0; i < 3; i++) {
-					int colorIndex = (i + colorOffset) % 3;
-					text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
+				// Rotate the colors every 5 ticks.
+				if(tickCount++ % 5 == 0) {
+					ChatColor[] colors = {ChatColor.RED, ChatColor.YELLOW, ChatColor.BLUE};
+					StringBuilder text = new StringBuilder();
+					for(int i = 0; i < 3; i++) {
+						int colorIndex = (i + colorOffset) % 3;
+						text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
+					}
+					indicator.setText(text.toString().trim());
+					colorOffset = (colorOffset + 1) % 3;
 				}
-
-				indicator.setText(text.toString().trim());
-
-				// Shift colors for next update
-				colorOffset = (colorOffset + 1) % 3;
 			}
-		}.runTaskTimer(M7tas.getInstance(), 0L, 5L); // Run every 5 ticks instead of every tick
+		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 
-		Utils.scheduleTask(indicator::remove, duration);
+		Utils.scheduleTask(() -> {
+			if(activeStunIndicator == indicator) activeStunIndicator = null;
+			indicator.remove();
+		}, duration);
 
+	}
+
+	public static void removeStunIndicator() {
+		if(activeStunIndicator != null) {
+			if(activeStunIndicator.isValid()) activeStunIndicator.remove();
+			activeStunIndicator = null;
+		}
 	}
 }

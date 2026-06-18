@@ -1,4 +1,5 @@
 m7tas.iml
+.claude/
 .idea/
 target/
 src/main/resources/mappings.txt
