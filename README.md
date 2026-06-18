@@ -1,11 +1,91 @@
-# M7 Tool-Assissted Speedrun
-This is a Minecraft 1.21.4 server plugin that simulates a perfect run of Master Mode The Catacombs Floor 7 in Hypixel SkyBlock.  **This is not a client-side mod and cannot be used on the real Hypixel server, nor is it in any way associated or affiliated with Hypixel.**
+# M7 Tool-Assissted Speedrun & Practice Map
+This is a Minecraft 1.21.11 server plugin that simulates a perfect run of Master Mode The Catacombs Floor 7 in Hypixel SkyBlock (specifically version 0.24.5 - Assorted QoL Changes, the last version before pearl patch).
+
+**This is not a client-side mod and cannot be used on the real Hypixel server, nor is it in any way associated or affiliated with Hypixel.**
+
+This plugin also allows players to practice M7 with perfect RNG and deterministic aggro behavior.
 
 ### Prerequisites
-- You must have the SkyBlock in Vanilla Minecraft plugin as well, which can be found [here](https://github.com/strad-dev/HypixelSBInVanillaMC/releases/tag/tas).  Alternatively, you can git clone that repository and compile it yourself, just make sure you are on the 1.21.4 branch.
-- You must be using the handcrafted map that I made.  It can be found [here](https://www.dropbox.com/scl/fi/b6qak5czld0tne4goyiut/M7-TAS-Server.zip?rlkey=6bncspvy79fe98w509v5fxby5&e=1&st=8ed2boym&dl=0).  If you compiled the plugins yourself, you can simply extract the world files and use those.
+- You must be using the handcrafted map that I made.  A zip for it can be found at the top-level of this repo.
 
 ### Contributing
 - If you found a time save or an error, open an issue and describe the error/timesave you found, or make a PR if you can understand my spaghetti code.
-- If you want to make a better version of Actions.java and Utils.java, feel free to PR.
-- If you REALLY want to, try to make it so that this plugin does not rely on SB in Vanilla for damage.
+- ⚠️⚠️ **IMPORTANT** ⚠️⚠️ If you open a PR that changes any underlying mechanics, run through the entire TAS to make sure it still works properly.  If it doesn't, please try to fix it without time loss, OR notify me to help.  If the TAS gets in the way of maintaining correctness, then I will drop support for it until TAS v3.
+
+### Intra-Tick Notes
+
+- On the same tick, boss-related actions will ALWAYS run before player actions.
+
+## TAS
+
+### Getting Started
+
+Run the `/setup` command to spawn all the fake players.
+
+### Spectating
+
+Use the `/spectate` command to view the TAS from the point of view of one of the players.  Run `/unspectate` if you wish to stop spectating.
+
+### Running the TAS
+
+Run the `/tas` command to run the entire TAS.  Alternatively, if you want to view a specific section, they are provided as follows: `clear` `boss` `maxor` `storm` `goldor` `necron` `witherking`
+
+## Practice Mode
+
+### Getting Started
+
+Select a class using the `/getcustomitems` command.  You will be given a kit and the corresponding class tag, allowing you to use the class's passives and abilities (if applicable).
+
+The recommended Minecraft game mode is **Adventure Mode**
+
+### Running Practice Mode
+
+Use the `/practice` command with 1-5 players.  By default, this will run all sections.
+
+You can also specify a specific section (`clear` `boss` `maxor` `storm` `goldor` `necron` `witherking`) to practice.
+
+If you are practicing a section that is NOT clear or maxor, the plugin will, by default, teleport you to the spawn location for that section.  You can bypass this by including the `--no-teleport` flag, but beware that it is up to you to start at the correct location!
+
+## Quality of Life
+
+### General
+
+- `/eq` is supported, and will also show your speed
+- Your speed automatically assumes Black Cat w/ Unalloyed Speed when equipping Racing Helmet or Cow Hat
+- You can shift + left click an item in your inventory to swap it with whatever is in the hotbar slot directly below it.  Exception: items in the right-most column will be swapped with whatever is in your 8th slot
+
+### Verbose Mode
+
+**TIMER Mode (Default)**
+
+Displays the amount of time in ticks and seconds it took for important boss progress to be made.
+
+**VERBOSE Mode (On)**
+
+Also shows what packets are being sent by Fake Players and standard information about how ability results are calculated
+
+**SUPER VERBOSE Mode**
+
+Sends a tick-by-tick replay of most things in addition to adding location data and marking the tick each item was sent
+
+### Main Differences from Hypixel
+
+**Aggro**
+
+Maxor, Storm, and Necron will aggro onto the player that last hit them.  If they are invulnerable, AOTS and Mage Beam count.  If no player has hit the boss yet, it will aggro onto the nearest player.
+
+**Storm**
+
+Lightning will not actually kill you.
+
+**Goldor**
+
+- Goldor has no death ticks.
+- Goldor will not chase you around at his maximum speed even if you complete a section early
+- Terminals will automatically complete 1 tick after you click on them
+- SS: You need to click the button 15 times total (i1 but very generous timing)
+- i4: You just need to hit each of the 9 spots at least once with arrows while on the pressure plate
+
+**Wither King**
+
+Dragons will always spawn in this order: `purple` `blue` `orange` `red` `green`
