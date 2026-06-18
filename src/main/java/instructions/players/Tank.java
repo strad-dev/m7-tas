@@ -872,7 +872,10 @@ public class Tank {
 		}
 		Utils.scheduleTask(() -> Actions.setHotbarSlot(tank, 3), 827);
 		Utils.scheduleTask(() -> Actions.leftClick(tank), 828);
-		Utils.scheduleTask(() -> Actions.turnHead(tank, -3f, -90f), 829);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(tank, -3f, -90f);
+			Actions.setHotbarSlot(tank, 6);
+		}, 829);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 0), 830);
 		Utils.scheduleTask(() -> Actions.move(tank, "WPJ", 0), 851);
 		Utils.scheduleTask(() -> Actions.move(tank, "WP", 14), 853);
