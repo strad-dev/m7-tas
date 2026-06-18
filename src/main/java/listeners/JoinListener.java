@@ -58,6 +58,11 @@ public class JoinListener implements Listener {
 			var knockback = joiningPlayer.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
 			if(knockback != null) knockback.setBaseValue(1);
 
+			// Full EXPLOSION knockback resistance too — explosion knockback (e.g. Necron's fireballs) is governed by
+			// this separate attribute, NOT KNOCKBACK_RESISTANCE, so without it players still get blasted by blasts.
+			var explosionKb = joiningPlayer.getAttribute(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
+			if(explosionKb != null) explosionKb.setBaseValue(1);
+
 			// Large safe-fall distance so players don't take fall damage during practice.
 			var safeFall = joiningPlayer.getAttribute(Attribute.SAFE_FALL_DISTANCE);
 			if(safeFall != null) safeFall.setBaseValue(1024);

@@ -336,6 +336,16 @@ public class MiscListener implements Listener {
 		}
 	}
 
+	// Fire resistance stops fire/lava DAMAGE but the entity still visually catches fire and
+	// accrues fire ticks — so cancel combustion outright for ALL players (walking through fire,
+	// landing in lava on the Goldor lava-jump, etc.).
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onPlayerCombust(EntityCombustEvent e) {
+		if(e.getEntity() instanceof Player) {
+			e.setCancelled(true);
+		}
+	}
+
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onWitherSuffocation(EntityDamageEvent e) {
 		if(e.getEntity() instanceof Wither && e.getCause() == EntityDamageEvent.DamageCause.SUFFOCATION) {
