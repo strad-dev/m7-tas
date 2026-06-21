@@ -1,34 +1,12 @@
 # M7 Tool-Assissted Speedrun & Practice Map
-This is a Minecraft 1.21.11 server plugin that simulates a perfect run of Master Mode The Catacombs Floor 7 in Hypixel SkyBlock (specifically version 0.24.5 - Assorted QoL Changes, the last version before pearl patch).
+This is a Minecraft 26.2 server plugin that simulates Master Mode The Catacombs Floor 7 in Hypixel SkyBlock (specifically version 0.24.5 - Assorted QoL Changes, the last version before pearl patch).
 
 **This is not a client-side mod and cannot be used on the real Hypixel server, nor is it in any way associated or affiliated with Hypixel.**
 
-This plugin also allows players to practice M7 with perfect RNG and deterministic aggro behavior.
-
-### Prerequisites
-- You must be using the handcrafted map that I made.  A zip for it can be found at the top-level of this repo.
+This plugin is a fork of the main M7 TAS plugin in use on Stradivarius Violin's public M7 Practice Server.
 
 ### Contributing
-- If you found a time save or an error, open an issue and describe the error/timesave you found, or make a PR if you can understand my spaghetti code.
-- ⚠️⚠️ **IMPORTANT** ⚠️⚠️ If you open a PR that changes any underlying mechanics, run through the entire TAS to make sure it still works properly.  If it doesn't, please try to fix it without time loss, OR notify me to help.  If the TAS gets in the way of maintaining correctness, then I will drop support for it until TAS v3.
-
-### Intra-Tick Notes
-
-- On the same tick, boss-related actions will ALWAYS run before player actions.
-
-## TAS
-
-### Getting Started
-
-Run the `/setup` command to spawn all the fake players.
-
-### Spectating
-
-Use the `/spectate` command to view the TAS from the point of view of one of the players.  Run `/unspectate` if you wish to stop spectating.
-
-### Running the TAS
-
-Run the `/tas` command to run the entire TAS.  Alternatively, if you want to view a specific section, they are provided as follows: `clear` `boss` `maxor` `storm` `goldor` `necron` `witherking`
+- If you found an error, open an issue and describe the error/timesave you found, or make a PR if you can understand my spaghetti code.
 
 ## Practice Mode
 
