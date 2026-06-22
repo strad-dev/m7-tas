@@ -3,7 +3,7 @@ This is a Minecraft 26.2 server plugin that simulates Master Mode The Catacombs 
 
 **This is not a client-side mod and cannot be used on the real Hypixel server, nor is it in any way associated or affiliated with Hypixel.**
 
-This plugin is a fork of the main M7 TAS plugin in use on Stradivarius Violin's public M7 Practice Server.
+This version of the plugin is a fork of the main M7 TAS plugin for use on Stradivarius Violin's Public M7 Practice Server.
 
 ### Contributing
 - If you found an error, open an issue and describe the error/timesave you found, or make a PR if you can understand my spaghetti code.

@@ -16,18 +16,16 @@ public class PlayerCollision {
 
 	public static void setupNoCollisionTeam() {
 		ScoreboardManager manager = Bukkit.getScoreboardManager();
-		if(manager != null) {
-			Scoreboard scoreboard = manager.getMainScoreboard();
+		Scoreboard scoreboard = manager.getMainScoreboard();
 
-			Team existingTeam = scoreboard.getTeam("nocollision");
-			if(existingTeam != null) {
-				existingTeam.unregister();
-			}
-
-			noCollisionTeam = scoreboard.registerNewTeam("nocollision");
-			noCollisionTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
-			noCollisionTeam.setCanSeeFriendlyInvisibles(false);
+		Team existingTeam = scoreboard.getTeam("nocollision");
+		if(existingTeam != null) {
+			existingTeam.unregister();
 		}
+
+		noCollisionTeam = scoreboard.registerNewTeam("nocollision");
+		noCollisionTeam.setOption(Team.Option.COLLISION_RULE, Team.OptionStatus.NEVER);
+		noCollisionTeam.setCanSeeFriendlyInvisibles(false);
 	}
 
 	public static void addToNoCollisionTeam(Player player) {

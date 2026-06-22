@@ -9,13 +9,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.PlayerInventory;
@@ -52,31 +51,31 @@ public class Spectate implements CommandExecutor {
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
 		if(cmd.getName().equalsIgnoreCase("spectate")) {
 			if(args.length < 1) {
-				p.sendMessage(ChatColor.RED + "Please specify a class to spectate");
+				p.sendMessage(Utils.msg("<red>Please specify a class to spectate"));
 				return true;
 			}
 
 			Map<String, Player> fakePlayers = FakePlayerManager.getFakePlayers();
 			if(fakePlayers.isEmpty()) {
-				p.sendMessage(ChatColor.RED + "No classes to spectate!  Try running /setup first");
+				p.sendMessage(Utils.msg("<red>No classes to spectate!  Try running /setup first"));
 				return true;
 			}
 
 			String role = args[0];
 			role = Character.toUpperCase(role.charAt(0)) + role.substring(1).toLowerCase();
 			if(!fakePlayers.containsKey(role)) {
-				p.sendMessage(ChatColor.RED + "Invalid class specified");
+				p.sendMessage(Utils.msg("<red>Invalid class specified"));
 				return true;
 			}
 
 			if(spectatorMap.containsKey(p)) {
-				p.sendMessage(ChatColor.RED + "You are already spectating a class.  Use /unspectate first");
+				p.sendMessage(Utils.msg("<red>You are already spectating a class.  Use /unspectate first"));
 				return true;
 			}
 
@@ -100,15 +99,15 @@ public class Spectate implements CommandExecutor {
 				startSpectatorSync();
 			}
 
-			p.sendMessage("You are now spectating " + role);
+			p.sendMessage(Utils.msg("You are now spectating " + role));
 			return true;
 		} else if(cmd.getName().equalsIgnoreCase("unspectate")) {
 			if(spectatorMap.containsKey(p)) {
 				removeSpectator(p);
-				p.sendMessage("You are no longer spectating a class");
+				p.sendMessage(Utils.msg("You are no longer spectating a class"));
 				return true;
 			}
-			p.sendMessage(ChatColor.RED + "You are not spectating a class");
+			p.sendMessage(Utils.msg("<red>You are not spectating a class"));
 			return true;
 		}
 		return true;
@@ -218,10 +217,10 @@ public class Spectate implements CommandExecutor {
 			ServerPlayer nmsFake = craftFake.getHandle();
 
 			ServerEntity entry = new ServerEntity(nmsFake.level(), nmsFake, 0, false, new ServerEntity.Synchronizer() {
-				@Override public void sendToTrackingPlayers(Packet<? super ClientGamePacketListener> packet) {}
-				@Override public void sendToTrackingPlayersAndSelf(Packet<? super ClientGamePacketListener> packet) {}
-				@Override public void sendToTrackingPlayersFiltered(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {}
-				@Override public void sendToTrackingPlayersFilteredAndSelf(Packet<? super ClientGamePacketListener> packet, Predicate<ServerPlayer> filter) {}
+				@Override public void sendToTrackingPlayers(@NonNull Packet<? super ClientGamePacketListener> packet) {}
+				@Override public void sendToTrackingPlayersAndSelf(@NonNull Packet<? super ClientGamePacketListener> packet) {}
+				@Override public void sendToTrackingPlayersFiltered(@NonNull Packet<? super ClientGamePacketListener> packet, @NonNull Predicate<ServerPlayer> filter) {}
+				// 26.2: ServerEntity.Synchronizer dropped sendToTrackingPlayersFilteredAndSelf.
 			}, new HashSet<>());
 			nmsSpectator.connection.send(new ClientboundAddEntityPacket(nmsFake, entry));
 			nmsSpectator.connection.send(new ClientboundSetEntityDataPacket(nmsFake.getId(), nmsFake.getEntityData().getNonDefaultValues()));

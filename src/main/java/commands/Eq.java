@@ -1,7 +1,7 @@
 package commands;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.command.Command;
@@ -13,8 +13,8 @@ import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.ClickType;
@@ -27,6 +27,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
+import plugin.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,14 +45,14 @@ import java.util.UUID;
  */
 public class Eq implements CommandExecutor, Listener {
 
-	private static final String TITLE = ChatColor.DARK_GRAY + "Equipment";
+	private static final Component TITLE = Utils.msg("<dark_gray>Equipment");
 	private static final int SPEED_SLOT = 8;
 	/** Last server tick a swap ran per player — collapses a double-click's burst of events into one swap. */
 	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 		open(p);
@@ -85,8 +86,8 @@ public class Eq implements CommandExecutor, Listener {
 	private static void applySpeedCane(Player p) {
 		ServerPlayer sp = ((CraftPlayer) p).getHandle();
 		AbstractContainerMenu menu = sp.containerMenu;
-		if(menu == null || SPEED_SLOT >= menu.slots.size()) return;
-		int amount = Math.max(1, Math.min(99, currentSpeed(p) / 10)); // speed/10, within the 99 stack-count ceiling
+		if(SPEED_SLOT >= menu.slots.size()) return;
+		int amount = Math.clamp(currentSpeed(p) / 10, 1, 99); // speed/10, within the 99 stack-count ceiling
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(speedItem(p));
 		nms.set(DataComponents.MAX_STACK_SIZE, amount); // raise the cap so the client renders counts of 65..99
 		nms.setCount(amount);
@@ -99,7 +100,7 @@ public class Eq implements CommandExecutor, Listener {
 		ItemStack cane = new ItemStack(Material.SUGAR_CANE);
 		ItemMeta meta = cane.getItemMeta();
 		if(meta != null) {
-			meta.setDisplayName(ChatColor.AQUA + "Speed: " + ChatColor.WHITE + speed);
+			meta.displayName(Utils.mm("<aqua>Speed: <white>" + speed));
 			cane.setItemMeta(meta);
 		}
 		return cane;
@@ -194,6 +195,6 @@ public class Eq implements CommandExecutor, Listener {
 	public static final class EqHolder implements InventoryHolder {
 		private Inventory inv;
 		void setInventory(Inventory inv) { this.inv = inv; }
-		@Override public Inventory getInventory() { return inv; }
+		@Override public @NonNull Inventory getInventory() { return inv; }
 	}
 }

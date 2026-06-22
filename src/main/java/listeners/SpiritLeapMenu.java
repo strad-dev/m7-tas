@@ -1,7 +1,6 @@
 package listeners;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -10,7 +9,9 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.jspecify.annotations.NonNull;
 import plugin.FakePlayerManager;
+import plugin.Utils;
 
 import java.util.*;
 
@@ -42,7 +43,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 	private final Map<Integer, Player> slotTargets = new HashMap<>();
 
 	private SpiritLeapMenu(Player viewer) {
-		inv = Bukkit.createInventory(this, SIZE, ChatColor.DARK_GRAY + "Spirit Leap");
+		inv = Bukkit.createInventory(this, SIZE, Utils.msg("<dark_gray>Spirit Leap"));
 		build(viewer);
 	}
 
@@ -56,7 +57,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 	}
 
 	@Override
-	public Inventory getInventory() {
+	public @NonNull Inventory getInventory() {
 		return inv;
 	}
 
@@ -101,11 +102,13 @@ public class SpiritLeapMenu implements InventoryHolder {
 			if(p.getScoreboardTags().contains(c)) return c;
 		}
 		String n = p.getName();
-		if(n.equals("Archer")) return "Archer";
-		if(n.equals("Mage2")) return "Tank";
-		if(n.equals("Mage3")) return "Berserk";
-		if(n.equals("Mage4")) return "Healer";
-		return "Mage";
+		return switch(n) {
+			case "Archer" -> "Archer";
+			case "Mage2" -> "Tank";
+			case "Mage3" -> "Berserk";
+			case "Mage4" -> "Healer";
+			default -> "Mage";
+		};
 	}
 
 	private static Material classPane(String cls) {
@@ -118,20 +121,20 @@ public class SpiritLeapMenu implements InventoryHolder {
 		};
 	}
 
-	private static ChatColor classColor(String cls) {
+	private static String classColor(String cls) {
 		return switch(cls) {
-			case "Archer" -> ChatColor.GREEN;
-			case "Berserk" -> ChatColor.RED;
-			case "Healer" -> ChatColor.YELLOW;
-			case "Tank" -> ChatColor.GRAY;
-			default -> ChatColor.AQUA; // Mage (light blue)
+			case "Archer" -> "<green>";
+			case "Berserk" -> "<red>";
+			case "Healer" -> "<yellow>";
+			case "Tank" -> "<gray>";
+			default -> "<aqua>"; // Mage (light blue)
 		};
 	}
 
 	private static ItemStack pane(Material mat, String name) {
 		ItemStack it = new ItemStack(mat);
 		ItemMeta meta = it.getItemMeta();
-		meta.setDisplayName(name);
+		meta.displayName(Utils.mm(name));
 		it.setItemMeta(meta);
 		return it;
 	}
@@ -140,7 +143,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 		ItemStack it = new ItemStack(Material.PLAYER_HEAD);
 		SkullMeta meta = (SkullMeta) it.getItemMeta();
 		meta.setOwningPlayer(target);
-		meta.setDisplayName(classColor(cls) + target.getName());
+		meta.displayName(Utils.mm(classColor(cls) + target.getName()));
 		it.setItemMeta(meta);
 		return it;
 	}

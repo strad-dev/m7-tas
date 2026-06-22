@@ -1,6 +1,6 @@
 package commands;
 
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
@@ -16,6 +16,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jspecify.annotations.NonNull;
 import plugin.FakePlayerInventory;
 import plugin.M7tas;
+import plugin.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ import java.util.List;
 public class GetCustomItems implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
@@ -34,7 +35,7 @@ public class GetCustomItems implements CommandExecutor {
 		if(!section.equals("all")) {
 			boolean isClass = section.equals("archer") || section.equals("berserk") || section.equals("healer") || section.equals("mage") || section.equals("tank");
 			if(!isClass) {
-				p.sendMessage(ChatColor.RED + "Invalid class. Valid: archer berserk healer mage tank all");
+				p.sendMessage(Utils.msg("<red>Invalid class. Valid: archer berserk healer mage tank all"));
 				return true;
 			}
 			String role = Character.toUpperCase(section.charAt(0)) + section.substring(1);
@@ -54,7 +55,7 @@ public class GetCustomItems implements CommandExecutor {
 				if(term != null && term.getType() == Material.BOW) term.addUnsafeEnchantment(Enchantment.POWER, power);
 			}
 
-			p.sendMessage(ChatColor.GREEN + "Set your inventory to the " + role + " loadout!");
+			p.sendMessage(Utils.msg("<green>Set your inventory to the " + role + " loadout!"));
 			return true;
 		}
 
@@ -62,12 +63,12 @@ public class GetCustomItems implements CommandExecutor {
 		stonk.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
 		ItemMeta meta = stonk.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.RED + "Dungeonbreaker");
-		meta.setItemName(ChatColor.RED + "Dungeonbreaker");
+		meta.displayName(Utils.mm("<red>Dungeonbreaker"));
+		meta.itemName(Utils.mm("<red>Dungeonbreaker"));
 		meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
-		List<String> lore = new ArrayList<>();
-		lore.add("skyblock/combat/stonk");
-		meta.setLore(lore);
+		List<Component> lore = new ArrayList<>();
+		lore.add(Utils.mm("skyblock/combat/stonk"));
+		meta.lore(lore);
 		stonk.setItemMeta(meta);
 		// Lets Dungeonbreaker break any block while the holder is in adventure mode (matches Hypixel behaviour).
 		stonk = plugin.Utils.breakAnyBlockInAdventure(stonk);
@@ -75,131 +76,131 @@ public class GetCustomItems implements CommandExecutor {
 		ItemStack term = new ItemStack(Material.BOW);
 		meta = term.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Terminator");
-		meta.setItemName(ChatColor.LIGHT_PURPLE + "Precise Terminator");
+		meta.displayName(Utils.mm("<light_purple>Precise Terminator"));
+		meta.itemName(Utils.mm("<light_purple>Precise Terminator"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/terminator");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/terminator"));
+		meta.lore(lore);
 		term.setItemMeta(meta);
 
 		ItemStack gyro = new ItemStack(Material.BLAZE_ROD);
 		meta = gyro.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Gyrokinetic Wand");
-		meta.setItemName(ChatColor.GOLD + "Gyrokinetic Wand");
+		meta.displayName(Utils.mm("<gold>Gyrokinetic Wand"));
+		meta.itemName(Utils.mm("<gold>Gyrokinetic Wand"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/gyro");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/gyro"));
+		meta.lore(lore);
 		gyro.setItemMeta(meta);
 
 		ItemStack scylla = new ItemStack(Material.IRON_SWORD);
 		meta = scylla.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Hyperion");
-		meta.setItemName(ChatColor.LIGHT_PURPLE + "Withered Hyperion");
+		meta.displayName(Utils.mm("<light_purple>Withered Hyperion"));
+		meta.itemName(Utils.mm("<light_purple>Withered Hyperion"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/scylla");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/scylla"));
+		meta.lore(lore);
 		scylla.setItemMeta(meta);
 
 		ItemStack aotv = new ItemStack(Material.DIAMOND_SHOVEL);
 		meta = aotv.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Warped Aspect of the Void");
-		meta.setItemName(ChatColor.GOLD + "Warped Aspect of the Void");
+		meta.displayName(Utils.mm("<gold>Warped Aspect of the Void"));
+		meta.itemName(Utils.mm("<gold>Warped Aspect of the Void"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/aotv");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/aotv"));
+		meta.lore(lore);
 		aotv.setItemMeta(meta);
 
 		ItemStack rag = new ItemStack(Material.GOLDEN_AXE);
 		meta = rag.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.DARK_PURPLE + "Withered Ragnarok Axe");
-		meta.setItemName(ChatColor.DARK_PURPLE + "Withered Ragnarok Axe");
+		meta.displayName(Utils.mm("<dark_purple>Withered Ragnarok Axe"));
+		meta.itemName(Utils.mm("<dark_purple>Withered Ragnarok Axe"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/rag");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/rag"));
+		meta.lore(lore);
 		rag.setItemMeta(meta);
 
 		ItemStack aots = new ItemStack(Material.DIAMOND_AXE);
 		meta = aots.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded");
-		meta.setItemName(ChatColor.LIGHT_PURPLE + "Withered Axe of the Shredded");
+		meta.displayName(Utils.mm("<light_purple>Withered Axe of the Shredded"));
+		meta.itemName(Utils.mm("<light_purple>Withered Axe of the Shredded"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/aots");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/aots"));
+		meta.lore(lore);
 		aots.setItemMeta(meta);
 
 		ItemStack iceSpray = new ItemStack(Material.STICK);
 		meta = iceSpray.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Heroic Ice Spray Wand");
-		meta.setItemName(ChatColor.GOLD + "Heroic Ice Spray Wand");
+		meta.displayName(Utils.mm("<gold>Heroic Ice Spray Wand"));
+		meta.itemName(Utils.mm("<gold>Heroic Ice Spray Wand"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/ice_spray");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/ice_spray"));
+		meta.lore(lore);
 		iceSpray.setItemMeta(meta);
 
 		ItemStack flamingFlay = new ItemStack(Material.FISHING_ROD);
 		meta = flamingFlay.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Withered Flaming Flay");
-		meta.setItemName(ChatColor.LIGHT_PURPLE + "Withered Flaming Flay");
+		meta.displayName(Utils.mm("<light_purple>Withered Flaming Flay"));
+		meta.itemName(Utils.mm("<light_purple>Withered Flaming Flay"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/flaming_flay");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/flaming_flay"));
+		meta.lore(lore);
 		flamingFlay.setItemMeta(meta);
 
 		ItemStack bonzo = new ItemStack(Material.BREEZE_ROD);
 		meta = bonzo.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.DARK_PURPLE + "Heroic Bonzo Staff");
-		meta.setItemName(ChatColor.DARK_PURPLE + "Heroic Bonzo Staff");
+		meta.displayName(Utils.mm("<dark_purple>Heroic Bonzo Staff"));
+		meta.itemName(Utils.mm("<dark_purple>Heroic Bonzo Staff"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/bonzo");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/bonzo"));
+		meta.lore(lore);
 		bonzo.setItemMeta(meta);
 
 		ItemStack lb = new ItemStack(Material.BOW);
 		meta = lb.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Precise Last Breath");
-		meta.setItemName(ChatColor.LIGHT_PURPLE + "Precise Last Breath");
+		meta.displayName(Utils.mm("<light_purple>Precise Last Breath"));
+		meta.itemName(Utils.mm("<light_purple>Precise Last Breath"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/last_breath");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/last_breath"));
+		meta.lore(lore);
 		lb.setItemMeta(meta);
 
 		ItemStack explosiveBow = new ItemStack(Material.BOW);
 		meta = explosiveBow.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Explosive Bow");
-		meta.setItemName(ChatColor.GOLD + "Explosive Bow");
+		meta.displayName(Utils.mm("<gold>Explosive Bow"));
+		meta.itemName(Utils.mm("<gold>Explosive Bow"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/explosive_bow");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/explosive_bow"));
+		meta.lore(lore);
 		explosiveBow.setItemMeta(meta);
 
 		ItemStack tac = new ItemStack(Material.BLAZE_ROD);
 		meta = tac.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Tactical Insertion");
-		meta.setItemName(ChatColor.GOLD + "Tactical Insertion");
+		meta.displayName(Utils.mm("<gold>Tactical Insertion"));
+		meta.itemName(Utils.mm("<gold>Tactical Insertion"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/tac");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/tac"));
+		meta.lore(lore);
 		tac.setItemMeta(meta);
 
 		ItemStack infinityboom = new ItemStack(Material.TNT);
 		meta = infinityboom.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Infinityboom TNT");
-		meta.setItemName(ChatColor.GOLD + "Infinityboom TNT");
+		meta.displayName(Utils.mm("<gold>Infinityboom TNT"));
+		meta.itemName(Utils.mm("<gold>Infinityboom TNT"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/infinityboom");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/infinityboom"));
+		meta.lore(lore);
 		infinityboom.setItemMeta(meta);
 		// Placeable on any block in adventure mode (the practice default), like the fake-player loadout.
 		infinityboom = plugin.Utils.placeOnAnythingInAdventure(infinityboom);
@@ -207,25 +208,25 @@ public class GetCustomItems implements CommandExecutor {
 		ItemStack jerrychine = new ItemStack(Material.GOLDEN_HORSE_ARMOR);
 		meta = jerrychine.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.GOLD + "Heroic Jerry-chine Gun");
-		meta.setItemName(ChatColor.GOLD + "Heroic Jerry-chine Gun");
+		meta.displayName(Utils.mm("<gold>Heroic Jerry-chine Gun"));
+		meta.itemName(Utils.mm("<gold>Heroic Jerry-chine Gun"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/jerrychine");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/jerrychine"));
+		meta.lore(lore);
 		jerrychine.setItemMeta(meta);
 
 		ItemStack springBoots = new ItemStack(Material.CHAINMAIL_BOOTS);
 		meta = springBoots.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.setDisplayName(ChatColor.DARK_PURPLE + "Renowned Spring Boots");
-		meta.setItemName(ChatColor.DARK_PURPLE + "Renowned Spring Boots");
+		meta.displayName(Utils.mm("<dark_purple>Renowned Spring Boots"));
+		meta.itemName(Utils.mm("<dark_purple>Renowned Spring Boots"));
 		lore = new ArrayList<>();
-		lore.add("skyblock/combat/spring_boots");
-		meta.setLore(lore);
+		lore.add(Utils.mm("skyblock/combat/spring_boots"));
+		meta.lore(lore);
 		springBoots.setItemMeta(meta);
 
 		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, explosiveBow, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine);
-		p.sendMessage(ChatColor.GREEN + "Here you go!");
+		p.sendMessage(Utils.msg("<green>Here you go!"));
 		return true;
 	}
 

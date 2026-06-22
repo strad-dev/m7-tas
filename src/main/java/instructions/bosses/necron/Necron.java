@@ -10,7 +10,7 @@ import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
+import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
@@ -213,7 +213,7 @@ public final class Necron extends WitherLord {
 		if(idx == 1) {
 			// 25% — fireball attack in place (no teleport, no blindness).
 			duration = FIREBALL_DURATION_TICKS;
-			Utils.timer(ChatColor.GREEN + "Necron fireball attack at " + formatTick(displayTick()));
+			Utils.timer("<green>Necron fireball attack at " + formatTick(displayTick()));
 			destroyPlatform(false); // 25% replay — fireballs only, never destroy the platform
 		} else {
 			// 80% / 5% — frenzy: teleport to the middle, blind players, hold still.
@@ -222,7 +222,7 @@ public final class Necron extends WitherLord {
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
 			applyBlindness();
 			frenzySounds(duration);
-			Utils.timer(ChatColor.GREEN + "Necron frenzy at " + formatTick(displayTick()));
+			Utils.timer("<green>Necron frenzy at " + formatTick(displayTick()));
 		}
 
 		cancelInterludeEndTask();
@@ -360,14 +360,14 @@ public final class Necron extends WitherLord {
 		final int deathTick = displayTick(); // Necron-relative tick of the final blow (t=0 of the death sequence)
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
-		Utils.timer(ChatColor.GREEN + "Necron killed in " + formatTick(displayTick()));
+		Utils.timer("<green>Necron killed in " + formatTick(displayTick()));
 		// Open the wall to the Wither King's arena 200t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, 200);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 60);
 		// note: In most mods, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
 		// This TAS fixes that. To compare to those timers, subtract 2 seconds here and add 2 seconds to Wither King time.
 		Utils.scheduleTask(() -> {
-			Utils.timer(ChatColor.GREEN + "Necron finished in " + formatTick(displayTick()));
+			Utils.timer("<green>Necron finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, DEATH_TO_WK_TICKS);
@@ -384,8 +384,8 @@ public final class Necron extends WitherLord {
 			double secs = normalF7Overall / 20.0;
 			int mins = (int) (secs / 60);
 			double rem = secs - mins * 60.0;
-			Bukkit.broadcastMessage(ChatColor.GOLD + "Normal Floor 7 Finishes Here in " + formatWithSpaces(normalF7Overall)
-					+ " ticks (" + String.format("%.2f", secs) + " seconds | " + mins + ":" + String.format("%05.2f", rem) + ")");
+			Bukkit.broadcast(Utils.msg("<gold>Normal Floor 7 Finishes Here in " + formatWithSpaces(normalF7Overall)
+					+ " ticks (" + String.format("%.2f", secs) + " seconds | " + mins + ":" + String.format("%05.2f", rem) + ")"));
 		}, DEATH_TO_WK_TICKS + 40);
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.remove();

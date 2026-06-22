@@ -10,10 +10,12 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
+import net.kyori.adventure.title.Title;
 import plugin.BossScheduler;
 import plugin.FakePlayerInventory;
 import plugin.Utils;
 
+import java.time.Duration;
 import java.util.*;
 
 @SuppressWarnings("DataFlowIssue")
@@ -22,7 +24,7 @@ public final class Maxor extends WitherLord {
 
 	private static final int PRE_MAXOR_TICKS = 738;
 	private static final String ENERGY_CRYSTAL_ID = "skyblock/game/energy_crystal";
-	private static final String ENERGY_CRYSTAL_NAME = ChatColor.GOLD + "" + ChatColor.BOLD + "﴾ " + ChatColor.RED + ChatColor.BOLD + "Energy Crystal" + ChatColor.GOLD + ChatColor.BOLD + " ﴿";
+	private static final String ENERGY_CRYSTAL_NAME = "<gold><bold>﴾ <red>Energy Crystal<gold> ﴿";
 	private static final String[] LASER_MESSAGE = {"YOU TRICKED ME!", "THAT BEAM!  IT HURTS!  IT HURTS!"};
 
 	// Laser/stun cycle constants.
@@ -147,7 +149,7 @@ public final class Maxor extends WitherLord {
 	}
 
 	public static ItemStack getEnergyCrystalItem() {
-		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.RED + "Energy Crystal", ENERGY_CRYSTAL_ID);
+		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<red>Energy Crystal", ENERGY_CRYSTAL_ID);
 	}
 
 	public boolean notEnergyCrystal(Entity e) {
@@ -189,7 +191,7 @@ public final class Maxor extends WitherLord {
 		if(crystal.equals(topLeftCrystal)) topLeftCrystal = null;
 		else if(crystal.equals(topRightCrystal)) topRightCrystal = null;
 
-		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " picked up an " + ChatColor.AQUA + "Energy Crystal" + ChatColor.GREEN + "!");
+		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<green> picked up an <aqua>Energy Crystal<green>!"));
 		Utils.timer(formatTick(displayTick()));
 
 		// If the player is already standing on a plate, place immediately —
@@ -241,16 +243,17 @@ public final class Maxor extends WitherLord {
 		}
 
 		ItemStack restore = previousSlot8.remove(p.getUniqueId());
-		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, ChatColor.GREEN + "SkyBlock Menu (Click)", ""));
+		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", ""));
 
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;
-		ChatColor placedColor = bothPlaced ? ChatColor.GREEN : ChatColor.RED;
-		String activeGame = placedColor + String.valueOf(placed) + ChatColor.GREEN + "/2 Energy Crystals are now active!";
-		Bukkit.broadcastMessage(activeGame);
+		String placedColor = bothPlaced ? "<green>" : "<red>";
+		String activeGame = placedColor + placed + "<green>/2 Energy Crystals are now active!";
+		Bukkit.broadcast(Utils.msg(activeGame));
 		Utils.timer(formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.sendTitle("", activeGame, 0, 40, 0);
+			player.showTitle(Title.title(Utils.msg(""), Utils.msg(activeGame),
+					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
 
 		if(bothPlaced) {
@@ -263,10 +266,11 @@ public final class Maxor extends WitherLord {
 		Utils.scheduleTask(() -> {
 			if(boss == null || boss.isDead()) return;
 			if(plateLeftCrystal == null || plateRightCrystal == null) return;
-			String chargeMsg = ChatColor.GREEN + "The Energy Laser is charging up!\n" + formatTick(displayTick());
+			String chargeMsg = "<green>The Energy Laser is charging up!\n" + formatTick(displayTick());
 			Utils.timer(chargeMsg);
 			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle("", chargeMsg.split("\n")[0], 0, 40, 0);
+				player.showTitle(Title.title(Utils.msg(""), Utils.msg(chargeMsg.split("\n")[0]),
+						Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 			}
 			Utils.runCommand("setblock 73 224 73 minecraft:red_stained_glass");
 			startLaserScan();
@@ -335,7 +339,7 @@ public final class Maxor extends WitherLord {
 		clearAggro();
 		setArmor(false);
 		sendChatMessage(LASER_MESSAGE[random.nextInt(LASER_MESSAGE.length)]);
-		Utils.timer(ChatColor.GREEN + "Maxor stunned in " + formatTick(displayTick()));
+		Utils.timer("<green>Maxor stunned in " + formatTick(displayTick()));
 
 		// Laser hit: 5% max HP damage + wither hurt sound. Bypasses the damage event
 		// (no event recursion) and counts toward the stun's 75% damage cap.
@@ -389,10 +393,11 @@ public final class Maxor extends WitherLord {
 		cancelStunEnrageTask();
 
 		setArmor(true);
-		Bukkit.broadcastMessage(ChatColor.RED + "⚠ Maxor is Enraged ⚠");
+		Bukkit.broadcast(Utils.msg("<red>⚠ Maxor is Enraged ⚠"));
 		Utils.timer(formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.sendTitle("", ChatColor.RED + "⚠ Maxor is Enraged ⚠", 0, 40, 0);
+			player.showTitle(Title.title(Utils.msg(""), Utils.msg("<red>⚠ Maxor is Enraged ⚠"),
+					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
@@ -473,13 +478,13 @@ public final class Maxor extends WitherLord {
 
 	private void playDeathDialogue() {
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
-		Utils.timer(ChatColor.GREEN + "Maxor killed in " + formatTick(displayTick()));
+		Utils.timer("<green>Maxor killed in " + formatTick(displayTick()));
 		Server.playWitherDeathSound(boss);
 		// Open the wall to Storm's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, 100);
 		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
 		Utils.scheduleTask(() -> {
-			Utils.timer(ChatColor.GREEN + "Maxor finished in " + formatTick(displayTick()));
+			Utils.timer("<green>Maxor finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);
@@ -491,7 +496,7 @@ public final class Maxor extends WitherLord {
 
 	private EnderCrystal spawnEnergyCrystal(Location loc) {
 		EnderCrystal c = (EnderCrystal) world.spawnEntity(loc, EntityType.END_CRYSTAL);
-		c.setCustomName(ENERGY_CRYSTAL_NAME);
+		c.customName(Utils.msg(ENERGY_CRYSTAL_NAME));
 		c.setCustomNameVisible(true);
 		return c;
 	}
@@ -523,7 +528,7 @@ public final class Maxor extends WitherLord {
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
 			// Optional: Set custom name
-			miner.setCustomName("Wither Miner " + ChatColor.YELLOW + "8M" + ChatColor.RED + "❤");
+			miner.customName(Utils.msg("Wither Miner <yellow>8M<red>❤"));
 			miner.setCustomNameVisible(true);
 
 			// Store in array

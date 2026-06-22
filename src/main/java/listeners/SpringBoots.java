@@ -4,7 +4,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -104,7 +104,7 @@ public class SpringBoots {
 	private static void tick() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			ItemStack boots = p.getInventory().getBoots();
-			boolean wearing = boots != null && ITEM_ID.equals(CustomItems.getID(boots));
+			boolean wearing = ITEM_ID.equals(CustomItems.getID(boots));
 			ChargeState st = states.get(p.getUniqueId());
 			if(!wearing) {
 				if(st != null) {
@@ -150,8 +150,9 @@ public class SpringBoots {
 	}
 
 	private static boolean isOnGround(Player p) {
-		if(p instanceof CraftPlayer cp) return cp.getHandle().onGround();
-		return p.isOnGround();
+		// Server-authoritative ground state via NMS. Every Bukkit Player on Paper is a CraftPlayer, and the NMS
+		// onGround() avoids the deprecated client-driven Bukkit Player#isOnGround().
+		return ((CraftPlayer) p).getHandle().onGround();
 	}
 
 	private static void maybePlayNote(Player p, ChargeState st) {

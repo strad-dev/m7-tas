@@ -8,21 +8,16 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
-import instructions.players.*;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+// import instructions.players.*; // TAS-only player routines — disabled in the practice fork
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
-import plugin.FakePlayerInventory;
 import plugin.FakePlayerManager;
 import plugin.MovementAudit;
 import plugin.Utils;
-
-import java.util.Map;
 
 /*
  * TAS
@@ -35,22 +30,16 @@ public class TAS implements CommandExecutor {
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
-		String section = "all";
-		if(args.length >= 1) {
-			section = args[0].toLowerCase();
-			if(!section.equals("all") && !section.equals("clear") && !section.equals("boss") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
-				p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear boss maxor storm goldor necron witherking");
-				return true;
-			}
-		}
-		runTAS(p.getWorld(), section);
+		// /tas is disabled in the practice fork (TAS removed). The command is also unregistered in M7tas.
+		p.sendMessage(Utils.msg("<red>The TAS is disabled on the practice server."));
 		return true;
 	}
 
+	/* TAS-only — disabled in the practice fork (references the commented-out player routines). Original in git history (main).
 	public static void runTAS(World world, String section) {
 		Map<String, Player> fakePlayers = FakePlayerManager.getFakePlayers();
 		if(fakePlayers.isEmpty()) {
@@ -151,9 +140,10 @@ public class TAS implements CommandExecutor {
 		Spectate.stopSpectatorSync();
 		Spectate.startSpectatorSync();
 	}
+	*/
 
 	/**
-	 * Like {@link #runTAS} but runs ONLY the boss/server instructions — no fake-player routines, no player
+	 * Like runTAS but runs ONLY the boss/server instructions — no fake-player routines, no player
 	 * handoffs, no spectator sync — so real players can practice the boss fights and mechanics. Bosses still
 	 * chain (e.g. {@code /practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
 	 * chainNext spawns the next; runPlayerHandoff is simply a no-op since no handoff is armed here.

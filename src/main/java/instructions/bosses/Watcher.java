@@ -6,13 +6,13 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import instructions.bosses.maxor.Maxor;
-import instructions.players.Mage;
+// import instructions.players.Mage; // TAS-only player routine — disabled in the practice fork
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.inventory.ItemStack;
@@ -154,7 +154,7 @@ public class Watcher {
 		triggerPhaseTick = Utils.phaseTick();
 		ORIGINAL_POSITION.setWorld(world);
 
-		Utils.timer(ChatColor.GREEN + "Watcher spawned on tick " + triggerPhaseTick);
+		Utils.timer("<green>Watcher spawned on tick " + triggerPhaseTick);
 
 		watcher = (Zombie) world.spawnEntity(ORIGINAL_POSITION, EntityType.ZOMBIE);
 		watcher.addScoreboardTag("TASWatcher");
@@ -173,7 +173,7 @@ public class Watcher {
 		ItemStack helmet = new ItemStack(Material.PLAYER_HEAD);
 		SkullMeta meta = (SkullMeta) helmet.getItemMeta();
 		assert meta != null;
-		meta.setOwnerProfile(profile);
+		meta.setPlayerProfile(profile);
 		helmet.setItemMeta(meta);
 
 		Objects.requireNonNull(watcher.getEquipment()).setHelmet(helmet);
@@ -243,7 +243,7 @@ public class Watcher {
 
 		mobsKilled++;
 		updateWatcherBossBar();
-		Utils.timer(ChatColor.GREEN + "Blood Mob " + mobsKilled + "/19 killed | " + formatTick(phaseRel()));
+		Utils.timer("<green>Blood Mob " + mobsKilled + "/19 killed | " + formatTick(phaseRel()));
 
 		if(mobsKilled < 19) {
 			sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
@@ -259,7 +259,7 @@ public class Watcher {
 	 * but triggered by the Mage's final blood-camp left click (see the Mage blood-camp choreography).
 	 */
 	public void bloodCampFinished() {
-		Utils.timer(ChatColor.GREEN + "Blood Camp finished in " + formatTick(phaseRel()));
+		Utils.timer("<green>Blood Camp finished in " + formatTick(phaseRel()));
 	}
 
 	// ============================== Portal sequence ==============================
@@ -272,7 +272,7 @@ public class Watcher {
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
 		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:nether_portal[axis=x]");
-		Utils.timer(ChatColor.GREEN + "Boss Portal Opened in " + formatTick(phaseRel()));
+		Utils.timer("<green>Boss Portal Opened in " + formatTick(phaseRel()));
 		Utils.debug(Utils.DebugType.BOSS, "Lightning struck, nether portal opened" + (Utils.isSuperVerbose() ? " at -120..-122 / 69..72 / -43" : ""));
 
 		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
@@ -309,14 +309,16 @@ public class Watcher {
 		// Teleport the actors THIS tick; the boss + player routines start together on the NEXT tick.
 		if(tasActive) {
 			FakePlayerManager.getFakePlayers().values().forEach(f -> Utils.teleport(f, boss));
-			Utils.timer(ChatColor.GREEN + "Entered Boss in " + formatTick(phaseRel()));
+			Utils.timer("<green>Entered Boss in " + formatTick(phaseRel()));
 			// Blood-room blessings: normally collected as item drops, but the TAS enters the boss immediately, so
 			// there's no time to walk over them — broadcast them manually 200 ticks in. Owned here (the Watcher-driven
 			// portal entry) rather than in the Mage routine.
-			Utils.scheduleTask(() -> {
-				Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.POWER, 5);
-				Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.LIFE, 5);
-			}, 200);
+			// TAS-only blood-room blessings (used the commented-out Mage routine); never runs in the practice
+			// fork since tasActive is always false here (no fake players).
+			// Utils.scheduleTask(() -> {
+			// 	Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.POWER, 5);
+			// 	Utils.broadcastBlessing(Mage.get(), Utils.BlessingType.LIFE, 5);
+			// }, 200);
 			if(doContinue && maxorHandoff != null) {
 				Utils.scheduleTask(maxorHandoff, 1); // spawns Maxor + starts each player's maxor(true) together
 			}
@@ -341,7 +343,7 @@ public class Watcher {
 	// ============================== Boss bar ==============================
 
 	private void createWatcherBossBar() {
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + 19 + ChatColor.RED + "❤";
+		String title = Utils.mmLegacy("<gold><bold>﴾ <red>The Watcher<gold> ﴿ </bold><yellow>19<red>❤");
 
 		watcherBossBar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SOLID);
 		watcherBossBar.setProgress(1.0);
@@ -360,7 +362,7 @@ public class Watcher {
 		int mobsRemaining = 19 - mobsKilled;
 		double progress = mobsRemaining / 19.0;
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + "The Watcher" + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + mobsRemaining + ChatColor.RED + "❤";
+		String title = Utils.mmLegacy("<gold><bold>﴾ <red>The Watcher<gold> ﴿ </bold><yellow>" + mobsRemaining + "<red>❤");
 
 		watcherBossBar.setTitle(title);
 		watcherBossBar.setProgress(Math.clamp(progress, 0.0, 1.0));
@@ -399,7 +401,7 @@ public class Watcher {
 				// beam instead of after it (the old mid-tick spawn lost the task-id race to the run-start beam).
 				BossScheduler.schedule(() -> {
 					spawnMob(endLoc, mobName);
-					Utils.timer(ChatColor.GREEN + "Blood Mob " + idx + "/19 spawned (" + mobName + ") | " + formatTick(phaseRel()));
+					Utils.timer("<green>Blood Mob " + idx + "/19 spawned (" + mobName + ") | " + formatTick(phaseRel()));
 					stand.remove(); // Remove armor stand after reaching destination
 				}, 1);
 			});
@@ -544,7 +546,7 @@ public class Watcher {
 		mob.setRemoveWhenFarAway(false);
 
 		if(mobName.equals("Diamante Giant")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "80M");
+			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>80M"));
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
@@ -556,14 +558,14 @@ public class Watcher {
 			mob.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "60M");
+			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>60M"));
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 			mob.setHealth(30);
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
-			mob.setCustomName(ChatColor.YELLOW + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "24M");
+			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>24M"));
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
 			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(12);
@@ -591,7 +593,7 @@ public class Watcher {
 	}
 
 	private void sendChatMessage(String message) {
-		Bukkit.broadcastMessage(ChatColor.RED + "[BOSS] The Watcher" + ChatColor.WHITE + ": " + message);
+		Bukkit.broadcast(Utils.msg("<red>[BOSS] The Watcher<white>: " + message));
 	}
 
 	// ============================== Cleanup / state ==============================
@@ -659,18 +661,12 @@ public class Watcher {
 	/** Phase column = ticks since the Watcher engaged; overall = run clock (triggerPhaseTick + t). */
 	private String formatTick(int t) {
 		int overall = t + triggerPhaseTick;
-		return ChatColor.GREEN + String.format("Watcher: %s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
+		return "<green>" + String.format("Watcher: %s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
 	}
 
 	private static String formatWithSpaces(int n) {
-		StringBuilder sb = new StringBuilder();
-		String s = String.valueOf(n);
-		for(int i = 0; i < s.length(); i++) {
-			if(i > 0 && (s.length() - i) % 3 == 0) sb.append(' ');
-			sb.append(s.charAt(i));
-		}
-		return sb.toString();
+		return WitherLord.formatWithSpaces(n);
 	}
 
 	private static String fmt(Location l) {

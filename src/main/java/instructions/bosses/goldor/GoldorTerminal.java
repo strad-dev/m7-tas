@@ -1,18 +1,18 @@
 package instructions.bosses.goldor;
 
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.TextDisplay;
+import plugin.Utils;
 
 public final class GoldorTerminal {
 	public static final String TAG_PREFIX = "goldor_terminal_";
 
-	private static final String INACTIVE_LINE_1 = ChatColor.RED + "Inactive Terminal";
-	private static final String INACTIVE_LINE_2 = ChatColor.GREEN + "" + ChatColor.BOLD + "CLICK HERE";
-	private static final String ACTIVE_TEXT = ChatColor.GREEN + "Terminal Active";
+	private static final String INACTIVE_LINE_1 = "<red>Inactive Terminal";
+	private static final String INACTIVE_LINE_2 = "<green><bold>CLICK HERE";
+	private static final String ACTIVE_TEXT = "<green>Terminal Active";
 
 	public final int sectionIdx;
 	public final int terminalIdx;
@@ -43,14 +43,14 @@ public final class GoldorTerminal {
 		});
 
 		this.displayTop = world.spawn(topLoc, TextDisplay.class, e -> {
-			e.setText(INACTIVE_LINE_1);
+			e.text(Utils.msg(INACTIVE_LINE_1));
 			e.setBillboard(Display.Billboard.CENTER);
 			e.setAlignment(TextDisplay.TextAlignment.CENTER);
 			e.addScoreboardTag("TASNoName");
 		});
 
 		this.displayBottom = world.spawn(bottomLoc, TextDisplay.class, e -> {
-			e.setText(INACTIVE_LINE_2);
+			e.text(Utils.msg(INACTIVE_LINE_2));
 			e.setBillboard(Display.Billboard.CENTER);
 			e.setAlignment(TextDisplay.TextAlignment.CENTER);
 			e.addScoreboardTag("TASNoName");
@@ -73,8 +73,8 @@ public final class GoldorTerminal {
 		activated = true;
 		pending = false;
 		// Active label replaces the bottom display; top display is emptied (no background when text is empty).
-		displayTop.setText("");
-		displayBottom.setText(ACTIVE_TEXT);
+		displayTop.text(Utils.msg(""));
+		displayBottom.text(Utils.msg(ACTIVE_TEXT));
 	}
 
 	public void cleanup() {

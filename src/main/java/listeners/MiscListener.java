@@ -10,12 +10,16 @@ import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
 import instructions.bosses.witherking.WitherKing;
+import io.papermc.paper.event.entity.EntityKnockbackEvent;
+import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.MinecraftServer;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -101,17 +105,13 @@ public class MiscListener implements Listener {
 	}
 
 	@EventHandler
-	public void onPlayerChat(AsyncPlayerChatEvent e) {
+	public void onPlayerChat(AsyncChatEvent e) {
 		String player = e.getPlayer().getName();
-		String message = e.getMessage();
-		String sentMessage = "";
-		if(player.equals("Beethoven_")) {
-			sentMessage += ChatColor.BLUE;
-		} else {
-			sentMessage += ChatColor.GREEN;
-		}
-		sentMessage += player + ChatColor.WHITE + ": " + message;
-		Bukkit.broadcastMessage(sentMessage);
+		String message = Utils.plain(e.message());
+		String nameColor = player.equals("Beethoven_") ? "<blue>" : "<green>";
+		Bukkit.broadcast(Utils.msg(nameColor + "<name><white>: <msg>",
+				Placeholder.unparsed("name", player),
+				Placeholder.unparsed("msg", message)));
 		e.setCancelled(true);
 	}
 
@@ -138,23 +138,20 @@ public class MiscListener implements Listener {
 		plugin.PlayerCollision.removeEntityFromNoCollisionTeam(e.getEntity());
 	}
 
+	// 26.2: migrated to Paper's unified io.papermc.paper.event.entity.EntityKnockbackEvent. The by-entity case
+	// arrives as EntityPushedByEntityAttackEvent (a subclass sharing the same HandlerList), whose getPushedBy()
+	// replaces the old EntityKnockbackByEntityEvent#getSourceEntity().
 	@EventHandler
-	public void onEntityKnockbackByEntity(EntityKnockbackByEntityEvent e) {
+	public void onKnockback(EntityKnockbackEvent e) {
+		// Cancel knockback on fake players (none in the practice fork — kept as a guard).
 		if(e.getEntity() instanceof Player p && FakePlayerManager.getFakePlayers().containsValue(p)) {
 			e.setCancelled(true);
 			return;
 		}
-		if(e.getSourceEntity() instanceof WindCharge windCharge && windCharge.getScoreboardTags().contains("Bonzo")) {
-			e.setCancelled(true);
-		}
-	}
-
-	@EventHandler
-	public void onEntityKnockback(EntityKnockbackEvent e) {
-		// Catches sources that don't fire the by-entity subclass (e.g. wither skull
-		// explosion knockback, which pushes via Explosion physics rather than a
-		// direct attacker-victim hit).
-		if(e.getEntity() instanceof Player p && FakePlayerManager.getFakePlayers().containsValue(p)) {
+		// Bonzo's Staff wind charge must not knock back the player it hits.
+		if(e instanceof EntityPushedByEntityAttackEvent pushed
+				&& pushed.getPushedBy() instanceof WindCharge windCharge
+				&& windCharge.getScoreboardTags().contains("Bonzo")) {
 			e.setCancelled(true);
 		}
 	}

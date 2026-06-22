@@ -44,34 +44,23 @@ public final class M7tas extends JavaPlugin {
 		// runtime — every registered boss ticker then runs each tick before any per-run choreography (see BossScheduler).
 		BossScheduler.start();
 
-		// Suppress Paper's deprecated-event registration warnings (EntityKnockbackEvent / EntityKnockbackByEntityEvent).
-		// Must be set before registerEvents() below, since the warning is logged there.
-		getLogger().setFilter(record -> {
-			String msg = record.getMessage();
-			return msg == null || !msg.contains("but the event is Deprecated");
-		});
-
 		PlayerCollision.setupNoCollisionTeam();
 
-		for(String cmd : List.of("setup", "spectate", "unspectate", "tas", "practice", "eq", "simulate", "reset", "getcustomitems", "verbose", "setspeed", "kickallfakes")) {
+		// TAS-only commands (tas, simulate, spectate/unspectate, reset, kickallfakes) are disabled in the practice fork.
+		for(String cmd : List.of("setup", "practice", "eq", "getcustomitems", "verbose", "setspeed")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
-				case "spectate", "unspectate" -> command.setExecutor(new Spectate());
-				case "tas" -> command.setExecutor(new TAS());
 				case "practice" -> command.setExecutor(new Practice());
 				case "eq" -> command.setExecutor(new Eq());
-				case "simulate" -> command.setExecutor(new Simulate());
-				case "reset" -> command.setExecutor(new Reset());
 				case "getcustomitems" -> command.setExecutor(new GetCustomItems());
 				case "verbose" -> command.setExecutor(new Verbose());
 				case "setspeed" -> command.setExecutor(new SetSpeed());
-				case "kickallfakes" -> command.setExecutor(new KickAllFakes());
 			}
 			command.setTabCompleter(new TabCompletor());
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
-		getServer().getPluginManager().registerEvents(new SpectatorListener(), this);
+		// getServer().getPluginManager().registerEvents(new SpectatorListener(), this); // TAS-only fake-spectate feature — disabled in the practice fork
 		getServer().getPluginManager().registerEvents(new WithersNotImmuneToArrows(), this);
 		getServer().getPluginManager().registerEvents(new PearlHelper(), this);
 		getServer().getPluginManager().registerEvents(new MiscListener(), this);

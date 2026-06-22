@@ -7,12 +7,12 @@ import java.util.List;
 /**
  * One of the three active Storm pads + its associated pillar column.
  * The "Red" pad/pillar exists in the world but is inert — not included here.
- *
+ * <br>
  * The pad detect box is a 3D bounding box matched against the player's feet
  * BlockX/Y/Z (inclusive on both ends). The higher X/Z corner is offset -1 from
  * the raw world dimensions because we're checking which block the player is
  * standing on top of, not the half-block edges.
- *
+ * <br>
  * The pillar column is a 7×7 horizontal footprint at (pillarX1..pillarX2,
  * pillarZ1..pillarZ2). The pillar's vertical extent is bounded by
  * {@link #PILLAR_BOTTOM_MIN}..{@link #PILLAR_BOTTOM_MAX} for the bottom-most
