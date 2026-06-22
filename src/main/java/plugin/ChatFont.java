@@ -1,7 +1,5 @@
 package plugin;
 
-import org.bukkit.ChatColor;
-
 /**
  * Minecraft default-font pixel metrics for measuring and centering chat lines. Widths match the vanilla
  * GUI font: each glyph's width plus 1px of inter-character spacing, with bold adding 1px per glyph (except
@@ -16,13 +14,16 @@ public final class ChatFont {
 	/** Wrap threshold for packing lines — a 10px buffer under {@link #MAX_WIDTH} so the client never wraps a line itself. */
 	public static final int WRAP_WIDTH = 310;
 
+	/** The legacy section sign (§) that prefixes colour/format codes. */
+	private static final char SECTION_CHAR = '§';
+
 	/** Rendered pixel width of {@code text} — skips §-colour/format codes and accounts for bold (§l, reset by §r/colours). */
 	public static int width(String text) {
 		int px = 0;
 		boolean afterCode = false;
 		boolean bold = false;
 		for(char c : text.toCharArray()) {
-			if(c == ChatColor.COLOR_CHAR) {
+			if(c == SECTION_CHAR) {
 				afterCode = true;
 				continue;
 			}

@@ -1,7 +1,7 @@
 package plugin;
 
 import commands.Spectate;
-import net.minecraft.advancements.criterion.BlockPredicate;
+import net.minecraft.advancements.predicates.BlockPredicate; // 26.2: moved from advancements.criterion
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
@@ -13,13 +13,13 @@ import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.item.AdventureModePredicate;
 import net.minecraft.world.item.component.TooltipDisplay;
-import nms.TASGamePacketListenerImpl;
+// import nms.TASGamePacketListenerImpl; // TAS-only fake-player connection — disabled in the practice fork
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R7.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -27,6 +27,14 @@ import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
+import org.bukkit.inventory.meta.ItemMeta;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -40,6 +48,82 @@ public class Utils {
 	 * intentionally NOT tracked here.
 	 */
 	private static final List<org.bukkit.scheduler.BukkitTask> scheduledTasks = new ArrayList<>();
+
+	// ===== Adventure item name/lore helpers (26.2: ItemMeta's String name/lore methods are @Deprecated) =====
+	private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
+	private static final MiniMessage MM = MiniMessage.miniMessage();
+
+	/** Item display-name / lore line from a MiniMessage string, with the default item italic suppressed (vanilla look). */
+	public static Component mm(String s) {
+		return MM.deserialize("<!italic>" + s);
+	}
+
+	/** Chat message / entity custom-name component from a MiniMessage string (no forced italic). */
+	public static Component msg(String s) {
+		return MM.deserialize(s);
+	}
+
+	/** Chat component from a MiniMessage template with tag resolvers. Use Placeholder.unparsed(...) for untrusted or
+	 *  arbitrary input (player names, chat text, debug payloads) so it is inserted literally and cannot inject tags. */
+	public static Component msg(String template, TagResolver... resolvers) {
+		return MM.deserialize(template, resolvers);
+	}
+
+	/** Plain (un-styled) text of a component — e.g. reading a custom name for a comparison. */
+	public static String plain(Component c) {
+		return c == null ? "" : PlainTextComponentSerializer.plainText().serialize(c);
+	}
+
+	/** Legacy §-coded string of a component — for Bukkit APIs that only accept a String (e.g. boss bar titles). */
+	public static String legacyString(Component c) {
+		return c == null ? "" : LEGACY.serialize(c);
+	}
+
+	/** MiniMessage string of a component — to round-trip a Component back through the MiniMessage helpers. */
+	public static String mmString(Component c) {
+		return c == null ? "" : MM.serialize(c);
+	}
+
+	/** Legacy §-string rendered from a MiniMessage string — for String-only Bukkit APIs (e.g. boss bar titles)
+	 *  while keeping the source free of deprecated ChatColor. */
+	public static String mmLegacy(String miniMessage) {
+		return LEGACY.serialize(MM.deserialize(miniMessage));
+	}
+
+	/** Component from a legacy §-string — replaces {@code meta.setDisplayName(s)} → {@code meta.displayName(Utils.nameComponent(s))}. */
+	public static Component nameComponent(String legacy) {
+		// Vanilla italicises custom item names; legacy setDisplayName did not. Default to non-italic (keep an explicit §o).
+		return LEGACY.deserialize(legacy).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
+	}
+
+	/** Components from legacy §-strings — replaces {@code meta.setLore(list)} → {@code meta.lore(Utils.loreComponents(list))}. */
+	public static List<Component> loreComponents(List<String> legacy) {
+		List<Component> out = new ArrayList<>(legacy.size());
+		for(String s : legacy) out.add(LEGACY.deserialize(s).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+		return out;
+	}
+
+	/** Legacy §-string of an item's display name, or "" if none — replaces {@code meta.getDisplayName()}. */
+	public static String displayName(ItemMeta meta) {
+		Component c = meta.displayName();
+		return c == null ? "" : LEGACY.serialize(c);
+	}
+
+	/** Legacy §-strings of an item's lore, or empty list if none — replaces {@code meta.getLore()}. */
+	public static List<String> lore(ItemMeta meta) {
+		List<Component> l = meta.lore();
+		if(l == null) return new ArrayList<>();
+		List<String> out = new ArrayList<>(l.size());
+		for(Component c : l) out.add(LEGACY.serialize(c));
+		return out;
+	}
+
+	/** Plain (un-styled) first lore line — the custom-item ID. Styling-independent, so the ID lookup can't be
+	 *  broken by lore formatting (e.g. the non-italic default). Replaces the old getLore().getFirst(). */
+	public static String firstLorePlain(ItemMeta meta) {
+		List<Component> l = meta.lore();
+		return l == null || l.isEmpty() ? "" : PlainTextComponentSerializer.plainText().serialize(l.getFirst());
+	}
 
 
 	/**
@@ -117,11 +201,9 @@ public class Utils {
 
 		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName() + (Utils.isSuperVerbose() ? (" at " + round(player.getLocation().getX(), 3) + " " + round(player.getLocation().getY(), 5) + " " + round(player.getLocation().getZ(), 3) + " " + player.getLocation().getYaw() + " " + player.getLocation().getPitch()) : ""));
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
-		if(serverPlayer.connection instanceof TASGamePacketListenerImpl customConnection) {
-			((Packet) packet).handle(customConnection);
-		} else {
-			((Packet) packet).handle(serverPlayer.connection);
-		}
+		// TAS fake-player custom-connection branch removed (no fake players in the practice fork);
+		// real players always use the normal connection.
+		((Packet) packet).handle(serverPlayer.connection);
 	}
 
 	/**
@@ -138,7 +220,7 @@ public class Utils {
 	/** The NMS server via the non-deprecated CraftServer bridge ({@code MinecraftServer.getServer()} is deprecated).
 	 *  Returns the same instance, so callers (tick counters, command source) are behaviour-identical. */
 	private static MinecraftServer nmsServer() {
-		return ((org.bukkit.craftbukkit.v1_21_R7.CraftServer) Bukkit.getServer()).getServer();
+		return ((org.bukkit.craftbukkit.CraftServer) Bukkit.getServer()).getServer();
 	}
 
 	/**
@@ -171,7 +253,7 @@ public class Utils {
 		assert meta != null;
 		meta.setColor(color);
 		meta.setUnbreakable(true);
-		meta.setDisplayName(name);
+		meta.displayName(Utils.nameComponent(name));
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
 		item.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
@@ -340,7 +422,7 @@ public class Utils {
 			case BAT -> sound = Sound.ENTITY_BAT_DEATH;
 			case ESSENCE -> sound = Sound.BLOCK_NOTE_BLOCK_PLING;
 			default -> {
-				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid secret type " + type);
+				Bukkit.broadcast(msg("<red>Error: Invalid secret type " + type));
 				return;
 			}
 		}
@@ -478,22 +560,26 @@ public class Utils {
 	 * Broadcast a tick-timer line — shown only at TIMER level and above (see {@link #showTimers()}).
 	 */
 	public static void timer(String message) {
-		if(showTimers()) Bukkit.broadcastMessage(message);
+		// `message` is a MiniMessage string built by callers (timer lines carry their own colors).
+		if(showTimers()) Bukkit.broadcast(msg(message));
 	}
 
 	public static void debug(DebugType type, String message) {
+		// The debug payload is inserted as an UNPARSED placeholder so arbitrary content (entity names, coords, a
+		// stray '<') is shown literally and can never break MiniMessage parsing or inject tags.
+		TagResolver m = Placeholder.unparsed("m", message);
 		// ERROR always fires — it flags a misuse/bug, not routine debug output, so it ignores the verbosity gate.
 		if(type == DebugType.ERROR) {
 			// Errors always carry a [tick: #] stamp regardless of verbosity, so the misuse can be pinpointed.
-			Bukkit.broadcastMessage(ChatColor.GRAY + "[tick: " + phaseTick() + "] " + ChatColor.RED + "[Error] " + message);
+			Bukkit.broadcast(msg("<gray>[tick: " + phaseTick() + "] <red>[Error] <m>", m));
 			return;
 		}
 		if(!isVerbose()) return;
-		String prefix = isSuperVerbose() ? ChatColor.GRAY + "[tick: " + phaseTick() + "] " : "";
+		String prefix = isSuperVerbose() ? "<gray>[tick: " + phaseTick() + "] " : "";
 		switch(type) {
-			case CLIENT -> Bukkit.broadcastMessage(prefix + ChatColor.DARK_AQUA + "[Client] " + message);
-			case SERVER -> Bukkit.broadcastMessage(prefix + ChatColor.GREEN + "[Server] " + message);
-			case BOSS -> Bukkit.broadcastMessage(prefix + ChatColor.LIGHT_PURPLE + "[Game] " + message);
+			case CLIENT -> Bukkit.broadcast(msg(prefix + "<dark_aqua>[Client] <m>", m));
+			case SERVER -> Bukkit.broadcast(msg(prefix + "<green>[Server] <m>", m));
+			case BOSS -> Bukkit.broadcast(msg(prefix + "<light_purple>[Game] <m>", m));
 			case ERROR -> { /* handled above */ }
 		}
 	}
@@ -537,7 +623,6 @@ public class Utils {
 	/** Outgoing-damage multiplier from the player's worn head item: Cow Hat 0.70, Spirit/Bonzo Mask 0.85, else 1.0. */
 	private static float helmetDamageMultiplier(Player p) {
 		ItemStack helmet = p.getInventory().getHelmet();
-		if(helmet == null) return 1.0f;
 		if(FakePlayerInventory.isCowHat(helmet)) return 0.70f;
 		if(FakePlayerInventory.isSpiritMask(helmet) || FakePlayerInventory.isBonzoMask(helmet)) return 0.85f;
 		return 1.0f;
@@ -587,21 +672,20 @@ public class Utils {
 
 	public static void changeName(LivingEntity entity) {
 		if(!(entity instanceof Player)) {
-			String[] oldName;
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
 			boolean exempt = entity.getScoreboardTags().stream().anyMatch(t -> t.equals("TASWitherKing") || t.equals("TASWatcher"));
 			String healthStr = exempt ? String.valueOf(health) : formatHealthM(entity);
-			try {
-				oldName = Objects.requireNonNull(entity.getCustomName()).split(" ");
-			} catch(Exception exception) {
-				oldName = (entity.getName() + " " + ChatColor.YELLOW + healthStr + ChatColor.RED + "❤").split(" ");
+			// <!bold> so the health suffix isn't bold (legacy §e/§c reset bold; MiniMessage color tags do not).
+			String healthTag = "<!bold><yellow>" + healthStr + "<red>❤";
+			Component current = entity.customName();
+			if(current == null) {
+				entity.customName(msg(entity.getName() + " " + healthTag));
+				return;
 			}
-			oldName[oldName.length - 1] = ChatColor.YELLOW + healthStr + ChatColor.RED + "❤";
-			StringBuilder newName = new StringBuilder(oldName[0]);
-			for(int i = 1; i < oldName.length; i++) {
-				newName.append(" ").append(oldName[i]);
-			}
-			entity.setCustomName(newName.toString());
+			// Replace the last space-delimited token (the health suffix) in place, preserving the colored base name.
+			String[] parts = MM.serialize(current).split(" ");
+			parts[parts.length - 1] = healthTag;
+			entity.customName(msg(String.join(" ", parts)));
 		}
 	}
 
@@ -639,49 +723,49 @@ public class Utils {
 	}
 
 	public static void broadcastBlessing(Player p, BlessingType type, int level) {
-		String message1 = ChatColor.GOLD + "" + ChatColor.BOLD + "DUNGEON BUFF!" + ChatColor.RESET + ChatColor.GOLD + " " + getRealName(p) + ChatColor.WHITE + " found a ";
+		String message1 = "<gold><bold>DUNGEON BUFF!<reset><gold> " + getRealName(p) + "<white> found a ";
 		String romanLevel;
 		switch(level) {
 			case 1 -> romanLevel = "I";
 			case 2 -> romanLevel = "II";
 			case 5 -> romanLevel = "V";
 			default -> {
-				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid level " + level);
+				Bukkit.broadcast(msg("<red>Error: Invalid level " + level));
 				return;
 			}
 		}
 		String message2;
 		switch(type) {
 			case LIFE -> {
-				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Life " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(1 + (level * 5.445 / 100), 2) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + round(1 + (level * 5.445 / 100), 2) + "x" + ChatColor.RED + " ❣ Health Regen";
+				message1 += "<light_purple>Blessing of Life " + romanLevel + "<white>!";
+				message2 = "<gray>     Granted you <green>+" + round(1 + (level * 5.445 / 100), 2) + "x<red> ❤ Health<gray> and <green>+" + round(1 + (level * 5.445 / 100), 2) + "x<red> ❣ Health Regen";
 			}
 			case POWER -> {
-				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Power " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.RED + " ❁ Strength" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.BLUE + " ☠ Crit Damage";
+				message1 += "<light_purple>Blessing of Power " + romanLevel + "<white>!";
+				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<red> ❁ Strength<gray> and <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<blue> ☠ Crit Damage";
 			}
 			case STONE -> {
-				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Stone " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 2) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + round(level * 10.89, 1) + ChatColor.RED + " ❁ Damage";
+				message1 += "<light_purple>Blessing of Stone " + romanLevel + "<white>!";
+				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 2) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense<gray> and <green>+" + round(level * 10.89, 1) + "<red> ❁ Damage";
 			}
 			case WISDOM -> {
-				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Wisdom " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY + " and " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.WHITE + " ✦ Speed";
+				message1 += "<light_purple>Blessing of Wisdom " + romanLevel + "<white>!";
+				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<aqua> ✎ Intelligence<gray> and <green>+" + round(level * 7.26, 1) + "<white> ✦ Speed";
 			}
 			case TIME -> {
 				if(level != 5) {
-					Bukkit.broadcastMessage(ChatColor.RED + "Error: Blessing of Time can only be level 5");
+					Bukkit.broadcast(msg("<red>Error: Blessing of Time can only be level 5"));
 					return;
 				}
-				message1 += ChatColor.LIGHT_PURPLE + "Blessing of Time " + romanLevel + ChatColor.WHITE + "!";
-				message2 = ChatColor.GRAY + "     Granted you " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.RED + " ❤ Health" + ChatColor.GRAY + ", " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.AQUA + " ✎ Intelligence" + ChatColor.GRAY + ", " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense" + ChatColor.GRAY + ", and " + ChatColor.GREEN + "+" + round(level * 7.26, 1) + ChatColor.GRAY + " & " + ChatColor.GREEN + "+" + round(1 + (level * 3.63 / 100), 2) + "x" + ChatColor.RED + " ❁ Strength";
+				message1 += "<light_purple>Blessing of Time " + romanLevel + "<white>!";
+				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<red> ❤ Health<gray>, <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<aqua> ✎ Intelligence<gray>, <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense<gray>, and <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<red> ❁ Strength";
 			}
 			default -> {
-				Bukkit.broadcastMessage(ChatColor.RED + "Error: Invalid blessing type " + type);
+				Bukkit.broadcast(msg("<red>Error: Invalid blessing type " + type));
 				return;
 			}
 		}
-		Bukkit.broadcastMessage(message1);
-		Bukkit.broadcastMessage(message2);
+		Bukkit.broadcast(msg(message1));
+		Bukkit.broadcast(msg(message2));
 	}
 }

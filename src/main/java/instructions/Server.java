@@ -18,6 +18,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -61,7 +62,7 @@ public class Server {
 		if(hasWitherKey) return;
 		hasWitherKey = true;
 		String name = picker != null ? Utils.getRealName(picker) : "Someone";
-		Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] " + name + " " + ChatColor.GREEN + "has obtained " + ChatColor.DARK_GRAY + "Wither Key" + ChatColor.GREEN + "!");
+		Bukkit.broadcast(Utils.msg("<gold>[MVP<dark_blue>++<gold>] <name> <green>has obtained <dark_gray>Wither Key<green>!", Placeholder.unparsed("name", name)));
 		if(picker != null) Utils.playLocalSound(picker, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
 	}
 
@@ -69,7 +70,7 @@ public class Server {
 		if(hasBloodKey) return;
 		hasBloodKey = true;
 		String name = picker != null ? Utils.getRealName(picker) : "Someone";
-		Bukkit.broadcastMessage(ChatColor.GOLD + "[MVP" + ChatColor.DARK_BLUE + "++" + ChatColor.GOLD + "] " + name + " " + ChatColor.GREEN + "has obtained " + ChatColor.RED + "Blood Key" + ChatColor.GREEN + "!");
+		Bukkit.broadcast(Utils.msg("<gold>[MVP<dark_blue>++<gold>] <name> <green>has obtained <red>Blood Key<green>!", Placeholder.unparsed("name", name)));
 		if(picker != null) Utils.playLocalSound(picker, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
 	}
 
@@ -109,7 +110,7 @@ public class Server {
 		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
 		Goldor.INSTANCE.forceEndPhase();
 		// Begin with 3 seconds of delay
-		Bukkit.broadcastMessage((instructions.bosses.WitherActions.isPracticeMode() ? "Run" : "TAS") + " starts in 3 seconds");
+		Bukkit.broadcast(Utils.msg((instructions.bosses.WitherActions.isPracticeMode() ? "Run" : "TAS") + " starts in 3 seconds"));
 
 		Utils.scheduleTask(() -> {
 			switch(section) {
@@ -120,27 +121,27 @@ public class Server {
 
 					// 5-second countdown
 					Utils.scheduleTask(() -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 5 seconds");
+						Bukkit.broadcast(Utils.msg("<green>Starting in 5 seconds"));
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 26);
 					Utils.scheduleTask(() -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 4 seconds");
+						Bukkit.broadcast(Utils.msg("<green>Starting in 4 seconds"));
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 46);
 					Utils.scheduleTask(() -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 3 seconds");
+						Bukkit.broadcast(Utils.msg("<green>Starting in 3 seconds"));
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 66);
 					Utils.scheduleTask(() -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 2 seconds");
+						Bukkit.broadcast(Utils.msg("<green>Starting in 2 seconds"));
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 86);
 					Utils.scheduleTask(() -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Starting in 1 seconds");
+						Bukkit.broadcast(Utils.msg("<green>Starting in 1 seconds"));
 						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
 					}, 106);
 					Utils.scheduleTask(() -> {
-						Bukkit.broadcastMessage(ChatColor.GREEN + "Run started");
+						Bukkit.broadcast(Utils.msg("<green>Run started"));
 						Utils.markPhaseStart();
 						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
 						// Arm the one-shot Blood-Room detection at clear-tick 0; the Watcher spawns the first tick a
@@ -225,7 +226,7 @@ public class Server {
 
 		for(int i = 0; i < locations.length; i++) {
 			Zombie zombie = (Zombie) world.spawnEntity(locations[i], EntityType.ZOMBIE);
-			zombie.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Angry Archaeologist " + ChatColor.RESET + ChatColor.YELLOW + ((int) healthValues[i] * 2) + "M" + ChatColor.RED + "❤");
+			zombie.customName(Utils.msg("<light_purple><bold>Angry Archaeologist </bold><yellow>" + ((int) healthValues[i] * 2) + "M<red>❤"));
 			zombie.setCustomNameVisible(true);
 			zombie.setAI(false);
 			zombie.setSilent(true);
@@ -256,7 +257,7 @@ public class Server {
 		}
 
 		yellowShadowAssassin = (Zombie) world.spawnEntity(new Location(world, -184.5, 69, -184.5, 0f, 0f), EntityType.ZOMBIE);
-		yellowShadowAssassin.setCustomName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "60M" + ChatColor.RED + "❤");
+		yellowShadowAssassin.customName(Utils.msg("<light_purple><bold>Shadow Assassin </bold><yellow>60M<red>❤"));
 		yellowShadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
 		yellowShadowAssassin.setCustomNameVisible(true);
 		yellowShadowAssassin.setAI(false);
@@ -269,7 +270,7 @@ public class Server {
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
 		yellowShadowAssassin.setHealth(30);
 
-		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
+		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, Utils.mmLegacy("<light_purple>Shadow Assassin Boots"));
 		assert yellowShadowAssassin.getEquipment() != null;
 		yellowShadowAssassin.getEquipment().setBoots(boots);
 		yellowShadowAssassin.getEquipment().setLeggings(new ItemStack(Material.AIR));
@@ -287,7 +288,7 @@ public class Server {
 		Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:glass");
 		Utils.scheduleTask(() -> Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
-		Bukkit.broadcastMessage(ChatColor.GOLD + Utils.getRealName(p) + ChatColor.GREEN + " opened a " + ChatColor.DARK_GRAY + ChatColor.BOLD + "WITHER " + ChatColor.RESET + ChatColor.GREEN + "door!");
+		Bukkit.broadcast(Utils.msg("<gold><name><green> opened a <dark_gray><bold>WITHER </bold><green>door!", Placeholder.unparsed("name", Utils.getRealName(p))));
 	}
 
 	public static void openBloodDoor() {
@@ -295,8 +296,8 @@ public class Server {
 		Utils.scheduleTask(() -> Utils.runCommand("fill -122 69 -74 -120 72 -72 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 1.0F, 0.5F);
-		Bukkit.broadcastMessage(ChatColor.RED + "The " + ChatColor.BOLD + "BLOOD DOOR" + ChatColor.RESET + ChatColor.RED + " has been opened!");
-		Bukkit.broadcastMessage(ChatColor.DARK_PURPLE + "A shiver runs down your spine...");
+		Bukkit.broadcast(Utils.msg("<red>The <bold>BLOOD DOOR</bold> has been opened!"));
+		Bukkit.broadcast(Utils.msg("<dark_purple>A shiver runs down your spine..."));
 		// The Watcher encounter begins the moment the Blood Door opens (if it was armed this run and hasn't
 		// already spawned from a player walking into the Blood Room).
 		Watcher.INSTANCE.startOnBloodDoor();
@@ -357,7 +358,7 @@ public class Server {
 		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
-		zombie.setCustomName(ChatColor.RED + mobName + ChatColor.RESET + ChatColor.RED + " ❤" + ChatColor.YELLOW + "2M");
+		zombie.customName(Utils.msg("<red>" + mobName + " ❤<yellow>2M"));
 		return zombie;
 	}
 
@@ -366,16 +367,16 @@ public class Server {
 		private static final double[][] OPTION_COORDS = {{-19.5, 71.5, -33.5}, {-24.5, 71.5, -30.5}, {-29.5, 71.5, -33.5}};
 		private static final String[] OPTION_LABELS = {"ⓐ", "ⓑ", "ⓒ"};
 		private static final float[] OPTION_PITCHES = {0.6f, 0.7f, 0.8f};
-		private static final String ORUO = ChatColor.DARK_RED + "[STATUE] Oruo the Omniscient" + ChatColor.WHITE + ": ";
+		private static final String ORUO = "<dark_red>[STATUE] Oruo the Omniscient<white>: ";
 
 		public static void oruoMessage(String message) {
-			Bukkit.broadcastMessage(ORUO + message);
+			Bukkit.broadcast(Utils.msg(ORUO + message));
 			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 		}
 
 		private static TextDisplay spawnOption(World world, Location loc, String text) {
 			TextDisplay td = (TextDisplay) world.spawnEntity(loc, EntityType.TEXT_DISPLAY);
-			td.setText(text);
+			td.text(Utils.nameComponent(text));
 			td.setAlignment(TextDisplay.TextAlignment.CENTER);
 			td.setBillboard(Display.Billboard.CENTER);
 			return td;
@@ -393,14 +394,14 @@ public class Server {
 		}
 
 		private static void spawnQuestion(int questionNum, String questionText, String[] answers, TextDisplay[] options, Location particleStart, Player player, World world) {
-			Bukkit.broadcastMessage("");
-			Bukkit.broadcastMessage(ChatColor.GOLD + "                                " + ChatColor.BOLD + "Question #" + questionNum);
-			Bukkit.broadcastMessage(ChatColor.GOLD + questionText);
-			Bukkit.broadcastMessage("");
+			Bukkit.broadcast(Utils.msg(""));
+			Bukkit.broadcast(Utils.msg("<gold>                                <bold>Question #" + questionNum));
+			Bukkit.broadcast(Utils.msg("<gold>" + questionText));
+			Bukkit.broadcast(Utils.msg(""));
 			for(int i = 0; i < 3; i++) {
-				Bukkit.broadcastMessage(ChatColor.GOLD + "     " + OPTION_LABELS[i] + " " + ChatColor.GREEN + answers[i]);
+				Bukkit.broadcast(Utils.msg("<gold>     " + OPTION_LABELS[i] + " <green>" + answers[i]));
 			}
-			Bukkit.broadcastMessage("");
+			Bukkit.broadcast(Utils.msg(""));
 			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 			for(int i = 0; i < 3; i++) {
 				final int idx = i;
@@ -409,7 +410,7 @@ public class Server {
 			for(int i = 0; i < 3; i++) {
 				final int idx = i;
 				Utils.scheduleTask(() -> {
-					options[idx] = spawnOption(world, new Location(world, OPTION_COORDS[idx][0], OPTION_COORDS[idx][1], OPTION_COORDS[idx][2]), ChatColor.GOLD + OPTION_LABELS[idx] + " " + ChatColor.GREEN + answers[idx]);
+					options[idx] = spawnOption(world, new Location(world, OPTION_COORDS[idx][0], OPTION_COORDS[idx][1], OPTION_COORDS[idx][2]), Utils.mmLegacy("<gold>" + OPTION_LABELS[idx] + " <green>" + answers[idx]));
 					Utils.playLocalSound(player, Sound.ENTITY_ITEM_PICKUP, 2.0f, OPTION_PITCHES[idx]);
 				}, 40 + idx * 10);
 			}
@@ -420,7 +421,7 @@ public class Server {
 		}
 
 		private static void answeredCorrectly(int questionNum, TextDisplay[] options) {
-			Bukkit.broadcastMessage(ORUO + ChatColor.GOLD + "akc0303 " + ChatColor.GREEN + "answered " + ChatColor.GOLD + "Question #" + questionNum + ChatColor.GREEN + " correctly!");
+			Bukkit.broadcast(Utils.msg(ORUO + "<gold>akc0303 <green>answered <gold>Question #" + questionNum + "<green> correctly!"));
 			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 			Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP, 2.0f, 0.75f);
 			options[0].remove();
@@ -444,8 +445,8 @@ public class Server {
 			Utils.scheduleTask(() -> oruoMessage("One more question!"), 477);
 			Utils.scheduleTask(() -> spawnQuestion(3, "                             Is akc0303 bald?", new String[]{"No", "Yes", "Decline to Answer"}, options, particleStart, player, world), 517);
 			Utils.scheduleTask(() -> {
-				Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Quiz Cleared");
-				Bukkit.broadcastMessage(ChatColor.DARK_GREEN + "Archer: Clear Finished in 578 Ticks (28.90 seconds)");
+				Bukkit.broadcast(Utils.msg("<dark_green>Archer: Quiz Cleared"));
+				Bukkit.broadcast(Utils.msg("<dark_green>Archer: Clear Finished in 578 Ticks (28.90 seconds)"));
 			}, 578);
 			Utils.scheduleTask(() -> oruoMessage("I bestow upon you all the power of a hundred years!"), 598);
 			Utils.scheduleTask(() -> Utils.broadcastBlessing(player, Utils.BlessingType.TIME, 5), 618);
@@ -631,7 +632,7 @@ public class Server {
 				Actions.rightClick(player);
 				playIceFillSounds(3, player);
 				Server.openIceFillRewards();
-				Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Ice Fill Cleared");
+				Bukkit.broadcast(Utils.msg("<red>Berserk: Ice Fill Cleared"));
 			}, 228);
 			Utils.scheduleTask(() -> Actions.move(player, "WP", 1), 229);
 			Utils.scheduleTask(() -> Actions.turnHead(player, 68f, -33f), 230);
@@ -645,7 +646,7 @@ public class Server {
 				Actions.leftClick(player);
 				Utils.broadcastBlessing(player, Utils.BlessingType.POWER, 5);
 				Utils.playSecretFoundSound(player, Utils.SecretType.BLESSING_CHEST);
-				Bukkit.broadcastMessage(ChatColor.RED + "Berserk: Clear Finished in 250 Ticks (12.50 seconds)");
+				Bukkit.broadcast(Utils.msg("<red>Berserk: Clear Finished in 250 Ticks (12.50 seconds)"));
 			}, 250);
 		}
 	}

@@ -1,6 +1,5 @@
 package commands;
 
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -10,6 +9,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.jspecify.annotations.NonNull;
+import plugin.Utils;
 
 import java.util.Map;
 
@@ -36,7 +36,7 @@ public class Practice implements CommandExecutor {
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
@@ -47,7 +47,7 @@ public class Practice implements CommandExecutor {
 			else section = arg.toLowerCase();
 		}
 		if(!DEFAULT_LOCATIONS.containsKey(section)) {
-			p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear boss maxor storm goldor necron witherking");
+			p.sendMessage(Utils.msg("<red>Invalid section specified.  Valid sections: clear boss maxor storm goldor necron witherking"));
 			return true;
 		}
 

@@ -32,7 +32,7 @@ public class WithersNotImmuneToArrows implements Listener {
 		// landing on a tick the boss was made vulnerable then re-armored within that same tick — the live counter
 		// already reads "shielded" because the arrow hit resolves after the start-of-tick boss scans, but the boss
 		// WAS intended vulnerable this tick (a same-tick mage beam would connect). Honor that heartbeat-time intent.
-		if(wither.getInvulnerabilityTicks() != 0
+		if(wither.getInvulnerableTicks() != 0
 				&& !(arrow.getScoreboardTags().contains("TerminatorArrow") && WitherActions.wasMadeVulnerableThisTick(wither))) {
 			return;
 		}
@@ -49,7 +49,7 @@ public class WithersNotImmuneToArrows implements Listener {
 		// Clear the spawn-shield counter before damaging: vanilla WitherBoss.hurt() rejects all damage while
 		// invulnerabilityTicks > 0, so on the same-tick-re-armored exception above the hit would otherwise no-op.
 		// A re-armored boss's armorTask re-asserts the shield next tick, so this only lets THIS hit land.
-		wither.setInvulnerabilityTicks(0);
+		wither.setInvulnerableTicks(0);
 		// Bukkit's no-source damage() uses a non-projectile cause, so the vanilla wither
 		// "powered" projectile shield doesn't apply. The fired EntityDamageEvent still reaches
 		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.

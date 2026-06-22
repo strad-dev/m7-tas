@@ -17,7 +17,7 @@ import plugin.Utils;
 public class Reset implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
@@ -27,7 +27,7 @@ public class Reset implements CommandExecutor {
 		Location hide = new Location(Bukkit.getWorld("world"), -120.5, 71, -183.5);
 		FakePlayerManager.getFakePlayers().values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
 		Server.serverSetup(Bukkit.getWorld("world"));
-		p.sendMessage("Reset server and all NPC locations");
+		p.sendMessage(Utils.msg("Reset server and all NPC locations"));
 		return true;
 	}
 }

@@ -7,27 +7,29 @@ commands:
   setup:
     description: Clear all classes and spawn them
     usage: /setup
-  spectate:
-    description: Spectate a class
-    usage: /spectate <class>
-  unspectate:
-    description: Stop spectating a class
-    usage: /unspectate
-  tas:
-    description: Begin TAS
-    usage: /tas <section>
+  # TAS-only commands — disabled in the practice fork:
+  # spectate:
+  #   description: Spectate a class
+  #   usage: /spectate <class>
+  # unspectate:
+  #   description: Stop spectating a class
+  #   usage: /unspectate
+  # tas:
+  #   description: Begin TAS
+  #   usage: /tas <section>
   practice:
     description: Begin practice (boss instructions only, for real players)
     usage: /practice <section> [--no-teleport]
   eq:
     description: View your equipment and current speed
     usage: /eq
-  reset:
-    description: Resets all classes to their spawn locations
-    usage: /reset
-  simulate:
-    description: Simulates player actions
-    usage: /simulate <move|click|hotbar|turnhead|allblessings|undo>
+  # TAS-only commands — disabled in the practice fork:
+  # reset:
+  #   description: Resets all classes to their spawn locations
+  #   usage: /reset
+  # simulate:
+  #   description: Simulates player actions
+  #   usage: /simulate <move|click|hotbar|turnhead|allblessings|undo>
   getcustomitems:
     description: Get custom items
     usage: /getcustomitems [all|archer|berserk|healer|mage|tank]
@@ -37,9 +39,10 @@ commands:
   setspeed:
     description: Set movement speed (100 = default); target self or a named player (fake or real)
     usage: /setspeed [player] [speed]
-  kickallfakes:
-    description: Kick all fake players
-    usage: /kickallfakes
+  # TAS-only command — disabled in the practice fork:
+  # kickallfakes:
+  #   description: Kick all fake players
+  #   usage: /kickallfakes
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>

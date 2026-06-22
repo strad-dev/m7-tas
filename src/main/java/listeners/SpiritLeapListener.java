@@ -2,7 +2,6 @@ package listeners;
 
 import instructions.Actions;
 import instructions.bosses.WitherActions;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,6 +11,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import plugin.FakePlayerManager;
+import plugin.Utils;
 
 /**
  * Opens and drives the practice-mode Spirit Leap menu ({@link SpiritLeapMenu}). Right-clicking the Infinileap opens
@@ -30,11 +30,11 @@ public class SpiritLeapListener implements Listener {
 		p.setCooldown(Material.ENDER_PEARL, 0); // right-clicking the leap item refreshes the ender pearl cooldown
 
 		if(!WitherActions.isPracticeMode()) {
-			p.sendMessage(ChatColor.RED + "This item can't be used right now!");
+			p.sendMessage(Utils.msg("<red>This item can't be used right now!"));
 			return;
 		}
 		if(!SpiritLeapMenu.hasCandidates(p)) {
-			p.sendMessage(ChatColor.RED + "Found no one to leap to!");
+			p.sendMessage(Utils.msg("<red>Found no one to leap to!"));
 			return;
 		}
 		SpiritLeapMenu.open(p);

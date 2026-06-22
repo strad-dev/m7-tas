@@ -1,6 +1,5 @@
 package listeners;
 
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
@@ -13,12 +12,12 @@ public class AllMobsHaveNames implements Listener {
 	@EventHandler
 	public void onEntitiesLoad(EntitiesLoadEvent e) {
 		for(Entity temp : e.getEntities()) {
-			if(temp instanceof LivingEntity entity && entity.getCustomName() == null) {
+			if(temp instanceof LivingEntity entity && entity.customName() == null) {
 				double health = entity.getHealth() + entity.getAbsorptionAmount();
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
-					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.YELLOW + health + ChatColor.RED + "❤");
+					entity.customName(Utils.msg("<aqua>" + entity.getName() + " <yellow>" + health + "<red>❤"));
 				} else {
-					entity.setCustomName(ChatColor.AQUA + entity.getName() + " " + ChatColor.YELLOW + Utils.formatHealthM(entity) + ChatColor.RED + "❤");
+					entity.customName(Utils.msg("<aqua>" + entity.getName() + " <yellow>" + Utils.formatHealthM(entity) + "<red>❤"));
 				}
 				entity.setCustomNameVisible(true);
 			}
@@ -29,15 +28,15 @@ public class AllMobsHaveNames implements Listener {
 	public void onEntitySpawn(EntitySpawnEvent e) {
 		if(e.getEntity() instanceof LivingEntity entity) {
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
-			String name = ChatColor.AQUA + entity.getName();
+			String name = "<aqua>" + entity.getName();
 			if(!name.contains("❤")) {
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
-					name += " " + ChatColor.YELLOW + health + ChatColor.RED + "❤";
+					name += " <yellow>" + health + "<red>❤";
 				} else {
-					name += " " + ChatColor.YELLOW + Utils.formatHealthM(entity) + ChatColor.RED + "❤";
+					name += " <yellow>" + Utils.formatHealthM(entity) + "<red>❤";
 				}
 			}
-			entity.setCustomName(name);
+			entity.customName(Utils.msg(name));
 			entity.setCustomNameVisible(true);
 		}
 	}

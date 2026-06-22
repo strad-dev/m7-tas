@@ -19,11 +19,11 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R7.block.CraftBlock;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.entity.CraftEntity;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -433,7 +433,8 @@ public class Actions {
 		double nearestDistance = Double.MAX_VALUE;
 		for(Entity entity : p.getNearbyEntities(32, 32, 32)) {
 			if(!(entity instanceof LivingEntity living)) continue;
-			if(living.getCustomName() == null || !living.getCustomName().toLowerCase().contains(nameContains.toLowerCase())) continue;
+			String livingName = Utils.plain(living.customName());
+			if(livingName.isEmpty() || !livingName.toLowerCase().contains(nameContains.toLowerCase())) continue;
 			double distance = p.getLocation().distance(living.getLocation());
 			if(distance < nearestDistance) {
 				nearestDistance = distance;
@@ -768,7 +769,7 @@ public class Actions {
 			// player was triggering this.
 			if(!(entity instanceof LivingEntity le)) return false;
 			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
-			if(le instanceof Wither w && w.getInvulnerabilityTicks() != 0) return false;
+			if(le instanceof Wither w && w.getInvulnerableTicks() != 0) return false;
 			if(le instanceof org.bukkit.entity.Player player) {
 				if(FakePlayerManager.getFakePlayers().containsValue(player)) return false;
 				return !Spectate.getSpectatingPlayers(p).contains(player);
@@ -778,7 +779,8 @@ public class Actions {
 
 		if(entityRay != null && entityRay.getHitEntity() != null) {
 			net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entityRay.getHitEntity()).getHandle();
-			ServerboundInteractPacket attackPacket = ServerboundInteractPacket.createAttackPacket(nmsEntity, serverPlayer.isShiftKeyDown());
+			// 26.2: ServerboundInteractPacket is a flat record. Attack = null hand & null location.
+			ServerboundInteractPacket attackPacket = new ServerboundInteractPacket(nmsEntity.getId(), null, null, serverPlayer.isShiftKeyDown());
 			Utils.simulatePacket(p, attackPacket);
 			return;
 		}
@@ -850,9 +852,10 @@ public class Actions {
 			Vec3 hitPos = new Vec3(entityRay.getHitPosition().getX(), entityRay.getHitPosition().getY(), entityRay.getHitPosition().getZ());
 			Vec3 localHit = hitPos.subtract(entityPos);
 
-			ServerboundInteractPacket interactAtPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND, localHit);
+			// 26.2: flat record. interact-at = hand + location (relative to entity); interact = hand, null location.
+			ServerboundInteractPacket interactAtPacket = new ServerboundInteractPacket(nmsEntity.getId(), InteractionHand.MAIN_HAND, localHit, serverPlayer.isShiftKeyDown());
 			Utils.simulatePacket(p, interactAtPacket);
-			ServerboundInteractPacket interactPacket = ServerboundInteractPacket.createInteractionPacket(nmsEntity, serverPlayer.isShiftKeyDown(), InteractionHand.MAIN_HAND);
+			ServerboundInteractPacket interactPacket = new ServerboundInteractPacket(nmsEntity.getId(), InteractionHand.MAIN_HAND, null, serverPlayer.isShiftKeyDown());
 			Utils.simulatePacket(p, interactPacket);
 			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 
@@ -912,7 +915,7 @@ public class Actions {
 		ItemStack held = p.getInventory().getItemInMainHand();
 		if(!"skyblock/utility/infinileap".equals(CustomItems.getID(held))) {
 			String heldDesc = held.getType().isAir() ? "an empty hand"
-					: held.getType() + (held.hasItemMeta() && held.getItemMeta().hasDisplayName() ? " (" + held.getItemMeta().getDisplayName() + ")" : "")
+					: held.getType() + (held.hasItemMeta() && held.getItemMeta().hasDisplayName() ? " (" + Utils.displayName(held.getItemMeta()) + ")" : "")
 					+ (CustomItems.getID(held) != null ? " [id=" + CustomItems.getID(held) + "]" : "");
 			Utils.debug(Utils.DebugType.ERROR, p.getName() + " tried to leap while holding " + heldDesc + " instead of an Infinileap");
 			return;
@@ -961,7 +964,7 @@ public class Actions {
 		b.setType(Material.AIR);
 
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
-		zombie.setCustomName("Mimic " + ChatColor.RESET + ChatColor.YELLOW + "4M" + ChatColor.RED + "❤");
+		zombie.customName(Utils.msg("Mimic <yellow>4M<red>❤"));
 		zombie.setCustomNameVisible(true);
 		zombie.setAI(false);
 		zombie.setSilent(true);
@@ -999,7 +1002,7 @@ public class Actions {
 		Vector dir = aimFrom.getDirection();
 
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(
-				net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+				nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 		nmsArrow.setPos(aimFrom.getX(), aimFrom.getY() - 0.1, aimFrom.getZ());
 		nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), speed, 0);
 		nmsArrow.setOwner(nmsPlayer);

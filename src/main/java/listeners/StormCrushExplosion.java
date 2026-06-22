@@ -2,6 +2,8 @@ package listeners;
 
 import instructions.bosses.storm.PadAndPillar;
 import instructions.bosses.storm.Storm;
+import io.papermc.paper.event.entity.EntityKnockbackEvent;
+import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -66,18 +68,20 @@ public class StormCrushExplosion implements Listener {
 		event.setCancelled(true);
 	}
 
+	// 26.2: migrated to Paper's unified io.papermc.paper.event.entity.EntityKnockbackEvent — one handler. The
+	// by-entity crush source arrives as EntityPushedByEntityAttackEvent (subclass sharing the same HandlerList);
+	// explosion-physics paths arrive on the base event with Cause.EXPLOSION.
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-	public void onCrushKnockback(EntityKnockbackByEntityEvent event) {
-		if(!isStormCrush(event.getSourceEntity())) return;
-		event.setCancelled(true);
-	}
-
-	/** Generic-source knockback fallback for explosion physics paths that don't carry the source entity. */
-	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-	public void onAnyKnockback(EntityKnockbackEvent event) {
-		if(event.getCause() != EntityKnockbackEvent.KnockbackCause.EXPLOSION) return;
-		if(Storm.INSTANCE.crushExplosionNotActive()) return;
-		event.setCancelled(true);
+	public void onCrushKnockback(EntityKnockbackEvent event) {
+		// Crush source delivered as a pushed-by-entity knockback.
+		if(event instanceof EntityPushedByEntityAttackEvent pushed && isStormCrush(pushed.getPushedBy())) {
+			event.setCancelled(true);
+			return;
+		}
+		// Explosion-physics knockback during an active crush (no source entity carried).
+		if(event.getCause() == EntityKnockbackEvent.Cause.EXPLOSION && !Storm.INSTANCE.crushExplosionNotActive()) {
+			event.setCancelled(true);
+		}
 	}
 
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

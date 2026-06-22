@@ -9,7 +9,7 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
+import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
@@ -17,9 +17,11 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
+import net.kyori.adventure.title.Title;
 import plugin.M7tas;
 import plugin.Utils;
 
+import java.time.Duration;
 import java.util.*;
 
 @SuppressWarnings("DataFlowIssue")
@@ -178,7 +180,7 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 0, 3, 90, 122, 101));
 		GoldorDevice dev = new GoldorDevice(world, 0, 110, 121, 91, 1.0);
 		List<GoldorLever> lev = buildLevers(0);
-		GoldorGate gate = new GoldorGate(world, 0, makeBox(96, 115, 121, 104, 135, 124));
+		GoldorGate gate = new GoldorGate(world, 0, makeBox(96, 121, 104, 124));
 		return new GoldorSection(0, terms, dev, lev, gate);
 	}
 
@@ -191,7 +193,7 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 1, 4, 40, 124, 123));
 		GoldorDevice dev = new GoldorDevice(world, 1, 60, 131, 142);
 		List<GoldorLever> lev = buildLevers(1);
-		GoldorGate gate = new GoldorGate(world, 1, makeBox(16, 115, 128, 19, 135, 136));
+		GoldorGate gate = new GoldorGate(world, 1, makeBox(16, 128, 19, 136));
 		return new GoldorSection(1, terms, dev, lev, gate);
 	}
 
@@ -203,7 +205,7 @@ public final class Goldor extends WitherLord {
 		terms.add(new GoldorTerminal(world, 2, 3, -2, 109, 77));
 		GoldorDevice dev = new GoldorDevice(world, 2, -2, 119, 74);
 		List<GoldorLever> lev = buildLevers(2);
-		GoldorGate gate = new GoldorGate(world, 2, makeBox(4, 115, 48, 12, 135, 51));
+		GoldorGate gate = new GoldorGate(world, 2, makeBox(4, 48, 12, 51));
 		return new GoldorSection(2, terms, dev, lev, gate);
 	}
 
@@ -230,10 +232,10 @@ public final class Goldor extends WitherLord {
 		return lev;
 	}
 
-	private static BoundingBox makeBox(int x1, int y1, int z1, int x2, int y2, int z2) {
+	private static BoundingBox makeBox(int x1, int z1, int x2, int z2) {
 		return new BoundingBox(
-				Math.min(x1, x2), Math.min(y1, y2), Math.min(z1, z2),
-				Math.max(x1, x2) + 1, Math.max(y1, y2) + 1, Math.max(z1, z2) + 1
+				Math.min(x1, x2), Math.min(115, 135), Math.min(z1, z2),
+				Math.max(x1, x2) + 1, Math.max(115, 135) + 1, Math.max(z1, z2) + 1
 		);
 	}
 
@@ -461,7 +463,7 @@ public final class Goldor extends WitherLord {
 	 *  {@code now} is the activation's effective tick (live {@code tick}, or {@code tick - 1} if grace-deferred). */
 	public String verboseTimingLine(int now) {
 		int secTicks = now - sectionStartTick;
-		return ChatColor.GREEN + String.format("S%d: %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
+		return "<green>" + String.format("S%d: %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
 				currentSectionIdx + 1, formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(now), now / 20.0);
 	}
 
@@ -470,7 +472,7 @@ public final class Goldor extends WitherLord {
 	public String gateDestroyedLine(int gateSectionStartTick) {
 		int secTicks = displayTick() - gateSectionStartTick;
 		int termTicks = displayTick();
-		return ChatColor.GREEN + String.format("Gate destroyed in %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
+		return "<green>" + String.format("Gate destroyed in %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
 				formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(termTicks), termTicks / 20.0);
 	}
 
@@ -507,17 +509,18 @@ public final class Goldor extends WitherLord {
 	/** Broadcast this section's duration (measured to now), the cumulative terminal-phase time, and the run-overall time. */
 	private void reportSectionFinished(GoldorSection s, int now) {
 		int sectionTicks = now - sectionStartTick;
-		Utils.timer(ChatColor.GREEN + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
+		Utils.timer("<green>" + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
 				s.idx + 1, formatWithSpaces(sectionTicks), sectionTicks / 20.0) + formatTick(now));
 	}
 
 	public static void broadcastActivation(Player p, String thing, int order, int total) {
-		String msg = ChatColor.GOLD + Utils.getRealName(p) + " "
-				+ ChatColor.GREEN + "activated a " + thing + " ("
-				+ ChatColor.RED + order + ChatColor.GREEN + "/" + total + ")";
-		Bukkit.broadcastMessage(msg);
+		String msg = "<gold>" + Utils.getRealName(p) + " "
+				+ "<green>activated a " + thing + " ("
+				+ "<red>" + order + "<green>/" + total + ")";
+		Bukkit.broadcast(Utils.msg(msg));
 		for(Player pl : Bukkit.getOnlinePlayers()) {
-			pl.sendTitle("", msg, 0, 40, 0);
+			pl.showTitle(Title.title(Utils.msg(""), Utils.msg(msg),
+					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
@@ -617,10 +620,11 @@ public final class Goldor extends WitherLord {
 		for(Location loc : coreSnapshot.keySet()) {
 			loc.getBlock().setType(Material.BARRIER, false);
 		}
-		String msg = ChatColor.GREEN + "The Core entrance is opening!";
-		Bukkit.broadcastMessage(msg);
+		String msg = "<green>The Core entrance is opening!";
+		Bukkit.broadcast(Utils.msg(msg));
 		for(Player pl : Bukkit.getOnlinePlayers()) {
-			pl.sendTitle("", msg, 0, 40, 0);
+			pl.showTitle(Title.title(Utils.msg(""), Utils.msg(msg),
+					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 		Utils.scheduleTask(() -> {
@@ -735,13 +739,13 @@ public final class Goldor extends WitherLord {
 		sendChatMessage("...");
 		// Three columns: time-since-core-opened (S4 complete), then the shared Terminals (Goldor) + Overall columns.
 		int coreTicks = displayTick() - coreOpenTick;
-		Utils.timer(ChatColor.GREEN + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
+		Utils.timer("<green>" + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
 				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
 		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 60);
 		// Open the floor to Necron's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, 100);
 		Utils.scheduleTask(() -> {
-			Utils.timer(ChatColor.GREEN + "Goldor finished in " + formatTick(displayTick()));
+			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 80);

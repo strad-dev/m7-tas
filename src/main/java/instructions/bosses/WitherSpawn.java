@@ -15,10 +15,10 @@ public final class WitherSpawn {
 	/**
 	 * Restore all three active Storm pillars to their initial state
 	 * (column y175..y196 of pillar material, with air below y175).
-	 *
+	 * <br>
 	 * Runs as part of every {@code /tas} setup, not just at Storm fight start —
 	 * the user wants the world reset across all TAS invocations.
-	 *
+	 * <br>
 	 * For each pillar:
 	 * <ol>
 	 *   <li>Air-clear y169..y175 — wipes any stale blocks left below the initial bottom

@@ -6,8 +6,10 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
+import net.kyori.adventure.title.Title;
 import plugin.Utils;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -135,10 +137,11 @@ public final class GoldorGate {
 	}
 
 	private void broadcastDestroyed() {
-		String msg = ChatColor.GREEN + "The gate has been destroyed!";
-		Bukkit.broadcastMessage(msg);
+		String msg = "<green>The gate has been destroyed!";
+		Bukkit.broadcast(Utils.msg(msg));
 		for(Player pl : Bukkit.getOnlinePlayers()) {
-			pl.sendTitle("", msg, 0, 40, 0);
+			pl.showTitle(Title.title(Utils.msg(""), Utils.msg(msg),
+					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 		Utils.timer(Goldor.INSTANCE.gateDestroyedLine(sectionStartTick));
