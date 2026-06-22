@@ -5,3 +5,4 @@ target/
 src/main/resources/mappings.txt
 PAPER_NMS_SETUP.md
 PUBLIC_SERVER.md
+MIGRATION_PLAYBOOK.md
