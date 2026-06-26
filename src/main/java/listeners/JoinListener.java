@@ -9,6 +9,9 @@ import net.minecraft.server.network.ServerCommonPacketListenerImpl;
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import nms.PlayerPacketInterceptor;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.boss.BossBar;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -16,6 +19,7 @@ import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -148,6 +152,18 @@ public class JoinListener implements Listener {
 				watcherBossBar.addPlayer(joiningPlayer);
 			}
 		}, 1);
+	}
+
+	// Force every real player to the dungeon-entrance spawn on join so they stop appearing above the
+	// map. LOWEST priority so that if something runs /practice on the same join (e.g. the network
+	// plugin sending a practicer in), that teleport runs afterwards and still wins.
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onJoinSpawn(PlayerJoinEvent ev) {
+		Player jp = ev.getPlayer();
+		if (FakePlayerManager.getFakePlayers().containsValue(jp)) return; // never the fakes
+		if (jp.getGameMode() == GameMode.SPECTATOR) return;              // don't yank spectators
+		World w = Bukkit.getWorld("world");
+		if (w != null) jp.teleport(new Location(w, -120.5, 71, -183.5, 0.0f, 0.0f));
 	}
 
 	@EventHandler
