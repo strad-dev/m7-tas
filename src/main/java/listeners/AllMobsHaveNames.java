@@ -15,20 +15,26 @@ public class AllMobsHaveNames implements Listener {
 			if(temp instanceof LivingEntity entity && entity.customName() == null) {
 				double health = entity.getHealth() + entity.getAbsorptionAmount();
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
-					entity.customName(Utils.msg("<aqua>" + entity.getName() + " <yellow>" + health + "<red>❤"));
+					entity.customName(Utils.msg("<aqua>" + sanitize(entity.getName()) + " <yellow>" + health + "<red>❤"));
 				} else {
-					entity.customName(Utils.msg("<aqua>" + entity.getName() + " <yellow>" + Utils.formatHealthM(entity) + "<red>❤"));
+					entity.customName(Utils.msg("<aqua>" + sanitize(entity.getName()) + " <yellow>" + Utils.formatHealthM(entity) + "<red>❤"));
 				}
 				entity.setCustomNameVisible(true);
 			}
 		}
 	}
 
+	/** Strips legacy §-color codes so a foreign mob's §-coded name (e.g. a /summon'd "§fMort") doesn't
+	 *  break MiniMessage, which rejects § codes. */
+	private static String sanitize(String name) {
+		return name == null ? "" : name.replaceAll("(?i)§[0-9A-FK-OR]", "");
+	}
+
 	@EventHandler
 	public void onEntitySpawn(EntitySpawnEvent e) {
 		if(e.getEntity() instanceof LivingEntity entity) {
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
-			String name = "<aqua>" + entity.getName();
+			String name = "<aqua>" + sanitize(entity.getName());
 			if(!name.contains("❤")) {
 				if(entity.getScoreboardTags().contains("TASWitherKing") || entity.getScoreboardTags().contains("TASWatcher")) {
 					name += " <yellow>" + health + "<red>❤";

@@ -97,6 +97,9 @@ public final class GoldorGate {
 		if(explosionMarked) {
 			removeBlocksNow();
 		} else {
+			// All terminals done and the gate wasn't blown early — it auto-destructs 100 ticks (5s) later.
+			// Announce the countdown (matches real Hypixel's "The gate will open in 5 seconds!").
+			Bukkit.broadcast(Utils.msg("<green>The gate will open in 5 seconds!"));
 			pendingDelayedRemoval = Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
 				if(!blocksRemoved) removeBlocksNow();
 			}, 100L);
