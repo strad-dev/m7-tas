@@ -24,6 +24,20 @@
     </pluginRepositories>
 
     <build>
+        <!-- Filter only plugin.yml so ${project.version} (and other pom props) are substituted at build
+             time - this pom is the single source of truth for the version. Other resources copied as-is. -->
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes><include>plugin.yml</include></includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes><exclude>plugin.yml</exclude></excludes>
+            </resource>
+        </resources>
         <plugins>
             <!-- Surface plain @Deprecated usages (hidden by default) so deprecation cleanup is complete. -->
             <plugin>
