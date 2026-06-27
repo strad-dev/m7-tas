@@ -85,6 +85,10 @@ public final class M7tas extends JavaPlugin {
 		Spectate.startSpectatorSync();
 		SpringBoots.start();
 		LavaJump.start();
+
+		// Export the item catalog (palette + per-class default kits) to the shared data folder so the network
+		// plugin's lobby loadout editor can load the real M7 items. M7 is the sole writer of this file.
+		Catalog.export();
 	}
 
 	@Override

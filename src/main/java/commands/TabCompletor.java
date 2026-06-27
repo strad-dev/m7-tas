@@ -24,7 +24,7 @@ public class TabCompletor implements TabCompleter {
 		switch(cmdName) {
 			case "practice" -> {
 				if(args.length == 1) {
-					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking"};
+					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking", "end"};
 					String input = args[0].toLowerCase();
 
 					for(String section : sections) {

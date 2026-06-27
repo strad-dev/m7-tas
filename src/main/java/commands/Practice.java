@@ -40,6 +40,13 @@ public class Practice implements CommandExecutor {
 			return true;
 		}
 
+		// /practice end - cancel the current session.
+		if(args.length >= 1 && args[0].equalsIgnoreCase("end")) {
+			TAS.endPractice(p.getWorld());
+			p.sendMessage(Utils.msg("<yellow>Practice session ended"));
+			return true;
+		}
+
 		String section = "all";
 		boolean noTeleport = false;
 		for(String arg : args) {
