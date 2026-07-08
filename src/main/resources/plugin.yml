@@ -23,6 +23,7 @@ commands:
   eq:
     description: View your equipment and current speed
     usage: /eq
+    aliases: [stats]
   # TAS-only commands — disabled in the practice fork:
   # reset:
   #   description: Resets all classes to their spawn locations
