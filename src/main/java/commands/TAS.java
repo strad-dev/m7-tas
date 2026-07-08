@@ -8,21 +8,16 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
-import instructions.players.*;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+// import instructions.players.*; // TAS-only player routines — disabled in the practice fork
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
-import plugin.FakePlayerInventory;
 import plugin.FakePlayerManager;
 import plugin.MovementAudit;
 import plugin.Utils;
-
-import java.util.Map;
 
 /*
  * TAS
@@ -35,22 +30,16 @@ public class TAS implements CommandExecutor {
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
-		String section = "all";
-		if(args.length >= 1) {
-			section = args[0].toLowerCase();
-			if(!section.equals("all") && !section.equals("clear") && !section.equals("boss") && !section.equals("maxor") && !section.equals("storm") && !section.equals("goldor") && !section.equals("necron") && !section.equals("witherking")) {
-				p.sendMessage(ChatColor.RED + "Invalid section specified.  Valid sections: clear boss maxor storm goldor necron witherking");
-				return true;
-			}
-		}
-		runTAS(p.getWorld(), section);
+		// /tas is disabled in the practice fork (TAS removed). The command is also unregistered in M7tas.
+		p.sendMessage(Utils.msg("<red>The TAS is disabled on the practice server."));
 		return true;
 	}
 
+	/* TAS-only — disabled in the practice fork (references the commented-out player routines). Original in git history (main).
 	public static void runTAS(World world, String section) {
 		Map<String, Player> fakePlayers = FakePlayerManager.getFakePlayers();
 		if(fakePlayers.isEmpty()) {
@@ -151,9 +140,10 @@ public class TAS implements CommandExecutor {
 		Spectate.stopSpectatorSync();
 		Spectate.startSpectatorSync();
 	}
+	*/
 
 	/**
-	 * Like {@link #runTAS} but runs ONLY the boss/server instructions — no fake-player routines, no player
+	 * Like runTAS but runs ONLY the boss/server instructions — no fake-player routines, no player
 	 * handoffs, no spectator sync — so real players can practice the boss fights and mechanics. Bosses still
 	 * chain (e.g. {@code /practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
 	 * chainNext spawns the next; runPlayerHandoff is simply a no-op since no handoff is armed here.
@@ -193,5 +183,37 @@ public class TAS implements CommandExecutor {
 		Actions.cancelAllMovement();
 		Server.serverSetup(world);
 		Server.serverInstructions(world, section);
+	}
+
+	/**
+	 * Cancels the current practice session: stops all scripted choreography + movement, disarms the
+	 * boss chain so nothing re-spawns, turns practice mode off, and clears the boss entities.
+	 */
+	public static void endPractice(World world) {
+		WitherActions.setPracticeMode(false);
+		Utils.cancelAllScheduled();
+		MovementAudit.cancelAll();
+		Actions.cancelAllMovement();
+		Maxor.INSTANCE.armPlayerHandoff(null);
+		Storm.INSTANCE.armPlayerHandoff(null);
+		Goldor.INSTANCE.armPlayerHandoff(null);
+		Necron.INSTANCE.armPlayerHandoff(null);
+		Watcher.INSTANCE.arm(world, false, null);
+		// Clear the boss entities + energy crystals + Wither King dragons/relics so the dungeon resets.
+		for(org.bukkit.entity.Entity e : world.getEntities()) {
+			if(e instanceof org.bukkit.entity.Wither
+					|| e instanceof org.bukkit.entity.EnderCrystal
+					|| e.getScoreboardTags().contains("SkyblockBoss")
+					|| e.getScoreboardTags().contains("TASWitherKing")
+					|| e.getScoreboardTags().contains("WitherKingDragon")
+					|| e.getScoreboardTags().contains("TASWitherKingRelic")
+					|| e.getScoreboardTags().contains("TASWatcher")) {
+				e.remove();
+			}
+		}
+		// Put all practicers back into spectator mode.
+		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+			if(p.getGameMode() != org.bukkit.GameMode.SPECTATOR) p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+		}
 	}
 }

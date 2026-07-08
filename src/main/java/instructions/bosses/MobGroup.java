@@ -3,7 +3,7 @@ package instructions.bosses;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton;
+import org.bukkit.craftbukkit.entity.CraftWitherSkeleton;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.WitherSkeleton;
 import org.bukkit.entity.Zombie;
@@ -60,7 +60,7 @@ public final class MobGroup {
 			mob.setSilent(spec.silent());
 			mob.setPersistent(spec.persistent());
 			mob.setRemoveWhenFarAway(false);
-			mob.setCustomName(spec.customName());
+			mob.customName(Utils.nameComponent(spec.customName()));
 			mob.setCustomNameVisible(true);
 
 			if(spec.adult() && mob instanceof Zombie zombie) {
@@ -72,7 +72,7 @@ public final class MobGroup {
 				if(spec.mainHand() != null) eq.setItemInMainHand(spec.mainHand());
 				List<ItemStack> armorPieces = spec.armorPieces();
 				if(armorPieces != null) {
-					if(armorPieces.size() > 0 && armorPieces.get(0) != null) eq.setHelmet(armorPieces.get(0));
+					if(!armorPieces.isEmpty() && armorPieces.get(0) != null) eq.setHelmet(armorPieces.get(0));
 					if(armorPieces.size() > 1 && armorPieces.get(1) != null) eq.setChestplate(armorPieces.get(1));
 					if(armorPieces.size() > 2 && armorPieces.get(2) != null) eq.setLeggings(armorPieces.get(2));
 					if(armorPieces.size() > 3 && armorPieces.get(3) != null) eq.setBoots(armorPieces.get(3));

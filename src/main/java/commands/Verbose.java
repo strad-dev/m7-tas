@@ -1,6 +1,5 @@
 package commands;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,12 +11,12 @@ import plugin.Utils.VerboseLevel;
 public class Verbose implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
 		if(!(sender instanceof Player p)) {
-			sender.sendMessage("Only players can run this");
+			sender.sendMessage(Utils.msg("Only players can run this"));
 			return true;
 		}
 
 		if(args.length < 1) {
-			p.sendMessage(ChatColor.RED + "Usage: /verbose <off|timer|on|super>");
+			p.sendMessage(Utils.msg("<red>Usage: /verbose \\<off|timer|on|super>"));
 			return true;
 		}
 
@@ -29,12 +28,12 @@ public class Verbose implements CommandExecutor {
 			// `super` toggles: engage it, or fall back to normal verbosity if it's already on.
 			case "super" -> level = (Utils.getVerboseLevel() == VerboseLevel.SUPER) ? VerboseLevel.ON : VerboseLevel.SUPER;
 			default -> {
-				p.sendMessage(ChatColor.RED + "Usage: /verbose <off|timer|on|super>");
+				p.sendMessage(Utils.msg("<red>Usage: /verbose \\<off|timer|on|super>"));
 				return true;
 			}
 		}
 		Utils.setVerboseLevel(level);
-		p.sendMessage(ChatColor.GREEN + "Verbose Mode: " + level);
+		p.sendMessage(Utils.msg("<green>Verbose Mode: " + level));
 		return true;
 	}
 }

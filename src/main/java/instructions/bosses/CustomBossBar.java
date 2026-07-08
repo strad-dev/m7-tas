@@ -2,14 +2,13 @@ package instructions.bosses;
 
 import net.minecraft.world.entity.boss.wither.WitherBoss;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
+import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.TextDisplay;
@@ -62,9 +61,10 @@ public class CustomBossBar {
 		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
 		String healthStr = exempt ? String.valueOf((int) maxHealth) : Utils.formatHealthM(activeWither);
 
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.RESET + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + healthStr + ChatColor.RED + "❤";
+		// witherName is a MiniMessage string supplied by the caller; <reset> after it closes any obfuscated/bold it carries.
+		String title = "<gold><bold>﴾ <red><bold>" + witherName + "<reset><gold><bold> ﴿ <!bold><yellow>" + healthStr + "<red>❤";
 
-		activeWitherBossBar = Bukkit.createBossBar(title, BarColor.PURPLE, BarStyle.SOLID);
+		activeWitherBossBar = Bukkit.createBossBar(Utils.mmLegacy(title), BarColor.PURPLE, BarStyle.SOLID);
 		activeWitherBossBar.setProgress(1.0);
 
 		// Add all current online players
@@ -103,9 +103,9 @@ public class CustomBossBar {
 		String healthStr = exempt ? String.valueOf((int) Math.floor(currentHealth)) : Utils.formatHealthM(activeWither);
 
 		// Update title with current health
-		String title = ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + witherName + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + healthStr + ChatColor.RED + "❤";
+		String title = "<gold><bold>﴾ <red><bold>" + witherName + "<reset><gold><bold> ﴿ <!bold><yellow>" + healthStr + "<red>❤";
 
-		activeWitherBossBar.setTitle(title);
+		activeWitherBossBar.setTitle(Utils.mmLegacy(title));
 
 		// Update progress bar
 		double progress = Math.max(0.0, Math.min(1.0, currentHealth / maxHealth));
@@ -181,13 +181,13 @@ public class CustomBossBar {
 
 				// Rotate the colors every 5 ticks.
 				if(tickCount++ % 5 == 0) {
-					ChatColor[] colors = {ChatColor.RED, ChatColor.YELLOW, ChatColor.BLUE};
+					String[] colors = {"<red>", "<yellow>", "<blue>"};
 					StringBuilder text = new StringBuilder();
 					for(int i = 0; i < 3; i++) {
 						int colorIndex = (i + colorOffset) % 3;
-						text.append(colors[colorIndex]).append(ChatColor.BOLD).append("?");
+						text.append(colors[colorIndex]).append("<bold>?");
 					}
-					indicator.setText(text.toString().trim());
+					indicator.text(Utils.msg(text.toString()));
 					colorOffset = (colorOffset + 1) % 3;
 				}
 			}

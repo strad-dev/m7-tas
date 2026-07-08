@@ -17,9 +17,11 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+import net.kyori.adventure.title.Title;
 import plugin.BossScheduler;
 import plugin.Utils;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -176,23 +178,27 @@ public final class Storm extends WitherLord {
 		}, 400);
 		Utils.scheduleTask(() -> {
 			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle(ChatColor.DARK_RED + "4", "", 0, 25, 0);
+				player.showTitle(Title.title(Utils.msg("<dark_red>4"), Utils.msg(""),
+						Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(25 * 50L), Duration.ofMillis(0L))));
 			}
 		}, 440);
 		Utils.scheduleTask(() -> sendChatMessage("I'd be happy to show you what that's like!"), 460);
 		Utils.scheduleTask(() -> {
 			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle(ChatColor.DARK_RED + "3", "", 0, 25, 0);
+				player.showTitle(Title.title(Utils.msg("<dark_red>3"), Utils.msg(""),
+						Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(25 * 50L), Duration.ofMillis(0L))));
 			}
 		}, 465);
 		Utils.scheduleTask(() -> {
 			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle(ChatColor.DARK_RED + "2", "", 0, 25, 0);
+				player.showTitle(Title.title(Utils.msg("<dark_red>2"), Utils.msg(""),
+						Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(25 * 50L), Duration.ofMillis(0L))));
 			}
 		}, 490);
 		Utils.scheduleTask(() -> {
 			for(Player player : Bukkit.getOnlinePlayers()) {
-				player.sendTitle(ChatColor.DARK_RED + "1", "", 0, 25, 0);
+				player.showTitle(Title.title(Utils.msg("<dark_red>1"), Utils.msg(""),
+						Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(25 * 50L), Duration.ofMillis(0L))));
 			}
 		}, 515);
 		Utils.scheduleTask(() -> sendChatMessage(LIGHTNING_MESSAGE[random.nextInt(LIGHTNING_MESSAGE.length)]), 525);
@@ -356,7 +362,7 @@ public final class Storm extends WitherLord {
 		clearAggro();
 		setArmor(false);
 		sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
-		Utils.timer(ChatColor.GREEN + "Storm crushed in " + formatTick(displayTick()));
+		Utils.timer("<green>Storm crushed in " + formatTick(displayTick()));
 
 		// Crush damage: 5% max HP, bypasses event (no recursion) — counted toward the 55% stun cap.
 		boss.setHealth(Math.max(0.0, currentHp - crushDmg));
@@ -409,6 +415,7 @@ public final class Storm extends WitherLord {
 		return closest;
 	}
 
+	@SuppressWarnings("removal") // GameRule.MOB_GRIEFING is deprecated-for-removal in 26.2 but still functional; no clean replacement.
 	private void fireCrushExplosion() {
 		if(boss == null || !boss.isValid()) return;
 		Location loc = boss.getLocation();
@@ -424,7 +431,7 @@ public final class Storm extends WitherLord {
 			world.createExplosion(loc.getX(), loc.getY(), loc.getZ(), CRUSH_EXPLOSION_POWER, false, true, boss);
 		} finally {
 			crushExplosionActive = false;
-			world.setGameRule(GameRule.MOB_GRIEFING, prevMobGriefing != null && prevMobGriefing);
+			world.setGameRule(GameRule.MOB_GRIEFING, prevMobGriefing);
 		}
 	}
 
@@ -435,9 +442,10 @@ public final class Storm extends WitherLord {
 
 		setArmor(true);
 		sendChatMessage(ENRAGE_MESSAGE[random.nextInt(ENRAGE_MESSAGE.length)]);
-		Utils.timer(ChatColor.RED + "⚠ Storm is enraged! ⚠\n" + formatTick(displayTick()));
+		Utils.timer("<red>⚠ Storm is enraged! ⚠\n" + formatTick(displayTick()));
 		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.sendTitle("", ChatColor.RED + "⚠ Storm is enraged! ⚠", 0, 40, 0);
+			player.showTitle(Title.title(Utils.msg(""), Utils.msg("<red>⚠ Storm is enraged! ⚠"),
+					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
@@ -533,12 +541,12 @@ public final class Storm extends WitherLord {
 	private void playDeathDialogue() {
 		sendChatMessage("I should have known that I stand no chance.");
 		Server.playWitherDeathSound(boss);
-		Utils.timer(ChatColor.GREEN + "Storm killed in " + formatTick(displayTick()));
+		Utils.timer("<green>Storm killed in " + formatTick(displayTick()));
 		// Open the wall to Goldor's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openStormToGoldor, 100);
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 60);
 		Utils.scheduleTask(() -> {
-			Utils.timer(ChatColor.GREEN + "Storm finished in " + formatTick(displayTick()));
+			Utils.timer("<green>Storm finished in " + formatTick(displayTick()));
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);
@@ -602,7 +610,7 @@ public final class Storm extends WitherLord {
 		mobGroups.clear();
 
 		// Static name + equipment shared by every miner.
-		String minerName = "Wither Miner " + ChatColor.YELLOW + "8M" + ChatColor.RED + "❤";
+		String minerName = Utils.mmLegacy("Wither Miner <yellow>8M<red>❤");
 		ItemStack stonePickaxe = new ItemStack(Material.STONE_PICKAXE);
 		Location facingCenter = FACING_CENTER.clone();
 		facingCenter.setWorld(world);
@@ -655,10 +663,10 @@ public final class Storm extends WitherLord {
 	}
 
 	private static MobSpawnSpec shadowAssassinSpec(String groupName, double x, double z) {
-		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, ChatColor.LIGHT_PURPLE + "Shadow Assassin Boots");
+		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, Utils.mmLegacy("<light_purple>Shadow Assassin Boots"));
 		List<ItemStack> armor = Arrays.asList(new ItemStack(Material.AIR), new ItemStack(Material.AIR), new ItemStack(Material.AIR), boots);
 		List<PotionEffect> effects = List.of(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
-		return new MobSpawnSpec(groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, 170, z), 15.0, -30, -20, ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Shadow Assassin " + ChatColor.RESET + ChatColor.YELLOW + "30M" + ChatColor.RED + "❤", new ItemStack(Material.STONE_SWORD),
+		return new MobSpawnSpec(groupName, EntityType.ZOMBIE, 1, MobSpawnSpec.fixed(x, 170, z), 15.0, -30, -20, Utils.mmLegacy("<light_purple><bold>Shadow Assassin </bold><yellow>30M<red>❤"), new ItemStack(Material.STONE_SWORD),
 				/* aiEnabled */ false, /* aggressive */ false, /* adult */ true,
 				/* silent */ true, /* persistent */ true,
 				/* facingTarget */ null, effects, armor, 80,
@@ -679,7 +687,7 @@ public final class Storm extends WitherLord {
 			sentry.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
 			sentry.setAI(false);
 			sentry.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
-			sentry.setCustomName("Wither Guard " + ChatColor.YELLOW + "8M" + ChatColor.RED + "❤");
+			sentry.customName(Utils.msg("Wither Guard <yellow>8M<red>❤"));
 			sentry.setCustomNameVisible(true);
 
 			Location targetLoc = new Location(world, center.getX(), loc.getY(), center.getZ());
@@ -691,7 +699,7 @@ public final class Storm extends WitherLord {
 			facingLoc.setPitch(pitch);
 			sentry.teleport(facingLoc);
 
-			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWs = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((org.bukkit.craftbukkit.v1_21_R7.entity.CraftWitherSkeleton) sentry).getHandle();
+			net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWs = (net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((org.bukkit.craftbukkit.entity.CraftWitherSkeleton) sentry).getHandle();
 			nmsWs.setAggressive(true);
 
 			sentries.add(sentry);

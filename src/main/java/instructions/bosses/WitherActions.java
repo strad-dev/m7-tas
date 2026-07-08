@@ -8,8 +8,8 @@ import net.minecraft.world.phys.Vec3;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftLivingEntity;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftWither;
+import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -304,18 +304,18 @@ public class WitherActions {
 			// Assert the shield THIS tick — the maintenance task's first run is only next tick (0-tick delay = next
 			// scheduler pass), so without this an enrage mid-tick would leave the boss unshielded for the rest of the
 			// tick, letting same-tick beams/arrows land after it re-armored (over-DPS).
-			wither.setInvulnerabilityTicks(3);
+			wither.setInvulnerableTicks(3);
 			// Start the armor maintenance task
 			armorTask = new BukkitRunnable() {
 				@Override
 				public void run() {
 					// Reapply invulnerability ticks
-					wither.setInvulnerabilityTicks(3);
+					wither.setInvulnerableTicks(3);
 				}
 			}.runTaskTimer(M7tas.getInstance(), 0L, 1L); // Start immediately, repeat every 20 ticks (1 second)
 		} else {
 			// Remove armor immediately
-			wither.setInvulnerabilityTicks(0);
+			wither.setInvulnerableTicks(0);
 			// Record the tick the window opened so a same-tick re-arm (e.g. a stun whose cap-enrage fires in the
 			// same tick's damage handler) still lets a Terminator/Last Breath arrow through this tick.
 			lastVulnerableTick.put(wither.getUniqueId(), MinecraftServer.currentTick);

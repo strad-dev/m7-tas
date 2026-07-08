@@ -20,9 +20,9 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Slab;
-import org.bukkit.craftbukkit.v1_21_R7.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R7.profile.CraftPlayerProfile;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
@@ -119,7 +119,7 @@ public class CustomItems implements Listener {
 			return "";
 		} else if(!item.getItemMeta().hasLore()) {
 			return "";
-		} else return item.getItemMeta().getLore().getFirst();
+		} else return Utils.firstLorePlain(item.getItemMeta());
 	}
 
 	public static List<EntityType> doNotKill() {
@@ -210,12 +210,7 @@ public class CustomItems implements Listener {
 		// abilities (Dungeonbreaker/stonk, gyro, last_breath) can still interact with entities like
 		// item frames normally.
 		String id = getID(e.getPlayer().getInventory().getItemInMainHand());
-		if(id != null && !id.isEmpty()
-				&& !id.equals("skyblock/combat/gyro")
-				&& !id.equals("skyblock/combat/dungeonbreaker")
-				&& !id.equals("skyblock/combat/stonk")
-				&& !id.equals("skyblock/combat/last_breath")
-				&& !id.equals("skyblock/combat/explosive_bow")) {
+		if(!id.isEmpty() && !id.equals("skyblock/combat/gyro") && !id.equals("skyblock/combat/dungeonbreaker") && !id.equals("skyblock/combat/stonk") && !id.equals("skyblock/combat/last_breath") && !id.equals("skyblock/combat/explosive_bow")) {
 			e.setCancelled(true);
 		}
 	}
@@ -319,7 +314,7 @@ public class CustomItems implements Listener {
 	public void onEntityShootBow(EntityShootBowEvent e) {
 		if(e.getEntity() instanceof Player p) {
 			String id = getID(p.getInventory().getItemInMainHand());
-			if(id != null && id.equals("skyblock/combat/explosive_bow")) {
+			if(id.equals("skyblock/combat/explosive_bow")) {
 				if(e.getProjectile() instanceof Arrow primary) {
 					// Re-aim the vanilla primary IN PLACE (no cancel, no second entity) — just override its velocity
 					// with the clean eye direction to strip the random spread (inaccuracy 1.0). The bonus arrows are
@@ -352,7 +347,7 @@ public class CustomItems implements Listener {
 				}
 				return;
 			}
-			if(id != null && id.equals("skyblock/combat/last_breath")) {
+			if(id.equals("skyblock/combat/last_breath")) {
 				if(!(e.getProjectile() instanceof Arrow primary)) return;
 				// Re-aim the vanilla primary IN PLACE (no cancel, no second entity) — override its velocity with the
 				// clean eye direction to strip the random spread. Bonus arrows are new entities → deterministic
@@ -399,7 +394,7 @@ public class CustomItems implements Listener {
 		boolean fired = false;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
 			String id = getID(item);
-			if(item != null && id != null && id.startsWith("skyblock/")) {
+			if(item != null && id.startsWith("skyblock/")) {
 				// Cancel early for right-clicks to prevent vanilla item use (bow drawing, etc.)
 				// Skip for items without right-click abilities
 				boolean isRightClick = action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.RIGHT_CLICK_BLOCK);
@@ -562,7 +557,7 @@ public class CustomItems implements Listener {
 		int damaged = 0;
 		double damage = 0;
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) && !(entity instanceof Player pl && FakePlayerManager.getFakePlayers().containsValue(pl))) {
+			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0) && !(entity instanceof Player pl && FakePlayerManager.getFakePlayers().containsValue(pl))) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
@@ -571,7 +566,7 @@ public class CustomItems implements Listener {
 			}
 		}
 		if(damaged > 0) {
-			p.sendMessage(ChatColor.RED + "Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage");
+			p.sendMessage(Utils.msg("<red>Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage"));
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
@@ -632,7 +627,7 @@ public class CustomItems implements Listener {
 
 				// If no safe spot found, don't teleport
 				if(!foundSafe) {
-					p.sendMessage("§cNo safe teleport location found!");
+					p.sendMessage(Utils.msg("<red>No safe teleport location found!"));
 					return;
 				}
 			}
@@ -1227,7 +1222,7 @@ public class CustomItems implements Listener {
 			assert world != null;
 			ArrayList<Entity> entities = (ArrayList<Entity>) world.getNearbyEntities(l, 1, 1, 1);
 			for(Entity entity : entities) {
-				if(!damagedEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+				if(!damagedEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 					damagedEntities.add(entity);
 					Utils.hurtEntity(entity1, (float) (2.5 + add), p);
 					entity1.setNoDamageTicks(0);
@@ -1331,7 +1326,7 @@ public class CustomItems implements Listener {
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
@@ -1395,7 +1390,7 @@ public class CustomItems implements Listener {
 				// Check for mob hits
 				List<EntityType> doNotKill = doNotKill();
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
-					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 						// Deal 1 damage using NMS
 						Utils.hurtEntity(entity1, 1, p);
 						entity1.setNoDamageTicks(0);
@@ -1456,7 +1451,7 @@ public class CustomItems implements Listener {
 			Location blockLoc = new Location(l.getWorld(), x, Math.max(y, l.getY()), z);
 
 			Material blockType = blockTypes[(int) (Math.random() * blockTypes.length)];
-			FallingBlock block = l.getWorld().spawnFallingBlock(blockLoc, blockType.createBlockData());
+			FallingBlock block = l.getWorld().spawn(blockLoc, FallingBlock.class, fb -> fb.setBlockData(blockType.createBlockData()));
 			block.setGravity(false);
 			block.setDropItem(false);
 			block.setInvulnerable(true);
@@ -1489,7 +1484,7 @@ public class CustomItems implements Listener {
 						Material blockType = blockTypes[(int) (Math.random() * blockTypes.length)];
 						Location respawnLoc = block.getLocation().clone().add(0, 0.1, 0);
 
-						FallingBlock newBlock = Objects.requireNonNull(respawnLoc.getWorld()).spawnFallingBlock(respawnLoc, blockType.createBlockData());
+						FallingBlock newBlock = Objects.requireNonNull(respawnLoc.getWorld()).spawn(respawnLoc, FallingBlock.class, fb -> fb.setBlockData(blockType.createBlockData()));
 						newBlock.setGravity(false);
 						newBlock.setDropItem(false);
 						newBlock.setInvulnerable(true);
@@ -1639,7 +1634,7 @@ public class CustomItems implements Listener {
 		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
 		SkullMeta meta = (SkullMeta) head.getItemMeta();
 		assert meta != null;
-		meta.setOwnerProfile(profile);
+		meta.setPlayerProfile(profile);
 		head.setItemMeta(meta);
 		return head;
 	}
@@ -1776,9 +1771,9 @@ public class CustomItems implements Listener {
 		Location l = p.getEyeLocation().add(0, -0.1, 0);
 
 		// Create NMS arrows directly
-		net.minecraft.world.entity.projectile.arrow.Arrow nmsLeft = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
-		net.minecraft.world.entity.projectile.arrow.Arrow nmsMiddle = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
-		net.minecraft.world.entity.projectile.arrow.Arrow nmsRight = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+		net.minecraft.world.entity.projectile.arrow.Arrow nmsLeft = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
+		net.minecraft.world.entity.projectile.arrow.Arrow nmsMiddle = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
+		net.minecraft.world.entity.projectile.arrow.Arrow nmsRight = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 
 		// Set positions
 		nmsLeft.setPos(l.getX(), l.getY(), l.getZ());
@@ -1976,23 +1971,23 @@ public class CustomItems implements Listener {
 	/** Tell {@code p} their ability is on cooldown, showing the remaining time in seconds (e.g. "...for 3.45
 	 *  seconds!"). {@code ticksRemaining} is the ticks left until the ability is usable again. */
 	private static void sendCooldownMessage(Player p, int ticksRemaining) {
-		p.sendMessage(ChatColor.RED + "This ability is on cooldown for " + String.format("%.2f", Math.max(0, ticksRemaining) / 20.0) + " seconds!");
+		String format = String.format("%.2f", Math.max(0, ticksRemaining) / 20.0);
+		p.sendMessage(Utils.msg("<red>This ability is on cooldown for " + format + " seconds!"));
 		// During a TAS run (not practice) an ability fired on cooldown means the choreography mistimed it — flag it
 		// loudly so the offending tick/player is visible. (ERROR always prints with a [tick: N] stamp.)
 		if(!instructions.bosses.WitherActions.isPracticeMode()) {
 			ItemStack held = p.getInventory().getItemInMainHand();
 			String ability = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
-					? held.getItemMeta().getDisplayName() : String.valueOf(held.getType());
-			Utils.debug(Utils.DebugType.ERROR, Utils.getRealName(p) + " tried to use " + ability + ChatColor.RED
-					+ " on cooldown (" + Math.max(0, ticksRemaining) + "t / " + String.format("%.2f", Math.max(0, ticksRemaining) / 20.0) + "s left)");
+					? Utils.displayName(held.getItemMeta()) : String.valueOf(held.getType());
+			Utils.debug(Utils.DebugType.ERROR, Utils.getRealName(p) + " tried to use " + ability + Utils.mmLegacy("<red>")
+					+ " on cooldown (" + Math.max(0, ticksRemaining) + "t / " + format + "s left)");
 		}
 	}
 
 	/** Outgoing-damage multiplier from Spring Boots: a 20% reduction (×0.8) while the boots are worn, else 1.0. */
 	public static double springBootsMultiplier(Player p) {
 		ItemStack boots = p.getInventory().getBoots();
-		return boots != null && boots.getType() == Material.CHAINMAIL_BOOTS && boots.hasItemMeta()
-				&& boots.getItemMeta().hasDisplayName() && boots.getItemMeta().getDisplayName().contains("Spring Boots")
+		return boots.getType() == Material.CHAINMAIL_BOOTS && boots.hasItemMeta() && boots.getItemMeta().hasDisplayName() && Utils.displayName(boots.getItemMeta()).contains("Spring Boots")
 				? 0.8 : 1.0;
 	}
 
@@ -2011,7 +2006,7 @@ public class CustomItems implements Listener {
 
 	private static boolean isThermoPiece(ItemStack item) {
 		return item != null && item.hasItemMeta() && item.getItemMeta().hasDisplayName()
-				&& item.getItemMeta().getDisplayName().contains("Thermodynamic");
+				&& Utils.displayName(item.getItemMeta()).contains("Thermodynamic");
 	}
 
 	/**
@@ -2075,7 +2070,7 @@ public class CustomItems implements Listener {
 		List<LivingEntity> alreadyHurt = new ArrayList<>();
 		Set<Block> visitedBlocks = new HashSet<>();
 		for(Vector dir : List.of(leftDirection, baseDirection, rightDirection)) {
-			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 			nmsArrow.setPos(l.getX(), l.getY(), l.getZ());
 			nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), speed, 0);
 			nmsArrow.setOwner(nmsPlayer);
@@ -2095,7 +2090,7 @@ public class CustomItems implements Listener {
 						Location impact = arrow.getLocation();
 
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
-							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerabilityTicks() != 0)) {
+							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 								Utils.hurtEntity(target, 19, p);
 								target.setNoDamageTicks(0);
 								Utils.changeName(target);
@@ -2128,7 +2123,7 @@ public class CustomItems implements Listener {
 		sheep.setInvulnerable(true);
 		sheep.setSilent(true);
 		sheep.setColor(DyeColor.WHITE);
-		sheep.setCustomName(null);
+		sheep.customName(null);
 		sheep.setCustomNameVisible(false);
 		sheep.setCollidable(false);
 		sheep.addScoreboardTag("TASNoName");
@@ -2181,7 +2176,7 @@ public class CustomItems implements Listener {
 				Location spawnLoc = eyeLoc.add(0, -0.1, 0);
 				double speed = 2;
 
-				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(net.minecraft.world.entity.EntityType.ARROW, nmsWorld);
+				net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 				nmsArrow.setPos(spawnLoc.getX(), spawnLoc.getY(), spawnLoc.getZ());
 				nmsArrow.shoot(dir.getX(), dir.getY(), dir.getZ(), (float) speed, 0);
 				nmsArrow.setOwner(nmsPlayer);
@@ -2266,7 +2261,7 @@ public class CustomItems implements Listener {
 
 		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume —
 		// no at-location sound, so volume doesn't depend on how far the target is.
-		if(targetEntity instanceof Wither wither && wither.getInvulnerabilityTicks() != 0) {
+		if(targetEntity instanceof Wither wither && wither.getInvulnerableTicks() != 0) {
 			// Armored (e.g. mid-intro, before the fight is live): no damage lands, but still record the damager so
 			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);

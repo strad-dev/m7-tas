@@ -5,7 +5,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import plugin.FakePlayerManager;
+// import plugin.FakePlayerManager; // unused after TAS tab-completions removed in the practice fork
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,9 +22,9 @@ public class TabCompletor implements TabCompleter {
 		String cmdName = command.getName().toLowerCase();
 
 		switch(cmdName) {
-			case "tas", "practice" -> {
+			case "practice" -> {
 				if(args.length == 1) {
-					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking"};
+					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking", "end"};
 					String input = args[0].toLowerCase();
 
 					for(String section : sections) {
@@ -33,7 +33,7 @@ public class TabCompletor implements TabCompleter {
 							completions.add(section);
 						}
 					}
-				} else if(cmdName.equals("practice") && args.length == 2) {
+				} else if(args.length == 2) {
 					// /practice <section> [--no-teleport]
 					if("--no-teleport".startsWith(args[1].toLowerCase())) {
 						completions.add("--no-teleport");
@@ -41,19 +41,7 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
-			case "spectate" -> {
-				if(args.length == 1) {
-					// Get available classes from fakePlayers map
-					for(String role : FakePlayerManager.getFakePlayers().keySet()) {
-						if(role.toLowerCase().startsWith(args[0].toLowerCase())) {
-							completions.add(role);
-						}
-					}
-				} else if(args.length > 1) {
-					// Spectate only accepts one argument
-					return completions;
-				}
-			}
+			// "spectate" tab-completion removed — TAS-only command, disabled in the practice fork.
 
 			case "getcustomitems" -> {
 				if(args.length == 1) {
@@ -99,35 +87,7 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
-			case "simulate" -> {
-				if(args.length == 1) {
-					String[] simCommands = {"undo", "allblessings", "move", "click", "hotbar", "turnhead", "swapitems"};
-					for(String cmd : simCommands) {
-						if(cmd.startsWith(args[0].toLowerCase())) {
-							completions.add(cmd);
-						}
-					}
-				} else if(args.length == 2 && (args[0].equalsIgnoreCase("move") || args[0].equalsIgnoreCase("click") || args[0].equalsIgnoreCase("hotbar") || args[0].equalsIgnoreCase("turnhead") || args[0].equalsIgnoreCase("swapitems"))) {
-					for(String role : FakePlayerManager.getFakePlayers().keySet()) {
-						if(role.toLowerCase().startsWith(args[1].toLowerCase())) {
-							completions.add(role);
-						}
-					}
-				} else if(args.length == 3 && args[0].equalsIgnoreCase("click")) {
-					for(String click : new String[]{"left", "right"}) {
-						if(click.startsWith(args[2].toLowerCase())) {
-							completions.add(click);
-						}
-					}
-				} else if(args.length == 3 && args[0].equalsIgnoreCase("hotbar")) {
-					for(int i = 0; i <= 8; i++) {
-						String slot = String.valueOf(i);
-						if(slot.startsWith(args[2])) {
-							completions.add(slot);
-						}
-					}
-				}
-			}
+			// "simulate" tab-completion removed — TAS-only command, disabled in the practice fork.
 		}
 
 		return completions;

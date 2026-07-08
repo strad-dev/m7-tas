@@ -8,14 +8,14 @@ import plugin.Utils;
  * each call to {@link #runCycle(int)} represents one 20-tick cycle in which
  * the pillar advances if the pad-gate caller has determined a player is
  * standing on the corresponding pad.
- *
+ * <br>
  * Motion model: pillar material always extends from {@link #bottomY} up to
  * {@link PadAndPillar#PILLAR_ANCHOR_Y} (y196). Moving DOWN by one block:
  * clone the row at y={@code bottomY} to y={@code bottomY - 1}, then decrement
  * bottomY. Moving UP by one block: air-fill the row at y={@code bottomY},
  * then increment bottomY. The anchor at y196 is the persistent seed and
  * never moves.
- *
+ * <br>
  * Cycle motion table (measured in-game):
  * <pre>
  *   bottomY at  | direction | this cycle's behavior

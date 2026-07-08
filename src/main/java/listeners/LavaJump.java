@@ -5,7 +5,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
-import org.bukkit.craftbukkit.v1_21_R7.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -20,6 +20,9 @@ import java.util.UUID;
 public class LavaJump {
 	private static final double LAUNCH_VELOCITY = 3.5D;
 	private static final int RELAUNCH_COOLDOWN_TICKS = 10;
+	/** Player fluid-jump threshold: LivingEntity#getFluidJumpThreshold returns 0.4 for eye height ≥ 0.4.
+	 *  Lava height ≤ this is "shallow" (travelInLava keeps vertical ×0.8 → big); above is "deep" (×0.5 → small). */
+	private static final double PLAYER_FLUID_JUMP_THRESHOLD = 0.4D;
 
 	// Goldor boss arena bounds: -8 254 -8 to 134 0 147
 	private static final double MIN_X = -8, MAX_X = 134;
@@ -88,14 +91,14 @@ public class LavaJump {
 			npc.hurtMarked = true;
 			MovementAudit.startAirborneAudit(p, "lavajump");
 
-			// One tick after launch, the stored Y delta reflects lava's drag multiplier (if still in lava):
-			//   shallow lava (0.8x): ≈ 2.80 → "big"
-			//   deep lava   (0.5x): ≈ 1.75 → "small"
-			Utils.scheduleTask(() -> {
-				double postY = npc.getDeltaMovement().y();
-				String kind = postY > (LAUNCH_VELOCITY * 0.65D) ? "big" : "small";
-				Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava launched with upwards velocity " + postY + " classified " + kind);
-			}, 1);
+			// Classify big/small deterministically from lava DEPTH — vanilla's own shallow/deep test
+			// (LivingEntity.travelInLava: getFluidHeight(LAVA) <= getFluidJumpThreshold()). Shallow lava keeps
+			// vertical ×0.8 → "big"; deep lava ×0.5 → "small". The lava drag formula is unchanged in 26.2; what
+			// changed is that the server no longer reflects the client's dragged velocity for real players, so the
+			// old post-launch getDeltaMovement().y read always looked "big". Depth is server-authoritative here.
+			double lavaHeight = npc.getFluidHeight(net.minecraft.tags.FluidTags.LAVA);
+			String kind = lavaHeight <= PLAYER_FLUID_JUMP_THRESHOLD ? "big" : "small";
+			Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava launched (lava height " + Utils.round(lavaHeight, 4) + ") classified " + kind);
 		}, 1);
 	}
 }

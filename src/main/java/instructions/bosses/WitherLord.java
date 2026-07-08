@@ -14,7 +14,7 @@ import java.util.List;
  * Shared base class for the four "real" wither bosses (Maxor, Storm, Goldor, Necron).
  * WitherKing is intentionally excluded — its 5-HP scale, MAGIC name formatting,
  * dragon-driven HP decrement, and single-arg constructor don't fit the abstraction.
- *
+ * <br>
  * Each subclass exposes a {@code public static final <Subclass> INSTANCE = new <Subclass>();}
  * singleton. The instance is reused across fights; {@link #start(World, boolean)} resets
  * all per-fight state via {@link #resetState()} so each fight begins clean.
@@ -70,7 +70,7 @@ public abstract class WitherLord {
 		boss.setSilent(true);
 		boss.setPersistent(true);
 		boss.setRemoveWhenFarAway(false);
-		boss.setCustomName(ChatColor.GOLD + String.valueOf(ChatColor.BOLD) + "﴾ " + ChatColor.RED + ChatColor.BOLD + displayName() + ChatColor.GOLD + ChatColor.BOLD + " ﴿ " + ChatColor.YELLOW + displayHealth() + ChatColor.RED + "❤");
+		boss.customName(Utils.msg("<gold><bold>﴾ <red>" + displayName() + "<gold> ﴿ </bold><yellow>" + displayHealth() + "<red>❤"));
 		boss.setCustomNameVisible(true);
 		boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth());
 		boss.getAttribute(Attribute.ARMOR).setBaseValue(-30);
@@ -88,12 +88,12 @@ public abstract class WitherLord {
 
 	/**
 	 * Accurate, ordering-independent phase tick for DISPLAY ONLY.
-	 *
+	 * <br>
 	 * The {@link #tick} field is an increment counter advanced by a repeating task in the scheduler heartbeat.
 	 * A scheduled action (terminal click, crystal pickup, death dialogue) runs in that same heartbeat AFTER the
 	 * increment, so it reads {@code tick} already +1 for that tick; an entity-physics event (a sharpshooter
 	 * arrow hit) runs before the heartbeat and reads it un-incremented. That split is the off-by-one.
-	 *
+	 * <br>
 	 * This instead subtracts the phase-start server tick from the server's own tick counter, which is constant
 	 * across the whole server tick — so a scheduled action at phase-delay D and an entity event D ticks in BOTH
 	 * read exactly D, with no +1, in every boss fight. {@link #tick} is deliberately left untouched for
@@ -134,13 +134,13 @@ public abstract class WitherLord {
 	// --- Shared helpers ---
 
 	protected final void sendChatMessage(String message) {
-		Bukkit.broadcastMessage(ChatColor.DARK_RED + "[BOSS] " + displayName() + ChatColor.RED + ": " + message);
+		Bukkit.broadcast(Utils.msg("<dark_red>[BOSS] " + displayName() + "<red>: " + message));
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT);
 	}
 
 	protected final String formatTick(int t) {
 		int overall = overallTick(t);
-		return ChatColor.GREEN + String.format("%s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
+		return "<green>" + String.format("%s ticks (%.2f seconds) | Overall: %s ticks (%.2f seconds)",
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
 	}
 

@@ -250,7 +250,7 @@ public class GoldorListener implements Listener {
 		}
 		if(!Goldor.INSTANCE.isProtectedFrame(frame)) return; // frames outside S3 behave normally
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
-		if(arrow != null && frame.equals(arrow)) {
+		if(frame.equals(arrow)) {
 			// processArrowFrame rotates explicitly; cancel so vanilla doesn't ALSO rotate it (double-turn)
 			// when the held item happens to be exempt from CustomItems' interaction cancel.
 			if(processArrowFrame(frame, p, false)) e.setCancelled(true);
@@ -265,7 +265,7 @@ public class GoldorListener implements Listener {
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
-		if(arrow == null || !frame.equals(arrow)) return false;
+		if(!frame.equals(arrow)) return false;
 		GoldorSection s3 = Goldor.INSTANCE.getSection(2);
 		if(s3 == null || s3.device.isActivated()) return false;
 		s3.device.markActivated();
@@ -282,7 +282,7 @@ public class GoldorListener implements Listener {
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
 		if(!Goldor.INSTANCE.isProtectedFrame(frame)) return;
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
-		if(arrow != null && frame.equals(arrow)) return;
+		if(frame.equals(arrow)) return;
 		if(e.getPlayer().getGameMode() == GameMode.CREATIVE) return; // creative bypass
 		e.setCancelled(true);
 	}
