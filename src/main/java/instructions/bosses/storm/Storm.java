@@ -164,6 +164,8 @@ public final class Storm extends WitherLord {
 		if(doContinue) {
 			Goldor.goldorInstructions(world, true);
 			runPlayerHandoff(); // start each player's goldor() routine the same tick Goldor spawns
+		} else {
+			instructions.bosses.WitherActions.signalRunComplete(); // Storm was the last boss of this practice
 		}
 	}
 

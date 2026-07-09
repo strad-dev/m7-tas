@@ -142,6 +142,8 @@ public final class Goldor extends WitherLord {
 		if(doContinue) {
 			Necron.necronInstructions(world, true);
 			runPlayerHandoff(); // start each player's necron() routine the same tick Necron spawns
+		} else {
+			instructions.bosses.WitherActions.signalRunComplete(); // Goldor/Terminals was the last boss of this practice
 		}
 	}
 

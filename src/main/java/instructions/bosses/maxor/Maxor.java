@@ -145,6 +145,8 @@ public final class Maxor extends WitherLord {
 		if(doContinue) {
 			Storm.stormInstructions(world, true);
 			runPlayerHandoff(); // start each player's storm() routine the same tick Storm spawns
+		} else {
+			instructions.bosses.WitherActions.signalRunComplete(); // Maxor was the last boss of this practice
 		}
 	}
 

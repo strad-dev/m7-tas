@@ -136,6 +136,8 @@ public final class Necron extends WitherLord {
 		if(doContinue) {
 			WitherKing.witherKingInstructions(world, false);
 			runPlayerHandoff();
+		} else {
+			instructions.bosses.WitherActions.signalRunComplete(); // Necron was the last boss of this practice (no Wither-King)
 		}
 	}
 

@@ -500,6 +500,10 @@ public class WitherKing {
 		Utils.scheduleTask(() -> { if(witherKing != null && witherKing.isValid()) witherKing.remove(); }, 300);
 
 		Utils.scheduleTask(WitherKing::printFinalMessage, END_DELAY_TICKS);
+
+		// Tell the network plugin the run is over — but only AFTER the last death-dialogue line (t=240) has
+		// been sent, so a networked witherking/all/boss run holds the player until the Wither-King finishes talking.
+		Utils.scheduleTask(WitherActions::signalRunComplete, 250);
 	}
 
 	/** Final congratulation: hardcoded splits for a TAS run, live ticks for a practice run, a short line for
@@ -743,6 +747,6 @@ public class WitherKing {
 	}
 
 	private static void sendChatMessage(String message) {
-		Bukkit.broadcast(Utils.msg("<dark_red>[BOSS] <red>Wither-King: " + message));
+		Bukkit.broadcast(Utils.msg("<dark_red>[BOSS] <red><obfuscated>Wither-King</obfuscated>: " + message));
 	}
 }

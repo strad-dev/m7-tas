@@ -54,6 +54,19 @@ public class WitherActions {
 
 	public static boolean isPracticeMode() { return practiceMode; }
 
+	/**
+	 * Tell the network plugin (StradDevHub) a /practice run just finished, so it returns players to spectator
+	 * and frees the M7 slot. Fire-and-forget console signal: no-op unless we're in practice mode AND the
+	 * network plugin is installed, so the M7 plugin stays fully standalone. Wither-King runs must call this
+	 * only AFTER the death dialogue ends (see {@code WitherKing.deathSequence}); other sections call it the
+	 * moment their boss is defeated (their {@code chainNext(false)} / clear completion).
+	 */
+	public static void signalRunComplete() {
+		if (!practiceMode) return;
+		if (Bukkit.getPluginManager().getPlugin("StradNetworkPlugin") == null) return;
+		Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "m7runcomplete");
+	}
+
 	/** Whether {@code p} can aggro a boss in the current mode. During a TAS (non-practice) the withers ignore all
 	 *  real players — they are not part of the run — so only fake players are eligible. In practice mode the real
 	 *  players ARE the runners (no fakes are spawned), so the opposite holds. */
