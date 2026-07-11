@@ -105,66 +105,80 @@ public class Server {
 	}
 
 	public static void serverInstructions(World world, String section) {
+		serverInstructions(world, section, 60);
+	}
+
+	/**
+	 * @param delayTicks how long to wait before the section's instructions begin — the pre-run "get into
+	 *   position" window, followed by a shared 5-second countdown. Defaults to 60 (3s) via the two-arg overload;
+	 *   the network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in so everyone has
+	 *   time to get into position. EXCEPTION: the boss/maxor sections ignore this — Maxor is the dungeon-boss
+	 *   entry and on real Hypixel it starts the moment you enter, so those get only a 20-tick load grace and no
+	 *   countdown (see {@link #MAXOR_GRACE_TICKS}).
+	 */
+	public static void serverInstructions(World world, String section, int delayTicks) {
 		// Tear down any lingering Goldor phase from a previous run immediately, before this run's pre-fired
 		// arrows/abilities can interact with stale phase state (e.g. an already-activated S4 device). Without
 		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
 		Goldor.INSTANCE.forceEndPhase();
-		// Begin with 3 seconds of delay
-		Bukkit.broadcast(Utils.msg((instructions.bosses.WitherActions.isPracticeMode() ? "Run" : "TAS") + " starts in 3 seconds"));
 
+		// boss/maxor: no prep window and no countdown — just a short load grace, then Maxor starts.
+		if(section.equals("boss") || section.equals("maxor")) {
+			Utils.scheduleTask(() -> startSection(world, section), MAXOR_GRACE_TICKS);
+			return;
+		}
+
+		// Every other section: the pre-run "get into position" window, then a 5-second countdown, then start.
+		Bukkit.broadcast(Utils.msg((instructions.bosses.WitherActions.isPracticeMode() ? "Run" : "TAS") + " starts in " + Math.max(1, delayTicks / 20) + " seconds"));
+		Utils.scheduleTask(() -> countdownThenStart(world, section), delayTicks);
+	}
+
+	/** Load grace before Maxor (boss/maxor sections) — just long enough for warped-in clients to finish loading. */
+	private static final int MAXOR_GRACE_TICKS = 20;
+
+	/**
+	 * The shared 5-second "Starting in N seconds" countdown (the messages the clear section has always used), then
+	 * the section's actual start. Used for every section except boss/maxor.
+	 */
+	private static void countdownThenStart(World world, String section) {
+		for(int i = 5; i >= 1; i--) {
+			int secs = i;
+			Utils.scheduleTask(() -> {
+				Bukkit.broadcast(Utils.msg("<green>Starting in " + secs + " second" + (secs == 1 ? "" : "s")));
+				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
+			}, (5 - i) * 20L);
+		}
 		Utils.scheduleTask(() -> {
-			switch(section) {
-				case "all", "clear" -> {
-					Utils.scheduleTask(() -> Utils.debug(Utils.DebugType.SERVER, "Out of Bounds Check Triggered!"), 40);
-					Utils.scheduleTask(() -> Utils.debug(Utils.DebugType.SERVER, "Out of Bounds Check Triggered!"), 80);
-					Utils.scheduleTask(() -> Utils.debug(Utils.DebugType.SERVER, "Out of Bounds Check Triggered!"), 120);
+			Bukkit.broadcast(Utils.msg("<green>Run started"));
+			startSection(world, section);
+		}, 100);
+	}
 
-					// 5-second countdown
-					Utils.scheduleTask(() -> {
-						Bukkit.broadcast(Utils.msg("<green>Starting in 5 seconds"));
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 26);
-					Utils.scheduleTask(() -> {
-						Bukkit.broadcast(Utils.msg("<green>Starting in 4 seconds"));
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 46);
-					Utils.scheduleTask(() -> {
-						Bukkit.broadcast(Utils.msg("<green>Starting in 3 seconds"));
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 66);
-					Utils.scheduleTask(() -> {
-						Bukkit.broadcast(Utils.msg("<green>Starting in 2 seconds"));
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 86);
-					Utils.scheduleTask(() -> {
-						Bukkit.broadcast(Utils.msg("<green>Starting in 1 seconds"));
-						Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-					}, 106);
-					Utils.scheduleTask(() -> {
-						Bukkit.broadcast(Utils.msg("<green>Run started"));
-						Utils.markPhaseStart();
-						Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
-						// Arm the one-shot Blood-Room detection at clear-tick 0; the Watcher spawns the first tick a
-						// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
-						Watcher.INSTANCE.beginDetection(world);
-						openFirstDoor();
-					}, 126);
-				}
-				case "boss" -> Maxor.maxorInstructions(world, true);
-				case "maxor" -> Maxor.maxorInstructions(world, false);
-				case "storm" -> Storm.stormInstructions(world, false);
-				case "goldor" -> {
-					Utils.runCommand("fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
-					Utils.runCommand("fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
-					Goldor.goldorInstructions(world, false);
-				}
-				case "necron" -> {
-					Utils.scheduleTask(() -> Utils.runCommand("fill 53 63 113 55 63 115 minecraft:air"), 1);
-					Necron.necronInstructions(world, false);
-				}
-				case "witherking" -> WitherKing.witherKingInstructions(world, true);
+	/** Runs the section-specific start actions. Callers own the pre-run delay/countdown; this is just the start. */
+	private static void startSection(World world, String section) {
+		switch(section) {
+			case "all", "clear" -> {
+				Utils.markPhaseStart();
+				Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
+				// Arm the one-shot Blood-Room detection at clear-tick 0; the Watcher spawns the first tick a
+				// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
+				Watcher.INSTANCE.beginDetection(world);
+				openFirstDoor();
 			}
-		}, 60);
+			case "boss" -> Maxor.maxorInstructions(world, true);
+			case "maxor" -> Maxor.maxorInstructions(world, false);
+			case "storm" -> Storm.stormInstructions(world, false);
+			case "goldor" -> {
+				Utils.runCommand("fill 62 136 142 58 133 142 minecraft:lever[face=wall,facing=north,powered=true]");
+				Utils.runCommand("fill 58 136 143 62 133 143 minecraft:redstone_lamp[lit=true]");
+				Goldor.goldorInstructions(world, false);
+			}
+			case "necron" -> {
+				Utils.scheduleTask(() -> Utils.runCommand("fill 53 63 113 55 63 115 minecraft:air"), 1);
+				Necron.necronInstructions(world, false);
+			}
+			case "witherking" -> WitherKing.witherKingInstructions(world, true);
+		}
 	}
 
 	public static void serverSetup(World world) {

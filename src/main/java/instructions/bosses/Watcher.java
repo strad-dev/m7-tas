@@ -250,7 +250,20 @@ public class Watcher {
 		} else {
 			sendChatMessage("You have proven yourself.  You may pass.");
 			bloodCampFinished();
-			Utils.scheduleTask(this::openPortal, 80);
+			if(doContinue) {
+				// Full run ("all"): open the boss portal so the party can chain into Maxor.
+				Utils.scheduleTask(this::openPortal, 80);
+			} else {
+				// Clear-only practice: defeating the Watcher IS the end of the run — do NOT light the boss
+				// portal (that leads to the boss and is wrong for a clear-only session). Just clean up the
+				// Watcher, record the Clear split, and signal completion so the network ends the session.
+				Utils.scheduleTask(() -> {
+					removeWatcherEntity();
+					WitherActions.recordSplit("Clear", Utils.runTick());
+					active = false;
+					WitherActions.signalRunComplete();
+				}, 80);
+			}
 		}
 	}
 

@@ -17,8 +17,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.inventory.EquipmentSlot;
 import plugin.M7tas;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 	private final Player player;
 
@@ -45,16 +43,20 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			}
 		}
 		if(msg instanceof ServerboundPlayerActionPacket pkt) {
+			// Drop-key ability triggers (Q / Ctrl+Q) and bow release. For DROP we let vanilla process the packet
+			// (super.channelRead below): CustomItems' PlayerDropItemEvent handler cancels the physical drop for
+			// class players, so the item is kept while handleDrop fires the ability. For a bow RELEASE we consume
+			// the packet (return) and release the draw manually with creative-mode instabuild so it fires without
+			// consuming a real arrow.
 			var action = pkt.getAction();
-			AtomicBoolean usedAbility = new AtomicBoolean(false);
 			if(action == ServerboundPlayerActionPacket.Action.DROP_ITEM) {
 				Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-					usedAbility.set(CustomItems.handleDrop(player, true));
+					CustomItems.handleDrop(player, true);
 					player.updateInventory();
 				});
 			} else if(action == ServerboundPlayerActionPacket.Action.DROP_ALL_ITEMS) {
 				Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
-					usedAbility.set(CustomItems.handleDrop(player, false));
+					CustomItems.handleDrop(player, false);
 					player.updateInventory();
 				});
 			} else if(action == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
@@ -70,17 +72,15 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					return;
 				}
 			}
-			if(usedAbility.get()) {
-				return;
-			}
 		}
 		if(msg instanceof ServerboundAttackPacket) {
 			// 26.2 split melee attacks into their own ServerboundAttackPacket (ServerboundInteractPacket is now
 			// interact / interact-at only). Dispatch the LEFT_CLICK_AIR ability path for every attack:
 			// EntityDamageByEntityEvent only fires when damage actually lands, which excludes shield-invulnerable
-			// withers, dying entities, and other no-damage cases — so abilities like the mage beam need this path.
-			// The same-tick cooldown in handleCustomItems (lastLeftClickAbilityTick) dedupes against the EDBEE
-			// dispatch when damage does land.
+			// withers, dying entities, and other no-damage cases — so abilities like the mage beam need this path
+			// (this is what fires the beam when a mob is in melee range, where no PlayerInteractEvent fires). The
+			// same-tick cooldown in handleCustomItems (lastLeftClickAbilityTick) dedupes against the EDBEE dispatch
+			// when damage does land.
 			Bukkit.getScheduler().runTask(M7tas.getInstance(), () ->
 				CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player));
 		}

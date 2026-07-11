@@ -152,6 +152,14 @@ public class TAS implements CommandExecutor {
 	 * actors to be spawned (idle is fine). Goldor (terminals/patrol) needs no actors.
 	 */
 	public static void runPractice(World world, String section) {
+		runPractice(world, section, 60);
+	}
+
+	/**
+	 * @param delayTicks pre-run "get into position" window before the section starts (default 60 = 3s; the
+	 *   network plugin passes 400 = 20s when it warps a party in). Forwarded to {@link Server#serverInstructions}.
+	 */
+	public static void runPractice(World world, String section, int delayTicks) {
 		// Kick all fake actors — practice is for real players, who become the boss's aggro target.
 		FakePlayerManager.stopCustomConnection();
 		FakePlayerManager.kickAllFakes();
@@ -182,7 +190,7 @@ public class TAS implements CommandExecutor {
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
 		Server.serverSetup(world);
-		Server.serverInstructions(world, section);
+		Server.serverInstructions(world, section, delayTicks);
 	}
 
 	/**

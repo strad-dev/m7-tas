@@ -18,8 +18,9 @@ import java.util.Map;
  * - Teleports all online players (spectators excluded) to the chosen phase's default location, then starts it.
  * - "--no-teleport" skips the teleport so players can start the phase wherever they currently are.
  * - Runs the same boss/server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
- *   spectator sync, so real players can practice the boss fights and mechanics. The phase begins after the
- *   standard 3-second pre-run countdown (see Server.serverInstructions).
+ *   spectator sync, so real players can practice the boss fights and mechanics. The phase begins after a
+ *   pre-run delay (default 60 ticks / 3s; pass a bare integer arg to override, e.g. the network plugin sends
+ *   "practice <section> 400" for a 20s get-into-position window — see Server.serverInstructions).
  */
 public class Practice implements CommandExecutor {
 
@@ -49,8 +50,12 @@ public class Practice implements CommandExecutor {
 
 		String section = "all";
 		boolean noTeleport = false;
+		// Optional pre-run "get into position" delay in ticks (a bare integer arg). Defaults to 60 (3s); the
+		// network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in together.
+		int delayTicks = 60;
 		for(String arg : args) {
 			if(arg.equalsIgnoreCase("--no-teleport") || arg.equalsIgnoreCase("--noteleport")) noTeleport = true;
+			else if(arg.matches("\\d+")) delayTicks = Integer.parseInt(arg);
 			else section = arg.toLowerCase();
 		}
 		if(!DEFAULT_LOCATIONS.containsKey(section)) {
@@ -71,7 +76,7 @@ public class Practice implements CommandExecutor {
 			}
 		}
 
-		TAS.runPractice(world, section);
+		TAS.runPractice(world, section, delayTicks);
 		return true;
 	}
 }

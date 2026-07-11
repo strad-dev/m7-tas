@@ -70,6 +70,28 @@
                     </archive>
                 </configuration>
             </plugin>
+            <!-- Copy the freshly-built jar into the local deploy staging folder
+                 (network test/assets/plugins) that deploy-remote.bat pushes from.
+                 Relative path so no absolute home path is committed. Does NOT clean
+                 old versions locally - that is done by hand / on the remote. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>stage-jar</id>
+                        <phase>package</phase>
+                        <goals><goal>run</goal></goals>
+                        <configuration>
+                            <target>
+                                <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                      todir="${project.basedir}/../../../testing servers/network test/assets/plugins"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

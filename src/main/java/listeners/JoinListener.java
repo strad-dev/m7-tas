@@ -24,7 +24,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import plugin.FakePlayerManager;
-import plugin.Utils;
 
 import java.lang.reflect.Field;
 
@@ -38,7 +37,12 @@ public class JoinListener implements Listener {
 	 */
 	@EventHandler
 	public void onJoin(PlayerJoinEvent ev) {
-		Utils.scheduleTask(() -> {
+		// Raw runTaskLater, NOT Utils.scheduleTask: this is join INFRASTRUCTURE (attributes, no-collision team,
+		// and crucially the packet-interceptor install), and must NOT be tracked by Utils' scheduledTasks. A
+		// network-warped practicer joins and, on the SAME tick, M7Bridge dispatches /practice → runPractice →
+		// Utils.cancelAllScheduled(), which would otherwise cancel this still-pending +1 task and leave the player
+		// with no interceptor (killing drop abilities, bow release, and the mob-melee mage beam).
+		Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
 			Player joiningPlayer = ev.getPlayer();
 
 			// Remove the vanilla attack cooldown for every joining player (instant re-attack).
@@ -151,7 +155,7 @@ public class JoinListener implements Listener {
 			if(watcherBossBar != null) {
 				watcherBossBar.addPlayer(joiningPlayer);
 			}
-		}, 1);
+		}, 1L);
 	}
 
 	// Force every real player to the dungeon-entrance spawn on join so they stop appearing above the
