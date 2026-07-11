@@ -184,4 +184,36 @@ public class TAS implements CommandExecutor {
 		Server.serverSetup(world);
 		Server.serverInstructions(world, section);
 	}
+
+	/**
+	 * Cancels the current practice session: stops all scripted choreography + movement, disarms the
+	 * boss chain so nothing re-spawns, turns practice mode off, and clears the boss entities.
+	 */
+	public static void endPractice(World world) {
+		WitherActions.setPracticeMode(false);
+		Utils.cancelAllScheduled();
+		MovementAudit.cancelAll();
+		Actions.cancelAllMovement();
+		Maxor.INSTANCE.armPlayerHandoff(null);
+		Storm.INSTANCE.armPlayerHandoff(null);
+		Goldor.INSTANCE.armPlayerHandoff(null);
+		Necron.INSTANCE.armPlayerHandoff(null);
+		Watcher.INSTANCE.arm(world, false, null);
+		// Clear the boss entities + energy crystals + Wither King dragons/relics so the dungeon resets.
+		for(org.bukkit.entity.Entity e : world.getEntities()) {
+			if(e instanceof org.bukkit.entity.Wither
+					|| e instanceof org.bukkit.entity.EnderCrystal
+					|| e.getScoreboardTags().contains("SkyblockBoss")
+					|| e.getScoreboardTags().contains("TASWitherKing")
+					|| e.getScoreboardTags().contains("WitherKingDragon")
+					|| e.getScoreboardTags().contains("TASWitherKingRelic")
+					|| e.getScoreboardTags().contains("TASWatcher")) {
+				e.remove();
+			}
+		}
+		// Put all practicers back into spectator mode.
+		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+			if(p.getGameMode() != org.bukkit.GameMode.SPECTATOR) p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+		}
+	}
 }
