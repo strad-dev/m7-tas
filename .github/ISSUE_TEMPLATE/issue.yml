@@ -1,14 +1,15 @@
----
 name: Issue
-description: Do not create issues here regarding the queue system on mc.strad.dev
+description: Do NOT create issues here regarding the queue system on mc.strad.dev
 body:
+  - type: textarea
+    id: details
+    attributes:
+      label: Description
+      description: Describe your issue here
+      placeholder: Do NOT create issues here regarding the queue system on mc.strad.dev
   - type: checkboxes
     id: acknowledge
     attributes:
       label: Before you submit
       options:
         - label: I confirm that this is NOT a bug regarding the queue system on mc.strad.dev
-          required: true
----
-
-
