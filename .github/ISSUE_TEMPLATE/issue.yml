@@ -1,9 +1,6 @@
 ---
-name: Do not create issues here regarding the queue system on mc.strad.dev
+name: Issue
 about: Do not create issues here regarding the queue system on mc.strad.dev
-title: ''
-labels: ''
-assignees: ''
 body:
   - type: checkboxes
     id: acknowledge
