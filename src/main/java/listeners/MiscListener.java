@@ -29,6 +29,7 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import plugin.FakePlayerManager;
 import plugin.MovementAudit;
@@ -104,8 +105,8 @@ public class MiscListener implements Listener {
 		if(LavaJump.isInBossArena(e.getPlayer().getLocation())) e.setCancelled(true);
 	}
 
-	// Chat is now owned network-wide by StradNetworkPlugin (which runs on the m7 server too), so the
-	// old per-server chat handler was removed here to avoid double-broadcasting the same message.
+	// Chat is now owned by an external network chat plugin (when one is present), so the old per-server
+	// chat handler was removed here to avoid double-broadcasting the same message.
 
 	@EventHandler
 	public void onEntityExplode(EntityExplodeEvent e) {
@@ -331,6 +332,19 @@ public class MiscListener implements Listener {
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerCombust(EntityCombustEvent e) {
 		if(e.getEntity() instanceof Player) {
+			e.setCancelled(true);
+		}
+	}
+
+	// The wither bosses (and their skulls / any wither skeletons) apply the vanilla WITHER effect on hit -
+	// a black damage-over-time that also clutters the screen. Players are never meant to be withered in
+	// practice, so cancel it as it's applied. Only ADDED/CHANGED are blocked so removals aren't disturbed.
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onWitherEffect(EntityPotionEffectEvent e) {
+		if(e.getEntity() instanceof Player
+				&& e.getModifiedType() == PotionEffectType.WITHER
+				&& (e.getAction() == EntityPotionEffectEvent.Action.ADDED
+					|| e.getAction() == EntityPotionEffectEvent.Action.CHANGED)) {
 			e.setCancelled(true);
 		}
 	}
