@@ -1884,20 +1884,6 @@ public class CustomItems implements Listener {
 					if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
 				}, 1);
 			}, 10);
-		} else if(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk")) {
-			PotionEffect strength = p.getPotionEffect(PotionEffectType.STRENGTH);
-			boolean hasRagBuff = p.getScoreboardTags().contains("RagBuff");
-			int maxAmplifier = hasRagBuff ? 8 : 7;
-			int baseAmplifier = hasRagBuff ? 1 : 0;
-
-			int newAmplifier;
-			if(strength == null) {
-				newAmplifier = baseAmplifier;
-			} else {
-				newAmplifier = Math.min(strength.getAmplifier() + 1, maxAmplifier);
-			}
-			p.removePotionEffect(PotionEffectType.STRENGTH);
-			p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 100, newAmplifier));
 		}
 	}
 
