@@ -5,7 +5,7 @@ This is a Minecraft 26.2 server plugin that simulates Master Mode The Catacombs 
 
 This version of the plugin is a fork of the main M7 TAS plugin for use on Stradivarius Violin's Public M7 Practice Server.
 
-**ADVANCED USERS**: This plugin and map can be locally hosted if you know how to run a PaperMC server.  It can also be built yourself within an IDE.  Stradivarius Violin is not responsible for any issues that may arise from improper building and installation, and does not guarantee that it will work on your machine.  Limited support for self-hosting is available in the [Discord Server](https://discord.gg/gNfPwa8)
+**ADVANCED USERS**: This plugin and map can be locally hosted if you know how to run a PaperMC server.  It can also be built yourself if you know how to get Paper NMS via Maven (the dependency is there, there are a few extra steps).  Stradivarius Violin is not responsible for any issues that may arise from improper building and installation, and does not guarantee that it will work on your machine.  Limited support for self-hosting is available in the [Discord Server](https://discord.gg/gNfPwa8)
 
 ## Practice Mode
 
