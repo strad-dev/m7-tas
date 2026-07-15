@@ -245,8 +245,8 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
-		// Protected blocks are unbreakable outright, no matter what the breaker is holding.
-		if(Goldor.INSTANCE.isStonkImmune(e.getBlock())) {
+		// Protected Goldor interactables are unbreakable outright — any tool (stonk, dungeonbreaker, …), any phase.
+		if(Goldor.INSTANCE.isProtected(e.getBlock())) {
 			e.setCancelled(true);
 			return;
 		}
@@ -417,6 +417,11 @@ public class CustomItems implements Listener {
 						} else {
 							switch(id) {
 								case "skyblock/combat/terminator" -> {
+									// Left-click ALSO fires the terminator bow, on the terminator's own cooldown (not the
+									// salvation cooldown). Just record the packet tick like the right-click path does;
+									// pollTerminators() enforces the 5/4-tick cooldown and fires at most one volley per player
+									// per tick, so a left- and right-click landing on the same tick collapse into one shot.
+									termLastPacketTick.put(p.getUniqueId(), currentTick);
 									if(currentTick >= salvationReady.getOrDefault(p.getUniqueId(), 0)) {
 										salvation(p);
 										salvationReady.put(p.getUniqueId(), currentTick + SALVATION_COOLDOWN_TICKS);
@@ -1111,7 +1116,7 @@ public class CustomItems implements Listener {
 	}
 
 	public static void stonk(Player p, Block b) {
-		if(Goldor.INSTANCE.isStonkImmune(b)) return;
+		if(Goldor.INSTANCE.isProtected(b)) return;
 		if(b.getType().getHardness() != -1) {
 			Material m = b.getType();
 			BlockData data = b.getBlockData().clone();

@@ -1,7 +1,7 @@
 name: m7tas
 version: '${project.version}'
 main: plugin.M7tas
-api-version: '1.21'
+api-version: '26.2'
 
 commands:
   setup:

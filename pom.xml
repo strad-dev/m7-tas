@@ -7,7 +7,7 @@
 
     <groupId>dev.strad</groupId>
     <artifactId>M7TAS</artifactId>
-    <version>2.5.0</version>
+    <version>2.5.2</version>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>ca.bkaw</groupId>
             <artifactId>paper-nms</artifactId>
-            <version>26.2.build.55-alpha</version>
+            <version>26.2.build.60-beta</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

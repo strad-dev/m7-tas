@@ -527,26 +527,27 @@ public final class Goldor extends WitherLord {
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
 
-	/** True if this block must not be removed by stonk while the Goldor phase is active. Losing any of these
-	 *  mid-fight would soft-lock the phase (they're the only way to complete their sections) or knock an
-	 *  interactable off its mount. Covers: the Simon Says button (S1 device) and the block behind it; the
-	 *  S2 "Lights" levers and their mount blocks; the S4 Sharp Shooter pressure-plate support; and every section lever
-	 *  plus the block directly beneath it. */
-	public boolean isStonkImmune(Block b) {
-		if(!phaseActive) return false;
+	/**
+	 * True if this block is a Goldor interactable that must never be destroyed — by stonk, dungeonbreaker, or any
+	 * other break. A pure positional test, ALWAYS immune regardless of phase or block state: losing any of these
+	 * would soft-lock a section (they're the only way to complete it) or knock an interactable off its mount.
+	 * Covers: the Simon Says button (S1) and the block behind it; the S2 "Lights" lamp backing (z=143) and its
+	 * levers (z=142); the S4 Sharp Shooter pressure-plate support; and every section lever plus the block directly
+	 * beneath it (from the static coord table, so it holds even before the phase spins up).
+	 */
+	public boolean isProtected(Block b) {
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
 		// S1 Simon Says button and the block behind it.
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) return true;
 		if(bx == SIMON_BEHIND_BX && by == SIMON_BEHIND_BY && bz == SIMON_BEHIND_BZ) return true;
-		// S2 "Lights" lever mount blocks, plus the levers themselves hanging on the z-142 face.
+		// S2 "Lights" lamp backing (z=143) plus the levers hanging on the z-142 face.
 		if((bz == LIGHTS_MOUNT_Z || bz == LIGHTS_MOUNT_Z - 1) && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
 		// S4 Sharp Shooter gold pressure-plate support block.
 		if(bx == PLATE_SUPPORT_BX && by == PLATE_SUPPORT_BY && bz == PLATE_SUPPORT_BZ) return true;
-		// Section levers and the support block directly beneath each.
-		for(GoldorSection s : sections) {
-			for(GoldorLever lev : s.levers) {
-				if(lev.isLeverBlock(bx, by, bz)) return true;
-				if(lev.isLeverBlock(bx, by + 1, bz)) return true; // candidate block sits directly under a lever
+		// Section levers and the support block directly beneath each (static coords → phase-independent).
+		for(int[][] section : SECTION_LEVER_COORDS) {
+			for(int[] c : section) {
+				if(bx == c[0] && bz == c[2] && (by == c[1] || by == c[1] - 1)) return true;
 			}
 		}
 		return false;

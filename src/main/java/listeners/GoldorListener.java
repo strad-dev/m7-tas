@@ -227,7 +227,15 @@ public class GoldorListener implements Listener {
 	private static void toggleLever(Block b) {
 		if(b.getBlockData() instanceof org.bukkit.block.data.Powerable pw) {
 			pw.setPowered(!pw.isPowered());
-			b.setBlockData(pw, true); // physics=true so the lamp behind the lever updates
+			b.setBlockData(pw, true); // physics=true: updates the lever's own neighbours → lights the lamp directly behind it
+			// Vanilla LeverBlock.pull does TWO neighbour updates: the lever's own block AND the block the lever is
+			// mounted on. That second update is what lets the strongly-powered mount lamp re-light the lamps around it
+			// (a redstone lamp adjacent to a strongly-powered solid block lights up too → the vanilla cross section).
+			// Bukkit's setBlockData only did the lever's own update, so replicate the mount-block update here; without
+			// it only the single lamp directly behind the lever would light.
+			net.minecraft.server.level.ServerLevel level = ((org.bukkit.craftbukkit.CraftWorld) b.getWorld()).getHandle();
+			net.minecraft.core.BlockPos mountPos = new net.minecraft.core.BlockPos(b.getX(), b.getY(), b.getZ() + 1); // lamp is at LIGHTS_LAMP_Z = lever z + 1
+			level.updateNeighborsAt(mountPos, net.minecraft.world.level.block.Blocks.LEVER, null);
 		}
 	}
 

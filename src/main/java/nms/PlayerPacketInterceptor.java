@@ -118,8 +118,16 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				// Count Simon Says button clicks straight from the packet, bypassing vanilla's interact-event
 				// suppression so rapid real-player clicks all register (deduped to one per tick in GoldorListener).
 				GoldorListener.tryRegisterSimonClick(player, bx, by, bz);
-				CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
-						player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
+				// Right-clicking a lever or button owns the click — the held item's right-click ability must NOT
+				// fire on top of it (mirrors the guard in CustomItems.onPlayerInteract, which only covers the Bukkit
+				// event path; this interceptor path had no such guard, so a combat/utility item's right-click was
+				// firing on an S2 lever and hijacking the vanilla toggle). Simon registration + the dedupe reset above
+				// still run; only the item-ability dispatch is skipped.
+				org.bukkit.Material clicked = player.getWorld().getBlockAt(bx, by, bz).getType();
+				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)) {
+					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
+							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
+				}
 			});
 		} else if(msg instanceof ServerboundUseItemPacket airPkt && airPkt.getHand() == InteractionHand.MAIN_HAND) {
 			MinecraftServer.getServer().execute(() -> {
