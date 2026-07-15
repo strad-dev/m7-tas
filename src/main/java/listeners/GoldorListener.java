@@ -48,6 +48,14 @@ public class GoldorListener implements Listener {
 	// repeat from the same player within the same tick — fixes the same-tick double-count without rate-limiting
 	// genuine clicks (those land on different ticks). Stale entries self-expire via the tick comparison.
 	private final Map<UUID, Integer> lastSimonClickTick = new HashMap<>();
+	// The last toggle of each S2 "Lights" lever, keyed by its "x_y_z". In ADVENTURE a single physical click emits
+	// BOTH a right- and a phantom left-click on the SAME lever a tick or two apart; toggling on each flip-flops it
+	// ("undo"). We swallow ONLY that phantom: an OPPOSITE-type click on the same lever within a couple ticks. Same-
+	// button spam is never throttled (people click fast), and different levers are independent — so fast solving
+	// still registers every lever.
+	private record LeverToggle(int tick, boolean wasRight) {}
+	private final Map<String, LeverToggle> lastS2LeverToggle = new HashMap<>();
+	private static final int S2_PHANTOM_WINDOW_TICKS = 2;
 	// Sharp Shooter: hit state on the 9 target blocks
 	private final boolean[][] sharpHits = new boolean[3][3]; // [xIdx 0..2 → 68/66/64][yIdx 0..2 → 130/128/126]
 	private int sharpHitCount = 0;
@@ -132,16 +140,26 @@ public class GoldorListener implements Listener {
 			return;
 		}
 
-		// Lights levers (S2 device) — the puzzle reads the lever's physical toggled state. A right-click flips the
-		// lever via vanilla; a LEFT-click is treated as if it were a right-click, but vanilla won't toggle a lever
-		// on left-click (and in creative would break it), so we flip it ourselves and cancel the event.
+		// Lights levers (S2 device) — the puzzle reads the lever's physical toggled state. We OWN the toggle for both
+		// clicks: cancel the event so vanilla never flips the lever, then flip it ourselves exactly once per tick.
+		// Relying on vanilla's right-click toggle made the device behave differently per gamemode (adventure vs
+		// survival/creative) and could double-toggle from the duplicate UseItemOn packets one click sends (flip →
+		// unflip → "undo"); owning it makes the flip deterministic and identical in every gamemode. Deduped per tick
+		// because one physical click can surface as several same-tick interact events.
 		if(b.getType() == Material.LEVER
 				&& bx >= LIGHTS_X1 && bx <= LIGHTS_X2
 				&& by >= LIGHTS_Y1 && by <= LIGHTS_Y2
 				&& bz == LIGHTS_Z) {
-			if(leftClick) {
-				e.setCancelled(true); // don't let the left-click break/interact with the lever
-				toggleLever(b);       // replicate the flip vanilla would apply on a right-click
+			e.setCancelled(true); // don't let vanilla toggle/break the lever — we do it ourselves
+			int now = MinecraftServer.currentTick;
+			String leverKey = bx + "_" + by + "_" + bz;
+			LeverToggle last = lastS2LeverToggle.get(leverKey);
+			// Phantom = an opposite-type click on this lever within a couple ticks of the last one (the adventure
+			// right→left echo). Real repeated clicks are the same type (or land later), so they always toggle.
+			boolean phantom = last != null && last.wasRight() != rightClick && now - last.tick() <= S2_PHANTOM_WINDOW_TICKS;
+			if(!phantom) {
+				lastS2LeverToggle.put(leverKey, new LeverToggle(now, rightClick));
+				toggleLever(b);
 			}
 			runWhenPhaseActive(deferred -> processLightsClick(p));
 			return;

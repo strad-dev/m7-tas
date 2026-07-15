@@ -389,6 +389,7 @@ public class CustomItems implements Listener {
 	}
 
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
+		if(p.getGameMode() == org.bukkit.GameMode.SPECTATOR) return; // spectators never fire item abilities (e.g. a right-click on a block)
 		if(Spectate.getSpectatorMap().containsKey(p)) return;
 		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return;
 		boolean fired = false;
@@ -1723,6 +1724,7 @@ public class CustomItems implements Listener {
 
 		serverPlayer.setOnGround(false);
 		p.setVelocity(direction);
+		MovementAudit.startAirborneAudit(p, "jerrychine"); // SUPER-verbose per-tick trace of the knockback arc
 		double horizSpeed = Math.hypot(direction.getX(), direction.getZ());
 		Utils.debug(Utils.DebugType.SERVER, "Jerry-chine moved " + p.getName() + " " + Utils.round(direction.getX(), 3) + " " + Utils.round(direction.getY(), 5) + " " + Utils.round(direction.getZ(), 3));
 	}
@@ -1965,8 +1967,8 @@ public class CustomItems implements Listener {
 		String format = String.format("%.2f", Math.max(0, ticksRemaining) / 20.0);
 		p.sendMessage(Utils.msg("<red>This ability is on cooldown for " + format + " seconds!"));
 		// During a TAS run (not practice) an ability fired on cooldown means the choreography mistimed it — flag it
-		// loudly so the offending tick/player is visible. (ERROR always prints with a [tick: N] stamp.)
-		if(!instructions.bosses.WitherActions.isPracticeMode()) {
+		// with the offending tick/player. Gated behind regular verbose (ON+) so it doesn't spam the console otherwise.
+		if(!instructions.bosses.WitherActions.isPracticeMode() && Utils.isVerbose()) {
 			ItemStack held = p.getInventory().getItemInMainHand();
 			String ability = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
 					? Utils.displayName(held.getItemMeta()) : String.valueOf(held.getType());

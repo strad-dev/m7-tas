@@ -109,21 +109,29 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			net.minecraft.core.BlockPos bp = usePkt.getHitResult().getBlockPos();
 			int bx = bp.getX(), by = bp.getY(), bz = bp.getZ();
 			MinecraftServer.getServer().execute(() -> {
+				org.bukkit.Material clicked = player.getWorld().getBlockAt(bx, by, bz).getType();
 				// Reset vanilla's interact dedupe so rapid repeat clicks on the same block keep firing
 				// PlayerInteractEvent (e.g. the Simon Says button) instead of reusing the cached
 				// (block,hand,item) result. Fake players do this in TASGamePacketListenerImpl#handleUseItemOn;
 				// real players use the vanilla listener, which doesn't — so reset it here, before vanilla
 				// processes the packet (same main-thread FIFO queue as super.channelRead below).
-				((CraftPlayer) player).getHandle().gameMode.firedInteract = false;
+				//
+				// EXCEPTION — never reset it for a LEVER. A single physical right-click sends the UseItemOn packet
+				// more than once; vanilla's dedupe collapses the duplicates into one toggle, but resetting it defeats
+				// that and toggles the lever twice (flip → unflip). That's invisible on the section levers (their
+				// solve tracks a boolean set on the first interact, not the block state) but it breaks the S2 "Lights"
+				// device, which reads the physical lamp state — so the lever appeared to "undo" itself. Buttons still
+				// get the reset so rapid Simon clicks each register.
+				if(clicked != org.bukkit.Material.LEVER) {
+					((CraftPlayer) player).getHandle().gameMode.firedInteract = false;
+				}
 				// Count Simon Says button clicks straight from the packet, bypassing vanilla's interact-event
 				// suppression so rapid real-player clicks all register (deduped to one per tick in GoldorListener).
 				GoldorListener.tryRegisterSimonClick(player, bx, by, bz);
 				// Right-clicking a lever or button owns the click — the held item's right-click ability must NOT
 				// fire on top of it (mirrors the guard in CustomItems.onPlayerInteract, which only covers the Bukkit
 				// event path; this interceptor path had no such guard, so a combat/utility item's right-click was
-				// firing on an S2 lever and hijacking the vanilla toggle). Simon registration + the dedupe reset above
-				// still run; only the item-ability dispatch is skipped.
-				org.bukkit.Material clicked = player.getWorld().getBlockAt(bx, by, bz).getType();
+				// firing on an S2 lever and hijacking the vanilla toggle).
 				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)) {
 					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
 							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
