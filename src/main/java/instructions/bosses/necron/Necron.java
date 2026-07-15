@@ -380,8 +380,10 @@ public final class Necron extends WitherLord {
 		 * thus, there are no timesaves available in normal f7 VS master mode m7
 		 */
 		// A normal F7 completes 140t after the final blow — 40t after the t=100 phase transition (matches the
-		// DEATH_TO_WK_TICKS + 40 print delay below), not on the death tick itself.
-		final int normalF7Overall = overallTick(deathTick + DEATH_TO_WK_TICKS + 40);
+		// DEATH_TO_WK_TICKS + 40 print delay below), not on the death tick itself. Add that offset OUTSIDE
+		// overallTick(): in practice mode overallTick() reports the LIVE run tick and ignores its argument, so a
+		// forward projection has to start from the overall DEATH tick and add the 140t death→finish gap itself.
+		final int normalF7Overall = overallTick(deathTick) + DEATH_TO_WK_TICKS + 40;
 		Utils.scheduleTask(() -> {
 			double secs = normalF7Overall / 20.0;
 			int mins = (int) (secs / 60);

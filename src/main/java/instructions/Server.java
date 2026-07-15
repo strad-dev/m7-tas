@@ -128,30 +128,42 @@ public class Server {
 			return;
 		}
 
-		// Every other section: the pre-run "get into position" window, then a 5-second countdown, then start.
-		Bukkit.broadcast(Utils.msg((instructions.bosses.WitherActions.isPracticeMode() ? "Run" : "TAS") + " starts in " + Math.max(1, delayTicks / 20) + " seconds"));
-		Utils.scheduleTask(() -> countdownThenStart(world, section), delayTicks);
+		int seconds = Math.max(1, delayTicks / 20);
+		if(instructions.bosses.WitherActions.isPracticeMode()) {
+			// Practice: the input delay IS the countdown — start counting down from `seconds` RIGHT NOW (5s in
+			// → "Starting in 5...4...3...2...1", then start), rather than waiting the delay and then a fixed 5s.
+			countdownThenStart(world, section, seconds);
+		} else {
+			// TAS: unchanged — the get-into-position window, then the shared 5s countdown. The fake-player
+			// choreography is calibrated to this exact timing (scheduled at /tas-run time), so don't touch it.
+			Bukkit.broadcast(Utils.msg("TAS starts in " + seconds + " seconds"));
+			Utils.scheduleTask(() -> countdownThenStart(world, section, 5), delayTicks);
+		}
 	}
 
 	/** Load grace before Maxor (boss/maxor sections) — just long enough for warped-in clients to finish loading. */
 	private static final int MAXOR_GRACE_TICKS = 20;
 
 	/**
-	 * The shared 5-second "Starting in N seconds" countdown (the messages the clear section has always used), then
-	 * the section's actual start. Used for every section except boss/maxor.
+	 * A "Starting in N seconds" countdown, then the section's actual start. To avoid spamming a long warp-in
+	 * window, only the FIRST second and the final five (5,4,3,2,1) are announced — the in-between seconds stay
+	 * silent. The first message fires immediately (tick 0), so the countdown length still equals {@code seconds}.
+	 * Used for every section except boss/maxor.
 	 */
-	private static void countdownThenStart(World world, String section) {
-		for(int i = 5; i >= 1; i--) {
+	private static void countdownThenStart(World world, String section, int seconds) {
+		for(int i = seconds; i >= 1; i--) {
 			int secs = i;
+			// Announce only the first tick of the countdown and the final 5s; skip everything in between.
+			if(secs != seconds && secs > 5) continue;
 			Utils.scheduleTask(() -> {
 				Bukkit.broadcast(Utils.msg("<green>Starting in " + secs + " second" + (secs == 1 ? "" : "s")));
 				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);
-			}, (5 - i) * 20L);
+			}, (seconds - i) * 20L);
 		}
 		Utils.scheduleTask(() -> {
 			Bukkit.broadcast(Utils.msg("<green>Run started"));
 			startSection(world, section);
-		}, 100);
+		}, seconds * 20L);
 	}
 
 	/** Runs the section-specific start actions. Callers own the pre-run delay/countdown; this is just the start. */

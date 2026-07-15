@@ -132,12 +132,18 @@ public class GoldorListener implements Listener {
 			return;
 		}
 
-		// Lights levers (S2 device) — right-click only (the puzzle reads the lever's physical toggled state).
+		// Lights levers (S2 device) — the puzzle reads the lever's physical toggled state. A right-click flips the
+		// lever via vanilla; a LEFT-click is treated as if it were a right-click, but vanilla won't toggle a lever
+		// on left-click (and in creative would break it), so we flip it ourselves and cancel the event.
 		if(b.getType() == Material.LEVER
 				&& bx >= LIGHTS_X1 && bx <= LIGHTS_X2
 				&& by >= LIGHTS_Y1 && by <= LIGHTS_Y2
 				&& bz == LIGHTS_Z) {
-			if(rightClick) runWhenPhaseActive(deferred -> processLightsClick(p));
+			if(leftClick) {
+				e.setCancelled(true); // don't let the left-click break/interact with the lever
+				toggleLever(b);       // replicate the flip vanilla would apply on a right-click
+			}
+			runWhenPhaseActive(deferred -> processLightsClick(p));
 			return;
 		}
 
@@ -213,6 +219,16 @@ public class GoldorListener implements Listener {
 			s2.device.markActivated();
 			Goldor.INSTANCE.onActivation(p, s2, "device", true);
 		}, 1L);
+	}
+
+	/** Flip an S2 Lights lever's powered state (physics on, so the redstone lamp behind it re-lights/unlights).
+	 *  Used to make a LEFT-click behave like a right-click: vanilla only toggles a lever on right-click, so a
+	 *  left-click must flip it explicitly. */
+	private static void toggleLever(Block b) {
+		if(b.getBlockData() instanceof org.bukkit.block.data.Powerable pw) {
+			pw.setPowered(!pw.isPowered());
+			b.setBlockData(pw, true); // physics=true so the lamp behind the lever updates
+		}
 	}
 
 	/** True only if EVERY redstone lamp of the S2 Lights device (the lever mount blocks at z=143) is lit. */
