@@ -45,6 +45,19 @@ public class MiscListener implements Listener {
 		}
 	}
 
+	// Anvils must never open their repair/rename menu. Deny the block interaction on any anvil variant so the
+	// UI never opens; item-use in hand is left untouched (only the container open is blocked).
+	@EventHandler
+	public void onAnvilInteract(PlayerInteractEvent e) {
+		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		Block b = e.getClickedBlock();
+		if(b == null) return;
+		Material m = b.getType();
+		if(m == Material.ANVIL || m == Material.CHIPPED_ANVIL || m == Material.DAMAGED_ANVIL) {
+			e.setUseInteractedBlock(org.bukkit.event.Event.Result.DENY);
+		}
+	}
+
 	// The Watcher is a pre-boss you never damage (you kill its 19 blood mobs). It relies on RESISTANCE 255, but
 	// genericKill (mage beam / hurtEntity) bypasses potion effects - so cancel ALL damage to it outright.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)

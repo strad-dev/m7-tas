@@ -443,15 +443,59 @@ public final class Storm extends WitherLord {
 		cancelStunEnrageTask();
 
 		setArmor(true);
-		sendChatMessage(ENRAGE_MESSAGE[random.nextInt(ENRAGE_MESSAGE.length)]);
-		Utils.timer("<red>⚠ Storm is enraged! ⚠\n" + formatTick(displayTick()));
-		for(Player player : Bukkit.getOnlinePlayers()) {
-			player.showTitle(Title.title(Utils.msg(""), Utils.msg("<red>⚠ Storm is enraged! ⚠"),
-					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
+
+		// Fail check: every pillar has already been exploded and Storm is still alive. This is the ONLY failable
+		// part of the run — it can only happen if the players didn't do enough DPS during the crush stuns. With no
+		// pillars left, Storm can never be crushed/stunned again, so the run is lost. Per user: do NOT announce the
+		// enrage in this case; play the taunt + fail message instead.
+		if(!dying && allPillarsExploded()) {
+			playFailSequence();
+		} else {
+			sendChatMessage(ENRAGE_MESSAGE[random.nextInt(ENRAGE_MESSAGE.length)]);
+			Utils.timer("<red>⚠ Storm is enraged! ⚠\n" + formatTick(displayTick()));
+			for(Player player : Bukkit.getOnlinePlayers()) {
+				player.showTitle(Title.title(Utils.msg(""), Utils.msg("<red>⚠ Storm is enraged! ⚠"),
+						Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
+			}
+			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		}
-		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
 		setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+	}
+
+	/** True once every active pillar has been consumed by a crush (all three exploded). */
+	private boolean allPillarsExploded() {
+		if(pillars.isEmpty()) return false;
+		for(PillarOscillator osc : pillars) {
+			if(!osc.isUsed()) return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Run-fail dialogue for the all-pillars-gone-but-Storm-alive case. Storm taunts, then a server message
+	 * declares the run failed and the run is ended. Delays are measured from the enrage tick: dialogue 1
+	 * immediately, dialogue 2 at +60t, the fail message + run-end at +120t.
+	 */
+	private void playFailSequence() {
+		sendChatMessage("Bahahaha!  Not a single intact pillar remains!");
+		Utils.scheduleTask(() -> sendChatMessage("Rejoice, your last moments are with me and my lightning."), 60);
+		Utils.scheduleTask(() -> {
+			Bukkit.broadcast(Utils.msg("<red>You failed the run!"));
+			endFailedRun();
+		}, 120);
+	}
+
+	/**
+	 * End the failed run the moment the fail message shows, so players aren't left softlocked with an enraged,
+	 * unkillable Storm (no pillars remain, so he can never be crushed/stunned again). Mirrors the {@code /reset}
+	 * path: drop any queued choreography, then run the full server setup — which removes the boss (via
+	 * {@code CustomBossBar.forceCleanup}), restores the pillars/devices/transition walls, and respawns the
+	 * minibosses — leaving the arena clean and ready for another attempt.
+	 */
+	private void endFailedRun() {
+		Utils.cancelAllScheduled();
+		Server.serverSetup(world);
 	}
 
 	private void cancelStunEnrageTask() {

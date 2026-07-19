@@ -38,6 +38,11 @@ public class Server {
 	private static boolean hasBloodKey = false;
 	private static boolean witherDoorOpened = false;
 	private static boolean bloodDoorOpened = false;
+	// False from serverSetup() until startSection() actually begins the run, so a player standing at a door
+	// during the pre-run countdown can't open it early. Deliberately gates the DOOR, not the key: the key
+	// archaeologists are only spawned at setup, so refusing a key mid-countdown would kill the mob without
+	// granting it and leave the door permanently unopenable.
+	private static boolean runStarted = false;
 
 	// Door bounds as {minX, minY, minZ, maxX, maxY, maxZ} (inclusive). Match the openXxxDoor() fill regions.
 	private static final int[] WITHER_DOOR = {-122, 69, -106, -120, 72, -104};
@@ -48,6 +53,7 @@ public class Server {
 		hasBloodKey = false;
 		witherDoorOpened = false;
 		bloodDoorOpened = false;
+		runStarted = false;
 	}
 
 	public static boolean hasWitherKey() {
@@ -87,19 +93,21 @@ public class Server {
 	}
 
 	/**
-	 * Open the Wither Door if the player has the key and it isn't already open (one-shot). Called on a door click.
+	 * Open the Wither Door if the run has started, the player has the key, and it isn't already open (one-shot).
+	 * Called on a door click.
 	 */
 	public static void tryOpenWitherDoor(Player p) {
-		if(!hasWitherKey || witherDoorOpened) return;
+		if(!runStarted || !hasWitherKey || witherDoorOpened) return;
 		witherDoorOpened = true;
 		openWitherDoor(p);
 	}
 
 	/**
-	 * Open the Blood Door if the player has the key and it isn't already open (one-shot). Called on a door click.
+	 * Open the Blood Door if the run has started, the player has the key, and it isn't already open (one-shot).
+	 * Called on a door click.
 	 */
 	public static void tryOpenBloodDoor() {
-		if(!hasBloodKey || bloodDoorOpened) return;
+		if(!runStarted || !hasBloodKey || bloodDoorOpened) return;
 		bloodDoorOpened = true;
 		openBloodDoor();
 	}
@@ -168,6 +176,9 @@ public class Server {
 
 	/** Runs the section-specific start actions. Callers own the pre-run delay/countdown; this is just the start. */
 	private static void startSection(World world, String section) {
+		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
+		// so this is the one place that means "the run is now live" — see runStarted.
+		runStarted = true;
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.markPhaseStart();
@@ -223,6 +234,7 @@ public class Server {
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 		Goldor.resetS3Device(world);
 		Goldor.resetSectionLevers(world);
+		Goldor.resetSimonSign(world);
 		if(GoldorListener.INSTANCE != null) {
 			GoldorListener.INSTANCE.resetSharpShooter(world);
 			GoldorListener.INSTANCE.resetSimon();

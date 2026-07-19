@@ -540,8 +540,8 @@ public class WitherKing {
 		Bukkit.broadcast(Utils.msg("                          <gray><bold>Wither King</bold><white>: 998 ticks"));
 		Bukkit.broadcast(Utils.msg(""));
 		Bukkit.broadcast(Utils.msg("     <green><bold>TAS by </bold><aqua>Stradivarius Violin<green>, also known as <aqua>Beethoven_"));
-		Bukkit.broadcast(Utils.msg("    <red><bold>YOUTUBE</bold><aqua>: https://www.youtube.com/@Stradivarius_Violin"));
-		Bukkit.broadcast(Utils.msg("               <blue><bold>DISCORD</bold><aqua>: https://discord.gg/gNfPwa8"));
+		Bukkit.broadcast(Utils.msg("    <red><bold>YOUTUBE</bold><aqua>: <click:open_url:'https://www.youtube.com/@Stradivarius_Violin'><u>https://www.youtube.com/@Stradivarius_Violin</u></click>"));
+		Bukkit.broadcast(Utils.msg("               <blue><bold>DISCORD</bold><aqua>: <click:open_url:'https://discord.gg/gNfPwa8'><u>https://discord.gg/gNfPwa8</u></click>"));
 		Bukkit.broadcast(Utils.msg("<green><bold>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
 
 		Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP);

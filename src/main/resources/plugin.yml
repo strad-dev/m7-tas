@@ -25,7 +25,7 @@ commands:
     usage: /eq
     aliases: [stats]
   # TAS-only commands — disabled in the practice fork:
-  # reset:
+  # reset:yo
   #   description: Resets all classes to their spawn locations
   #   usage: /reset
   # simulate:

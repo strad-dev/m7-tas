@@ -563,7 +563,9 @@ public class CustomItems implements Listener {
 		int damaged = 0;
 		double damage = 0;
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && !entity.equals(p) && entity instanceof LivingEntity entity1 && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0) && !(entity instanceof Player pl && FakePlayerManager.getFakePlayers().containsValue(pl))) {
+			// Never damage players — real, fake or spectating. Matches the other AoE abilities (iceSpray, the
+			// AOTS beam, terminator); the old fake-player-only exclusion let implosion hit fellow practicers.
+			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
 				Utils.changeName(entity1);
