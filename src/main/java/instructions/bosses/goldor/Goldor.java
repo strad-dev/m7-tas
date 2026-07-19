@@ -53,13 +53,12 @@ public final class Goldor extends WitherLord {
 	// Block directly behind the Simon Says button (also stonk-immune so the button can't be knocked off).
 	private static final int SIMON_BEHIND_BX = 111, SIMON_BEHIND_BY = 121, SIMON_BEHIND_BZ = 91;
 	// S1 Simon Says ("SS") device protection zone — the whole device column (110..111, 119..124, 91..96),
-	// which covers the button, its backing, and the glowing "i1" label sign. Every block in here is
-	// stonk/break-immune so nothing in the device can be knocked out. See isProtected.
+	// which covers the button, its backing, and the "i1" label sign at (110,121,93). Every block in here is
+	// stonk/break-immune so nothing in the device can be knocked out — which is also what keeps the sign's
+	// message intact across runs (it can never be broken/replaced). See isProtected.
 	private static final int SS_ZONE_X1 = 110, SS_ZONE_X2 = 111;
 	private static final int SS_ZONE_Y1 = 119, SS_ZONE_Y2 = 124;
 	private static final int SS_ZONE_Z1 = 91,  SS_ZONE_Z2 = 96;
-	// The glowing label sign inside the SS device.
-	private static final int SIMON_SIGN_BX = 110, SIMON_SIGN_BY = 121, SIMON_SIGN_BZ = 93;
 	// S2 "Lights" device — the blocks the wall levers are mounted on (levers at z=142, mount blocks at z=143).
 	private static final int LIGHTS_MOUNT_Z = 143, LIGHTS_MOUNT_X1 = 58, LIGHTS_MOUNT_X2 = 62, LIGHTS_MOUNT_Y1 = 133, LIGHTS_MOUNT_Y2 = 136;
 	// S4 Sharp Shooter — the block supporting the gold pressure plate (plate at 63,127,35).
@@ -298,25 +297,6 @@ public final class Goldor extends WitherLord {
 			}
 		}
 		if(best != null) best.setRotation(Rotation.NONE);
-	}
-
-	/** (Re)stamp the S1 Simon Says device label sign at (110,121,93) so it always shows a glowing "i1". Called on
-	 *  each run setup ({@link instructions.Server#serverSetup}). The sign is already indestructible via
-	 *  {@link #isProtected}; this guarantees its message + glow survive a fresh setup or any world edit. Preserves
-	 *  the sign's existing block type/facing — only the text (line 0 = "i1", the rest cleared) and the glowing flag
-	 *  are rewritten. Both faces are stamped so the label reads correctly whichever way the sign points. */
-	public static void resetSimonSign(World world) {
-		Block b = world.getBlockAt(SIMON_SIGN_BX, SIMON_SIGN_BY, SIMON_SIGN_BZ);
-		if(!(b.getState() instanceof org.bukkit.block.Sign sign)) return;
-		for(org.bukkit.block.sign.Side side : org.bukkit.block.sign.Side.values()) {
-			org.bukkit.block.sign.SignSide ss = sign.getSide(side);
-			ss.line(0, Utils.msg("i1"));
-			ss.line(1, net.kyori.adventure.text.Component.empty());
-			ss.line(2, net.kyori.adventure.text.Component.empty());
-			ss.line(3, net.kyori.adventure.text.Component.empty());
-			ss.setGlowingText(true);
-		}
-		sign.update(true, false);
 	}
 
 	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to

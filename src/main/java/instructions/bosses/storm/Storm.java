@@ -487,15 +487,15 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * End the failed run the moment the fail message shows, so players aren't left softlocked with an enraged,
-	 * unkillable Storm (no pillars remain, so he can never be crushed/stunned again). Mirrors the {@code /reset}
-	 * path: drop any queued choreography, then run the full server setup — which removes the boss (via
-	 * {@code CustomBossBar.forceCleanup}), restores the pillars/devices/transition walls, and respawns the
-	 * minibosses — leaving the arena clean and ready for another attempt.
+	 * End the failed run through the SAME path a normal run-end uses: fire the run-complete notify event
+	 * ({@link instructions.bosses.WitherActions#signalRunComplete()} → {@code plugin.RunCompleteEvent}). The
+	 * network glue listens for it and runs its staged session end (interlude → reset the dungeon + everyone to
+	 * spectator → free the slot), which clears the enraged, unkillable Storm so players aren't softlocked.
+	 * Standalone (nothing listening) the event no-ops, exactly like a normal completion — a manual /reset then
+	 * clears it, the same as any standalone run.
 	 */
 	private void endFailedRun() {
-		Utils.cancelAllScheduled();
-		Server.serverSetup(world);
+		instructions.bosses.WitherActions.signalRunComplete();
 	}
 
 	private void cancelStunEnrageTask() {

@@ -234,7 +234,6 @@ public class Server {
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 		Goldor.resetS3Device(world);
 		Goldor.resetSectionLevers(world);
-		Goldor.resetSimonSign(world);
 		if(GoldorListener.INSTANCE != null) {
 			GoldorListener.INSTANCE.resetSharpShooter(world);
 			GoldorListener.INSTANCE.resetSimon();
