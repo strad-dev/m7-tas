@@ -473,6 +473,14 @@ public class MiscListener implements Listener {
 		if(e.getRightClicked() instanceof Villager) e.setCancelled(true);
 	}
 
+	// Mort and the Wizard (villager NPCs) are invulnerable to everything - stray terminator arrows,
+	// Salvation/mage beams, melee, explosions, fire, fall. They're set decoration, never combat targets.
+	// LOWEST so the hit is dead before any other handler acts on it.
+	@EventHandler(priority = EventPriority.LOWEST)
+	public void onVillagerDamage(EntityDamageEvent e) {
+		if(e.getEntity() instanceof Villager) e.setCancelled(true);
+	}
+
 	@EventHandler
 	public void onPlayerPickupArrow(PlayerPickupArrowEvent e) {
 		if(e.getArrow().getScoreboardTags().contains("TerminatorArrow")) {
