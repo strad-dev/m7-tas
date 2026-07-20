@@ -56,6 +56,10 @@ public class Server {
 		runStarted = false;
 	}
 
+	public static boolean isRunStarted() {
+		return runStarted;
+	}
+
 	public static boolean hasWitherKey() {
 		return hasWitherKey;
 	}

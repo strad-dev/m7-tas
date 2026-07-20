@@ -9,6 +9,7 @@ import commands.Spectate;
 import instructions.Actions;
 import instructions.Server;
 import instructions.bosses.goldor.Goldor;
+import instructions.bosses.maxor.Maxor;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.server.MinecraftServer;
@@ -219,6 +220,9 @@ public class CustomItems implements Listener {
 	public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
 		// Right-clicking an item frame or an interaction entity must not fire the held item's right-click ability.
 		if(e.getRightClicked() instanceof ItemFrame || e.getRightClicked() instanceof Interaction) return;
+		// Right-clicking a pickupable Energy Crystal picks it up (Maxor); that click must not ALSO fire the held
+		// item's right-click ability.
+		if(e.getRightClicked() instanceof EnderCrystal crystal && !Maxor.INSTANCE.notEnergyCrystal(crystal)) return;
 		handleCustomItems(e, e.getHand(), e.getPlayer().getInventory().getItemInMainHand(), Action.RIGHT_CLICK_AIR, e.getPlayer());
 	}
 
@@ -245,13 +249,29 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
-		// Protected Goldor interactables are unbreakable outright — any tool (stonk, dungeonbreaker, …), any phase.
-		if(Goldor.INSTANCE.isProtected(e.getBlock())) {
+		// Protected Goldor interactables and the Maxor Energy-Crystal pressure plates are unbreakable outright —
+		// any tool (stonk, dungeonbreaker, …), any phase.
+		if(Goldor.INSTANCE.isProtected(e.getBlock()) || Maxor.INSTANCE.isProtected(e.getBlock())) {
 			e.setCancelled(true);
 			return;
 		}
+		// Wither/Blood door blocks are unbreakable ONCE THE RUN HAS STARTED (opened via the key + door-click path
+		// in MiscListener, never broken). During the pre-run prep window they may still be stonked through.
+		if(Server.isRunStarted() && (Server.inWitherDoor(e.getBlock()) || Server.inBloodDoor(e.getBlock()))) {
+			e.setCancelled(true);
+			return;
+		}
+		// Do the removal ourselves WITHOUT physics instead of letting vanilla break the block. A vanilla break runs
+		// updateNeighbourShapes on the six neighbours, which is what tears out anything support-dependent sitting on/
+		// against the block — carpets, torches, flowers, rails, redstone — and cascades a nether portal to air via its
+		// frame-completeness check. That removal path (updateShape → destroyBlock) fires NO BlockPhysicsEvent, so it
+		// can't be vetoed from a listener; the only place to stop it is here, at the source. setType(AIR, false) uses
+		// applyPhysics=false, which skips the neighbour shape updates entirely — so nothing attached ever pops off.
+		e.setCancelled(true);
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
-			stonk(e.getPlayer(), e.getBlock());
+			stonk(e.getPlayer(), e.getBlock()); // temporary: removes the block no-physics + restores it after 200 ticks
+		} else {
+			e.getBlock().setType(Material.AIR, false); // permanent break (Dungeonbreaker, etc.), still no-physics
 		}
 	}
 
@@ -1119,13 +1139,14 @@ public class CustomItems implements Listener {
 	}
 
 	public static void stonk(Player p, Block b) {
-		if(Goldor.INSTANCE.isProtected(b)) return;
+		if(Goldor.INSTANCE.isProtected(b) || Maxor.INSTANCE.isProtected(b)) return;
 		if(b.getType().getHardness() != -1) {
 			Material m = b.getType();
 			BlockData data = b.getBlockData().clone();
 			Location loc = b.getLocation();
 			Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + Utils.round(loc.getX(), 3) + " " + Utils.round(loc.getY(), 5) + " " + Utils.round(loc.getZ(), 3));
 
+			b.setType(Material.AIR, false); // no-physics: attached neighbours (carpets, portals, …) don't pop off
 			pendingStonkRestorations.put(loc, data);
 			BukkitTask task = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 				b.setType(m);
@@ -1587,7 +1608,9 @@ public class CustomItems implements Listener {
 
 
 		for(Entity e : Objects.requireNonNull(l.getWorld()).getNearbyEntities(l, 10, 10, 10)) {
-			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)) {
+			// The Watcher is immune to the Gyrokinetic Wand — never let the rift pull/hold it.
+			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)
+					&& !entity.getScoreboardTags().contains("TASWatcher")) {
 				new BukkitRunnable() {
 					int tick = 0;
 

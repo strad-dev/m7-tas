@@ -475,10 +475,10 @@ public class WitherKing {
 	}
 
 	public static void playDragonDeathSound(boolean sendMessage) {
-		for(int i = 0; i < 181; i += 10) {
+		for(int i = 0; i < 191; i += 10) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 1.0f, 1.0f), i);
 		}
-		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 1.0f, 1.0f), 190);
+		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 1.0f, 1.0f), 200);
 		if(witherKing.getHealth() == 1) {
 			witherKing.setHealth(0.001);
 		} else {

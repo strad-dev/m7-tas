@@ -330,21 +330,21 @@ public class GoldorListener implements Listener {
 	}
 
 	// =================== Punching items out of S3 frames: cancelled (creative bypass) ===================
+	// Phase-independent (isInS3FrameRegion, not isProtectedFrame) so the items can never be knocked out — in prep,
+	// between phases, or mid-phase.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFramePunch(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
-		if(Goldor.INSTANCE.isPhaseInactive()) return;
-		if(e.getEntity() instanceof ItemFrame frame && Goldor.INSTANCE.isProtectedFrame(frame)) {
+		if(e.getEntity() instanceof ItemFrame frame && Goldor.INSTANCE.isInS3FrameRegion(frame)) {
 			if(e.getDamager() instanceof Player p && p.getGameMode() == GameMode.CREATIVE) return; // creative bypass
 			e.setCancelled(true);
 		}
 	}
 
-	// Broader EntityDamageEvent fallback (non-entity damage sources). No player → no creative bypass.
+	// Broader EntityDamageEvent fallback (non-entity damage sources). No player → no creative bypass. Phase-independent.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFrameDamage(org.bukkit.event.entity.EntityDamageEvent e) {
-		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(e instanceof org.bukkit.event.entity.EntityDamageByEntityEvent) return; // handled by onFramePunch
-		if(e.getEntity() instanceof ItemFrame frame && Goldor.INSTANCE.isProtectedFrame(frame)) {
+		if(e.getEntity() instanceof ItemFrame frame && Goldor.INSTANCE.isInS3FrameRegion(frame)) {
 			e.setCancelled(true);
 		}
 	}
@@ -450,10 +450,12 @@ public class GoldorListener implements Listener {
 	}
 
 	// =================== Item-frame indestructibility (S3 only, creative bypass) ===================
+	// Phase-independent (isInS3FrameRegion) so the frames are unbreakable in EVERY phase — this also cancels the
+	// PHYSICS cause, which is what fires when the frame's support block is broken out from behind it, so the frame
+	// stays put even with its support gone.
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onHangingBreak(HangingBreakEvent e) {
-		if(Goldor.INSTANCE.isPhaseInactive()) return;
-		if(!(e.getEntity() instanceof ItemFrame frame) || !Goldor.INSTANCE.isProtectedFrame(frame)) return;
+		if(!(e.getEntity() instanceof ItemFrame frame) || !Goldor.INSTANCE.isInS3FrameRegion(frame)) return;
 		if(e instanceof org.bukkit.event.hanging.HangingBreakByEntityEvent be
 				&& be.getRemover() instanceof Player p
 				&& p.getGameMode() == GameMode.CREATIVE) return;

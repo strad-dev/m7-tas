@@ -6,6 +6,7 @@ import instructions.bosses.WitherLord;
 import instructions.bosses.storm.Storm;
 import listeners.CustomItems;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -35,6 +36,10 @@ public final class Maxor extends WitherLord {
 	private static final int STUN_COOLDOWN_TICKS = 200;
 	private static final int PLATE_GATE_TICKS = 160;
 	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
+
+	// The two Energy Crystal pressure plates (see placeAtPlate / pickUp). Stonk/break-immune — see isProtected.
+	private static final int PLATE_Y = 224, PLATE_Z = 41;
+	private static final int PLATE_LEFT_X = 94, PLATE_RIGHT_X = 52;
 
 	private final Random random = new Random();
 
@@ -157,6 +162,15 @@ public final class Maxor extends WitherLord {
 	public boolean notEnergyCrystal(Entity e) {
 		// Only the top spawn crystals can be picked up — plate-placed ones are committed.
 		return !(e instanceof EnderCrystal) || (!e.equals(topLeftCrystal) && !e.equals(topRightCrystal));
+	}
+
+	/** True if this block is one of the two Energy Crystal pressure plates OR the support block directly beneath it
+	 *  — both stonk/break-immune so the plate can't be knocked out from under a crystal placement (breaking the
+	 *  support pops the plate off too). A pure positional test (phase-independent, immune in EVERY phase including
+	 *  the pre-run prep window), mirroring {@link instructions.bosses.goldor.Goldor#isProtected}. */
+	public boolean isProtected(Block b) {
+		return (b.getY() == PLATE_Y || b.getY() == PLATE_Y - 1) && b.getZ() == PLATE_Z
+				&& (b.getX() == PLATE_LEFT_X || b.getX() == PLATE_RIGHT_X);
 	}
 
 	public void resetCrystals() {

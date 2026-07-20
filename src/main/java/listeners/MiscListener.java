@@ -91,15 +91,23 @@ public class MiscListener implements Listener {
 
 	// Left/right-clicking a Wither/Blood door block opens it - if the matching key has been obtained. The click
 	// is always cancelled within the door bounds so the block can't be broken; opening is a no-op without the key.
+	// Left/right-clicking a Wither/Blood door block opens it - if the matching key has been obtained. The click is
+	// always cancelled within the door bounds so the block can't be broken; opening is a no-op without the key.
+	// EXCEPTION: BEFORE the run starts (the prep/countdown window), a player holding the stonk may break through the
+	// door — so we let that click pass through untouched instead of cancelling it, and the break reaches the stonk
+	// handler in CustomItems.onBlockBreak (which only protects the door once the run has started). Once the run is
+	// live, the stonk gets no special treatment: clicking the door just opens it (if the key's been obtained).
 	@EventHandler
 	public void onDoorClick(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) return;
 		Block b = e.getClickedBlock();
 		if(b == null) return;
+		if(!Server.inWitherDoor(b) && !Server.inBloodDoor(b)) return;
+		if(!Server.isRunStarted() && CustomItems.getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) return;
 		if(Server.inWitherDoor(b)) {
 			e.setCancelled(true);
 			Server.tryOpenWitherDoor(e.getPlayer());
-		} else if(Server.inBloodDoor(b)) {
+		} else {
 			e.setCancelled(true);
 			Server.tryOpenBloodDoor();
 		}
@@ -430,6 +438,17 @@ public class MiscListener implements Listener {
 		if(Maxor.INSTANCE.notEnergyCrystal(crystal)) return;
 		e.setCancelled(true);
 		Maxor.INSTANCE.pickUp(e.getPlayer(), crystal);
+	}
+
+	// Left-clicking (attacking) a pickupable top crystal collects it too, same as a right-click. The crystal
+	// takes no damage (onEnderCrystalDamage cancels it); this just routes the attack into a pickup.
+	@EventHandler
+	public void onEnergyCrystalLeftClick(EntityDamageByEntityEvent e) {
+		if(!(e.getEntity() instanceof EnderCrystal crystal)) return;
+		if(!(e.getDamager() instanceof Player p)) return;
+		if(Maxor.INSTANCE.notEnergyCrystal(crystal)) return;
+		e.setCancelled(true);
+		Maxor.INSTANCE.pickUp(p, crystal);
 	}
 
 	@EventHandler
