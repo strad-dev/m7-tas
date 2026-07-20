@@ -475,10 +475,18 @@ public class MiscListener implements Listener {
 
 	// Mort and the Wizard (villager NPCs) are invulnerable to everything - stray terminator arrows,
 	// Salvation/mage beams, melee, explosions, fire, fall. They're set decoration, never combat targets.
+	// /kill is the one exception: it must still remove them.
+	//
+	// Vanilla's /kill (LivingEntity#kill) arrives as DamageCause.KILL, because DamageTypes.GENERIC_KILL maps
+	// to it. Utils.hurtEntity uses that SAME source for ability damage, so letting KILL through would once
+	// have let mage beams in too - which is why hurtEntity now refuses villagers outright. With ability damage
+	// stopped at the source, a KILL-cause hit on a villager can only be a real /kill.
 	// LOWEST so the hit is dead before any other handler acts on it.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVillagerDamage(EntityDamageEvent e) {
-		if(e.getEntity() instanceof Villager) e.setCancelled(true);
+		if(!(e.getEntity() instanceof Villager)) return;
+		if(e.getCause() == EntityDamageEvent.DamageCause.KILL) return; // /kill still removes them
+		e.setCancelled(true);
 	}
 
 	@EventHandler

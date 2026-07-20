@@ -643,6 +643,12 @@ public class Utils {
 		// The Wither King is immune to all direct player damage (mage beam, AOTS, etc.) — its HP is driven solely
 		// by dragon kills (each removes 1 via setHealth in WitherKing#playDragonDeathSound). Aggro is still noted above.
 		if(entity.getScoreboardTags().contains("TASWitherKing")) return;
+		// Villager NPCs (Mort / the Wizard) never take plugin-dealt damage - mage beam, Salvation, AOTS, AoE.
+		// Blocking it HERE rather than only in MiscListener matters: this method hits with genericKill, the exact
+		// same damage source vanilla's /kill uses, so the two are indistinguishable once they reach the damage
+		// event. Keeping ability damage away from villagers at the source means a KILL-cause event on a villager
+		// can only be a real /kill, which is what lets MiscListener allow it through cleanly.
+		if(entity instanceof org.bukkit.entity.Villager) return;
 		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
 			// EnderDragon.hurtServer() delegates to hurt() which rejects damage sources without
 			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
