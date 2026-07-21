@@ -195,6 +195,17 @@ public class MiscListener implements Listener {
 			} else if(e.getHitEntity() != null) {
 				// Resolve EnderDragonPart to its parent EnderDragon (EnderDragonPart is not a LivingEntity)
 				Entity rawHit = e.getHitEntity();
+
+				// Phase through falling blocks. Vanilla projectile targeting is not restricted to LivingEntity, so a
+				// FallingBlock is a legal arrow target — which makes a Gyrokinetic Wand's 64-block swarm an arrow-proof
+				// wall that costs a pierce level per block (pierce 4 = the arrow dies after 5). The blocks are
+				// invulnerable decoration, so nothing is lost by ignoring them; cancelling before vanilla's onHitEntity
+				// runs is what preserves the pierce level (same reason the Terminator branch below cancels).
+				if(rawHit instanceof FallingBlock && arrow.getScoreboardTags().contains("TerminatorArrow")) {
+					e.setCancelled(true);
+					return;
+				}
+
 				LivingEntity hitEntity = rawHit instanceof LivingEntity le ? le
 						: rawHit instanceof EnderDragonPart part ? part.getParent() : null;
 				if(hitEntity == null) return;
@@ -343,6 +354,18 @@ public class MiscListener implements Listener {
 	@EventHandler(ignoreCancelled = true)
 	public void onWatcherPortal(PlayerPortalEvent e) {
 		if(e.getCause() == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) {
+			e.setCancelled(true);
+		}
+	}
+
+	// Runners practising the same floor stand on top of each other constantly - a stray Terminator shot or a
+	// Scylla swing at a boss must never hit another player. Unwrap projectiles the same way onBossDamager does,
+	// otherwise Archer arrows still land.
+	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
+	public void onPlayerVsPlayer(EntityDamageByEntityEvent e) {
+		if(!(e.getEntity() instanceof Player)) return;
+		if(e.getDamager() instanceof Player
+				|| (e.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player)) {
 			e.setCancelled(true);
 		}
 	}

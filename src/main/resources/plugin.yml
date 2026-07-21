@@ -24,10 +24,10 @@ commands:
     description: View your equipment and current speed
     usage: /eq
     aliases: [stats]
-  # TAS-only commands — disabled in the practice fork:
-  # reset:yo
-  #   description: Resets all classes to their spawn locations
-  #   usage: /reset
+  reset:
+    description: Reset the dungeon to its pre-run state (and send any fake players out of sight)
+    usage: /reset
+  # TAS-only command — disabled in the practice fork:
   # simulate:
   #   description: Simulates player actions
   #   usage: /simulate <move|click|hotbar|turnhead|allblessings|undo>

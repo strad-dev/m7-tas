@@ -47,11 +47,12 @@ public final class M7tas extends JavaPlugin {
 		PlayerCollision.setupNoCollisionTeam();
 
 		// TAS-only commands (tas, simulate, spectate/unspectate, reset, kickallfakes) are disabled in the practice fork.
-		for(String cmd : List.of("setup", "practice", "eq", "getcustomitems", "verbose", "setspeed")) {
+		for(String cmd : List.of("setup", "practice", "eq", "reset", "getcustomitems", "verbose", "setspeed")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
 				case "practice" -> command.setExecutor(new Practice());
+				case "reset" -> command.setExecutor(new Reset());
 				case "eq" -> command.setExecutor(new Eq());
 				case "getcustomitems" -> command.setExecutor(new GetCustomItems());
 				case "verbose" -> command.setExecutor(new Verbose());

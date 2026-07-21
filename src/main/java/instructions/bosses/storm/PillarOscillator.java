@@ -37,6 +37,8 @@ public final class PillarOscillator {
 	private Direction direction;
 	private int lastMovementTick;
 	private boolean used;
+	/** Set by {@link #markUsed()}; makes every still-queued {@link #moveOne} op a no-op. */
+	private boolean frozen;
 
 	public PillarOscillator(PadAndPillar pillar) {
 		this.pillar = pillar;
@@ -49,6 +51,7 @@ public final class PillarOscillator {
 		direction = Direction.DOWN;
 		lastMovementTick = Integer.MIN_VALUE;
 		used = false;
+		frozen = false;
 	}
 
 	public PadAndPillar getPillar() { return pillar; }
@@ -56,7 +59,26 @@ public final class PillarOscillator {
 
 	/** @return true once this pillar has crushed Storm and been consumed — the pad no longer activates it. */
 	public boolean isUsed() { return used; }
-	public void markUsed() { used = true; }
+
+	/**
+	 * Consume this pillar: its pad goes dead AND its already-queued clone ops are neutered.
+	 * <br>
+	 * The freeze matters because {@link #runCycle} fires up to five {@code moveOne} ops through
+	 * {@code Utils.scheduleTask} (which hands back no cancellable handle) spread over 16 ticks. Marking the
+	 * pillar used only stops the NEXT cycle from being started — the current cycle's remaining DOWN clones
+	 * would otherwise keep descending into Storm during the 20 ticks before the crush explosion fires,
+	 * re-burying him in the very pillar that already crushed him. Once a pillar has crushed Storm it is
+	 * finished moving; it exists only to be blown up.
+	 */
+	public void markUsed() {
+		used = true;
+		freeze();
+	}
+
+	/** Neuter this pillar's still-queued clone ops without consuming it. Used when Storm dies mid-cycle. */
+	public void freeze() {
+		frozen = true;
+	}
 
 	/**
 	 * Execute one 20-tick cycle's motion, scheduling per-block clone ops at 4-tick
@@ -93,6 +115,8 @@ public final class PillarOscillator {
 	}
 
 	private void moveOne() {
+		// This pillar has crushed Storm and is awaiting its explosion — drop the leftover queued ops.
+		if(frozen) return;
 		if(direction == Direction.DOWN) {
 			// Push Storm out from under the descending pillar before placing the
 			// new bottom row. If Storm is already at the floor the push no-ops

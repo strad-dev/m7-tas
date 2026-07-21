@@ -23,6 +23,7 @@ public class Setup implements CommandExecutor {
 		}
 
 		// FakePlayerManager.spawnAllFakes(p.getWorld()); // TAS-only: no fake players in the practice fork
+		Server.blanketKill(p.getWorld());
 		Server.serverSetup(p.getWorld());
 		p.sendMessage(Utils.msg("Reset the dungeon (map + mobs)."));
 		return true;

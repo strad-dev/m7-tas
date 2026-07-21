@@ -208,6 +208,45 @@ public class Server {
 		}
 	}
 
+	/**
+	 * Wholesale removal of every entity type a run spawns. Run-end cleanups are supposed to tear these down but
+	 * currently don't fire reliably, so a run aborted part-way leaves orphans (mobs, boss-bar/stun indicators,
+	 * terminal labels, lever hitboxes, quiz options, statue displays, crystals) that no targeted forceCleanup owns
+	 * and they stack up across runs. Nothing in the dungeon world legitimately outlives a run — every one of these
+	 * is respawned by the run that needs it — so nuking them all closes every leak path at once. Called ONLY from
+	 * {@code /reset} and {@code /setup}, NOT from {@link #serverSetup} (which also runs at TAS/practice run start,
+	 * where a blanket kill mid-startup would be wrong). Mirrors the blanket kill {@code M7tas.onDisable} does.
+	 */
+	public static void blanketKill(World world) {
+		for(Zombie zombie : world.getEntitiesByClass(Zombie.class)) {
+			zombie.remove();
+		}
+		for(Wither wither : world.getEntitiesByClass(Wither.class)) {
+			wither.remove();
+		}
+		for(WitherSkeleton witherSkeleton : world.getEntitiesByClass(WitherSkeleton.class)) {
+			witherSkeleton.remove();
+		}
+		for(EnderDragon enderDragon : world.getEntitiesByClass(EnderDragon.class)) {
+			enderDragon.remove();
+		}
+		for(ArmorStand armorStand : world.getEntitiesByClass(ArmorStand.class)) {
+			armorStand.remove();
+		}
+		for(EnderCrystal crystal : world.getEntitiesByClass(EnderCrystal.class)) {
+			crystal.remove();
+		}
+		for(Interaction interaction : world.getEntitiesByClass(Interaction.class)) {
+			interaction.remove();
+		}
+		for(ItemDisplay display : world.getEntitiesByClass(ItemDisplay.class)) {
+			display.remove();
+		}
+		for(TextDisplay display : world.getEntitiesByClass(TextDisplay.class)) {
+			display.remove();
+		}
+	}
+
 	public static void serverSetup(World world) {
 		CustomItems.flushStonkRestorations();
 		// Replace every superboomed wall / crypt still set to AIR and despawn active crypt mobs, then clear ender pearl

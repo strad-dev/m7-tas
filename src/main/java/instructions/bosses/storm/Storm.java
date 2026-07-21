@@ -84,6 +84,14 @@ public final class Storm extends WitherLord {
 	private boolean stunCapReached;
 	private PadAndPillar currentCrushPillar;
 	private boolean crushExplosionActive;
+	// A crush explosion has been scheduled and hasn't gone off yet. Guarantees exactly one detonation per crush
+	// and lets the death path force a still-pending one rather than lose the pillar.
+	private boolean crushExplosionPending;
+	// Where the crush happened, captured at trigger time. The explosion is anchored here rather than at
+	// boss.getLocation() so it still lands on the right column if Storm dies / is moved during the 20-tick delay.
+	private Location pendingCrushLoc;
+	// Phase tick the pending explosion was armed on — drives the overdue-detonation safety net in pollCycle.
+	private int crushArmedTick;
 
 	private Storm() {
 		register(this);
@@ -136,6 +144,9 @@ public final class Storm extends WitherLord {
 		stunDamageDealt = 0;
 		stunCapReached = false;
 		currentCrushPillar = null;
+		// Drop any crush explosion left armed by a previous attempt so it can't detonate into the new run.
+		crushExplosionPending = false;
+		pendingCrushLoc = null;
 		cleanupMobs();
 		pillars.clear();
 		for(PadAndPillar p : PadAndPillar.ACTIVE) {
@@ -268,9 +279,22 @@ public final class Storm extends WitherLord {
 			}
 		}
 
+		// Safety net: the detonation rides Utils.scheduleTask, so a global scheduler flush could swallow it. That
+		// would leave the crushed pillar standing AND latch crushExplosionPending forever, permanently disabling
+		// crush detection. If it's overdue, fire it here instead.
+		if(crushExplosionPending && tick - crushArmedTick > CRUSH_EXPLOSION_DELAY + 20) {
+			fireCrushExplosion();
+		}
+
 		// Crush detection — only after intro ends, only while not already stunned, and only
 		// within the 60-tick window after any pillar's most recent movement.
-		if(crushEnabled && !inStun && !dying && anyPillarMovedRecently() && stormInDiorite()) {
+		//
+		// crushExplosionPending is part of the gate because the stun can END before the pillar is destroyed: the
+		// explosion lands 20 ticks after the crush, but enough DPS reaches the 55% stun cap sooner (~18-19t is
+		// typical), which enrages Storm immediately. He is then un-stunned while still buried in a stationary,
+		// not-yet-exploded pillar — so this very next poll would crush him again on that same diorite. Waiting for
+		// the pending explosion closes that window without touching the enrage timing.
+		if(crushEnabled && !inStun && !dying && !crushExplosionPending && anyPillarMovedRecently() && stormInCrushablePillar()) {
 			triggerCrush();
 		}
 	}
@@ -305,7 +329,15 @@ public final class Storm extends WitherLord {
 		return false;
 	}
 
-	private boolean stormInDiorite() {
+	/**
+	 * True if Storm's hitbox overlaps diorite belonging to a pillar that hasn't been consumed yet.
+	 * <br>
+	 * The used-pillar check matters because a consumed pillar's blocks linger until its explosion fires (and, if
+	 * that explosion ever fails to clear the full column, indefinitely). Plain "am I touching diorite?" would let
+	 * leftovers from an already-crushed pillar trigger a second crush — which then scopes to some OTHER pillar via
+	 * {@link #findPillarStormIsIn}'s closest-pillar fallback, consuming and detonating an innocent one.
+	 */
+	private boolean stormInCrushablePillar() {
 		BoundingBox box = boss.getBoundingBox();
 		int minX = (int) Math.floor(box.getMinX());
 		int maxX = (int) Math.floor(box.getMaxX());
@@ -317,9 +349,20 @@ public final class Storm extends WitherLord {
 			for(int y = minY; y <= maxY; y++) {
 				for(int z = minZ; z <= maxZ; z++) {
 					Material m = world.getBlockAt(x, y, z).getType();
-					if(m == Material.DIORITE || m == Material.POLISHED_DIORITE) return true;
+					if(m != Material.DIORITE && m != Material.POLISHED_DIORITE) continue;
+					if(inUnusedPillarColumn(x, z)) return true;
 				}
 			}
+		}
+		return false;
+	}
+
+	/** @return true if block column (x, z) belongs to a pillar that hasn't been consumed by a crush yet. */
+	private boolean inUnusedPillarColumn(int x, int z) {
+		for(PillarOscillator osc : pillars) {
+			if(osc.isUsed()) continue;
+			PadAndPillar p = osc.getPillar();
+			if(x >= p.pillarX1() && x <= p.pillarX2() && z >= p.pillarZ1() && z <= p.pillarZ2()) return true;
 		}
 		return false;
 	}
@@ -352,8 +395,11 @@ public final class Storm extends WitherLord {
 			sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
 			boss.setHealth(onePercent);
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
+			// Arm the explosion BEFORE entering the dying state so the crush position is captured while Storm is
+			// still where the pillar caught him. The detonation itself keeps its normal T+20 timing and no longer
+			// depends on the boss being alive when it lands.
+			scheduleCrushExplosion();
 			enterDyingState();
-			Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
 			return;
 		}
 
@@ -379,7 +425,7 @@ public final class Storm extends WitherLord {
 		stunEnrageTask = BossScheduler.schedule(this::enrageStorm, STUN_AUTO_ENRAGE_TICKS);
 
 		// Pillar destruction explosion fires 20 ticks after Storm is damaged.
-		Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
+		scheduleCrushExplosion();
 	}
 
 	/**
@@ -417,10 +463,36 @@ public final class Storm extends WitherLord {
 		return closest;
 	}
 
+	/**
+	 * Arm the pillar-destruction explosion for the crush that just happened. Anchors it to Storm's current
+	 * position so the detonation is independent of anything that moves or removes him during the delay.
+	 */
+	private void scheduleCrushExplosion() {
+		pendingCrushLoc = boss != null ? boss.getLocation().clone() : pendingCrushLoc;
+		crushExplosionPending = true;
+		crushArmedTick = tick;
+		Utils.scheduleTask(this::fireCrushExplosion, CRUSH_EXPLOSION_DELAY);
+	}
+
 	@SuppressWarnings("removal") // GameRule.MOB_GRIEFING is deprecated-for-removal in 26.2 but still functional; no clean replacement.
 	private void fireCrushExplosion() {
-		if(boss == null || !boss.isValid()) return;
-		Location loc = boss.getLocation();
+		// Idempotent: the death path may force this early, in which case the queued task finds nothing to do.
+		if(!crushExplosionPending) return;
+		crushExplosionPending = false;
+		// Anchor on the recorded crush position, NOT boss.getLocation() — Storm may have died, been pinned to 1 HP
+		// or been moved since. The pillar must come down either way, so an invalid boss is no longer a bail-out;
+		// the explosion is fired from the pillar's own column instead.
+		Location loc = pendingCrushLoc != null ? pendingCrushLoc
+				: (boss != null && boss.isValid() ? boss.getLocation() : null);
+		pendingCrushLoc = null;
+		if(loc == null) return;
+		// The blast's block list is scoped by StormCrushExplosion via isStormCrush(source) — with no live boss to
+		// pass as the source nothing would filter it and a power-50 explosion would level the arena. In that case
+		// clear the crushed column directly instead, so the pillar still comes down.
+		if(boss == null || !boss.isValid()) {
+			clearCrushedPillarColumn();
+			return;
+		}
 		// Power=7 mirrors the vanilla Wither spawn explosion. StormCrushExplosion listener
 		// filters the resulting block list to keep only diorite/polished_diorite with y<196.
 		// Vanilla's Level.explode() force-disables block-breaking when the source is a Mob and
@@ -434,6 +506,20 @@ public final class Storm extends WitherLord {
 		} finally {
 			crushExplosionActive = false;
 			world.setGameRule(GameRule.MOB_GRIEFING, prevMobGriefing);
+		}
+	}
+
+	/**
+	 * Boss-less fallback for {@link #fireCrushExplosion}: strip the crushed pillar's diorite by command instead of
+	 * by blast. Same end state (column emptied down from the anchor), just without the particles.
+	 */
+	private void clearCrushedPillarColumn() {
+		PadAndPillar p = currentCrushPillar;
+		if(p == null) return;
+		for(String material : new String[]{"minecraft:diorite", "minecraft:polished_diorite"}) {
+			Utils.runCommand(String.format("fill %d %d %d %d %d %d minecraft:air replace %s",
+					p.pillarX1(), PadAndPillar.PILLAR_BOTTOM_MIN, p.pillarZ1(),
+					p.pillarX2(), PadAndPillar.PILLAR_ANCHOR_Y - 1, p.pillarZ2(), material));
 		}
 	}
 
@@ -575,6 +661,12 @@ public final class Storm extends WitherLord {
 		boss.addScoreboardTag("TASDying");
 		cancelStunEnrageTask();
 		cancelCycleTask();
+		// cancelCycleTask only stops the NEXT cycle from starting. Every pillar's current cycle still has up to
+		// four more DOWN clones queued on the scheduler, which would keep descending onto the dying Storm and
+		// re-bury him. Freeze them all; the fight is over, no pillar needs to move again.
+		for(PillarOscillator osc : pillars) {
+			osc.freeze();
+		}
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
 		Utils.scheduleTask(() -> {
