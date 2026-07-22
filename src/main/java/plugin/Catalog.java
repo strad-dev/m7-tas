@@ -70,11 +70,11 @@ public final class Catalog {
 		}
 	}
 
-	/** Terminator Power per class, matching the TAS / GetCustomItems (Archer 66, Berserk/Healer/Tank 16, Mage none). */
+	/** Terminator Power per class, matching the TAS / GetCustomItems (Archer 70, Berserk/Healer/Tank 17, Mage none). */
 	private static int terminatorPower(String role) {
 		return switch (role) {
-			case "Archer" -> 66;
-			case "Berserk", "Healer", "Tank" -> 16;
+			case "Archer" -> 70;
+			case "Berserk", "Healer", "Tank" -> 17;
 			default -> 0;
 		};
 	}

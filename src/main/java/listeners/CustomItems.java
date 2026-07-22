@@ -298,36 +298,33 @@ public class CustomItems implements Listener {
 		dispatchDrop(p, ultimate);
 	}
 
-	public static boolean handleDrop(Player p, boolean ultimate) {
-		if(Spectate.getSpectatorMap().containsKey(p)) return false;
+	public static void handleDrop(Player p, boolean ultimate) {
+		if(Spectate.getSpectatorMap().containsKey(p)) return;
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
-		return dispatchDrop(p, ultimate);
+		dispatchDrop(p, ultimate);
 	}
 
-	private static boolean dispatchDrop(Player p, boolean ultimate) {
+	private static void dispatchDrop(Player p, boolean ultimate) {
 		int now = MinecraftServer.currentTick;
 		UUID id = p.getUniqueId();
 		if(p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer")) {
 			if(ultimate) {
-				if(now < rapidFireReady.getOrDefault(id, 0)) { sendCooldownMessage(p, rapidFireReady.getOrDefault(id, now) - now); return false; } // Rapid Fire: 100s
+				if(now < rapidFireReady.getOrDefault(id, 0)) { sendCooldownMessage(p, rapidFireReady.getOrDefault(id, now) - now); return; } // Rapid Fire: 100s
 				rapidFireReady.put(id, now + 2000);
 				rapidFire(p);
 			} else {
-				if(now < explosiveShotReady.getOrDefault(id, 0)) { sendCooldownMessage(p, explosiveShotReady.getOrDefault(id, now) - now); return false; } // Explosive Shot: 20s
+				if(now < explosiveShotReady.getOrDefault(id, 0)) { sendCooldownMessage(p, explosiveShotReady.getOrDefault(id, now) - now); return; } // Explosive Shot: 20s
 				explosiveShotReady.put(id, now + 400);
 				explosiveShot(p);
 			}
-			return true;
 		} else if(p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage")) {
 			if(!ultimate) {
-				if(now < guidedSheepReady.getOrDefault(id, 0)) { sendCooldownMessage(p, guidedSheepReady.getOrDefault(id, now) - now); return false; } // Guided Sheep: 30s
+				if(now < guidedSheepReady.getOrDefault(id, 0)) { sendCooldownMessage(p, guidedSheepReady.getOrDefault(id, now) - now); return; } // Guided Sheep: 30s
 				guidedSheepReady.put(id, now + effectiveCooldown(p, GUIDED_SHEEP_COOLDOWN_TICKS));
 				guidedSheep(p);
 			}
-			return true;
 		}
-		return false;
 	}
 
 	@EventHandler
@@ -2112,7 +2109,7 @@ public class CustomItems implements Listener {
 
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
 							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-								Utils.hurtEntity(target, 19, p);
+								Utils.hurtEntity(target, 20, p);
 								target.setNoDamageTicks(0);
 								Utils.changeName(target);
 								alreadyHurt.add(target);
@@ -2204,7 +2201,7 @@ public class CustomItems implements Listener {
 				nmsWorld.addFreshEntity(nmsArrow);
 
 				Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
-				arrow.setDamage(35);
+				arrow.setDamage(40);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());

@@ -213,9 +213,10 @@ public class Server {
 	 * currently don't fire reliably, so a run aborted part-way leaves orphans (mobs, boss-bar/stun indicators,
 	 * terminal labels, lever hitboxes, quiz options, statue displays, crystals) that no targeted forceCleanup owns
 	 * and they stack up across runs. Nothing in the dungeon world legitimately outlives a run — every one of these
-	 * is respawned by the run that needs it — so nuking them all closes every leak path at once. Called ONLY from
-	 * {@code /reset} and {@code /setup}, NOT from {@link #serverSetup} (which also runs at TAS/practice run start,
-	 * where a blanket kill mid-startup would be wrong). Mirrors the blanket kill {@code M7tas.onDisable} does.
+	 * is respawned by the run that needs it — so nuking them all closes every leak path at once. Called from
+	 * {@code /reset}, {@code /setup}, and {@code /practice} run start ({@code TAS.runPractice}) — always BEFORE the
+	 * spawns, NEVER from inside {@link #serverSetup} itself (a blanket kill mid-startup would race the minibosses
+	 * that method spawns). Mirrors the blanket kill {@code M7tas.onDisable} does.
 	 */
 	public static void blanketKill(World world) {
 		for(Zombie zombie : world.getEntitiesByClass(Zombie.class)) {
