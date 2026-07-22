@@ -1197,8 +1197,8 @@ public class CustomItems implements Listener {
 			Utils.debug(Utils.DebugType.SERVER, "Rag Buff applied to " + Utils.getRealName(p));
 			if(p.getName().equals("Archer")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 3));
-			} else if(p.getName().equals("Berserk")) {
-				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 0));
+			} else {
+				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 1));
 			}
 		}, 60);
 		// Remove only once the latest expiry is reached: a second cast refreshes ragBuffExpiry, so this earlier
@@ -2294,10 +2294,10 @@ public class CustomItems implements Listener {
 			//   Dark Claymore (and any other mage-beam item): 170 (200 RagBuffed) on ALL entities.
 			float damage;
 			if("skyblock/combat/scylla".equals(getID(p.getInventory().getItemInMainHand()))) {
-				damage = ragBuff ? 225 : 195;
+				damage = ragBuff ? 250 : 220;
 				if(!(temp instanceof Wither)) damage *= (1f - 0.33f);
 			} else {
-				damage = ragBuff ? 200 : 170;
+				damage = ragBuff ? 220 : 190;
 			}
 			damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
 			damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)

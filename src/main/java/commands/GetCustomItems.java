@@ -234,8 +234,8 @@ public class GetCustomItems implements CommandExecutor {
 	 *  no terminator → 0. */
 	private static int terminatorPower(String role) {
 		return switch(role) {
-			case "Archer" -> 66;
-			case "Berserk", "Healer", "Tank" -> 16;
+			case "Archer" -> 70;
+			case "Berserk", "Healer", "Tank" -> 17;
 			default -> 0;
 		};
 	}
