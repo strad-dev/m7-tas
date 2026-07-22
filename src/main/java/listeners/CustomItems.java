@@ -1609,8 +1609,9 @@ public class CustomItems implements Listener {
 
 		for(Entity e : Objects.requireNonNull(l.getWorld()).getNearbyEntities(l, 10, 10, 10)) {
 			// The Watcher and the villager NPCs (Mort/Wizard) are immune to the Gyrokinetic Wand — never
-			// let the rift pull/hold them.
+			// let the rift pull/hold them. Boss entities (withers, ender dragons) are also immune.
 			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)
+					&& !(entity instanceof EnderDragon)
 					&& !(entity instanceof Villager)
 					&& !entity.getScoreboardTags().contains("TASWatcher")) {
 				new BukkitRunnable() {

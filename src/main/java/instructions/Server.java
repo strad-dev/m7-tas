@@ -245,6 +245,12 @@ public class Server {
 		for(TextDisplay display : world.getEntitiesByClass(TextDisplay.class)) {
 			display.remove();
 		}
+		for(Snowball snowball : world.getEntitiesByClass(Snowball.class)) {
+			snowball.remove();
+		}
+		for(WindCharge windCharge : world.getEntitiesByClass(WindCharge.class)) {
+			windCharge.remove();
+		}
 	}
 
 	public static void serverSetup(World world) {
