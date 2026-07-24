@@ -247,7 +247,19 @@ public class Server {
 	public static void hardMobCleanup() {
 		cleanupInProgress = true;
 		try {
-			Utils.runCommand("kill @e[type=!player,type=!villager,type=!item_frame,type=!glow_item_frame,type=!painting,type=!block_display,type=!marker]");
+			// Use Entity.remove() rather than /kill: remove() despawns silently (NO EntityDeathEvent), so a purge
+			// can never grant a key/blessing or count as a kill. Same coverage as the old "@e" — everything except
+			// the handful of permanent fixtures below. getEntities() returns a snapshot, so removing while iterating
+			// is safe.
+			for(org.bukkit.World w : Bukkit.getWorlds()) {
+				for(org.bukkit.entity.Entity e : w.getEntities()) {
+					switch(e.getType()) {
+						case PLAYER, VILLAGER, ITEM_FRAME, GLOW_ITEM_FRAME, PAINTING, BLOCK_DISPLAY, MARKER -> {
+						}
+						default -> e.remove();
+					}
+				}
+			}
 		} finally {
 			cleanupInProgress = false;
 		}

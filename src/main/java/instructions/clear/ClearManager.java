@@ -221,14 +221,17 @@ public final class ClearManager {
 	}
 
 	private static void spawnItem(Secret s) {
-		// Use an ItemDisplay (not a dropped Item): dropped items weren't rendering for practicers even though they
-		// spawned server-side. A display of a paper renders reliably and is collected the same way (proximity).
-		ItemDisplay disp = (ItemDisplay) world.spawnEntity(s.location(world), EntityType.ITEM_DISPLAY);
-		disp.setItemStack(new ItemStack(Material.PAPER));
-		disp.setBillboard(Display.Billboard.VERTICAL); // pivots to face the player, like a dropped item sprite
-		disp.setPersistent(true);
-		disp.addScoreboardTag(TAG_ITEM);
-		s.entityId = disp.getUniqueId();
+		Item item = world.dropItem(s.location(world), new ItemStack(Material.PAPER));
+		s.entityId = item.getUniqueId();
+		item.addScoreboardTag(TAG_ITEM);
+		// "secret" tag so the map's `/kill @e[type=item]` command block can exclude these (tag=!secret).
+		item.addScoreboardTag("secret");
+		item.setPickupDelay(32767); // "never" auto-picked; we collect manually (3× range)
+		item.setPersistent(true);
+		item.setGravity(false);
+		try { item.setVelocity(new org.bukkit.util.Vector(0, 0, 0)); } catch(Throwable ignored) {}
+		try { item.setWillAge(false); } catch(Throwable ignored) {}
+		try { item.setUnlimitedLifetime(true); } catch(Throwable ignored) {}
 	}
 
 	private static void spawnBat(Secret s) {
