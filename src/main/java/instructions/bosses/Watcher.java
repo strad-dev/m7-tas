@@ -249,7 +249,6 @@ public class Watcher {
 			sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 		} else {
 			sendChatMessage("You have proven yourself.  You may pass.");
-			bloodCampFinished();
 			if(doContinue) {
 				// Full run ("all"): open the boss portal so the party can chain into Maxor.
 				Utils.scheduleTask(this::openPortal, 80);
@@ -259,7 +258,12 @@ public class Watcher {
 				// Watcher, record the Clear split, and signal completion so the network ends the session.
 				Utils.scheduleTask(() -> {
 					removeWatcherEntity();
+					bloodCampFinished(); // announce only once the Watcher vanishes
 					awardBloodClear(); // blessings + green check land as the Watcher disappears
+					// Same lightning strike + sound as the portal opening — just without summoning the portal.
+					world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
+					Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
+					Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
 					WitherActions.recordSplit("Clear", Utils.runTick());
 					active = false;
 					WitherActions.signalRunComplete();
@@ -290,6 +294,7 @@ public class Watcher {
 	private void openPortal() {
 		// The Watcher vanishes with the strike (boss bar + entity removed); keep counters until handoff.
 		removeWatcherEntity();
+		bloodCampFinished(); // announce only once the Watcher vanishes
 		awardBloodClear(); // blessings + green check land as the Watcher disappears / portal appears
 
 		world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);

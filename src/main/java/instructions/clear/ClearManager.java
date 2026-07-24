@@ -227,17 +227,14 @@ public final class ClearManager {
 	}
 
 	private static void spawnItem(Secret s) {
-		// Create the item FIRST (so it always spawns), then apply properties — a failing setter can't prevent
-		// the item from existing. (The consumer form applies setters pre-spawn, where setVelocity etc. can throw.)
-		Item item = world.dropItem(s.location(world), new ItemStack(Material.PAPER));
-		s.entityId = item.getUniqueId();
-		item.addScoreboardTag(TAG_ITEM);
-		item.setPickupDelay(32767); // "never" auto-picked; we collect manually (3× range)
-		item.setPersistent(true);
-		item.setGravity(false);
-		try { item.setVelocity(new org.bukkit.util.Vector(0, 0, 0)); } catch(Throwable ignored) {}
-		try { item.setWillAge(false); } catch(Throwable ignored) {}
-		try { item.setUnlimitedLifetime(true); } catch(Throwable ignored) {}
+		// Use an ItemDisplay (not a dropped Item): dropped items weren't rendering for practicers even though they
+		// spawned server-side. A display of a paper renders reliably and is collected the same way (proximity).
+		ItemDisplay disp = (ItemDisplay) world.spawnEntity(s.location(world), EntityType.ITEM_DISPLAY);
+		disp.setItemStack(new ItemStack(Material.PAPER));
+		disp.setBillboard(Display.Billboard.VERTICAL); // pivots to face the player, like a dropped item sprite
+		disp.setPersistent(true);
+		disp.addScoreboardTag(TAG_ITEM);
+		s.entityId = disp.getUniqueId();
 	}
 
 	private static void spawnBat(Secret s) {
@@ -532,9 +529,9 @@ public final class ClearManager {
 		DungeonMap.markDirty();
 		if(!milestone300 && teamScore() >= 300) {
 			milestone300 = true;
-			Bukkit.broadcast(Utils.msg("<green><bold>Your team reached a score of <yellow>300<green>! <gray>(<white><t><gray>)",
-					Placeholder.unparsed("t", formatTime(Utils.runTick()))));
-			Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f);
+			int t = Utils.runTick();
+			Bukkit.broadcast(Utils.msg("<green><bold>300 score reached</bold> in " + spaced(t) + " ticks (" + String.format("%.2f", t / 20.0) + " seconds)"));
+			Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
 		}
 	}
 
@@ -644,11 +641,14 @@ public final class ClearManager {
 		return String.format("<#%02X%02X%02X>", c.getRed(), c.getGreen(), c.getBlue());
 	}
 
-	/** m:ss.SS from a tick count. */
-	static String formatTime(int ticks) {
-		double secs = ticks / 20.0;
-		int mins = (int) (secs / 60);
-		double rem = secs - mins * 60.0;
-		return String.format("%d:%05.2f", mins, rem);
+	/** Space-separated thousands, e.g. 3084 → "3 084". */
+	private static String spaced(int n) {
+		String s = String.valueOf(n);
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < s.length(); i++) {
+			if(i > 0 && (s.length() - i) % 3 == 0) sb.append(' ');
+			sb.append(s.charAt(i));
+		}
+		return sb.toString();
 	}
 }

@@ -41,6 +41,7 @@ public class ClearListener implements Listener {
 		if(ent.getScoreboardTags().contains(ClearManager.TAG_BAT)) {
 			ClearManager.noteBatKill();
 			ClearManager.secretFound(killer, ClearManager.findSecretByEntity(ent.getUniqueId()));
+			ent.remove(); // drop the hitbox immediately instead of leaving the dying-bat corpse
 		}
 		if(ent.getScoreboardTags().contains(ClearManager.TAG_CRYPT)) {
 			ClearManager.cryptKilled(ent.getScoreboardTags().contains("SecretPrince"));

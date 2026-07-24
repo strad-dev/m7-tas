@@ -268,6 +268,7 @@ public class Server {
 		// serverSetup still resets the clear state (keys/doors + ClearManager) so /setup and /reset are clean.
 		resetClearState();
 		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
+		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:barrier"); // clear any leftover Ice-Fill gate barriers
 		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
 		Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:coal_block");
 		Utils.runCommand("fill -122 69 -74 -120 72 -72 minecraft:red_terracotta");
@@ -397,7 +398,9 @@ public class Server {
 	}
 
 	public static void openIceFillRewards() {
-		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:iron_bars");
+		// Swap the iron bars for invisible barriers for 20 ticks, then clear them to air (the gate opens on a delay).
+		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:barrier replace minecraft:iron_bars");
+		Utils.scheduleTask(() -> Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:barrier"), 20);
 	}
 
 	public static void playWitherDeathSound(Wither wither) {

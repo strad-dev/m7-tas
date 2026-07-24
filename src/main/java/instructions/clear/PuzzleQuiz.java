@@ -150,10 +150,17 @@ public final class PuzzleQuiz {
 
 	private static void complete(Player p) {
 		solved = true;
-		gen++;
 		Server.Quiz.removeOptions(options);
-		Server.Quiz.oruoMessage("I bestow upon you all the power of a hundred years!");
-		ClearManager.puzzleSolved(Rooms.QUIZ, p); // green check + Time V
+		final int g = ++gen;
+		// TAS timing: Q3 answered → (+20t) Oruo's reward line → (+20t) the blessing + green check.
+		Utils.scheduleTask(() -> {
+			if(g != gen) return;
+			Server.Quiz.oruoMessage("I bestow upon you all the power of a hundred years!");
+		}, 20);
+		Utils.scheduleTask(() -> {
+			if(g != gen) return;
+			ClearManager.puzzleSolved(Rooms.QUIZ, p); // green check + Time V
+		}, 40);
 	}
 
 	/** True if {@code b} is within 1 block of any answer button (used for Dungeonbreaker immunity). */

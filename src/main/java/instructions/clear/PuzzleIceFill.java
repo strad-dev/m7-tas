@@ -151,8 +151,8 @@ public final class PuzzleIceFill {
 		final int g = gen;
 		for(int[] c : levels[level]) {
 			world.getBlockAt(c[0], c[1], c[2]).setType(Material.AIR, false);
-			// Ice breaks with the glass sound; normal pitch, 2.0 volume, one per block.
-			world.playSound(new Location(world, c[0] + 0.5, c[1] + 0.5, c[2] + 0.5), Sound.BLOCK_GLASS_BREAK, 2.0f, 1.0f);
+			// Vanilla plays a block's break sound at soundType.pitch * 0.8; ice uses the GLASS type, so 0.8.
+			world.playSound(new Location(world, c[0] + 0.5, c[1] + 0.5, c[2] + 0.5), Sound.BLOCK_GLASS_BREAK, 2.0f, 0.8f);
 		}
 		Utils.scheduleTask(() -> {
 			if(g != gen || solved) return;
