@@ -26,7 +26,8 @@ public class Reset implements CommandExecutor {
 		Utils.cancelAllScheduled();
 		Location hide = new Location(Bukkit.getWorld("world"), -120.5, 71, -183.5);
 		FakePlayerManager.getFakePlayers().values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
-		Server.blanketKill(Bukkit.getWorld("world"));
+		// Hard cleanup before serverSetup respawns the minibosses, so it never nukes the fresh spawns.
+		Server.hardMobCleanup();
 		Server.serverSetup(Bukkit.getWorld("world"));
 		p.sendMessage(Utils.msg("Reset server and all NPC locations"));
 		return true;

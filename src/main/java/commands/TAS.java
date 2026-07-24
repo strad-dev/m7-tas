@@ -191,9 +191,9 @@ public class TAS implements CommandExecutor {
 		Actions.cancelAllMovement();
 		// Purge every stray entity a prior (possibly aborted) run leaked before we spawn this run's own. Must come
 		// BEFORE serverSetup (spawns minibosses) and serverInstructions (spawns bosses) so it never nukes what this
-		// run just staged — the same blanketKill-then-serverSetup order /reset and /setup use. Catches untracked
+		// run just staged — the same hardMobCleanup-then-serverSetup order /reset and /setup use. Catches untracked
 		// withers/crystals that the targeted forceCleanups in serverSetup can't, since they only free tracked refs.
-		Server.blanketKill(world);
+		Server.hardMobCleanup();
 		Server.serverSetup(world);
 		Server.serverInstructions(world, section, delayTicks);
 	}
@@ -204,6 +204,7 @@ public class TAS implements CommandExecutor {
 	 */
 	public static void endPractice(World world) {
 		WitherActions.setPracticeMode(false);
+		instructions.clear.ClearManager.stop(world); // remove secrets/chests, restore hotbar map slot, stop HUD loop
 		Utils.cancelAllScheduled();
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();

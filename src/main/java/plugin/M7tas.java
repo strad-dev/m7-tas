@@ -25,6 +25,7 @@
 package plugin;
 
 import commands.*;
+import instructions.Server;
 import instructions.bosses.goldor.Goldor;
 import listeners.*;
 import org.bukkit.command.PluginCommand;
@@ -73,6 +74,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new SpiritLeapListener(), this);
 		getServer().getPluginManager().registerEvents(new Eq(), this);
 		getServer().getPluginManager().registerEvents(new LinkedSlots(), this);
+		getServer().getPluginManager().registerEvents(new listeners.ClearListener(), this);
 
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();
@@ -103,12 +105,14 @@ public final class M7tas extends JavaPlugin {
 
 		CustomItems.flushStonkRestorations();
 
+		// Stop the clear HUD/map loop (hardMobCleanup below removes the secret entities).
+		if(!org.bukkit.Bukkit.getWorlds().isEmpty()) instructions.clear.ClearManager.stop(org.bukkit.Bukkit.getWorlds().getFirst());
+
 		Goldor.INSTANCE.shutdownRegenerateGates();
 
 		PlayerCollision.cleanup();
 
-		Utils.runCommand("tag @e[type=wither] remove TASWither");
-		Utils.runCommand("kill @e[type=!item_frame,type=!player,type=!villager]");
+		Server.hardMobCleanup();
 
 		PlayerInventoryBackup.clearAll();
 	}

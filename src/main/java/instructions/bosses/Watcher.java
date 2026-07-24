@@ -273,6 +273,11 @@ public class Watcher {
 	 */
 	public void bloodCampFinished() {
 		Utils.timer("<green>Blood Camp finished in " + formatTick(phaseRel()));
+		// Blood room cleared → award its blessings (Power V + Life V) and green-check it on the map.
+		if(instructions.clear.ClearManager.isActive()) {
+			org.bukkit.entity.Player near = instructions.clear.ClearManager.nearestRealPlayer(new org.bukkit.Location(world, -121, 70, -57));
+			instructions.clear.ClearManager.minibossKilled(instructions.clear.Rooms.BLOOD, near);
+		}
 	}
 
 	// ============================== Portal sequence ==============================

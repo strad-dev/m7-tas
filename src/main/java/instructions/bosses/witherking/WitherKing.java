@@ -568,6 +568,13 @@ public class WitherKing {
 		Bukkit.broadcast(Utils.msg("<green><bold>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
 		Bukkit.broadcast(Utils.msg("                <red>Master Mode The Catacombs <dark_gray>- <yellow>Floor VII"));
 		Bukkit.broadcast(Utils.msg(""));
+		// Full run → this run's live clear score; boss-only run (no clear) → "Skipped".
+		if(clearRan) {
+			Bukkit.broadcast(Utils.msg("                           <white>Team Score: <green>" + instructions.clear.ClearManager.teamScore()
+					+ " <white>(<aqua><bold>" + instructions.clear.ClearManager.grade() + "</bold><white>)"));
+		} else {
+			Bukkit.broadcast(Utils.msg("                           <white>Team Score: <red>Skipped"));
+		}
 		Bukkit.broadcast(Utils.msg(" <red>☠ <yellow>Defeated <red>Maxor, Storm, Goldor, and Necron <yellow>in <green>" + overall + " ticks"));
 		Bukkit.broadcast(Utils.msg("                         <green>" + formatTime(overall)));
 		Bukkit.broadcast(Utils.msg(""));

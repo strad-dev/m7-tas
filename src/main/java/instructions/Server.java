@@ -54,6 +54,7 @@ public class Server {
 		witherDoorOpened = false;
 		bloodDoorOpened = false;
 		runStarted = false;
+		instructions.clear.ClearManager.reset();
 	}
 
 	public static boolean isRunStarted() {
@@ -191,6 +192,8 @@ public class Server {
 				// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
 				Watcher.INSTANCE.beginDetection(world);
 				openFirstDoor();
+				// Spin up the clear mechanics (secrets, chests, minimap, HUD, scoring) for this run.
+				instructions.clear.ClearManager.start(world);
 			}
 			case "boss" -> Maxor.maxorInstructions(world, true);
 			case "maxor" -> Maxor.maxorInstructions(world, false);
@@ -209,49 +212,33 @@ public class Server {
 	}
 
 	/**
-	 * Wholesale removal of every entity type a run spawns. Run-end cleanups are supposed to tear these down but
-	 * currently don't fire reliably, so a run aborted part-way leaves orphans (mobs, boss-bar/stun indicators,
-	 * terminal labels, lever hitboxes, quiz options, statue displays, crystals) that no targeted forceCleanup owns
-	 * and they stack up across runs. Nothing in the dungeon world legitimately outlives a run — every one of these
-	 * is respawned by the run that needs it — so nuking them all closes every leak path at once. Called from
-	 * {@code /reset}, {@code /setup}, and {@code /practice} run start ({@code TAS.runPractice}) — always BEFORE the
-	 * spawns, NEVER from inside {@link #serverSetup} itself (a blanket kill mid-startup would race the minibosses
-	 * that method spawns). Mirrors the blanket kill {@code M7tas.onDisable} does.
+	 * Hard cleanup: kill every entity in the dungeon EXCEPT the handful of permanent fixtures that no run code
+	 * ever recreates. Run-end cleanups are supposed to tear a run's spawns down but currently don't fire reliably,
+	 * so a run aborted part-way leaves orphans (mobs, boss-bar/stun indicators, terminal labels, lever hitboxes,
+	 * quiz options, statue displays, crystals, stray projectiles) that no targeted forceCleanup owns and they stack
+	 * up across runs. Nothing transient in the dungeon legitimately outlives a run — every one of these is respawned
+	 * by the run that needs it — so nuking everything closes every leak path at once. This replaces the old targeted
+	 * class-by-class {@code blanketKill}, which missed anything not on its hand-maintained list. Called from
+	 * {@code /reset}, {@code /setup}, {@code /practice} run start ({@code TAS.runPractice}), and
+	 * {@code M7tas.onDisable} — always BEFORE any spawns, NEVER from inside {@link #serverSetup} itself (a kill
+	 * mid-startup would race the minibosses that method spawns).
+	 *
+	 * <p>The exclusion list is exactly the entity types that are NOT spawned anywhere in the plugin (verified: the
+	 * only references to these types in the source are exclusion lists like this one and {@code CustomItems.doNotKill}),
+	 * so preserving them can never leak a run entity — it only protects state that isn't ours to destroy:
+	 * <ul>
+	 *   <li>{@code player} — real players AND the fake ServerPlayers that drive the run;
+	 *   <li>{@code villager} — the Mort/Wizard NPCs;
+	 *   <li>{@code item_frame}, {@code glow_item_frame}, {@code painting}, {@code block_display} — static map
+	 *       decoration built into the world (the old {@code blanketKill} also spared these — it killed item/text
+	 *       displays and interactions, which the run spawns, but never these);
+	 *   <li>{@code marker} — invisible zero-hitbox command anchors.
+	 * </ul>
+	 * Runs from the console source stack, which executes in the overworld ({@code world}) — the dungeon world — so
+	 * {@code @e} is scoped to the dungeon just as the old per-world {@code blanketKill} was.
 	 */
-	public static void blanketKill(World world) {
-		for(Zombie zombie : world.getEntitiesByClass(Zombie.class)) {
-			zombie.remove();
-		}
-		for(Wither wither : world.getEntitiesByClass(Wither.class)) {
-			wither.remove();
-		}
-		for(WitherSkeleton witherSkeleton : world.getEntitiesByClass(WitherSkeleton.class)) {
-			witherSkeleton.remove();
-		}
-		for(EnderDragon enderDragon : world.getEntitiesByClass(EnderDragon.class)) {
-			enderDragon.remove();
-		}
-		for(ArmorStand armorStand : world.getEntitiesByClass(ArmorStand.class)) {
-			armorStand.remove();
-		}
-		for(EnderCrystal crystal : world.getEntitiesByClass(EnderCrystal.class)) {
-			crystal.remove();
-		}
-		for(Interaction interaction : world.getEntitiesByClass(Interaction.class)) {
-			interaction.remove();
-		}
-		for(ItemDisplay display : world.getEntitiesByClass(ItemDisplay.class)) {
-			display.remove();
-		}
-		for(TextDisplay display : world.getEntitiesByClass(TextDisplay.class)) {
-			display.remove();
-		}
-		for(Snowball snowball : world.getEntitiesByClass(Snowball.class)) {
-			snowball.remove();
-		}
-		for(WindCharge windCharge : world.getEntitiesByClass(WindCharge.class)) {
-			windCharge.remove();
-		}
+	public static void hardMobCleanup() {
+		Utils.runCommand("kill @e[type=!player,type=!villager,type=!item_frame,type=!glow_item_frame,type=!painting,type=!block_display,type=!marker]");
 	}
 
 	public static void serverSetup(World world) {
@@ -335,6 +322,8 @@ public class Server {
 			// The first archaeologist (-120.5,69,-152.5) drops the Wither Key; the next one the Blood Key.
 			if(i == 0) zombie.addScoreboardTag("WitherKeyMob");
 			else if(i == 1) zombie.addScoreboardTag("BloodKeyMob");
+			// Clear-phase miniboss: killing it white-checks (and blesses) the room it stands in (see ClearListener).
+			zombie.addScoreboardTag("ClearMiniboss");
 
 			archaeologists[i] = zombie;
 		}
@@ -352,6 +341,7 @@ public class Server {
 		yellowShadowAssassin.setAdult();
 		yellowShadowAssassin.setPersistent(true);
 		yellowShadowAssassin.setRemoveWhenFarAway(false);
+		yellowShadowAssassin.addScoreboardTag("ClearMiniboss"); // Yellow miniboss → green check + Wisdom V on kill
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
@@ -446,6 +436,9 @@ public class Server {
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
 		zombie.customName(Utils.msg("<red>" + mobName + " ❤<yellow>2M"));
+		// Bonus-score tracking: each Crypt Lurker kill = +1 (cap 5); a Prince kill also = +1 (see ClearListener).
+		zombie.addScoreboardTag(instructions.clear.ClearManager.TAG_CRYPT);
+		if(isPrince) zombie.addScoreboardTag("SecretPrince");
 		return zombie;
 	}
 

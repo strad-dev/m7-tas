@@ -817,6 +817,7 @@ public class Actions {
 	 *
 	 * @param p The fake player performing the right click
 	 */
+	@SuppressWarnings("deprecation") // Material.isInteractable() is deprecated but has no exact replacement; used only for a cosmetic spectator arm-swing
 	public static void rightClick(Player p) {
 		if(!(p instanceof CraftPlayer cp)) return;
 

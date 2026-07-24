@@ -255,6 +255,11 @@ public class CustomItems implements Listener {
 			e.setCancelled(true);
 			return;
 		}
+		// Clear-phase secret chests and the Quiz answer buttons are immune to Dungeonbreaker.
+		if(instructions.clear.ClearManager.isActive() && instructions.clear.ClearManager.isProtectedBlock(e.getBlock())) {
+			e.setCancelled(true);
+			return;
+		}
 		// Wither/Blood door blocks are unbreakable ONCE THE RUN HAS STARTED (opened via the key + door-click path
 		// in MiscListener, never broken). During the pre-run prep window they may still be stonked through.
 		if(Server.isRunStarted() && (Server.inWitherDoor(e.getBlock()) || Server.inBloodDoor(e.getBlock()))) {
@@ -408,6 +413,13 @@ public class CustomItems implements Listener {
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
 		if(p.getGameMode() == org.bukkit.GameMode.SPECTATOR) return; // spectators never fire item abilities (e.g. a right-click on a block)
 		if(Spectate.getSpectatorMap().containsKey(p)) return;
+		// Trap room disables all right-click item abilities EXCEPT ender pearls and Dungeonbreaker.
+		if((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK)
+				&& instructions.clear.ClearManager.isActive()
+				&& instructions.clear.Rooms.roomAt(p.getLocation()) == instructions.clear.Rooms.TRAP) {
+			boolean allowed = item != null && (item.getType() == Material.ENDER_PEARL || getID(item).equals("skyblock/combat/stonk"));
+			if(!allowed) return;
+		}
 		if(action == Action.LEFT_CLICK_AIR && droppingPlayers.contains(p.getUniqueId())) return;
 		boolean fired = false;
 		if(Objects.equals(hand, EquipmentSlot.HAND)) {
