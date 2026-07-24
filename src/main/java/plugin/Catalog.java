@@ -12,18 +12,14 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Exports the M7 item catalog to the shared data folder ({@code ../data/m7-item-catalog.json}) on
  * plugin enable, so the network plugin's lobby loadout editor can load the real M7 items (palette)
  * and each class's default kit. M7 is the SOLE writer of this file - it is the single source of
  * truth for item definitions; the network plugin only reads it.
- *
+ * <br>
  * Format (matches the network plugin's reader):
  *   { "palette": [ "&lt;base64 item&gt;", ... ],
  *     "defaults": { "Archer": [ &lt;41 base64-or-null&gt; ], "Mage": [...], ... } }

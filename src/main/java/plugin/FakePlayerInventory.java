@@ -245,7 +245,6 @@ public class FakePlayerInventory {
 
 		switch(role) {
 			case "Archer" -> {
-				//noinspection DuplicatedCode
 				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
@@ -259,7 +258,6 @@ public class FakePlayerInventory {
 				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", ""));
 			}
 			case "Berserk" -> {
-				//noinspection DuplicatedCode
 				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));

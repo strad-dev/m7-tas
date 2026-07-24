@@ -290,7 +290,7 @@ public class GoldorListener implements Listener {
 			if(Goldor.INSTANCE.isInS3FrameRegion(frame)) runWhenPhaseActive(deferred -> processArrowFrame(frame, p, deferred));
 			return;
 		}
-		if(!Goldor.INSTANCE.isProtectedFrame(frame)) return; // frames outside S3 behave normally
+		if(Goldor.INSTANCE.isProtectedFrame(frame)) return; // frames outside S3 behave normally
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
 		if(frame.equals(arrow)) {
 			// processArrowFrame rotates explicitly; cancel so vanilla doesn't ALSO rotate it (double-turn)
@@ -322,7 +322,7 @@ public class GoldorListener implements Listener {
 	public void onInteractAtFrame(PlayerInteractAtEntityEvent e) {
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
-		if(!Goldor.INSTANCE.isProtectedFrame(frame)) return;
+		if(Goldor.INSTANCE.isProtectedFrame(frame)) return;
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
 		if(frame.equals(arrow)) return;
 		if(e.getPlayer().getGameMode() == GameMode.CREATIVE) return; // creative bypass

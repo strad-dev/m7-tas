@@ -1,12 +1,12 @@
 package instructions.bosses.goldor;
 
+import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
-import net.kyori.adventure.title.Title;
 import plugin.Utils;
 
 import java.time.Duration;

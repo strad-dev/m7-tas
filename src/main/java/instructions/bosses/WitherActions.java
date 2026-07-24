@@ -18,11 +18,7 @@ import plugin.BossScheduler;
 import plugin.FakePlayerManager;
 import plugin.M7tas;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class WitherActions {
@@ -71,9 +67,9 @@ public class WitherActions {
 	 *  real players — they are not part of the run — so only fake players are eligible. In practice mode the real
 	 *  players ARE the runners (no fakes are spawned), so the opposite holds. */
 	private static boolean isAggroEligible(Player p) {
-		if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) return false; // spectators never aggro
+		if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) return true; // spectators never aggro
 		boolean fake = FakePlayerManager.getFakePlayers().containsValue(p);
-		return practiceMode != fake;
+		return practiceMode == fake;
 	}
 
 	// --- Live section splits (for the Wither-King practice scoreboard) ---
@@ -111,7 +107,7 @@ public class WitherActions {
 		if(p == null) return;
 		// During a TAS the run is driven entirely by the fake players — a real player hitting a boss must never
 		// steal its aggro. (In practice mode it's the reverse: only real players count.)
-		if(!isAggroEligible(p)) return;
+		if(isAggroEligible(p)) return;
 		int now = MinecraftServer.currentTick;
 		if(now > lastDamageTick) {
 			lastDamager = p;
@@ -296,7 +292,7 @@ public class WitherActions {
 		double best = Double.MAX_VALUE;
 		Location loc = wither.getLocation();
 		for(Player p : Bukkit.getOnlinePlayers()) {
-			if(!isAggroEligible(p)) continue;
+			if(isAggroEligible(p)) continue;
 			if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) continue;
 			if(p.isDead() || p.getWorld() != wither.getWorld()) continue;
 			double d = p.getLocation().distanceSquared(loc);

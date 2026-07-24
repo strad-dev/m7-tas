@@ -42,7 +42,6 @@ import java.util.Random;
  * Only the fireball attack is modeled — TAS DPS is high enough that no other real ability window
  * (wither-skull barrages, rotating beams, diamond swords, lightning) ever triggers.
  */
-@SuppressWarnings("DataFlowIssue")
 public final class Necron extends WitherLord {
 	public static final Necron INSTANCE = new Necron();
 

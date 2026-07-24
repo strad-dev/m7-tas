@@ -5,9 +5,10 @@ import instructions.clear.PuzzleQuiz;
 import instructions.clear.Rooms;
 import instructions.clear.Secret;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.*;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -105,6 +106,6 @@ public class ClearListener implements Listener {
 	/** The Wizard is the villager in the Wizard room (name-independent, so it survives map re-labels). */
 	private static boolean isWizard(Villager v) {
 		String name = Utils.plain(v.customName());
-		return Rooms.roomAt(v.getLocation()) == Rooms.WIZARD || (name != null && name.contains("Wizard"));
+		return Rooms.roomAt(v.getLocation()) == Rooms.WIZARD || name.contains("Wizard");
 	}
 }

@@ -108,7 +108,7 @@ public class CustomBossBar {
 		activeWitherBossBar.setTitle(Utils.mmLegacy(title));
 
 		// Update progress bar
-		double progress = Math.max(0.0, Math.min(1.0, currentHealth / maxHealth));
+		double progress = Math.clamp(currentHealth / maxHealth, 0.0, 1.0);
 		activeWitherBossBar.setProgress(progress);
 
 		// Ensure all online players can see it

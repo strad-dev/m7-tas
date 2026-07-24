@@ -18,6 +18,7 @@ import java.util.Map;
  * code — almost always as "is this player a fake?" guards, which are simply always false now
  * ({@link #getFakePlayers()} is empty), preserving correct behaviour without editing ~15 call sites.
  */
+@SuppressWarnings("EmptyMethod")
 public class FakePlayerManager {
 	// Always empty in the practice fork — there are no fake players.
 	private static final Map<String, Player> fakePlayers = new HashMap<>();

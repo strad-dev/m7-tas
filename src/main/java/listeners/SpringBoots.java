@@ -70,7 +70,7 @@ public class SpringBoots {
 	private static final int E5_PERIOD = 40;
 
 	private static final double MAX_HEIGHT = 61.0;
-	private static final double V_CAP = heightToVelocity(MAX_HEIGHT);
+	private static final double V_CAP = heightToVelocity();
 
 	private static final Map<UUID, ChargeState> states = new HashMap<>();
 	private static BukkitTask poller;
@@ -187,11 +187,11 @@ public class SpringBoots {
 	}
 
 	// invert Minecraft player vertical physics. per-tick: pos += v; v -= 0.08; v *= 0.98.
-	private static double heightToVelocity(double h) {
+	private static double heightToVelocity() {
 		double lo = 0.0, hi = 4.0;
 		for(int i = 0; i < 40; i++) {
 			double mid = (lo + hi) / 2.0;
-			if(simulatePeak(mid) < h) lo = mid;
+			if(simulatePeak(mid) < SpringBoots.MAX_HEIGHT) lo = mid;
 			else hi = mid;
 		}
 		return (lo + hi) / 2.0;

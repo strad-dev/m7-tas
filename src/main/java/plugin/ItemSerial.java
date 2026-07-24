@@ -9,7 +9,7 @@ import java.util.Base64;
  * {@link ItemStack#serializeAsBytes()} so the network plugin's loadout editor and this plugin's
  * catalog export speak the exact same format (both run on the same Paper build, so the bytes and the
  * custom-item lore IDs round-trip cleanly). A null/air slot serializes to {@code null}.
- *
+ * <br>
  * NOTE: an identical copy lives in the network plugin ({@code loadout/ItemSerial.java}) - keep the
  * two in sync.
  */

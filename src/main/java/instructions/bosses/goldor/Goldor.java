@@ -2,6 +2,7 @@ package instructions.bosses.goldor;
 
 import instructions.bosses.WitherLord;
 import instructions.bosses.necron.Necron;
+import net.kyori.adventure.title.Title;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -17,14 +18,12 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
-import net.kyori.adventure.title.Title;
 import plugin.M7tas;
 import plugin.Utils;
 
 import java.time.Duration;
 import java.util.*;
 
-@SuppressWarnings("DataFlowIssue")
 public final class Goldor extends WitherLord {
 	public static final Goldor INSTANCE = new Goldor();
 
@@ -321,8 +320,8 @@ public final class Goldor extends WitherLord {
 	/** Returns true if this item frame is within the S3 protected zone (immune to rotation/punch/break).
 	 *  Uses live coord check rather than the cached set so frames loaded after phase-start still match. */
 	public boolean isProtectedFrame(ItemFrame frame) {
-		if(!phaseActive) return false;
-		return S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
+		if(!phaseActive) return true;
+		return !S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
 	}
 
 	/** Phase-independent variant of {@link #isProtectedFrame}: is this frame within the S3 frame wall,
@@ -546,9 +545,6 @@ public final class Goldor extends WitherLord {
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
 		// S1 Simon Says device zone — the whole column (button, backing, and the "i1" sign) is immune.
 		if(bx >= SS_ZONE_X1 && bx <= SS_ZONE_X2 && by >= SS_ZONE_Y1 && by <= SS_ZONE_Y2 && bz >= SS_ZONE_Z1 && bz <= SS_ZONE_Z2) return true;
-		// S1 Simon Says button and the block behind it.
-		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) return true;
-		if(bx == SIMON_BEHIND_BX && by == SIMON_BEHIND_BY && bz == SIMON_BEHIND_BZ) return true;
 		// S2 "Lights" lamp backing (z=143) plus the levers hanging on the z-142 face.
 		if((bz == LIGHTS_MOUNT_Z || bz == LIGHTS_MOUNT_Z - 1) && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
 		// S4 Sharp Shooter gold pressure-plate support block.

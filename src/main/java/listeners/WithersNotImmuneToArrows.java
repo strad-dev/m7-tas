@@ -12,7 +12,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import plugin.Utils;
 
-@SuppressWarnings("DataFlowIssue")
 public class WithersNotImmuneToArrows implements Listener {
 	/**
 	 * Vanilla blocks projectile damage on a "powered" wither (HP <= 50%) and while its

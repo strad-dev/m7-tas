@@ -515,7 +515,7 @@ public class Actions {
 
 	/**
 	 * Mage-beam loop variant of {@link #leftClick}: only sends the swing packet (and thus
-	 * the mage-beam dispatch in {@link nms.TASGamePacketListenerImpl#handleAnimate}) if a
+	 * the mage-beam dispatch in handleAnimate) if a
 	 * mage beam fired from the player's current facing direction would actually intercept
 	 * a damageable entity within {@link #MAGE_BEAM_RANGE}. Avoids the thousands of no-op
 	 * swing/dispatch packets that would otherwise be sent during Storm-phase beam spam.
@@ -915,9 +915,14 @@ public class Actions {
 		// Spirit Leap requires the Infinileap (ender pearl) in hand — bail if the player isn't holding it.
 		ItemStack held = p.getInventory().getItemInMainHand();
 		if(!"skyblock/utility/infinileap".equals(CustomItems.getID(held))) {
-			String heldDesc = held.getType().isAir() ? "an empty hand"
-					: held.getType() + (held.hasItemMeta() && held.getItemMeta().hasDisplayName() ? " (" + Utils.displayName(held.getItemMeta()) + ")" : "")
-					+ (CustomItems.getID(held) != null ? " [id=" + CustomItems.getID(held) + "]" : "");
+			String heldDesc;
+			if(held.getType().isAir()) {
+				heldDesc = "an empty hand";
+			} else {
+				CustomItems.getID(held);
+				heldDesc = held.getType() + (held.hasItemMeta() && held.getItemMeta().hasDisplayName() ? " (" + Utils.displayName(held.getItemMeta()) + ")" : "")
+						+ " [id=" + CustomItems.getID(held) + "]";
+			}
 			Utils.debug(Utils.DebugType.ERROR, p.getName() + " tried to leap while holding " + heldDesc + " instead of an Infinileap");
 			return;
 		}

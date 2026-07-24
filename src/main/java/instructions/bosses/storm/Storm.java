@@ -8,6 +8,7 @@ import instructions.bosses.MobGroup;
 import instructions.bosses.MobSpawnSpec;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
+import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
@@ -17,7 +18,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
-import net.kyori.adventure.title.Title;
 import plugin.BossScheduler;
 import plugin.Utils;
 

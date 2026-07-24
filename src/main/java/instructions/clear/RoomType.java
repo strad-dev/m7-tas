@@ -1,6 +1,6 @@
 package instructions.clear;
 
-import java.awt.Color;
+import java.awt.*;
 
 /**
  * The seven dungeon room categories, each with its authoritative Magical-Map colour (RGB pulled from the

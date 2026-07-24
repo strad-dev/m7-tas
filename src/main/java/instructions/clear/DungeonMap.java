@@ -6,8 +6,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.map.*;
+import org.jspecify.annotations.NonNull;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -76,7 +77,7 @@ public final class DungeonMap {
 		}
 
 		@Override
-		public void render(MapView mv, MapCanvas canvas, Player player) {
+		public void render(@NonNull MapView mv, @NonNull MapCanvas canvas, Player player) {
 			Integer seen = drawn.get(player.getUniqueId());
 			if(seen == null || seen != version) {
 				paintTiles(canvas);

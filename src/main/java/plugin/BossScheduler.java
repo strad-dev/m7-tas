@@ -69,11 +69,12 @@ public final class BossScheduler {
 		movementTickers.clear();
 	}
 
-	/** Register a per-tick boss simulation step. Runs every tick, in registration order, before all player
-	 *  choreography. Returns the handle for {@link #removeTicker}. */
-	public static Runnable addTicker(Runnable ticker) {
+	/**
+	 * Register a per-tick boss simulation step. Runs every tick, in registration order, before all player
+	 * choreography. Returns the handle for {@link #removeTicker}.
+	 */
+	public static void addTicker(Runnable ticker) {
 		tickers.add(ticker);
-		return ticker;
 	}
 
 	/** Unregister a ticker previously returned by {@link #addTicker} or {@link #schedule}. Safe to call from inside
@@ -82,11 +83,12 @@ public final class BossScheduler {
 		if(ticker != null) tickers.remove(ticker);
 	}
 
-	/** Register a per-tick boss ENTITY-MOVEMENT step (an aggro mover). Runs in the movement phase — from the
-	 *  fake-player ticker, after fake aiStep — NOT at the start of the tick. Returns the handle for {@link #removeMovementTicker}. */
-	public static Runnable addMovementTicker(Runnable ticker) {
+	/**
+	 * Register a per-tick boss ENTITY-MOVEMENT step (an aggro mover). Runs in the movement phase — from the
+	 * fake-player ticker, after fake aiStep — NOT at the start of the tick. Returns the handle for {@link #removeMovementTicker}.
+	 */
+	public static void addMovementTicker(Runnable ticker) {
 		movementTickers.add(ticker);
-		return ticker;
 	}
 
 	/** Unregister a mover previously returned by {@link #addMovementTicker}. Safe to call from inside the mover. */

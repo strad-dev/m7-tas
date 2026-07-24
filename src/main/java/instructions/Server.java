@@ -9,6 +9,7 @@ import instructions.bosses.storm.Storm;
 import instructions.bosses.witherking.WitherKing;
 import listeners.CustomItems;
 import listeners.GoldorListener;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -18,7 +19,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -237,10 +237,7 @@ public class Server {
 	 *   <li>{@code marker} — invisible zero-hitbox command anchors.
 	 * </ul>
 	 * Runs from the console source stack, which executes in the overworld ({@code world}) — the dungeon world — so
-	 * {@code @e} is scoped to the dungeon just as the old per-world {@code blanketKill} was.
-	 */
-	/** True only during a {@link #hardMobCleanup()} kill, so death handlers (key grants, secret/miniboss counting)
-	 *  can tell a cleanup purge apart from a real kill. */
+	 * {@code @e} is scoped to the dungeon just as the old per-world {@code blanketKill} was.*/
 	private static boolean cleanupInProgress = false;
 
 	public static boolean isCleanupInProgress() {
@@ -329,7 +326,6 @@ public class Server {
 			Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(healthValues[i]);
 			zombie.setHealth(healthValues[i]);
 
-			assert zombie.getEquipment() != null;
 			zombie.getEquipment().setHelmet(new ItemStack(Material.DIAMOND_HELMET));
 			zombie.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
 			zombie.getEquipment().setLeggings(new ItemStack(Material.DIAMOND_LEGGINGS));
@@ -365,7 +361,6 @@ public class Server {
 		yellowShadowAssassin.setHealth(30);
 
 		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, Utils.mmLegacy("<light_purple>Shadow Assassin Boots"));
-		assert yellowShadowAssassin.getEquipment() != null;
 		yellowShadowAssassin.getEquipment().setBoots(boots);
 		yellowShadowAssassin.getEquipment().setLeggings(new ItemStack(Material.AIR));
 		yellowShadowAssassin.getEquipment().setChestplate(new ItemStack(Material.AIR));
@@ -433,7 +428,6 @@ public class Server {
 		Zombie zombie = (Zombie) Objects.requireNonNull(loc.getWorld()).spawnEntity(loc, EntityType.ZOMBIE);
 		zombie.setAdult();
 		// Clear random armor and prevent chicken jockey from finalizeSpawn
-		assert zombie.getEquipment() != null;
 		zombie.getEquipment().setHelmet(null);
 		zombie.getEquipment().setChestplate(null);
 		zombie.getEquipment().setLeggings(null);

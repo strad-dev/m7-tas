@@ -1,7 +1,6 @@
 package instructions.clear;
 
 import commands.Spectate;
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
@@ -19,12 +18,7 @@ import plugin.M7tas;
 import plugin.Utils;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * The central controller for the dungeon clear phase. Holds all per-run state (found secrets, room
@@ -497,10 +491,9 @@ public final class ClearManager {
 		z.setHealth(2);
 		Objects.requireNonNull(z.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
 		Objects.requireNonNull(z.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-		if(z.getEquipment() != null) {
-			z.getEquipment().clear();
-			z.getEquipment().setItemInMainHand(new ItemStack(Material.CHEST));
-		}
+		z.getEquipment();
+		z.getEquipment().clear();
+		z.getEquipment().setItemInMainHand(new ItemStack(Material.CHEST));
 		z.addScoreboardTag(TAG_MIMIC);
 		s.entityId = z.getUniqueId();
 	}
@@ -571,7 +564,7 @@ public final class ClearManager {
 		int skillRooms = (int) Math.min(80, Math.floor(80.0 * checkedCells() / 36.0));
 		int puzzlePenalty = 10 * unsolvedPuzzles();
 		int deathPenalty = Math.max(0, deaths * 2 - 1);
-		return Math.max(20, Math.min(100, 20 + skillRooms - puzzlePenalty - deathPenalty));
+		return Math.clamp(20 + skillRooms - puzzlePenalty - deathPenalty, 20, 100);
 	}
 
 	public static int explore() {
@@ -581,6 +574,7 @@ public final class ClearManager {
 		return checkPts + secretPts;
 	}
 
+	@SuppressWarnings("SameReturnValue")
 	public static int speed() {
 		return 100;
 	}
