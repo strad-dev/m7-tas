@@ -273,12 +273,24 @@ public final class ClearManager {
 		}
 	}
 
+	private static ItemStack skyblockMenu() {
+		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "");
+	}
+
+	/** Slot 8 holds the dungeon map while inside the clear grid; outside it (e.g. the boss arena) our map is
+	 *  swapped back to the SkyBlock Menu. Only ever touches OUR map — never a Maxor crystal or any other item. */
+	private static void manageSlot8(Player p) {
+		if(Rooms.roomAt(p.getLocation()) != null) {
+			setMapSlot(p); // in the clear grid → dungeon map
+		} else if(DungeonMap.isDungeonMap(p.getInventory().getItem(8))) {
+			p.getInventory().setItem(8, skyblockMenu()); // in the boss (outside the grid) → SkyBlock Menu
+		}
+	}
+
 	private static void restoreMenus() {
 		for(Player p : realPlayers()) {
-			ItemStack cur = p.getInventory().getItem(8);
-			if(cur != null && cur.getType() == Material.FILLED_MAP) {
-				p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(
-						Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, ""));
+			if(DungeonMap.isDungeonMap(p.getInventory().getItem(8))) {
+				p.getInventory().setItem(8, skyblockMenu());
 			}
 		}
 	}
@@ -289,7 +301,7 @@ public final class ClearManager {
 		if(!active) return;
 		List<Player> players = realPlayers();
 		for(Player p : players) {
-			setMapSlot(p);
+			manageSlot8(p);
 			collectItems(p);
 			updateActionBar(p);
 		}
