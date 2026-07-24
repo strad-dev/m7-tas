@@ -93,14 +93,14 @@ public class ClearListener implements Listener {
 		}
 	}
 
-	// Wizard crystal hand-in via LEFT-click (attack). MiscListener makes villagers invulnerable, but the
-	// hand-in should still register. NOT ignoreCancelled for the same reason as the right-click path.
+	// Wizard crystal hand-in via LEFT-click (attack). Uses PrePlayerAttackEntityEvent, which fires on the
+	// attack itself — so it works even though the Wizard villager takes no damage (invulnerable / cancelled).
 	@EventHandler(priority = EventPriority.NORMAL)
-	public void onLeftClickEntity(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+	public void onLeftClickEntity(io.papermc.paper.event.player.PrePlayerAttackEntityEvent e) {
 		if(!ClearManager.isActive()) return;
-		if(!(e.getEntity() instanceof Villager v)) return;
-		if(!(e.getDamager() instanceof Player p)) return;
-		if(ClearManager.hasCrystal() && isWizard(v)) ClearManager.handInCrystal(p);
+		if(e.getAttacked() instanceof Villager v && ClearManager.hasCrystal() && isWizard(v)) {
+			ClearManager.handInCrystal(e.getPlayer());
+		}
 	}
 
 	/** The Wizard is the villager in the Wizard room (name-independent, so it survives map re-labels). */
