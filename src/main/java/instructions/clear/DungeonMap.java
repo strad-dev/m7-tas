@@ -63,9 +63,15 @@ public final class DungeonMap {
 		ItemStack map = new ItemStack(Material.FILLED_MAP);
 		MapMeta meta = (MapMeta) map.getItemMeta();
 		meta.setMapView(view());
-		meta.displayName(plugin.Utils.nameComponent(plugin.Utils.mmLegacy("<green>Magical Map")));
+		meta.displayName(plugin.Utils.nameComponent(plugin.Utils.mmLegacy("<white>Magical Map")));
 		map.setItemMeta(meta);
 		return map;
+	}
+
+	/** True only if {@code item} is a filled map bound to THIS session's dungeon MapView (not a stale old map). */
+	public static boolean isDungeonMap(ItemStack item) {
+		return item != null && item.getType() == Material.FILLED_MAP
+				&& item.getItemMeta() instanceof MapMeta mm && mm.getMapView() == view();
 	}
 
 	private static int tileX(int gx) { return BORDER + gx * (TILE + GAP); }

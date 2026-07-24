@@ -266,8 +266,9 @@ public final class ClearManager {
 	}
 
 	private static void setMapSlot(Player p) {
-		ItemStack cur = p.getInventory().getItem(8);
-		if(cur == null || cur.getType() != Material.FILLED_MAP) {
+		// Replace slot 8 unless it's already THIS session's dungeon map — a stale filled map from a previous
+		// session/build points at a dead MapView and renders blank, so it must be swapped out too.
+		if(!DungeonMap.isDungeonMap(p.getInventory().getItem(8))) {
 			p.getInventory().setItem(8, DungeonMap.mapItem());
 		}
 	}
@@ -443,6 +444,12 @@ public final class ClearManager {
 			}
 		}
 		return null;
+	}
+
+	/** True if this block is a clear-phase secret you right-click (chest/essence) — such a click owns the
+	 *  interaction, so the held item's right-click ability must NOT also fire on top of it. */
+	public static boolean isSecretBlock(Block b) {
+		return active && b != null && findSecretAtBlock(b.getX(), b.getY(), b.getZ()) != null;
 	}
 
 	/** A right-clickable block secret (chest or essence) at these coords, or null. */

@@ -132,7 +132,9 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				// fire on top of it (mirrors the guard in CustomItems.onPlayerInteract, which only covers the Bukkit
 				// event path; this interceptor path had no such guard, so a combat/utility item's right-click was
 				// firing on an S2 lever and hijacking the vanilla toggle).
-				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)) {
+				org.bukkit.block.Block clickedBlock = player.getWorld().getBlockAt(bx, by, bz);
+				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)
+						&& !instructions.clear.ClearManager.isSecretBlock(clickedBlock)) {
 					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
 							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
 				}

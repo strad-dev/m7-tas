@@ -200,6 +200,10 @@ public class CustomItems implements Listener {
 				&& (e.getClickedBlock().getType() == Material.LEVER || Tag.BUTTONS.isTagged(e.getClickedBlock().getType()))) {
 			return;
 		}
+		// Right-clicking a clear-phase secret (chest/essence) owns the click — don't fire the held item's ability.
+		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && instructions.clear.ClearManager.isSecretBlock(e.getClickedBlock())) {
+			return;
+		}
 		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer());
 	}
 
