@@ -24,9 +24,11 @@ public final class DungeonMap {
 	private DungeonMap() {
 	}
 
-	// layout: 4px border + 6 tiles of 18px + 5 gaps of 2px = 126px, centered in the 128px canvas
-	private static final int BORDER = 4, TILE = 18, GAP = 2;
-	private static final Color BG = new Color(24, 24, 24);
+	// layout: 6 tiles + 5 gaps, centred so all four borders are (near-)equal
+	private static final int TILE = 17, GAP = 3;
+	private static final int BORDER = (128 - (6 * TILE + 5 * GAP)) / 2;
+	private static final int DOOR_WIDTH = 6; // door opening thickness along the shared wall
+	private static final Color BG = new Color(0, 0, 0, 0); // transparent → shows the map's parchment background
 
 	// The 15 doors, as cell pairs {gx,gz}→{gx,gz}. Drawn as black connectors.
 	private static final int[][][] DOORS = {
@@ -92,19 +94,28 @@ public final class DungeonMap {
 			for(Room r : Rooms.all()) {
 				for(int[] c : r.cells) fillRect(canvas, tileX(c[0]), tileY(c[1]), TILE, TILE, r.type.color);
 			}
-			// connectors within a multi-cell room (room colour)
+			// connectors within a multi-cell room — full-width joins (room colour)
 			for(Room r : Rooms.all()) {
 				for(int[] a : r.cells) {
 					for(int[] b : r.cells) {
-						if(adjacent(a, b) && cellOrder(a, b)) fillConnector(canvas, a, b, r.type.color);
+						if(adjacent(a, b) && cellOrder(a, b)) fillConnector(canvas, a, b, r.type.color, TILE);
 					}
 				}
 			}
-			// door connectors between rooms (black)
+			// fill the centre gap where four cells of the same room meet (e.g. Museum's 2x2 doughnut hole)
+			for(Room r : Rooms.all()) {
+				for(int[] c : r.cells) {
+					int gx = c[0], gz = c[1];
+					if(Rooms.byCell(gx + 1, gz) == r && Rooms.byCell(gx, gz + 1) == r && Rooms.byCell(gx + 1, gz + 1) == r) {
+						fillRect(canvas, tileX(gx) + TILE, tileY(gz) + TILE, GAP, GAP, r.type.color);
+					}
+				}
+			}
+			// door connectors between rooms — a narrow black opening centred on the shared wall
 			for(int[][] d : DOORS) {
 				Room ra = Rooms.byCell(d[0][0], d[0][1]);
 				Room rb = Rooms.byCell(d[1][0], d[1][1]);
-				if(ra != null && rb != null && ra != rb) fillConnector(canvas, d[0], d[1], Color.BLACK);
+				if(ra != null && rb != null && ra != rb) fillConnector(canvas, d[0], d[1], Color.BLACK, DOOR_WIDTH);
 			}
 			// checkmarks
 			for(Room r : Rooms.all()) {
@@ -119,15 +130,16 @@ public final class DungeonMap {
 		private void paintCursors(MapCanvas canvas) {
 			MapCursorCollection cursors = new MapCursorCollection();
 			for(Player p : ClearManager.realPlayers()) {
-				double u = (double) (Rooms.ORIGIN - p.getLocation().getX()) / Rooms.PITCH;
-				double v = (double) (Rooms.ORIGIN - p.getLocation().getZ()) / Rooms.PITCH;
+				double u = (Rooms.ORIGIN - p.getLocation().getX()) / Rooms.PITCH;
+				double v = (Rooms.ORIGIN - p.getLocation().getZ()) / Rooms.PITCH;
 				if(u < 0 || v < 0 || u > 6 || v > 6) continue; // off the map
 				int px = (int) Math.round(BORDER + u * (TILE + GAP));
 				int py = (int) Math.round(BORDER + v * (TILE + GAP));
-				byte cx = (byte) Math.max(-128, Math.min(127, px * 2 - 128));
-				byte cy = (byte) Math.max(-128, Math.min(127, py * 2 - 128));
-				byte dir = (byte) (Math.round(p.getLocation().getYaw() / 22.5f) & 15);
-				cursors.addCursor(new MapCursor(cx, cy, dir, MapCursor.Type.WHITE_POINTER, true));
+				byte cx = (byte) Math.clamp(px * 2L - 128, -128, 127);
+				byte cy = (byte) Math.clamp(py * 2L - 128, -128, 127);
+				// +8 (180°): the cursor arrow otherwise points opposite the player's facing.
+				byte dir = (byte) ((Math.round(p.getLocation().getYaw() / 22.5f) + 8) & 15);
+				cursors.addCursor(new MapCursor(cx, cy, dir, MapCursor.Type.PLAYER, true));
 			}
 			canvas.setCursors(cursors);
 		}
@@ -140,17 +152,16 @@ public final class DungeonMap {
 				if(x >= 0 && x < 128 && y >= 0 && y < 128) canvas.setPixelColor(x, y, c);
 	}
 
-	/** Fill the gap strip between two orthogonally adjacent cells. */
-	private static void fillConnector(MapCanvas canvas, int[] a, int[] b, Color c) {
+	/** Fill the gap strip between two orthogonally adjacent cells, {@code span} px long along the wall (centred). */
+	private static void fillConnector(MapCanvas canvas, int[] a, int[] b, Color c, int span) {
 		int agx = a[0], agz = a[1], bgx = b[0], bgz = b[1];
+		int off = (TILE - span) / 2;
 		if(agz == bgz) { // horizontal neighbours → vertical gap strip
 			int leftGx = Math.min(agx, bgx);
-			int x0 = tileX(leftGx) + TILE;
-			fillRect(canvas, x0, tileY(agz), GAP, TILE, c);
+			fillRect(canvas, tileX(leftGx) + TILE, tileY(agz) + off, GAP, span, c);
 		} else if(agx == bgx) { // vertical neighbours → horizontal gap strip
 			int topGz = Math.min(agz, bgz);
-			int y0 = tileY(topGz) + TILE;
-			fillRect(canvas, tileX(agx), y0, TILE, GAP, c);
+			fillRect(canvas, tileX(agx) + off, tileY(topGz) + TILE, span, GAP, c);
 		}
 	}
 

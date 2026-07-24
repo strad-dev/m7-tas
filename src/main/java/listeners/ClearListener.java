@@ -30,6 +30,7 @@ public class ClearListener implements Listener {
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onDeath(EntityDeathEvent e) {
 		if(!ClearManager.isActive()) return;
+		if(instructions.Server.isCleanupInProgress()) return; // cleanup purges must not count as kills
 		LivingEntity ent = e.getEntity();
 		Location loc = ent.getLocation();
 		Player killer = ent.getKiller() != null ? ent.getKiller() : ClearManager.nearestRealPlayer(loc);
@@ -69,36 +70,40 @@ public class ClearListener implements Listener {
 			ClearManager.pickUpCrystal(e.getPlayer());
 			return;
 		}
-		// Secret chests
-		if(b.getType() == Material.CHEST) {
-			Secret s = ClearManager.findChestSecret(b.getX(), b.getY(), b.getZ());
-			if(s != null) {
-				e.setCancelled(true); // no vanilla container GUI
-				ClearManager.openChest(e.getPlayer(), s);
+		// Secret chests (right-click, no GUI) and essence skulls (right-click to collect).
+		Secret s = ClearManager.findSecretAtBlock(b.getX(), b.getY(), b.getZ());
+		if(s != null) {
+			e.setCancelled(true); // ALWAYS cancel so an already-opened chest never shows the vanilla GUI
+			if(!s.found) {
+				if(s.isChest()) ClearManager.openChest(e.getPlayer(), s);
+				else ClearManager.secretFound(e.getPlayer(), s); // essence
 			}
 		}
 	}
 
-	// Essence (Interaction hitbox) + Wizard crystal hand-in. NOT ignoreCancelled: MiscListener cancels
-	// villager right-clicks at LOWEST to block the trade GUI, and we still want the hand-in to fire.
+	// Wizard crystal hand-in via RIGHT-click. NOT ignoreCancelled: MiscListener cancels villager right-clicks
+	// at LOWEST to block the trade GUI, and we still want the hand-in to fire.
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onRightClickEntity(PlayerInteractEntityEvent e) {
 		if(!ClearManager.isActive()) return;
-		Entity ent = e.getRightClicked();
+		if(e.getRightClicked() instanceof Villager v && ClearManager.hasCrystal() && isWizard(v)) {
+			ClearManager.handInCrystal(e.getPlayer());
+		}
+	}
 
-		if(ent instanceof Interaction && ent.getScoreboardTags().contains(ClearManager.TAG_ESSENCE)) {
-			Secret s = ClearManager.findSecretByEntity(ent.getUniqueId());
-			if(s != null && !s.found) {
-				e.setCancelled(true);
-				ClearManager.secretFound(e.getPlayer(), s);
-			}
-			return;
-		}
-		if(ent instanceof Villager && ClearManager.hasCrystal()) {
-			// The Wizard is the villager in the Wizard room (name-independent, so it survives map re-labels).
-			String name = Utils.plain(ent.customName());
-			boolean isWizard = Rooms.roomAt(ent.getLocation()) == Rooms.WIZARD || (name != null && name.contains("Wizard"));
-			if(isWizard) ClearManager.handInCrystal(e.getPlayer());
-		}
+	// Wizard crystal hand-in via LEFT-click (attack). MiscListener makes villagers invulnerable, but the
+	// hand-in should still register. NOT ignoreCancelled for the same reason as the right-click path.
+	@EventHandler(priority = EventPriority.NORMAL)
+	public void onLeftClickEntity(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
+		if(!ClearManager.isActive()) return;
+		if(!(e.getEntity() instanceof Villager v)) return;
+		if(!(e.getDamager() instanceof Player p)) return;
+		if(ClearManager.hasCrystal() && isWizard(v)) ClearManager.handInCrystal(p);
+	}
+
+	/** The Wizard is the villager in the Wizard room (name-independent, so it survives map re-labels). */
+	private static boolean isWizard(Villager v) {
+		String name = Utils.plain(v.customName());
+		return Rooms.roomAt(v.getLocation()) == Rooms.WIZARD || (name != null && name.contains("Wizard"));
 	}
 }

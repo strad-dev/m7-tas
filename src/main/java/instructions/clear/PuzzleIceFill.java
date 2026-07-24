@@ -2,6 +2,7 @@ package instructions.clear;
 
 import instructions.Server;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -24,9 +25,15 @@ public final class PuzzleIceFill {
 	private PuzzleIceFill() {
 	}
 
-	private static final int GX = 1, GZ = 4;
 	private static final int[] LEVEL_Y = {69, 70, 71};
 	private static final int RESET_TICKS = 60;
+
+	// Strict per-layer bounding boxes {minX, minZ, maxX, maxZ, y} — only ice within these is part of each layer.
+	private static final int[][] LAYER_BOX = {
+			{-52, -154, -49, -152, 69}, // layer 1
+			{-59, -155, -54, -151, 70}, // layer 2
+			{-68, -156, -61, -150, 71}, // layer 3
+	};
 
 	@SuppressWarnings("unchecked")
 	private static final List<int[]>[] levels = new List[3];
@@ -47,13 +54,12 @@ public final class PuzzleIceFill {
 		frozenCount = 0;
 		solved = failing = false;
 		solver = null;
-		int minX = Rooms.cellMinX(GX), maxX = Rooms.cellMaxX(GX);
-		int minZ = Rooms.cellMinZ(GZ), maxZ = Rooms.cellMaxZ(GZ);
 		for(int l = 0; l < 3; l++) {
 			levels[l] = new ArrayList<>();
-			int y = LEVEL_Y[l];
-			for(int x = minX; x <= maxX; x++) {
-				for(int z = minZ; z <= maxZ; z++) {
+			int[] box = LAYER_BOX[l];
+			int y = box[4];
+			for(int x = box[0]; x <= box[2]; x++) {
+				for(int z = box[1]; z <= box[3]; z++) {
 					Block b = w.getBlockAt(x, y, z);
 					if(b.getType() == Material.ICE || b.getType() == Material.PACKED_ICE) {
 						if(b.getType() == Material.PACKED_ICE) b.setType(Material.ICE, false); // fresh start
@@ -62,6 +68,7 @@ public final class PuzzleIceFill {
 				}
 			}
 		}
+		Utils.debug(Utils.DebugType.SERVER, "Ice Fill scan: L1=" + levels[0].size() + " L2=" + levels[1].size() + " L3=" + levels[2].size());
 	}
 
 	public static void stop() {
@@ -94,7 +101,7 @@ public final class PuzzleIceFill {
 		int[] here = {below.getX(), below.getY(), below.getZ()};
 		if(previous != null && sameCoords(here, previous)) return; // standing on the last block
 		if(below.getType() == Material.PACKED_ICE) { // already frozen → doubling back
-			fail(p);
+			fail(p, "<red>Oops!  You stepped on the wrong block!");
 			return;
 		}
 		if(below.getType() != Material.ICE) return;
@@ -104,7 +111,7 @@ public final class PuzzleIceFill {
 		} else if(adjacent(here, previous)) {
 			freeze(p, below, here);
 		} else {
-			fail(p); // diagonal or disconnected
+			fail(p, "<red>Don't move diagnoally!  Bad!"); // diagonal or non-adjacent
 		}
 	}
 
@@ -112,35 +119,41 @@ public final class PuzzleIceFill {
 		below.setType(Material.PACKED_ICE, false);
 		previous = here;
 		frozenCount++;
-		float pitch = 1.0f + Math.min(1.0f, frozenCount / (float) Math.max(1, levels[currentLevel].size()));
-		Utils.playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 1.5f, pitch);
+		Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f); // the existing ice-fill freeze sound
 		if(frozenCount >= levels[currentLevel].size()) levelComplete(p);
 	}
 
 	private static void levelComplete(Player p) {
-		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_BELL, 1.5f, 1.0f + 0.25f * currentLevel);
+		Server.IceFill.playIceFillSounds(currentLevel + 1, p); // the tritone from the old section (level 1/2/3)
 		currentLevel++;
 		previous = null;
 		frozenCount = 0;
 		solver = null;
+		while(currentLevel < 3 && levels[currentLevel].isEmpty()) currentLevel++; // skip empty levels (safety)
 		if(currentLevel >= 3) {
 			solved = true;
-			Bukkit.broadcast(Utils.msg("<aqua>Ice Fill <green>cleared!"));
 			Server.openIceFillRewards();
 			ClearManager.puzzleSolved(Rooms.ICE_FILL, p); // green check (reward chests are opened by hand)
+			// Gate-opening sound: pressure-plate click, 9 times over 40 ticks (every 5t) to the completer.
+			for(int t = 0; t <= 40; t += 5) {
+				Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_WOODEN_PRESSURE_PLATE_CLICK_ON, 2.0f, 0.5f), t);
+			}
 		}
 	}
 
-	private static void fail(Player p) {
+	private static void fail(Player p, String message) {
 		failing = true;
 		solver = null;
 		previous = null;
 		frozenCount = 0;
-		Utils.playGlobalSound(Sound.ENTITY_ITEM_BREAK, 1.5f, 0.5f);
-		Bukkit.broadcast(Utils.msg("<red>Ice Fill layer broke — resetting..."));
+		Bukkit.broadcast(Utils.msg(message));
 		final int level = currentLevel;
 		final int g = gen;
-		for(int[] c : levels[level]) world.getBlockAt(c[0], c[1], c[2]).setType(Material.AIR, false);
+		for(int[] c : levels[level]) {
+			world.getBlockAt(c[0], c[1], c[2]).setType(Material.AIR, false);
+			// Ice breaks with the glass sound; normal pitch, 2.0 volume, one per block.
+			world.playSound(new Location(world, c[0] + 0.5, c[1] + 0.5, c[2] + 0.5), Sound.BLOCK_GLASS_BREAK, 2.0f, 1.0f);
+		}
 		Utils.scheduleTask(() -> {
 			if(g != gen || solved) return;
 			for(int[] c : levels[level]) {

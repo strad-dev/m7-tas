@@ -86,9 +86,9 @@ public class Room {
 				return allCountedFound() ? Check.GREEN : Check.WHITE;
 			}
 			case NORMAL -> {
-				// Wizard has no miniboss: it is "cleared" (white) from the start.
-				boolean clr = cleared || !hasMiniboss;
-				if(!clr) return Check.NONE;
+				// White once the miniboss is killed — or, for the miniboss-less Wizard, once a player has
+				// entered it (ClearManager sets `cleared` on entry). Green once white AND all secrets found.
+				if(!cleared) return Check.NONE;
 				return allCountedFound() ? Check.GREEN : Check.WHITE;
 			}
 			default -> {

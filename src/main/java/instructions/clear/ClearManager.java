@@ -5,6 +5,11 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.Lidded;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Rotatable;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -15,6 +20,7 @@ import plugin.Utils;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,18 +54,36 @@ public final class ClearManager {
 	// blessing tally — tracked for future use (TAS v3), never consumed by gameplay yet
 	private static final Map<Blessing, Integer> blessingTally = new LinkedHashMap<>();
 
-	// per-room last checkmark, so a transition can play its ding exactly once
-	private static final Map<Room, Room.Check> lastCheck = new LinkedHashMap<>();
-
 	private static boolean milestone300;
 
 	// entity scoreboard tags for spawned secrets (also targeted by Server.blanketKill)
 	public static final String TAG_ITEM = "SecretItem";
 	public static final String TAG_BAT = "SecretBat";
-	public static final String TAG_ESSENCE = "SecretEssence";
-	public static final String TAG_ESSENCE_DISPLAY = "SecretEssenceDisplay";
 	public static final String TAG_MIMIC = "SecretMimic";
 	public static final String TAG_CRYPT = "SecretCryptLurker";
+
+	/** Wither Essence is a placed wither-skeleton-skull block, right-clicked to collect (not an entity). */
+	private static final Material ESSENCE_BLOCK = Material.WITHER_SKELETON_SKULL;
+
+	/** Explicit chest facings (keyed "x,y,z") from the map builder; chests not listed use the auto-orient fallback. */
+	private static final Map<String, BlockFace> CHEST_FACING = new HashMap<>();
+	static {
+		CHEST_FACING.put("-114,69,-35", BlockFace.EAST);
+		CHEST_FACING.put("-186,79,-26", BlockFace.WEST);
+		CHEST_FACING.put("-186,61,-40", BlockFace.EAST);
+		CHEST_FACING.put("-69,69,-61", BlockFace.WEST);
+		CHEST_FACING.put("-172,83,-85", BlockFace.WEST);
+		CHEST_FACING.put("-186,62,-80", BlockFace.EAST);
+		CHEST_FACING.put("-109,82,-89", BlockFace.WEST);
+		CHEST_FACING.put("-125,92,-101", BlockFace.SOUTH);
+		CHEST_FACING.put("-54,69,-89", BlockFace.SOUTH);
+		CHEST_FACING.put("-64,52,-125", BlockFace.EAST);
+		CHEST_FACING.put("-70,89,-185", BlockFace.EAST);
+		CHEST_FACING.put("-22,88,-188", BlockFace.EAST);
+		CHEST_FACING.put("-29,91,-163", BlockFace.EAST);
+		CHEST_FACING.put("-71,75,-152", BlockFace.EAST);
+		CHEST_FACING.put("-71,75,-154", BlockFace.EAST);
+	}
 
 	public static boolean isActive() {
 		return active;
@@ -75,6 +99,12 @@ public final class ClearManager {
 			tickTask.cancel();
 			tickTask = null;
 		}
+		// Tear down last run's placed chests / essence / secret entities so /reset and /setup start clean.
+		World w = world != null ? world : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst());
+		if(w != null) {
+			removeSecretEntities(w);
+			teardownSecretBlocks(w);
+		}
 		Rooms.reset();
 		cryptLurkers = 0;
 		firstPrince = firstBat = mimicKilled = false;
@@ -82,15 +112,13 @@ public final class ClearManager {
 		crystalPickedUp = crystalHandedIn = false;
 		milestone300 = false;
 		blessingTally.clear();
-		lastCheck.clear();
-		for(Room r : Rooms.all()) lastCheck.put(r, r.check());
 	}
 
 	/** Begin the clear phase: spawn secrets, place chest blocks, hand out maps, start the HUD loop. */
 	public static void start(World w) {
 		world = w;
 		reset();
-		placeChests();
+		placeSecretBlocks();
 		spawnSecretEntities();
 		PuzzleQuiz.reset();
 		PuzzleIceFill.begin(w);
@@ -111,58 +139,105 @@ public final class ClearManager {
 		PuzzleIceFill.stop();
 		if(w != null) {
 			removeSecretEntities(w);
-			clearChests(w);
+			teardownSecretBlocks(w);
 		}
 		restoreMenus();
 	}
 
 	// ==================== spawning ====================
 
-	private static void placeChests() {
+	/** Place the secret chests (oriented toward an open side) and re-arm the essence skulls (wither variant). */
+	private static void placeSecretBlocks() {
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
 				if(s.isChest()) {
-					Utils.runCommand("setblock " + s.blockX() + " " + s.blockY() + " " + s.blockZ() + " minecraft:chest");
+					Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
+					b.setType(Material.CHEST, false);
+					if(b.getBlockData() instanceof Directional dir) {
+						BlockFace face = CHEST_FACING.getOrDefault(s.blockX() + "," + s.blockY() + "," + s.blockZ(), openFace(b));
+						if(face != null) {
+							dir.setFacing(face);
+							b.setBlockData(dir, false);
+						}
+					}
+				} else if(s.type == Utils.SecretType.ESSENCE) {
+					// Essence lives in the static map; just make sure it's the wither variant (a prior run may have
+					// converted it to a normal skull on collect). Keep whatever orientation it already has.
+					Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
+					Material m = b.getType();
+					if(m == Material.SKELETON_SKULL) convertSkull(b, Material.WITHER_SKELETON_SKULL);
+					else if(m == Material.SKELETON_WALL_SKULL) convertSkull(b, Material.WITHER_SKELETON_WALL_SKULL);
+					else if(m != Material.WITHER_SKELETON_SKULL && m != Material.WITHER_SKELETON_WALL_SKULL) b.setType(ESSENCE_BLOCK, false);
 				}
 			}
 		}
 	}
 
-	private static void clearChests(World w) {
+	/** Undo {@link #placeSecretBlocks}: remove the placed chests and revert any collected essence back to a wither skull. */
+	private static void teardownSecretBlocks(World w) {
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
 				if(s.isChest()) {
 					Block b = w.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
 					if(b.getType() == Material.CHEST) b.setType(Material.AIR, false);
+				} else if(s.type == Utils.SecretType.ESSENCE) {
+					Block b = w.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
+					if(b.getType() == Material.SKELETON_SKULL) convertSkull(b, Material.WITHER_SKELETON_SKULL);
+					else if(b.getType() == Material.SKELETON_WALL_SKULL) convertSkull(b, Material.WITHER_SKELETON_WALL_SKULL);
 				}
 			}
 		}
+	}
+
+	/** Change a skull block to {@code target}, preserving its floor rotation / wall facing. */
+	private static void convertSkull(Block b, Material target) {
+		BlockData old = b.getBlockData();
+		BlockData nd = target.createBlockData();
+		if(old instanceof Rotatable or && nd instanceof Rotatable nr) nr.setRotation(or.getRotation());
+		if(old instanceof Directional od && nd instanceof Directional ndd) ndd.setFacing(od.getFacing());
+		b.setBlockData(nd, false);
+	}
+
+	/** The first horizontal face whose neighbour isn't a solid block — the side a chest should open toward. */
+	private static BlockFace openFace(Block b) {
+		for(BlockFace f : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
+			if(!b.getRelative(f).getType().isOccluding()) return f;
+		}
+		return null;
 	}
 
 	private static void spawnSecretEntities() {
+		int items = 0, bats = 0;
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
-				switch(s.type) {
-					case ITEM -> spawnItem(s);
-					case BAT -> spawnBat(s);
-					case ESSENCE -> spawnEssence(s);
-					default -> {
+				// Guard each spawn so one failure can't abort the rest (e.g. leave later items unspawned).
+				try {
+					switch(s.type) {
+						case ITEM -> { spawnItem(s); items++; }
+						case BAT -> { spawnBat(s); bats++; }
+						default -> {
+						}
 					}
+				} catch(Throwable ex) {
+					Bukkit.getLogger().warning("[M7 clear] failed to spawn secret " + s.type + " at " + s.blockX() + "," + s.blockY() + "," + s.blockZ() + ": " + ex);
 				}
 			}
 		}
+		Bukkit.getLogger().info("[M7 clear] spawned " + items + " items, " + bats + " bats");
 	}
 
 	private static void spawnItem(Secret s) {
+		// Create the item FIRST (so it always spawns), then apply properties — a failing setter can't prevent
+		// the item from existing. (The consumer form applies setters pre-spawn, where setVelocity etc. can throw.)
 		Item item = world.dropItem(s.location(world), new ItemStack(Material.PAPER));
-		item.setUnlimitedLifetime(true);
-		item.setWillAge(false);
+		s.entityId = item.getUniqueId();
+		item.addScoreboardTag(TAG_ITEM);
 		item.setPickupDelay(32767); // "never" auto-picked; we collect manually (3× range)
 		item.setPersistent(true);
 		item.setGravity(false);
-		item.setVelocity(new org.bukkit.util.Vector(0, 0, 0));
-		item.addScoreboardTag(TAG_ITEM);
-		s.entityId = item.getUniqueId();
+		try { item.setVelocity(new org.bukkit.util.Vector(0, 0, 0)); } catch(Throwable ignored) {}
+		try { item.setWillAge(false); } catch(Throwable ignored) {}
+		try { item.setUnlimitedLifetime(true); } catch(Throwable ignored) {}
 	}
 
 	private static void spawnBat(Secret s) {
@@ -180,33 +255,10 @@ public final class ClearManager {
 		s.entityId = bat.getUniqueId();
 	}
 
-	private static void spawnEssence(Secret s) {
-		Interaction hit = (Interaction) world.spawnEntity(s.location(world), EntityType.INTERACTION);
-		hit.setInteractionWidth(1.0f);
-		hit.setInteractionHeight(1.0f);
-		hit.setResponsive(true);
-		hit.setPersistent(true);
-		hit.addScoreboardTag(TAG_ESSENCE);
-		s.entityId = hit.getUniqueId();
-
-		// A small floating skull so the essence is visible; purely decorative (click hits the Interaction).
-		ItemDisplay disp = (ItemDisplay) world.spawnEntity(s.location(world).add(0, 0.4, 0), EntityType.ITEM_DISPLAY);
-		disp.setItemStack(new ItemStack(Material.WITHER_SKELETON_SKULL));
-		disp.setBillboard(Display.Billboard.CENTER);
-		org.bukkit.util.Transformation t = disp.getTransformation();
-		disp.setTransformation(new org.bukkit.util.Transformation(
-				t.getTranslation(), t.getLeftRotation(),
-				new org.joml.Vector3f(0.5f, 0.5f, 0.5f), t.getRightRotation()));
-		disp.setPersistent(true);
-		disp.addScoreboardTag(TAG_ESSENCE_DISPLAY);
-	}
-
 	private static void removeSecretEntities(World w) {
 		for(Entity e : w.getEntities()) {
 			if(e.getScoreboardTags().contains(TAG_ITEM)
 					|| e.getScoreboardTags().contains(TAG_BAT)
-					|| e.getScoreboardTags().contains(TAG_ESSENCE)
-					|| e.getScoreboardTags().contains(TAG_ESSENCE_DISPLAY)
 					|| e.getScoreboardTags().contains(TAG_MIMIC)) {
 				e.remove();
 			}
@@ -246,6 +298,16 @@ public final class ClearManager {
 			collectItems(p);
 			updateActionBar(p);
 		}
+		// Wizard has no miniboss — it earns its white check the moment a player first sets foot in it.
+		if(!Rooms.WIZARD.cleared) {
+			for(Player p : players) {
+				if(Rooms.roomAt(p.getLocation()) == Rooms.WIZARD) {
+					Rooms.WIZARD.cleared = true;
+					afterEvent(Rooms.WIZARD);
+					break;
+				}
+			}
+		}
 		PuzzleQuiz.tick(world, players);
 		PuzzleIceFill.tick(world, players);
 	}
@@ -268,9 +330,16 @@ public final class ClearManager {
 		Room room = Rooms.roomAt(p.getLocation());
 		if(room == null) return; // outside the dungeon grid (e.g. boss arena) — leave the action bar alone
 		String color = hex(room.type.color);
+		// Bonus flags: M (mimic), P (prince), B (bat) — e.g. "Crypts 3/5 (M, P, B)".
+		List<String> flags = new ArrayList<>();
+		if(mimicKilled) flags.add("M");
+		if(firstPrince) flags.add("P");
+		if(firstBat) flags.add("B");
+		String crypts = "Crypts <white>" + Math.min(cryptLurkers, 5) + "/5" + (flags.isEmpty() ? "" : " (" + String.join(", ", flags) + ")");
 		String bar = color + room.name
 				+ " <dark_gray>| " + color + "Secrets <white>" + room.countedSecretFound() + "/" + room.countedSecretTotal()
 				+ " <dark_gray>| " + color + "Total <white>" + totalSecretsFound() + "/" + totalSecrets()
+				+ " <dark_gray>| " + color + crypts
 				+ " <dark_gray>| " + color + "Score <white>" + teamScore();
 		p.sendActionBar(Utils.msg(bar));
 	}
@@ -289,13 +358,18 @@ public final class ClearManager {
 		}
 		if(s.entityId != null) {
 			Entity e = Bukkit.getEntity(s.entityId);
-			if(e != null && !(e instanceof LivingEntity)) e.remove(); // items/essence hitboxes; bats die naturally
+			if(e != null && !(e instanceof LivingEntity)) e.remove(); // dropped items; bats/mimics die naturally
 		}
-		// Essence also has a floating display entity beside its hitbox — clear it too.
-		if(s.type == Utils.SecretType.ESSENCE && world != null) {
-			Location at = s.location(world);
-			for(Entity e : world.getNearbyEntities(at, 1.5, 1.5, 1.5)) {
-				if(e.getScoreboardTags().contains(TAG_ESSENCE_DISPLAY)) e.remove();
+		if(world != null) {
+			if(s.isChest() && !s.mimic) {
+				// Found chests stay visibly open.
+				Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
+				if(b.getState() instanceof Lidded lid) lid.open();
+			} else if(s.type == Utils.SecretType.ESSENCE) {
+				// Collected essence turns into a normal skeleton skull, keeping its orientation.
+				Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
+				if(b.getType() == Material.WITHER_SKELETON_SKULL) convertSkull(b, Material.SKELETON_SKULL);
+				else if(b.getType() == Material.WITHER_SKELETON_WALL_SKULL) convertSkull(b, Material.SKELETON_WALL_SKULL);
 			}
 		}
 		afterEvent(s.room);
@@ -304,7 +378,11 @@ public final class ClearManager {
 	public static void minibossKilled(Room room, Player killer) {
 		if(room == null || room.cleared) return;
 		room.cleared = true;
-		for(Blessing b : room.clearBlessings) awardBlessing(killer, b);
+		for(Blessing b : room.clearBlessings) {
+			awardBlessing(killer, b);
+			// The blessing pickup plays the item-pickup ding to whoever earned it (like the key grants).
+			if(killer != null) Utils.playLocalSound(killer, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
+		}
 		afterEvent(room);
 	}
 
@@ -343,15 +421,24 @@ public final class ClearManager {
 		if(crystalPickedUp) return;
 		crystalPickedUp = true;
 		Utils.playSecretFoundSound(p, Utils.SecretType.ITEM);
-		Bukkit.broadcast(Utils.msg("<light_purple><name> <green>picked up the <white>Crystal Ball<green>! Hand it to the Wizard.",
-				Placeholder.unparsed("name", Utils.getRealName(p))));
+		p.sendMessage(Utils.msg("<green>You found a Special Crystal!")); // only the picker sees it
 	}
 
 	public static void handInCrystal(Player p) {
 		if(!hasCrystal()) return;
 		crystalHandedIn = true;
-		Bukkit.broadcast(Utils.msg("<dark_aqua>[NPC] Wizard<white>: Oh, my lovely crystal ball! You deserve a reward, young gobelin."));
-		awardBlessing(p, new Blessing(Utils.BlessingType.WISDOM, 1));
+		// Reuses the existing Wizard hand-in dialogue (previously the fake-player Berserk routine).
+		Utils.playLocalSound(p, Sound.ENTITY_VILLAGER_YES);
+		Bukkit.broadcast(Utils.msg("<yellow>[NPC] Wizard<white>: Oh my lovely crystal ball, mi so happy"));
+		Utils.scheduleTask(() -> {
+			Utils.playLocalSound(p, Sound.ENTITY_VILLAGER_YES);
+			Bukkit.broadcast(Utils.msg("<yellow>[NPC] Wizard<white>: You deserve a reward young gobelin"));
+		}, 20);
+		Utils.scheduleTask(() -> {
+			Utils.playLocalSound(p, Sound.ENTITY_VILLAGER_YES);
+			Bukkit.broadcast(Utils.msg("<yellow>[NPC] Wizard<white>: Granted your team a <light_purple>Blessing of Wisdom I"));
+			awardBlessing(p, new Blessing(Utils.BlessingType.WISDOM, 1));
+		}, 60);
 	}
 
 	// ---- lookups for the listener ----
@@ -359,6 +446,17 @@ public final class ClearManager {
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
 				if(s.isChest() && s.blockX() == x && s.blockY() == y && s.blockZ() == z) return s;
+			}
+		}
+		return null;
+	}
+
+	/** A right-clickable block secret (chest or essence) at these coords, or null. */
+	public static Secret findSecretAtBlock(int x, int y, int z) {
+		for(Room r : Rooms.all()) {
+			for(Secret s : r.secrets) {
+				if((s.isChest() || s.type == Utils.SecretType.ESSENCE)
+						&& s.blockX() == x && s.blockY() == y && s.blockZ() == z) return s;
 			}
 		}
 		return null;
@@ -377,6 +475,8 @@ public final class ClearManager {
 	/** Open a chest secret (right-clicked). A mimic chest instead spawns its Mimic (secret completes on kill). */
 	public static void openChest(Player p, Secret s) {
 		if(s == null || s.found) return;
+		// Ice-Fill reward chests can't be opened until the puzzle is solved.
+		if(s.room == Rooms.ICE_FILL && !Rooms.ICE_FILL.solved) return;
 		if(s.mimic) {
 			if(s.entityId != null && Bukkit.getEntity(s.entityId) != null) return; // mimic already out
 			spawnMimic(p.getWorld(), s);
@@ -430,26 +530,11 @@ public final class ClearManager {
 	/** Recompute checkmark transitions + score milestone after any event. */
 	private static void afterEvent(Room room) {
 		DungeonMap.markDirty();
-		if(room != null) checkTransition(room);
 		if(!milestone300 && teamScore() >= 300) {
 			milestone300 = true;
 			Bukkit.broadcast(Utils.msg("<green><bold>Your team reached a score of <yellow>300<green>! <gray>(<white><t><gray>)",
 					Placeholder.unparsed("t", formatTime(Utils.runTick()))));
 			Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f);
-		}
-	}
-
-	private static void checkTransition(Room room) {
-		Room.Check now = room.check();
-		Room.Check was = lastCheck.getOrDefault(room, Room.Check.NONE);
-		if(now == was) return;
-		lastCheck.put(room, now);
-		if(now == Room.Check.WHITE) {
-			Bukkit.broadcast(Utils.msg("<green>✔ <white>" + room.name + " <gray>cleared!"));
-			Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 1.2f);
-		} else if(now == Room.Check.GREEN) {
-			Bukkit.broadcast(Utils.msg("<green><bold>✔ " + room.name + " <reset><green>fully cleared!"));
-			Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1f, 2f);
 		}
 	}
 
@@ -477,7 +562,9 @@ public final class ClearManager {
 	 *  room-clear score is built on. A room contributes its cells the moment it earns any checkmark. */
 	private static int checkedCells() {
 		int cells = 0;
-		for(Room r : Rooms.all()) if(r.check() != Room.Check.NONE) cells += r.cells.length;
+		// Blood always counts as completed for scoring (matches Hypixel's live projection), even if its
+		// checkmark isn't set on the map yet.
+		for(Room r : Rooms.all()) if(r.check() != Room.Check.NONE || r.type == RoomType.BLOOD) cells += r.cells.length;
 		return cells;
 	}
 

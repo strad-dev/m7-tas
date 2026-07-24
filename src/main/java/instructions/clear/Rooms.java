@@ -69,7 +69,7 @@ public final class Rooms {
 				.addSecret(Secret.blessingChest(-125, 92, -101, BlessingType.LIFE, 2))
 				.addSecret(Secret.bat(-123.5, 95, -98.5))
 				.addSecret(Secret.mimicChest(-54, 69, -89));
-		reg("Dino Dig", RoomType.NORMAL, new int[][]{{0, 2}, {0, 3}, {1, 3}}, 4, true, new Blessing(BlessingType.LIFE, 5))
+		reg("Dino Dig Site", RoomType.NORMAL, new int[][]{{0, 2}, {0, 3}, {1, 3}}, 4, true, new Blessing(BlessingType.LIFE, 5))
 				.addSecret(Secret.chest(-34, 92, -103))
 				.addSecret(Secret.bat(-17.5, 47, -106.5))
 				.addSecret(Secret.item(-55.5, 57, -110.5))

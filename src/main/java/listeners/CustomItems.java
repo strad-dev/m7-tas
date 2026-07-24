@@ -959,6 +959,14 @@ public class CustomItems implements Listener {
 		}
 	}
 
+	/** Crypts already blown up this run (keyed by min-corner) — a crypt can't be farmed for repeated kills. */
+	private static final Set<String> activatedCrypts = new HashSet<>();
+
+	/** Clear the per-run crypt-farm guard (called at run start). */
+	public static void resetCrypts() {
+		activatedCrypts.clear();
+	}
+
 	public static boolean checkAndActivateCrypt(Block clicked, Player p) {
 		Material type = clicked.getType();
 		int slabY;
@@ -1043,6 +1051,13 @@ public class CustomItems implements Listener {
 
 		boolean isPrince = slabBlocks.stream().anyMatch(b -> b.getType() == Material.GOLD_BLOCK);
 
+		// A crypt can only be farmed once: it still opens + restores visually, but no new lurker spawns on repeat.
+		String cryptKey = minX + "," + slabY + "," + minZ;
+		boolean alreadyBlownUp = !activatedCrypts.add(cryptKey);
+		if(alreadyBlownUp) {
+			p.sendMessage(Utils.msg("<red>You have already blown up this crypt!"));
+		}
+
 		// Store block data
 		Map<Location, BlockData> stored = new HashMap<>();
 		for(Block b : slabBlocks) {
@@ -1059,18 +1074,20 @@ public class CustomItems implements Listener {
 		double centerX = (minX + maxX) / 2.0 + 0.5;
 		double centerZ = (minZ + maxZ) / 2.0 + 0.5;
 		Location spawnLoc = new Location(world, centerX, slabY - 1, centerZ);
-		Zombie mob = Server.spawnCryptLurker(spawnLoc, isPrince);
+		Zombie mob = alreadyBlownUp ? null : Server.spawnCryptLurker(spawnLoc, isPrince);
 
 		pendingBlockRestorations.putAll(stored);
-		pendingCryptMobs.add(mob);
+		if(mob != null) pendingCryptMobs.add(mob);
 		BukkitTask[] holder = new BukkitTask[1];
 		holder[0] = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			for(Map.Entry<Location, BlockData> entry : stored.entrySet()) {
 				entry.getKey().getBlock().setBlockData(entry.getValue(), false);
 				pendingBlockRestorations.remove(entry.getKey());
 			}
-			if(mob.isValid()) mob.remove();
-			pendingCryptMobs.remove(mob);
+			if(mob != null) {
+				if(mob.isValid()) mob.remove();
+				pendingCryptMobs.remove(mob);
+			}
 			pendingBlockTasks.remove(holder[0]);
 		}, 40);
 		pendingBlockTasks.add(holder[0]);

@@ -73,6 +73,7 @@ public class MiscListener implements Listener {
 	// Killing the key archaeologists grants the global Wither / Blood keys (which gate the doors).
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onKeyMobDeath(EntityDeathEvent e) {
+		if(Server.isCleanupInProgress()) return; // a cleanup purge must not grant keys
 		boolean witherMob = e.getEntity().getScoreboardTags().contains("WitherKeyMob");
 		boolean bloodMob = e.getEntity().getScoreboardTags().contains("BloodKeyMob");
 		if(!witherMob && !bloodMob) return;

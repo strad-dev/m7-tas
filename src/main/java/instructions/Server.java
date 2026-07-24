@@ -192,6 +192,8 @@ public class Server {
 				// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
 				Watcher.INSTANCE.beginDetection(world);
 				openFirstDoor();
+				// Spawn the minibosses now that the run has actually started (not during the pre-run setup window).
+				spawnMinibosses(world);
 				// Spin up the clear mechanics (secrets, chests, minimap, HUD, scoring) for this run.
 				instructions.clear.ClearManager.start(world);
 			}
@@ -237,8 +239,21 @@ public class Server {
 	 * Runs from the console source stack, which executes in the overworld ({@code world}) — the dungeon world — so
 	 * {@code @e} is scoped to the dungeon just as the old per-world {@code blanketKill} was.
 	 */
+	/** True only during a {@link #hardMobCleanup()} kill, so death handlers (key grants, secret/miniboss counting)
+	 *  can tell a cleanup purge apart from a real kill. */
+	private static boolean cleanupInProgress = false;
+
+	public static boolean isCleanupInProgress() {
+		return cleanupInProgress;
+	}
+
 	public static void hardMobCleanup() {
-		Utils.runCommand("kill @e[type=!player,type=!villager,type=!item_frame,type=!glow_item_frame,type=!painting,type=!block_display,type=!marker]");
+		cleanupInProgress = true;
+		try {
+			Utils.runCommand("kill @e[type=!player,type=!villager,type=!item_frame,type=!glow_item_frame,type=!painting,type=!block_display,type=!marker]");
+		} finally {
+			cleanupInProgress = false;
+		}
 	}
 
 	public static void serverSetup(World world) {
@@ -249,7 +264,9 @@ public class Server {
 		for(Player pl : Bukkit.getOnlinePlayers()) {
 			pl.setCooldown(Material.ENDER_PEARL, 0);
 		}
-		spawnMinibosses(world);
+		// Minibosses are no longer spawned here — they spawn when the run actually starts (see startSection).
+		// serverSetup still resets the clear state (keys/doors + ClearManager) so /setup and /reset are clean.
+		resetClearState();
 		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
 		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:iron_bars replace minecraft:air");
 		Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:coal_block");
@@ -279,7 +296,6 @@ public class Server {
 	}
 
 	private static void spawnMinibosses(World world) {
-		resetClearState(); // fresh run — keys not yet obtained, doors closed
 		for(Zombie zombie : archaeologists) {
 			if(zombie != null) {
 				zombie.remove();
@@ -454,6 +470,44 @@ public class Server {
 			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 		}
 
+		/** The question animation (chat + particle trails + floating ⓐ/ⓑ/ⓒ labels) WITHOUT auto-answering —
+		 *  used by the interactive practice quiz. Fills {@code options} with the spawned displays (a=+40t, b=+50t,
+		 *  c=+60t), so callers should only accept an answer once (c) has appeared (~tick 61). */
+		public static void animateQuestion(World world, Player player, int questionNum, String questionText, String[] answers, TextDisplay[] options) {
+			Location particleStart = PARTICLE_START.clone();
+			particleStart.setWorld(world);
+			Bukkit.broadcast(Utils.msg(""));
+			Bukkit.broadcast(Utils.msg("<gold>                                <bold>Question #" + questionNum));
+			Bukkit.broadcast(Utils.msg("<gold>" + questionText));
+			Bukkit.broadcast(Utils.msg(""));
+			for(int i = 0; i < 3; i++) {
+				Bukkit.broadcast(Utils.msg("<gold>     " + OPTION_LABELS[i] + " <green>" + answers[i]));
+			}
+			Bukkit.broadcast(Utils.msg(""));
+			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
+			for(int i = 0; i < 3; i++) {
+				final int idx = i;
+				Utils.scheduleTask(() -> spawnParticleTrail(world, particleStart, new Location(world, OPTION_COORDS[idx][0], OPTION_COORDS[idx][1], OPTION_COORDS[idx][2])), idx * 10);
+			}
+			for(int i = 0; i < 3; i++) {
+				final int idx = i;
+				Utils.scheduleTask(() -> {
+					options[idx] = spawnOption(world, new Location(world, OPTION_COORDS[idx][0], OPTION_COORDS[idx][1], OPTION_COORDS[idx][2]), Utils.mmLegacy("<gold>" + OPTION_LABELS[idx] + " <green>" + answers[idx]));
+					if(player != null) Utils.playLocalSound(player, Sound.ENTITY_ITEM_PICKUP, 2.0f, OPTION_PITCHES[idx]);
+				}, 40 + idx * 10);
+			}
+		}
+
+		/** Remove the floating option labels spawned by {@link #animateQuestion}. */
+		public static void removeOptions(TextDisplay[] options) {
+			for(int i = 0; i < options.length; i++) {
+				if(options[i] != null) {
+					options[i].remove();
+					options[i] = null;
+				}
+			}
+		}
+
 		private static TextDisplay spawnOption(World world, Location loc, String text) {
 			TextDisplay td = (TextDisplay) world.spawnEntity(loc, EntityType.TEXT_DISPLAY);
 			td.text(Utils.nameComponent(text));
@@ -491,7 +545,7 @@ public class Server {
 				final int idx = i;
 				Utils.scheduleTask(() -> {
 					options[idx] = spawnOption(world, new Location(world, OPTION_COORDS[idx][0], OPTION_COORDS[idx][1], OPTION_COORDS[idx][2]), Utils.mmLegacy("<gold>" + OPTION_LABELS[idx] + " <green>" + answers[idx]));
-					Utils.playLocalSound(player, Sound.ENTITY_ITEM_PICKUP, 2.0f, OPTION_PITCHES[idx]);
+					if(player != null) Utils.playLocalSound(player, Sound.ENTITY_ITEM_PICKUP, 2.0f, OPTION_PITCHES[idx]);
 				}, 40 + idx * 10);
 			}
 			Utils.scheduleTask(() -> {
@@ -537,11 +591,11 @@ public class Server {
 		private static BukkitTask iceFillTask;
 		private static final Set<Block> frozenBlocks = new HashSet<>();
 
-		private static void playIceFillSounds(int level, Player player) {
+		public static void playIceFillSounds(int level, Player player) {
 			switch(level) {
 				case 1 -> {
 					Utils.playLocalSound(player, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.189446f);
-					Utils.scheduleTask(() -> Utils.playLocalSound(player, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.3352f), 5);
+					Utils.scheduleTask(() -> Utils.playLocalSound(player, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.301903f), 5); // avg of the first & third note
 					Utils.scheduleTask(() -> Utils.playLocalSound(player, Sound.BLOCK_NOTE_BLOCK_HARP, 2.0f, 1.41436f), 10);
 				}
 				case 2 -> {

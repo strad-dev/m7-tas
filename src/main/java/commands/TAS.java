@@ -174,6 +174,8 @@ public class TAS implements CommandExecutor {
 		listeners.CustomItems.resetTerminatorCooldowns();
 		// Reset class-ability (drop) cooldowns.
 		listeners.CustomItems.resetAbilityCooldowns();
+		// Reset the per-run crypt-farm guard.
+		listeners.CustomItems.resetCrypts();
 
 		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
 		// disarm every player-side handoff + the Watcher so the boss chain spawns each boss WITHOUT starting a

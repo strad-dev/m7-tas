@@ -259,6 +259,7 @@ public class Watcher {
 				// Watcher, record the Clear split, and signal completion so the network ends the session.
 				Utils.scheduleTask(() -> {
 					removeWatcherEntity();
+					awardBloodClear(); // blessings + green check land as the Watcher disappears
 					WitherActions.recordSplit("Clear", Utils.runTick());
 					active = false;
 					WitherActions.signalRunComplete();
@@ -273,7 +274,11 @@ public class Watcher {
 	 */
 	public void bloodCampFinished() {
 		Utils.timer("<green>Blood Camp finished in " + formatTick(phaseRel()));
-		// Blood room cleared → award its blessings (Power V + Life V) and green-check it on the map.
+	}
+
+	/** Blood room cleared → Power V + Life V + green check. Fired only when the Watcher vanishes (portal appears
+	 *  / clear ends), NOT on the final kill, so the reward lands as the Watcher disappears. */
+	private void awardBloodClear() {
 		if(instructions.clear.ClearManager.isActive()) {
 			org.bukkit.entity.Player near = instructions.clear.ClearManager.nearestRealPlayer(new org.bukkit.Location(world, -121, 70, -57));
 			instructions.clear.ClearManager.minibossKilled(instructions.clear.Rooms.BLOOD, near);
@@ -285,6 +290,7 @@ public class Watcher {
 	private void openPortal() {
 		// The Watcher vanishes with the strike (boss bar + entity removed); keep counters until handoff.
 		removeWatcherEntity();
+		awardBloodClear(); // blessings + green check land as the Watcher disappears / portal appears
 
 		world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
