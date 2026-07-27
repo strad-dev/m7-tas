@@ -42,6 +42,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
@@ -2270,19 +2271,21 @@ public class CustomItems implements Listener {
 		// Apply offsets
 		l.add(offsetX, offsetY, offsetZ);
 
-		// Get the eye location and direction
-		Location eyeLocation = p.getEyeLocation();
-		Vector eyeDirection = eyeLocation.getDirection();
+		// The beam is cast from the RIGHT HAND (`l`) — the same point the visible particle trail starts from —
+		// in the look direction, so what the beam visually passes through is what it hits. (Casting from the eye
+		// instead made a mob the hand-origin beam clearly crossed miss, because the eye ray sits ~0.8 blocks up
+		// and ~0.3 to the left of the visible beam.)
+		Vector direction = p.getEyeLocation().getDirection();
+		Vector hand = l.toVector();
 
-		// Raytrace both entities and blocks. Whichever is closer along the line of sight is
-		// what the beam actually hits — so if a wall is between the player and an entity,
-		// the wall stops the beam and the entity takes no damage.
-		RayTraceResult entityResult = findTargetEntity(p, eyeLocation, eyeDirection, range);
-		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eyeLocation, eyeDirection, range, FluidCollisionMode.NEVER, true);
+		// Raytrace both entities and blocks from the hand. Whichever is closer along the beam is what it actually
+		// hits — so if a wall is between the player and an entity, the wall stops the beam and the entity takes no
+		// damage. Entity hits get a MAGE_BEAM_LENIENCY-block margin (see findTargetEntity); blocks stay precise.
+		RayTraceResult entityResult = findTargetEntity(p, l, direction, range);
+		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(l, direction, range, FluidCollisionMode.NEVER, true);
 
-		Vector eye = eyeLocation.toVector();
-		double entityDist = entityResult != null ? entityResult.getHitPosition().distance(eye) : Double.MAX_VALUE;
-		double blockDist = blockResult != null ? blockResult.getHitPosition().distance(eye) : Double.MAX_VALUE;
+		double entityDist = entityResult != null ? entityResult.getHitPosition().distance(hand) : Double.MAX_VALUE;
+		double blockDist = blockResult != null ? blockResult.getHitPosition().distance(hand) : Double.MAX_VALUE;
 
 		Vector targetPoint;
 		Entity targetEntity;
@@ -2294,7 +2297,7 @@ public class CustomItems implements Listener {
 			targetPoint = blockResult.getHitPosition();
 		} else {
 			targetEntity = null;
-			targetPoint = eye.clone().add(eyeDirection.clone().multiply(range));
+			targetPoint = hand.clone().add(direction.clone().multiply(range));
 		}
 
 		// Calculate the direction from hand to the target point
@@ -2358,11 +2361,60 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	private static RayTraceResult findTargetEntity(Player p, Location eyeLocation, Vector eyeDirection, double range) {
-		// raySize=0 (precise) instead of 0.5: the 0.5 inflate blew up geometry at close
-		// range to large hitboxes (e.g. withers), because the player's eye ends up inside
-		// the inflated AABB and the raytrace returns an arbitrary exit face.
-		return p.getWorld().rayTraceEntities(eyeLocation, eyeDirection, range, 0, entity -> entity instanceof LivingEntity livingEntity && !(entity instanceof Player) && !entity.isDead() && !(livingEntity.hasPotionEffect(PotionEffectType.RESISTANCE) && livingEntity.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255));
+	/** How far the beam may travel from a mob's true hitbox and still count as a hit (each face inflated by this). */
+	private static final double MAGE_BEAM_LENIENCY = 0.5;
+
+	/**
+	 * Nearest valid living entity the beam hits, testing each candidate's bounding box inflated by
+	 * {@link #MAGE_BEAM_LENIENCY} on every face — so the beam can pass up to that far from the real hitbox and
+	 * still connect. We do the ray↔AABB test by hand (slab method) rather than Bukkit's
+	 * {@code rayTraceEntities(..., raySize, ...)}: an origin that lands inside an inflated box (common at close
+	 * range against big hitboxes like withers) is treated as an immediate hit at t=0, instead of Bukkit returning
+	 * an arbitrary exit face — the bug that forced the old precise raySize=0.
+	 */
+	private static RayTraceResult findTargetEntity(Player p, Location origin, Vector direction, double range) {
+		Vector start = origin.toVector();
+		double reach = range + MAGE_BEAM_LENIENCY;
+		Entity best = null;
+		double bestT = Double.MAX_VALUE;
+		Vector bestHit = null;
+		for(Entity e : p.getWorld().getNearbyEntities(origin, reach, reach, reach)) {
+			if(!(e instanceof LivingEntity le) || e instanceof Player || e.isDead()) continue;
+			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) continue;
+			double t = rayBoxDistance(start, direction, e.getBoundingBox().expand(MAGE_BEAM_LENIENCY), range);
+			if(t >= 0 && t < bestT) {
+				bestT = t;
+				best = e;
+				bestHit = start.clone().add(direction.clone().multiply(t));
+			}
+		}
+		return best == null ? null : new RayTraceResult(bestHit, best);
+	}
+
+	/**
+	 * Distance {@code t} along {@code start + t*direction} (direction assumed unit-length) at which the ray first
+	 * enters {@code box}, or {@code -1} if it never does within {@code maxDist}. Returns {@code 0} when the origin
+	 * is already inside the box (slab method, clamped at 0).
+	 */
+	private static double rayBoxDistance(Vector start, Vector direction, BoundingBox box, double maxDist) {
+		double[] o = {start.getX(), start.getY(), start.getZ()};
+		double[] d = {direction.getX(), direction.getY(), direction.getZ()};
+		double[] lo = {box.getMinX(), box.getMinY(), box.getMinZ()};
+		double[] hi = {box.getMaxX(), box.getMaxY(), box.getMaxZ()};
+		double tmin = 0.0, tmax = maxDist;
+		for(int i = 0; i < 3; i++) {
+			if(Math.abs(d[i]) < 1e-8) {
+				if(o[i] < lo[i] || o[i] > hi[i]) return -1; // parallel to this slab and outside it
+			} else {
+				double t1 = (lo[i] - o[i]) / d[i];
+				double t2 = (hi[i] - o[i]) / d[i];
+				if(t1 > t2) { double tmp = t1; t1 = t2; t2 = tmp; }
+				tmin = Math.max(tmin, t1);
+				tmax = Math.min(tmax, t2);
+				if(tmin > tmax) return -1;
+			}
+		}
+		return tmin;
 	}
 
 	public static void spawnFireworkParticle(Location l) {

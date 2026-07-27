@@ -1,6 +1,7 @@
 m7tas.iml
 .claude/
 CLAUDE.md
+MAP.md
 .idea/
 target/
 src/main/resources/mappings.txt

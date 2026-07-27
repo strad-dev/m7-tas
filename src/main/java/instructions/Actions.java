@@ -533,7 +533,9 @@ public class Actions {
 	private static boolean mageBeamWouldHit(Player p) {
 		Location eye = p.getEyeLocation();
 		Vector dir = eye.getDirection();
-		RayTraceResult entityHit = p.getWorld().rayTraceEntities(eye, dir, MAGE_BEAM_RANGE, 0, entity -> {
+		// raySize 0.5 mirrors CustomItems.MAGE_BEAM_LENIENCY so this gate is never stricter than the real beam
+		// (this only decides whether to bother firing; the actual target/hit is recomputed in CustomItems.mageBeam).
+		RayTraceResult entityHit = p.getWorld().rayTraceEntities(eye, dir, MAGE_BEAM_RANGE, 0.5, entity -> {
 			if(!(entity instanceof LivingEntity le)) return false;
 			if(le instanceof Player) return false;
 			if(le.isDead()) return false;

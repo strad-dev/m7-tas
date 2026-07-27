@@ -122,6 +122,7 @@ public final class ClearManager {
 		PuzzleQuiz.reset();
 		PuzzleIceFill.begin(w);
 		active = true;
+		exploreRoom(Rooms.byName("Red Blue")); // the entrance room starts already explored on the map
 		giveMaps();
 		if(tickTask != null) tickTask.cancel();
 		tickTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), ClearManager::tick, 1L, 1L);
@@ -583,6 +584,9 @@ public final class ClearManager {
 
 	/** Recompute checkmark transitions + score milestone after any event. */
 	private static void afterEvent(Room room) {
+		// Progressing a room's objective (e.g. killing its miniboss with a beam) counts as exploring it, even if
+		// nobody stood inside — so a room cleared from outside still fills in and shows its checkmark on the map.
+		exploreRoom(room);
 		DungeonMap.markDirty();
 		if(!milestone300 && teamScore() >= 300) {
 			milestone300 = true;
