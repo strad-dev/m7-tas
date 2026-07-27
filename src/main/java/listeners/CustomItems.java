@@ -1089,7 +1089,13 @@ public class CustomItems implements Listener {
 				pendingBlockRestorations.remove(entry.getKey());
 			}
 			if(mob != null) {
-				if(mob.isValid()) mob.remove();
+				if(mob.isValid()) {
+					// The lurker/prince was never killed before the crypt regenerated — so this crypt doesn't
+					// count as "used". Un-mark it so it can be blown up again for another attempt at the kill.
+					// (A killed lurker leaves the mob invalid here, so the key stays and the crypt is spent.)
+					mob.remove();
+					activatedCrypts.remove(cryptKey);
+				}
 				pendingCryptMobs.remove(mob);
 			}
 			pendingBlockTasks.remove(holder[0]);

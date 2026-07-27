@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import instructions.clear.DungeonMap;
 import plugin.FakePlayerInventory;
 
 import java.util.HashMap;
@@ -35,6 +36,8 @@ import java.util.UUID;
 public class LinkedSlots implements Listener {
 
 	private static final int MENU_SLOT = 8;
+	/** Raw slot of the offhand in the survival/E inventory view — where the clear-phase dungeon map is locked. */
+	private static final int OFFHAND_SLOT = 40;
 	/** A double-click's pickup-all event can trail its first click by up to the click window (~5 ticks). */
 	private static final int DOUBLE_CLICK_WINDOW = 10;
 	/** Last server tick a linked swap ran per player — collapses a double-click's burst of events into one swap. */
@@ -54,6 +57,17 @@ public class LinkedSlots implements Listener {
 			boolean swapOffhandMenu = e.getClick() == ClickType.SWAP_OFFHAND && e.getClickedInventory() != null
 					&& e.getClickedInventory().equals(inv) && e.getSlot() == MENU_SLOT;
 			if(clicksMenuSlot || numberKeyToMenu || swapOffhandMenu) {
+				e.setCancelled(true);
+				return;
+			}
+		}
+
+		// --- offhand dungeon-map lock: the clear-phase map can't be moved out of the offhand by any click ---
+		if(DungeonMap.isDungeonMap(inv.getItemInOffHand())) {
+			boolean clicksOffhand = e.getClickedInventory() != null && e.getClickedInventory().equals(inv) && e.getSlot() == OFFHAND_SLOT;
+			// SWAP_OFFHAND (F while hovering any slot) would pull the map out regardless of which slot is hovered.
+			boolean swapOffhand = e.getClick() == ClickType.SWAP_OFFHAND;
+			if(clicksOffhand || swapOffhand) {
 				e.setCancelled(true);
 				return;
 			}
@@ -120,15 +134,19 @@ public class LinkedSlots implements Listener {
 
 	@EventHandler
 	public void onDrop(PlayerDropItemEvent e) {
-		if(FakePlayerInventory.isSkyblockMenu(e.getItemDrop().getItemStack())) {
+		ItemStack dropped = e.getItemDrop().getItemStack();
+		// The menu and the auto-managed offhand dungeon map are both undroppable.
+		if(FakePlayerInventory.isSkyblockMenu(dropped) || DungeonMap.isDungeonMap(dropped)) {
 			e.setCancelled(true);
 		}
 	}
 
-	// Pressing F with no inventory open fires this (not an InventoryClickEvent) — block swapping the menu to offhand.
+	// Pressing F with no inventory open fires this (not an InventoryClickEvent) — block swapping the menu, or the
+	// clear-phase dungeon map (which the clear tick keeps in the offhand), out of its slot.
 	@EventHandler
 	public void onSwapHands(PlayerSwapHandItemsEvent e) {
-		if(FakePlayerInventory.isSkyblockMenu(e.getMainHandItem()) || FakePlayerInventory.isSkyblockMenu(e.getOffHandItem())) {
+		if(FakePlayerInventory.isSkyblockMenu(e.getMainHandItem()) || FakePlayerInventory.isSkyblockMenu(e.getOffHandItem())
+				|| DungeonMap.isDungeonMap(e.getMainHandItem()) || DungeonMap.isDungeonMap(e.getOffHandItem())) {
 			e.setCancelled(true);
 		}
 	}

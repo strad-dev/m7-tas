@@ -38,6 +38,8 @@ public class Room {
 	public boolean cleared;
 	/** Puzzle solved (PUZZLE rooms only). */
 	public boolean solved;
+	/** True once any player has set foot inside this room — until then the map draws it grey with a "?". */
+	public boolean explored;
 
 	Room(String name, RoomType type, int[][] cells, int level, boolean hasMiniboss, Blessing[] clearBlessings) {
 		this.name = name;
@@ -100,6 +102,7 @@ public class Room {
 	public void reset() {
 		cleared = false;
 		solved = false;
+		explored = false;
 		for(Secret s : secrets) {
 			s.found = false;
 			s.entityId = null;

@@ -2,6 +2,7 @@ package instructions.bosses.witherking;
 
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherActions;
+import net.kyori.adventure.title.Title;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonDeathPhase;
 import net.minecraft.world.entity.boss.enderdragon.phases.DragonPhaseInstance;
 import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
@@ -19,6 +20,7 @@ import org.joml.Vector3f;
 import plugin.*;
 
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.*;
 
 /**
@@ -125,6 +127,12 @@ public class WitherKing {
 	private static boolean flameSpawned = false;
 	/** Event-spawned dragons, in order: Power then Apex. Spawned when the last living dragon is killed. */
 	private static final Deque<String> eventQueue = new ArrayDeque<>();
+	/** Ticks the spawn animation runs before the dragon actually appears (matches the {@link BossScheduler} delay). */
+	private static final int DRAGON_SPAWN_ANIM = 100;
+	/** Uniform scale of the "Nt" countdown TextDisplay — deliberately huge so it reads from across the arena. */
+	private static final float DRAGON_COUNTDOWN_SCALE = 12f;
+	/** Live per-dragon "Nt" countdown display tasks, cancelled in {@link #forceCleanup}. */
+	private static final List<BukkitTask> countdownTasks = new ArrayList<>();
 
 	// ============================== Entry / summon phase ==============================
 
@@ -376,6 +384,7 @@ public class WitherKing {
 
 		Bukkit.broadcast(Utils.msg("<yellow>The " + dragonName + "</bold><yellow> is spawning!"));
 		Utils.timer("<yellow>Triggered in " + formatTick());
+		announceDragonSpawn(color, dragonName, spawnLocation);
 
 		// Spawn on the boss lane (start of the target tick, before player choreography) — NOT a raw scheduleTask,
 		// which fires mid-tick AFTER the players' beams, eating the spawn-tick of damage. This lets a beam on the
@@ -402,6 +411,65 @@ public class WitherKing {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 2.0f, 1.0f);
 		}, 100);
+	}
+
+	/**
+	 * The moment a dragon begins spawning: the arrow "ding" cue (same as the clear's 300-score sound), a
+	 * per-player title naming the inbound dragon, and a green tick-countdown floating at the spawn point.
+	 */
+	private static void announceDragonSpawn(String color, String dragonName, Location spawnLocation) {
+		Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
+
+		// Soul (purple) + Ice (blue) spawn on the same tick, so their titles are split by class — Archer/Tank get
+		// Soul, Berserk/Mage/Healer get Ice; every later (solo) dragon titles everyone.
+		Title.Times times = Title.Times.times(Duration.ZERO, Duration.ofMillis(40 * 50L), Duration.ofMillis(10 * 50L));
+		Title title = Title.title(Utils.msg(dragonName + " <yellow>spawning!"), Utils.msg(""), times);
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue; // never the fake players themselves
+			if(shouldSeeDragonPopup(p, color)) p.showTitle(title);
+		}
+
+		startDragonCountdown(spawnLocation);
+	}
+
+	/** Which players get a given dragon's spawn title. Ice → Berserk/Mage/Healer; Soul → Archer/Tank (and anyone
+	 *  without one of those class tags); all other dragons → everyone. */
+	private static boolean shouldSeeDragonPopup(Player p, String color) {
+		var tags = p.getScoreboardTags();
+		boolean iceClass = tags.contains("Berserk") || tags.contains("Mage") || tags.contains("Healer");
+		return switch(color) {
+			case "blue" -> iceClass;   // Ice
+			case "purple" -> !iceClass; // Soul (Archer/Tank + untagged fallback)
+			default -> true;            // Flame / Power / Apex spawn alone
+		};
+	}
+
+	/** Spawn a large green TextDisplay at {@code spawnLocation} that counts ticks down to the dragon's arrival
+	 *  ("100t" … "1t"), then removes itself. Also tracked in {@link #countdownTasks} for {@link #forceCleanup}. */
+	private static void startDragonCountdown(Location spawnLocation) {
+		Location loc = spawnLocation.clone().add(0, 3, 0); // float a few blocks above the spawn point
+		TextDisplay display = world.spawn(loc, TextDisplay.class, d -> {
+			d.text(Utils.msg("<green>" + DRAGON_SPAWN_ANIM + "t"));
+			d.setBillboard(org.bukkit.entity.Display.Billboard.CENTER); // always faces the viewer
+			d.setSeeThrough(true);
+			d.setPersistent(true);
+			d.addScoreboardTag("WitherKingDragon"); // swept by forceCleanup alongside the dragons
+			d.setTransformation(new Transformation(new Vector3f(0f, 0f, 0f), new AxisAngle4f(0f, 0f, 0f, 1f),
+					new Vector3f(DRAGON_COUNTDOWN_SCALE, DRAGON_COUNTDOWN_SCALE, DRAGON_COUNTDOWN_SCALE), new AxisAngle4f(0f, 0f, 0f, 1f)));
+		});
+		BukkitTask[] holder = new BukkitTask[1];
+		int[] remaining = {DRAGON_SPAWN_ANIM};
+		holder[0] = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
+			remaining[0]--;
+			if(remaining[0] <= 0 || !display.isValid()) {
+				if(display.isValid()) display.remove();
+				holder[0].cancel();
+				countdownTasks.remove(holder[0]);
+				return;
+			}
+			display.text(Utils.msg("<green>" + remaining[0] + "t"));
+		}, 1L, 1L);
+		countdownTasks.add(holder[0]);
 	}
 
 	/**
@@ -679,6 +747,10 @@ public class WitherKing {
 		dragons.clear();
 		dyingDragons.clear();
 		dragonSpawnTick.clear();
+
+		// Stop any in-flight dragon-spawn countdowns (their TextDisplays are swept below by the WitherKingDragon tag).
+		for(BukkitTask t : countdownTasks) if(t != null && !t.isCancelled()) t.cancel();
+		countdownTasks.clear();
 
 		for(ItemDisplay d : statueDisplays.values()) if(d != null && d.isValid()) d.remove();
 		for(Interaction i : statueInteractions.values()) if(i != null && i.isValid()) i.remove();

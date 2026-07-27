@@ -131,6 +131,16 @@ public final class Rooms {
 		return cell == null ? null : byCell(cell[0], cell[1]);
 	}
 
+	/** Whether a location sits within the overall room-grid rectangle — inside a room OR a 1-block between-room
+	 *  buffer — as opposed to fully outside the grid (e.g. the boss arena). Unlike {@link #roomAt}, this stays
+	 *  true while walking across the gap between two rooms. */
+	public static boolean inGrid(Location loc) {
+		double dx = ORIGIN - loc.getX();
+		double dz = ORIGIN - loc.getZ();
+		if(dx < 0 || dz < 0) return false;
+		return (int) (dx / PITCH) <= 5 && (int) (dz / PITCH) <= 5;
+	}
+
 	/** The grid cell {@code {gx,gz}} for a world (x,z), or {@code null} if outside the grid / in a buffer. */
 	public static int[] cellAt(double worldX, double worldZ) {
 		double dx = ORIGIN - worldX;

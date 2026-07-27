@@ -33,10 +33,23 @@ public class TabCompletor implements TabCompleter {
 							completions.add(section);
 						}
 					}
-				} else if(args.length == 2) {
-					// /practice <section> [--no-teleport]
-					if("--no-teleport".startsWith(args[1].toLowerCase())) {
+				} else if(args.length >= 2) {
+					// /practice <section> [--no-teleport] [<delayTicks>] — both flags are order-independent
+					// (see Practice), so suggest whichever hasn't been typed yet.
+					String input = args[args.length - 1].toLowerCase();
+					boolean hasNoTeleport = false, hasDelay = false;
+					for(int i = 1; i < args.length - 1; i++) {
+						if(args[i].equalsIgnoreCase("--no-teleport") || args[i].equalsIgnoreCase("--noteleport")) hasNoTeleport = true;
+						else if(args[i].matches("\\d+")) hasDelay = true;
+					}
+					if(!hasNoTeleport && "--no-teleport".startsWith(input)) {
 						completions.add("--no-teleport");
+					}
+					if(!hasDelay) {
+						// Pre-run "get into position" delay in ticks: default 60 (3s); network warp-in uses 400 (20s).
+						for(String preset : new String[]{"60", "100", "200", "400"}) {
+							if(preset.startsWith(input)) completions.add(preset);
+						}
 					}
 				}
 			}

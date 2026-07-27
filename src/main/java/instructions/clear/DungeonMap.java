@@ -14,10 +14,22 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The hotbar minimap: one shared {@link MapView} with a custom {@link MapRenderer} that draws the 6×6 room
- * grid (each room in its {@link RoomType} colour), black door connectors, room-colour connectors within
- * multi-cell rooms, white/green checkmarks per {@link Room#check()}, and a marker cursor for every real
- * player. {@link #mapItem()} builds the FILLED_MAP that goes in hotbar slot 8 during the clear.
+ * The offhand minimap: one shared {@link MapView} with a custom {@link MapRenderer} that draws the 6×6 room
+ * grid, door connectors, white/green checkmarks per {@link Room#check()}, and a marker cursor for every real
+ * player. {@link #mapItem()} builds the FILLED_MAP the clear keeps in the player's offhand (hotbar slot 8 stays
+ * the SkyBlock Menu).
+ *
+ * <p><b>Fog of war</b> (matching Hypixel's Magical Map): a room is only drawn once it becomes visible.
+ * <ul>
+ *   <li><b>Explored</b> (a player has set foot inside, {@link Room#explored}) — drawn in full: every cell in the
+ *       {@link RoomType} colour, with its checkmark.</li>
+ *   <li><b>Revealed</b> — an unexplored room a door directly connects to an explored room. Drawn as a single grey
+ *       1×1 "?" at the door-adjacent cell (so a multi-cell room only shows its shape once entered). Reveal never
+ *       chains: a room two doors out from anything explored stays hidden.</li>
+ *   <li><b>Hidden</b> — everything else; not drawn at all.</li>
+ * </ul>
+ * Opening the lone wither / blood door auto-explores the room behind it (Deathmite / Blood) as if a player had
+ * walked in — see {@code Server.openWitherDoor/openBloodDoor} → {@link ClearManager#exploreRoom}.
  *
  * <p>Orientation: grid column {@code gx} → map X (left→right), row {@code gz} → map Y (top→bottom).
  */
@@ -30,8 +42,21 @@ public final class DungeonMap {
 	private static final int BORDER = (128 - (6 * TILE + 5 * GAP)) / 2;
 	private static final int DOOR_WIDTH = 6; // door opening thickness along the shared wall
 	private static final Color BG = new Color(0, 0, 0, 0); // transparent → shows the map's parchment background
+	// Door colours by type (real-map values): most doors are brown NORMAL doors; this layout has exactly one
+	// WITHER door (black, directly above the Fairy room), one BLOOD door (red, into Blood), and the ENTRANCE
+	// (Start-room) door (green).
+	private static final Color DOOR_NORMAL = new Color(114, 67, 27);
+	private static final Color DOOR_WITHER = new Color(0, 0, 0);
+	private static final Color DOOR_BLOOD = new Color(255, 0, 0);
+	private static final Color DOOR_ENTRANCE = new Color(0, 124, 0);
+	/** The lone wither door, as its {gx,gz} cell pair: Deathmite (3,2) ↔ Fairy (3,3). */
+	private static final int[][] WITHER_DOOR = {{3, 2}, {3, 3}};
+	// Real-Magical-Map values (from NEU's DungeonMap.java, same source as the RoomType colours): undiscovered
+	// rooms are grey (65,65,65) with a near-black (13,13,13) "?".
+	private static final Color UNEXPLORED = new Color(65, 65, 65);
+	private static final Color QUESTION = new Color(13, 13, 13);
 
-	// The 15 doors, as cell pairs {gx,gz}→{gx,gz}. Drawn as black connectors.
+	// The 15 doors, as cell pairs {gx,gz}→{gx,gz}. Coloured by door type in doorColor(); see DOOR_* constants.
 	private static final int[][][] DOORS = {
 			{{0, 0}, {0, 1}}, {{4, 0}, {5, 0}}, {{5, 1}, {5, 2}}, {{3, 2}, {4, 2}}, {{3, 2}, {3, 1}},
 			{{3, 2}, {3, 3}}, {{2, 2}, {2, 1}}, {{0, 1}, {0, 2}}, {{3, 3}, {3, 4}}, {{3, 4}, {3, 5}},
@@ -97,20 +122,32 @@ public final class DungeonMap {
 				for(int y = 0; y < 128; y++)
 					canvas.setPixelColor(x, y, BG);
 
+			// Fog of war: explored rooms draw in full; each unexplored-but-revealed room draws a single 1×1 at
+			// its door-adjacent entry cell; everything else stays hidden. `reveal` maps a revealed room → that cell.
+			Map<Room, int[]> reveal = computeReveals();
+
 			// room tiles
 			for(Room r : Rooms.all()) {
-				for(int[] c : r.cells) fillRect(canvas, tileX(c[0]), tileY(c[1]), TILE, TILE, r.type.color);
+				if(r.explored) {
+					for(int[] c : r.cells) fillRect(canvas, tileX(c[0]), tileY(c[1]), TILE, TILE, r.type.color);
+				} else {
+					int[] e = reveal.get(r);
+					if(e != null) fillRect(canvas, tileX(e[0]), tileY(e[1]), TILE, TILE, UNEXPLORED);
+				}
 			}
-			// connectors within a multi-cell room — full-width joins (room colour)
+			// connectors within a multi-cell room — full-width joins in the room colour (explored rooms only; a
+			// revealed room is a lone 1×1 so it has no internal joins)
 			for(Room r : Rooms.all()) {
+				if(!r.explored) continue;
 				for(int[] a : r.cells) {
 					for(int[] b : r.cells) {
 						if(adjacent(a, b) && cellOrder(a, b)) fillConnector(canvas, a, b, r.type.color, TILE);
 					}
 				}
 			}
-			// fill the centre gap where four cells of the same room meet (e.g. Museum's 2x2 doughnut hole)
+			// fill the centre gap where four cells of the same explored room meet (e.g. Museum's 2x2 doughnut hole)
 			for(Room r : Rooms.all()) {
+				if(!r.explored) continue;
 				for(int[] c : r.cells) {
 					int gx = c[0], gz = c[1];
 					if(Rooms.byCell(gx + 1, gz) == r && Rooms.byCell(gx, gz + 1) == r && Rooms.byCell(gx + 1, gz + 1) == r) {
@@ -118,20 +155,38 @@ public final class DungeonMap {
 					}
 				}
 			}
-			// door connectors between rooms — a narrow black opening centred on the shared wall
+			// door connectors between rooms — a narrow opening centred on the shared wall, coloured by door type.
+			// Only drawn between two currently-visible cells: a locked-and-closed door (whose far room is hidden)
+			// draws nothing, and a door into a revealed room only draws if it lands on that room's shown 1×1 cell.
 			for(int[][] d : DOORS) {
 				Room ra = Rooms.byCell(d[0][0], d[0][1]);
 				Room rb = Rooms.byCell(d[1][0], d[1][1]);
-				if(ra != null && rb != null && ra != rb) fillConnector(canvas, d[0], d[1], Color.BLACK, DOOR_WIDTH);
+				if(ra == null || rb == null || ra == rb) continue;
+				if(!cellDrawn(reveal, d[0][0], d[0][1]) || !cellDrawn(reveal, d[1][0], d[1][1])) continue;
+				fillConnector(canvas, d[0], d[1], doorColor(d, ra, rb), DOOR_WIDTH);
 			}
-			// checkmarks
+			// revealed rooms get a black "?" at their shown cell; explored rooms get their checkmark (if any)
 			for(Room r : Rooms.all()) {
+				if(!r.explored) {
+					int[] e = reveal.get(r);
+					if(e != null) drawQuestion(canvas, tileX(e[0]) + TILE / 2, tileY(e[1]) + TILE / 2);
+					continue;
+				}
 				Room.Check ch = r.check();
 				if(ch == Room.Check.NONE) continue;
-				int[] c = r.cells[0];
 				Color col = ch == Room.Check.GREEN ? RoomType.GREEN_CHECK : RoomType.WHITE_CHECK;
+				int[] c = r.cells[0];
 				drawCheck(canvas, tileX(c[0]) + TILE / 2, tileY(c[1]) + TILE / 2, col);
 			}
+		}
+
+		/** A door's colour by type: red into the Blood room, green to/from the Entrance (Start) room, black for
+		 *  the lone {@link #WITHER_DOOR} above the Fairy room, else a brown NORMAL door. */
+		private Color doorColor(int[][] d, Room a, Room b) {
+			if(a.type == RoomType.BLOOD || b.type == RoomType.BLOOD) return DOOR_BLOOD;
+			if(a.type == RoomType.START || b.type == RoomType.START) return DOOR_ENTRANCE;
+			if(sameDoor(d, WITHER_DOOR)) return DOOR_WITHER;
+			return DOOR_NORMAL;
 		}
 
 		private void paintCursors(MapCanvas canvas) {
@@ -146,10 +201,55 @@ public final class DungeonMap {
 				byte cy = (byte) Math.clamp(py * 2L - 128, -128, 127);
 				// +8 (180°): the cursor arrow otherwise points opposite the player's facing.
 				byte dir = (byte) ((Math.round(p.getLocation().getYaw() / 22.5f) + 8) & 15);
-				cursors.addCursor(new MapCursor(cx, cy, dir, MapCursor.Type.PLAYER, true));
+				cursors.addCursor(new MapCursor(cx, cy, dir, classCursor(p), true));
 			}
 			canvas.setCursors(cursors);
 		}
+
+		/** Marker sprite coloured by the player's dungeon class (read from the class scoreboard tag set by
+		 *  {@code /eq}), using the vanilla map markers: archer green ({@code FRAME}), berserk red, mage blue,
+		 *  healer/tank white ({@code PLAYER}). Any untagged player also gets the white {@code PLAYER} arrow. */
+		private MapCursor.Type classCursor(Player p) {
+			var tags = p.getScoreboardTags();
+			if(tags.contains("Archer"))  return MapCursor.Type.FRAME;       // green
+			if(tags.contains("Berserk")) return MapCursor.Type.RED_MARKER;  // red
+			if(tags.contains("Mage"))    return MapCursor.Type.BLUE_MARKER; // blue
+			return MapCursor.Type.PLAYER;                                   // healer, tank, and untagged → white
+		}
+	}
+
+	// --- fog of war ---
+
+	/** For every unexplored room currently revealed (an OPEN door directly links it to an explored room), the
+	 *  single door-adjacent cell {@code {gx,gz}} to draw its 1×1 "?" at. Reveal is one node deep and never chains
+	 *  through a revealed room. Explored/hidden rooms are absent from the returned map. */
+	private static Map<Room, int[]> computeReveals() {
+		Map<Room, int[]> reveal = new HashMap<>();
+		for(int[][] d : DOORS) {
+			Room ra = Rooms.byCell(d[0][0], d[0][1]);
+			Room rb = Rooms.byCell(d[1][0], d[1][1]);
+			if(ra == null || rb == null || ra == rb) continue;
+			// an explored room reveals its unexplored neighbour at the neighbour's door cell (first door wins)
+			if(ra.explored && !rb.explored) reveal.putIfAbsent(rb, d[1]);
+			if(rb.explored && !ra.explored) reveal.putIfAbsent(ra, d[0]);
+		}
+		return reveal;
+	}
+
+	/** Whether cell {@code (gx,gz)} is actually painted this frame: any cell of an explored room, or the single
+	 *  shown cell of a revealed room. Used to gate door connectors to visible endpoints only. */
+	private static boolean cellDrawn(Map<Room, int[]> reveal, int gx, int gz) {
+		Room r = Rooms.byCell(gx, gz);
+		if(r == null) return false;
+		if(r.explored) return true;
+		int[] e = reveal.get(r);
+		return e != null && e[0] == gx && e[1] == gz;
+	}
+
+	/** True if two doors connect the same cell pair, regardless of endpoint order. */
+	private static boolean sameDoor(int[][] d, int[][] e) {
+		return (d[0][0] == e[0][0] && d[0][1] == e[0][1] && d[1][0] == e[1][0] && d[1][1] == e[1][1])
+				|| (d[0][0] == e[1][0] && d[0][1] == e[1][1] && d[1][0] == e[0][0] && d[1][1] == e[0][1]);
 	}
 
 	// --- drawing helpers ---
@@ -179,6 +279,21 @@ public final class DungeonMap {
 	/** Stable order so each same-room connector is drawn once (a before b). */
 	private static boolean cellOrder(int[] a, int[] b) {
 		return a[0] < b[0] || (a[0] == b[0] && a[1] < b[1]);
+	}
+
+	/** Stamp the real vanilla-font "?" (the same glyph Hypixel's map draws) centred on (cx,cy), in the near-black
+	 *  {@link #QUESTION} colour. Reads the glyph bitmap straight from {@link MinecraftFont} and plots it with the
+	 *  Color-based {@code setPixelColor} (no deprecated byte-palette API). */
+	private static void drawQuestion(MapCanvas canvas, int cx, int cy) {
+		MapFont.CharacterSprite sprite = MinecraftFont.Font.getChar('?');
+		if(sprite == null) return;
+		int w = sprite.getWidth(), h = sprite.getHeight();
+		int x0 = cx - w / 2, y0 = cy - h / 2;
+		for(int row = 0; row < h; row++) {
+			for(int col = 0; col < w; col++) {
+				if(sprite.get(row, col)) canvas.setPixelColor(x0 + col, y0 + row, QUESTION);
+			}
+		}
 	}
 
 	/** A small check-mark: short down-right stroke then a longer up-right stroke, centred on (cx,cy). */

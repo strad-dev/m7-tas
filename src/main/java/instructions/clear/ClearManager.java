@@ -93,6 +93,10 @@ public final class ClearManager {
 			tickTask.cancel();
 			tickTask = null;
 		}
+		// Strip the offhand dungeon map (and restore slot 8's menu) from everyone. reset() runs from serverSetup
+		// before EVERY section, so this is what pulls the clear map out of the offhand when you jump straight to a
+		// boss (e.g. /practice witherking) — the clear tick loop that normally removes it is no longer running.
+		restoreMenus();
 		// Tear down last run's placed chests / essence / secret entities so /reset and /setup start clean.
 		World w = world != null ? world : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst());
 		if(w != null) {
@@ -100,6 +104,7 @@ public final class ClearManager {
 			teardownSecretBlocks(w);
 		}
 		Rooms.reset();
+		DungeonMap.markDirty(); // clear the fog-of-war reveal state so the next run repaints from scratch
 		cryptLurkers = 0;
 		firstPrince = firstBat = mimicKilled = false;
 		deaths = 0;
@@ -259,51 +264,82 @@ public final class ClearManager {
 		}
 	}
 
-	// ==================== hotbar map ====================
+	// ==================== offhand map ====================
 
 	private static void giveMaps() {
-		for(Player p : realPlayers()) setMapSlot(p);
-	}
-
-	private static void setMapSlot(Player p) {
-		// Replace slot 8 unless it's already THIS session's dungeon map — a stale filled map from a previous
-		// session/build points at a dead MapView and renders blank, so it must be swapped out too.
-		if(!DungeonMap.isDungeonMap(p.getInventory().getItem(8))) {
-			p.getInventory().setItem(8, DungeonMap.mapItem());
-		}
+		for(Player p : realPlayers()) manageMapAndMenu(p);
 	}
 
 	private static ItemStack skyblockMenu() {
 		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "");
 	}
 
-	/** Slot 8 holds the dungeon map while inside the clear grid; outside it (e.g. the boss arena) our map is
-	 *  swapped back to the SkyBlock Menu. Only ever touches OUR map — never a Maxor crystal or any other item. */
-	private static void manageSlot8(Player p) {
-		if(Rooms.roomAt(p.getLocation()) != null) {
-			setMapSlot(p); // in the clear grid → dungeon map
-		} else if(DungeonMap.isDungeonMap(p.getInventory().getItem(8))) {
-			p.getInventory().setItem(8, skyblockMenu()); // in the boss (outside the grid) → SkyBlock Menu
+	/** The Magical Map rides in the OFFHAND while inside the clear grid (removed in the boss arena, outside the
+	 *  grid); hotbar slot 8 ("slot 9") always holds the SkyBlock Menu during the clear. Only ever touches OUR own
+	 *  map / the menu star — never a Maxor crystal or any other item. */
+	private static void manageMapAndMenu(Player p) {
+		// Slot 8 stays the SkyBlock Menu the whole clear (revert it if it's holding a stale dungeon map / is empty).
+		ItemStack slot8 = p.getInventory().getItem(8);
+		if(!FakePlayerInventory.isSkyblockMenu(slot8)) {
+			if(slot8 == null || slot8.getType() == Material.AIR || DungeonMap.isDungeonMap(slot8)) {
+				p.getInventory().setItem(8, skyblockMenu());
+			}
+		}
+		ItemStack off = p.getInventory().getItemInOffHand();
+		if(Rooms.inGrid(p.getLocation())) {
+			if(!DungeonMap.isDungeonMap(off)) p.getInventory().setItemInOffHand(DungeonMap.mapItem());
+		} else if(DungeonMap.isDungeonMap(off)) {
+			p.getInventory().setItemInOffHand(new ItemStack(Material.AIR)); // in the boss (outside the grid) → remove
 		}
 	}
 
 	private static void restoreMenus() {
 		for(Player p : realPlayers()) {
-			if(DungeonMap.isDungeonMap(p.getInventory().getItem(8))) {
-				p.getInventory().setItem(8, skyblockMenu());
+			if(DungeonMap.isDungeonMap(p.getInventory().getItemInOffHand())) {
+				p.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
 			}
+			ItemStack slot8 = p.getInventory().getItem(8);
+			if(DungeonMap.isDungeonMap(slot8)) p.getInventory().setItem(8, skyblockMenu());
 		}
 	}
 
 	// ==================== per-tick loop ====================
 
+	/** Reveal any room a player is currently standing in. Includes the fake players, so a TAS run reveals the
+	 *  map as the fakes clear (real players spectating them share the reveal); spectator-mode viewers don't. */
+	private static void markExploration() {
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(p.getGameMode() == GameMode.SPECTATOR) continue;
+			Room r = Rooms.roomAt(p.getLocation());
+			if(r != null && !r.explored) {
+				r.explored = true;
+				DungeonMap.markDirty();
+			}
+		}
+	}
+
+	/** Force a room fully explored on the map without anyone entering it — used when a locked door opens and
+	 *  "explores" the room behind it (wither door → Deathmite, blood door → Blood). */
+	public static void exploreRoom(Room r) {
+		if(r != null && !r.explored) {
+			r.explored = true;
+			DungeonMap.markDirty();
+		}
+	}
+
 	private static void tick() {
 		if(!active) return;
+		markExploration();
 		List<Player> players = realPlayers();
 		for(Player p : players) {
-			manageSlot8(p);
+			manageMapAndMenu(p);
 			collectItems(p);
 			updateActionBar(p);
+		}
+		// Spectators follow the fakes but are excluded from realPlayers() — give them the run-stats bar too.
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue; // never the fakes themselves
+			if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) updateActionBar(p);
 		}
 		// Wizard has no miniboss — it earns its white check the moment a player first sets foot in it.
 		if(!Rooms.WIZARD.cleared) {
@@ -334,18 +370,24 @@ public final class ClearManager {
 	}
 
 	private static void updateActionBar(Player p) {
-		Room room = Rooms.roomAt(p.getLocation());
-		if(room == null) return; // outside the dungeon grid (e.g. boss arena) — leave the action bar alone
-		String color = hex(room.type.color);
+		if(!Rooms.inGrid(p.getLocation())) return; // fully outside the dungeon grid (e.g. boss arena) — leave the bar alone
+		Room room = Rooms.roomAt(p.getLocation()); // null when standing in a between-room buffer
+		// Between rooms there's no specific room to name, so drop the room-name + per-room "Secrets" segments and
+		// fall back to a neutral colour; the run-wide Total/Crypts/Score segments stay put.
+		String color = room != null ? hex(room.type.color) : "<gray>";
 		// Bonus flags: M (mimic), P (prince), B (bat) — e.g. "Crypts 3/5 (M, P, B)".
 		List<String> flags = new ArrayList<>();
 		if(mimicKilled) flags.add("M");
 		if(firstPrince) flags.add("P");
 		if(firstBat) flags.add("B");
 		String crypts = "Crypts <white>" + Math.min(cryptLurkers, 5) + "/5" + (flags.isEmpty() ? "" : " (" + String.join(", ", flags) + ")");
-		String bar = color + room.name
-				+ " <dark_gray>| " + color + "Secrets <white>" + room.countedSecretFound() + "/" + room.countedSecretTotal()
-				+ " <dark_gray>| " + color + "Total <white>" + totalSecretsFound() + "/" + totalSecrets()
+		String bar = "";
+		if(room != null) {
+			bar += color + room.name
+					+ " <dark_gray>| " + color + "Secrets <white>" + room.countedSecretFound() + "/" + room.countedSecretTotal()
+					+ " <dark_gray>| ";
+		}
+		bar += color + "Total <white>" + totalSecretsFound() + "/" + totalSecrets()
 				+ " <dark_gray>| " + color + crypts
 				+ " <dark_gray>| " + color + "Score <white>" + teamScore();
 		p.sendActionBar(Utils.msg(bar));

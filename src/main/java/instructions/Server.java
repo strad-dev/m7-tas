@@ -390,6 +390,8 @@ public class Server {
 		Utils.scheduleTask(() -> Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		Bukkit.broadcast(Utils.msg("<gold><name><green> opened a <dark_gray><bold>WITHER </bold><green>door!", Placeholder.unparsed("name", Utils.getRealName(p))));
+		// Opening the door auto-explores the room behind it on the minimap (no need to walk in).
+		instructions.clear.ClearManager.exploreRoom(instructions.clear.Rooms.byName("Deathmite"));
 	}
 
 	public static void openBloodDoor() {
@@ -402,6 +404,8 @@ public class Server {
 		// The Watcher encounter begins the moment the Blood Door opens (if it was armed this run and hasn't
 		// already spawned from a player walking into the Blood Room).
 		Watcher.INSTANCE.startOnBloodDoor();
+		// Opening the door auto-explores the room behind it on the minimap (no need to walk in).
+		instructions.clear.ClearManager.exploreRoom(instructions.clear.Rooms.BLOOD);
 	}
 
 	public static void openIceFillRewards() {
