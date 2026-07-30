@@ -19,6 +19,9 @@ import java.util.List;
  * answering is only accepted after option (c) has appeared. Answers are given by right-clicking one of three
  * buttons (A/B/C, ±1 block); the correct answer is always <b>B</b>. A wrong answer plays Oruo's mocking
  * dialogue and restarts the whole quiz from the intro. Three correct answers → green check + Time V.
+ * <p>Question 3 is built per-run: it asks whether the player who <i>opened</i> the Quiz room (the first one to
+ * set foot in it, which is also what starts the quiz) is bald. The answer is "Yes" for everyone except
+ * {@code Beethoven_}, who isn't — for him the A/B options are swapped so that <b>B</b> stays the right button.
  */
 public final class PuzzleQuiz {
 	private PuzzleQuiz() {
@@ -28,16 +31,24 @@ public final class PuzzleQuiz {
 	private static final int[][] BUTTONS = {{-20, 70, -34}, {-25, 70, -31}, {-30, 70, -34}};
 	private static final int CORRECT = 1; // B
 
+	// Unpadded and unwrapped — animateQuestion word-wraps and centers each line via ChatFont.centerLines. Index 2
+	// is a template filled in by questionText() with whoever opened the room, so its width isn't known here.
 	private static final String[] QUESTIONS = {
-			"                      How is the run going so far?",
-			"Did you know that you can sub scribe to Stradivarius Violin to                         see more content like this?!",
-			"                             Is akc0303 bald?"
+			"How is the run going so far?",
+			"Did you know that you can sub scribe to Stradivarius Violin to see more content like this?!",
+			"Is %s bald?"
 	};
 	private static final String[][] ANSWERS = {
 			{"Alright", "Trash", "Literally tick-perfect"},
 			{"Oh wow, I should sub scribe!", "Oh wow, I should sub scribe!!", "Oh wow, I should sub scribe!!!"},
 			{"No", "Yes", "Decline to Answer"}
 	};
+	/** Q3's options for the one player who isn't bald: A/B swapped, so B ("No") is still the correct button. */
+	private static final String[] ANSWERS_NOT_BALD = {"Yes", "No", "Decline to Answer"};
+	/** The player Q3 answers "No" for. Matched against {@link Utils#getRealName(Player)}, so the Mage1 fake counts. */
+	private static final String NOT_BALD = "Beethoven_";
+	/** Q3's subject if nobody was recorded as opening the room (shouldn't happen — the quiz needs an entry to start). */
+	private static final String FALLBACK_OPENER = "akc0303";
 	private static final String ORUO = "<dark_red>[STATUE] Oruo the Omniscient<white>: ";
 
 	private static final TextDisplay[] options = new TextDisplay[3];
@@ -45,11 +56,14 @@ public final class PuzzleQuiz {
 	private static boolean started, solved, awaiting;
 	private static int question; // 0-based index of the current question
 	private static int gen;       // generation guard so restart/stop cancels stale scheduled tasks
+	/** Display name of the player who opened the Quiz room — the subject of question 3. Null until entry. */
+	private static String opener;
 
 	public static void reset() {
 		gen++;
 		started = solved = awaiting = false;
 		question = 0;
+		opener = null;
 		Server.Quiz.removeOptions(options);
 	}
 
@@ -65,6 +79,7 @@ public final class PuzzleQuiz {
 		for(Player p : players) {
 			if(Rooms.roomAt(p.getLocation()) == Rooms.QUIZ) {
 				world = w;
+				opener = Utils.getRealName(p); // question 3 is about whoever walked in first
 				begin();
 				return;
 			}
@@ -103,11 +118,24 @@ public final class PuzzleQuiz {
 		awaiting = false;
 		Server.Quiz.removeOptions(options);
 		Player p = ClearManager.nearestRealPlayer(new Location(world, -25, 71, -31));
-		Server.Quiz.animateQuestion(world, p, question + 1, QUESTIONS[question], ANSWERS[question], options);
+		Server.Quiz.animateQuestion(world, p, question + 1, questionText(question), answers(question), options);
 		// Answering is only allowed after option (c) has been shown (spawns at +60t).
 		Utils.scheduleTask(() -> {
 			if(g == gen) awaiting = true;
 		}, 62);
+	}
+
+	/** The question line, unpadded — {@code animateQuestion} centers it. Q3 names {@link #opener}. */
+	private static String questionText(int index) {
+		if(index != 2) return QUESTIONS[index];
+		return String.format(QUESTIONS[2], opener == null ? FALLBACK_OPENER : opener);
+	}
+
+	/** The three options. Q3 flips to {@link #ANSWERS_NOT_BALD} when {@link #NOT_BALD} opened the room — the
+	 *  correct text becomes "No", still on button B. */
+	private static String[] answers(int index) {
+		if(index == 2 && NOT_BALD.equals(opener)) return ANSWERS_NOT_BALD;
+		return ANSWERS[index];
 	}
 
 	/** A player right-clicked answer {@code index} (0=A,1=B,2=C). */

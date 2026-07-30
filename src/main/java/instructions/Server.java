@@ -19,6 +19,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import plugin.ChatFont;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -496,7 +497,11 @@ public class Server {
 			particleStart.setWorld(world);
 			Bukkit.broadcast(Utils.msg(""));
 			Bukkit.broadcast(Utils.msg("<gold>                                <bold>Question #" + questionNum));
-			Bukkit.broadcast(Utils.msg("<gold>" + questionText));
+			// Wrapped + centered at render time: pass the question unpadded, since a line naming a player can't
+			// know its own rendered width (see PuzzleQuiz's question 3).
+			for(String line : ChatFont.centerLines(questionText)) {
+				Bukkit.broadcast(Utils.msg("<gold>" + line));
+			}
 			Bukkit.broadcast(Utils.msg(""));
 			for(int i = 0; i < 3; i++) {
 				Bukkit.broadcast(Utils.msg("<gold>     " + OPTION_LABELS[i] + " <green>" + answers[i]));

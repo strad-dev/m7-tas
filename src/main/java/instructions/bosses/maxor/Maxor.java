@@ -495,13 +495,15 @@ public final class Maxor extends WitherLord {
 	private void playDeathDialogue() {
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
 		Utils.timer("<green>Maxor killed in " + formatTick(displayTick()));
-		instructions.bosses.WitherActions.recordPhaseDuration("Maxor", displayTick());
 		Server.playWitherDeathSound(boss);
 		// Open the wall to Storm's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, 100);
 		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Maxor finished in " + formatTick(displayTick()));
+			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow — must be
+			// before chainNext, which spawns Storm and re-anchors the phase clock.
+			instructions.bosses.WitherActions.recordPhaseDuration("Maxor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);

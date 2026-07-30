@@ -1,5 +1,8 @@
 package plugin;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Minecraft default-font pixel metrics for measuring and centering chat lines. Widths match the vanilla
  * GUI font: each glyph's width plus 1px of inter-character spacing, with bold adding 1px per glyph (except
@@ -40,6 +43,32 @@ public final class ChatFont {
 			px += advance;
 		}
 		return px;
+	}
+
+	/**
+	 * {@code text} word-wrapped at {@link #WRAP_WIDTH} and each resulting line {@link #centerPad}ed — so a line
+	 * whose rendered width isn't known up front (a player name, a live number) still sits centered instead of
+	 * carrying hardcoded padding. Text short enough for one line comes back as a single entry.
+	 * <p>Measured with {@link #width}, so pass plain text or a legacy §-string; MiniMessage tags would be counted
+	 * as literal characters. A single word wider than {@link #WRAP_WIDTH} gets its own line and overflows it.
+	 */
+	public static List<String> centerLines(String text) {
+		List<String> lines = new ArrayList<>();
+		if(text == null || text.isBlank()) return lines;
+		StringBuilder line = new StringBuilder();
+		for(String word : text.trim().split("\\s+")) {
+			if(line.isEmpty()) {
+				line.append(word);
+			} else if(width(line + " " + word) <= WRAP_WIDTH) {
+				line.append(' ').append(word);
+			} else {
+				lines.add(centerPad(line.toString()));
+				line.setLength(0);
+				line.append(word);
+			}
+		}
+		if(!line.isEmpty()) lines.add(centerPad(line.toString()));
+		return lines;
 	}
 
 	/** Leading spaces that center {@code text} within {@link #MAX_WIDTH}, then the text. */

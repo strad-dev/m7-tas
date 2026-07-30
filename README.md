@@ -170,7 +170,7 @@ about leaderboards or categories — deciding what a run *qualifies for* is your
 | `runTicks` | total run length in server ticks |
 | `clearEndTick`, `bloodDoneTick`, `score300Tick`, `fullClearTick` | clear-phase milestones, as overall ticks |
 | `teamScore`, `grade` | final score and its letter grade (`S+`, `S`, `A`, …) |
-| `phaseDurations` | per-boss durations, relative to that boss's own start |
+| `phaseDurations` | per-boss durations, relative to that boss's own start, measured to the end of that boss's phase (the tick it chains to the next one) — not to its killing blow |
 | `splitEnds` | overall tick each section ended: `Clear` `Maxor` `Storm` `Terminals` `Goldor` `Necron` `WitherKing` |
 | `participants` | uuid, name, and `stayedAdventure` for everyone still in the run at completion |
 
@@ -184,7 +184,8 @@ Four things to know before you use them:
 - **`Integer`/`String` fields are `null` when not reached.**  Every clear milestone is `null` on a boss-only
   practice; `witherKing` is `null` for a run that stopped at Necron.  A score of `null` is not a score of 0.
 - All ticks are server ticks (20/s).  "Overall" ticks are relative to the run's t=0; phase durations are
-  relative to their own boss's start.
+  relative to their own boss's start, and run to the **end of the phase** (after the death dialogue, the tick
+  the next boss spawns), not to the killing blow — so they line up with the `splitEnds` deltas.
 
 ### Hooking in
 

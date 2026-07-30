@@ -567,6 +567,8 @@ public class WitherKing {
 
 		// Tell the network plugin the run is over — but only AFTER the last death-dialogue line (t=240) has
 		// been sent, so a networked witherking/all/boss run holds the player until the Wither-King finishes talking.
+		// The RESULT is not measured here: printFinalMessage already froze it at scoreboard time (see there), so a
+		// player leaving during the dialogue can't wipe the run off the leaderboards.
 		Utils.scheduleTask(WitherActions::signalRunComplete, 250);
 	}
 
@@ -586,6 +588,12 @@ public class WitherKing {
 		} else {
 			printPracticeScoreboard();
 		}
+
+		// Freeze the run result HERE, with the scoreboard — the run-complete signal itself is held back another
+		// ~180t so the death dialogue plays out in full (see deathSequence). A result records whoever is still in
+		// the run, so measuring it at signal time meant a player leaving during the dialogue wiped the entire run
+		// from the leaderboards. Capturing here also makes the recorded total agree with the numbers just printed.
+		WitherActions.captureRunResult();
 	}
 
 	/** The hardcoded TAS victory screen. */

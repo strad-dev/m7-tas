@@ -746,12 +746,14 @@ public final class Storm extends WitherLord {
 		sendChatMessage("I should have known that I stand no chance.");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Storm killed in " + formatTick(displayTick()));
-		instructions.bosses.WitherActions.recordPhaseDuration("Storm", displayTick());
 		// Open the wall to Goldor's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openStormToGoldor, 100);
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 60);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Storm finished in " + formatTick(displayTick()));
+			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow — must be
+			// before chainNext, which spawns Goldor and re-anchors the phase clock.
+			instructions.bosses.WitherActions.recordPhaseDuration("Storm", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 100);

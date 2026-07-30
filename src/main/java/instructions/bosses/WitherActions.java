@@ -73,7 +73,31 @@ public class WitherActions {
 	 */
 	public static void signalRunComplete(boolean success) {
 		if (!practiceMode) return;
-		Bukkit.getPluginManager().callEvent(new plugin.RunCompleteEvent(plugin.RunResult.capture(runSection, success)));
+		// Prefer a snapshot taken earlier by captureRunResult() — see that method for why the capture instant and
+		// the signal instant have to be allowed to differ.
+		plugin.RunResult result = (success && pendingResult != null)
+				? pendingResult
+				: plugin.RunResult.capture(runSection, success);
+		pendingResult = null;
+		Bukkit.getPluginManager().callEvent(new plugin.RunCompleteEvent(result));
+	}
+
+	/** A result snapshotted before the run-complete signal is due to fire. Null when nothing has snapshotted yet. */
+	private static volatile plugin.RunResult pendingResult = null;
+
+	/**
+	 * Snapshot the run's result NOW, for a {@link #signalRunComplete()} that will come later.
+	 * <br>
+	 * <b>Why this exists.</b> A result records whoever is still in the run ({@code ClearManager.realPlayers()}), so
+	 * the instant it's captured matters. The Wither King has to hold its signal until the death dialogue has played
+	 * out in full — but during those ~9 seconds a player can walk out, and capturing then would find an empty
+	 * roster and silently drop the entire run from the leaderboards. So the numbers are frozen when the scoreboard
+	 * prints and merely *delivered* when the dialogue ends. Bosses whose signal already fires at the moment they
+	 * finish don't need this; they can capture at signal time.
+	 */
+	public static void captureRunResult() {
+		if (!practiceMode) return;
+		pendingResult = plugin.RunResult.capture(runSection, true);
 	}
 
 	// --- Identity of the current run (/practice <section>), for the run-result payload ---
@@ -92,6 +116,7 @@ public class WitherActions {
 	public static void startRunTracking(String section) {
 		runSection = section == null ? "all" : section;
 		runId = java.util.UUID.randomUUID().toString();
+		pendingResult = null; // never let a previous run's snapshot leak into this one
 	}
 
 	/** The section the current run was started with. */
@@ -135,13 +160,15 @@ public class WitherActions {
 	public static Map<String, Integer> splitEnds() { return new java.util.LinkedHashMap<>(splitEnds); }
 
 	// --- Per-phase durations (for the leaderboards) ---
-	// PHASE-RELATIVE tick (Utils.phaseTick(), i.e. the boss's own clock) at the moment its boss died. Distinct from
-	// splitEnds above, which is overall-run-relative and is stamped by the NEXT section's start — meaning a
-	// standalone "/practice maxor" never lands a Maxor split at all. Each boss stamps its own duration here from
-	// its death dialogue, so an individual-phase practice is timed exactly like a phase inside a full run.
+	// PHASE-RELATIVE tick (Utils.phaseTick(), i.e. the boss's own clock) at the moment the phase ENDED — the tick the
+	// death dialogue finishes and the boss chains to the next phase ("<Boss> finished in ..."), NOT the killing blow
+	// ("<Boss> killed in ..."), which is 80-200 ticks earlier. Distinct from splitEnds above, which is
+	// overall-run-relative and is stamped by the NEXT section's start — meaning a standalone "/practice maxor" never
+	// lands a Maxor split at all. Each boss stamps its own duration here at the end of its own death sequence, so an
+	// individual-phase practice is timed exactly like a phase inside a full run.
 	private static final Map<String, Integer> phaseDurations = new java.util.LinkedHashMap<>();
 
-	/** Record the duration (phase-relative ticks) of the named boss phase, stamped at its killing blow. */
+	/** Record the duration (phase-relative ticks) of the named boss phase, stamped when the phase ends. */
 	public static void recordPhaseDuration(String phase, int phaseTicks) { phaseDurations.put(phase, phaseTicks); }
 
 	/** Duration (phase-relative ticks) of the named boss phase, or null if it wasn't completed this run. */

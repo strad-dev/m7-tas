@@ -749,14 +749,16 @@ public final class Goldor extends WitherLord {
 		int coreTicks = displayTick() - coreOpenTick;
 		Utils.timer("<green>" + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
 				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
-		// The leaderboard times the WHOLE Goldor phase (terminals + core), matching what /practice goldor times —
-		// not the core-only coreTicks column above.
-		instructions.bosses.WitherActions.recordPhaseDuration("Goldor", displayTick());
 		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 60);
 		// Open the floor to Necron's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, 100);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
+			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow — must be
+			// before chainNext, which spawns Necron and re-anchors the phase clock. The board times the WHOLE
+			// Goldor phase (terminals + core), matching what /practice goldor times — not the core-only column
+			// printed at the killing blow.
+			instructions.bosses.WitherActions.recordPhaseDuration("Goldor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
 		}, 80);
