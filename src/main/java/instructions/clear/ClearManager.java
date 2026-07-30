@@ -77,10 +77,11 @@ public final class ClearManager {
 		CHEST_FACING.put("-186,61,-40", BlockFace.EAST);
 		CHEST_FACING.put("-69,69,-61", BlockFace.WEST);
 		CHEST_FACING.put("-172,83,-85", BlockFace.WEST);
+		CHEST_FACING.put("-169,70,-83", BlockFace.WEST);
 		CHEST_FACING.put("-186,62,-80", BlockFace.EAST);
 		CHEST_FACING.put("-109,82,-89", BlockFace.WEST);
 		CHEST_FACING.put("-125,92,-101", BlockFace.SOUTH);
-		CHEST_FACING.put("-54,69,-89", BlockFace.SOUTH);
+		CHEST_FACING.put("-54,69,-89", BlockFace.WEST);
 		CHEST_FACING.put("-64,52,-125", BlockFace.EAST);
 		CHEST_FACING.put("-70,89,-185", BlockFace.EAST);
 		CHEST_FACING.put("-22,88,-188", BlockFace.EAST);
@@ -164,7 +165,8 @@ public final class ClearManager {
 			for(Secret s : r.secrets) {
 				if(s.isChest()) {
 					Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
-					b.setType(Material.CHEST, false);
+					// Mimic chests are TRAPPED chests (same tell as real Hypixel — that's how you spot one).
+					b.setType(s.mimic ? Material.TRAPPED_CHEST : Material.CHEST, false);
 					if(b.getBlockData() instanceof Directional dir) {
 						BlockFace face = CHEST_FACING.getOrDefault(s.blockX() + "," + s.blockY() + "," + s.blockZ(), openFace(b));
 						if(face != null) {
@@ -191,7 +193,7 @@ public final class ClearManager {
 			for(Secret s : r.secrets) {
 				if(s.isChest()) {
 					Block b = w.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
-					if(b.getType() == Material.CHEST) b.setType(Material.AIR, false);
+					if(b.getType() == Material.CHEST || b.getType() == Material.TRAPPED_CHEST) b.setType(Material.AIR, false);
 				} else if(s.type == Utils.SecretType.ESSENCE) {
 					Block b = w.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
 					if(b.getType() == Material.SKELETON_SKULL) convertSkull(b, Material.WITHER_SKELETON_SKULL);
@@ -570,7 +572,7 @@ public final class ClearManager {
 
 	private static void spawnMimic(World w, Secret s) {
 		Block b = w.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
-		if(b.getType() == Material.CHEST) b.setType(Material.AIR, false);
+		if(b.getType() == Material.CHEST || b.getType() == Material.TRAPPED_CHEST) b.setType(Material.AIR, false);
 		Zombie z = (Zombie) w.spawnEntity(s.location(w).add(0.5, 0, 0.5), EntityType.ZOMBIE);
 		z.setBaby();
 		z.setAI(false);

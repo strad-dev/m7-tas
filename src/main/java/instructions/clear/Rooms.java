@@ -60,7 +60,7 @@ public final class Rooms {
 				.addSecret(Secret.blessingChest(-169, 70, -134, BlessingType.STONE, 2))
 				.addSecret(Secret.essence(-180, 93, -127))
 				.addSecret(Secret.blessingChest(-172, 83, -85, BlessingType.STONE, 2))
-				.addSecret(Secret.chest(-169, 70, -83))
+				.addSecret(Secret.mimicChest(-169, 70, -83))
 				.addSecret(Secret.chest(-186, 62, -80));
 		reg("Deathmite", RoomType.NORMAL, new int[][]{{1, 2}, {2, 2}, {3, 2}}, 2, true, new Blessing(BlessingType.POWER, 5))
 				.addSecret(Secret.item(-130.5, 69, -79.5))
@@ -68,7 +68,7 @@ public final class Rooms {
 				.addSecret(Secret.blessingChest(-109, 82, -89, BlessingType.LIFE, 2))
 				.addSecret(Secret.blessingChest(-125, 92, -101, BlessingType.LIFE, 2))
 				.addSecret(Secret.bat(-123.5, 95, -98.5))
-				.addSecret(Secret.mimicChest(-54, 69, -89));
+				.addSecret(Secret.chest(-54, 69, -89));
 		reg("Dino Dig Site", RoomType.NORMAL, new int[][]{{0, 2}, {0, 3}, {1, 3}}, 4, true, new Blessing(BlessingType.LIFE, 5))
 				.addSecret(Secret.chest(-34, 92, -103))
 				.addSecret(Secret.bat(-17.5, 47, -106.5))
