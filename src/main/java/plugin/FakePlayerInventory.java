@@ -131,7 +131,7 @@ public class FakePlayerInventory {
 		switch(role) {
 			case "Archer" -> {
 				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[3] = Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[18] = getThermodynamicHelmet();
 				arr[19] = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Chestplate"));
@@ -144,14 +144,14 @@ public class FakePlayerInventory {
 			}
 			case "Berserk" -> {
 				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[3] = Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag");
 				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "");
 			}
 			case "Healer" -> {
 				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
-				arr[3] = Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
 				arr[32] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay");
@@ -163,14 +163,14 @@ public class FakePlayerInventory {
 				arr[3] = getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore");
 				arr[4] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
 				arr[30] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla");
-				arr[31] = Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
+				arr[31] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[32] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag");
 				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
 				arr[35] = getSkyBlockItem(Material.BOW, "<gold>Precise Explosive Bow", "skyblock/combat/explosive_bow");
 			}
 			case "Tank" -> {
 				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
-				arr[3] = Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
 				arr[31] = getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Withered Axe of the Shredded", "skyblock/combat/aots");
@@ -246,7 +246,7 @@ public class FakePlayerInventory {
 		switch(role) {
 			case "Archer" -> {
 				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
+				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(18, getThermodynamicHelmet());
 				inventory.setItem(19, Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Chestplate")));
@@ -259,14 +259,14 @@ public class FakePlayerInventory {
 			}
 			case "Berserk" -> {
 				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
+				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag"));
 				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", ""));
 			}
 			case "Healer" -> {
 				inventory.setItem(2, getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
+				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay"));
@@ -278,14 +278,14 @@ public class FakePlayerInventory {
 				inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore"));
 				inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla"));
-				inventory.setItem(31, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
+				inventory.setItem(31, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag"));
 				inventory.setItem(33, getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath"));
 				inventory.setItem(35, getSkyBlockItem(Material.BOW, "<gold>Precise Explosive Bow", "skyblock/combat/explosive_bow"));
 			}
 			case "Tank" -> {
 				inventory.setItem(2, getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, Utils.placeOnAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
+				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
 				inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Withered Axe of the Shredded", "skyblock/combat/aots"));

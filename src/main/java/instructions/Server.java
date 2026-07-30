@@ -45,6 +45,7 @@ public class Server {
 	private static boolean runStarted = false;
 
 	// Door bounds as {minX, minY, minZ, maxX, maxY, maxZ} (inclusive). Match the openXxxDoor() fill regions.
+	private static final int[] START_DOOR = {-122, 69, -170, -120, 72, -168};
 	private static final int[] WITHER_DOOR = {-122, 69, -106, -120, 72, -104};
 	private static final int[] BLOOD_DOOR = {-122, 69, -74, -120, 72, -72};
 
@@ -87,6 +88,10 @@ public class Server {
 
 	private static boolean inBounds(Block b, int[] d) {
 		return b.getX() >= d[0] && b.getX() <= d[3] && b.getY() >= d[1] && b.getY() <= d[4] && b.getZ() >= d[2] && b.getZ() <= d[5];
+	}
+
+	public static boolean inStartDoor(Block b) {
+		return inBounds(b, START_DOOR);
 	}
 
 	public static boolean inWitherDoor(Block b) {

@@ -161,6 +161,40 @@ public final class Rooms {
 	public static int cellMaxZ(int gz) { return ORIGIN - PITCH * gz; }
 	public static int cellMinZ(int gz) { return cellMaxZ(gz) - 30; }
 
+	/**
+	 * True if the block column at world (x,z) sits on the vertical outer face (perimeter wall) of a room — at ANY
+	 * height. Used to stop blocks being broken through room walls without touching the floor/ceiling (rooms have
+	 * varying heights, so we can't restrict by Y). A room is only its own outer perimeter: for a multi-cell room
+	 * (e.g. the 2x2 Museum) the internal seams between its cells count as interior, so the middle of the room is
+	 * NOT a face and stays breakable. Between-room seams and everything off the grid return false.
+	 */
+	public static boolean isRoomFace(int worldX, int worldZ) {
+		int[] cell = cellAt(worldX, worldZ);
+		if(cell == null) return false; // between-room buffer or outside the grid — not a room's own wall
+		Room r = byCell(cell[0], cell[1]);
+		if(r == null) return false;
+		// A perimeter column has at least one of its four horizontal neighbours outside this room's footprint.
+		return !inFootprint(worldX + 1, worldZ, r) || !inFootprint(worldX - 1, worldZ, r)
+				|| !inFootprint(worldX, worldZ + 1, r) || !inFootprint(worldX, worldZ - 1, r);
+	}
+
+	/** Whether the column at (x,z) belongs to room {@code r}'s physical footprint — its own cells, plus the 1-block
+	 *  seams that fall BETWEEN two cells of the same room (so multi-cell rooms read as one solid blob). */
+	private static boolean inFootprint(int x, int z, Room r) {
+		long dx = (long) ORIGIN - x;
+		long dz = (long) ORIGIN - z;
+		if(dx < 0 || dz < 0) return false;
+		int gx = (int) (dx / PITCH);
+		int gz = (int) (dz / PITCH);
+		if(gx > 5 || gz > 5) return false;
+		boolean xSeam = (int) (dx - (long) gx * PITCH) == 31; // seam between cell gx and gx+1
+		boolean zSeam = (int) (dz - (long) gz * PITCH) == 31; // seam between cell gz and gz+1
+		if(!xSeam && !zSeam) return byCell(gx, gz) == r;
+		if(xSeam && !zSeam) return byCell(gx, gz) == r && byCell(gx + 1, gz) == r;
+		if(!xSeam) return byCell(gx, gz) == r && byCell(gx, gz + 1) == r;
+		return byCell(gx, gz) == r && byCell(gx + 1, gz) == r && byCell(gx, gz + 1) == r && byCell(gx + 1, gz + 1) == r;
+	}
+
 	public static void reset() {
 		for(Room r : ALL) r.reset();
 	}

@@ -308,6 +308,33 @@ public class Utils {
 	}
 
 	/**
+	 * Return a copy of {@code item} that can be BOTH placed on and "broken" against any block while its holder is in
+	 * adventure mode — {@link #placeOnAnythingInAdventure} + {@link #breakAnyBlockInAdventure} in a single stamp. It
+	 * has to be one call: each of those writes its own {@code TOOLTIP_DISPLAY}, so chaining them would clobber the
+	 * first one's entry and un-hide its "Unknown" tooltip line.
+	 * <p>
+	 * The can_break half is NOT about breaking blocks — Superboom TNT's left-click never breaks anything, the interact
+	 * event is always cancelled. It exists so the CLIENT will tell us WHICH block was left-clicked: verified in the
+	 * 26.2 client, {@code MultiPlayerGameMode.startDestroyBlock} returns early without sending
+	 * {@code ServerboundPlayerActionPacket} when {@code Player.blockActionRestricted} is true, and in adventure mode
+	 * that's true unless the held stack's can_break predicate matches the block. Without the stamp a left-click sends
+	 * only a swing packet (no block position) and the server would have to ray-trace the target itself.
+	 * <p>
+	 * Apply LAST (after any setItemMeta), since it mutates the NMS copy directly.
+	 */
+	public static ItemStack placeAndBreakAnythingInAdventure(ItemStack item) {
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
+		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
+		// Empty predicates name no concrete block, so the client would render "Can be placed on: Unknown" and
+		// "Can Break: Unknown" — hide both components from the tooltip.
+		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
+				.withHidden(DataComponents.CAN_PLACE_ON, true)
+				.withHidden(DataComponents.CAN_BREAK, true));
+		return CraftItemStack.asBukkitCopy(nms);
+	}
+
+	/**
 	 * Plays a sound for every player on the server
 	 *
 	 * @param s The sound to play

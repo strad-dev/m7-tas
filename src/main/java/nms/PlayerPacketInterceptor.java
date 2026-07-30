@@ -71,6 +71,26 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					});
 					return;
 				}
+			} else if(action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
+				// A left-click ON A BLOCK. This is the ONLY place the client tells us which block a left-click hit —
+				// the swing packet carries no position — so block abilities (Superboom TNT) take their target from
+				// here instead of the server ray-tracing its own reach. Dispatched as LEFT_CLICK_BLOCK carrying the
+				// packet's pos. The block itself is still never broken: handleCustomItems cancels the follow-up
+				// PlayerInteractEvent for left-click ability items, and onBlockBreak refuses outright as a backstop.
+				//
+				// NOTE this only arrives for items stamped can_break (Dungeonbreaker, and Superboom TNT via
+				// Utils.placeAndBreakAnythingInAdventure) while the player is in adventure mode — verified in the 26.2
+				// client: MultiPlayerGameMode.startDestroyBlock returns early when Player.blockActionRestricted is
+				// true. In survival every item sends it. Either way vanilla's own PlayerInteractEvent fires for the
+				// same packet, so both dispatches land on the same tick and collapse via the 1/tick ability guards.
+				//
+				// On the server executor (same main-thread FIFO queue as vanilla's handler, drained before
+				// super.channelRead's packet), matching the UseItemOn path below.
+				net.minecraft.core.BlockPos bp = pkt.getPos();
+				int bx = bp.getX(), by = bp.getY(), bz = bp.getZ();
+				MinecraftServer.getServer().execute(() ->
+					CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(),
+							Action.LEFT_CLICK_BLOCK, player, player.getWorld().getBlockAt(bx, by, bz)));
 			}
 		}
 		if(msg instanceof ServerboundAttackPacket) {
@@ -135,8 +155,10 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				org.bukkit.block.Block clickedBlock = player.getWorld().getBlockAt(bx, by, bz);
 				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)
 						&& !instructions.clear.ClearManager.isSecretBlock(clickedBlock)) {
+					// Pass vanilla's own hit-result block through: block abilities (Superboom TNT) centre on it rather
+					// than ray-tracing a reach of their own, so they match vanilla's interaction range and target.
 					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
-							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player);
+							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player, clickedBlock);
 				}
 			});
 		} else if(msg instanceof ServerboundUseItemPacket airPkt && airPkt.getHand() == InteractionHand.MAIN_HAND) {

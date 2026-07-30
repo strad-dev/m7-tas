@@ -202,8 +202,9 @@ public class GetCustomItems implements CommandExecutor {
 		lore.add(Utils.mm("skyblock/combat/infinityboom"));
 		meta.lore(lore);
 		infinityboom.setItemMeta(meta);
-		// Placeable on any block in adventure mode (the practice default), like the fake-player loadout.
-		infinityboom = plugin.Utils.placeOnAnythingInAdventure(infinityboom);
+		// Placeable on / "breakable" against any block in adventure mode (the practice default), like the loadout copy.
+		// The can_break half is what makes the client report the clicked block on a left-click — see the helper.
+		infinityboom = plugin.Utils.placeAndBreakAnythingInAdventure(infinityboom);
 
 		ItemStack jerrychine = new ItemStack(Material.GOLDEN_HORSE_ARMOR);
 		meta = jerrychine.getItemMeta();

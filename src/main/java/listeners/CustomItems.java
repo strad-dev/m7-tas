@@ -28,9 +28,11 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
@@ -111,6 +113,17 @@ public class CustomItems implements Listener {
 	private static final Map<Location, BlockData> pendingBlockRestorations = new HashMap<>();
 	private static final List<BukkitTask> pendingBlockTasks = new ArrayList<>();
 	private static final List<Zombie> pendingCryptMobs = new ArrayList<>();
+	// DETECTION radius of every explosion that routes through triggerSuperboomRadius — Superboom TNT, Explosive Shot
+	// and Guided Sheep. This is the FIRST of the two searches: a cube half-extent around the impact block (Chebyshev
+	// distance, no line-of-sight test — air neither triggers nor blocks it) scanned for a *valid* crypt/wall block.
+	// 2 → a 5x5x5 box. The SECOND search is per hit block in triggerSuperboomAt: the crypt rectangle validation in
+	// checkAndActivateCrypt and the cracked-brick 6-face flood-fill, which decide how much is actually removed —
+	// deliberately NOT scaled by this constant. Reach is separate again: vanilla's interaction range (see superboom).
+	private static final int SUPERBOOM_RADIUS = 2;
+	// Tick of the last Superboom-TNT detonation per player. The TNT detonates either from the ability dispatch (any
+	// click path) or from a raw vanilla placement caught in onInfinityboomPlace — this caps it to one blast per player
+	// per tick so a click that somehow reaches both paths doesn't double-boom.
+	private static final Map<UUID, Integer> lastSuperboomTick = new ConcurrentHashMap<>();
 
 	public static boolean abilityFiredThisTick(Player p) {
 		return lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick;
@@ -205,7 +218,8 @@ public class CustomItems implements Listener {
 		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && instructions.clear.ClearManager.isSecretBlock(e.getClickedBlock())) {
 			return;
 		}
-		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer());
+		// getClickedBlock() is vanilla's own hit result (null for air clicks) — block abilities use it as their reach.
+		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer(), e.getClickedBlock());
 	}
 
 	@EventHandler
@@ -254,6 +268,14 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
+		// Superboom TNT carries a can_break stamp purely so the adventure-mode client reports the clicked block on a
+		// left-click (see Utils.placeAndBreakAnythingInAdventure) — it must never actually break anything. The
+		// left-click interact event is already cancelled for it in handleCustomItems; this is the backstop, and it
+		// matters because the fall-through below would otherwise remove the block PERMANENTLY.
+		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/infinityboom")) {
+			e.setCancelled(true);
+			return;
+		}
 		// Protected Goldor interactables and the Maxor Energy-Crystal pressure plates are unbreakable outright —
 		// any tool (stonk, dungeonbreaker, …), any phase.
 		if(Goldor.INSTANCE.isProtected(e.getBlock()) || Maxor.INSTANCE.isProtected(e.getBlock())) {
@@ -268,6 +290,17 @@ public class CustomItems implements Listener {
 		// Wither/Blood door blocks are unbreakable ONCE THE RUN HAS STARTED (opened via the key + door-click path
 		// in MiscListener, never broken). During the pre-run prep window they may still be stonked through.
 		if(Server.isRunStarted() && (Server.inWitherDoor(e.getBlock()) || Server.inBloodDoor(e.getBlock()))) {
+			e.setCancelled(true);
+			return;
+		}
+		// The vertical faces (perimeter walls) of a room can't be broken through — only the floor/ceiling and the
+		// room interior can be stonked. We restrict by the room's horizontal perimeter at any Y (rooms have varying
+		// heights, so a Y-based floor/ceiling rule is impossible). Multi-cell rooms (e.g. the 2x2 Museum) protect only
+		// their OUTER perimeter, so the middle of the room stays stonkable. The three doors (start / wither / blood)
+		// sit in these walls and must remain stonkable, so they're exempt.
+		Block b = e.getBlock();
+		if(instructions.clear.Rooms.isRoomFace(b.getX(), b.getZ())
+				&& !Server.inStartDoor(b) && !Server.inWitherDoor(b) && !Server.inBloodDoor(b)) {
 			e.setCancelled(true);
 			return;
 		}
@@ -416,6 +449,17 @@ public class CustomItems implements Listener {
 	}
 
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p) {
+		handleCustomItems(e, hand, item, action, p, null);
+	}
+
+	/**
+	 * @param clickedBlock the block VANILLA reported this click landed on — {@code PlayerInteractEvent.getClickedBlock()}
+	 *                     or {@code ServerboundUseItemOnPacket}'s hit result — or {@code null} for an air click, an
+	 *                     entity interaction, or a fake-player dispatch. Abilities that act on a block (Superboom TNT)
+	 *                     use this instead of ray-tracing a reach of their own, so their range is exactly vanilla's
+	 *                     block-interaction range and their target is exactly the block the client aimed at.
+	 */
+	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p, Block clickedBlock) {
 		if(p.getGameMode() == org.bukkit.GameMode.SPECTATOR) return; // spectators never fire item abilities (e.g. a right-click on a block)
 		if(Spectate.getSpectatorMap().containsKey(p)) return;
 		// Trap room disables all right-click item abilities EXCEPT ender pearls and Dungeonbreaker.
@@ -474,7 +518,7 @@ public class CustomItems implements Listener {
 									}
 								}
 								case "skyblock/combat/infinityboom" -> {
-									superboom(p);
+									superboom(p, clickedBlock);
 									fired = true;
 								}
 							}
@@ -512,7 +556,7 @@ public class CustomItems implements Listener {
 								fired = true;
 							}
 							case "skyblock/combat/infinityboom" -> {
-								superboom(p);
+								superboom(p, clickedBlock);
 								fired = true;
 							}
 							case "skyblock/combat/rag" -> {
@@ -1106,10 +1150,60 @@ public class CustomItems implements Listener {
 		return true;
 	}
 
-	public static void superboom(Player p) {
-		RayTraceResult blockRay = p.rayTraceBlocks(5.0);
-		if(blockRay == null || blockRay.getHitBlock() == null) return;
-		triggerSuperboomRadius(blockRay.getHitBlock().getLocation(), p);
+	/**
+	 * Detonate a Superboom TNT against the block the click landed on. There is deliberately **NO server-side ray
+	 * trace** here: {@code clicked} is always the block the CLIENT reported, so reach and target are vanilla's, not an
+	 * approximation of them. An own ray trace was both too generous (a fixed 5 blocks, past what the client considers
+	 * interactable) and subtly wrong (it skipped passable blocks, so aiming at a lever centred on the wall behind it).
+	 * <p>
+	 * Every click path now carries a block: RIGHT_CLICK_BLOCK from {@code PlayerInteractEvent.getClickedBlock()} /
+	 * {@code ServerboundUseItemOnPacket}'s hit result, LEFT_CLICK_BLOCK from {@code ServerboundPlayerActionPacket}'s
+	 * pos (that's why the TNT carries a can_break stamp — see {@code Utils.placeAndBreakAnythingInAdventure}; without
+	 * it the adventure-mode client sends no block-attack packet at all), and a real placement from
+	 * {@code BlockPlaceEvent.getBlockAgainst()}. A null {@code clicked} therefore means the client itself saw nothing
+	 * interactable (air click) or the click was consumed by an entity — vanilla would place no TNT, so nothing booms.
+	 */
+	public static void superboom(Player p, Block clicked) {
+		if(clicked == null) return;
+		superboomAt(p, clicked.getLocation());
+	}
+
+	/**
+	 * Detonate a Superboom TNT centred on {@code center}, at most once per player per tick. Shared by the ability
+	 * dispatch (every click path) and by {@link #onInfinityboomPlace(BlockPlaceEvent)}, which covers the paths where
+	 * vanilla physically places the TNT block instead of a click firing the ability.
+	 */
+	private static void superboomAt(Player p, Location center) {
+		int currentTick = MinecraftServer.currentTick;
+		if(currentTick == lastSuperboomTick.getOrDefault(p.getUniqueId(), -1)) return;
+		lastSuperboomTick.put(p.getUniqueId(), currentTick);
+		triggerSuperboomRadius(center, p);
+	}
+
+	/**
+	 * Catch-all so an Infinityboom TNT is NEVER left in the world as a real block. Most click paths fire the ability
+	 * and cancel the interact event, so vanilla never places anything — but every path where the click ISN'T consumed
+	 * by the ability still lets vanilla place the TNT, since it carries can-place-on-anything for adventure mode:
+	 * sneak-right-click on a lever / button / clear-phase secret (all of which return early in onPlayerInteract so the
+	 * block keeps its click), a right-click inside the Trap room (right-click abilities disabled there), an off-hand
+	 * placement, and presumably more. Rather than chase each one, veto the placement here and detonate instead:
+	 * BlockPlaceEvent fires exactly when vanilla decided to place, which is exactly when no ability consumed the click,
+	 * so the TNT behaves identically however it was used. Cancelling also keeps the stack intact (Infinityboom = no
+	 * consumption). Creative mode is left alone so setup/building can still place real TNT.
+	 */
+	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+	public void onInfinityboomPlace(BlockPlaceEvent e) {
+		if(!getID(e.getItemInHand()).equals("skyblock/combat/infinityboom")) return;
+		Player p = e.getPlayer();
+		org.bukkit.GameMode gm = p.getGameMode();
+		if(gm != org.bukkit.GameMode.SURVIVAL && gm != org.bukkit.GameMode.ADVENTURE) return;
+		e.setCancelled(true);
+		p.updateInventory(); // the client predicted the placement — resend the (unchanged) stack so it doesn't ghost
+		// Mirror the Trap-room restriction in handleCustomItems: no right-click item abilities in there.
+		if(instructions.clear.ClearManager.isActive()
+				&& instructions.clear.Rooms.roomAt(p.getLocation()) == instructions.clear.Rooms.TRAP) return;
+		// Centre on the block clicked against — the same "block vanilla says was interacted with" the click path uses.
+		superboomAt(p, e.getBlockAgainst().getLocation());
 	}
 
 	public static void triggerSuperboomRadius(Location center, Player p) {
@@ -1121,9 +1215,9 @@ public class CustomItems implements Listener {
 		instructions.bosses.goldor.Goldor.INSTANCE.notifyExplosionAt(center);
 		World world = center.getWorld();
 		int cx = center.getBlockX(), cy = center.getBlockY(), cz = center.getBlockZ();
-		for(int dx = -1; dx <= 1; dx++) {
-			for(int dy = -1; dy <= 1; dy++) {
-				for(int dz = -1; dz <= 1; dz++) {
+		for(int dx = -SUPERBOOM_RADIUS; dx <= SUPERBOOM_RADIUS; dx++) {
+			for(int dy = -SUPERBOOM_RADIUS; dy <= SUPERBOOM_RADIUS; dy++) {
+				for(int dz = -SUPERBOOM_RADIUS; dz <= SUPERBOOM_RADIUS; dz++) {
 					Block b = world.getBlockAt(cx + dx, cy + dy, cz + dz);
 					Material type = b.getType();
 					if((type == Material.SMOOTH_STONE_SLAB || type == Material.GOLD_BLOCK || type == Material.STONE_BRICK_STAIRS || type == Material.CRACKED_STONE_BRICKS) && visited.add(b)) {
@@ -2271,21 +2365,32 @@ public class CustomItems implements Listener {
 		// Apply offsets
 		l.add(offsetX, offsetY, offsetZ);
 
-		// The beam is cast from the RIGHT HAND (`l`) — the same point the visible particle trail starts from —
-		// in the look direction, so what the beam visually passes through is what it hits. (Casting from the eye
-		// instead made a mob the hand-origin beam clearly crossed miss, because the eye ray sits ~0.8 blocks up
-		// and ~0.3 to the left of the visible beam.)
-		Vector direction = p.getEyeLocation().getDirection();
-		Vector hand = l.toVector();
+		// GEOMETRY: the beam is DRAWN from the right hand (`l`) but AIMED from the eye — i.e. it converges on the
+		// crosshair. The trail is a straight line from the hand to wherever the crosshair ray terminates, so the two
+		// coincide at the target end (a mob under the crosshair is where the beam visibly lands) while still leaving
+		// the hand, which is what it looks like on Hypixel.
+		//
+		// This supersedes the earlier fix that cast the damage ray FROM the hand along the look direction: that made
+		// the ray match the trail exactly, but the trail was then *parallel* to the crosshair and permanently offset
+		// ~0.31 blocks right / ~0.81 down from it, so the beam visibly never went where you were aiming. Converging
+		// the trail instead fixes the same visual/hit mismatch from the other side, and it re-aligns the real beam
+		// with Actions.mageBeamWouldHit, the fake-player fire gate, which has always aimed from the eye.
+		//
+		// Consequence to keep in mind: only the ENDPOINT is shared. A mob straddling the hand→target segment but not
+		// the crosshair ray is crossed by the trail without being hit — that's what MAGE_BEAM_LENIENCY (0.5 per face)
+		// absorbs, and it's inherent to any hand-origin trail that aims by crosshair.
+		Location eye = p.getEyeLocation();
+		Vector direction = eye.getDirection();
+		Vector eyeVec = eye.toVector();
 
-		// Raytrace both entities and blocks from the hand. Whichever is closer along the beam is what it actually
+		// Raytrace both entities and blocks from the eye. Whichever is closer along the ray is what it actually
 		// hits — so if a wall is between the player and an entity, the wall stops the beam and the entity takes no
 		// damage. Entity hits get a MAGE_BEAM_LENIENCY-block margin (see findTargetEntity); blocks stay precise.
-		RayTraceResult entityResult = findTargetEntity(p, l, direction, range);
-		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(l, direction, range, FluidCollisionMode.NEVER, true);
+		RayTraceResult entityResult = findTargetEntity(p, eye, direction, range);
+		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eye, direction, range, FluidCollisionMode.NEVER, true);
 
-		double entityDist = entityResult != null ? entityResult.getHitPosition().distance(hand) : Double.MAX_VALUE;
-		double blockDist = blockResult != null ? blockResult.getHitPosition().distance(hand) : Double.MAX_VALUE;
+		double entityDist = entityResult != null ? entityResult.getHitPosition().distance(eyeVec) : Double.MAX_VALUE;
+		double blockDist = blockResult != null ? blockResult.getHitPosition().distance(eyeVec) : Double.MAX_VALUE;
 
 		Vector targetPoint;
 		Entity targetEntity;
@@ -2296,11 +2401,12 @@ public class CustomItems implements Listener {
 			targetEntity = null;
 			targetPoint = blockResult.getHitPosition();
 		} else {
+			// Nothing in range: aim at the far end of the crosshair ray so the trail still converges toward it.
 			targetEntity = null;
-			targetPoint = hand.clone().add(direction.clone().multiply(range));
+			targetPoint = eyeVec.clone().add(direction.clone().multiply(range));
 		}
 
-		// Calculate the direction from hand to the target point
+		// The trail runs hand → target point: that convergence is what makes the beam land on the crosshair.
 		Vector handToTarget = targetPoint.clone().subtract(l.toVector());
 		double distance = handToTarget.length();
 		handToTarget.normalize();

@@ -795,8 +795,9 @@ public class Actions {
 			if(Server.inBloodDoor(hitBlock)) { Server.tryOpenBloodDoor(); return; }
 
 			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) {
-				// No entity hit, block hit but not a pickaxe — dispatch left-click ability
-				CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_BLOCK, p);
+				// No entity hit, block hit but not a pickaxe — dispatch left-click ability. Pass the hit block so
+				// block abilities (Superboom TNT) use this pick's target instead of re-tracing their own reach.
+				CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_BLOCK, p, hitBlock);
 				return;
 			}
 

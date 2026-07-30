@@ -122,6 +122,7 @@ public final class ClearManager {
 		PuzzleQuiz.reset();
 		PuzzleIceFill.begin(w);
 		active = true;
+		exploreRoom(Rooms.byName("Start"));    // the green Start room is always explored (players spawn in it)
 		exploreRoom(Rooms.byName("Red Blue")); // the entrance room starts already explored on the map
 		giveMaps();
 		if(tickTask != null) tickTask.cancel();

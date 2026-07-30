@@ -51,6 +51,15 @@ public final class DungeonMap {
 	private static final Color DOOR_ENTRANCE = new Color(0, 124, 0);
 	/** The lone wither door, as its {gx,gz} cell pair: Deathmite (3,2) ↔ Fairy (3,3). */
 	private static final int[][] WITHER_DOOR = {{3, 2}, {3, 3}};
+	// The single "entrance" door of each coloured special room — the one you pass through approaching it FROM
+	// SPAWN — painted in that room's own colour instead of brown. Fairy has three doors, so only its spawn-side
+	// door (from Red Blue, below) counts; the wither door above it and the Wizard door beside it keep their own
+	// colours. Blood's one door is already painted blood-red by the RoomType.BLOOD check in doorColor().
+	private static final int[][] FAIRY_DOOR = {{3, 3}, {3, 4}};  // Red Blue → Fairy
+	private static final int[][] YELLOW_DOOR = {{5, 4}, {5, 5}}; // Red Blue → Yellow
+	private static final int[][] TRAP_DOOR = {{4, 4}, {4, 5}};   // Red Blue → Trap
+	private static final int[][] QUIZ_DOOR = {{0, 0}, {0, 1}};   // Gravel → Quiz (puzzle)
+	private static final int[][] ICE_DOOR = {{0, 4}, {1, 4}};    // Well → Ice Fill (puzzle)
 	// Real-Magical-Map values (from NEU's DungeonMap.java, same source as the RoomType colours): undiscovered
 	// rooms are grey (65,65,65) with a near-black (13,13,13) "?".
 	private static final Color UNEXPLORED = new Color(65, 65, 65);
@@ -180,9 +189,14 @@ public final class DungeonMap {
 			}
 		}
 
-		/** A door's colour by type: red into the Blood room, green to/from the Entrance (Start) room, black for
-		 *  the lone {@link #WITHER_DOOR} above the Fairy room, else a brown NORMAL door. */
+		/** A door's colour: the spawn-side entrance door of Fairy / Yellow / Trap / a puzzle room is painted in
+		 *  that room's own colour; Blood's door is red and the Start door green (both the room's colour too);
+		 *  the lone {@link #WITHER_DOOR} above the Fairy room is black; every other door is a brown NORMAL door. */
 		private Color doorColor(int[][] d, Room a, Room b) {
+			if(sameDoor(d, FAIRY_DOOR)) return RoomType.FAIRY.color;
+			if(sameDoor(d, YELLOW_DOOR)) return RoomType.YELLOW.color;
+			if(sameDoor(d, TRAP_DOOR)) return RoomType.TRAP.color;
+			if(sameDoor(d, QUIZ_DOOR) || sameDoor(d, ICE_DOOR)) return RoomType.PUZZLE.color;
 			if(a.type == RoomType.BLOOD || b.type == RoomType.BLOOD) return DOOR_BLOOD;
 			if(a.type == RoomType.START || b.type == RoomType.START) return DOOR_ENTRANCE;
 			if(sameDoor(d, WITHER_DOOR)) return DOOR_WITHER;
