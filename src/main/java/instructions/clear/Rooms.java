@@ -101,7 +101,7 @@ public final class Rooms {
 		TRAP = reg("Trap", RoomType.TRAP, new int[][]{{4, 5}}, 0, false);
 		// The Power-II chest whose opening earns Trap its white checkmark (see ClearManager).
 		TRAP.addSecret(Secret.chest(-143, 67, -182))
-				.addSecret(Secret.bat(-158.5, 91, -189.5))
+				.addSecret(Secret.bat(-158.5, 92, -190.5))
 				.addSecret(Secret.blessingChest(-164, 90, -184, BlessingType.POWER, 2));
 		YELLOW = reg("Yellow", RoomType.YELLOW, new int[][]{{5, 5}}, 0, true, new Blessing(BlessingType.WISDOM, 5));
 	}

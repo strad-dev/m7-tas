@@ -57,10 +57,58 @@ public class WitherActions {
 	 * network slot. Only fires in practice mode. Wither-King runs must call this only AFTER the death dialogue
 	 * ends (see {@code WitherKing.deathSequence}); other sections call it the moment their boss is defeated
 	 * (their {@code chainNext(false)} / clear completion).
+	 * <br>
+	 * Overload for a run that was actually WON. Storm's all-pillars-gone failure path fires
+	 * {@link #signalRunComplete(boolean)} with {@code false} instead, so a listener can tell the two apart —
+	 * the event used to be indistinguishable between a win and that one loss.
 	 */
 	public static void signalRunComplete() {
+		signalRunComplete(true);
+	}
+
+	/**
+	 * @param success false only for a run that ended in failure (see {@code Storm.endFailedRun}). A failed run
+	 *                still fires the event — the network plugin needs to free its slot either way — but carries
+	 *                {@code success=false} so it is never recorded to a leaderboard.
+	 */
+	public static void signalRunComplete(boolean success) {
 		if (!practiceMode) return;
-		Bukkit.getPluginManager().callEvent(new plugin.RunCompleteEvent());
+		Bukkit.getPluginManager().callEvent(new plugin.RunCompleteEvent(plugin.RunResult.capture(runSection, success)));
+	}
+
+	// --- Identity of the current run (/practice <section>), for the run-result payload ---
+	private static volatile String runSection = "all";
+	private static volatile String runId = "";
+
+	/**
+	 * Start tracking a new run: records which section /practice was invoked with and mints a fresh run id.
+	 * Called once by {@code TAS.runPractice}.
+	 * <br>
+	 * The run id lets a consumer recognise two reports from the SAME run. That matters because a run reports
+	 * more than once: the 300-score milestone is signalled the instant it's reached (so it counts even if the
+	 * team then resets), and the run-complete payload later repeats that same milestone. A listener keyed on the
+	 * run id can drop the duplicate instead of recording the run twice.
+	 */
+	public static void startRunTracking(String section) {
+		runSection = section == null ? "all" : section;
+		runId = java.util.UUID.randomUUID().toString();
+	}
+
+	/** The section the current run was started with. */
+	public static String runSection() { return runSection; }
+
+	/** Unique id for the current run, stable across every report this run makes. */
+	public static String runId() { return runId; }
+
+	/**
+	 * Announce that the team just hit a score milestone, as {@link plugin.ScoreMilestoneEvent}. Fired the moment
+	 * it happens rather than at run end, so the time stands even if the team resets straight afterwards. Same
+	 * standalone contract as {@link #signalRunComplete()}: practice-only, and it fires into the void unlistened.
+	 */
+	public static void signalScoreMilestone(int score) {
+		if (!practiceMode) return;
+		Bukkit.getPluginManager().callEvent(
+				new plugin.ScoreMilestoneEvent(score, plugin.RunResult.capture(runSection, true)));
 	}
 
 	/** Whether {@code p} can aggro a boss in the current mode. During a TAS (non-practice) the withers ignore all
@@ -83,8 +131,30 @@ public class WitherActions {
 	/** Overall tick at which the named section finished, or null if it wasn't run this session. */
 	public static Integer getSplitEnd(String section) { return splitEnds.get(section); }
 
-	/** Clear all recorded splits — called at the start of every /tas and /practice run. */
-	public static void clearSplits() { splitEnds.clear(); }
+	/** Every recorded split, in the order the sections finished. */
+	public static Map<String, Integer> splitEnds() { return new java.util.LinkedHashMap<>(splitEnds); }
+
+	// --- Per-phase durations (for the leaderboards) ---
+	// PHASE-RELATIVE tick (Utils.phaseTick(), i.e. the boss's own clock) at the moment its boss died. Distinct from
+	// splitEnds above, which is overall-run-relative and is stamped by the NEXT section's start — meaning a
+	// standalone "/practice maxor" never lands a Maxor split at all. Each boss stamps its own duration here from
+	// its death dialogue, so an individual-phase practice is timed exactly like a phase inside a full run.
+	private static final Map<String, Integer> phaseDurations = new java.util.LinkedHashMap<>();
+
+	/** Record the duration (phase-relative ticks) of the named boss phase, stamped at its killing blow. */
+	public static void recordPhaseDuration(String phase, int phaseTicks) { phaseDurations.put(phase, phaseTicks); }
+
+	/** Duration (phase-relative ticks) of the named boss phase, or null if it wasn't completed this run. */
+	public static Integer getPhaseDuration(String phase) { return phaseDurations.get(phase); }
+
+	/** Every recorded phase duration, in completion order. */
+	public static Map<String, Integer> phaseDurations() { return new java.util.LinkedHashMap<>(phaseDurations); }
+
+	/** Clear all recorded splits + phase durations — called at the start of every /tas and /practice run. */
+	public static void clearSplits() {
+		splitEnds.clear();
+		phaseDurations.clear();
+	}
 
 	// --- Game-mode tracking for the practice scoreboard's golden-name anti-cheat ---
 	// Players who changed game mode at any point during the current run; their scoreboard name shows white, not gold.

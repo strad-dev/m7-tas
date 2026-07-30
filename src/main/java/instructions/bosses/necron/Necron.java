@@ -362,6 +362,7 @@ public final class Necron extends WitherLord {
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Necron killed in " + formatTick(displayTick()));
+		instructions.bosses.WitherActions.recordPhaseDuration("Necron", displayTick());
 		// Open the wall to the Wither King's arena 200t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, 200);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 60);

@@ -495,6 +495,7 @@ public final class Maxor extends WitherLord {
 	private void playDeathDialogue() {
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
 		Utils.timer("<green>Maxor killed in " + formatTick(displayTick()));
+		instructions.bosses.WitherActions.recordPhaseDuration("Maxor", displayTick());
 		Server.playWitherDeathSound(boss);
 		// Open the wall to Storm's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, 100);

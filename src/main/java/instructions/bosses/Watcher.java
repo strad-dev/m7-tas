@@ -278,6 +278,8 @@ public class Watcher {
 	 */
 	public void bloodCampFinished() {
 		Utils.timer("<green>Blood Camp finished in " + formatTick(phaseRel()));
+		// Leaderboard milestone: on a clear-only practice this IS the end of the run.
+		instructions.clear.ClearManager.noteBloodDone();
 	}
 
 	/** Blood room cleared → Power V + Life V + green check. Fired only when the Watcher vanishes (portal appears

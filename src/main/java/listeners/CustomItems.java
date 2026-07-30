@@ -90,6 +90,15 @@ public class CustomItems implements Listener {
 	// the beam's own 5-tick cooldown (fired on tick N → next usable on tick N+5).
 	private static final int MAGE_BEAM_COOLDOWN_TICKS = 5;
 	private static final Map<UUID, Integer> mageBeamReady = new ConcurrentHashMap<>();
+	// Secondary mage weapons: in a MAGE's hand (same class gate as the Hyperion/Claymore) these fire the SAME mage
+	// beam on left-click — same 5-tick cooldown, same geometry and hit test — but only chip for a flat 1 damage; see
+	// mageBeam's damage switch. Their real ability is on the right-click and is unaffected. While the beam is armed,
+	// left-clicking them must also never break a block (leftClickAbilityItem below).
+	private static final Set<String> WEAK_BEAM_IDS = Set.of(
+			"skyblock/combat/bonzo",
+			"skyblock/combat/aotv",
+			"skyblock/combat/ice_spray",
+			"skyblock/combat/rag");
 	// Per-ability cooldowns (base ticks before the Mage class's 50% reduction — see effectiveCooldown). Each map
 	// stores the tick that ability is next usable, keyed by player. Reset in resetAbilityCooldowns().
 	private static final int GYRO_COOLDOWN_TICKS = 600;       // Gyrokinetic Wand: 30s
@@ -481,7 +490,8 @@ public class CustomItems implements Listener {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
-					boolean isMageBeamItem = (item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD) && (p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage"));
+					boolean isMage = p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
+					boolean isMageBeamItem = isMage && (item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD || WEAK_BEAM_IDS.contains(id));
 					// Items whose left-click is an ability are weapons/wands, never pickaxes — their left-click must
 					// NEVER break a block, even when the ability is on cooldown or capped by the 1/tick guard.
 					boolean leftClickAbilityItem = isMageBeamItem || id.equals("skyblock/combat/terminator") || id.equals("skyblock/combat/gyro") || id.equals("skyblock/combat/infinityboom");
@@ -2437,15 +2447,21 @@ public class CustomItems implements Listener {
 			// Per-weapon mage-beam damage (ID "...scylla" is the Hyperion, "...claymore" the Dark Claymore):
 			//   Hyperion: 195 (225 RagBuffed) — full vs minecraft:wither ONLY; −33% against any other mob type.
 			//   Dark Claymore (and any other mage-beam item): 170 (200 RagBuffed) on ALL entities.
+			//   WEAK_BEAM_IDS (Bonzo Staff / AOTV / Ice Spray Wand / Rag Axe): flat 1, no buff or armour scaling.
+			String heldId = getID(p.getInventory().getItemInMainHand());
 			float damage;
-			if("skyblock/combat/scylla".equals(getID(p.getInventory().getItemInMainHand()))) {
-				damage = ragBuff ? 250 : 220;
-				if(!(temp instanceof Wither)) damage *= (1f - 0.33f);
+			if(WEAK_BEAM_IDS.contains(heldId)) {
+				damage = 1;
 			} else {
-				damage = ragBuff ? 220 : 190;
+				if("skyblock/combat/scylla".equals(heldId)) {
+					damage = ragBuff ? 250 : 220;
+					if(!(temp instanceof Wither)) damage *= (1f - 0.33f);
+				} else {
+					damage = ragBuff ? 220 : 190;
+				}
+				damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
+				damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)
 			}
-			damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
-			damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
 			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
 			// broadcast the same way (withers are permanently silent, so silence can't signal that).

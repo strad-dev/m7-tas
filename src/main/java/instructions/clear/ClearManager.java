@@ -50,6 +50,16 @@ public final class ClearManager {
 
 	private static boolean milestone300;
 
+	// ---- leaderboard milestones (overall run ticks; -1 = not reached this run) ----
+	// Stamped once each, never recomputed. score300Tick was previously only broadcast and thrown away.
+	private static int score300Tick = -1;
+	private static int bloodDoneTick = -1;
+	private static int fullClearTick = -1;
+
+	/** The literal maximum team score: skill 100 + explore 100 + speed 100 + bonus 19 (10 base + 5 crypt
+	 *  lurkers + first Prince + first Bat + 2 mimic). A "full clear" is this score AND blood finished. */
+	public static final int PERFECT_SCORE = 319;
+
 	// entity scoreboard tags for spawned secrets (also targeted by Server.blanketKill)
 	public static final String TAG_ITEM = "SecretItem";
 	public static final String TAG_BAT = "SecretBat";
@@ -110,6 +120,7 @@ public final class ClearManager {
 		deaths = 0;
 		crystalPickedUp = crystalHandedIn = false;
 		milestone300 = false;
+		score300Tick = bloodDoneTick = fullClearTick = -1;
 		blessingTally.clear();
 	}
 
@@ -592,10 +603,48 @@ public final class ClearManager {
 		if(!milestone300 && teamScore() >= 300) {
 			milestone300 = true;
 			int t = Utils.runTick();
+			score300Tick = t;
 			Bukkit.broadcast(Utils.msg("<green><bold>300 score reached</bold> in " + spaced(t) + " ticks (" + String.format("%.2f", t / 20.0) + " seconds)"));
 			Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
+			// Report it NOW, not at run end: the milestone stands on its own, so it must count even if the team
+			// resets immediately after. score300Tick is assigned above first — the payload reads it.
+			instructions.bosses.WitherActions.signalScoreMilestone(300);
 		}
+		checkFullClear();
 	}
+
+	// ==================== leaderboard milestones ====================
+
+	/**
+	 * Stamp the "blood finished" tick — called from {@code Watcher.bloodCampFinished()}, i.e. the moment the
+	 * Watcher vanishes, which on a clear-only practice is also the end of the run. Safe to call when the clear
+	 * phase isn't running (a boss-only practice); it simply records nothing.
+	 */
+	public static void noteBloodDone() {
+		if(!active || bloodDoneTick >= 0) return;
+		bloodDoneTick = Utils.runTick();
+		checkFullClear();
+	}
+
+	/**
+	 * A "full clear" is the maximum score AND blood finished. Either can land last — the score can max out after
+	 * blood (a late secret) or blood can finish after the score maxes — so both paths call this and whichever
+	 * completes the pair stamps the tick.
+	 */
+	private static void checkFullClear() {
+		if(!active || fullClearTick >= 0) return;
+		if(bloodDoneTick < 0 || teamScore() < PERFECT_SCORE) return;
+		fullClearTick = Utils.runTick();
+	}
+
+	/** Overall run tick at which the team first hit 300 score, or -1 if it never did. */
+	public static int score300Tick() { return score300Tick; }
+
+	/** Overall run tick at which blood finished, or -1 if it never did. */
+	public static int bloodDoneTick() { return bloodDoneTick; }
+
+	/** Overall run tick at which the run became a full clear ({@link #PERFECT_SCORE} + blood), or -1. */
+	public static int fullClearTick() { return fullClearTick; }
 
 	// ==================== scoring ====================
 

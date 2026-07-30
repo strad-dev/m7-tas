@@ -166,6 +166,9 @@ public class TAS implements CommandExecutor {
 		WitherActions.setPracticeMode(true);
 		// Clear any section splits from a previous run; this run records its own for the Wither-King scoreboard.
 		WitherActions.clearSplits();
+		// Remember which section this run is + mint a fresh run id, so the reports this run makes (the 300-score
+		// milestone and the run-complete payload) can be recognised as coming from the same run.
+		WitherActions.startRunTracking(section);
 		// Clear game-mode-change tracking (the practice scoreboard's golden-name anti-cheat).
 		WitherActions.clearGameModeChanges();
 		// Reset Berserk's per-mob damage-ramp counters.

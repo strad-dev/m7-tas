@@ -8,6 +8,7 @@ import instructions.bosses.MobGroup;
 import instructions.bosses.MobSpawnSpec;
 import instructions.bosses.WitherLord;
 import instructions.bosses.goldor.Goldor;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -19,6 +20,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import plugin.BossScheduler;
+import plugin.FakePlayerManager;
 import plugin.Utils;
 
 import java.time.Duration;
@@ -35,6 +37,12 @@ public final class Storm extends WitherLord {
 
 	// Intro ends at this tick; aggro + crush detection enable here.
 	private static final int INTRO_END_TICK = 665;
+
+	// Pad poll cadence: pollCycle runs on phase ticks divisible by this (the real-Hypixel 20-tick grid).
+	private static final int PAD_CYCLE_TICKS = 20;
+	// Phase tick of the first lightning volley (see scheduleIntroDialogue) — the action bar's
+	// "Storm moves in" countdown appears here and runs out at INTRO_END_TICK.
+	private static final int LIGHTNING_TICK = 535;
 
 	// Crush parameters.
 	private static final double CRUSH_DAMAGE_FRACTION = 0.05;
@@ -258,13 +266,66 @@ public final class Storm extends WitherLord {
 				cancelCycleTask();
 				return;
 			}
-			if(displayTick() % 20 == 0) pollCycle();
+			updateActionBar();
+			if(displayTick() % PAD_CYCLE_TICKS == 0) pollCycle();
 		};
 		BossScheduler.addTicker(cycleTicker);
 		// The ticker's first heartbeat run is phase tick 1 (registration is deferred a tick), so it would miss the
 		// tick-0 poll. Run it once now (we're at phase tick 0) so a player already standing on a pad advances it
 		// immediately on tick 0 instead of waiting until tick 20.
+		updateActionBar();
 		pollCycle();
+	}
+
+	/**
+	 * Per-tick action-bar QoL for the Storm section. Two counters:
+	 * <ul>
+	 *   <li><b>Pad</b> — ticks until the next pad poll, i.e. how long a player standing on a pad has to wait before
+	 *       their pillar advances. Counts 20t → 1t and resets on the poll tick itself.</li>
+	 *   <li><b>Storm moves in</b> — only between the lightning volley and {@link #INTRO_END_TICK}: how long until
+	 *       Storm gets his aggro and crush detection arms.</li>
+	 * </ul>
+	 * Sent to every real player (spectators included) — the fakes are skipped. Rendered per player because the "Pad"
+	 * label takes the colour of whichever pad that player is nearest to. Doesn't collide with {@code ClearManager}'s
+	 * bar: that one bails out for anyone outside the dungeon room grid, which the boss arena is.
+	 */
+	private void updateActionBar() {
+		int t = displayTick();
+		String pad = "Pad <white>" + (PAD_CYCLE_TICKS - Math.floorMod(t, PAD_CYCLE_TICKS)) + "t";
+		String moves = t >= LIGHTNING_TICK && t <= INTRO_END_TICK
+				? " <dark_gray>| <red>Storm moves in <white>" + (INTRO_END_TICK - t) + "t"
+				: "";
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
+			p.sendActionBar(Utils.msg(nearestPadColor(p.getLocation()) + pad + moves));
+		}
+	}
+
+	/**
+	 * @return the MiniMessage colour of the pad whose centre is horizontally closest to {@code loc}, out of all four
+	 * (Red included — it has no pillar but a player standing on it should still see it named). Y is ignored so the
+	 * colour doesn't flip while a player is riding a pillar up or down.
+	 */
+	private static String nearestPadColor(Location loc) {
+		PadAndPillar nearest = PadAndPillar.ALL.getFirst();
+		double bestDistSq = Double.POSITIVE_INFINITY;
+		for(PadAndPillar pad : PadAndPillar.ALL) {
+			double dx = loc.getX() - pad.padBox().getCenterX();
+			double dz = loc.getZ() - pad.padBox().getCenterZ();
+			double d2 = dx * dx + dz * dz;
+			if(d2 < bestDistSq) {
+				bestDistSq = d2;
+				nearest = pad;
+			}
+		}
+		return nearest.color();
+	}
+
+	private static void broadcastActionBar(Component bar) {
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
+			p.sendActionBar(bar);
+		}
 	}
 
 	/** One 20-tick poll: advance each occupied pad's pillar, then run crush detection. Called by the cycle ticker
@@ -303,6 +364,8 @@ public final class Storm extends WitherLord {
 		if(cycleTicker != null) {
 			BossScheduler.removeTicker(cycleTicker);
 			cycleTicker = null;
+			// Wipe the HUD instead of letting the last "Pad 7t" sit on screen for its fade-out.
+			broadcastActionBar(Component.empty());
 		}
 	}
 
@@ -579,9 +642,12 @@ public final class Storm extends WitherLord {
 	 * spectator → free the slot), which clears the enraged, unkillable Storm so players aren't softlocked.
 	 * Standalone (nothing listening) the event no-ops, exactly like a normal completion — a manual /reset then
 	 * clears it, the same as any standalone run.
+	 * <br>
+	 * Signalled with {@code success=false} — this is the only losing path that fires the event, and a listener
+	 * must be able to free its slot without recording the run to a leaderboard.
 	 */
 	private void endFailedRun() {
-		instructions.bosses.WitherActions.signalRunComplete();
+		instructions.bosses.WitherActions.signalRunComplete(false);
 	}
 
 	private void cancelStunEnrageTask() {
@@ -680,6 +746,7 @@ public final class Storm extends WitherLord {
 		sendChatMessage("I should have known that I stand no chance.");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Storm killed in " + formatTick(displayTick()));
+		instructions.bosses.WitherActions.recordPhaseDuration("Storm", displayTick());
 		// Open the wall to Goldor's arena 100t after the killing blow (restored on the next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openStormToGoldor, 100);
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 60);

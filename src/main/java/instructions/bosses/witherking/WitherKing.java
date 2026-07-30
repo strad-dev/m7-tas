@@ -574,6 +574,7 @@ public class WitherKing {
 	 *  a standalone Wither-King practice. */
 	private static void printFinalMessage() {
 		WitherActions.recordSplit("WitherKing", Utils.runTick());
+		WitherActions.recordPhaseDuration("WitherKing", Utils.phaseTick());
 
 		if(!WitherActions.isPracticeMode()) {
 			printTasScoreboard();
