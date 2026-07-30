@@ -18,7 +18,8 @@ import java.util.List;
  * TAS animation (particle trails + floating ⓐ/ⓑ/ⓒ labels, reused from {@link Server.Quiz#animateQuestion}) and
  * answering is only accepted after option (c) has appeared. Answers are given by right-clicking one of three
  * buttons (A/B/C, ±1 block); the correct answer is always <b>B</b>. A wrong answer plays Oruo's mocking
- * dialogue and restarts the whole quiz from the intro. Three correct answers → green check + Time V.
+ * dialogue and restarts the whole quiz from the intro. Three correct answers → green check + score immediately,
+ * then Time V once Oruo's reward line has played.
  * <p>Question 3 is built per-run: it asks whether the player who <i>opened</i> the Quiz room (the first one to
  * set foot in it, which is also what starts the quiz) is bald. The answer is "Yes" for everyone except
  * {@code Beethoven_}, who isn't — for him the A/B options are swapped so that <b>B</b> stays the right button.
@@ -180,14 +181,17 @@ public final class PuzzleQuiz {
 		solved = true;
 		Server.Quiz.removeOptions(options);
 		final int g = ++gen;
-		// TAS timing: Q3 answered → (+20t) Oruo's reward line → (+20t) the blessing + green check.
+		// The room is beaten the moment the last question lands, so the green check + score go up now — waiting for
+		// Oruo's dialogue only delayed the score by 40 ticks.
+		ClearManager.puzzleSolved(Rooms.QUIZ, p, false);
+		// TAS timing: Q3 answered → (+20t) Oruo's reward line → (+20t) the blessing.
 		Utils.scheduleTask(() -> {
 			if(g != gen) return;
 			Server.Quiz.oruoMessage("I bestow upon you all the power of a hundred years!");
 		}, 20);
 		Utils.scheduleTask(() -> {
 			if(g != gen) return;
-			ClearManager.puzzleSolved(Rooms.QUIZ, p); // green check + Time V
+			ClearManager.awardRoomBlessings(Rooms.QUIZ, p); // Time V
 		}, 40);
 	}
 

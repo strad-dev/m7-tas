@@ -449,10 +449,25 @@ public final class ClearManager {
 	}
 
 	public static void puzzleSolved(Room room, Player p) {
+		puzzleSolved(room, p, true);
+	}
+
+	/**
+	 * Mark a puzzle solved — green check + score straight away. With {@code awardBlessings} false the room's
+	 * clear blessings are left for a later {@link #awardRoomBlessings} call: the Quiz scores the instant its last
+	 * question is answered, but Oruo doesn't hand over Time V until his reward dialogue has played out.
+	 */
+	public static void puzzleSolved(Room room, Player p, boolean awardBlessings) {
 		if(room == null || room.solved) return;
 		room.solved = true;
-		for(Blessing b : room.clearBlessings) awardBlessing(p, b);
+		if(awardBlessings) for(Blessing b : room.clearBlessings) awardBlessing(p, b);
 		afterEvent(room);
+	}
+
+	/** Award a room's clear blessings on their own, without touching its checkmark (deferred-blessing puzzles). */
+	public static void awardRoomBlessings(Room room, Player p) {
+		if(room == null) return;
+		for(Blessing b : room.clearBlessings) awardBlessing(p, b);
 	}
 
 	public static void cryptKilled(boolean isPrince) {
