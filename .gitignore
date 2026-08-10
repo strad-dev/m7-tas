@@ -7,5 +7,6 @@ target/
 src/main/resources/mappings.txt
 PAPER_NMS_SETUP.md
 PUBLIC_SERVER.md
+DAMAGE_PLAN.md
 MIGRATION_PLAYBOOK.md
 .paper-nms/
