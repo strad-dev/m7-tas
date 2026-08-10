@@ -29,6 +29,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class FakePlayerInventory {
@@ -123,10 +124,9 @@ public class FakePlayerInventory {
 		arr[11] = getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<light_purple>Renowned Spring Boots", "skyblock/combat/spring_boots");
 		arr[12] = getRacingHelmet();
 		arr[13] = getCowHat();
-		arr[26] = getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine");
 		arr[28] = getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Bonzo Staff", "skyblock/combat/bonzo");
-		arr[29] = getSkyBlockItem(Material.BLAZE_ROD, "<dark_purple>Tactical Insertion", "skyblock/combat/tac");
-		arr[34] = Utils.placeOnStoneBricksInAdventure(new ItemStack(Material.SOUL_SAND));
+		arr[29] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Tactical Insertion", "skyblock/combat/tac");
+		arr[34] = getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine");
 
 		switch(role) {
 			case "Archer" -> {
@@ -162,6 +162,9 @@ public class FakePlayerInventory {
 				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
 				arr[3] = getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore");
 				arr[4] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
+				// Storage row 2, middle - directly above the Infinityboom in slot 31. No Power enchant: the class
+				// bake in Catalog/GetCustomItems only touches slot 4, and the Mage's Terminator Power is 0 anyway.
+				arr[22] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[30] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla");
 				arr[31] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[32] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag");
@@ -238,10 +241,9 @@ public class FakePlayerInventory {
 		inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<light_purple>Renowned Spring Boots", "skyblock/combat/spring_boots"));
 		inventory.setItem(12, getRacingHelmet());
 		inventory.setItem(13, getCowHat());
-		inventory.setItem(26, getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine"));
 		inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Bonzo Staff", "skyblock/combat/bonzo"));
-		inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, "<dark_purple>Tactical Insertion", "skyblock/combat/tac"));
-		inventory.setItem(34, Utils.placeOnStoneBricksInAdventure(new ItemStack(Material.SOUL_SAND)));
+		inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, "<gold>Tactical Insertion", "skyblock/combat/tac"));
+		inventory.setItem(34, getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine"));
 
 		switch(role) {
 			case "Archer" -> {
@@ -277,6 +279,7 @@ public class FakePlayerInventory {
 				inventory.setItem(2, getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
 				inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore"));
 				inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
+				inventory.setItem(22, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
 				inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla"));
 				inventory.setItem(31, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
 				inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag"));
@@ -301,7 +304,10 @@ public class FakePlayerInventory {
 		Multimap<String, Property> props = HashMultimap.create();
 		props.put("textures", new Property("textures", textureValue, textureSignature));
 		PropertyMap propertyMap = new PropertyMap(props);
-		GameProfile gp = new GameProfile(UUID.randomUUID(), identifier, propertyMap);
+		// Profile id derived from the identifier, NOT random: the profile id is part of the item's NBT, so a random
+		// one made every copy of the same head a byte-different ItemStack — which is why the catalog palette used to
+		// list the shared heads (Spirit Mask, Bonzo Mask, Racing Helmet, Cow Hat, ...) once per class.
+		GameProfile gp = new GameProfile(UUID.nameUUIDFromBytes(identifier.getBytes(StandardCharsets.UTF_8)), identifier, propertyMap);
 
 		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
 
@@ -387,6 +393,15 @@ public class FakePlayerInventory {
 
 	public static ItemStack getThermodynamicHelmet() {
 		return getCustomHead("<light_purple>Renowned Thermodynamic Helmet", "thermoHelmet", "ewogICJ0aW1lc3RhbXAiIDogMTc3MjE1OTIwMzEzMywKICAicHJvZmlsZUlkIiA6ICJkZGRhNjc4ZmYyN2M0NjFhOWUyMjRiMTU1NjI4NDZmYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJSeWxlZTc1NDMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2FkNjdjZjMzMTg4YTU0YjZmNTVkMmVmNTI0OGNkM2I3MjE3Njk5NGUxZDIwMzczMWU4NmIzNjVhODU4MTcyNiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "erdSAba2Gk9jBaa6fd87ZzBdUbuKFtDuo4m2+H9s3WISKq+i+VMi/IUa5WvN2dy7i2sFXA8jqtXh5LG87+I3bTSZKfvxlEgQfwBg0aG7HEsqn1OAAsT/4ZFWE7Flt79D22G8kZZe5IGkFj5T8pZpEC6NBKWX+k666Bd+G68TmGFcaSzKgKs/AGRtR6iwJKMp1U9CD9+jr7WAC5j/jDtwHLzYTv+zxEt8ufNv5ewSrGtnXelBkAQmAo8dhvrfik0G/rpB5RhM8FZOfhV+fqjLvtcBd0vOVrDMLHaZJ+2TpjDnjScA+GIS30EEwnx8TpsoJM5PLJUL7b9xNZEECQAklnZt59gSg2e0PF6rI2Q2Fb9HIVDETPKoNK/9X7MfWC9uWr/GEA4G61tLYq5NnMEAqj3+AT6YTWb3Vy5xDauTHftbAogQEWa/2S5GyHUVQ0zh850aOy9AQMCbUaN5hTk/x6AFJIY9bvFEGVJ3Wr8HZPIh/WAqgRqgnLRx6RxSqymBsh/I2SYLaWtM027hkUlcAfj3HbYMkBdD8UXx3AzPvXAwhDojUPMWwK74La9MwiDRDO+fxFdhOIhrbh4ib1MaH7dqrcnDX6OjdQfZ0QR3lNRYet8wKlxVL3xy3ppRfLys8Wrvhdi3kBplKJxW5CyoI4fEJLtyvC2NM3olt9ZvVbM=");
+	}
+
+	/** Epic rarity — light purple, matching the other epic items (Hyperion, Terminator, Last Breath, ...). */
+	public static final String GOLEM_SWORD_NAME = "<light_purple>Golem Sword";
+
+	/** Golem Sword — right-click zeroes the holder's Y velocity. In no class's default kit; it exists for
+	 *  {@code /getcustomitems} and the loadout palette ({@link Catalog#extraPaletteItems()}). */
+	public static ItemStack getGolemSword() {
+		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword");
 	}
 
 	public static ItemStack getSkyBlockItem(Material material, String name, String id) {

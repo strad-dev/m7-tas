@@ -349,15 +349,44 @@ public class Utils {
 	 * Apply LAST (after any setItemMeta), since it mutates the NMS copy directly.
 	 */
 	public static ItemStack placeAndBreakAnythingInAdventure(ItemStack item) {
-		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+		ItemStack copy = withoutBlockBreakSpeed(item);
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(copy);
 		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
 		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
 		// Empty predicates name no concrete block, so the client would render "Can be placed on: Unknown" and
-		// "Can Break: Unknown" — hide both components from the tooltip.
+		// "Can Break: Unknown" — hide both components from the tooltip. The break-speed modifier below would render
+		// its own "-1024 Block Break Speed" line, so hide the attribute block too.
 		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
 				.withHidden(DataComponents.CAN_PLACE_ON, true)
-				.withHidden(DataComponents.CAN_BREAK, true));
+				.withHidden(DataComponents.CAN_BREAK, true)
+				.withHidden(DataComponents.ATTRIBUTE_MODIFIERS, true));
 		return CraftItemStack.asBukkitCopy(nms);
+	}
+
+	/**
+	 * Return a copy of {@code item} that cannot break blocks at all, by cancelling out the base BLOCK_BREAK_SPEED
+	 * every player joins with. {@code JoinListener} sets that base to 1024 (destroy speed is MULTIPLIED by it, so
+	 * everything breaks in one tick with anything); this hangs a matching −1024 on the item for the MAINHAND, so
+	 * while it is held the attribute is 1024 − 1024 = 0 and the multiplier zeroes the destroy speed outright.
+	 * <p>
+	 * Applied by {@link #placeAndBreakAnythingInAdventure} to every can_break item EXCEPT Dungeonbreaker (which
+	 * uses {@link #breakAnyBlockInAdventure} and adds its own +1024 on top instead). Those items only carry
+	 * can_break so the CLIENT reports which block was left-clicked — that packet is gated on the predicate, not on
+	 * destroy speed, so zeroing the speed keeps Superboom's targeting while making the break itself impossible
+	 * client-side too, instead of relying on {@code CustomItems.onBlockBreak} to refuse it after the fact.
+	 * <p>
+	 * NOTE: setting any explicit attribute modifier drops the item's DEFAULT modifiers (vanilla replaces the whole
+	 * component), so don't route a weapon through this without re-adding its damage.
+	 */
+	public static ItemStack withoutBlockBreakSpeed(ItemStack item) {
+		ItemStack copy = item.clone();
+		ItemMeta meta = copy.getItemMeta();
+		if(meta == null) return copy;
+		meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(
+				new NamespacedKey(M7tas.getInstance(), "no_break_speed"), -1024,
+				AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
+		copy.setItemMeta(meta);
+		return copy;
 	}
 
 	/**

@@ -62,6 +62,14 @@ public class JoinListener implements Listener {
 			var safeFall = joiningPlayer.getAttribute(Attribute.SAFE_FALL_DISTANCE);
 			if(safeFall != null) safeFall.setBaseValue(1024);
 
+			// Instant block breaking for every joining player: BLOCK_BREAK_SPEED is the final MULTIPLIER on destroy
+			// speed (unlike MINING_EFFICIENCY, which is additive and only counts when the held tool already suits the
+			// block), so 1024 breaks anything in one tick with anything. Items that carry can_break but must NOT
+			// actually break blocks cancel this out with a -1024 modifier of their own — see
+			// Utils.placeAndBreakAnythingInAdventure. Dungeonbreaker instead ADDS 1024 on top.
+			var breakSpeed = joiningPlayer.getAttribute(Attribute.BLOCK_BREAK_SPEED);
+			if(breakSpeed != null) breakSpeed.setBaseValue(1024);
+
 			// Put every player in the no-collision team so real players don't push each other (or the fakes).
 			plugin.PlayerCollision.addToNoCollisionTeam(joiningPlayer);
 

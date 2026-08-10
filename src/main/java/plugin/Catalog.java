@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -38,7 +39,10 @@ public final class Catalog {
 		try {
 			CatalogFile f = new CatalogFile();
 			f.defaults = new LinkedHashMap<>();
-			LinkedHashSet<String> palette = new LinkedHashSet<>();
+			// Logical key -> the first b64 seen for it, so the palette lists each ITEM once. Deduping on the raw
+			// b64 was not enough: two copies of the same item can differ byte-for-byte (the per-class Terminator
+			// Power, and previously every custom head's random profile id), which listed them twice in the editor.
+			LinkedHashMap<String, String> palette = new LinkedHashMap<>();
 
 			for (String role : ROLES) {
 				ItemStack[] arr = FakePlayerInventory.classLoadoutContents(role);
@@ -51,11 +55,16 @@ public final class Catalog {
 				for (ItemStack it : arr) {
 					String b64 = ItemSerial.toB64(it);
 					ser.add(b64);
-					if (b64 != null) palette.add(b64); // dedupe identical items across classes
+					if (b64 != null && !hiddenFromPalette(it)) palette.putIfAbsent(paletteKey(it), b64);
 				}
 				f.defaults.put(role, ser);
 			}
-			f.palette = new ArrayList<>(palette);
+			// Items nobody's default kit carries still belong in the palette.
+			for (ItemStack it : extraPaletteItems()) {
+				String b64 = ItemSerial.toB64(it);
+				if (b64 != null) palette.putIfAbsent(paletteKey(it), b64);
+			}
+			f.palette = new ArrayList<>(palette.values());
 
 			Path file = dataDir().resolve("m7-item-catalog.json");
 			save(file, f);
@@ -64,6 +73,36 @@ public final class Catalog {
 		} catch (Exception e) {
 			M7tas.getInstance().getLogger().warning("Failed to export M7 item catalog: " + e);
 		}
+	}
+
+	/**
+	 * Items that stay in the default kits but must NOT be offered in the editor palette. Just the SkyBlock Menu: it
+	 * has no ability, and the network plugin's editor pins it to the last hotbar slot itself, so there is nothing
+	 * to pick it for.
+	 */
+	private static boolean hiddenFromPalette(ItemStack it) {
+		return FakePlayerInventory.isSkyblockMenu(it);
+	}
+
+	/** Custom items that are in no class's default kit but should still be offered by the loadout editor. */
+	static List<ItemStack> extraPaletteItems() {
+		return List.of(FakePlayerInventory.getGolemSword());
+	}
+
+	/**
+	 * An item's LOGICAL identity for palette dedupe: material + display name + custom-item lore ID, all as PLAIN
+	 * text so a colour/format change can't split one item into two entries. Two stacks that agree on all three are
+	 * the same item to a player picking one out of the editor, however their NBT differs (enchant levels, profile
+	 * ids, amounts) - only the first is kept. Items that share an ID but not a name (Heroic vs Withered Hyperion)
+	 * stay separate entries, which is what you want in a picker.
+	 * <br>
+	 * The network plugin's {@code loadout/ItemRefresh.key} matches saved loadout items against the exported catalog
+	 * with this exact rule - keep the two in sync.
+	 */
+	private static String paletteKey(ItemStack it) {
+		ItemMeta meta = it.hasItemMeta() ? it.getItemMeta() : null;
+		if (meta == null) return it.getType().name() + "||";
+		return it.getType().name() + "|" + Utils.plain(meta.displayName()) + "|" + Utils.firstLorePlain(meta);
 	}
 
 	/** Terminator Power per class, matching the TAS / GetCustomItems (Archer 70, Berserk/Healer/Tank 17, Mage none). */

@@ -219,14 +219,17 @@ public class GetCustomItems implements CommandExecutor {
 		ItemStack springBoots = new ItemStack(Material.CHAINMAIL_BOOTS);
 		meta = springBoots.getItemMeta();
 		meta.setUnbreakable(true);
-		meta.displayName(Utils.mm("<dark_purple>Renowned Spring Boots"));
-		meta.itemName(Utils.mm("<dark_purple>Renowned Spring Boots"));
+		meta.displayName(Utils.mm("<light_purple>Renowned Spring Boots"));
+		meta.itemName(Utils.mm("<light_purple>Renowned Spring Boots"));
 		lore = new ArrayList<>();
 		lore.add(Utils.mm("skyblock/combat/spring_boots"));
 		meta.lore(lore);
 		springBoots.setItemMeta(meta);
 
-		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, explosiveBow, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine);
+		// In no class loadout, so it has no FakePlayerInventory slot — take the canonical copy straight from there.
+		ItemStack golemSword = FakePlayerInventory.getGolemSword();
+
+		p.getInventory().addItem(scylla, aotv, iceSpray, bonzo, term, stonk, rag, lb, explosiveBow, gyro, aots, tac, flamingFlay, infinityboom, springBoots, jerrychine, golemSword);
 		p.sendMessage(Utils.msg("<green>Here you go!"));
 		return true;
 	}

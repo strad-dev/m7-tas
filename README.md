@@ -105,7 +105,7 @@ if(id.equals("skyblock/combat/terminator")) {
 
 | Namespace | IDs |
 |-----------|-----|
-| `skyblock/combat/` | `aots` `aotv` `bonzo` `claymore` `dungeonbreaker` `explosive_bow` `flaming_flay` `gyro` `ice_spray` `infinityboom` `jerrychine` `last_breath` `rag` `scylla` `spring_boots` `stonk` `tac` `terminator` |
+| `skyblock/combat/` | `aots` `aotv` `bonzo` `claymore` `dungeonbreaker` `explosive_bow` `flaming_flay` `golem_sword` `gyro` `ice_spray` `infinityboom` `jerrychine` `last_breath` `rag` `scylla` `spring_boots` `stonk` `tac` `terminator` |
 | `skyblock/game/` | `energy_crystal` |
 | `skyblock/utility/` | `infinileap` |
 

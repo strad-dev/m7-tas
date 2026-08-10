@@ -16,6 +16,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -106,10 +109,12 @@ public class CustomItems implements Listener {
 	private static final int ICE_SPRAY_COOLDOWN_TICKS = 100;  // Ice Spray Wand: 5s
 	private static final int TAC_COOLDOWN_TICKS = 400;        // Tactical Insertion: 20s
 	private static final int GUIDED_SHEEP_COOLDOWN_TICKS = 600; // Guided Sheep: 30s
+	private static final int GOLEM_SWORD_COOLDOWN_TICKS = 60; // Golem Sword: 3s
 	private static final Map<UUID, Integer> gyroReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> ragReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> iceSprayReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> tacReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> golemSwordReady = new ConcurrentHashMap<>();
 	// Server tick the RagBuff currently expires at, per player. Each cast's buff lands at +60 and lasts 200 ticks
 	// (10s); a re-cast while still active pushes this out so the earlier cast's removal no-ops (see rag()).
 	private static final Map<UUID, Integer> ragBuffExpiry = new ConcurrentHashMap<>();
@@ -583,6 +588,16 @@ public class CustomItems implements Listener {
 								aots(p);
 								fired = true;
 							}
+							case "skyblock/combat/golem_sword" -> {
+								UUID uid = p.getUniqueId();
+								if(currentTick >= golemSwordReady.getOrDefault(uid, 0)) {
+									golemSword(p);
+									golemSwordReady.put(uid, currentTick + effectiveCooldown(p, GOLEM_SWORD_COOLDOWN_TICKS));
+									fired = true;
+								} else {
+									sendCooldownMessage(p, golemSwordReady.getOrDefault(uid, currentTick) - currentTick);
+								}
+							}
 							case "skyblock/combat/ice_spray" -> {
 								UUID uid = p.getUniqueId();
 								if(currentTick >= iceSprayReady.getOrDefault(uid, 0)) {
@@ -748,9 +763,7 @@ public class CustomItems implements Listener {
 				}
 			}
 
-			l.setYaw(origin.getYaw());
-			l.setPitch(origin.getPitch());
-			p.teleport(l);
+			noRotateTeleport(p, l);
 			Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 		} else {
 			switch(result.getHitBlockFace()) {
@@ -759,16 +772,12 @@ public class CustomItems implements Listener {
 				}
 				case UP -> {
 					Location l = result.getHitBlock().getLocation().add(0.5, 1, 0.5);
-					l.setYaw(origin.getYaw());
-					l.setPitch(origin.getPitch());
-					p.teleport(l);
+					noRotateTeleport(p, l);
 					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 				}
 				case DOWN -> {
 					Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
-					l.setYaw(origin.getYaw());
-					l.setPitch(origin.getPitch());
-					p.teleport(l);
+					noRotateTeleport(p, l);
 					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 				}
 				default -> {
@@ -807,9 +816,7 @@ public class CustomItems implements Listener {
 							if(checkLoc.distance(hitLocation) >= 0.5) {
 								// Center on the block we're in
 								Location l = new Location(checkLoc.getWorld(), Math.floor(checkLoc.getX()) + 0.5, Math.floor(checkLoc.getY()), Math.floor(checkLoc.getZ()) + 0.5);
-								l.setYaw(origin.getYaw());
-								l.setPitch(origin.getPitch());
-								p.teleport(l);
+								noRotateTeleport(p, l);
 								Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 								p.setFallDistance(0);
 								Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
@@ -823,9 +830,7 @@ public class CustomItems implements Listener {
 					// If we found a safe spot but didn't teleport yet
 					if(lastSafe != null) {
 						Location l = new Location(lastSafe.getWorld(), Math.floor(lastSafe.getX()) + 0.5, Math.floor(lastSafe.getY()), Math.floor(lastSafe.getZ()) + 0.5);
-						l.setYaw(origin.getYaw());
-						l.setPitch(origin.getPitch());
-						p.teleport(l);
+						noRotateTeleport(p, l);
 						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 				}
@@ -833,6 +838,29 @@ public class CustomItems implements Listener {
 		}
 		p.setFallDistance(0);
 		Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
+	}
+
+	/**
+	 * Teleport a player without touching where they are looking. Yaw/pitch go out as RELATIVE in the position packet,
+	 * so the client applies a delta to whatever it is currently looking at instead of being snapped to an absolute
+	 * rotation — a high-ping player who turned their head between clicking and the teleport landing keeps the head
+	 * they turned to, rather than being yanked back to the rotation the server last knew about.
+	 * <br>
+	 * The rotation delta must be ZERO (hence the 0/0 below): relative components are OFFSETS from the current
+	 * rotation, not absolutes (vanilla {@code PositionMoveRotation.calculateAbsolute}) — passing the player's own
+	 * yaw in would add it on top and spin them.
+	 * <br>
+	 * Goes through the connection rather than {@code Player#teleport(Location, cause, TeleportFlag...)}: Paper
+	 * deprecated {@code TeleportFlag.Relative.X/Y/Z/YAW/PITCH} for removal in 1.21.3, leaving no Bukkit-API way to
+	 * ask for a relative rotation. This overload is CraftBukkit's own, so it still fires {@code PlayerTeleportEvent}
+	 * (cause PLUGIN) and honours a cancel. Same-world only, which every caller here is.
+	 */
+	private static void noRotateTeleport(Player p, Location l) {
+		ServerPlayer sp = ((CraftPlayer) p).getHandle();
+		sp.connection.teleport(
+				new PositionMoveRotation(new Vec3(l.getX(), l.getY(), l.getZ()), Vec3.ZERO, 0f, 0f),
+				Set.of(Relative.Y_ROT, Relative.X_ROT),
+				PlayerTeleportEvent.TeleportCause.PLUGIN);
 	}
 
 	public static void aotv(Player p) {
@@ -849,12 +877,10 @@ public class CustomItems implements Listener {
 					Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					return;
 				}
-				l.setYaw(p.getEyeLocation().getYaw());
-				l.setPitch(p.getEyeLocation().getPitch());
 				p.setFallDistance(0);
 				Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_HURT, 1, 0.50F);
 				Utils.debug(Utils.DebugType.SERVER, "Etherwarping " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
-				p.teleport(l);
+				noRotateTeleport(p, l);
 			} else {
 				Utils.debug(Utils.DebugType.SERVER, "Could not Etherwarp " + p.getName() + " at all");
 			}
@@ -931,10 +957,7 @@ public class CustomItems implements Listener {
 						}
 					}
 				}
-
-				l.setYaw(origin.getYaw());
-				l.setPitch(origin.getPitch());
-				p.teleport(l);
+				noRotateTeleport(p, l);
 				Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 			} else {
 				switch(result.getHitBlockFace()) {
@@ -943,16 +966,12 @@ public class CustomItems implements Listener {
 					}
 					case UP -> {
 						Location l = result.getHitBlock().getLocation().add(0.5, 1, 0.5);
-						l.setYaw(origin.getYaw());
-						l.setPitch(origin.getPitch());
-						p.teleport(l);
+						noRotateTeleport(p, l);
 						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 					case DOWN -> {
 						Location l = result.getHitBlock().getLocation().add(0.5, -2, 0.5);
-						l.setYaw(origin.getYaw());
-						l.setPitch(origin.getPitch());
-						p.teleport(l);
+						noRotateTeleport(p, l);
 						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 					default -> {
@@ -991,9 +1010,7 @@ public class CustomItems implements Listener {
 								if(checkLoc.distance(hitLocation) >= 0.5) {
 									// Center on the block we're in
 									Location l = new Location(checkLoc.getWorld(), Math.floor(checkLoc.getX()) + 0.5, Math.floor(checkLoc.getY()), Math.floor(checkLoc.getZ()) + 0.5);
-									l.setYaw(origin.getYaw());
-									l.setPitch(origin.getPitch());
-									p.teleport(l);
+									noRotateTeleport(p, l);
 									Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 									p.setFallDistance(0);
 									Utils.playLocalSound(p, Sound.ENTITY_ENDERMAN_TELEPORT, 1, 1);
@@ -1005,9 +1022,7 @@ public class CustomItems implements Listener {
 						// If we found a safe spot but didn't teleport yet
 						if(lastSafe != null) {
 							Location l = new Location(lastSafe.getWorld(), Math.floor(lastSafe.getX()) + 0.5, Math.floor(lastSafe.getY()), Math.floor(lastSafe.getZ()) + 0.5);
-							l.setYaw(origin.getYaw());
-							l.setPitch(origin.getPitch());
-							p.teleport(l);
+							noRotateTeleport(p, l);
 							Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 						}
 					}
@@ -1488,6 +1503,18 @@ public class CustomItems implements Listener {
 				distance++;
 			}
 		}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
+	}
+
+	/**
+	 * Golem Sword — kills the holder's vertical momentum: Y velocity is zeroed, X/Z are left alone. For a real
+	 * player this rides out as a velocity packet, and the client's {@code lerpMotion} SETS its delta movement, so
+	 * a fall/leap stalls on the spot instead of the value being added to whatever it was already doing.
+	 * 3s cooldown, halved/quartered for a Mage like every other ability (see {@link #effectiveCooldown}).
+	 */
+	public static void golemSword(Player p) {
+		Vector v = p.getVelocity();
+		v.setY(0);
+		p.setVelocity(v);
 	}
 
 	public static void iceSpray(Player p) {
@@ -2103,6 +2130,7 @@ public class CustomItems implements Listener {
 		ragBuffExpiry.clear();
 		iceSprayReady.clear();
 		tacReady.clear();
+		golemSwordReady.clear();
 	}
 
 	/** True if {@code p} is the Mage CLASS (drives ability-cooldown reduction). Real players carry an exclusive class
