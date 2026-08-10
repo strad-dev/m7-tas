@@ -282,9 +282,17 @@ public final class Storm extends WitherLord {
 	 * <ul>
 	 *   <li><b>Pad</b> — ticks until the next pad poll, i.e. how long a player standing on a pad has to wait before
 	 *       their pillar advances. Counts 20t → 1t and resets on the poll tick itself.</li>
+	 *   <li><b>Armed</b> — one segment per pillar that is currently inside its {@link #CRUSH_DETECTOR_WINDOW}, i.e.
+	 *       descending and recently moved, so a poll landing on Storm underneath it would crush him. The label takes
+	 *       that pillar's own colour and the count is that pillar's remaining armed ticks; the segment disappears when
+	 *       the window runs out. Already-consumed pillars are skipped — their pad is dead. Only shown from
+	 *       {@link #LIGHTNING_TICK} on: before the volley Storm is still walking his intro path and crush can't fire,
+	 *       so an armed window there is noise.</li>
 	 *   <li><b>Storm moves in</b> — only between the lightning volley and {@link #INTRO_END_TICK}: how long until
 	 *       Storm gets his aggro and crush detection arms.</li>
 	 * </ul>
+	 * The armed counters use {@link #tick} (not {@link #displayTick()}) because that's the clock
+	 * {@link #pollCycle} feeds the crush detector — the bar must agree with the mechanic, not with the pad counter.
 	 * Sent to every real player (spectators included) — the fakes are skipped. Rendered per player because the "Pad"
 	 * label takes the colour of whichever pad that player is nearest to. Doesn't collide with {@code ClearManager}'s
 	 * bar: that one bails out for anyone outside the dungeon room grid, which the boss arena is.
@@ -292,13 +300,31 @@ public final class Storm extends WitherLord {
 	private void updateActionBar() {
 		int t = displayTick();
 		String pad = "Pad <white>" + (PAD_CYCLE_TICKS - Math.floorMod(t, PAD_CYCLE_TICKS)) + "t";
+		// Nothing can be crushed during the dialogue, so the armed windows are noise until the lightning volley.
+		String armed = t >= LIGHTNING_TICK ? armedSegments() : "";
 		String moves = t >= LIGHTNING_TICK && t <= INTRO_END_TICK
 				? " <dark_gray>| <red>Storm moves in <white>" + (INTRO_END_TICK - t) + "t"
 				: "";
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			p.sendActionBar(Utils.msg(nearestPadColor(p.getLocation()) + pad + moves));
+			p.sendActionBar(Utils.msg(nearestPadColor(p.getLocation()) + pad + armed + moves));
 		}
+	}
+
+	/**
+	 * @return one {@code " | <colour>Armed <white>Nt"} segment per pillar still inside its crush window, in
+	 * Purple/Yellow/Green order so the segments don't swap places under a player as their timers run out, or
+	 * an empty string when nothing is armed. Global state — every player sees the same segments.
+	 */
+	private String armedSegments() {
+		StringBuilder sb = new StringBuilder();
+		for(PillarOscillator osc : pillars) {
+			if(osc.isUsed()) continue;
+			int left = osc.armedTicksLeft(tick, CRUSH_DETECTOR_WINDOW);
+			if(left <= 0) continue;
+			sb.append(" <dark_gray>| ").append(osc.getPillar().color()).append("Armed <white>").append(left).append("t");
+		}
+		return sb.toString();
 	}
 
 	/**

@@ -215,7 +215,7 @@ public class WitherActions {
 	}
 
 	/** Hard cap on per-tick vertical displacement so a large goalY-wy gap doesn't snap-teleport. */
-	private static final double AGGRO_SPEED_VERTICAL_MAX = 0.5;
+	private static final double AGGRO_SPEED_VERTICAL_MAX = 0.2;
 
 	/**
 	 * Makes a Wither chase a target using a vanilla-style PD-with-friction velocity controller:

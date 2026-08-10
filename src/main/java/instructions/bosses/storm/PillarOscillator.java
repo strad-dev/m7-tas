@@ -147,4 +147,16 @@ public final class PillarOscillator {
 		if(direction != Direction.DOWN) return false;
 		return lastMovementTick != Integer.MIN_VALUE && (currentTick - lastMovementTick) <= windowTicks;
 	}
+
+	/**
+	 * Display counterpart of {@link #movedRecently} for Storm's action-bar HUD.
+	 *
+	 * @return how many more ticks this pillar stays armed, counting {@code currentTick} itself — so it reads
+	 * {@code windowTicks + 1} on the tick the DOWN cycle starts and {@code 1} on the last armed tick — or 0 if
+	 * the pillar isn't armed at all (moving UP, or the window has run out).
+	 */
+	public int armedTicksLeft(int currentTick, int windowTicks) {
+		if(!movedRecently(currentTick, windowTicks)) return 0;
+		return windowTicks - (currentTick - lastMovementTick) + 1;
+	}
 }

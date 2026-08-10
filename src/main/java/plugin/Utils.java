@@ -44,11 +44,25 @@ import java.util.*;
 
 public class Utils {
 	/**
-	 * Every one-shot task handed to {@link #scheduleTask} — so {@link #cancelAllScheduled()} can clear a previous
-	 * run's lingering choreography. Repeating tasks (boss tickers, aggro, spectator sync) use runTaskTimer and are
-	 * intentionally NOT tracked here.
+	 * Every one-shot task handed to {@link #scheduleTask} that has NOT run yet — so {@link #cancelAllScheduled()}
+	 * can clear a previous run's lingering choreography. Repeating tasks (boss tickers, aggro, spectator sync) use
+	 * runTaskTimer and are intentionally NOT tracked here.
+	 *
+	 * <p>Self-pruning: each task removes its own entry as it fires. This is load-bearing, not tidiness —
+	 * {@code CraftScheduler.cancelTask} walks the whole pending queue AND enqueues a cancellation task per call, so
+	 * cancelling N tasks is O(N * queue). This map used to be an append-only list holding every task ever scheduled
+	 * in the session (CustomItems schedules one per damage event, so hundreds/second), and cancelling ~100k dead
+	 * entries froze the main thread past the 60s watchdog on the next {@code /practice}.
+	 *
+	 * <p>Main-thread only — no synchronisation.
 	 */
-	private static final List<org.bukkit.scheduler.BukkitTask> scheduledTasks = new ArrayList<>();
+	private static final Map<Integer, org.bukkit.scheduler.BukkitTask> scheduledTasks = new LinkedHashMap<>();
+
+	/**
+	 * Bumped by {@link #cancelAllScheduled()}. A task captures the generation it was scheduled under and no-ops if
+	 * it no longer matches, so choreography can never bleed into the next run even if its cancel didn't land.
+	 */
+	private static int scheduleGeneration = 0;
 
 	// ===== Adventure item name/lore helpers (26.2: ItemMeta's String name/lore methods are @Deprecated) =====
 	private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
@@ -135,18 +149,30 @@ public class Utils {
 	 */
 	public static void scheduleTask(Runnable task, long delay) {
 		if(!M7tas.getInstance().isEnabled()) return;
-		scheduledTasks.add(Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), task, delay));
+		final int generation = scheduleGeneration;
+		final int[] id = new int[1]; // filled in below; runTaskLater always defers at least a tick, so it's set by then
+		org.bukkit.scheduler.BukkitTask handle = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
+			scheduledTasks.remove(id[0]);
+			if(generation != scheduleGeneration) return; // a run started/ended after we were queued — drop it
+			task.run();
+		}, delay);
+		id[0] = handle.getTaskId();
+		scheduledTasks.put(id[0], handle);
 	}
 
 	/**
-	 * Cancel every pending one-shot task scheduled via {@link #scheduleTask}. Called at the start of a run so a
+	 * Cancel every *pending* one-shot task scheduled via {@link #scheduleTask}. Called at the start of a run so a
 	 * previous run's still-queued dialogue/choreography (e.g. a player routine's broadcasts) can't fire into it.
+	 * Bumping the generation is what actually guarantees that; the cancels are just to keep the scheduler queue
+	 * from carrying dead weight.
 	 */
 	public static void cancelAllScheduled() {
-		for(org.bukkit.scheduler.BukkitTask t : scheduledTasks) {
+		scheduleGeneration++;
+		List<org.bukkit.scheduler.BukkitTask> live = new ArrayList<>(scheduledTasks.values());
+		scheduledTasks.clear(); // before cancelling, so a task firing mid-loop can't mutate the map we copied from
+		for(org.bukkit.scheduler.BukkitTask t : live) {
 			if(t != null && !t.isCancelled()) t.cancel();
 		}
-		scheduledTasks.clear();
 	}
 
 	public static void setSpeed(Player p, int speed) {
