@@ -10,13 +10,13 @@ import java.util.List;
  *
  * <p>Checkmark rules (see {@link #check()}):
  * <ul>
- *   <li>START / FAIRY — always GREEN (no mechanics).</li>
- *   <li>PUZZLE (Quiz, Ice Fill) — GREEN the instant the puzzle is solved (no white stage).</li>
- *   <li>YELLOW — GREEN the instant its miniboss dies.</li>
- *   <li>NORMAL — WHITE when the miniboss dies (Wizard, which has no miniboss, is WHITE from the start),
+ *   <li>START / FAIRY: always GREEN, since they have no mechanics.</li>
+ *   <li>PUZZLE (Quiz, Ice Fill): GREEN the instant the puzzle is solved, with no white stage.</li>
+ *   <li>YELLOW: GREEN the instant its miniboss dies.</li>
+ *   <li>NORMAL: WHITE when the miniboss dies (Wizard, which has no miniboss, is WHITE from the start),
  *       GREEN once WHITE and all counted secrets are found.</li>
- *   <li>TRAP — WHITE when the Power-II chest is opened, GREEN once WHITE and all secrets are found.</li>
- *   <li>BLOOD — WHITE/GREEN when the Watcher camp is cleared (it has no secrets, so effectively GREEN).</li>
+ *   <li>TRAP: WHITE when the Power-II chest is opened, GREEN once WHITE and all secrets are found.</li>
+ *   <li>BLOOD: WHITE then GREEN when the Watcher camp is cleared.  It has no secrets, so effectively GREEN.</li>
  * </ul>
  */
 public class Room {
@@ -38,7 +38,7 @@ public class Room {
 	public boolean cleared;
 	/** Puzzle solved (PUZZLE rooms only). */
 	public boolean solved;
-	/** True once any player has set foot inside this room — until then the map draws it grey with a "?". */
+	/** True once any player has set foot inside this room.  Until then the map draws it grey with a "?". */
 	public boolean explored;
 
 	Room(String name, RoomType type, int[][] cells, int level, boolean hasMiniboss, Blessing[] clearBlessings) {
@@ -88,8 +88,8 @@ public class Room {
 				return allCountedFound() ? Check.GREEN : Check.WHITE;
 			}
 			case NORMAL -> {
-				// White once the miniboss is killed — or, for the miniboss-less Wizard, once a player has
-				// entered it (ClearManager sets `cleared` on entry). Green once white AND all secrets found.
+				// White once the miniboss is killed, or for the miniboss-less Wizard once a player has
+				// entered it, since ClearManager sets `cleared` on entry.  Green once white AND all secrets found.
 				if(!cleared) return Check.NONE;
 				return allCountedFound() ? Check.GREEN : Check.WHITE;
 			}

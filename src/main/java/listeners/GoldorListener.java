@@ -40,20 +40,20 @@ public class GoldorListener implements Listener {
 
 	// ------ Per-device runtime state (cleared on each phase via Goldor's resetState by reference) ------
 
-	// Simon Says: cumulative GLOBAL click count (15 activates, no time limit). NOT per-player — any players'
-	// clicks accumulate toward 15. Reset on device completion and on serverSetup (see resetSimon).
+	// Simon Says: cumulative GLOBAL click count (15 activates, no time limit).  This is NOT per-player: any
+	// players' clicks accumulate toward 15.  Reset on device completion and on serverSetup (see resetSimon).
 	private int simonClicks = 0;
-	// Last server tick each player registered a Simon Says click on. A single physical right-click can surface as
-	// TWO PlayerInteractEvents on the same tick (the off-hand event while sneaking, and/or vanilla re-firing after
-	// PlayerPacketInterceptor resets its interact-dedupe). One click cannot span two ticks, so we collapse any
-	// repeat from the same player within the same tick — fixes the same-tick double-count without rate-limiting
-	// genuine clicks (those land on different ticks). Stale entries self-expire via the tick comparison.
+	// Last server tick each player registered a Simon Says click on.  A single physical right-click can surface as
+	// TWO PlayerInteractEvents on the same tick: the off-hand event while sneaking, and/or vanilla re-firing after
+	// PlayerPacketInterceptor resets its interact-dedupe.  One click cannot span two ticks, so I collapse any
+	// repeat from the same player within the same tick.  That fixes the same-tick double-count without
+	// rate-limiting genuine clicks, which land on different ticks.  Stale entries self-expire via the comparison.
 	private final Map<UUID, Integer> lastSimonClickTick = new HashMap<>();
-	// The last toggle of each S2 "Lights" lever, keyed by its "x_y_z". In ADVENTURE a single physical click emits
-	// BOTH a right- and a phantom left-click on the SAME lever a tick or two apart; toggling on each flip-flops it
-	// ("undo"). We swallow ONLY that phantom: an OPPOSITE-type click on the same lever within a couple ticks. Same-
-	// button spam is never throttled (people click fast), and different levers are independent — so fast solving
-	// still registers every lever.
+	// The last toggle of each S2 "Lights" lever, keyed by its "x_y_z".  In ADVENTURE a single physical click emits
+	// BOTH a right-click and a phantom left-click on the SAME lever a tick or two apart, and toggling on each
+	// flip-flops it into an undo.  I swallow ONLY that phantom: an OPPOSITE-type click on the same lever within a
+	// couple of ticks.  Same-button spam is never throttled, because people click fast, and different levers are
+	// independent, so fast solving still registers every lever.
 	private record LeverToggle(int tick, boolean wasRight) {}
 	private final Map<String, LeverToggle> lastS2LeverToggle = new HashMap<>();
 	private static final int S2_PHANTOM_WINDOW_TICKS = 2;
@@ -75,19 +75,20 @@ public class GoldorListener implements Listener {
 	private static final int LIGHTS_X1 = 58, LIGHTS_X2 = 62;
 	private static final int LIGHTS_Y1 = 133, LIGHTS_Y2 = 136;
 	private static final int LIGHTS_Z = 142;
-	// The redstone lamps sit one block behind the levers (the blocks the levers are mounted on) — the device is
+	// The redstone lamps sit one block behind the levers, on the blocks the levers are mounted on.  The device is
 	// only solved when EVERY lamp in this grid is lit.
 	private static final int LIGHTS_LAMP_Z = 143;
 
 	/**
-	 * True if {@code p} must not be able to progress a Goldor device: a spectator (the idle state on m7 — they are
-	 * watching, not running the phase) or a player spectating a fake. Not redundant with vanilla's own spectator
-	 * gating: CraftBukkit still fires the interact events for a spectator's clicks, and the raw
+	 * True if {@code p} must not be able to progress a Goldor device: a spectator, which is the idle state on m7
+	 * where they are watching rather than running the phase, or a player spectating a fake.  This is not redundant
+	 * with vanilla's own spectator gating: CraftBukkit still fires the interact events for a spectator's clicks, and the raw
 	 * {@code ServerboundUseItemOnPacket} path in {@code PlayerPacketInterceptor} → {@link #tryRegisterSimonClick}
 	 * bypasses vanilla entirely, so without this a spectator could click a terminal or spam Simon Says.
 	 * <p>
 	 * Checked at every entry point AND again in the {@code process*} solvers, which can run a tick later off
-	 * {@link #runWhenPhaseActive} — same "re-check all state on the deferred path" rule the rest of this class uses.
+	 * {@link #runWhenPhaseActive}.  That is the same "re-check all state on the deferred path" rule the rest of
+	 * this class uses.
 	 */
 	private static boolean cannotSolve(Player p) {
 		return p == null || p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p);
@@ -109,7 +110,7 @@ public class GoldorListener implements Listener {
 	}
 
 	/** Returns true if the entity was a terminal Interaction belonging to the current section
-	 *  and the activation was accepted (or already pending — either way, the click is "consumed"). */
+	*  and the activation was accepted, or was already pending.  Either way the click is "consumed". */
 	private boolean tryActivateTerminal(Entity ent, Player p) {
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
 		String tagPrefix = GoldorTerminal.TAG_PREFIX;
@@ -142,26 +143,27 @@ public class GoldorListener implements Listener {
 		boolean rightClick = e.getAction() == Action.RIGHT_CLICK_BLOCK;
 		boolean leftClick = e.getAction() == Action.LEFT_CLICK_BLOCK;
 		if(!rightClick && !leftClick) return;
-		// Only the main hand — a sneaking right-click fires a second (off-hand) event for the same click,
+		// Only the main hand.  A sneaking right-click fires a second, off-hand event for the same click,
 		// which would otherwise double-count the Simon Says button.
 		if(e.getHand() != EquipmentSlot.HAND) return;
 		Block b = e.getClickedBlock();
 		if(b == null) return;
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
 		Player p = e.getPlayer();
-		// Spectators can't solve anything — return BEFORE the Lights branch so we also don't cancel their event or
-		// own the lever toggle on their behalf; vanilla ignores a spectator's click by itself.
+		// Spectators can't solve anything, so return BEFORE the Lights branch and we also don't cancel their event
+		// or own the lever toggle on their behalf.  Vanilla ignores a spectator's click by itself.
 		if(cannotSolve(p)) return;
 
-		// Simon Says button (S1 device) — right-click only (it's a button). Defer if the phase hasn't spun up yet so a
-		// click in a chained full run (players scheduled on start, Goldor only active when Storm dies) counts.
+		// Simon Says button (S1 device), right-click only since it's a button.  Defer if the phase hasn't spun up yet
+		// so a click in a chained full run counts: players are scheduled on start, but Goldor is only active when
+		// Storm dies.
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) {
 			if(rightClick) tryRegisterSimonClick(p, bx, by, bz);
 			return;
 		}
 
-		// Lights levers (S2 device) — the puzzle reads the lever's physical toggled state. We OWN the toggle for both
-		// clicks: cancel the event so vanilla never flips the lever, then flip it ourselves exactly once per tick.
+		// Lights levers (S2 device): the puzzle reads the lever's physical toggled state.  I OWN the toggle for both
+		// clicks: cancel the event so vanilla never flips the lever, then flip it myself exactly once per tick.
 		// Relying on vanilla's right-click toggle made the device behave differently per gamemode (adventure vs
 		// survival/creative) and could double-toggle from the duplicate UseItemOn packets one click sends (flip →
 		// unflip → "undo"); owning it makes the flip deterministic and identical in every gamemode. Deduped per tick
@@ -170,7 +172,7 @@ public class GoldorListener implements Listener {
 				&& bx >= LIGHTS_X1 && bx <= LIGHTS_X2
 				&& by >= LIGHTS_Y1 && by <= LIGHTS_Y2
 				&& bz == LIGHTS_Z) {
-			e.setCancelled(true); // don't let vanilla toggle/break the lever — we do it ourselves
+			e.setCancelled(true); // don't let vanilla toggle or break the lever; I do it myself
 			int now = MinecraftServer.currentTick;
 			String leverKey = bx + "_" + by + "_" + bz;
 			LeverToggle last = lastS2LeverToggle.get(leverKey);
@@ -185,7 +187,7 @@ public class GoldorListener implements Listener {
 			return;
 		}
 
-		// Section levers — section-gated, so they only matter once the phase is active.
+		// Section levers are section-gated, so they only matter once the phase is active.
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(b.getType() == Material.LEVER) {
 			for(GoldorSection sec : new GoldorSection[]{
@@ -209,14 +211,14 @@ public class GoldorListener implements Listener {
 
 	/**
 	 * Register a Simon Says button click from {@code p} when (bx,by,bz) is the button, deduped to once per player
-	 * per server tick. A single physical click can surface twice on the same tick — the off-hand event while
-	 * sneaking, and/or vanilla re-firing the interact after {@code PlayerPacketInterceptor} resets its dedupe — and
-	 * one click cannot span two ticks, so any same-tick repeat from a player is dropped.
+	 * per server tick.  A single physical click can surface twice on the same tick: the off-hand event while
+	 * sneaking, and/or vanilla re-firing the interact after {@code PlayerPacketInterceptor} resets its dedupe.
+	 * One click cannot span two ticks, so any same-tick repeat from a player is dropped.
 	 *
 	 * <p>Called from two places, both main-thread and both funneling through this single guard:
 	 * <ul>
-	 *   <li>the vanilla {@link #onInteract} PlayerInteractEvent — the path fake players take (simulated packets);
-	 *   <li>the raw {@code ServerboundUseItemOnPacket} in {@code PlayerPacketInterceptor} — real players, which
+	 *   <li>the vanilla {@link #onInteract} PlayerInteractEvent, the path fake players take via simulated packets;
+	 *   <li>the raw {@code ServerboundUseItemOnPacket} in {@code PlayerPacketInterceptor}, for real players, which
 	 *       bypasses vanilla's interact-event suppression so rapid clicks aren't throttled to a few per second.
 	 * </ul>
 	 */
@@ -230,7 +232,7 @@ public class GoldorListener implements Listener {
 		INSTANCE.runWhenPhaseActive(deferred -> INSTANCE.processSimonClick(p, deferred));
 	}
 
-	/** Register one Simon Says click (global counter). Safe to call from the deferred path — re-checks state. */
+	/** Register one Simon Says click on the global counter.  Safe to call from the deferred path, since it re-checks state. */
 	private void processSimonClick(Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return;
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
@@ -244,11 +246,11 @@ public class GoldorListener implements Listener {
 		}
 	}
 
-	/** Activate the S2 Lights device — but ONLY once every redstone lamp is lit. The clicked lever hasn't toggled
-	 *  yet (vanilla flips it AFTER this PlayerInteractEvent) and its lamp won't relight until the resulting block
-	 *  update settles, so the lamp grid is read on the NEXT tick; a flip that doesn't complete the puzzle is a no-op.
-	 *  The activation is credited to the completing click's own tick (the lamp lit this tick; we just observe it one
-	 *  tick later — hence wasDeferred=true). */
+	/** Activate the S2 Lights device, but ONLY once every redstone lamp is lit.  The clicked lever hasn't toggled
+	*  yet (vanilla flips it AFTER this PlayerInteractEvent) and its lamp won't relight until the resulting block
+	*  update settles, so the lamp grid is read on the NEXT tick; a flip that doesn't complete the puzzle is a no-op.
+	*  The activation is credited to the completing click's own tick: the lamp lit this tick and I just observe it
+	*  one tick later, hence wasDeferred=true. */
 	private void processLightsClick(Player p) {
 		if(cannotSolve(p)) return;
 		GoldorSection s2 = Goldor.INSTANCE.getSection(1);
@@ -325,10 +327,10 @@ public class GoldorListener implements Listener {
 		e.setCancelled(true);
 	}
 
-	/** Solve the S3 Arrow Align device. Returns true if this call activated it (caller suppresses vanilla's
-	 *  rotation). Safe to call from the deferred path — re-checks all state. */
+	/** Solve the S3 Arrow Align device.  Returns true if this call activated it, in which case the caller
+	*  suppresses vanilla's rotation.  Safe to call from the deferred path, since it re-checks all state. */
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
-		if(cannotSolve(p)) return false; // guarded here, not in onInteractEntity — frame PROTECTION still applies to spectators
+		if(cannotSolve(p)) return false; // guarded here, not in onInteractEntity, since frame PROTECTION still applies to spectators
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
 		if(!frame.equals(arrow)) return false;
@@ -337,7 +339,7 @@ public class GoldorListener implements Listener {
 		s3.device.markActivated();
 		Goldor.INSTANCE.onActivation(p, s3, "device", wasDeferred);
 		// CustomItems cancels this interaction when the fake player holds a non-exempt custom item, which skips
-		// vanilla's rotation — replicate the normal one-step turn here.
+		// vanilla's rotation, so replicate the normal one-step turn here.
 		frame.setRotation(frame.getRotation().rotateClockwise());
 		return true;
 	}
@@ -354,8 +356,8 @@ public class GoldorListener implements Listener {
 	}
 
 	// =================== Punching items out of S3 frames: cancelled (creative bypass) ===================
-	// Phase-independent (isInS3FrameRegion, not isProtectedFrame) so the items can never be knocked out — in prep,
-	// between phases, or mid-phase.
+	// Phase-independent (isInS3FrameRegion, not isProtectedFrame) so the items can never be knocked out, whether
+	// in prep, between phases, or mid-phase.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onFramePunch(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
 		if(e.getEntity() instanceof ItemFrame frame && Goldor.INSTANCE.isInS3FrameRegion(frame)) {
@@ -475,7 +477,7 @@ public class GoldorListener implements Listener {
 	}
 
 	// =================== Item-frame indestructibility (S3 only, creative bypass) ===================
-	// Phase-independent (isInS3FrameRegion) so the frames are unbreakable in EVERY phase — this also cancels the
+	// Phase-independent (isInS3FrameRegion) so the frames are unbreakable in EVERY phase.  This also cancels the
 	// PHYSICS cause, which is what fires when the frame's support block is broken out from behind it, so the frame
 	// stays put even with its support gone.
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

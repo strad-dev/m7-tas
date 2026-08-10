@@ -34,7 +34,7 @@ public class TabCompletor implements TabCompleter {
 						}
 					}
 				} else if(args.length >= 2) {
-					// /practice <section> [--no-teleport] [<delayTicks>] — both flags are order-independent
+					// /practice <section> [--no-teleport] [<delayTicks>]: both flags are order-independent
 					// (see Practice), so suggest whichever hasn't been typed yet.
 					String input = args[args.length - 1].toLowerCase();
 					boolean hasNoTeleport = false, hasDelay = false;
@@ -54,15 +54,21 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
-			// "spectate" tab-completion removed — TAS-only command, disabled in the practice fork.
+			// "spectate" tab-completion removed: TAS-only command, disabled in the practice fork.
 
-			case "getcustomitems" -> {
+			case "class" -> {
 				if(args.length == 1) {
-					for(String val : new String[]{"all", "archer", "berserk", "healer", "mage", "tank"}) {
-						if(val.startsWith(args[0].toLowerCase())) {
+					for(String val : loadout.Loadouts.CLASSES) {
+						if(val.toLowerCase().startsWith(args[0].toLowerCase())) {
 							completions.add(val);
 						}
 					}
+				}
+			}
+
+			case "m7loadout" -> {
+				if(args.length == 1 && "reset".startsWith(args[0].toLowerCase())) {
+					completions.add("reset");
 				}
 			}
 
@@ -100,7 +106,7 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
-			// "simulate" tab-completion removed — TAS-only command, disabled in the practice fork.
+			// "simulate" tab-completion removed: TAS-only command, disabled in the practice fork.
 		}
 
 		return completions;

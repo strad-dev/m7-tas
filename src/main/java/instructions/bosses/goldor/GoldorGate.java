@@ -46,7 +46,7 @@ public final class GoldorGate {
 
 	private void snapshotBlocks() {
 		// Box max is exclusive (Goldor.makeBox stores blockMax+1, matching BoundingBox.contains),
-		// so iterate with strict < — inclusive <= grabbed an extra block layer on every max side.
+		// so iterate with strict <.  An inclusive <= grabbed an extra block layer on every max side.
 		int minX = (int) Math.floor(bounds.getMinX());
 		int minY = (int) Math.floor(bounds.getMinY());
 		int minZ = (int) Math.floor(bounds.getMinZ());
@@ -97,7 +97,7 @@ public final class GoldorGate {
 		if(explosionMarked) {
 			removeBlocksNow();
 		} else {
-			// All terminals done and the gate wasn't blown early — it auto-destructs 100 ticks (5s) later.
+			// All terminals done and the gate wasn't blown early, so it auto-destructs 100 ticks (5s) later.
 			// Announce the countdown (matches real Hypixel's "The gate will open in 5 seconds!").
 			Bukkit.broadcast(Utils.msg("<green>The gate will open in 5 seconds!"));
 			pendingDelayedRemoval = Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
@@ -117,7 +117,7 @@ public final class GoldorGate {
 		}
 		// Announce only if we haven't already (early-explosion path announces before blocks are removed).
 		announceDestroyed();
-		// Blocks are gone and the section's items were already done — this is the true section-complete
+		// Blocks are gone and the section's items were already done, so this is the true section-complete
 		// moment. Tell Goldor so it reports the section timing and advances to the next section.
 		Goldor.INSTANCE.onGateDestroyed(sectionIdx);
 		// Regen always fires exactly 100 ticks after blocks are removed from the world.
@@ -150,7 +150,7 @@ public final class GoldorGate {
 		Utils.timer(Goldor.INSTANCE.gateDestroyedLine(sectionStartTick));
 	}
 
-	/** Called from resetState() — restore blocks, cancel pending tasks. */
+	/** Called from resetState(): restore blocks and cancel pending tasks. */
 	public void cleanup() {
 		if(pendingDelayedRemoval != null && !pendingDelayedRemoval.isCancelled()) pendingDelayedRemoval.cancel();
 		if(pendingRegen != null && !pendingRegen.isCancelled()) pendingRegen.cancel();

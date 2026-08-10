@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Interactive Ice Fill puzzle (grid 1,4). Three ice levels at y=69/70/71. For the active level the player must
- * turn every ice block to packed ice by walking a single continuous stroke — no diagonal moves, no doubling
+ * turn every ice block to packed ice by walking a single continuous stroke, with no diagonal moves and no doubling
  * back onto a frozen block, and no jumping to a non-adjacent block. Any violation breaks that level's layer and
  * resets it after 60 ticks. Completing all three levels → {@link ClearManager#puzzleSolved} (green check) and
  * reveals the two reward chests via {@link Server#openIceFillRewards()} (the Power-V blessings are claimed by
@@ -24,7 +24,7 @@ public final class PuzzleIceFill {
 	private static final int[] LEVEL_Y = {69, 70, 71};
 	private static final int RESET_TICKS = 60;
 
-	// Strict per-layer bounding boxes {minX, minZ, maxX, maxZ, y} — only ice within these is part of each layer.
+	// Strict per-layer bounding boxes {minX, minZ, maxX, maxZ, y}.  Only ice within these is part of each layer.
 	private static final int[][] LAYER_BOX = {
 			{-52, -154, -49, -152, 69}, // layer 1
 			{-59, -155, -54, -151, 70}, // layer 2

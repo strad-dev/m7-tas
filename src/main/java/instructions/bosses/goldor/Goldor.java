@@ -36,37 +36,37 @@ public final class Goldor extends WitherLord {
 	private static final double WP_DX = 8.5,   WP_DZ = 40.5;
 	private static final double PATROL_SPEED = 0.1;
 
-	// Core approach — horizontal targets (Y target is 116, descent is independent of horizontal motion)
+	// Core approach, horizontal targets.  Y target is 116, and the descent is independent of horizontal motion.
 	private static final double CORE_TARGET_X = 54.5, CORE_TARGET_Z = 40.5;
 	private static final double CORE_FINAL_X  = 54.5, CORE_FINAL_Z  = 114.5;
 	private static final double CORE_TARGET_Y = 116.0;
 	private static final double CORE_APPROACH_SPEED = 0.8;
 	private static final double Y_DESCENT_SPEED = 0.1;
 
-	// Item-frame protection AABB — only the S3 frame wall per user: -2,119,74 to -2,125,80 (block coords).
+	// Item-frame protection AABB, only the S3 frame wall: -2,119,74 to -2,125,80 in block coords.
 	// Expand by 1 in each direction to tolerate the frame entity's offset from its attached block.
 	private static final BoundingBox S3_FRAME_BOUNDS = new BoundingBox(-3, 118, 73, 0, 126, 81);
 
-	// Simon Says button coord (S1 device) — kept in sync with GoldorListener.SIMON_B{X,Y,Z}.
+	// Simon Says button coord (S1 device), kept in sync with GoldorListener.SIMON_B{X,Y,Z}.
 	private static final int SIMON_BX = 110, SIMON_BY = 121, SIMON_BZ = 91;
 	// Block directly behind the Simon Says button (also stonk-immune so the button can't be knocked off).
 	private static final int SIMON_BEHIND_BX = 111, SIMON_BEHIND_BY = 121, SIMON_BEHIND_BZ = 91;
-	// S1 Simon Says ("SS") device protection zone — the whole device column (110..111, 119..124, 91..96),
-	// which covers the button, its backing, and the "i1" label sign at (110,121,93). Every block in here is
-	// stonk/break-immune so nothing in the device can be knocked out — which is also what keeps the sign's
-	// message intact across runs (it can never be broken/replaced). See isProtected.
+	// S1 Simon Says ("SS") device protection zone: the whole device column (110..111, 119..124, 91..96),
+	// which covers the button, its backing, and the "i1" label sign at (110,121,93).  Every block in here is
+	// stonk and break immune so nothing in the device can be knocked out.  That is also what keeps the sign's
+	// message intact across runs, since it can never be broken or replaced.  See isProtected.
 	private static final int SS_ZONE_X1 = 110, SS_ZONE_X2 = 111;
 	private static final int SS_ZONE_Y1 = 119, SS_ZONE_Y2 = 124;
 	private static final int SS_ZONE_Z1 = 91,  SS_ZONE_Z2 = 96;
-	// S2 "Lights" device — the blocks the wall levers are mounted on (levers at z=142, mount blocks at z=143).
+	// S2 "Lights" device: the blocks the wall levers are mounted on (levers at z=142, mount blocks at z=143).
 	private static final int LIGHTS_MOUNT_Z = 143, LIGHTS_MOUNT_X1 = 58, LIGHTS_MOUNT_X2 = 62, LIGHTS_MOUNT_Y1 = 133, LIGHTS_MOUNT_Y2 = 136;
-	// S4 Sharp Shooter — the block supporting the gold pressure plate (plate at 63,127,35).
+	// S4 Sharp Shooter: the block supporting the gold pressure plate (plate at 63,127,35).
 	private static final int PLATE_SUPPORT_BX = 63, PLATE_SUPPORT_BY = 126, PLATE_SUPPORT_BZ = 35;
 
 	// Section lever block coords, indexed [sectionIdx][leverIdx] → {x, y, z}. Single source of truth for both
 	// the GoldorLever placements (buildS1..buildS4) and the run-start reset (resetSectionLevers). These are the
-	// per-section levers a player flips to clear a section — NOT the S2 "Lights" device levers (those live in the
-	// LIGHTS_MOUNT region and are reset separately in Server.serverSetup).
+	// per-section levers a player flips to clear a section, NOT the S2 "Lights" device levers, which live in the
+	// LIGHTS_MOUNT region and are reset separately in Server.serverSetup.
 	private static final int[][][] SECTION_LEVER_COORDS = {
 			{{106, 124, 113}, {94, 124, 113}},  // S1
 			{{27, 124, 127},  {23, 132, 138}},  // S2
@@ -137,7 +137,7 @@ public final class Goldor extends WitherLord {
 
 	@Override
 	protected void onStart() {
-		// Storm's section ends as the Goldor (terminals) phase begins — record its end for the practice scoreboard.
+		// Storm's section ends as the Goldor (terminals) phase begins, so record its end for the practice scoreboard.
 		instructions.bosses.WitherActions.recordSplit("Storm", plugin.Utils.runTick());
 		startPhase();
 		scheduleIntroDialogue();
@@ -165,8 +165,8 @@ public final class Goldor extends WitherLord {
 	private void startPhase() {
 		phaseActive = true;
 
-		// Goldor is hittable while on patrol — drop the wither invulnerability shield so attacks actually
-		// land (terminator ding, hurt sound, and the patrol slow all fire). His health bar is still
+		// Goldor is hittable while on patrol, so drop the wither invulnerability shield and attacks actually
+		// land: the terminator ding, the hurt sound, and the patrol slow all fire.  His health bar is still
 		// protected by the !coreOpen branch in handleDamage, which cancels the damage itself.
 		setArmor(false);
 
@@ -299,8 +299,8 @@ public final class Goldor extends WitherLord {
 	}
 
 	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to
-	 *  powered=false so a new run starts with them all off. Preserves each lever's face/facing — only the
-	 *  powered state is flipped. Called from {@link instructions.Server#serverSetup} on each run start. */
+	*  powered=false so a new run starts with them all off.  Each lever's face and facing are preserved, and only
+	*  the powered state is flipped.  Called from {@link instructions.Server#serverSetup} on each run start. */
 	public static void resetSectionLevers(World world) {
 		for(int[][] section : SECTION_LEVER_COORDS) {
 			for(int[] c : section) {
@@ -415,8 +415,8 @@ public final class Goldor extends WitherLord {
 	/** Force-end any lingering Goldor phase immediately. Called when a new run is triggered so a previous
 	 *  run's still-active phase (phaseActive=true with its S4 device already marked activated, since the
 	 *  fight never reached a clean end) doesn't reject this run's pre-fired sharpshooter arrows as
-	 *  "device already activated". Mirrors the cleanup {@link #start} does, but runs now instead of waiting
-	 *  for the new phase to spin up — so the gap between trigger and new start() is a clean, inactive phase. */
+	 *  "device already activated".  Mirrors the cleanup {@link #start} does, but runs now instead of waiting
+	 *  for the new phase to spin up, so the gap between trigger and new start() is a clean, inactive phase. */
 	public void forceEndPhase() {
 		if(boss != null) {
 			boss.remove();
@@ -435,9 +435,9 @@ public final class Goldor extends WitherLord {
 	}
 
 	/** {@code wasDeferred} is true only for a device whose interaction landed before the phase spun up and was
-	 *  held by GoldorListener's one-tick grace — that grace runs the activation a tick late, so this single
-	 *  activation's displayed times are credited to the tick the click actually happened ({@code tick - 1}).
-	 *  Every non-deferred activation reads the live {@code tick}, which is already phase-relative-correct. */
+	*  held by GoldorListener's one-tick grace.  That grace runs the activation a tick late, so this single
+	*  activation's displayed times are credited to the tick the click actually happened ({@code tick - 1}).
+	*  Every non-deferred activation reads the live {@code tick}, which is already phase-relative-correct. */
 	public void onActivation(Player p, GoldorSection ownSection, String thingLabel, boolean wasDeferred) {
 		if(!phaseActive) return;
 		int now = wasDeferred ? Math.max(0, displayTick() - 1) : displayTick();
@@ -467,8 +467,8 @@ public final class Goldor extends WitherLord {
 	}
 
 	/** Verbose per-activation timing: elapsed ticks within the current section and within the whole Goldor fight.
-	 *  Used after each terminal/device/lever activation (gated on {@link Utils#isVerbose()} by the caller).
-	 *  {@code now} is the activation's effective tick (live {@code tick}, or {@code tick - 1} if grace-deferred). */
+	*  Used after each terminal, device or lever activation (gated on {@link Utils#isVerbose()} by the caller).
+	*  {@code now} is the activation's effective tick: the live {@code tick}, or {@code tick - 1} if grace-deferred. */
 	public String verboseTimingLine(int now) {
 		int secTicks = now - sectionStartTick;
 		return "<green>" + String.format("S%d: %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
@@ -484,32 +484,32 @@ public final class Goldor extends WitherLord {
 				formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(termTicks), termTicks / 20.0);
 	}
 
-	/** Every terminal/device/lever in this section is now done. A section is NOT yet "complete":
-	 *  for S1–S3 it stays the current section (its terminals already done, the next section's still
-	 *  locked) until its gate is actually destroyed — {@link GoldorGate} calls {@link #onGateDestroyed}
-	 *  at that moment to finalize the timing and advance. S4 has no gate, so it completes immediately. */
+	/** Every terminal, device and lever in this section is now done.  A section is NOT yet "complete":
+	*  for S1–S3 it stays the current section (its terminals already done, the next section's still
+	*  locked) until its gate is actually destroyed.  {@link GoldorGate} calls {@link #onGateDestroyed}
+	*  at that moment to finalize the timing and advance.  S4 has no gate, so it completes immediately. */
 	private void onAllItemsComplete(GoldorSection s, int now) {
 		if(s.idx < 3) {
 			// Kick off the gate's destruction (immediate if already blown, else the 100t auto-destruct).
 			s.gate.onSectionComplete();
 		} else {
-			// S4 has no gate, so it completes the instant its items are done — credit the activation's tick.
+			// S4 has no gate, so it completes the instant its items are done.  Credit the activation's tick.
 			reportSectionFinished(s, now);
 			onCoreOpen();
 		}
 	}
 
-	/** Called by {@link GoldorGate} the instant its blocks are removed — which only ever happens after
-	 *  the section's items are done. This is the true "section complete" event for S1–S3: report the
-	 *  timing (measured to now, i.e. gate destruction) and advance to the next section. */
+	/** Called by {@link GoldorGate} the instant its blocks are removed, which only ever happens after
+	*  the section's items are done.  This is the true "section complete" event for S1–S3: report the
+	*  timing (measured to now, i.e. gate destruction) and advance to the next section. */
 	public void onGateDestroyed(int sectionIdx) {
 		GoldorSection s = getSection(sectionIdx);
 		if(s == null || sectionIdx != currentSectionIdx) return;
-		// Gate destruction is its own event at the live tick — not a grace-deferred activation.
+		// Gate destruction is its own event at the live tick, not a grace-deferred activation.
 		reportSectionFinished(s, displayTick());
 		currentSectionIdx++;
 		sectionStartTick = displayTick();
-		// The next section is now active — stamp its gate so a later destruction reports time-into-that-section.
+		// The next section is now active, so stamp its gate and a later destruction reports time-into-that-section.
 		GoldorSection next = getCurrentSection();
 		if(next != null && next.gate != null) next.gate.setSectionStartTick(displayTick());
 	}
@@ -534,16 +534,17 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * True if this block is a Goldor interactable that must never be destroyed — by stonk, dungeonbreaker, or any
-	 * other break. A pure positional test, ALWAYS immune regardless of phase or block state: losing any of these
-	 * would soft-lock a section (they're the only way to complete it) or knock an interactable off its mount.
+	 * True if this block is a Goldor interactable that must never be destroyed by stonk, dungeonbreaker, or any
+	 * other break.  This is a pure positional test and is ALWAYS immune regardless of phase or block state, because
+	 * losing any of these would soft-lock a section (they're the only way to complete it) or knock an interactable
+	 * off its mount.
 	 * Covers: the Simon Says button (S1) and the block behind it; the S2 "Lights" lamp backing (z=143) and its
 	 * levers (z=142); the S4 Sharp Shooter pressure-plate support; and every section lever plus the block directly
 	 * beneath it (from the static coord table, so it holds even before the phase spins up).
 	 */
 	public boolean isProtected(Block b) {
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
-		// S1 Simon Says device zone — the whole column (button, backing, and the "i1" sign) is immune.
+		// S1 Simon Says device zone: the whole column (button, backing, and the "i1" sign) is immune.
 		if(bx >= SS_ZONE_X1 && bx <= SS_ZONE_X2 && by >= SS_ZONE_Y1 && by <= SS_ZONE_Y2 && bz >= SS_ZONE_Z1 && bz <= SS_ZONE_Z2) return true;
 		// S2 "Lights" lamp backing (z=143) plus the levers hanging on the z-142 face.
 		if((bz == LIGHTS_MOUNT_Z || bz == LIGHTS_MOUNT_Z - 1) && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
@@ -566,8 +567,8 @@ public final class Goldor extends WitherLord {
 		return phaseActive && x == SIMON_BX && y == SIMON_BY && z == SIMON_BZ;
 	}
 
-	/** Failsafe invoked from M7tas.onDisable() — immediately restore any gates whose blocks were removed,
-	 *  so a mid-fight server stop never leaves the world with broken gate blocks. */
+	/** Failsafe invoked from M7tas.onDisable().  It immediately restores any gates whose blocks were removed,
+	*  so a mid-fight server stop never leaves the world with broken gate blocks. */
 	public void shutdownRegenerateGates() {
 		for(GoldorSection s : sections) {
 			if(s.gate != null) s.gate.cleanup();
@@ -607,7 +608,7 @@ public final class Goldor extends WitherLord {
 	private void onCoreOpen() {
 		coreOpen = true;
 		coreOpenTick = displayTick();
-		// Terminals are done (core just opened) — record the Terminals section end for the practice scoreboard.
+		// Terminals are done now that the core opened, so record the Terminals section end for the scoreboard.
 		instructions.bosses.WitherActions.recordSplit("Terminals", plugin.Utils.runTick());
 		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
 
@@ -661,7 +662,7 @@ public final class Goldor extends WitherLord {
 				Location loc = boss.getLocation();
 				double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 
-				// Vertical motion is independent of horizontal — Y descends toward CORE_TARGET_Y at Y_DESCENT_SPEED each tick.
+				// Vertical motion is independent of horizontal: Y descends toward CORE_TARGET_Y at Y_DESCENT_SPEED each tick.
 				double ny = y;
 				if(y > CORE_TARGET_Y) {
 					ny = Math.max(CORE_TARGET_Y, y - Y_DESCENT_SPEED);
@@ -700,7 +701,7 @@ public final class Goldor extends WitherLord {
 
 	// ---------- Damage / death ----------
 
-	/** Hooked from MiscListener. Goldor dies silently — vanilla death is suppressed. */
+	/** Hooked from MiscListener.  Goldor dies silently, since vanilla death is suppressed. */
 	public void handleDamage(EntityDamageEvent e) {
 		if(boss == null || !boss.equals(e.getEntity())) return;
 		if(e.isCancelled()) return;
@@ -716,8 +717,8 @@ public final class Goldor extends WitherLord {
 		if(!coreOpen) {
 			lastDamagedTick = tick;
 			// Cancelling the damage below suppresses the vanilla hurt flash, so send the hurt animation
-			// ourselves — one packet renders the red flash for ~10 ticks (re-armed by follow-up hits),
-			// matching the slow window.
+			// ourselves.  One packet renders the red flash for ~10 ticks, re-armed by follow-up hits,
+			// which matches the slow window.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
 			e.setCancelled(true);
 			return;
@@ -754,10 +755,11 @@ public final class Goldor extends WitherLord {
 		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, 100);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
-			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow — must be
-			// before chainNext, which spawns Necron and re-anchors the phase clock. The board times the WHOLE
-			// Goldor phase (terminals + core), matching what /practice goldor times — not the core-only column
-			// printed at the killing blow.
+			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
+			// come before chainNext, which spawns Necron and re-anchors the phase clock.  The board times the WHOLE
+			// Goldor phase, terminals and core, matching what /practice goldor times.  It is not the core-only
+			// column printed at the killing blow.
+
 			instructions.bosses.WitherActions.recordPhaseDuration("Goldor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);

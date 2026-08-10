@@ -24,19 +24,19 @@ import java.util.*;
 public class WitherActions {
 
 	// Aggro movers run in BossScheduler's MOVEMENT lane (BossScheduler.addMovementTicker), driven from the
-	// fake-player ticker after fake aiStep — so the boss moves at the same point in the tick as the fakes
-	// ("where movement normally happens"), not at the start of the tick. The value is the registered mover
-	// handle, used to unregister in clearWitherAggro.
+	// fake-player ticker after fake aiStep, so the boss moves at the same point in the tick as the fakes
+	// ("where movement normally happens") and not at the start of the tick.  The value is the registered
+	// mover handle, used to unregister in clearWitherAggro.
 	private static final Map<UUID, Runnable> witherAggroTasks = new HashMap<>();
 	private static BukkitTask armorTask = null;
 
-	// Server tick on which each wither last had its armor DROPPED (became vulnerable). Read by
+	// Server tick on which each wither last had its armor DROPPED (became vulnerable).  Read by
 	// wasMadeVulnerableThisTick so a Terminator/Last Breath arrow can register on a one-tick window that opened
-	// then re-closed within the same tick — see that method and WithersNotImmuneToArrows.
+	// then re-closed within the same tick.  See that method and WithersNotImmuneToArrows.
 	private static final Map<UUID, Integer> lastVulnerableTick = new HashMap<>();
 
-	// --- Aggro target: bosses chase whoever last damaged them (fake or real). Among players that hit on the same
-	// tick, the alphabetically-first name wins. The target persists until a later tick's hit. ---
+	// --- Aggro target: bosses chase whoever last damaged them (fake or real).  Among players that hit on the same
+	// tick, the alphabetically-first name wins.  The target persists until a later tick's hit. ---
 	private static volatile boolean practiceMode = false;
 	private static volatile Player lastDamager = null;
 	private static volatile int lastDamageTick = Integer.MIN_VALUE;
@@ -52,14 +52,14 @@ public class WitherActions {
 
 	/**
 	 * Announce that a /practice run just finished as a plain Bukkit event ({@link plugin.RunCompleteEvent}).
-	 * M7 TAS depends on nothing external — the event fires into the void when nothing listens, so the plugin
-	 * stays fully standalone; an optional glue plugin may listen to return players to spectator and free a
-	 * network slot. Only fires in practice mode. Wither-King runs must call this only AFTER the death dialogue
-	 * ends (see {@code WitherKing.deathSequence}); other sections call it the moment their boss is defeated
-	 * (their {@code chainNext(false)} / clear completion).
+	 * M7 TAS depends on nothing external.  The event fires into the void when nothing listens, so the plugin
+	 * stays fully standalone, and an optional glue plugin may listen to return players to spectator and free a
+	 * network slot.  Only fires in practice mode.  Wither-King runs must call this only AFTER the death dialogue
+	 * ends (see {@code WitherKing.deathSequence}); other sections call it the moment their boss is defeated,
+	 * at their {@code chainNext(false)} or clear completion.
 	 * <br>
 	 * Overload for a run that was actually WON. Storm's all-pillars-gone failure path fires
-	 * {@link #signalRunComplete(boolean)} with {@code false} instead, so a listener can tell the two apart —
+	 * {@link #signalRunComplete(boolean)} with {@code false} instead, so a listener can tell the two apart, and
 	 * the event used to be indistinguishable between a win and that one loss.
 	 */
 	public static void signalRunComplete() {
@@ -67,13 +67,13 @@ public class WitherActions {
 	}
 
 	/**
-	 * @param success false only for a run that ended in failure (see {@code Storm.endFailedRun}). A failed run
-	 *                still fires the event — the network plugin needs to free its slot either way — but carries
-	 *                {@code success=false} so it is never recorded to a leaderboard.
+	 * @param success false only for a run that ended in failure (see {@code Storm.endFailedRun}).  A failed run
+	 *                still fires the event, because the network plugin needs to free its slot either way, but it
+	 *                carries {@code success=false} so it is never recorded to a leaderboard.
 	 */
 	public static void signalRunComplete(boolean success) {
 		if (!practiceMode) return;
-		// Prefer a snapshot taken earlier by captureRunResult() — see that method for why the capture instant and
+		// Prefer a snapshot taken earlier by captureRunResult().  See that method for why the capture instant and
 		// the signal instant have to be allowed to differ.
 		plugin.RunResult result = (success && pendingResult != null)
 				? pendingResult
@@ -89,10 +89,10 @@ public class WitherActions {
 	 * Snapshot the run's result NOW, for a {@link #signalRunComplete()} that will come later.
 	 * <br>
 	 * <b>Why this exists.</b> A result records whoever is still in the run ({@code ClearManager.realPlayers()}), so
-	 * the instant it's captured matters. The Wither King has to hold its signal until the death dialogue has played
-	 * out in full — but during those ~9 seconds a player can walk out, and capturing then would find an empty
-	 * roster and silently drop the entire run from the leaderboards. So the numbers are frozen when the scoreboard
-	 * prints and merely *delivered* when the dialogue ends. Bosses whose signal already fires at the moment they
+	 * the instant it's captured matters.  The Wither King has to hold its signal until the death dialogue has played
+	 * out in full, but during those ~9 seconds a player can walk out, and capturing then would find an empty
+	 * roster and silently drop the entire run from the leaderboards.  So the numbers are frozen when the scoreboard
+	 * prints and merely *delivered* when the dialogue ends.  Bosses whose signal already fires at the moment they
 	 * finish don't need this; they can capture at signal time.
 	 */
 	public static void captureRunResult() {
@@ -136,9 +136,9 @@ public class WitherActions {
 				new plugin.ScoreMilestoneEvent(score, plugin.RunResult.capture(runSection, true)));
 	}
 
-	/** Whether {@code p} can aggro a boss in the current mode. During a TAS (non-practice) the withers ignore all
-	 *  real players — they are not part of the run — so only fake players are eligible. In practice mode the real
-	 *  players ARE the runners (no fakes are spawned), so the opposite holds. */
+	/** Whether {@code p} can aggro a boss in the current mode.  During a TAS (non-practice) the withers ignore all
+	*  real players, since they are not part of the run, so only fake players are eligible.  In practice mode the
+	*  real players ARE the runners and no fakes are spawned, so the opposite holds. */
 	private static boolean isAggroEligible(Player p) {
 		if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) return true; // spectators never aggro
 		boolean fake = FakePlayerManager.getFakePlayers().containsValue(p);
@@ -160,12 +160,12 @@ public class WitherActions {
 	public static Map<String, Integer> splitEnds() { return new java.util.LinkedHashMap<>(splitEnds); }
 
 	// --- Per-phase durations (for the leaderboards) ---
-	// PHASE-RELATIVE tick (Utils.phaseTick(), i.e. the boss's own clock) at the moment the phase ENDED — the tick the
-	// death dialogue finishes and the boss chains to the next phase ("<Boss> finished in ..."), NOT the killing blow
-	// ("<Boss> killed in ..."), which is 80-200 ticks earlier. Distinct from splitEnds above, which is
-	// overall-run-relative and is stamped by the NEXT section's start — meaning a standalone "/practice maxor" never
-	// lands a Maxor split at all. Each boss stamps its own duration here at the end of its own death sequence, so an
-	// individual-phase practice is timed exactly like a phase inside a full run.
+	// PHASE-RELATIVE tick (Utils.phaseTick(), i.e. the boss's own clock) at the moment the phase ENDED.  That is the
+	// tick the death dialogue finishes and the boss chains to the next phase ("<Boss> finished in ..."), NOT the
+	// killing blow ("<Boss> killed in ..."), which is 80-200 ticks earlier.  This is distinct from splitEnds above,
+	// which is overall-run-relative and is stamped by the NEXT section's start, meaning a standalone
+	// "/practice maxor" never lands a Maxor split at all.  Each boss stamps its own duration here at the end of its
+	// own death sequence, so an individual-phase practice is timed exactly like a phase inside a full run.
 	private static final Map<String, Integer> phaseDurations = new java.util.LinkedHashMap<>();
 
 	/** Record the duration (phase-relative ticks) of the named boss phase, stamped when the phase ends. */
@@ -177,7 +177,7 @@ public class WitherActions {
 	/** Every recorded phase duration, in completion order. */
 	public static Map<String, Integer> phaseDurations() { return new java.util.LinkedHashMap<>(phaseDurations); }
 
-	/** Clear all recorded splits + phase durations — called at the start of every /tas and /practice run. */
+	/** Clear all recorded splits and phase durations.  Called at the start of every /tas and /practice run. */
 	public static void clearSplits() {
 		splitEnds.clear();
 		phaseDurations.clear();
@@ -187,7 +187,7 @@ public class WitherActions {
 	// Players who changed game mode at any point during the current run; their scoreboard name shows white, not gold.
 	private static final Set<UUID> gameModeChanged = new HashSet<>();
 
-	/** Clear recorded game-mode changes — called at the start of every /tas and /practice run. */
+	/** Clear recorded game-mode changes.  Called at the start of every /tas and /practice run. */
 	public static void clearGameModeChanges() { gameModeChanged.clear(); }
 
 	/** Record that a player changed game mode during the run (disqualifies their golden name). */
@@ -198,12 +198,12 @@ public class WitherActions {
 		return p.getGameMode() == GameMode.ADVENTURE && !gameModeChanged.contains(p.getUniqueId());
 	}
 
-	/** Record a player that just damaged a boss — the aggro target. Same-tick ties go to the alphabetically-first
-	 *  name; a later tick's hit always takes over. */
+	/** Record a player that just damaged a boss, which makes them the aggro target.  Same-tick ties go to the
+	*  alphabetically-first name; a later tick's hit always takes over. */
 	public static void noteDamager(Player p) {
 		if(p == null) return;
-		// During a TAS the run is driven entirely by the fake players — a real player hitting a boss must never
-		// steal its aggro. (In practice mode it's the reverse: only real players count.)
+		// During a TAS the run is driven entirely by the fake players, so a real player hitting a boss must never
+		// steal its aggro.  In practice mode it's the reverse: only real players count.
 		if(isAggroEligible(p)) return;
 		int now = MinecraftServer.currentTick;
 		if(now > lastDamageTick) {
@@ -221,12 +221,12 @@ public class WitherActions {
 	 * Makes a Wither chase a target using a vanilla-style PD-with-friction velocity controller:
 	 * each tick the goal is recomputed (closest spot at {@code stopDistance} horizontally from
 	 * the target, with {@code yOffset} vertical offset), and the wither's horizontal velocity
-	 * is integrated via the same shape as vanilla {@code Wither.aiStep} — {@code v += dir*A - v*0.6}
-	 * then a {@code *= 0.91} friction. The acceleration term {@code A} is scaled so the
+	 * is integrated via the same shape as vanilla {@code Wither.aiStep}, i.e. {@code v += dir*A - v*0.6}
+	 * then a {@code *= 0.91} friction.  The acceleration term {@code A} is scaled so the
 	 * steady-state per-tick displacement equals {@code maxSpeed} (vanilla's hard-coded
-	 * {@code A=0.3} gives ~0.4717 blocks/tick; we use {@code A = maxSpeed * 0.636}). When the
+	 * {@code A=0.3} gives ~0.4717 blocks/tick; I use {@code A = maxSpeed * 0.636}).  When the
 	 * PD step would overshoot the goal, the wither snaps exactly to the goal and the velocity
-	 * state is zeroed — no ramp-down.
+	 * state is zeroed, with no ramp-down.
 	 * <br>
 	 * Also enables {@code noPhysics} so the wither phases through walls while chasing.
 	 *
@@ -267,8 +267,8 @@ public class WitherActions {
 				net.minecraft.world.entity.LivingEntity active = damager == null ? null : ((CraftLivingEntity) damager).getHandle();
 
 				if(w.isRemoved() || active == null || active.isRemoved() || !active.isAlive()) {
-					// No valid damager yet (or it momentarily went away) — hold position this tick. Only the boss
-					// itself disappearing tears the chase task down.
+					// No valid damager yet, or it momentarily went away, so hold position this tick.  Only the
+					// boss itself disappearing tears the chase task down.
 					if(!w.isRemoved()) return;
 					witherAggroTasks.remove(wither.getUniqueId());
 					w.noPhysics = false;
@@ -280,8 +280,8 @@ public class WitherActions {
 				double tx = active.getX(), tz = active.getZ();
 
 				// Horizontal target: closest point on the (radius=stopDistance) ring around the
-				// player, projected from the wither's current horizontal position. If the wither
-				// is already inside the ring, hold position — never back away from the player.
+				// player, projected from the wither's current horizontal position.  If the wither
+				// is already inside the ring, hold position and never back away from the player.
 				double dx = wx - tx;
 				double dz = wz - tz;
 				double horiz = Math.sqrt(dx * dx + dz * dz);
@@ -297,7 +297,7 @@ public class WitherActions {
 				double goalY = active.getY() + yOffset;
 
 				// Horizontal step: vanilla-shape PD (vxState += dir*A - vxState*0.6), then check
-				// for overshoot and snap if reached. Velocity state persists across ticks so the
+				// for overshoot and snap if reached.  Velocity state persists across ticks so the
 				// wither accelerates smoothly from rest like a vanilla Wither.
 				double mx = goalX - wx;
 				double mz = goalZ - wz;
@@ -315,7 +315,7 @@ public class WitherActions {
 					vzState += dirz * A - vzState * 0.6;
 					double stepLen = Math.sqrt(vxState * vxState + vzState * vzState);
 					if(stepLen >= horizMove) {
-						// Would reach or overshoot the goal this tick — snap exactly, no ramp-down.
+						// Would reach or overshoot the goal this tick, so snap exactly, with no ramp-down.
 						vx = mx;
 						vz = mz;
 						vxState = 0;
@@ -346,13 +346,13 @@ public class WitherActions {
 				w.hurtMarked = true;
 
 				// Vanilla LivingEntity.travel() no-ops when !isControlledByLocalInstance(),
-				// which is true for a Mob under setAI(false). Move manually — noPhysics makes
-				// this a pure setPos.
+				// which is true for a Mob under setAI(false).  Move manually, and noPhysics
+				// makes this a pure setPos.
 				w.move(MoverType.SELF, v);
 
-				// Use vanilla's LivingEntity.lookAt — this is the exact math LookControl
+				// Use vanilla's LivingEntity.lookAt.  This is the exact math LookControl
 				// uses to aim a mob at a target, so the formula and sign conventions are
-				// guaranteed to match rendering. It sets xRot, yRot, yHeadRot in one call.
+				// guaranteed to match rendering.  It sets xRot, yRot, yHeadRot in one call.
 				w.lookAt(EntityAnchorArgument.Anchor.EYES, active.getEyePosition());
 
 				// Vanilla air-drag for next tick: matches Wither.aiStep's `*= 0.91` after the move.
@@ -381,9 +381,9 @@ public class WitherActions {
 		w.noPhysics = false;
 	}
 
-	/** Closest valid player to the boss — the auto-aggro fallback used until someone beam/melee-damages it.
-	 *  Only fakes are considered during a TAS, only real players in practice (see {@link #isAggroEligible});
-	 *  excludes spectators and dead/cross-world players. */
+	/** Closest valid player to the boss, the auto-aggro fallback used until someone beam or melee damages it.
+	*  Only fakes are considered during a TAS, only real players in practice (see {@link #isAggroEligible}).
+	*  Spectators and dead or cross-world players are excluded. */
 	private static Player closestPlayer(Wither wither) {
 		Player closest = null;
 		double best = Double.MAX_VALUE;
@@ -407,9 +407,9 @@ public class WitherActions {
 		}
 
 		if(showArmor) {
-			// Assert the shield THIS tick — the maintenance task's first run is only next tick (0-tick delay = next
-			// scheduler pass), so without this an enrage mid-tick would leave the boss unshielded for the rest of the
-			// tick, letting same-tick beams/arrows land after it re-armored (over-DPS).
+			// Assert the shield THIS tick.  The maintenance task's first run is only next tick, since a 0-tick delay
+			// means the next scheduler pass, so without this an enrage mid-tick would leave the boss unshielded for the
+			// rest of the tick and let same-tick beams or arrows land after it re-armored, which is over-DPS.
 			wither.setInvulnerableTicks(3);
 			// Start the armor maintenance task
 			armorTask = new BukkitRunnable() {
@@ -429,15 +429,15 @@ public class WitherActions {
 	}
 
 	/**
-	 * True if {@code wither} was made vulnerable (armor dropped) on the CURRENT server tick — even if it has since
+	 * True if {@code wither} was made vulnerable (armor dropped) on the CURRENT server tick, even if it has since
 	 * been re-armored within the same tick.
 	 *
 	 * <p>The arrow damage gate ({@link listeners.WithersNotImmuneToArrows}) normally reads the live invulnerability
 	 * counter, but a Terminator/Last Breath arrow's hit resolves in the entity-physics lane, AFTER the start-of-tick
 	 * boss scans (see CLAUDE.md "Boss Tick Ordering"). So a one-tick vulnerability window that opens and re-closes
-	 * within a single tick is invisible to that arrow — the counter already reads "shielded" by the time the hit
-	 * lands, even though a same-tick mage beam (player lane) would connect. This captures the heartbeat-time intent
-	 * so the arrow honors it too.
+	 * within a single tick is invisible to that arrow, because the counter already reads "shielded" by the time the
+	 * hit lands, even though a same-tick mage beam in the player lane would connect.  This captures the
+	 * heartbeat-time intent so the arrow honors it too.
 	 */
 	public static boolean wasMadeVulnerableThisTick(Wither wither) {
 		return lastVulnerableTick.getOrDefault(wither.getUniqueId(), Integer.MIN_VALUE) == MinecraftServer.currentTick;

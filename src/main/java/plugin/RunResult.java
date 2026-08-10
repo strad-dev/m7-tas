@@ -13,14 +13,14 @@ import java.util.Map;
 /**
  * A snapshot of everything measurable about a finished /practice run, attached to {@link RunCompleteEvent}.
  * <br>
- * This is M7 TAS reporting FACTS about the run — ticks, score, who was there. It deliberately knows nothing
+ * This is M7 TAS reporting FACTS about the run: ticks, score, who was there.  It deliberately knows nothing
  * about leaderboards, categories or group sizes: deciding which boards a run qualifies for is the listening
  * plugin's business. M7 TAS stays standalone (nothing here reaches outside the plugin), and a listener that
  * doesn't want to compile against this class can read {@link #toJson()} through one reflective call.
  * <br>
  * All ticks are server ticks (20/s). "Overall" ticks are relative to the run's t=0
  * ({@link Utils#runTick()}); phase durations are relative to their own boss's start ({@link Utils#phaseTick()}).
- * A {@code null} Integer means "not reached this run" — e.g. every clear milestone is null for a boss-only
+ * A {@code null} Integer means "not reached this run", e.g. every clear milestone is null for a boss-only
  * practice, and {@code witherKing} is null for a run that stopped at Necron.
  */
 public final class RunResult {
@@ -82,7 +82,7 @@ public final class RunResult {
 
 	/**
 	 * Snapshot the current run. Must be called at completion time, while the participants are still online and
-	 * still in Adventure (i.e. before anything forces them to spectator) — {@code /practice end} moves everyone
+	 * still in Adventure, i.e. before anything forces them to spectator.  {@code /practice end} moves everyone
 	 * to spectator, which would empty {@link ClearManager#realPlayers()}.
 	 */
 	public static RunResult capture(String section, boolean success) {
@@ -97,7 +97,7 @@ public final class RunResult {
 
 		// Score and the clear milestones only mean anything if a clear phase actually ran. On a boss-only
 		// practice ClearManager was never started, and teamScore() would report a meaningless ~120 from an
-		// unexplored map — so report null rather than a number that would poison a leaderboard.
+		// unexplored map, so report null rather than a number that would poison a leaderboard.
 		if (ClearManager.isActive()) {
 			r.teamScore = ClearManager.teamScore();
 			r.grade = ClearManager.grade();

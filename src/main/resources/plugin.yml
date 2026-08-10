@@ -7,7 +7,7 @@ commands:
   setup:
     description: Clear all classes and spawn them
     usage: /setup
-  # TAS-only commands — disabled in the practice fork:
+  # TAS-only commands, disabled in the practice fork:
   # spectate:
   #   description: Spectate a class
   #   usage: /spectate <class>
@@ -27,23 +27,26 @@ commands:
   reset:
     description: Reset the dungeon to its pre-run state (and send any fake players out of sight)
     usage: /reset
-  # TAS-only command — disabled in the practice fork:
+  # TAS-only command, disabled in the practice fork:
   # simulate:
   #   description: Simulates player actions
   #   usage: /simulate <move|click|hotbar|turnhead|allblessings|undo>
-  getcustomitems:
-    description: Get custom items
-    usage: /getcustomitems [all|archer|berserk|healer|mage|tank]
   verbose:
     description: Toggle verbose debug messages
     usage: /verbose <true|false>
   setspeed:
     description: Set movement speed (100 = default); target self or a named player (fake or real)
     usage: /setspeed [player] [speed]
-  # TAS-only command — disabled in the practice fork:
+  # TAS-only command, disabled in the practice fork:
   # kickallfakes:
   #   description: Kick all fake players
   #   usage: /kickallfakes
   terminal:
     description: Helper command to facilitate terminals phase
     usage: /terminal <section> <terminal>
+  class:
+    description: Pick your M7 class (shared with the network plugin's copy)
+    usage: /class <archer|mage|tank|berserk|healer>
+  m7loadout:
+    description: Edit the saved kit for your selected class
+    usage: /m7loadout [reset]

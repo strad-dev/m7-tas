@@ -82,8 +82,8 @@ public class FakePlayerInventory {
 	/**
 	 * Build the full 41-slot loadout array for a class/role WITHOUT a live player: indices [0..35] are the main
 	 * inventory slots, [36] helmet, [37] chestplate, [38] leggings, [39] boots, [40] off-hand. Used by the
-	 * cross-server item-catalog export ({@link Catalog}). IMPORTANT: this mirrors
-	 * {@link #applyClassLoadout(Player, String)} item-for-item - if you change a class's items in one, change
+	 * cross-server item-catalog export ({@link Catalog}).  IMPORTANT: this mirrors
+	 * {@link #applyClassLoadout(Player, String)} item-for-item, so if you change a class's items in one, change
 	 * the other to match.
 	 */
 	public static ItemStack[] classLoadoutContents(String role) {
@@ -124,7 +124,7 @@ public class FakePlayerInventory {
 		arr[11] = getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<dark_purple>Renowned Spring Boots", "skyblock/combat/spring_boots");
 		arr[12] = getRacingHelmet();
 		arr[13] = getCowHat();
-		arr[28] = getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Bonzo Staff", "skyblock/combat/bonzo");
+		arr[28] = getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Heroic Bonzo Staff", "skyblock/combat/bonzo");
 		arr[29] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Tactical Insertion", "skyblock/combat/tac");
 		arr[34] = getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine");
 
@@ -137,16 +137,16 @@ public class FakePlayerInventory {
 				arr[19] = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Chestplate"));
 				arr[20] = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Leggings"));
 				arr[21] = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Boots"));
-				arr[30] = getSkyBlockItem(Material.BONE, "<light_purple>Rapid Bonemerang", "");
+				// Slot 30 was the Rapid Bonemerang; dropped because it had no ability behind it at all.
 				arr[32] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
-				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag");
+				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarock Axe", "skyblock/combat/rag");
 				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "");
 			}
 			case "Berserk" -> {
 				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
 				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
-				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag");
+				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarock Axe", "skyblock/combat/rag");
 				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "");
 			}
 			case "Healer" -> {
@@ -162,12 +162,12 @@ public class FakePlayerInventory {
 				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
 				arr[3] = getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore");
 				arr[4] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				// Storage row 2, middle - directly above the Infinityboom in slot 31. No Power enchant: the class
-				// bake in Catalog/GetCustomItems only touches slot 4, and the Mage's Terminator Power is 0 anyway.
+				// Storage row 2, middle, directly above the Infinityboom in slot 31.  No Power enchant: the class
+				// bake in Catalog.defaultFor only touches slot 4, and the Mage's Terminator Power is 0 anyway.
 				arr[22] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[30] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla");
 				arr[31] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
-				arr[32] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag");
+				arr[32] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarock Axe", "skyblock/combat/rag");
 				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
 				arr[35] = getSkyBlockItem(Material.BOW, "<gold>Precise Explosive Bow", "skyblock/combat/explosive_bow");
 			}
@@ -176,7 +176,7 @@ public class FakePlayerInventory {
 				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
 				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
 				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[31] = getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Withered Axe of the Shredded", "skyblock/combat/aots");
+				arr[31] = getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Suspicious Axe of the Shredded", "skyblock/combat/aots");
 				arr[32] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay");
 				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
 			}
@@ -188,114 +188,28 @@ public class FakePlayerInventory {
 	 * Populate {@code p}'s inventory with the full loadout for a class/role: armor set, shared hotbar/utility items,
 	 * and class-specific weapons in their fixed slots. Clears the inventory first. {@code role} accepts a class name
 	 * ({@code Archer}/{@code Berserk}/{@code Healer}/{@code Mage}/{@code Tank}) or a fake-player name
-	 * ({@code Mage1}–{@code Mage4}, mapped to the Mage loadout). This is the single source of truth shared by
-	 * {@link #setInventories()} (which layers on the fake-player buffs + equipment packets) and {@code /getcustomitems}.
+	 * ({@code Mage1}-{@code Mage4}, mapped to the Mage loadout).
+	 * <br>
+	 * The kit itself comes from {@link #classLoadoutContents(String)}, the ONE definition of what a class carries.
+	 * This used to be a hand-copied second listing of the same items, which had to be kept in step item-for-item;
+	 * it was only separate because {@code /getcustomitems} applied it to a live player while the catalog export
+	 * needed an array. That command is gone (players get their kit from {@code /class} + {@code /m7loadout} +
+	 * {@code /practice}), so this is now just "the array, applied to a player".
 	 */
 	public static void applyClassLoadout(Player p, String role) {
-		ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
-		pearls.setAmount(16);
-		ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, "<red>Dungeonbreaker", "skyblock/combat/stonk");
-		pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
-		ItemMeta meta = pickaxe.getItemMeta();
-		meta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
-		pickaxe.setItemMeta(meta);
-		// Lets Dungeonbreaker break any block while the holder is in adventure mode (matches Hypixel behaviour).
-		pickaxe = Utils.breakAnyBlockInAdventure(pickaxe);
+		ItemStack[] arr = classLoadoutContents(role);
 		PlayerInventory inventory = p.getInventory();
 		inventory.clear();
 
 		// Applying a kit gives the player the TAS movement speed (400).
 		Utils.setSpeed(p, 400);
 
-		switch(role) {
-			case "Archer", "Berserk", "Healer", "Tank" -> {
-				ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(231, 65, 80), Utils.mmLegacy("<light_purple>Ancient Necron's Chestplate"));
-				ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(231, 92, 60), Utils.mmLegacy("<light_purple>Ancient Necron's Leggings"));
-				ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(231, 110, 60), Utils.mmLegacy("<light_purple>Ancient Necron's Boots"));
-
-				inventory.setHelmet(getDiamondHead());
-				inventory.setChestplate(chestplate);
-				inventory.setLeggings(leggings);
-				inventory.setBoots(boots);
-			}
-			case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
-				ItemStack chestplate = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), Utils.mmLegacy("<light_purple>Ancient Storm's Chestplate"));
-				ItemStack leggings = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), Utils.mmLegacy("<light_purple>Ancient Storm's Leggings"));
-				ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), Utils.mmLegacy("<light_purple>Ancient Storm's Boots"));
-
-				inventory.setHelmet(getStormHelmet());
-				inventory.setChestplate(chestplate);
-				inventory.setLeggings(leggings);
-				inventory.setBoots(boots);
-			}
-		}
-
-		inventory.setItem(0, getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Heroic Hyperion", "skyblock/combat/scylla"));
-		inventory.setItem(1, getSkyBlockItem(Material.DIAMOND_SHOVEL, "<gold>Warped Aspect of the Void", "skyblock/combat/aotv"));
-		inventory.setItem(5, pickaxe);
-		inventory.setItem(6, getSkyBlockItem(Material.BLAZE_ROD, "<gold>Gyrokinetic Wand", "skyblock/combat/gyro"));
-		inventory.setItem(7, pearls);
-		inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, SKYBLOCK_MENU_NAME, ""));
-		inventory.setItem(9, getSpiritMask());
-		inventory.setItem(10, getBonzoMask());
-		inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<dark_purple>Renowned Spring Boots", "skyblock/combat/spring_boots"));
-		inventory.setItem(12, getRacingHelmet());
-		inventory.setItem(13, getCowHat());
-		inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Bonzo Staff", "skyblock/combat/bonzo"));
-		inventory.setItem(29, getSkyBlockItem(Material.BLAZE_ROD, "<gold>Tactical Insertion", "skyblock/combat/tac"));
-		inventory.setItem(34, getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine"));
-
-		switch(role) {
-			case "Archer" -> {
-				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
-				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
-				inventory.setItem(18, getThermodynamicHelmet());
-				inventory.setItem(19, Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Chestplate")));
-				inventory.setItem(20, Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Leggings")));
-				inventory.setItem(21, Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Boots")));
-				inventory.setItem(30, getSkyBlockItem(Material.BONE, "<light_purple>Rapid Bonemerang", ""));
-				inventory.setItem(32, getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath"));
-				inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag"));
-				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", ""));
-			}
-			case "Berserk" -> {
-				inventory.setItem(2, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
-				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
-				inventory.setItem(33, getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag"));
-				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", ""));
-			}
-			case "Healer" -> {
-				inventory.setItem(2, getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
-				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
-				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay"));
-				inventory.setItem(33, getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath"));
-				inventory.setItem(35, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", ""));
-			}
-			case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
-				inventory.setItem(2, getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore"));
-				inventory.setItem(4, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(22, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
-				inventory.setItem(30, getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla"));
-				inventory.setItem(31, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
-				inventory.setItem(32, getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarok Axe", "skyblock/combat/rag"));
-				inventory.setItem(33, getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath"));
-				inventory.setItem(35, getSkyBlockItem(Material.BOW, "<gold>Precise Explosive Bow", "skyblock/combat/explosive_bow"));
-			}
-			case "Tank" -> {
-				inventory.setItem(2, getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray"));
-				inventory.setItem(3, Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom")));
-				inventory.setItem(4, getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator"));
-				inventory.setItem(30, getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap"));
-				inventory.setItem(31, getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Withered Axe of the Shredded", "skyblock/combat/aots"));
-				inventory.setItem(32, getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay"));
-				inventory.setItem(33, getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath"));
-			}
-		}
+		for(int i = 0; i < 36; i++) inventory.setItem(i, arr[i]);
+		inventory.setHelmet(arr[36]);
+		inventory.setChestplate(arr[37]);
+		inventory.setLeggings(arr[38]);
+		inventory.setBoots(arr[39]);
+		if(arr[40] != null) inventory.setItemInOffHand(arr[40]);
 	}
 
 	// --- Item Creators ---
@@ -305,7 +219,7 @@ public class FakePlayerInventory {
 		props.put("textures", new Property("textures", textureValue, textureSignature));
 		PropertyMap propertyMap = new PropertyMap(props);
 		// Profile id derived from the identifier, NOT random: the profile id is part of the item's NBT, so a random
-		// one made every copy of the same head a byte-different ItemStack — which is why the catalog palette used to
+		// one made every copy of the same head a byte-different ItemStack.  That is why the catalog palette used to
 		// list the shared heads (Spirit Mask, Bonzo Mask, Racing Helmet, Cow Hat, ...) once per class.
 		GameProfile gp = new GameProfile(UUID.nameUUIDFromBytes(identifier.getBytes(StandardCharsets.UTF_8)), identifier, propertyMap);
 
@@ -331,7 +245,7 @@ public class FakePlayerInventory {
 
 	public static final String RACING_HELMET_NAME = "<light_purple>Renowned Racing Helmet";
 
-	/** True if the given item is the Renowned Racing Helmet (identified by display name — it carries no lore ID). */
+	/** True if the given item is the Renowned Racing Helmet, identified by display name since it carries no lore ID. */
 	public static boolean isRacingHelmet(ItemStack item) {
 		if(item == null || item.getType() != Material.PLAYER_HEAD || !item.hasItemMeta()) {
 			return false;
@@ -360,17 +274,17 @@ public class FakePlayerInventory {
 		return meta.hasDisplayName() && Utils.mmLegacy(name).equals(Utils.displayName(meta));
 	}
 
-	/** True if the given item is the Renowned Cow Hat (identified by display name — it carries no lore ID). */
+	/** True if the given item is the Renowned Cow Hat, identified by display name since it carries no lore ID. */
 	public static boolean isCowHat(ItemStack item) {
 		return isNamedHead(item, COW_HAT_NAME);
 	}
 
-	/** True if the given item is the Ancient Spirit Mask (identified by display name — it carries no lore ID). */
+	/** True if the given item is the Ancient Spirit Mask, identified by display name since it carries no lore ID. */
 	public static boolean isSpiritMask(ItemStack item) {
 		return isNamedHead(item, SPIRIT_MASK_NAME);
 	}
 
-	/** True if the given item is the Ancient Bonzo's Mask (identified by display name — it carries no lore ID). */
+	/** True if the given item is the Ancient Bonzo's Mask, identified by display name since it carries no lore ID. */
 	public static boolean isBonzoMask(ItemStack item) {
 		return isNamedHead(item, BONZO_MASK_NAME);
 	}
@@ -395,11 +309,37 @@ public class FakePlayerInventory {
 		return getCustomHead("<light_purple>Renowned Thermodynamic Helmet", "thermoHelmet", "ewogICJ0aW1lc3RhbXAiIDogMTc3MjE1OTIwMzEzMywKICAicHJvZmlsZUlkIiA6ICJkZGRhNjc4ZmYyN2M0NjFhOWUyMjRiMTU1NjI4NDZmYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJSeWxlZTc1NDMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2FkNjdjZjMzMTg4YTU0YjZmNTVkMmVmNTI0OGNkM2I3MjE3Njk5NGUxZDIwMzczMWU4NmIzNjVhODU4MTcyNiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "erdSAba2Gk9jBaa6fd87ZzBdUbuKFtDuo4m2+H9s3WISKq+i+VMi/IUa5WvN2dy7i2sFXA8jqtXh5LG87+I3bTSZKfvxlEgQfwBg0aG7HEsqn1OAAsT/4ZFWE7Flt79D22G8kZZe5IGkFj5T8pZpEC6NBKWX+k666Bd+G68TmGFcaSzKgKs/AGRtR6iwJKMp1U9CD9+jr7WAC5j/jDtwHLzYTv+zxEt8ufNv5ewSrGtnXelBkAQmAo8dhvrfik0G/rpB5RhM8FZOfhV+fqjLvtcBd0vOVrDMLHaZJ+2TpjDnjScA+GIS30EEwnx8TpsoJM5PLJUL7b9xNZEECQAklnZt59gSg2e0PF6rI2Q2Fb9HIVDETPKoNK/9X7MfWC9uWr/GEA4G61tLYq5NnMEAqj3+AT6YTWb3Vy5xDauTHftbAogQEWa/2S5GyHUVQ0zh850aOy9AQMCbUaN5hTk/x6AFJIY9bvFEGVJ3Wr8HZPIh/WAqgRqgnLRx6RxSqymBsh/I2SYLaWtM027hkUlcAfj3HbYMkBdD8UXx3AzPvXAwhDojUPMWwK74La9MwiDRDO+fxFdhOIhrbh4ib1MaH7dqrcnDX6OjdQfZ0QR3lNRYet8wKlxVL3xy3ppRfLys8Wrvhdi3kBplKJxW5CyoI4fEJLtyvC2NM3olt9ZvVbM=");
 	}
 
-	/** Epic rarity — dark purple. (light_purple is MYTHIC in this palette: Hyperion, Terminator, Last Breath, ...) */
-	public static final String GOLEM_SWORD_NAME = "<dark_purple>Withered Golem Sword";
+	/** Legendary rarity, so gold. */
+	public static final String WITHER_GOGGLES_NAME = "<gold>Necrotic Wither Goggles";
 
-	/** Golem Sword — right-click zeroes the holder's Y velocity. In no class's default kit; it exists for
-	 *  {@code /getcustomitems} and the loadout palette ({@link Catalog#extraPaletteItems()}). */
+	/** Necrotic Wither Goggles, a helmet in no class's default kit.  It exists for the loadout palette
+	*  ({@link Catalog#extraPaletteItems()}).  No ability, so it carries no lore ID. */
+	public static ItemStack getWitherGoggles() {
+		return getCustomHead(WITHER_GOGGLES_NAME, "witherGoggles", "ewogICJ0aW1lc3RhbXAiIDogMTYwNTU0MzM0MTg4MSwKICAicHJvZmlsZUlkIiA6ICJiMGQ0YjI4YmMxZDc0ODg5YWYwZTg2NjFjZWU5NmFhYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNaW5lU2tpbl9vcmciLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMzdjZWI4ZjA3NThlMmQ4YWM0OWRlNmY5Nzc2MDNjN2JmYzIzZmQ4MmE4NTc0ODEwYTQ1ZjVlOTdjNjQzNmQ3OSIKICAgIH0KICB9Cn0=", "mqJHuSSijxc6VikSP8VL+tISFxCoCe6FA1s0ysbo7kp+eE8qYy7vRQTBqAI1rTSQmgQn1Oy0n+tFVFa7ToZSNVBM5VTllx6Nt1cipRTC4NkY4cilcqUeMddt1ao+jckKWsZ8nUD/8m9CCNtagldPKB5mhA458sN59j7iCTI1nR97cgDlIXZh9vDNG8/isTnDyzmpfyYUdSDj2+cSoILua+pgh7TVc/5Hg50kawkQ4dL1F4J05dHlA5eOnUgP352oWAYHmMMgblLY59n4/TkyyfSsz8YGd93enM+egfqQ2ipJU7Tgo0WhhbEdwE44BAi/mi1L2wW4YV18yJ7AxE4cvm9RxFM8Q1B9YBJ7MSUcwqvlf3kxoywaVbLBaOkeHrKIAKkqcyFljyDbLwTfXCAXhmBG0X0HMi+wPQCKki1oONMiZ0A1tJV5IzF/lOWptpSUpF/NSi/U3A+0V/EBjgdpXcCzpITPLC8v0nWfoUktnOytpZU+25/HGzRW+P93VTaT08kIFG8Cw2yIpQ/dAg2eTZwScUqePXpwKMD2vBIIQEEZpapi624g4004VGKQx/C8p4ZQg+/XydVM7doeG46IzM25nn5JQiqLkwZzft447fssR3bfSUxIWeiRmIy51FvYUU73yBF1BsPo0m7R3voZuwo7SEite6S2yW0ptjpAnP8=");
+	}
+
+	/**
+	 * Alternate-reforge Storm's armour pieces (Mythic), palette-only alongside the Ancient set the Mage class wears.
+	 * Colours match the Ancient piece each one stands in for, because the reforge is the only difference, so they
+	 * must look identical in the editor.  Not in any class's default kit; see {@link Catalog#extraPaletteItems()}.
+	 */
+	public static ItemStack getLovingStormChestplate() {
+		return Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(23, 147, 196), Utils.mmLegacy("<light_purple>Loving Storm's Chestplate"));
+	}
+
+	public static ItemStack getNecroticStormLeggings() {
+		return Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(23, 168, 196), Utils.mmLegacy("<light_purple>Necrotic Storm's Leggings"));
+	}
+
+	public static ItemStack getNecroticStormBoots() {
+		return Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(28, 212, 228), Utils.mmLegacy("<light_purple>Necrotic Storm's Boots"));
+	}
+
+	/** Epic rarity, so dark purple.  light_purple is MYTHIC in this palette: Hyperion, Terminator, Last Breath, ... */
+	public static final String GOLEM_SWORD_NAME = "<dark_purple>Suspicious Golem Sword";
+
+	/** Golem Sword: right-click zeroes the holder's Y velocity.  In no class's default kit; it exists for
+	*  the loadout palette ({@link Catalog#extraPaletteItems()}), i.e. by picking it in /m7loadout. */
 	public static ItemStack getGolemSword() {
 		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword");
 	}

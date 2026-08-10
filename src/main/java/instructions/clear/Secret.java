@@ -24,7 +24,7 @@ public class Secret {
 	/** Whether this counts toward the dungeon's 47 scored secrets (false for Ice-Fill reward chests). */
 	public final boolean counted;
 
-	/** Owning room — set by {@link Rooms} when the secret is registered. */
+	/** Owning room, set by {@link Rooms} when the secret is registered. */
 	Room room;
 	/** Run-time completion flag. */
 	public boolean found;

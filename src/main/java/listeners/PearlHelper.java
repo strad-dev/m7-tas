@@ -18,7 +18,7 @@ public class PearlHelper implements Listener {
 		if (!(e.getEntity() instanceof EnderPearl pearl)) return;
 		if (!(e.getEntity().getShooter() instanceof Player p)) return;
 
-		// Infinileap is an ender pearl item but must never be thrown — leaping is done by
+		// Infinileap is an ender pearl item but must never be thrown, since leaping is done by
 		// Actions.leap directly. Normally handleCustomItems cancels the interact event first;
 		// this is the hard backstop in case any use path slips through.
 		if("skyblock/utility/infinileap".equals(CustomItems.getID(p.getInventory().getItemInMainHand()))) {
@@ -40,7 +40,7 @@ public class PearlHelper implements Listener {
 			Location l;
 			if(e.getHitBlock() != null && e.getHitBlockFace() != null) {
 				BlockFace face = e.getHitBlockFace();
-				// When pearl is thrown from inside a block, Bukkit inverts the face — use velocity instead
+				// When a pearl is thrown from inside a block, Bukkit inverts the face, so use velocity instead
 				if(!p.getEyeLocation().getBlock().isPassable()) {
 					Vector vel = pearl.getVelocity();
 					double absX = Math.abs(vel.getX()), absY = Math.abs(vel.getY()), absZ = Math.abs(vel.getZ());
@@ -63,7 +63,7 @@ public class PearlHelper implements Listener {
 					l = e.getHitBlock().getRelative(face).getLocation().add(0.5, 0, 0.5);
 				}
 			} else {
-				// Entity hit or unknown — use pearl location floored
+				// Entity hit or unknown, so use the pearl location floored
 				l = pearl.getLocation();
 				l.setX(Math.floor(l.getX()) + 0.5);
 				l.setY(Math.ceil(l.getY()));

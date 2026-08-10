@@ -7,22 +7,22 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Boss-priority tick scheduler — the mechanism behind the "all boss actions run at the start of the tick" invariant
- * (see CLAUDE.md "Boss Tick Ordering").
+ * Boss-priority tick scheduler, the mechanism behind the "all boss actions run at the start of the tick"
+ * invariant (see CLAUDE.md "Boss Tick Ordering").
  *
  * <p>A single repeating heartbeat, started once at plugin enable ({@link M7tas#onEnable}). Because it is created at
  * enable time, its Bukkit scheduler task id is lower than any per-run choreography (which is only scheduled when
  * {@code /tas} runs), and CraftBukkit executes same-tick tasks in task-id order. So every registered boss ticker runs
- * each tick BEFORE the players' beam/melee choreography — guaranteeing a mage-beam hit reads finalized boss state
- * (stun/enrage/HP) on the same tick instead of the previous one. That is what lets the player routines drop the
- * +1-tick offsets that previously forced the beam to wait a tick for the boss state.
+ * each tick BEFORE the players' beam and melee choreography, which guarantees a mage-beam hit reads finalized
+ * boss state (stun, enrage, HP) on the same tick instead of the previous one.  That is what lets the player
+ * routines drop the +1-tick offsets that previously forced the beam to wait a tick for the boss state.
  *
  * <p>Two ways to register work:
  * <ul>
- *   <li>{@link #addTicker} — a per-tick boss simulation step (movement, stun/enrage scans). Runs every tick in
- *       registration order, so a boss that needs "move, then scan" must register the mover first.
- *   <li>{@link #schedule} — a one-shot that fires at the START of a future tick (the boss-lane equivalent of
- *       {@code runTaskLater}), for timed boss state changes a player hit must observe deterministically.
+ *   <li>{@link #addTicker}: a per-tick boss simulation step (movement, stun and enrage scans).  Runs every tick
+ *       in registration order, so a boss that needs "move, then scan" must register the mover first.
+ *   <li>{@link #schedule}: a one-shot that fires at the START of a future tick, the boss-lane equivalent of
+ *       {@code runTaskLater}, for timed boss state changes a player hit must observe deterministically.
  * </ul>
  *
  * <p>{@link CopyOnWriteArrayList} lets a ticker register/unregister itself (or another) from inside its {@code run()}
@@ -32,9 +32,9 @@ public final class BossScheduler {
 	private BossScheduler() {}
 
 	private static final List<Runnable> tickers = new CopyOnWriteArrayList<>();
-	// Movement lane: boss ENTITY movement (aggro movers). Driven from the fake-player ticker AFTER fake aiStep
-	// (see FakePlayerManager), so a boss moves at the same point in the tick as the fakes — "where movement
-	// normally happens" — rather than at the start of the tick. Start-of-tick scans (the `tickers` lane above)
+	// Movement lane: boss ENTITY movement (aggro movers).  Driven from the fake-player ticker AFTER fake aiStep
+	// (see FakePlayerManager), so a boss moves at the same point in the tick as the fakes, "where movement
+	// normally happens", rather than at the start of the tick.  Start-of-tick scans, the `tickers` lane above,
 	// therefore read the boss's PRE-move position, a deliberate one-tick lag matching vanilla entity ticking.
 	private static final List<Runnable> movementTickers = new CopyOnWriteArrayList<>();
 	private static BukkitTask heartbeat;
@@ -46,9 +46,9 @@ public final class BossScheduler {
 	public static void start() {
 		if(heartbeat != null && !heartbeat.isCancelled()) return;
 		heartbeat = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
-			// Advance FIRST, so bossTick reads the same value for the whole server tick — whether schedule() is
+			// Advance FIRST, so bossTick reads the same value for the whole server tick, whether schedule() is
 			// called from the boss lane (a ticker, here) or the player lane (a damage handler that runs later this
-			// tick). That keeps delay semantics identical regardless of caller (see schedule()).
+			// tick).  That keeps delay semantics identical regardless of caller (see schedule()).
 			bossTick++;
 			// Isolate failures: these tickers used to be independent tasks, so one throwing must not stop the rest.
 			for(Runnable ticker : tickers) {
@@ -84,8 +84,9 @@ public final class BossScheduler {
 	}
 
 	/**
-	 * Register a per-tick boss ENTITY-MOVEMENT step (an aggro mover). Runs in the movement phase — from the
-	 * fake-player ticker, after fake aiStep — NOT at the start of the tick. Returns the handle for {@link #removeMovementTicker}.
+	 * Register a per-tick boss ENTITY-MOVEMENT step (an aggro mover).  Runs in the movement phase, from the
+	 * fake-player ticker after fake aiStep, NOT at the start of the tick.  Returns the handle for
+	 * {@link #removeMovementTicker}.
 	 */
 	public static void addMovementTicker(Runnable ticker) {
 		movementTickers.add(ticker);
@@ -113,8 +114,9 @@ public final class BossScheduler {
 	 * heartbeat (before that tick's player choreography). Invoked while processing tick T (from either lane), the
 	 * action fires at the start of tick {@code T + delayTicks}.
 	 *
-	 * <p>Use this — NOT {@code runTaskLater} / {@link Utils#scheduleTask} — for timed boss state changes a player hit
-	 * must observe deterministically: stun→enrage, immunity/cooldown windows ending, interlude ends. Example: Maxor
+	 * <p>Use this, NOT {@code runTaskLater} or {@link Utils#scheduleTask}, for timed boss state changes a player hit
+	 * must observe deterministically: stun→enrage, immunity and cooldown windows ending, interlude ends.  Example: Maxor
+
 	 * enters the laser at the start of tick 195 and schedules enrage with delay 160 → enrage fires at the start of
 	 * tick 355, so a beam on tick 355 sees the already-re-armored boss. A raw runTaskLater would fire mid-tick, after
 	 * the beam.

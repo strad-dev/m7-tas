@@ -85,7 +85,7 @@ public final class MobGroup {
 				}
 			}
 
-			// Face the target if requested — used to point miners/sentries at the room center.
+			// Face the target if requested, used to point miners and sentries at the room center.
 			if(spec.facingTarget() != null) {
 				Location target = spec.facingTarget();
 				Vector direction = target.toVector().subtract(spawnLoc.toVector()).normalize();

@@ -19,7 +19,7 @@ import org.bukkit.event.hanging.HangingBreakEvent;
 import java.util.Iterator;
 
 /**
- * Storm's crush explosion is purely cosmetic for entities — its job is to clear
+ * Storm's crush explosion is purely cosmetic for entities.  Its job is to clear
  * the pillar's diorite. This listener:
  * <ol>
  *   <li>filters {@link EntityExplodeEvent#blockList()} so only the active pillar's
@@ -31,7 +31,7 @@ import java.util.Iterator;
  *       so the blast doesn't push entities around,</li>
  *   <li>cancels any {@link HangingBreakEvent} caused by Storm's crush explosion
  *       so item frames / paintings inside the blast radius (e.g. Goldor terminal
- *       frames) are not silently destroyed — hanging entities are removed by
+ *       frames) are not silently destroyed, since hanging entities are removed by
  *       vanilla on a separate event path that is not covered by the damage or
  *       knockback cancellations.</li>
  * </ol>
@@ -42,7 +42,7 @@ public class StormCrushExplosion implements Listener {
 	public void onCrushExplode(EntityExplodeEvent event) {
 		if(!isStormCrush(event.getEntity())) return;
 
-		// Scope the destruction to only the pillar Storm is currently crushing —
+		// Scope the destruction to only the pillar Storm is currently crushing,
 		// no collateral damage to other pillars or arena blocks.
 		PadAndPillar pillar = Storm.INSTANCE.getCurrentCrushPillar();
 
@@ -70,7 +70,7 @@ public class StormCrushExplosion implements Listener {
 		event.setCancelled(true);
 	}
 
-	// 26.2: migrated to Paper's unified io.papermc.paper.event.entity.EntityKnockbackEvent — one handler. The
+	// 26.2: migrated to Paper's unified io.papermc.paper.event.entity.EntityKnockbackEvent, so one handler.  The
 	// by-entity crush source arrives as EntityPushedByEntityAttackEvent (subclass sharing the same HandlerList);
 	// explosion-physics paths arrive on the base event with Cause.EXPLOSION.
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

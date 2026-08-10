@@ -34,20 +34,20 @@ import java.util.Map;
 import java.util.UUID;
 
 /*
- * Eq (/eq) — a real Hypixel command.
+ * Eq (/eq), a real Hypixel command.
  * Opens a 1-row chest GUI showing the player's worn armor (helmet/chestplate/leggings/boots in slots 0-3)
  * and a sugar cane in slot 8 whose stack size is the player's current speed floored to the lower 100
  * (e.g. 480 → a stack of 4) with the exact speed on its tooltip. Clicking an armor piece in your own
  * inventory while the menu is open swaps it onto your body (and into the matching GUI slot).
  *
- * Registered both as the /eq executor and as an event listener (two stateless instances — the GUI is
+ * Registered both as the /eq executor and as an event listener, as two stateless instances, since the GUI is
  * identified by its {@link EqHolder}, not by instance state).
  */
 public class Eq implements CommandExecutor, Listener {
 
 	private static final Component TITLE = Utils.msg("<dark_gray>Equipment");
 	private static final int SPEED_SLOT = 8;
-	/** Last server tick a swap ran per player — collapses a double-click's burst of events into one swap. */
+	/** Last server tick a swap ran per player, which collapses a double-click's burst of events into one swap. */
 	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
 
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
@@ -65,7 +65,7 @@ public class Eq implements CommandExecutor, Listener {
 		holder.setInventory(gui);
 		refresh(p, gui);
 		p.openInventory(gui);
-		applySpeedCane(p); // must run after the menu exists — writes the cane via NMS (see below)
+		applySpeedCane(p); // must run after the menu exists, since it writes the cane via NMS (see below)
 	}
 
 	/** Mirror the player's worn armor into slots 0-3. The speed cane (slot 8) is set separately via NMS. */
@@ -79,7 +79,7 @@ public class Eq implements CommandExecutor, Listener {
 	/**
 	 * Write the speed cane into the open /eq menu's slot 8 via NMS. The cane's count is speed/10 (e.g. 650 -> 65),
 	 * since the client renders a stack count clamped to the item's max_stack_size and that component is itself
-	 * hard-capped at 99 — so a literal 3-digit speed can't be a count. The exact speed stays on the tooltip.
+	 * hard-capped at 99, so a literal 3-digit speed can't be a count.  The exact speed stays on the tooltip.
 	 * We still raise MAX_STACK_SIZE to the count because sugar cane's default cap (64) would otherwise clamp
 	 * counts of 65..99. Done via NMS because the Bukkit ItemStack path clamps the count to the item's max stack.
 	 */
@@ -118,7 +118,7 @@ public class Eq implements CommandExecutor, Listener {
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof EqHolder)) return;
-		e.setCancelled(true); // the GUI is fully controlled — only the armor swap below mutates anything
+		e.setCancelled(true); // the GUI is fully controlled; only the armor swap below mutates anything
 		if(e.getClick() == ClickType.DOUBLE_CLICK) return; // collect-to-cursor, not a swap
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		Inventory clicked = e.getClickedInventory();
@@ -129,7 +129,7 @@ public class Eq implements CommandExecutor, Listener {
 		int idx = armorSlotIndex(item.getType());
 		if(idx < 0) return;
 
-		// A double-click fires several events in the same tick — perform at most one swap per player per tick.
+		// A double-click fires several events in the same tick, so perform at most one swap per player per tick.
 		int now = MinecraftServer.currentTick;
 		if(lastSwapTick.getOrDefault(p.getUniqueId(), -1) == now) return;
 		lastSwapTick.put(p.getUniqueId(), now);

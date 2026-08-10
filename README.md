@@ -11,7 +11,7 @@ A practice server is available at `mc.strad.dev` for Minecraft 26.2
 
 ### Getting Started
 
-Select a class using the `/getcustomitems` command.  You will be given a kit and the corresponding class tag, allowing you to use the class's passives and abilities (if applicable).
+Select a class using the `/class` command, then tune its kit with `/m7loadout`.  `/practice` hands you that kit and the corresponding class tag, allowing you to use the class's passives and abilities (if applicable).
 
 The recommended Minecraft game mode is **Adventure Mode**
 
@@ -115,7 +115,8 @@ Two ways to *get* those items:
 
 ```java
 ItemStack[] kit = plugin.FakePlayerInventory.classLoadoutContents("Mage"); // 41 slots, see layout below
-plugin.FakePlayerInventory.applyClassLoadout(player, "Archer");            // same thing /getcustomitems does
+plugin.FakePlayerInventory.applyClassLoadout(player, "Archer");            // the class's DEFAULT kit, ignoring saved edits
+loadout.Loadouts.applyFor(player);                                        // the player's SAVED kit + class tag (what /practice does)
 ```
 
 Valid roles are `Archer`, `Berserk`, `Healer`, `Mage`, `Tank`.
@@ -169,7 +170,7 @@ about leaderboards or categories.  Deciding what a run *qualifies for* is your p
 | `runTicks` | total run length in server ticks |
 | `clearEndTick`, `bloodDoneTick`, `score300Tick`, `fullClearTick` | clear-phase milestones, as overall ticks |
 | `teamScore`, `grade` | final score and its letter grade (`S+`, `S`, `A`, …) |
-| `phaseDurations` | per-boss durations, relative to that boss's own start, measured to the end of that boss's phase (the tick it chains to the next one) — not to its killing blow |
+| `phaseDurations` | per-boss durations, relative to that boss's own start, measured to the end of that boss's phase (the tick it chains to the next one), not to its killing blow |
 | `splitEnds` | overall tick each section ended: `Clear` `Maxor` `Storm` `Terminals` `Goldor` `Necron` `WitherKing` |
 | `participants` | uuid, name, and `stayedAdventure` for everyone still in the run at completion |
 

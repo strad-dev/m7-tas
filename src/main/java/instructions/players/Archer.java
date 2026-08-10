@@ -120,8 +120,8 @@
 //		Utils.scheduleTask(() -> Actions.rightClick(archer), 21); // etherwarp into fairy
 //		Utils.scheduleTask(() -> Actions.turnHead(archer, 4f, 24f), 22);
 //		Utils.scheduleTask(() -> Actions.rightClick(archer), 23); // etherwarp to wither door
-//		// Left-click the wither door to open it — requires the Wither Key from killing archaeologist I (handled by
-//		// Actions.leftClick's door detection; the old hard openWitherDoor() call is gone).
+//		// Left-click the wither door to open it.  This requires the Wither Key from killing archaeologist I, and
+//		// is handled by Actions.leftClick's door detection; the old hard openWitherDoor() call is gone.
 //		Utils.scheduleTask(() -> Actions.leftClick(archer), 25); // opens tick 45
 //		Utils.scheduleTask(() -> {
 //			Actions.turnHead(archer, 10f, 6.5f);
@@ -389,8 +389,8 @@
 //			Actions.swapItems(archer, 11, 36);
 //			Actions.setHotbarSlot(archer, 5);
 //		}, 619);
-//		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
-//		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
+//		// The boss handoff (teleport to boss spawn, then maxor(true)) is now driven by the Watcher's portal
+//		// entry.  See Watcher.enterPortal and the maxorHandoff armed in TAS.runTAS.
 //	}
 //
 //	public static void maxor(boolean doContinue) {

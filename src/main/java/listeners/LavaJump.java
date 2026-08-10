@@ -91,7 +91,7 @@ public class LavaJump {
 			npc.hurtMarked = true;
 			MovementAudit.startAirborneAudit(p, "lavajump");
 
-			// Classify big/small deterministically from lava DEPTH — vanilla's own shallow/deep test
+			// Classify big and small deterministically from lava DEPTH, since vanilla's own shallow/deep test
 			// (LivingEntity.travelInLava: getFluidHeight(LAVA) <= getFluidJumpThreshold()). Shallow lava keeps
 			// vertical ×0.8 → "big"; deep lava ×0.5 → "small". The lava drag formula is unchanged in 26.2; what
 			// changed is that the server no longer reflects the client's dragged velocity for real players, so the

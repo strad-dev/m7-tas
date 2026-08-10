@@ -6,7 +6,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import instructions.bosses.maxor.Maxor;
-// import instructions.players.Mage; // TAS-only player routine — disabled in the practice fork
+// import instructions.players.Mage; // TAS-only player routine, disabled in the practice fork
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
@@ -63,7 +63,7 @@ public class Watcher {
 	private boolean tasActive = false;         // true iff the triggering player was a fake (TAS run)
 	private boolean doContinue = false;        // chain into Maxor on portal entry (set by arm())
 	private Runnable maxorHandoff = null;      // full Maxor handoff supplied by TAS.runTAS
-	private int triggerPhaseTick = 0;          // Utils.phaseTick() captured at spawn — overall-column basis
+	private int triggerPhaseTick = 0;          // Utils.phaseTick() captured at spawn, the overall-column basis
 	private BukkitTask detectTask;
 	private BukkitTask portalDetectTask;
 
@@ -78,8 +78,8 @@ public class Watcher {
 	// ============================== Arming & detection ==============================
 
 	/**
-	 * Supply the run's continuation intent + Maxor handoff. Does NOT spawn or start detection — that's
-	 * {@link #beginDetection(World)} at clear-tick 0. Called from TAS.runTAS for "all"/"clear".
+	 * Supply the run's continuation intent and Maxor handoff.  Does NOT spawn or start detection; that's
+	 * {@link #beginDetection(World)} at clear-tick 0.  Called from TAS.runTAS for "all" and "clear".
 	 */
 	public void arm(World w, boolean doContinue, Runnable maxorHandoff) {
 		this.world = w;
@@ -115,10 +115,10 @@ public class Watcher {
 	}
 
 	/**
-	 * Start the encounter the instant the Blood Door opens (faithful to F7 — the Watcher appears on door-open,
-	 * not on walking into the room). Only fires if detection was armed this run ({@link #beginDetection}) and the
-	 * Watcher hasn't already spawned; cancels the bounds scan and spawns immediately. {@code tasActive} follows
-	 * whether any fake actor exists (TAS) vs real players (practice).
+	 * Start the encounter the instant the Blood Door opens.  This is faithful to F7: the Watcher appears on
+	 * door-open, not on walking into the room.  Only fires if detection was armed this run
+	 * ({@link #beginDetection}) and the Watcher hasn't already spawned; it cancels the bounds scan and spawns
+	 * immediately.  {@code tasActive} follows whether any fake actor exists (TAS) or real players (practice).
 	 */
 	public void startOnBloodDoor() {
 		if(active) return;
@@ -212,7 +212,7 @@ public class Watcher {
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -60.5)); // AsapIcey
 		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -56.5)); // Beethoven_
 
-		// Choreography start (anchored to the real entry tick — replaces the old hardcoded 3-tick "time to bounds")
+		// Choreography start, anchored to the real entry tick.  This replaces the old hardcoded 3-tick "time to bounds".
 		sendChatMessage("Things feel a little more roomy now, eh?");
 		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
 		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
@@ -221,8 +221,8 @@ public class Watcher {
 
 	// ============================== Event-driven kills ==============================
 
-	// Blood-Mob kills already counted, by UUID — a single kill can surface twice (EntityDeathEvent AND the
-	// hurtEntity kill chokepoint), so dedupe to count each mob exactly once.
+	// Blood-Mob kills already counted, by UUID.  A single kill can surface twice, via EntityDeathEvent AND the
+	// hurtEntity kill chokepoint, so dedupe to count each mob exactly once.
 	private final Set<UUID> countedMobKills = new HashSet<>();
 
 	/** Dispatched from the EntityDeathEvent listener. Counts Blood-Mob deaths, drives kill lines + portal. */
@@ -231,10 +231,10 @@ public class Watcher {
 	}
 
 	/**
-	 * Count one Blood-Mob kill — exactly once, whether it arrives via {@link #handleMobDeath} (EntityDeathEvent) or
-	 * the {@code Utils.hurtEntity} kill chokepoint. The chokepoint is the backstop for an instakill on the SAME tick
-	 * the mob spawns: that death is unreliable through the EntityDeathEvent path (the entity dies before it has been
-	 * fully ticked into the world), so it would otherwise be lost and the kill never count toward the 19.
+	 * Count one Blood-Mob kill exactly once, whether it arrives via {@link #handleMobDeath} (EntityDeathEvent) or
+	 * the {@code Utils.hurtEntity} kill chokepoint.  The chokepoint is the backstop for an instakill on the SAME
+	 * tick the mob spawns: that death is unreliable through the EntityDeathEvent path, because the entity dies
+	 * before it has been fully ticked into the world, so it would otherwise be lost and never count toward the 19.
 	 */
 	public void registerMobKill(LivingEntity mob) {
 		if(!active) return;
@@ -253,14 +253,14 @@ public class Watcher {
 				// Full run ("all"): open the boss portal so the party can chain into Maxor.
 				Utils.scheduleTask(this::openPortal, 80);
 			} else {
-				// Clear-only practice: defeating the Watcher IS the end of the run — do NOT light the boss
-				// portal (that leads to the boss and is wrong for a clear-only session). Just clean up the
+				// Clear-only practice: defeating the Watcher IS the end of the run, so do NOT light the boss
+				// portal, which leads to the boss and is wrong for a clear-only session.  Just clean up the
 				// Watcher, record the Clear split, and signal completion so the network ends the session.
 				Utils.scheduleTask(() -> {
 					removeWatcherEntity();
 					bloodCampFinished(); // announce only once the Watcher vanishes
 					awardBloodClear(); // blessings + green check land as the Watcher disappears
-					// Same lightning strike + sound as the portal opening — just without summoning the portal.
+					// Same lightning strike and sound as the portal opening, just without summoning the portal.
 					world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
 					Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
 					Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
@@ -273,7 +273,7 @@ public class Watcher {
 	}
 
 	/**
-	 * "Blood Camp finished" milestone — owned here so it reports on the Watcher phase clock (like "Entered Boss"),
+	 * "Blood Camp finished" milestone.  Owned here so it reports on the Watcher phase clock, like "Entered Boss",
 	 * but triggered by the Mage's final blood-camp left click (see the Mage blood-camp choreography).
 	 */
 	public void bloodCampFinished() {
@@ -333,7 +333,7 @@ public class Watcher {
 	private void enterPortal(Player p) {
 		Location boss = BOSS_SPAWN.clone();
 		boss.setWorld(world);
-		// Clear ends as the boss portal is entered — record its end tick for the Wither-King practice scoreboard.
+		// Clear ends as the boss portal is entered, so record its end tick for the Wither-King practice scoreboard.
 		WitherActions.recordSplit("Clear", Utils.runTick());
 		Utils.debug(Utils.DebugType.BOSS, "Portal entered by " + Utils.getRealName(p) + " → teleporting " + (tasActive ? "fakes" : "all players"));
 
@@ -341,9 +341,9 @@ public class Watcher {
 		if(tasActive) {
 			FakePlayerManager.getFakePlayers().values().forEach(f -> Utils.teleport(f, boss));
 			Utils.timer("<green>Entered Boss in " + formatTick(phaseRel()));
-			// Blood-room blessings: normally collected as item drops, but the TAS enters the boss immediately, so
-			// there's no time to walk over them — broadcast them manually 200 ticks in. Owned here (the Watcher-driven
-			// portal entry) rather than in the Mage routine.
+			// Blood-room blessings are normally collected as item drops, but the TAS enters the boss immediately, so
+			// there's no time to walk over them.  Broadcast them manually 200 ticks in.  Owned here, at the
+			// Watcher-driven portal entry, rather than in the Mage routine.
 			// TAS-only blood-room blessings (used the commented-out Mage routine); never runs in the practice
 			// fork since tasActive is always false here (no fake players).
 			// Utils.scheduleTask(() -> {
@@ -357,13 +357,13 @@ public class Watcher {
 			for(Player pl : world.getPlayers()) {
 				if(FakePlayerManager.getFakePlayers().containsValue(pl)) continue;
 				if(pl.getGameMode() == GameMode.SPECTATOR) continue;
-				// Real players need the vanilla teleport (which sends them their own position packet); Utils.teleport
-				// is the fake-player path — it only updates OTHER viewers, so a real player would snap back to the
+				// Real players need the vanilla teleport, which sends them their own position packet.  Utils.teleport
+				// is the fake-player path and only updates OTHER viewers, so a real player would snap back to the
 				// blood room, never reach Maxor, and the boss gauntlet (Storm, …) would never chain.
 				pl.teleport(boss);
 			}
-			// Chain the rest of the boss gauntlet in practice too (e.g. /practice all) — doContinue is armed from
-			// the section (true for "all"), so Maxor → Storm → … chains without fake-player routines.
+			// Chain the rest of the boss gauntlet in practice too, e.g. /practice all.  doContinue is armed from
+			// the section and is true for "all", so Maxor → Storm → … chains without fake-player routines.
 			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, doContinue), 1);
 		}
 
@@ -415,10 +415,10 @@ public class Watcher {
 			stand.setVisible(false);
 			stand.setCustomNameVisible(false);
 			stand.setInvulnerable(true);
-			// Marker = zero hitbox: the head-travel stand drifts through the room right where players aim, so a
-			// normal hitbox lets arrows hit it — and genericKill (hurtEntity) ignores setInvulnerable, killing it,
-			// while even a cancelled hit still eats the arrow's pierce. A marker has no AABB, so the projectile
-			// sweep can't register a hit at all (head equipment + pose still render).
+			// Marker means zero hitbox.  The head-travel stand drifts through the room right where players aim, so
+			// a normal hitbox lets arrows hit it, and genericKill (hurtEntity) ignores setInvulnerable and kills it,
+			// while even a cancelled hit still eats the arrow's pierce.  A marker has no AABB, so the projectile
+			// sweep can't register a hit at all, and the head equipment and pose still render.
 			stand.setMarker(true);
 			stand.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, -1, 255));
 			ItemStack zombieHead = new ItemStack(Material.ZOMBIE_HEAD);
@@ -426,10 +426,10 @@ public class Watcher {
 
 			if(Utils.isSuperVerbose()) Utils.debug(Utils.DebugType.BOSS, "Begin spawning " + mobName + " (" + fmt(l) + ")");
 			moveEntitySmooth(stand, headStart.clone().add(0, 1, 0), endLoc, 0.4, () -> {
-				// Only the actual world-spawn is migrated onto the boss ticker — the travel/animation above stays on
-				// the old raw schedule (unchanged Watcher movement). schedule(...,1) fires at the START of the next
-				// tick (boss lane, before all player choreography), so the mob exists before the mage's same-tick
-				// beam instead of after it (the old mid-tick spawn lost the task-id race to the run-start beam).
+				// Only the actual world-spawn is migrated onto the boss ticker.  The travel and animation above stay
+				// on the old raw schedule, so Watcher movement is unchanged.  schedule(...,1) fires at the START of
+				// the next tick, in the boss lane before all player choreography, so the mob exists before the mage's
+				// same-tick beam instead of after it.  The old mid-tick spawn lost the task-id race to the run-start beam.
 				BossScheduler.schedule(() -> {
 					spawnMob(endLoc, mobName);
 					Utils.timer("<green>Blood Mob " + idx + "/19 spawned (" + mobName + ") | " + formatTick(phaseRel()));

@@ -28,11 +28,16 @@ import commands.*;
 import instructions.Server;
 import instructions.bosses.goldor.Goldor;
 import listeners.*;
+import loadout.ClassCommand;
+import loadout.LoadoutEditor;
+import org.bukkit.command.Command;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.SimpleCommandMap;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.Map;
 
 public final class M7tas extends JavaPlugin {
 	private static Plugin plugin;
@@ -42,27 +47,30 @@ public final class M7tas extends JavaPlugin {
 		plugin = this;
 
 		// Start the boss-priority heartbeat FIRST so its scheduler task id is the lowest of anything created at
-		// runtime — every registered boss ticker then runs each tick before any per-run choreography (see BossScheduler).
+		// runtime, so every registered boss ticker runs each tick before any per-run choreography (see BossScheduler).
 		BossScheduler.start();
 
 		PlayerCollision.setupNoCollisionTeam();
 
 		// TAS-only commands (tas, simulate, spectate/unspectate, reset, kickallfakes) are disabled in the practice fork.
-		for(String cmd : List.of("setup", "practice", "eq", "reset", "getcustomitems", "verbose", "setspeed")) {
+		LoadoutEditor loadoutEditor = new LoadoutEditor();
+		for(String cmd : List.of("setup", "practice", "eq", "reset", "verbose", "setspeed",
+				"class", "m7loadout")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
 				case "practice" -> command.setExecutor(new Practice());
 				case "reset" -> command.setExecutor(new Reset());
 				case "eq" -> command.setExecutor(new Eq());
-				case "getcustomitems" -> command.setExecutor(new GetCustomItems());
 				case "verbose" -> command.setExecutor(new Verbose());
 				case "setspeed" -> command.setExecutor(new SetSpeed());
+				case "class" -> command.setExecutor(new ClassCommand());
+				case "m7loadout" -> command.setExecutor(loadoutEditor);
 			}
 			command.setTabCompleter(new TabCompletor());
 		}
 		getServer().getPluginManager().registerEvents(new JoinListener(), this);
-		// getServer().getPluginManager().registerEvents(new SpectatorListener(), this); // TAS-only fake-spectate feature — disabled in the practice fork
+		// getServer().getPluginManager().registerEvents(new SpectatorListener(), this); // TAS-only fake-spectate feature, disabled in the practice fork
 		getServer().getPluginManager().registerEvents(new WithersNotImmuneToArrows(), this);
 		getServer().getPluginManager().registerEvents(new PearlHelper(), this);
 		getServer().getPluginManager().registerEvents(new MiscListener(), this);
@@ -75,10 +83,11 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new Eq(), this);
 		getServer().getPluginManager().registerEvents(new LinkedSlots(), this);
 		getServer().getPluginManager().registerEvents(new listeners.ClearListener(), this);
+		getServer().getPluginManager().registerEvents(loadoutEditor, this);
 
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();
-		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic) — runs every tick.
+		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic), which runs every tick.
 		getServer().getScheduler().runTaskTimer(this, listeners.CustomItems::pollTerminators, 1L, 1L);
 		// Practice-only boss-movement driver: in practice the fake ticker gates its own runMovementTickers call off
 		// (and may not be running at all, since fakes are kicked), so drive the lane here. In a TAS this is a no-op
@@ -92,6 +101,34 @@ public final class M7tas extends JavaPlugin {
 		// Export the item catalog (palette + per-class default kits) to the shared data folder so the network
 		// plugin's lobby loadout editor can load the real M7 items. M7 is the sole writer of this file.
 		Catalog.export();
+
+		// /class and /m7loadout exist in BOTH plugins: this one owns them here, the network plugin provides its own
+		// copy on every server M7 isn't installed on. A bare label goes to whichever plugin registers it FIRST, and
+		// the network plugin softdepends on us so we normally already have it, and this claim is the backstop for when we
+		// don't (load order changed, its jar deployed alone first, a reload). It no longer claims these labels on
+		// m7, so this is not a tug-of-war; and being enabled earlier, our task id is lower, so we would lose a
+		// tug-of-war anyway if one were reintroduced there.
+		getServer().getScheduler().runTask(this, () -> {
+			forceOwnLabel("class");
+			forceOwnLabel("m7loadout");
+		});
+	}
+
+	/**
+	 * Take a bare command label back from another plugin that registered the same name. Bukkit maps a bare label to
+	 * exactly one command; the loser keeps only its prefixed form ({@code /stradnetworkplugin:class}). Mirrors the
+	 * network plugin's {@code Main.forceOwnLabel}.
+	 */
+	private void forceOwnLabel(String name) {
+		PluginCommand ours = getCommand(name);
+		if(ours == null) return;
+		if(!(getServer().getCommandMap() instanceof SimpleCommandMap map)) return;
+		Map<String, Command> known = map.getKnownCommands();
+		if(known.get(name) == ours) return; // already ours, nothing to do
+		known.remove(name); // drop the other plugin's bare-label mapping (it keeps its prefixed form)
+		known.put(name, ours);
+		ours.register(map);
+		getLogger().info("Claimed /" + name + " for M7 (was another plugin's).");
 	}
 
 	@Override

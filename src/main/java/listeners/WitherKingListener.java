@@ -19,8 +19,8 @@ import org.bukkit.inventory.ItemStack;
 /**
  * Drives the Wither-King summon phase. Pickup fires when a player right-clicks a relic's Interaction entity;
  * placement fires when a player right-clicks the matching altar block (Y 6/7) while holding that relic. A held
- * relic is locked into the hotbar — it can't be moved, dropped, or placed anywhere except its correct altar.
- * Both paths work for real players (practice) and — once the player choreography is wired — fake players.
+ * relic is locked into the hotbar: it can't be moved, dropped, or placed anywhere except its correct altar.
+ * Both paths work for real players in practice and, once the player choreography is wired, fake players.
  */
 public class WitherKingListener implements Listener {
 
@@ -35,20 +35,20 @@ public class WitherKingListener implements Listener {
 		WitherKing.pickUpRelic(e.getPlayer(), color);
 	}
 
-	/** Right-click a block while holding a relic: the wool is never placed as a real block — only a click on the
+	/** Right-click a block while holding a relic: the wool is never placed as a real block, and only a click on the
 	 *  matching altar (Y 6/7) places the relic. Anything else is silently cancelled (prevents misplacement). */
 	@EventHandler
 	public void onPlace(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 		Player p = e.getPlayer();
 		String heldColor = WitherKing.relicColorOfItem(p.getInventory().getItemInMainHand());
-		if(heldColor == null) return; // not holding a relic — ignore
+		if(heldColor == null) return; // not holding a relic, so ignore
 		e.setCancelled(true); // never let the wool be placed as a block
 
 		Block b = e.getClickedBlock();
 		if(b == null || (b.getY() != 6 && b.getY() != 7)) return;
 		String altarColor = WitherKing.altarColorAt(b.getX(), b.getZ());
-		if(altarColor == null || !altarColor.equals(heldColor)) return; // wrong altar — do nothing
+		if(altarColor == null || !altarColor.equals(heldColor)) return; // wrong altar, so do nothing
 
 		WitherKing.placeRelic(p, altarColor);
 	}

@@ -89,7 +89,7 @@ public final class Rooms {
 				.addSecret(Secret.chest(-29, 91, -163))
 				.addSecret(Secret.item(-22.5, 57, -154.5));
 		ICE_FILL = reg("Ice Fill", RoomType.PUZZLE, new int[][]{{1, 4}}, 0, false);
-		// The two Power-V reward chests, revealed on solve but claimed by hand — not part of the 47.
+		// The two Power-V reward chests, revealed on solve but claimed by hand.  Not part of the 47.
 		ICE_FILL.addSecret(Secret.rewardChest(-71, 75, -152, BlessingType.POWER, 5))
 				.addSecret(Secret.rewardChest(-71, 75, -154, BlessingType.POWER, 5));
 		reg("Red Blue", RoomType.NORMAL, new int[][]{{3, 4}, {4, 4}, {5, 4}}, 1, true, new Blessing(BlessingType.POWER, 5))
@@ -131,8 +131,8 @@ public final class Rooms {
 		return cell == null ? null : byCell(cell[0], cell[1]);
 	}
 
-	/** Whether a location sits within the overall room-grid rectangle — inside a room OR a 1-block between-room
-	 *  buffer — as opposed to fully outside the grid (e.g. the boss arena). Unlike {@link #roomAt}, this stays
+	/** Whether a location sits within the overall room-grid rectangle, i.e. inside a room OR a 1-block between-room
+	*  buffer, as opposed to fully outside the grid such as the boss arena.  Unlike {@link #roomAt}, this stays
 	 *  true while walking across the gap between two rooms. */
 	public static boolean inGrid(Location loc) {
 		double dx = ORIGIN - loc.getX();
@@ -162,7 +162,7 @@ public final class Rooms {
 	public static int cellMinZ(int gz) { return cellMaxZ(gz) - 30; }
 
 	/**
-	 * True if the block column at world (x,z) sits on the vertical outer face (perimeter wall) of a room — at ANY
+	 * True if the block column at world (x,z) sits on the vertical outer face (perimeter wall) of a room, at ANY
 	 * height. Used to stop blocks being broken through room walls without touching the floor/ceiling (rooms have
 	 * varying heights, so we can't restrict by Y). A room is only its own outer perimeter: for a multi-cell room
 	 * (e.g. the 2x2 Museum) the internal seams between its cells count as interior, so the middle of the room is
@@ -170,7 +170,7 @@ public final class Rooms {
 	 */
 	public static boolean isRoomFace(int worldX, int worldZ) {
 		int[] cell = cellAt(worldX, worldZ);
-		if(cell == null) return false; // between-room buffer or outside the grid — not a room's own wall
+		if(cell == null) return false; // between-room buffer or outside the grid, so not a room's own wall
 		Room r = byCell(cell[0], cell[1]);
 		if(r == null) return false;
 		// A perimeter column has at least one of its four horizontal neighbours outside this room's footprint.
@@ -178,7 +178,7 @@ public final class Rooms {
 				|| !inFootprint(worldX, worldZ + 1, r) || !inFootprint(worldX, worldZ - 1, r);
 	}
 
-	/** Whether the column at (x,z) belongs to room {@code r}'s physical footprint — its own cells, plus the 1-block
+	/** Whether the column at (x,z) belongs to room {@code r}'s physical footprint: its own cells, plus the 1-block
 	 *  seams that fall BETWEEN two cells of the same room (so multi-cell rooms read as one solid blob). */
 	private static boolean inFootprint(int x, int z, Room r) {
 		long dx = (long) ORIGIN - x;

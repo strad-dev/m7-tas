@@ -8,7 +8,7 @@ import plugin.Utils;
  * {@code /practice}) every wall is restored via {@link #resetAll()} from {@code Server.serverSetup}.
  *
  * <p>Each {@code open*} is fired from the dying boss's death sequence at the tick offset noted below
- * (relative to the killing blow). Resets clone a buried copy of the original blocks back into place — or,
+ * (relative to the killing blow).  Resets clone a buried copy of the original blocks back into place, or
  * for Storm's mixed wall, refill the original block types and re-place the embedded sea lanterns.
  */
 public final class BossTransition {

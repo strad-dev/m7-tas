@@ -37,24 +37,24 @@ public final class Maxor extends WitherLord {
 	private static final int PLATE_GATE_TICKS = 160;
 	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
 
-	// The two Energy Crystal pressure plates (see placeAtPlate / pickUp). Stonk/break-immune — see isProtected.
+	// The two Energy Crystal pressure plates (see placeAtPlate / pickUp).  Stonk and break immune; see isProtected.
 	private static final int PLATE_Y = 224, PLATE_Z = 41;
 	private static final int PLATE_LEFT_X = 94, PLATE_RIGHT_X = 52;
 
 	private final Random random = new Random();
 
-	// Top spawn crystals — pickupable. Nulled on pickUp.
+	// Top spawn crystals, which are pickupable.  Nulled on pickUp.
 	private EnderCrystal topLeftCrystal;
 	private EnderCrystal topRightCrystal;
-	// Plate-placed crystals — NOT pickupable. Committed once placed.
+	// Plate-placed crystals, which are NOT pickupable.  Committed once placed.
 	private EnderCrystal plateLeftCrystal;
 	private EnderCrystal plateRightCrystal;
 	private final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
 	private final WitherSkeleton[] miners = new WitherSkeleton[10];
 
 	// Laser/stun cycle state.
-	// The laser scan runs as a boss ticker (BossScheduler.addTicker) so the stun is detected/applied every tick
-	// BEFORE the players' beam choreography — letting a beam hit on the stun tick read the post-stun state.
+	// The laser scan runs as a boss ticker (BossScheduler.addTicker) so the stun is detected and applied every
+	// tick BEFORE the players' beam choreography, which lets a beam hit on the stun tick read the post-stun state.
 	private Runnable laserTicker;
 	// Auto-enrage one-shot, run as a boss-lane task (BossScheduler.schedule) so it fires at the start of its tick.
 	private Runnable stunEnrageTask;
@@ -62,9 +62,9 @@ public final class Maxor extends WitherLord {
 	private boolean stunCooldownActive;
 	private boolean inStun;
 	private double stunDamageDealt;
-	// Latched true the moment the stun's 75% damage cap is reached. Once set, handleDamage rejects ALL further
-	// damage until the next stun — this is what stops same-tick arrows that land AFTER the cap-enrage from over-DPSing
-	// (enrage flips inStun=false mid-tick, which would otherwise re-open the uncapped path for the rest of the tick).
+	// Latched true the moment the stun's 75% damage cap is reached.  Once set, handleDamage rejects ALL further
+	// damage until the next stun.  That is what stops same-tick arrows landing AFTER the cap-enrage from
+	// over-DPSing: enrage flips inStun=false mid-tick, which would re-open the uncapped path for the rest of the tick.
 	private boolean stunCapReached;
 	private final List<Runnable> pendingPlateChecks = new ArrayList<>();
 
@@ -160,14 +160,15 @@ public final class Maxor extends WitherLord {
 	}
 
 	public boolean notEnergyCrystal(Entity e) {
-		// Only the top spawn crystals can be picked up — plate-placed ones are committed.
+		// Only the top spawn crystals can be picked up; plate-placed ones are committed.
 		return !(e instanceof EnderCrystal) || (!e.equals(topLeftCrystal) && !e.equals(topRightCrystal));
 	}
 
-	/** True if this block is one of the two Energy Crystal pressure plates OR the support block directly beneath it
-	 *  — both stonk/break-immune so the plate can't be knocked out from under a crystal placement (breaking the
-	 *  support pops the plate off too). A pure positional test (phase-independent, immune in EVERY phase including
-	 *  the pre-run prep window), mirroring {@link instructions.bosses.goldor.Goldor#isProtected}. */
+	/** True if this block is one of the two Energy Crystal pressure plates OR the support block directly beneath
+	*  it.  Both are stonk and break immune so the plate can't be knocked out from under a crystal placement;
+	*  breaking the support pops the plate off too.  This is a pure positional test, phase-independent and immune
+	*  in EVERY phase including the pre-run prep window, mirroring
+	*  {@link instructions.bosses.goldor.Goldor#isProtected}. */
 	public boolean isProtected(Block b) {
 		return (b.getY() == PLATE_Y || b.getY() == PLATE_Y - 1) && b.getZ() == PLATE_Z
 				&& (b.getX() == PLATE_LEFT_X || b.getX() == PLATE_RIGHT_X);
@@ -210,7 +211,7 @@ public final class Maxor extends WitherLord {
 		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<green> picked up an <aqua>Energy Crystal<green>!"));
 		Utils.timer(formatTick(displayTick()));
 
-		// If the player is already standing on a plate, place immediately —
+		// If the player is already standing on a plate, place immediately,
 		// no PHYSICAL interact fires until they re-step on the plate.
 		Location feet = p.getLocation();
 		int fx = feet.getBlockX(), fy = feet.getBlockY(), fz = feet.getBlockZ();
@@ -220,16 +221,16 @@ public final class Maxor extends WitherLord {
 	}
 
 	/**
-	 * Plate-step entry point. If plates are active, place immediately.
-	 * Otherwise schedule a recheck for when the gate opens — if the player is still
-	 * standing on the same plate at that moment (and still holds a crystal), place then.
+	 * Plate-step entry point.  If plates are active, place immediately.
+	 * Otherwise schedule a recheck for when the gate opens: if the player is still
+	 * standing on the same plate at that moment and still holds a crystal, place then.
 	 */
 	public void onPlateStep(Player p, Location plate) {
 		if(platesActive) {
 			placeAtPlate(p, plate);
 			return;
 		}
-		// Gate not open yet — queue a recheck. The gate-open task drains and runs these.
+		// Gate not open yet, so queue a recheck.  The gate-open task drains and runs these.
 		final int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
 		pendingPlateChecks.add(() -> {
 			Location feet = p.getLocation();
@@ -333,7 +334,7 @@ public final class Maxor extends WitherLord {
 		double currentHp = boss.getHealth();
 		double onePercent = maxHp * 0.01;
 
-		// Killing-blow path: laser would drop Maxor to/below 0 HP — clamp to 1% + death sequence.
+		// Killing-blow path: the laser would drop Maxor to 0 HP or below, so clamp to 1% and run the death sequence.
 		if(laserDmg >= currentHp) {
 			clearAggro();
 			setArmor(false);
@@ -387,7 +388,7 @@ public final class Maxor extends WitherLord {
 		cancelLaserScan();
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
-		// Pin internal HP to 1 — display already shows "1" via the TASDying tag in formatHealthM.
+		// Pin internal HP to 1.  The display already shows "1" via the TASDying tag in formatHealthM.
 		// Deferred 1 tick so vanilla's post-event setHealth doesn't overwrite us.
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.setHealth(1.0);
@@ -421,9 +422,9 @@ public final class Maxor extends WitherLord {
 	}
 
 	/**
-	 * Damage interceptor for Maxor. Hook from a Bukkit listener.
-	 * - If a hit would kill him, clamp it to leave him on 1% HP and play the death dialogue.
-	 * - Otherwise during a stun, clamp cumulative damage to 75% of max HP and trigger enrage.
+	 * Damage interceptor for Maxor.  Hook from a Bukkit listener.
+	 * If a hit would kill him, clamp it to leave him on 1% HP and play the death dialogue.
+	 * Otherwise during a stun, clamp cumulative damage to 75% of max HP and trigger enrage.
 	 */
 	public void handleDamage(EntityDamageEvent e) {
 		if(boss == null || !boss.equals(e.getEntity())) return;
@@ -467,7 +468,7 @@ public final class Maxor extends WitherLord {
 		if(cappedDmg >= currentHp) {
 			cappedDmg = Math.max(0, currentHp - onePercent);
 			willDie = true;
-			willEnrage = false; // dying overrides — no enrage
+			willEnrage = false; // dying overrides, so no enrage
 		}
 
 		if(cappedDmg < finalDmg) {
@@ -501,8 +502,8 @@ public final class Maxor extends WitherLord {
 		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Maxor finished in " + formatTick(displayTick()));
-			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow — must be
-			// before chainNext, which spawns Storm and re-anchors the phase clock.
+			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
+			// come before chainNext, which spawns Storm and re-anchors the phase clock.
 			instructions.bosses.WitherActions.recordPhaseDuration("Maxor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);

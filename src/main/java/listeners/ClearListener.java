@@ -25,7 +25,7 @@ import plugin.Utils;
  */
 public class ClearListener implements Listener {
 
-	// -100 63 -111 — the Wizard's crystal ball (right-click to pick up; ±1 block tolerance).
+	// -100 63 -111 is the Wizard's crystal ball: right-click to pick up, with ±1 block tolerance.
 	private static final int[] CRYSTAL = {-100, 63, -111};
 
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -94,7 +94,7 @@ public class ClearListener implements Listener {
 	}
 
 	// Wizard crystal hand-in via LEFT-click (attack). Uses PrePlayerAttackEntityEvent, which fires on the
-	// attack itself — so it works even though the Wizard villager takes no damage (invulnerable / cancelled).
+	// attack itself, so it works even though the Wizard villager takes no damage, being invulnerable or cancelled.
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onLeftClickEntity(io.papermc.paper.event.player.PrePlayerAttackEntityEvent e) {
 		if(!ClearManager.isActive()) return;

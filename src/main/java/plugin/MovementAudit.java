@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-tick airborne movement printer — a SUPER-verbose dev tool that traces a player's trajectory tick by tick
+ * Per-tick airborne movement printer: a SUPER-verbose dev tool that traces a player's trajectory tick by tick
  * after a launch (spring boots, lava jump, bonzo-staff / jerry-chine knockback, a scripted jump) for speedrun
  * physics analysis. Inert unless verbose mode is SUPER. Real-player driven off its own 1-tick task (the original
  * was driven by the removed fake-player ticker; that NMS version lives in git history on {@code main}).
@@ -43,7 +43,7 @@ public class MovementAudit {
 		return audits.containsKey(id);
 	}
 
-	/** Begin tracing {@code p}'s airborne trajectory (SUPER verbose only — a no-op otherwise). Prints a START line
+	/** Begin tracing {@code p}'s airborne trajectory.  SUPER verbose only; a no-op otherwise.  Prints a START line
 	 *  and drives a per-tick trace until the player lands or the audit is cancelled. */
 	public static void startAirborneAudit(Player p, String source) {
 		if(!Utils.isSuperVerbose()) return;

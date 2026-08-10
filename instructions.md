@@ -194,7 +194,7 @@ skyblock/combat/bonzo_staff,§5Heroic Bonzo Staff
 skyblock/combat/tactical_insertion,§6Tactical Insertion
 skyblock/combat/scylla,§dWithered Hyperion
 minecraft:tnt,§6Infiniboom TNT,1
-minecraft:golden_axe,§5Withered Ragnarok Axe,1
+minecraft:golden_axe,§5Withered Ragnarock Axe,1
 minecraft:bow,§dPrecise Last Breath,1
 minecraft:air
 minecraft:air
@@ -280,7 +280,7 @@ Throw an Ender Pearl.  The item in hand must be a vanilla `minecraft:ender_pearl
 Example: `throwpearl;;10`
 
 ### `rag;`
-Use the Ragnarok Axe ability.  The item in hand must be a `minecraft:golden_axe` named Ragnarok Axe.
+Use the Ragnarock Axe ability.  The item in hand must be a `minecraft:golden_axe` named Ragnarock Axe.
 
 Example: `rag;;11`
 

@@ -36,7 +36,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 			{32, 33, 34, 35, 41, 42, 43, 44}    // bottom-right
 	};
 	private static final int[] CORNERS = {0, 8, 36, 44};
-	// Middle row (18–26) + middle column (4,13,22,31,40) — plain glass dividers, no action.
+	// Middle row (18–26) and middle column (4,13,22,31,40) are plain glass dividers, with no action.
 	private static final int[] CROSS = {4, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 40};
 
 	private final Inventory inv;
@@ -96,7 +96,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 		return list.size() > 4 ? new ArrayList<>(list.subList(0, 4)) : list;
 	}
 
-	/** Class from the player's scoreboard tag (set by /getcustomitems), falling back to the fake-player name. */
+	/** Class from the player's scoreboard tag (set by /class), falling back to the fake-player name. */
 	private static String resolveClass(Player p) {
 		for(String c : new String[]{"Archer", "Berserk", "Healer", "Mage", "Tank"}) {
 			if(p.getScoreboardTags().contains(c)) return c;

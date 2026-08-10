@@ -45,7 +45,7 @@ public final class PillarOscillator {
 		reset();
 	}
 
-	/** Resets to initial state — bottom at y175, direction DOWN, no movement recorded, not used. */
+	/** Resets to initial state: bottom at y175, direction DOWN, no movement recorded, not used. */
 	public void reset() {
 		bottomY = PadAndPillar.PILLAR_BOTTOM_INITIAL;
 		direction = Direction.DOWN;
@@ -57,7 +57,7 @@ public final class PillarOscillator {
 	public PadAndPillar getPillar() { return pillar; }
 	public int getBottomY() { return bottomY; }
 
-	/** @return true once this pillar has crushed Storm and been consumed — the pad no longer activates it. */
+	/** @return true once this pillar has crushed Storm and been consumed, after which the pad no longer activates it. */
 	public boolean isUsed() { return used; }
 
 	/**
@@ -65,9 +65,9 @@ public final class PillarOscillator {
 	 * <br>
 	 * The freeze matters because {@link #runCycle} fires up to five {@code moveOne} ops through
 	 * {@code Utils.scheduleTask} (which hands back no cancellable handle) spread over 16 ticks. Marking the
-	 * pillar used only stops the NEXT cycle from being started — the current cycle's remaining DOWN clones
+	 * pillar used only stops the NEXT cycle from being started.  The current cycle's remaining DOWN clones
 	 * would otherwise keep descending into Storm during the 20 ticks before the crush explosion fires,
-	 * re-burying him in the very pillar that already crushed him. Once a pillar has crushed Storm it is
+	 * re-burying him in the very pillar that already crushed him.  Once a pillar has crushed Storm it is
 	 * finished moving; it exists only to be blown up.
 	 */
 	public void markUsed() {
@@ -82,8 +82,8 @@ public final class PillarOscillator {
 
 	/**
 	 * Execute one 20-tick cycle's motion, scheduling per-block clone ops at 4-tick
-	 * intervals. Caller is responsible for the pad-presence gating — only call
-	 * this when the pad is occupied at the cycle boundary.
+	 * intervals.  The caller is responsible for the pad-presence gating, so only
+	 * call this when the pad is occupied at the cycle boundary.
 	 *
 	 * @param currentTick the boss-fight tick when the cycle starts; recorded as
 	 *                    the most-recent-movement marker for crush-detector arming.
@@ -108,14 +108,14 @@ public final class PillarOscillator {
 			Utils.scheduleTask(this::moveOne, delay + i * 4L);
 		}
 
-		// Only downward motion arms the crush detector — upward cycles don't count.
+		// Only downward motion arms the crush detector; upward cycles don't count.
 		if(direction == Direction.DOWN) {
 			lastMovementTick = currentTick;
 		}
 	}
 
 	private void moveOne() {
-		// This pillar has crushed Storm and is awaiting its explosion — drop the leftover queued ops.
+		// This pillar has crushed Storm and is awaiting its explosion, so drop the leftover queued ops.
 		if(frozen) return;
 		if(direction == Direction.DOWN) {
 			// Push Storm out from under the descending pillar before placing the
@@ -151,9 +151,9 @@ public final class PillarOscillator {
 	/**
 	 * Display counterpart of {@link #movedRecently} for Storm's action-bar HUD.
 	 *
-	 * @return how many more ticks this pillar stays armed, counting {@code currentTick} itself — so it reads
-	 * {@code windowTicks + 1} on the tick the DOWN cycle starts and {@code 1} on the last armed tick — or 0 if
-	 * the pillar isn't armed at all (moving UP, or the window has run out).
+	 * @return how many more ticks this pillar stays armed, counting {@code currentTick} itself, so it reads
+	 * {@code windowTicks + 1} on the tick the DOWN cycle starts and {@code 1} on the last armed tick.  Returns 0
+	 * if the pillar isn't armed at all, i.e. it is moving UP or the window has run out.
 	 */
 	public int armedTicksLeft(int currentTick, int windowTicks) {
 		if(!movedRecently(currentTick, windowTicks)) return 0;

@@ -22,17 +22,17 @@ import java.util.List;
  * then Time V once Oruo's reward line has played.
  * <p>Question 3 is built per-run: it asks whether the player who <i>opened</i> the Quiz room (the first one to
  * set foot in it, which is also what starts the quiz) is bald. The answer is "Yes" for everyone except
- * {@code Beethoven_}, who isn't — for him the A/B options are swapped so that <b>B</b> stays the right button.
+ * {@code Beethoven_}, who isn't, so for him the A/B options are swapped and <b>B</b> stays the right button.
  */
 public final class PuzzleQuiz {
 	private PuzzleQuiz() {
 	}
 
-	// Answer buttons (A, B, C) — index 1 (B) is always correct. ±1 block tolerance around each.
+	// Answer buttons (A, B, C).  Index 1 (B) is always correct.  ±1 block tolerance around each.
 	private static final int[][] BUTTONS = {{-20, 70, -34}, {-25, 70, -31}, {-30, 70, -34}};
 	private static final int CORRECT = 1; // B
 
-	// Unpadded and unwrapped — animateQuestion word-wraps and centers each line via ChatFont.centerLines. Index 2
+	// Unpadded and unwrapped: animateQuestion word-wraps and centers each line via ChatFont.centerLines.  Index 2
 	// is a template filled in by questionText() with whoever opened the room, so its width isn't known here.
 	private static final String[] QUESTIONS = {
 			"How is the run going so far?",
@@ -48,7 +48,7 @@ public final class PuzzleQuiz {
 	private static final String[] ANSWERS_NOT_BALD = {"Yes", "No", "Decline to Answer"};
 	/** The player Q3 answers "No" for. Matched against {@link Utils#getRealName(Player)}, so the Mage1 fake counts. */
 	private static final String NOT_BALD = "Beethoven_";
-	/** Q3's subject if nobody was recorded as opening the room (shouldn't happen — the quiz needs an entry to start). */
+	/** Q3's subject if nobody was recorded as opening the room.  This shouldn't happen: the quiz needs an entry to start. */
 	private static final String FALLBACK_OPENER = "akc0303";
 	private static final String ORUO = "<dark_red>[STATUE] Oruo the Omniscient<white>: ";
 
@@ -57,7 +57,7 @@ public final class PuzzleQuiz {
 	private static boolean started, solved, awaiting;
 	private static int question; // 0-based index of the current question
 	private static int gen;       // generation guard so restart/stop cancels stale scheduled tasks
-	/** Display name of the player who opened the Quiz room — the subject of question 3. Null until entry. */
+	/** Display name of the player who opened the Quiz room, the subject of question 3.  Null until entry. */
 	private static String opener;
 
 	public static void reset() {
@@ -87,7 +87,7 @@ public final class PuzzleQuiz {
 		}
 	}
 
-	/** Full run of the quiz from Oruo's intro dialogue — also the restart target after a wrong answer. */
+	/** Full run of the quiz from Oruo's intro dialogue.  This is also the restart target after a wrong answer. */
 	private static void begin() {
 		started = true;
 		awaiting = false;
@@ -126,14 +126,14 @@ public final class PuzzleQuiz {
 		}, 62);
 	}
 
-	/** The question line, unpadded — {@code animateQuestion} centers it. Q3 names {@link #opener}. */
+	/** The question line, unpadded, since {@code animateQuestion} centers it.  Q3 names {@link #opener}. */
 	private static String questionText(int index) {
 		if(index != 2) return QUESTIONS[index];
 		return String.format(QUESTIONS[2], opener == null ? FALLBACK_OPENER : opener);
 	}
 
-	/** The three options. Q3 flips to {@link #ANSWERS_NOT_BALD} when {@link #NOT_BALD} opened the room — the
-	 *  correct text becomes "No", still on button B. */
+	/** The three options.  Q3 flips to {@link #ANSWERS_NOT_BALD} when {@link #NOT_BALD} opened the room, so the
+	*  correct text becomes "No", still on button B. */
 	private static String[] answers(int index) {
 		if(index == 2 && NOT_BALD.equals(opener)) return ANSWERS_NOT_BALD;
 		return ANSWERS[index];
@@ -181,8 +181,8 @@ public final class PuzzleQuiz {
 		solved = true;
 		Server.Quiz.removeOptions(options);
 		final int g = ++gen;
-		// The room is beaten the moment the last question lands, so the green check + score go up now — waiting for
-		// Oruo's dialogue only delayed the score by 40 ticks.
+		// The room is beaten the moment the last question lands, so the green check and score go up now.  Waiting
+		// for Oruo's dialogue only delayed the score by 40 ticks.
 		ClearManager.puzzleSolved(Rooms.QUIZ, p, false);
 		// TAS timing: Q3 answered → (+20t) Oruo's reward line → (+20t) the blessing.
 		Utils.scheduleTask(() -> {

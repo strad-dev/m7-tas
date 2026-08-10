@@ -436,8 +436,8 @@
 //			Actions.setHotbarSlot(berserk, 5);
 //		}, 251);
 //		Utils.scheduleTask(Server.IceFill::stopIceFillTask, 742);
-//		// Boss handoff (teleport to boss spawn + maxor(true)) is now driven by the Watcher's portal entry — see
-//		// Watcher.enterPortal / the maxorHandoff armed in TAS.runTAS.
+//		// The boss handoff (teleport to boss spawn, then maxor(true)) is now driven by the Watcher's portal
+//		// entry.  See Watcher.enterPortal and the maxorHandoff armed in TAS.runTAS.
 //	}
 //
 //	public static void maxor(boolean doContinue) {

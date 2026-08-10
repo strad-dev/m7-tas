@@ -128,12 +128,12 @@ public class Server {
 	}
 
 	/**
-	 * @param delayTicks how long to wait before the section's instructions begin — the pre-run "get into
-	 *   position" window, followed by a shared 5-second countdown. Defaults to 60 (3s) via the two-arg overload;
-	 *   the network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in so everyone has
-	 *   time to get into position. EXCEPTION: the boss/maxor sections ignore this — Maxor is the dungeon-boss
-	 *   entry and on real Hypixel it starts the moment you enter, so those get only a 20-tick load grace and no
-	 *   countdown (see {@link #MAXOR_GRACE_TICKS}).
+	 * @param delayTicks how long to wait before the section's instructions begin, i.e. the pre-run "get into
+	 *   position" window, followed by a shared 5-second countdown.  Defaults to 60 (3s) via the two-arg overload,
+	 *   and the network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in so everyone
+	 *   has time to get into position.  EXCEPTION: the boss and maxor sections ignore this.  Maxor is the
+	 *   dungeon-boss entry and on real Hypixel it starts the moment you enter, so those get only a 20-tick load
+	 *   grace and no countdown (see {@link #MAXOR_GRACE_TICKS}).
 	 */
 	public static void serverInstructions(World world, String section, int delayTicks) {
 		// Tear down any lingering Goldor phase from a previous run immediately, before this run's pre-fired
@@ -141,7 +141,7 @@ public class Server {
 		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
 		Goldor.INSTANCE.forceEndPhase();
 
-		// boss/maxor: no prep window and no countdown — just a short load grace, then Maxor starts.
+		// boss/maxor: no prep window and no countdown, just a short load grace, then Maxor starts.
 		if(section.equals("boss") || section.equals("maxor")) {
 			Utils.scheduleTask(() -> startSection(world, section), MAXOR_GRACE_TICKS);
 			return;
@@ -149,24 +149,24 @@ public class Server {
 
 		int seconds = Math.max(1, delayTicks / 20);
 		if(instructions.bosses.WitherActions.isPracticeMode()) {
-			// Practice: the input delay IS the countdown — start counting down from `seconds` RIGHT NOW (5s in
+			// Practice: the input delay IS the countdown, so start counting down from `seconds` RIGHT NOW (5s in
 			// → "Starting in 5...4...3...2...1", then start), rather than waiting the delay and then a fixed 5s.
 			countdownThenStart(world, section, seconds);
 		} else {
-			// TAS: unchanged — the get-into-position window, then the shared 5s countdown. The fake-player
-			// choreography is calibrated to this exact timing (scheduled at /tas-run time), so don't touch it.
+			// TAS is unchanged: the get-into-position window, then the shared 5s countdown.  The fake-player
+			// choreography is calibrated to this exact timing, scheduled at /tas-run time, so don't touch it.
 			Bukkit.broadcast(Utils.msg("TAS starts in " + seconds + " seconds"));
 			Utils.scheduleTask(() -> countdownThenStart(world, section, 5), delayTicks);
 		}
 	}
 
-	/** Load grace before Maxor (boss/maxor sections) — just long enough for warped-in clients to finish loading. */
+	/** Load grace before Maxor (boss/maxor sections), just long enough for warped-in clients to finish loading. */
 	private static final int MAXOR_GRACE_TICKS = 20;
 
 	/**
 	 * A "Starting in N seconds" countdown, then the section's actual start. To avoid spamming a long warp-in
-	 * window, only the FIRST second and the final five (5,4,3,2,1) are announced — the in-between seconds stay
-	 * silent. The first message fires immediately (tick 0), so the countdown length still equals {@code seconds}.
+	 * window, only the FIRST second and the final five (5,4,3,2,1) are announced, and the in-between seconds stay
+	 * silent.  The first message fires immediately (tick 0), so the countdown length still equals {@code seconds}.
 	 * Used for every section except boss/maxor.
 	 */
 	private static void countdownThenStart(World world, String section, int seconds) {
@@ -188,7 +188,7 @@ public class Server {
 	/** Runs the section-specific start actions. Callers own the pre-run delay/countdown; this is just the start. */
 	private static void startSection(World world, String section) {
 		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
-		// so this is the one place that means "the run is now live" — see runStarted.
+		// so this is the one place that means "the run is now live".  See runStarted.
 		runStarted = true;
 		switch(section) {
 			case "all", "clear" -> {
@@ -224,25 +224,25 @@ public class Server {
 	 * ever recreates. Run-end cleanups are supposed to tear a run's spawns down but currently don't fire reliably,
 	 * so a run aborted part-way leaves orphans (mobs, boss-bar/stun indicators, terminal labels, lever hitboxes,
 	 * quiz options, statue displays, crystals, stray projectiles) that no targeted forceCleanup owns and they stack
-	 * up across runs. Nothing transient in the dungeon legitimately outlives a run — every one of these is respawned
-	 * by the run that needs it — so nuking everything closes every leak path at once. This replaces the old targeted
-	 * class-by-class {@code blanketKill}, which missed anything not on its hand-maintained list. Called from
-	 * {@code /reset}, {@code /setup}, {@code /practice} run start ({@code TAS.runPractice}), and
-	 * {@code M7tas.onDisable} — always BEFORE any spawns, NEVER from inside {@link #serverSetup} itself (a kill
-	 * mid-startup would race the minibosses that method spawns).
+	 * up across runs.  Nothing transient in the dungeon legitimately outlives a run, since every one of these is
+	 * respawned by the run that needs it, so nuking everything closes every leak path at once.  This replaces the
+	 * old targeted class-by-class {@code blanketKill}, which missed anything not on its hand-maintained list.
+	 * Called from {@code /reset}, {@code /setup}, {@code /practice} run start ({@code TAS.runPractice}), and
+	 * {@code M7tas.onDisable}, always BEFORE any spawns and NEVER from inside {@link #serverSetup} itself, since a
+	 * kill mid-startup would race the minibosses that method spawns.
 	 *
 	 * <p>The exclusion list is exactly the entity types that are NOT spawned anywhere in the plugin (verified: the
 	 * only references to these types in the source are exclusion lists like this one and {@code CustomItems.doNotKill}),
-	 * so preserving them can never leak a run entity — it only protects state that isn't ours to destroy:
+	 * so preserving them can never leak a run entity.  It only protects state that isn't ours to destroy:
 	 * <ul>
-	 *   <li>{@code player} — real players AND the fake ServerPlayers that drive the run;
-	 *   <li>{@code villager} — the Mort/Wizard NPCs;
-	 *   <li>{@code item_frame}, {@code glow_item_frame}, {@code painting}, {@code block_display} — static map
-	 *       decoration built into the world (the old {@code blanketKill} also spared these — it killed item/text
-	 *       displays and interactions, which the run spawns, but never these);
-	 *   <li>{@code marker} — invisible zero-hitbox command anchors.
+	 *   <li>{@code player}: real players AND the fake ServerPlayers that drive the run;
+	 *   <li>{@code villager}: the Mort/Wizard NPCs;
+	 *   <li>{@code item_frame}, {@code glow_item_frame}, {@code painting}, {@code block_display}: static map
+	 *       decoration built into the world.  The old {@code blanketKill} also spared these; it killed item and
+	 *       text displays and interactions, which the run spawns, but never these;
+	 *   <li>{@code marker}: invisible zero-hitbox command anchors.
 	 * </ul>
-	 * Runs from the console source stack, which executes in the overworld ({@code world}) — the dungeon world — so
+	 * Runs from the console source stack, which executes in the overworld ({@code world}), the dungeon world, so
 	 * {@code @e} is scoped to the dungeon just as the old per-world {@code blanketKill} was.*/
 	private static boolean cleanupInProgress = false;
 
@@ -253,10 +253,10 @@ public class Server {
 	public static void hardMobCleanup() {
 		cleanupInProgress = true;
 		try {
-			// Use Entity.remove() rather than /kill: remove() despawns silently (NO EntityDeathEvent), so a purge
-			// can never grant a key/blessing or count as a kill. Same coverage as the old "@e" — everything except
-			// the handful of permanent fixtures below. getEntities() returns a snapshot, so removing while iterating
-			// is safe.
+			// Use Entity.remove() rather than /kill: remove() despawns silently with NO EntityDeathEvent, so a purge
+			// can never grant a key or blessing or count as a kill.  Same coverage as the old "@e", i.e. everything
+			// except the handful of permanent fixtures below.  getEntities() returns a snapshot, so removing while
+			// iterating is safe.
 			for(org.bukkit.World w : Bukkit.getWorlds()) {
 				for(org.bukkit.entity.Entity e : w.getEntities()) {
 					switch(e.getType()) {
@@ -279,7 +279,7 @@ public class Server {
 		for(Player pl : Bukkit.getOnlinePlayers()) {
 			pl.setCooldown(Material.ENDER_PEARL, 0);
 		}
-		// Minibosses are no longer spawned here — they spawn when the run actually starts (see startSection).
+		// Minibosses are no longer spawned here; they spawn when the run actually starts (see startSection).
 		// serverSetup still resets the clear state (keys/doors + ClearManager) so /setup and /reset are clean.
 		resetClearState();
 		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
@@ -489,7 +489,7 @@ public class Server {
 			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 		}
 
-		/** The question animation (chat + particle trails + floating ⓐ/ⓑ/ⓒ labels) WITHOUT auto-answering —
+		/** The question animation (chat, particle trails and floating ⓐ/ⓑ/ⓒ labels) WITHOUT auto-answering,
 		 *  used by the interactive practice quiz. Fills {@code options} with the spawned displays (a=+40t, b=+50t,
 		 *  c=+60t), so callers should only accept an answer once (c) has appeared (~tick 61). */
 		public static void animateQuestion(World world, Player player, int questionNum, String questionText, String[] answers, TextDisplay[] options) {

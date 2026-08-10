@@ -7,7 +7,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import plugin.Utils;
-// import plugin.FakePlayerManager; // TAS-only — disabled in the practice fork
+// import plugin.FakePlayerManager; // TAS-only, disabled in the practice fork
 
 /*
  * Setup

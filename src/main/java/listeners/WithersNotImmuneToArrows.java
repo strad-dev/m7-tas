@@ -15,7 +15,7 @@ import plugin.Utils;
 public class WithersNotImmuneToArrows implements Listener {
 	/**
 	 * Vanilla blocks projectile damage on a "powered" wither (HP <= 50%) and while its
-	 * invulnerability shield is up. We want arrows — including Terminator arrows — to
+	 * invulnerability shield is up.  Arrows, including Terminator arrows, should
 	 * damage a vulnerable wither at any HP. Cancel the event preemptively (LOWEST) so
 	 * vanilla never gets to bounce/skip, then apply the damage manually.
 	 */
@@ -25,10 +25,10 @@ public class WithersNotImmuneToArrows implements Listener {
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
-		// NOTE: arrows deliberately do NOT set the aggro target — only melee/mage-beam hits do (see WitherActions).
+		// Note that arrows deliberately do NOT set the aggro target; only melee and mage-beam hits do (see WitherActions).
 
 		// Shield up (invulnerability ticks active) → bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow
-		// landing on a tick the boss was made vulnerable then re-armored within that same tick — the live counter
+		// landing on a tick the boss was made vulnerable then re-armored within that same tick, since the live counter
 		// already reads "shielded" because the arrow hit resolves after the start-of-tick boss scans, but the boss
 		// WAS intended vulnerable this tick (a same-tick mage beam would connect). Honor that heartbeat-time intent.
 		if(wither.getInvulnerableTicks() != 0
@@ -36,7 +36,7 @@ public class WithersNotImmuneToArrows implements Listener {
 			return;
 		}
 
-		// Dying wither (any WitherLord): phase the arrow through silently — no ding, no damage, no pierce loss.
+		// Dying wither (any WitherLord): phase the arrow through silently, with no ding, no damage, no pierce loss.
 		WitherLord activeLord = WitherLord.activeFor(wither);
 		if(activeLord != null && activeLord.isDying()) {
 			event.setCancelled(true);

@@ -21,15 +21,15 @@ import java.util.UUID;
  *
  * <p><b>Fog of war</b> (matching Hypixel's Magical Map): a room is only drawn once it becomes visible.
  * <ul>
- *   <li><b>Explored</b> (a player has set foot inside, {@link Room#explored}) — drawn in full: every cell in the
- *       {@link RoomType} colour, with its checkmark.</li>
- *   <li><b>Revealed</b> — an unexplored room a door directly connects to an explored room. Drawn as a single grey
- *       1×1 "?" at the door-adjacent cell (so a multi-cell room only shows its shape once entered). Reveal never
+ *   <li><b>Explored</b> (a player has set foot inside, {@link Room#explored}): drawn in full, with every cell in
+ *       the {@link RoomType} colour and its checkmark.</li>
+ *   <li><b>Revealed</b>: an unexplored room a door directly connects to an explored room.  Drawn as a single grey
+ *       1×1 "?" at the door-adjacent cell, so a multi-cell room only shows its shape once entered.  Reveal never
  *       chains: a room two doors out from anything explored stays hidden.</li>
- *   <li><b>Hidden</b> — everything else; not drawn at all.</li>
+ *   <li><b>Hidden</b>: everything else, which is not drawn at all.</li>
  * </ul>
  * Opening the lone wither / blood door auto-explores the room behind it (Deathmite / Blood) as if a player had
- * walked in — see {@code Server.openWitherDoor/openBloodDoor} → {@link ClearManager#exploreRoom}.
+ * walked in.  See {@code Server.openWitherDoor/openBloodDoor} → {@link ClearManager#exploreRoom}.
  *
  * <p>Orientation: grid column {@code gx} → map X (left→right), row {@code gz} → map Y (top→bottom).
  */
@@ -51,10 +51,10 @@ public final class DungeonMap {
 	private static final Color DOOR_ENTRANCE = new Color(0, 124, 0);
 	/** The lone wither door, as its {gx,gz} cell pair: Deathmite (3,2) ↔ Fairy (3,3). */
 	private static final int[][] WITHER_DOOR = {{3, 2}, {3, 3}};
-	// The single "entrance" door of each coloured special room — the one you pass through approaching it FROM
-	// SPAWN — painted in that room's own colour instead of brown. Fairy has three doors, so only its spawn-side
+	// The single "entrance" door of each coloured special room, the one you pass through approaching it FROM
+	// SPAWN, painted in that room's own colour instead of brown.  Fairy has three doors, so only its spawn-side
 	// door (from Red Blue, below) counts; the wither door above it and the Wizard door beside it keep their own
-	// colours. Blood's one door is already painted blood-red by the RoomType.BLOOD check in doorColor().
+	// colours.  Blood's one door is already painted blood-red by the RoomType.BLOOD check in doorColor().
 	private static final int[][] FAIRY_DOOR = {{3, 3}, {3, 4}};  // Red Blue → Fairy
 	private static final int[][] YELLOW_DOOR = {{5, 4}, {5, 5}}; // Red Blue → Yellow
 	private static final int[][] TRAP_DOOR = {{4, 4}, {4, 5}};   // Red Blue → Trap
@@ -144,8 +144,8 @@ public final class DungeonMap {
 					if(e != null) fillRect(canvas, tileX(e[0]), tileY(e[1]), TILE, TILE, UNEXPLORED);
 				}
 			}
-			// connectors within a multi-cell room — full-width joins in the room colour (explored rooms only; a
-			// revealed room is a lone 1×1 so it has no internal joins)
+			// connectors within a multi-cell room: full-width joins in the room colour, for explored rooms only,
+			// since a revealed room is a lone 1×1 and has no internal joins
 			for(Room r : Rooms.all()) {
 				if(!r.explored) continue;
 				for(int[] a : r.cells) {
@@ -164,7 +164,8 @@ public final class DungeonMap {
 					}
 				}
 			}
-			// door connectors between rooms — a narrow opening centred on the shared wall, coloured by door type.
+			// door connectors between rooms: a narrow opening centred on the shared wall, coloured by door type.
+
 			// Only drawn between two currently-visible cells: a locked-and-closed door (whose far room is hidden)
 			// draws nothing, and a door into a revealed room only draws if it lands on that room's shown 1×1 cell.
 			for(int[][] d : DOORS) {

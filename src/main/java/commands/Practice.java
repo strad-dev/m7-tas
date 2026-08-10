@@ -1,5 +1,6 @@
 package commands;
 
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -11,16 +12,21 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /*
  * Practice
- * - Teleports all online players (spectators excluded) to the chosen phase's default location, then starts it.
- * - "--no-teleport" skips the teleport so players can start the phase wherever they currently are.
- * - Runs the same boss/server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
- *   spectator sync, so real players can practice the boss fights and mechanics. The phase begins after a
- *   pre-run delay (default 60 ticks / 3s; pass a bare integer arg to override, e.g. the network plugin sends
- *   "practice <section> 400" for a 20s get-into-position window — see Server.serverInstructions).
+ * 1. Every non-spectator must have a class selected (/class), or the run is refused: no class means no kit and no
+ *    class tag, which is a silently broken run rather than an obviously refused one.
+ * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
+ *    teleports them to the chosen phase's default location, then starts it.
+ * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.
+ * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
+ *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a
+ *    pre-run delay of 60 ticks (3s) by default.  Pass a bare integer arg to override it: the network plugin
+ *    sends "practice <section> 400" for a 20s get-into-position window.  See Server.serverInstructions.
  */
 public class Practice implements CommandExecutor {
 
@@ -41,7 +47,7 @@ public class Practice implements CommandExecutor {
 			return true;
 		}
 
-		// /practice end - cancel the current session.
+		// /practice end cancels the current session.
 		if(args.length >= 1 && args[0].equalsIgnoreCase("end")) {
 			TAS.endPractice(p.getWorld());
 			p.sendMessage(Utils.msg("<yellow>Practice session ended"));
@@ -65,14 +71,50 @@ public class Practice implements CommandExecutor {
 
 		World world = p.getWorld();
 
-		// Teleport every online player to the phase's default location — but leave spectators alone, and skip
-		// entirely with --no-teleport so players start wherever they currently are.
+		// Everyone the run applies to: online and not spectating, by either route, i.e. vanilla spectator mode,
+		// which is the idle state on the networked m7 server, or the plugin's own /spectate.  Used for the class
+		// check, the kit hand-out and the teleport, so all three always agree on who is taking part.
+		List<Player> participants = new ArrayList<>();
+		for(Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
+			if(online.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(online)) continue;
+			participants.add(online);
+		}
+
+		// Every participant must have picked a class.  Without one they would get no kit and no class tag, i.e. no
+		// abilities and no class-gated damage, which is a silently broken run rather than an obviously refused one.
+		// The network plugin blocks the same case up front in /m7practice, so this never fires for a bridged run.
+		List<String> noClass = new ArrayList<>();
+		for(Player participant : participants) {
+			if(loadout.Loadouts.getSelectedClass(participant.getUniqueId()) == null) noClass.add(participant.getName());
+		}
+		if(!noClass.isEmpty()) {
+			boolean solo = noClass.size() == 1 && noClass.getFirst().equals(p.getName());
+			p.sendMessage(solo
+					? Utils.msg("<red>Pick a class first with <white>/class <c></white> before starting practice.",
+							Placeholder.unparsed("c", "<archer|mage|tank|berserk|healer>"))
+					: Utils.msg("<red>Some players have not picked a class yet!  <white><who></white>  <gray>(they need /class <c>)",
+							Placeholder.unparsed("who", String.join(", ", noClass)),
+							Placeholder.unparsed("c", "<archer|mage|tank|berserk|healer>")));
+			return true;
+		}
+
+		// Hand every participant the kit they saved for their selected class. This is THE way to get items now
+		// (/getcustomitems is gone): pick a class with /class, tune it with /m7loadout, then /practice. applyFor
+		// refreshes the saved copies to the current item definitions first, and sets the class scoreboard tag that
+		// gates the mage beam and the per-class damage paths.
+		// Idempotent on the network: M7Bridge already applied the same loadout from the same file on join.
+		for(Player participant : participants) {
+			loadout.Loadouts.applyFor(participant);
+		}
+
+		// Teleport participants to the phase's default location.  This is skipped entirely with --no-teleport so
+		// players start wherever they currently are.
+
 		if(!noTeleport) {
 			double[] loc = DEFAULT_LOCATIONS.get(section);
 			Location target = new Location(world, loc[0], loc[1], loc[2], (float) loc[3], (float) loc[4]);
-			for(Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
-				if(online.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(online)) continue;
-				online.teleport(target, PlayerTeleportEvent.TeleportCause.PLUGIN);
+			for(Player participant : participants) {
+				participant.teleport(target, PlayerTeleportEvent.TeleportCause.PLUGIN);
 			}
 		}
 

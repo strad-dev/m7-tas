@@ -57,8 +57,8 @@ public class Actions {
 	 *  Beam-firing/aim helpers short-circuit if no candidate sits within this radius. */
 	private static final double MAGE_BEAM_RANGE = 50.0;
 	/** Practical max range a Terminator arrow can ballistically reach with a sensible launch
-	 *  angle. Used as the candidate-search radius for the auto-aim variant — past this distance
-	 *  the trajectory either falls into terrain or takes long enough that the target moves. */
+	*  angle.  Used as the candidate-search radius for the auto-aim variant, because past this
+	*  distance the trajectory either falls into terrain or takes long enough that the target moves. */
 	private static final double TERMINATOR_MAX_RANGE = 100.0;
 
 	public static String getActiveInput(UUID id) {
@@ -66,9 +66,9 @@ public class Actions {
 	}
 
 	/**
-	 * Forcibly clears a player's movement inputs for the current tick — used to simulate
-	 * the server opening a GUI (terminal click in Goldor phase). Does NOT touch activeInputs,
-	 * so a fake player's per-tick input ticker will repress the keys on the next tick.
+	 * Forcibly clears a player's movement inputs for the current tick, used to simulate
+	 * the server opening a GUI such as a terminal click in the Goldor phase.  Does NOT touch
+	 * activeInputs, so a fake player's per-tick input ticker will repress the keys on the next tick.
 	 */
 	public static void clearMovementInput(Player p) {
 		if(!(p instanceof CraftPlayer cp)) return;
@@ -348,7 +348,7 @@ public class Actions {
 			} else if(cowHatAfter && !cowHatBefore) {
 				Utils.setSpeed(p, 550);
 			} else if((racingHelmetBefore && !racingHelmetAfter) || (cowHatBefore && !cowHatAfter)) {
-				// A speed helmet came off (and neither is now on) — drop back to base speed.
+				// A speed helmet came off and neither is now on, so drop back to base speed.
 				Utils.setSpeed(p, 400);
 			}
 		}
@@ -407,8 +407,8 @@ public class Actions {
 
 	/**
 	 * Turns the given player's head directly toward the center of the given target's
-	 * bounding box — no LOS check, no boss/player filtering. Use when the caller has
-	 * already chosen the target (e.g. aiming the mage beam at Storm during the boss fight).
+	 * bounding box, with no LOS check and no boss or player filtering.  Use when the caller
+	 * has already chosen the target, e.g. aiming the mage beam at Storm during the boss fight.
 	 */
 	public static void snapHeadAtEntity(Player p, LivingEntity target) {
 		Location eye = p.getEyeLocation();
@@ -424,7 +424,7 @@ public class Actions {
 
 	/**
 	 * Turns the given player's head toward the nearest living entity whose custom name contains
-	 * {@code nameContains} (case-insensitive) within a 32-block cube. No LOS or boss/player filtering —
+	 * {@code nameContains} (case-insensitive) within a 32-block cube.  No LOS or boss/player filtering,
 	 * the caller is naming a specific mob. No-op if none match. Aim math delegates to
 	 * {@link #snapHeadAtEntity}.
 	 */
@@ -464,9 +464,9 @@ public class Actions {
 
 	/**
 	 * Turns the given player's head so that a Terminator arrow would land on the center
-	 * of the given target's bounding box — no boss/player filter, no terrain check.
-	 * Use when the caller has already chosen the target (e.g. aiming at Storm during the
-	 * boss fight). Returns silently if the target is out of ballistic range. Registers
+	 * of the given target's bounding box, with no boss or player filter and no terrain check.
+	 * Use when the caller has already chosen the target, e.g. aiming at Storm during the
+	 * boss fight.  Returns silently if the target is out of ballistic range.  Registers
 	 * a flight-time claim so the auto-pick variant won't re-target this mob while the
 	 * shot is in the air.
 	 */
@@ -495,7 +495,7 @@ public class Actions {
 		Vector origin = p.getEyeLocation().toVector();
 		double rangeSq = range * range;
 		List<LivingEntity> candidates = new ArrayList<>();
-		// getNearbyEntities takes half-extents — passing `range` gives a 2·range cube around the
+		// getNearbyEntities takes half-extents, so passing `range` gives a 2·range cube around the
 		// player, which is the smallest AABB that fully contains the desired sphere.
 		for(Entity e : p.getNearbyEntities(range, range, range)) {
 			if(!(e instanceof LivingEntity le)) continue;
@@ -521,8 +521,8 @@ public class Actions {
 	 * swing/dispatch packets that would otherwise be sent during Storm-phase beam spam.
 	 * <br>
 	 * Mirrors the raytrace logic in {@code CustomItems.mageBeam}: ignores Players and dead
-	 * or resistance-255 living entities, but DOES include Withers (the boss is a valid
-	 * target — the beam plays a stun sound even when the wither is invulnerable). Also
+	 * or resistance-255 living entities, but DOES include Withers, since the boss is a valid
+	 * target and the beam plays a stun sound even when the wither is invulnerable.  It also
 	 * skips firing if a solid block sits closer than the entity along the line of sight.
 	 */
 	public static void loopLeftClick(Player p) {
@@ -544,7 +544,7 @@ public class Actions {
 		});
 		if(entityHit == null) return false;
 		// If a solid block is closer than the entity along the line of sight, the beam
-		// would stop at the block and do no damage — skip the fire.
+		// would stop at the block and do no damage, so skip the fire.
 		RayTraceResult blockHit = p.getWorld().rayTraceBlocks(eye, dir, MAGE_BEAM_RANGE, FluidCollisionMode.NEVER, true);
 		if(blockHit == null) return true;
 		Vector eyeVec = eye.toVector();
@@ -559,13 +559,13 @@ public class Actions {
 	 * range. Mirrors {@link #loopLeftClick}'s purpose: avoid the per-tick arrow-spawn cost
 	 * when no target is in the line of fire.
 	 * <br>
-	 * Uses the same entity filter as {@link #mageBeamWouldHit} (skips Players, dead, and
-	 * resistance-255 mobs; includes Withers so Storm/etc. count as valid targets). The
+	 * Uses the same entity filter as {@link #mageBeamWouldHit}: it skips Players, dead mobs and
+	 * resistance-255 mobs, and includes Withers so Storm and the like count as valid targets.  The
 	 * trajectory is walked tick-by-tick with Minecraft arrow physics ({@code v.xz *= 0.99},
 	 * {@code v.y = v.y * 0.99 - 0.05}); the walk bails when horizontal distance exceeds
 	 * {@link #TERMINATOR_MAX_RANGE} or horizontal velocity collapses.
 	 * <br>
-	 * Only checks the middle arrow of the 3-arrow spread — left/right are ±5° and rarely
+	 * Only checks the middle arrow of the 3-arrow spread, since left and right are ±5° and rarely
 	 * matter when the middle misses.
 	 */
 	public static void loopRightClick(Player p) {
@@ -765,9 +765,9 @@ public class Actions {
 		RayTraceResult entityRay = p.getWorld().rayTraceEntities(p.getEyeLocation(), p.getEyeLocation().getDirection(), entityRange, entity -> {
 			if(entity == p) return false;
 			if(entity.isDead()) return false;
-			// Only LivingEntity is attackable — TASGamePacketListenerImpl.handleInteract rejects
-			// ItemEntity / ExperienceOrb / non-attackable arrows and disconnects the fake player
-			// ("Attempting to attack an invalid entity"). Storm death dropping XP orbs near the
+			// Only LivingEntity is attackable.  TASGamePacketListenerImpl.handleInteract rejects
+			// ItemEntity, ExperienceOrb and non-attackable arrows, then disconnects the fake player
+			// with "Attempting to attack an invalid entity".  Storm death dropping XP orbs near the
 			// player was triggering this.
 			if(!(entity instanceof LivingEntity le)) return false;
 			if(le.hasPotionEffect(PotionEffectType.RESISTANCE) && le.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) return false;
@@ -795,8 +795,8 @@ public class Actions {
 			if(Server.inBloodDoor(hitBlock)) { Server.tryOpenBloodDoor(); return; }
 
 			if(p.getInventory().getItemInMainHand().getType() != Material.DIAMOND_PICKAXE) {
-				// No entity hit, block hit but not a pickaxe — dispatch left-click ability. Pass the hit block so
-				// block abilities (Superboom TNT) use this pick's target instead of re-tracing their own reach.
+				// No entity hit, and a block hit but not a pickaxe, so dispatch the left-click ability.  Pass the hit
+				// block so block abilities (Superboom TNT) use this pick's target instead of re-tracing their own reach.
 				CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_BLOCK, p, hitBlock);
 				return;
 			}
@@ -810,7 +810,7 @@ public class Actions {
 			ServerboundPlayerActionPacket breakStopPacket = new ServerboundPlayerActionPacket(ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK, pos, direction, 0);
 			Utils.simulatePacket(p, breakStopPacket);
 		} else {
-			// No entity hit, no block hit — dispatch left-click ability
+			// No entity hit and no block hit, so dispatch the left-click ability
 			CustomItems.handleCustomItems(null, org.bukkit.inventory.EquipmentSlot.HAND, p.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, p);
 		}
 	}
@@ -833,7 +833,7 @@ public class Actions {
 		// Terminator) go through the normal packet path so their ability dispatch still fires.
 		String heldId = CustomItems.getID(p.getInventory().getItemInMainHand());
 		if("skyblock/combat/last_breath".equals(heldId) || "skyblock/combat/explosive_bow".equals(heldId)) {
-			// Only click path that sends no packet at all, so simulatePacket never logs it — log the click here
+			// Only click path that sends no packet at all, so simulatePacket never logs it.  Log the click here
 			Utils.debug(Utils.DebugType.CLIENT, p.getName() + " Right Clicked" + (Utils.isSuperVerbose() ? (" at " + Utils.round(p.getLocation().getX(), 3) + " " + Utils.round(p.getLocation().getY(), 5) + " " + Utils.round(p.getLocation().getZ(), 3) + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch()) : ""));
 			serverPlayer.startUsingItem(InteractionHand.MAIN_HAND);
 			return;
@@ -864,9 +864,9 @@ public class Actions {
 			for(Player spectator : Spectate.getSpectatingPlayers(p)) spectator.swingMainHand();
 
 			// Vanilla clients stop here when the entity interaction consumes the action and never
-			// send a UseItem packet, so the held item's right-click ability must not fire. Mirror the
-			// real-client exemption list at CustomItems#onPlayerInteractAtEntity (ItemFrame/Interaction)
-			// — without this, right-clicking a Goldor terminal would still trigger the ability.
+			// send a UseItem packet, so the held item's right-click ability must not fire.  Mirror the
+			// real-client exemption list at CustomItems#onPlayerInteractAtEntity (ItemFrame/Interaction).
+			// Without this, right-clicking a Goldor terminal would still trigger the ability.
 			if(entityRay.getHitEntity() instanceof ItemFrame || entityRay.getHitEntity() instanceof Interaction) {
 				return;
 			}
@@ -915,7 +915,7 @@ public class Actions {
 	}
 
 	public static void leap(Player p, Player target) {
-		// Spirit Leap requires the Infinileap (ender pearl) in hand — bail if the player isn't holding it.
+		// Spirit Leap requires the Infinileap (ender pearl) in hand, so bail if the player isn't holding it.
 		ItemStack held = p.getInventory().getItemInMainHand();
 		if(!"skyblock/utility/infinileap".equals(CustomItems.getID(held))) {
 			String heldDesc;
@@ -950,13 +950,13 @@ public class Actions {
 			// A leap usually fires mid-air (out of a bonzo launch/jump) or lands on a mid-jump target, so the
 			// inherited onGround is unreliable: when false, the next move() runs travel() with air physics
 			// (~0.02/tick, ignoring the speed attribute) instead of the intended ground sprint. Force grounded
-			// so the following move() always accelerates off the ground — gravity still applies, so the player
+			// so the following move() always accelerates off the ground.  Gravity still applies, so the player
 			// keeps falling if the landing spot is above the floor; onGround only governs horizontal friction.
 			npc.setOnGround(true);
 			npc.hurtMarked = true;
-			// teleport() relies on the vanilla entity tracker to inform observers, which lags a tick — long
-			// enough for their clients to keep extrapolating the pre-leap momentum and glide the entity
-			// forward before snapping. Broadcast the landed position with zero velocity so observer clients
+			// teleport() relies on the vanilla entity tracker to inform observers, which lags a tick.  That is
+			// long enough for their clients to keep extrapolating the pre-leap momentum and glide the entity
+			// forward before snapping.  Broadcast the landed position with zero velocity so observer clients
 			// snap this tick and stop extrapolating.
 			PositionMoveRotation pmr = PositionMoveRotation.of(npc);
 			Utils.broadcastPacket(ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(net.minecraft.world.entity.Relative.class), npc.onGround()));
@@ -994,16 +994,17 @@ public class Actions {
 	}
 
 	/**
-	 * Spawns a deterministic arrow — no random spread — and returns the Bukkit {@link Arrow} for the caller to
-	 * tag/configure. Bypasses {@code Player.launchProjectile} / vanilla bow release, whose CraftBukkit path calls
-	 * {@code Arrow.shootFromRotation} with inaccuracy=1.0F (a random, run-to-run-varying spread direction). Goes
-	 * directly through NMS {@code shoot(..., 0)} for a perfectly clean, repeatable trajectory — the same pattern
-	 * as {@code CustomItems.terminator}'s shotgun arrows.
+	 * Spawns a deterministic arrow, with no random spread, and returns the Bukkit {@link Arrow} for the caller to
+	 * tag and configure.  Bypasses {@code Player.launchProjectile} and the vanilla bow release, whose CraftBukkit
+	 * path calls {@code Arrow.shootFromRotation} with inaccuracy=1.0F, a random spread direction that varies run to
+	 * run.  Goes directly through NMS {@code shoot(..., 0)} for a perfectly clean, repeatable trajectory, the same
+	 * pattern as {@code CustomItems.terminator}'s shotgun arrows.
 	 * <br>
 	 * Both the spawn position (with the vanilla -0.1 Y offset {@code launchProjectile} applies) and the flight
 	 * direction come from {@code aimFrom}, so a caller can capture one aim {@link Location} at fire time and reuse
-	 * it for delayed bonus arrows — those then spawn at the same point and direction, not wherever the shooter has
+	 * it for delayed bonus arrows, which then spawn at the same point and direction, not wherever the shooter has
 	 * since moved.
+
 	 */
 	public static Arrow fireDeterministicArrow(Player p, Location aimFrom, float speed, double damage) {
 		ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();

@@ -40,7 +40,7 @@ public final class Storm extends WitherLord {
 
 	// Pad poll cadence: pollCycle runs on phase ticks divisible by this (the real-Hypixel 20-tick grid).
 	private static final int PAD_CYCLE_TICKS = 20;
-	// Phase tick of the first lightning volley (see scheduleIntroDialogue) — the action bar's
+	// Phase tick of the first lightning volley (see scheduleIntroDialogue).  The action bar's
 	// "Storm moves in" countdown appears here and runs out at INTRO_END_TICK.
 	private static final int LIGHTNING_TICK = 535;
 
@@ -52,7 +52,7 @@ public final class Storm extends WitherLord {
 	// ray power by ~1.9, so the average destruction radius is roughly power/6 blocks.
 	private static final float CRUSH_EXPLOSION_POWER = 50.0f;
 	private static final int CRUSH_DETECTOR_WINDOW = 61;
-	// Lowest Y Storm can be pushed down to by a descending pillar — at or below this
+	// Lowest Y Storm can be pushed down to by a descending pillar.  At or below this
 	// the push no-ops and the pillar is allowed to crush.
 	private static final double STORM_FLOOR_Y = 169.0;
 	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
@@ -65,7 +65,7 @@ public final class Storm extends WitherLord {
 	// Center the miners and sentries face toward.
 	private static final Location FACING_CENTER = new Location(null, 73.5, 0, 53.5);
 
-	// Deterministic Wither Guard locations — these are placed at exact pillar-sentry spots
+	// Deterministic Wither Guard locations: these are placed at exact pillar-sentry spots
 	// rather than randomized within an AABB.
 	private static final double[][] SENTRY_COORDS = {{114.5, 175, 35.5}, {114.5, 175, 45.5}, {114.5, 175, 61.5}, {114.5, 175, 71.5}, {86.5, 175, 35.5}, {86.5, 175, 45.5}, {86.5, 175, 61.5}, {86.5, 175, 71.5}, {60.5, 175, 35.5}, {60.5, 175, 45.5}, {60.5, 175, 61.5}, {60.5, 175, 71.5}, {32.5, 175, 35.5}, {32.5, 175, 45.5}, {32.5, 175, 61.5}, {32.5, 175, 71.5}, {79.5, 170, 104.5}, {77.5, 170, 103.5}, {75.5, 170, 103.5}, {73.5, 170, 103.5}, {71.5, 170, 103.5}, {69.5, 170, 103.5}, {67.5, 170, 104.5}, {22.5, 172, 59.5}, {23.5, 172, 57.5}, {23.5, 172, 55.5}, {23.5, 172, 53.5}, {23.5, 172, 51.5}, {23.5, 172, 49.5}, {22.5, 172, 47.5}, {67.5, 170, 2.5}, {69.5, 170, 3.5}, {71.5, 170, 3.5}, {73.5, 170, 3.5}, {75.5, 170, 3.5}, {77.5, 170, 3.5}, {79.5, 170, 2.5}, {124.5, 172, 47.5}, {123.5, 172, 49.5}, {123.5, 172, 51.5}, {123.5, 172, 53.5}, {123.5, 172, 55.5}, {123.5, 172, 57.5}, {124.5, 172, 59.5}};
 
@@ -78,27 +78,27 @@ public final class Storm extends WitherLord {
 	private final List<MobGroup> mobGroups = new ArrayList<>();
 	private final List<WitherSkeleton> sentries = new ArrayList<>();
 
-	// The pad/crush poll runs as a boss ticker (BossScheduler.addTicker) so crush detection + its state mutation
-	// happen at the start of the tick, before the players' beam choreography — see BossScheduler.
+	// The pad/crush poll runs as a boss ticker (BossScheduler.addTicker) so crush detection and its state mutation
+	// happen at the start of the tick, before the players' beam choreography.  See BossScheduler.
 	private Runnable cycleTicker;
 	// Auto-enrage one-shot, run as a boss-lane task (BossScheduler.schedule) so it fires at the start of its tick.
 	private Runnable stunEnrageTask;
 	private boolean crushEnabled;
 	private boolean inStun;
 	private double stunDamageDealt;
-	// Latched true the moment the crush's 55% damage cap is reached. Once set, handleDamage rejects ALL further
-	// damage until the next crush — stops same-tick arrows landing after the cap-enrage from over-DPSing (enrage
-	// flips inStun=false mid-tick, which would otherwise re-open the uncapped path for the rest of the tick).
+	// Latched true the moment the crush's 55% damage cap is reached.  Once set, handleDamage rejects ALL further
+	// damage until the next crush.  That stops same-tick arrows landing after the cap-enrage from over-DPSing:
+	// enrage flips inStun=false mid-tick, which would otherwise re-open the uncapped path for the rest of the tick.
 	private boolean stunCapReached;
 	private PadAndPillar currentCrushPillar;
 	private boolean crushExplosionActive;
 	// A crush explosion has been scheduled and hasn't gone off yet. Guarantees exactly one detonation per crush
 	// and lets the death path force a still-pending one rather than lose the pillar.
 	private boolean crushExplosionPending;
-	// Where the crush happened, captured at trigger time. The explosion is anchored here rather than at
-	// boss.getLocation() so it still lands on the right column if Storm dies / is moved during the 20-tick delay.
+	// Where the crush happened, captured at trigger time.  The explosion is anchored here rather than at
+	// boss.getLocation() so it still lands on the right column if Storm dies or is moved during the 20-tick delay.
 	private Location pendingCrushLoc;
-	// Phase tick the pending explosion was armed on — drives the overdue-detonation safety net in pollCycle.
+	// Phase tick the pending explosion was armed on.  This drives the overdue-detonation safety net in pollCycle.
 	private int crushArmedTick;
 
 	private Storm() {
@@ -164,7 +164,7 @@ public final class Storm extends WitherLord {
 
 	@Override
 	protected void onStart() {
-		// Maxor's section ends as Storm spawns — record its end tick for the Wither-King practice scoreboard.
+		// Maxor's section ends as Storm spawns, so record its end tick for the Wither-King practice scoreboard.
 		instructions.bosses.WitherActions.recordSplit("Maxor", plugin.Utils.runTick());
 		spawnMobGroups();
 		initialMovement();
@@ -259,8 +259,8 @@ public final class Storm extends WitherLord {
 	private void startCycleTask() {
 		cancelCycleTask();
 		// Runs every tick in the boss heartbeat, but the poll body only fires on phase ticks divisible by 20
-		// (0, 20, 40, ...). Gating on the absolute phase tick — not a registration-relative counter — keeps the
-		// cadence locked to the 20-grid regardless of when the ticker was registered or first ran.
+		// (0, 20, 40, ...).  I gate on the absolute phase tick rather than a registration-relative counter, which
+		// keeps the cadence locked to the 20-grid regardless of when the ticker was registered or first ran.
 		cycleTicker = () -> {
 			if(boss == null || boss.isDead()) {
 				cancelCycleTask();
@@ -278,24 +278,24 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * Per-tick action-bar QoL for the Storm section. Two counters:
+	 * Per-tick action-bar QoL for the Storm section.  Two counters:
 	 * <ul>
-	 *   <li><b>Pad</b> — ticks until the next pad poll, i.e. how long a player standing on a pad has to wait before
-	 *       their pillar advances. Counts 20t → 1t and resets on the poll tick itself.</li>
-	 *   <li><b>Armed</b> — one segment per pillar that is currently inside its {@link #CRUSH_DETECTOR_WINDOW}, i.e.
-	 *       descending and recently moved, so a poll landing on Storm underneath it would crush him. The label takes
+	 *   <li><b>Pad</b>: ticks until the next pad poll, i.e. how long a player standing on a pad has to wait before
+	 *       their pillar advances.  Counts 20t → 1t and resets on the poll tick itself.</li>
+	 *   <li><b>Armed</b>: one segment per pillar that is currently inside its {@link #CRUSH_DETECTOR_WINDOW}, i.e.
+	 *       descending and recently moved, so a poll landing on Storm underneath it would crush him.  The label takes
 	 *       that pillar's own colour and the count is that pillar's remaining armed ticks; the segment disappears when
-	 *       the window runs out. Already-consumed pillars are skipped — their pad is dead. Only shown from
+	 *       the window runs out.  Already-consumed pillars are skipped, since their pad is dead.  Only shown from
 	 *       {@link #LIGHTNING_TICK} on: before the volley Storm is still walking his intro path and crush can't fire,
 	 *       so an armed window there is noise.</li>
-	 *   <li><b>Storm moves in</b> — only between the lightning volley and {@link #INTRO_END_TICK}: how long until
-	 *       Storm gets his aggro and crush detection arms.</li>
+	 *   <li><b>Storm moves in</b>: only between the lightning volley and {@link #INTRO_END_TICK}, showing how long
+	 *       until Storm gets his aggro and crush detection arms.</li>
 	 * </ul>
 	 * The armed counters use {@link #tick} (not {@link #displayTick()}) because that's the clock
-	 * {@link #pollCycle} feeds the crush detector — the bar must agree with the mechanic, not with the pad counter.
-	 * Sent to every real player (spectators included) — the fakes are skipped. Rendered per player because the "Pad"
-	 * label takes the colour of whichever pad that player is nearest to. Doesn't collide with {@code ClearManager}'s
-	 * bar: that one bails out for anyone outside the dungeon room grid, which the boss arena is.
+	 * {@link #pollCycle} feeds the crush detector.  The bar must agree with the mechanic, not with the pad counter.
+	 * Sent to every real player, spectators included, and the fakes are skipped.  Rendered per player because the
+	 * "Pad" label takes the colour of whichever pad that player is nearest to.  It doesn't collide with
+	 * {@code ClearManager}'s bar: that one bails out for anyone outside the dungeon room grid, which the arena is.
 	 */
 	private void updateActionBar() {
 		int t = displayTick();
@@ -314,7 +314,7 @@ public final class Storm extends WitherLord {
 	/**
 	 * @return one {@code " | <colour>Armed <white>Nt"} segment per pillar still inside its crush window, in
 	 * Purple/Yellow/Green order so the segments don't swap places under a player as their timers run out, or
-	 * an empty string when nothing is armed. Global state — every player sees the same segments.
+	 * an empty string when nothing is armed.  This is global state, so every player sees the same segments.
 	 */
 	private String armedSegments() {
 		StringBuilder sb = new StringBuilder();
@@ -328,8 +328,8 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * @return the MiniMessage colour of the pad whose centre is horizontally closest to {@code loc}, out of all four
-	 * (Red included — it has no pillar but a player standing on it should still see it named). Y is ignored so the
+	 * @return the MiniMessage colour of the pad whose centre is horizontally closest to {@code loc}, out of all four.
+	 * Red is included: it has no pillar, but a player standing on it should still see it named.  Y is ignored so the
 	 * colour doesn't flip while a player is riding a pillar up or down.
 	 */
 	private static String nearestPadColor(Location loc) {
@@ -358,7 +358,7 @@ public final class Storm extends WitherLord {
 	 *  on every phase tick divisible by 20, plus once synchronously at phase tick 0 (see {@link #startCycleTask}). */
 	private void pollCycle() {
 		// Pad-gated pillar advance: per pillar, if any player stands on its pad, run a cycle.
-		// Used (already-crushed) pillars are skipped — their pad is dead.
+		// Used (already-crushed) pillars are skipped, since their pad is dead.
 		for(PillarOscillator osc : pillars) {
 			if(osc.isUsed()) continue;
 			if(padOccupied(osc.getPillar().padBox())) {
@@ -373,13 +373,13 @@ public final class Storm extends WitherLord {
 			fireCrushExplosion();
 		}
 
-		// Crush detection — only after intro ends, only while not already stunned, and only
+		// Crush detection: only after intro ends, only while not already stunned, and only
 		// within the 60-tick window after any pillar's most recent movement.
 		//
-		// crushExplosionPending is part of the gate because the stun can END before the pillar is destroyed: the
+		// crushExplosionPending is part of the gate because the stun can END before the pillar is destroyed.  The
 		// explosion lands 20 ticks after the crush, but enough DPS reaches the 55% stun cap sooner (~18-19t is
-		// typical), which enrages Storm immediately. He is then un-stunned while still buried in a stationary,
-		// not-yet-exploded pillar — so this very next poll would crush him again on that same diorite. Waiting for
+		// typical), which enrages Storm immediately.  He is then un-stunned while still buried in a stationary,
+		// not-yet-exploded pillar, so this very next poll would crush him again on that same diorite.  Waiting for
 		// the pending explosion closes that window without touching the enrage timing.
 		if(crushEnabled && !inStun && !dying && !crushExplosionPending && anyPillarMovedRecently() && stormInCrushablePillar()) {
 			triggerCrush();
@@ -399,7 +399,7 @@ public final class Storm extends WitherLord {
 		for(Player p : world.getPlayers()) {
 			if(p.getGameMode() == GameMode.SPECTATOR) continue;
 			// A player spectating a fake player is teleported onto that fake's position every tick, so their
-			// location isn't their own — ignore them or they'd falsely register as standing on the pad.
+			// location isn't their own.  Ignore them or they'd falsely register as standing on the pad.
 			if(Spectate.isSpectating(p)) continue;
 			int bx = p.getLocation().getBlockX();
 			int by = p.getLocation().getBlockY();
@@ -421,9 +421,9 @@ public final class Storm extends WitherLord {
 	/**
 	 * True if Storm's hitbox overlaps diorite belonging to a pillar that hasn't been consumed yet.
 	 * <br>
-	 * The used-pillar check matters because a consumed pillar's blocks linger until its explosion fires (and, if
-	 * that explosion ever fails to clear the full column, indefinitely). Plain "am I touching diorite?" would let
-	 * leftovers from an already-crushed pillar trigger a second crush — which then scopes to some OTHER pillar via
+	 * The used-pillar check matters because a consumed pillar's blocks linger until its explosion fires, and
+	 * indefinitely if that explosion ever fails to clear the full column.  Plain "am I touching diorite?" would let
+	 * leftovers from an already-crushed pillar trigger a second crush, which then scopes to some OTHER pillar via
 	 * {@link #findPillarStormIsIn}'s closest-pillar fallback, consuming and detonating an innocent one.
 	 */
 	private boolean stormInCrushablePillar() {
@@ -477,7 +477,7 @@ public final class Storm extends WitherLord {
 		double currentHp = boss.getHealth();
 		double onePercent = maxHp * 0.01;
 
-		// Killing-blow path: crush would drop Storm to/below 0 HP — clamp to 1% + death sequence.
+		// Killing-blow path: the crush would drop Storm to 0 HP or below, so clamp to 1% and run the death sequence.
 		if(crushDmg >= currentHp) {
 			clearAggro();
 			setArmor(false);
@@ -501,7 +501,7 @@ public final class Storm extends WitherLord {
 		sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
 		Utils.timer("<green>Storm crushed in " + formatTick(displayTick()));
 
-		// Crush damage: 5% max HP, bypasses event (no recursion) — counted toward the 55% stun cap.
+		// Crush damage: 5% max HP, bypassing the event so there's no recursion.  Counts toward the 55% stun cap.
 		boss.setHealth(Math.max(0.0, currentHp - crushDmg));
 		stunDamageDealt += crushDmg;
 		Utils.changeName(boss);
@@ -519,9 +519,9 @@ public final class Storm extends WitherLord {
 
 	/**
 	 * @return the PillarOscillator whose column Storm's hitbox currently overlaps horizontally.
-	 * If no overlap (e.g. Storm is between columns at trigger time), falls back to the closest
-	 * unused active pillar by horizontal distance — so the crush always has a valid pillar to
-	 * scope explosion destruction to. Returns null only if every active pillar has been used.
+	 * If there is no overlap (e.g. Storm is between columns at trigger time), falls back to the
+	 * closest unused active pillar by horizontal distance, so the crush always has a valid pillar
+	 * to scope explosion destruction to.  Returns null only if every active pillar has been used.
 	 */
 	private PillarOscillator findPillarStormIsIn() {
 		BoundingBox box = boss.getBoundingBox();
@@ -568,15 +568,15 @@ public final class Storm extends WitherLord {
 		// Idempotent: the death path may force this early, in which case the queued task finds nothing to do.
 		if(!crushExplosionPending) return;
 		crushExplosionPending = false;
-		// Anchor on the recorded crush position, NOT boss.getLocation() — Storm may have died, been pinned to 1 HP
-		// or been moved since. The pillar must come down either way, so an invalid boss is no longer a bail-out;
-		// the explosion is fired from the pillar's own column instead.
+		// Anchor on the recorded crush position, NOT boss.getLocation(), because Storm may have died, been pinned to
+		// 1 HP or been moved since.  The pillar must come down either way, so an invalid boss is no longer a
+		// bail-out; the explosion is fired from the pillar's own column instead.
 		Location loc = pendingCrushLoc != null ? pendingCrushLoc
 				: (boss != null && boss.isValid() ? boss.getLocation() : null);
 		pendingCrushLoc = null;
 		if(loc == null) return;
-		// The blast's block list is scoped by StormCrushExplosion via isStormCrush(source) — with no live boss to
-		// pass as the source nothing would filter it and a power-50 explosion would level the arena. In that case
+		// The blast's block list is scoped by StormCrushExplosion via isStormCrush(source).  With no live boss to
+		// pass as the source nothing would filter it and a power-50 explosion would level the arena.  In that case
 		// clear the crushed column directly instead, so the pillar still comes down.
 		if(boss == null || !boss.isValid()) {
 			clearCrushedPillarColumn();
@@ -619,10 +619,10 @@ public final class Storm extends WitherLord {
 
 		setArmor(true);
 
-		// Fail check: every pillar has already been exploded and Storm is still alive. This is the ONLY failable
-		// part of the run — it can only happen if the players didn't do enough DPS during the crush stuns. With no
-		// pillars left, Storm can never be crushed/stunned again, so the run is lost. Per user: do NOT announce the
-		// enrage in this case; play the taunt + fail message instead.
+		// Fail check: every pillar has already been exploded and Storm is still alive.  This is the ONLY failable
+		// part of the run, and it can only happen if the players didn't do enough DPS during the crush stuns.  With
+		// no pillars left, Storm can never be crushed or stunned again, so the run is lost.  Do NOT announce the
+		// enrage in this case; play the taunt and fail message instead.
 		if(!dying && allPillarsExploded()) {
 			playFailSequence();
 		} else {
@@ -666,10 +666,10 @@ public final class Storm extends WitherLord {
 	 * ({@link instructions.bosses.WitherActions#signalRunComplete()} → {@code plugin.RunCompleteEvent}). The
 	 * network glue listens for it and runs its staged session end (interlude → reset the dungeon + everyone to
 	 * spectator → free the slot), which clears the enraged, unkillable Storm so players aren't softlocked.
-	 * Standalone (nothing listening) the event no-ops, exactly like a normal completion — a manual /reset then
-	 * clears it, the same as any standalone run.
+	 * Standalone, with nothing listening, the event no-ops exactly like a normal completion, and a manual /reset
+	 * clears it the same as any standalone run.
 	 * <br>
-	 * Signalled with {@code success=false} — this is the only losing path that fires the event, and a listener
+	 * Signalled with {@code success=false}.  This is the only losing path that fires the event, and a listener
 	 * must be able to free its slot without recording the run to a leaderboard.
 	 */
 	private void endFailedRun() {
@@ -777,8 +777,8 @@ public final class Storm extends WitherLord {
 		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 60);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Storm finished in " + formatTick(displayTick()));
-			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow — must be
-			// before chainNext, which spawns Goldor and re-anchors the phase clock.
+			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
+			// come before chainNext, which spawns Goldor and re-anchors the phase clock.
 			instructions.bosses.WitherActions.recordPhaseDuration("Storm", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
@@ -813,10 +813,10 @@ public final class Storm extends WitherLord {
 	 * row at {@code newBottomY} would dip into Storm's vertical extent, shove Storm
 	 * down by one block to keep him below the descending pillar.
 	 * <br>
-	 * No-ops if Storm has reached {@link #STORM_FLOOR_Y} — at that point the descending
-	 * pillar is allowed to crush. This preserves the rule that a stationary or upward-
-	 * moving pillar Storm flies into horizontally still crushes via the 20-tick poll;
-	 * push only happens during active downward motion.
+	 * No-ops if Storm has reached {@link #STORM_FLOOR_Y}, at which point the descending
+	 * pillar is allowed to crush.  This preserves the rule that a stationary or upward-
+	 * moving pillar Storm flies into horizontally still crushes via the 20-tick poll.
+	 * The push only happens during active downward motion.
 	 */
 	public void tryPushBelowDescendingPillar(PadAndPillar pillar, int newBottomY) {
 		if(boss == null || !boss.isValid()) return;
@@ -826,8 +826,8 @@ public final class Storm extends WitherLord {
 		if(box.getMaxX() <= pillar.pillarX1() || box.getMinX() >= pillar.pillarX2() + 1) return;
 		if(box.getMaxZ() <= pillar.pillarZ1() || box.getMinZ() >= pillar.pillarZ2() + 1) return;
 
-		// New bottom block occupies y in [newBottomY, newBottomY+1). No vertical overlap
-		// means the new clone wouldn't touch Storm — nothing to push out of.
+		// New bottom block occupies y in [newBottomY, newBottomY+1).  No vertical overlap
+		// means the new clone wouldn't touch Storm, so there's nothing to push out of.
 		if(box.getMaxY() <= newBottomY) return;
 
 		if(boss.getLocation().getY() <= STORM_FLOOR_Y) return;
@@ -879,7 +879,7 @@ public final class Storm extends WitherLord {
 		mobGroups.add(new MobGroup(minerSpec("Pad SE", 10, MobSpawnSpec.uniformIn(108, 170, 6, 120, 170, 18), minerName, stonePickaxe, facingCenter, 80)));
 		mobGroups.add(new MobGroup(shadowAssassinSpec("Shadow SE", 120.5, 6.5)));
 
-		// Sentries — deterministic locations, spawned inline (44 separate fixed-location entities).
+		// Sentries at deterministic locations, spawned inline (44 separate fixed-location entities).
 		spawnSentries();
 
 		// Schedule all groups

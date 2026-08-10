@@ -40,21 +40,21 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 
-// import nms.TASGamePacketListenerImpl; // TAS-only fake-player connection — disabled in the practice fork
+// import nms.TASGamePacketListenerImpl; // TAS-only fake-player connection, disabled in the practice fork
 
 public class Utils {
 	/**
-	 * Every one-shot task handed to {@link #scheduleTask} that has NOT run yet — so {@link #cancelAllScheduled()}
-	 * can clear a previous run's lingering choreography. Repeating tasks (boss tickers, aggro, spectator sync) use
+	 * Every one-shot task handed to {@link #scheduleTask} that has NOT run yet, so {@link #cancelAllScheduled()}
+	 * can clear a previous run's lingering choreography.  Repeating tasks (boss tickers, aggro, spectator sync) use
 	 * runTaskTimer and are intentionally NOT tracked here.
 	 *
-	 * <p>Self-pruning: each task removes its own entry as it fires. This is load-bearing, not tidiness —
+	 * <p>Self-pruning: each task removes its own entry as it fires.  This is load-bearing, not tidiness:
 	 * {@code CraftScheduler.cancelTask} walks the whole pending queue AND enqueues a cancellation task per call, so
 	 * cancelling N tasks is O(N * queue). This map used to be an append-only list holding every task ever scheduled
 	 * in the session (CustomItems schedules one per damage event, so hundreds/second), and cancelling ~100k dead
 	 * entries froze the main thread past the 60s watchdog on the next {@code /practice}.
 	 *
-	 * <p>Main-thread only — no synchronisation.
+	 * <p>Main-thread only, so no synchronisation.
 	 */
 	private static final Map<Integer, org.bukkit.scheduler.BukkitTask> scheduledTasks = new LinkedHashMap<>();
 
@@ -84,47 +84,48 @@ public class Utils {
 		return MM.deserialize(template, resolvers);
 	}
 
-	/** Plain (un-styled) text of a component — e.g. reading a custom name for a comparison. */
+	/** Plain (un-styled) text of a component, e.g. reading a custom name for a comparison. */
+
 	public static String plain(Component c) {
 		return c == null ? "" : PlainTextComponentSerializer.plainText().serialize(c);
 	}
 
-	/** Legacy §-coded string of a component — for Bukkit APIs that only accept a String (e.g. boss bar titles). */
+	/** Legacy §-coded string of a component, for Bukkit APIs that only accept a String (e.g. boss bar titles). */
 	public static String legacyString(Component c) {
 		return c == null ? "" : LEGACY.serialize(c);
 	}
 
-	/** MiniMessage string of a component — to round-trip a Component back through the MiniMessage helpers. */
+	/** MiniMessage string of a component, to round-trip a Component back through the MiniMessage helpers. */
 	public static String mmString(Component c) {
 		return c == null ? "" : MM.serialize(c);
 	}
 
-	/** Legacy §-string rendered from a MiniMessage string — for String-only Bukkit APIs (e.g. boss bar titles)
-	 *  while keeping the source free of deprecated ChatColor. */
+	/** Legacy §-string rendered from a MiniMessage string, for String-only Bukkit APIs (e.g. boss bar titles)
+	*  while keeping the source free of deprecated ChatColor. */
 	public static String mmLegacy(String miniMessage) {
 		return LEGACY.serialize(MM.deserialize(miniMessage));
 	}
 
-	/** Component from a legacy §-string — replaces {@code meta.setDisplayName(s)} → {@code meta.displayName(Utils.nameComponent(s))}. */
+	/** Component from a legacy §-string.  Replaces {@code meta.setDisplayName(s)} → {@code meta.displayName(Utils.nameComponent(s))}. */
 	public static Component nameComponent(String legacy) {
-		// Vanilla italicises custom item names; legacy setDisplayName did not. Default to non-italic (keep an explicit §o).
+		// Vanilla italicises custom item names; legacy setDisplayName did not.  Default to non-italic, keeping an explicit §o.
 		return LEGACY.deserialize(legacy).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
 	}
 
-	/** Components from legacy §-strings — replaces {@code meta.setLore(list)} → {@code meta.lore(Utils.loreComponents(list))}. */
+	/** Components from legacy §-strings.  Replaces {@code meta.setLore(list)} → {@code meta.lore(Utils.loreComponents(list))}. */
 	public static List<Component> loreComponents(List<String> legacy) {
 		List<Component> out = new ArrayList<>(legacy.size());
 		for(String s : legacy) out.add(LEGACY.deserialize(s).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
 		return out;
 	}
 
-	/** Legacy §-string of an item's display name, or "" if none — replaces {@code meta.getDisplayName()}. */
+	/** Legacy §-string of an item's display name, or "" if none.  Replaces {@code meta.getDisplayName()}. */
 	public static String displayName(ItemMeta meta) {
 		Component c = meta.displayName();
 		return c == null ? "" : LEGACY.serialize(c);
 	}
 
-	/** Legacy §-strings of an item's lore, or empty list if none — replaces {@code meta.getLore()}. */
+	/** Legacy §-strings of an item's lore, or an empty list if none.  Replaces {@code meta.getLore()}. */
 	public static List<String> lore(ItemMeta meta) {
 		List<Component> l = meta.lore();
 		if(l == null) return new ArrayList<>();
@@ -133,8 +134,8 @@ public class Utils {
 		return out;
 	}
 
-	/** Plain (un-styled) first lore line — the custom-item ID. Styling-independent, so the ID lookup can't be
-	 *  broken by lore formatting (e.g. the non-italic default). Replaces the old getLore().getFirst(). */
+	/** Plain (un-styled) first lore line, which is the custom-item ID.  It is styling-independent, so the ID lookup
+	*  can't be broken by lore formatting such as the non-italic default.  Replaces the old getLore().getFirst(). */
 	public static String firstLorePlain(ItemMeta meta) {
 		List<Component> l = meta.lore();
 		return l == null || l.isEmpty() ? "" : PlainTextComponentSerializer.plainText().serialize(l.getFirst());
@@ -153,7 +154,8 @@ public class Utils {
 		final int[] id = new int[1]; // filled in below; runTaskLater always defers at least a tick, so it's set by then
 		org.bukkit.scheduler.BukkitTask handle = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			scheduledTasks.remove(id[0]);
-			if(generation != scheduleGeneration) return; // a run started/ended after we were queued — drop it
+			if(generation != scheduleGeneration) return; // a run started or ended after this was queued, so drop it
+
 			task.run();
 		}, delay);
 		id[0] = handle.getTaskId();
@@ -288,10 +290,10 @@ public class Utils {
 	}
 
 	/**
-	 * Return a copy of {@code item} that can break ANY block while its holder is in adventure mode. Stamps the
-	 * vanilla {@code minecraft:can_break} component with a single empty block-predicate — no block/state/nbt filter,
-	 * so it matches every block. Mirrors how SkyBlock's Dungeonbreaker bypasses adventure-mode block protection.
-	 * Apply LAST (after any setItemMeta), since this mutates the NMS copy directly.
+	 * Return a copy of {@code item} that can break ANY block while its holder is in adventure mode.  Stamps the
+	 * vanilla {@code minecraft:can_break} component with a single empty block-predicate: no block, state or nbt
+	 * filter, so it matches every block.  This mirrors how SkyBlock's Dungeonbreaker bypasses adventure-mode block
+	 * protection.  Apply LAST, after any setItemMeta, since this mutates the NMS copy directly.
 	 */
 	public static ItemStack breakAnyBlockInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
@@ -303,14 +305,14 @@ public class Utils {
 	}
 
 	/**
-	 * Return a copy of {@code item} that can be placed on Stone Bricks while its holder is in adventure mode
-	 * (the practice default). Stamps the vanilla {@code minecraft:can_place_on} component — renders a
-	 * "Can be placed on: Stone Bricks" tooltip. Apply LAST (after any setItemMeta), since it mutates the NMS copy.
+	 * Return a copy of {@code item} that can be placed on Stone Bricks while its holder is in adventure mode,
+	 * the practice default.  Stamps the vanilla {@code minecraft:can_place_on} component, which renders a
+	 * "Can be placed on: Stone Bricks" tooltip.  Apply LAST, after any setItemMeta, since it mutates the NMS copy.
 	 */
 	public static ItemStack placeOnStoneBricksInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
-		// Use the static built-in block registry as the HolderGetter — avoids RegistryAccess.lookupOrThrow, whose
-		// signature differs between the Spigot-mojang compile target and the Paper runtime (NoSuchMethodError).
+		// Use the static built-in block registry as the HolderGetter.  That avoids RegistryAccess.lookupOrThrow,
+		// whose signature differs between the Spigot-mojang compile target and the Paper runtime (NoSuchMethodError).
 		BlockPredicate stoneBricks = BlockPredicate.Builder.block()
 				.of(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.world.level.block.Blocks.STONE_BRICKS)
 				.build();
@@ -335,12 +337,12 @@ public class Utils {
 
 	/**
 	 * Return a copy of {@code item} that can be BOTH placed on and "broken" against any block while its holder is in
-	 * adventure mode — {@link #placeOnAnythingInAdventure} + {@link #breakAnyBlockInAdventure} in a single stamp. It
-	 * has to be one call: each of those writes its own {@code TOOLTIP_DISPLAY}, so chaining them would clobber the
-	 * first one's entry and un-hide its "Unknown" tooltip line.
+	 * adventure mode, i.e. {@link #placeOnAnythingInAdventure} and {@link #breakAnyBlockInAdventure} in a single
+	 * stamp.  It has to be one call: each of those writes its own {@code TOOLTIP_DISPLAY}, so chaining them would
+	 * clobber the first one's entry and un-hide its "Unknown" tooltip line.
 	 * <p>
-	 * The can_break half is NOT about breaking blocks — Superboom TNT's left-click never breaks anything, the interact
-	 * event is always cancelled. It exists so the CLIENT will tell us WHICH block was left-clicked: verified in the
+	 * The can_break half is NOT about breaking blocks.  Superboom TNT's left-click never breaks anything, since the
+	 * interact event is always cancelled.  It exists so the CLIENT will tell us WHICH block was left-clicked: verified in the
 	 * 26.2 client, {@code MultiPlayerGameMode.startDestroyBlock} returns early without sending
 	 * {@code ServerboundPlayerActionPacket} when {@code Player.blockActionRestricted} is true, and in adventure mode
 	 * that's true unless the held stack's can_break predicate matches the block. Without the stamp a left-click sends
@@ -354,7 +356,7 @@ public class Utils {
 		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
 		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
 		// Empty predicates name no concrete block, so the client would render "Can be placed on: Unknown" and
-		// "Can Break: Unknown" — hide both components from the tooltip. The break-speed modifier below would render
+		// "Can Break: Unknown".  Hide both components from the tooltip.  The break-speed modifier below would render
 		// its own "-1024 Block Break Speed" line, so hide the attribute block too.
 		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
 				.withHidden(DataComponents.CAN_PLACE_ON, true)
@@ -370,9 +372,9 @@ public class Utils {
 	 * while it is held the attribute is 1024 − 1024 = 0 and the multiplier zeroes the destroy speed outright.
 	 * <p>
 	 * Applied by {@link #placeAndBreakAnythingInAdventure} to every can_break item EXCEPT Dungeonbreaker (which
-	 * uses {@link #breakAnyBlockInAdventure} and adds its own +1024 on top instead). Those items only carry
-	 * can_break so the CLIENT reports which block was left-clicked — that packet is gated on the predicate, not on
-	 * destroy speed, so zeroing the speed keeps Superboom's targeting while making the break itself impossible
+	 * uses {@link #breakAnyBlockInAdventure} and adds its own +1024 on top instead).  Those items only carry
+	 * can_break so the CLIENT reports which block was left-clicked, and that packet is gated on the predicate, not
+	 * on destroy speed.  Zeroing the speed keeps Superboom's targeting while making the break itself impossible
 	 * client-side too, instead of relying on {@code CustomItems.onBlockBreak} to refuse it after the fact.
 	 * <p>
 	 * NOTE: setting any explicit attribute modifier drops the item's DEFAULT modifiers (vanilla replaces the whole
@@ -462,7 +464,7 @@ public class Utils {
 		}
 	}
 
-	// LivingEntity#getHurtSound is protected — resolved lazily; Method.invoke dispatches
+	// LivingEntity#getHurtSound is protected, so it is resolved lazily.  Method.invoke dispatches
 	// virtually, so subclass overrides (wither, dragon, zombie...) return their own sounds.
 	private static java.lang.reflect.Method getHurtSoundMethod;
 
@@ -554,9 +556,9 @@ public class Utils {
 	}
 
 	/**
-	 * Verbosity ladder, ascending. Each level is a superset of the one below:
-	 * OFF — silent; TIMER — only tick-timer announcements; ON — timers + full [Client]/[Server]/[Game]
-	 * debug + movement audit; SUPER — adds packet coordinates + movement residual tracking.
+	 * Verbosity ladder, ascending.  Each level is a superset of the one below.
+	 * OFF: silent.  TIMER: only tick-timer announcements.  ON: timers plus full [Client]/[Server]/[Game]
+	 * debug and the movement audit.  SUPER: adds packet coordinates and movement residual tracking.
 	 */
 	public enum VerboseLevel {OFF, TIMER, ON, SUPER}
 
@@ -605,8 +607,8 @@ public class Utils {
 	private static boolean runStarted = false;
 
 	/**
-	 * Mark the start of a new phase — resets the {@code [tick: N]} counter shown on every verbose line. The first
-	 * phase start after {@link #markRunStart()} also anchors the live overall-run timer.
+	 * Mark the start of a new phase.  This resets the {@code [tick: N]} counter shown on every verbose line.  The
+	 * first phase start after {@link #markRunStart()} also anchors the live overall-run timer.
 	 */
 	public static void markPhaseStart() {
 		int now = nmsServer().getTickCount();
@@ -633,14 +635,14 @@ public class Utils {
 	}
 
 	/**
-	 * Ticks elapsed since the last {@link #markPhaseStart()} — the value rendered in the verbose-line prefix.
+	 * Ticks elapsed since the last {@link #markPhaseStart()}, the value rendered in the verbose-line prefix.
 	 */
 	public static int phaseTick() {
 		return nmsServer().getTickCount() - phaseStartTick;
 	}
 
 	/**
-	 * Broadcast a tick-timer line — shown only at TIMER level and above (see {@link #showTimers()}).
+	 * Broadcast a tick-timer line.  Shown only at TIMER level and above (see {@link #showTimers()}).
 	 */
 	public static void timer(String message) {
 		// `message` is a MiniMessage string built by callers (timer lines carry their own colors).
@@ -651,7 +653,7 @@ public class Utils {
 		// The debug payload is inserted as an UNPARSED placeholder so arbitrary content (entity names, coords, a
 		// stray '<') is shown literally and can never break MiniMessage parsing or inject tags.
 		TagResolver m = Placeholder.unparsed("m", message);
-		// ERROR always fires — it flags a misuse/bug, not routine debug output, so it ignores the verbosity gate.
+		// ERROR always fires.  It flags a misuse or a bug, not routine debug output, so it ignores the verbosity gate.
 		if(type == DebugType.ERROR) {
 			// Errors always carry a [tick: #] stamp regardless of verbosity, so the misuse can be pinpointed.
 			Bukkit.broadcast(msg("<gray>[tick: " + phaseTick() + "] <red>[Error] <m>", m));
@@ -723,13 +725,13 @@ public class Utils {
 		if(attacker != null && entity instanceof org.bukkit.entity.Wither && entity.getScoreboardTags().contains("TASWither")) {
 			instructions.bosses.WitherActions.noteDamager(attacker);
 		}
-		// The Wither King is immune to all direct player damage (mage beam, AOTS, etc.) — its HP is driven solely
-		// by dragon kills (each removes 1 via setHealth in WitherKing#playDragonDeathSound). Aggro is still noted above.
+		// The Wither King is immune to all direct player damage (mage beam, AOTS, etc.).  Its HP is driven solely
+		// by dragon kills, each removing 1 via setHealth in WitherKing#playDragonDeathSound.  Aggro is still noted above.
 		if(entity.getScoreboardTags().contains("TASWitherKing")) return;
-		// Villager NPCs (Mort / the Wizard) never take plugin-dealt damage - mage beam, Salvation, AOTS, AoE.
-		// Blocking it HERE rather than only in MiscListener matters: this method hits with genericKill, the exact
-		// same damage source vanilla's /kill uses, so the two are indistinguishable once they reach the damage
-		// event. Keeping ability damage away from villagers at the source means a KILL-cause event on a villager
+		// Villager NPCs (Mort / the Wizard) never take plugin-dealt damage: mage beam, Salvation, AOTS or AoE.
+		// Blocking it HERE rather than only in MiscListener matters, because this method hits with genericKill, the
+		// exact same damage source vanilla's /kill uses, so the two are indistinguishable once they reach the damage
+		// event.  Keeping ability damage away from villagers at the source means a KILL-cause event on a villager
 		// can only be a real /kill, which is what lets MiscListener allow it through cleanly.
 		if(entity instanceof org.bukkit.entity.Villager) return;
 		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
@@ -744,8 +746,9 @@ public class Utils {
 				if(entity.getHealth() <= 0) {
 					instructions.bosses.witherking.WitherKing.handleDragonKilled(dragon);
 				} else if(damage > 0) {
-					// setHealth bypasses the vanilla damage path, so the red hurt flash never plays — send it
+					// setHealth bypasses the vanilla damage path, so the red hurt flash never plays.  Send it
 					// manually so a dragon flashes red when hit, like the withers do.
+
 					broadcastPacket(new net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket(nmsEntity));
 				}
 			}

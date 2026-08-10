@@ -8,7 +8,7 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
-// import instructions.players.*; // TAS-only player routines — disabled in the practice fork
+// import instructions.players.*; // TAS-only player routines, disabled in the practice fork
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -21,10 +21,10 @@ import plugin.Utils;
 
 /*
  * TAS
- * - Gives all NPCs the appropriate inventory
- * - Re-teleports all NPCs to their initial locations
- * - Re-spawns all mobs
- * - Runs the TAS script
+ * 1. Gives all NPCs the appropriate inventory
+ * 2. Re-teleports all NPCs to their initial locations
+ * 3. Re-spawns all mobs
+ * 4. Runs the TAS script
  */
 public class TAS implements CommandExecutor {
 
@@ -39,7 +39,7 @@ public class TAS implements CommandExecutor {
 		return true;
 	}
 
-	/* TAS-only — disabled in the practice fork (references the commented-out player routines). Original in git history (main).
+	/* TAS-only, disabled in the practice fork since it references the commented-out player routines.  Original in git history (main).
 	public static void runTAS(World world, String section) {
 		Map<String, Player> fakePlayers = FakePlayerManager.getFakePlayers();
 		if(fakePlayers.isEmpty()) {
@@ -47,7 +47,7 @@ public class TAS implements CommandExecutor {
 			return;
 		}
 
-		// A prior /practice may have left practice-mode aggro on — turn it back off for a real TAS run.
+		// A prior /practice may have left practice-mode aggro on, so turn it back off for a real TAS run.
 		WitherActions.setPracticeMode(false);
 		// Clear any section splits recorded by a previous run (used by the Wither-King practice scoreboard).
 		WitherActions.clearSplits();
@@ -73,9 +73,9 @@ public class TAS implements CommandExecutor {
 
 		fakePlayers.values().forEach(p -> Utils.setSpeed(p, 400));
 
-		// Start the boss/world instructions BEFORE the player routines. Both schedule their work for the same
-		// tick (+60); submitting this first makes the boss phase activate before the players' tick-0 device
-		// interactions fire — e.g. Tank right-clicking the S3 arrow-align frame, which would otherwise hit an
+		// Start the boss and world instructions BEFORE the player routines.  Both schedule their work for the same
+		// tick (+60), and submitting this first makes the boss phase activate before the players' tick-0 device
+		// interactions fire, e.g. Tank right-clicking the S3 arrow-align frame, which would otherwise hit an
 		// inactive phase and be dropped.
 		Server.serverInstructions(world, section);
 
@@ -90,7 +90,7 @@ public class TAS implements CommandExecutor {
 		// kicks off each player's maxor() routine (replacing the old hardcoded tick-742 teleport+maxor in each script).
 		if(section.equals("all") || section.equals("clear")) {
 			// The Watcher teleports the actors to the boss spawn the tick a fake enters the portal, then runs this
-			// handoff the next tick — so Maxor and every player's maxor() routine start together.
+			// handoff the next tick, so Maxor and every player's maxor() routine start together.
 			Runnable maxorHandoff = () -> {
 				Maxor.maxorInstructions(world, true);
 				Archer.maxor(true);
@@ -102,9 +102,9 @@ public class TAS implements CommandExecutor {
 			Watcher.INSTANCE.arm(world, section.equals("all"), maxorHandoff);
 		}
 
-		// Arm the boss-to-boss player handoffs: when Maxor/Storm die and spawn the next boss (chainNext), each
-		// player's storm()/goldor() routine starts that same tick — replacing the old hardcoded transition ticks
-		// (storm(true)@496, goldor(true)@881) in the player scripts.
+		// Arm the boss-to-boss player handoffs: when Maxor or Storm die and spawn the next boss (chainNext), each
+		// player's storm() or goldor() routine starts that same tick.  This replaces the old hardcoded transition
+		// ticks (storm(true)@496, goldor(true)@881) in the player scripts.
 		if(section.equals("all") || section.equals("boss")) {
 			Maxor.INSTANCE.armPlayerHandoff(() -> {
 				Archer.storm(true);
@@ -143,8 +143,8 @@ public class TAS implements CommandExecutor {
 	*/
 
 	/**
-	 * Like runTAS but runs ONLY the boss/server instructions — no fake-player routines, no player
-	 * handoffs, no spectator sync — so real players can practice the boss fights and mechanics. Bosses still
+	 * Like runTAS but runs ONLY the boss and server instructions, with no fake-player routines, no player
+	 * handoffs and no spectator sync, so real players can practice the boss fights and mechanics.  Bosses still
 	 * chain (e.g. {@code /practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
 	 * chainNext spawns the next; runPlayerHandoff is simply a no-op since no handoff is armed here.
 	 *
@@ -160,7 +160,7 @@ public class TAS implements CommandExecutor {
 	 *   network plugin passes 400 = 20s when it warps a party in). Forwarded to {@link Server#serverInstructions}.
 	 */
 	public static void runPractice(World world, String section, int delayTicks) {
-		// Kick all fake actors — practice is for real players, who become the boss's aggro target.
+		// Kick all fake actors, because practice is for real players, who become the boss's aggro target.
 		FakePlayerManager.stopCustomConnection();
 		FakePlayerManager.kickAllFakes();
 		WitherActions.setPracticeMode(true);
@@ -196,8 +196,9 @@ public class TAS implements CommandExecutor {
 		Actions.cancelAllMovement();
 		// Purge every stray entity a prior (possibly aborted) run leaked before we spawn this run's own. Must come
 		// BEFORE serverSetup (spawns minibosses) and serverInstructions (spawns bosses) so it never nukes what this
-		// run just staged — the same hardMobCleanup-then-serverSetup order /reset and /setup use. Catches untracked
-		// withers/crystals that the targeted forceCleanups in serverSetup can't, since they only free tracked refs.
+		// run just staged.  That is the same hardMobCleanup-then-serverSetup order /reset and /setup use.  It catches
+		// untracked withers and crystals the targeted forceCleanups in serverSetup can't, since they only free
+		// tracked refs.
 		Server.hardMobCleanup();
 		Server.serverSetup(world);
 		Server.serverInstructions(world, section, delayTicks);

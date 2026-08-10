@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * One of the three active Storm pads + its associated pillar column.
- * The "Red" pad/pillar exists in the world but is inert — it's in {@link #ALL} for display purposes only,
+ * The "Red" pad/pillar exists in the world but is inert: it's in {@link #ALL} for display purposes only,
  * never in {@link #ACTIVE}.
  * <br>
  * The pad detect box is a 3D bounding box matched against the player's feet
@@ -21,7 +21,7 @@ import java.util.List;
  */
 public record PadAndPillar(
 		String name,
-		/** MiniMessage colour tag matching the pad's wool — used by Storm's action-bar HUD. */
+		/** MiniMessage colour tag matching the pad's wool, used by Storm's action-bar HUD. */
 		String color,
 		BoundingBox padBox,
 		int pillarX1, int pillarX2,
@@ -36,11 +36,11 @@ public record PadAndPillar(
 	/** Highest the pillar's bottom-most block can reach during oscillation. */
 	public static final int PILLAR_BOTTOM_MAX = 189;
 
-	/** Anchor layer — always contains pillar material; explosion filter preserves y >= this. */
+	/** Anchor layer: always contains pillar material.  The explosion filter preserves y >= this. */
 	public static final int PILLAR_ANCHOR_Y = 196;
 
 	/**
-	 * Red pillar footprint — the inert fourth pillar. Not in {@link #ACTIVE} because it
+	 * Red pillar footprint, the inert fourth pillar.  Not in {@link #ACTIVE} because it
 	 * never oscillates and has no pad, but the crush-explosion filter uses these bounds
 	 * to explicitly preserve Red's column even when an active pillar's blast radius
 	 * reaches it.
@@ -69,9 +69,9 @@ public record PadAndPillar(
 	);
 
 	/**
-	 * The inert fourth pad/pillar. <b>Display-only</b> — deliberately kept out of {@link #ACTIVE} so nothing in the
-	 * oscillation / crush path can pick it up; it exists solely so the action-bar HUD can name and colour the pad a
-	 * player is standing nearest to. Its pad box mirrors the other three into the remaining (SE) corner.
+	 * The inert fourth pad/pillar.  <b>Display-only</b>, deliberately kept out of {@link #ACTIVE} so nothing in the
+	 * oscillation or crush path can pick it up.  It exists solely so the action-bar HUD can name and colour the pad
+	 * a player is standing nearest to.  Its pad box mirrors the other three into the remaining SE corner.
 	 */
 	public static final PadAndPillar RED = new PadAndPillar(
 			"Red", "<red>",
@@ -79,9 +79,10 @@ public record PadAndPillar(
 			RED_PILLAR_X1, RED_PILLAR_X2, RED_PILLAR_Z1, RED_PILLAR_Z2
 	);
 
-	/** The three pads that actually oscillate. Red is excluded — see {@link #RED}. */
+	/** The three pads that actually oscillate.  Red is excluded; see {@link #RED}. */
 	public static final List<PadAndPillar> ACTIVE = List.of(PURPLE, YELLOW, GREEN);
 
-	/** All four pads including the inert Red one. For display/lookup only — never iterate this to drive a pillar. */
+	/** All four pads including the inert Red one.  For display and lookup only; never iterate this to drive a pillar. */
+
 	public static final List<PadAndPillar> ALL = List.of(PURPLE, YELLOW, GREEN, RED);
 }

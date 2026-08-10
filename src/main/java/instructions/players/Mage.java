@@ -304,8 +304,8 @@
 //		 * ██████╔╝███████╗╚██████╔╝╚██████╔╝██████╔╝    ╚██████╗██║  ██║██║ ╚═╝ ██║██║
 //		 * ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ ╚═════╝      ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝
 //		 */
-//		// Left-click the blood door to open it — requires the Blood Key (handled by Actions.leftClick's door
-//		// detection; the old hard openBloodDoor() call is gone).
+//		// Left-click the blood door to open it.  This requires the Blood Key, and is handled by
+//		// Actions.leftClick's door detection; the old hard openBloodDoor() call is gone.
 //		Utils.scheduleTask(() -> Actions.leftClick(mage), 350);
 //		Utils.scheduleTask(() -> Actions.snapHeadAtNearestNamed(mage, "Diamante Giant"), 371);
 //		Utils.scheduleTask(() -> Actions.leftClick(mage), 372);
@@ -349,9 +349,9 @@
 //			Actions.swapItems(mage, 11, 36);
 //			Actions.setHotbarSlot(mage, 5);
 //		}, 661);
-//		// The "Entered Boss" milestone + blood-room blessings, and the Maxor handoff (teleport to boss spawn +
-//		// maxor(true)), are all owned by the Watcher's portal entry — see Watcher.enterPortal / the maxorHandoff
-//		// armed in TAS.runTAS.
+//		// The "Entered Boss" milestone, the blood-room blessings, and the Maxor handoff (teleport to boss spawn,
+//		// then maxor(true)) are all owned by the Watcher's portal entry.  See Watcher.enterPortal and the
+//		// maxorHandoff armed in TAS.runTAS.
 //	}
 //
 //	public static void maxor(boolean doContinue) {

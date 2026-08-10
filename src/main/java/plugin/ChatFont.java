@@ -14,13 +14,13 @@ public final class ChatFont {
 	/** Rendered width of a standard (unscaled) chat line. */
 	public static final int MAX_WIDTH = 320;
 
-	/** Wrap threshold for packing lines — a 10px buffer under {@link #MAX_WIDTH} so the client never wraps a line itself. */
+	/** Wrap threshold for packing lines: a 10px buffer under {@link #MAX_WIDTH} so the client never wraps a line itself. */
 	public static final int WRAP_WIDTH = 310;
 
 	/** The legacy section sign (§) that prefixes colour/format codes. */
 	private static final char SECTION_CHAR = '§';
 
-	/** Rendered pixel width of {@code text} — skips §-colour/format codes and accounts for bold (§l, reset by §r/colours). */
+	/** Rendered pixel width of {@code text}.  Skips §-colour and format codes, and accounts for bold (§l, reset by §r or colours). */
 	public static int width(String text) {
 		int px = 0;
 		boolean afterCode = false;
@@ -46,7 +46,7 @@ public final class ChatFont {
 	}
 
 	/**
-	 * {@code text} word-wrapped at {@link #WRAP_WIDTH} and each resulting line {@link #centerPad}ed — so a line
+	 * {@code text} word-wrapped at {@link #WRAP_WIDTH} and each resulting line {@link #centerPad}ed, so a line
 	 * whose rendered width isn't known up front (a player name, a live number) still sits centered instead of
 	 * carrying hardcoded padding. Text short enough for one line comes back as a single entry.
 	 * <p>Measured with {@link #width}, so pass plain text or a legacy §-string; MiniMessage tags would be counted

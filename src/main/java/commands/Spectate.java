@@ -41,7 +41,7 @@ public class Spectate implements CommandExecutor {
 	// Maps a real Player to the fake Player they are spectating
 	private static final Map<Player, Player> spectatorMap = new HashMap<>();
 
-	// Per-spectator sync state — ConcurrentHashMap so the netty thread can safely read it
+	// Per-spectator sync state.  ConcurrentHashMap so the netty thread can safely read it
 	private static final ConcurrentHashMap<Player, SpectatorState> spectatorStates = new ConcurrentHashMap<>();
 
 	// Maps a fake Player to the Player(s) that are spectating them
@@ -141,7 +141,7 @@ public class Spectate implements CommandExecutor {
 	}
 
 	/** @return true if this player is currently spectating a fake player (so their position mirrors that fake
-	 *  player's and shouldn't be treated as the player's own presence — e.g. Storm pad occupancy). */
+	 *  player's and shouldn't be treated as the player's own presence, e.g. Storm pad occupancy). */
 	public static boolean isSpectating(Player player) {
 		return spectatorMap.containsKey(player);
 	}
@@ -193,7 +193,7 @@ public class Spectate implements CommandExecutor {
 	}
 
 	private static void restorePlayerCollision(Player player) {
-		// Intentionally NOT removed from the no-collision team — every real player stays no-collide for their whole
+		// Intentionally NOT removed from the no-collision team: every real player stays no-collide for their whole
 		// session (added on join); the team rule, not setCollidable, is what suppresses player-vs-player pushing.
 		player.setCollidable(true);
 		player.removePotionEffect(PotionEffectType.INVISIBILITY);

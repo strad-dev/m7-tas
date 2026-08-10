@@ -66,7 +66,7 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> lastRightBlockTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastWitherShieldSoundTick = new ConcurrentHashMap<>();
-	// True while mageBeam's hurtEntity call is on the stack — damage events fire synchronously, so
+	// True while mageBeam's hurtEntity call is on the stack.  Damage events fire synchronously, so
 	// onWitherHurtSound reads this to skip its at-location broadcast for beam hits (package-private).
 	static boolean beamDamageInProgress = false;
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
@@ -79,33 +79,33 @@ public class CustomItems implements Listener {
 	// (5 ticks, or 4 with 4/4 Thermodynamic armor). This caps the rate at 1 shot / cooldown regardless of spam.
 	private static final Map<UUID, Integer> termLastPacketTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> termLastFireTick = new ConcurrentHashMap<>();
-	// Class-ability (drop-triggered) cooldowns — store the tick each ability is next usable. Reset on entering a
-	// boss fight (WitherLord.start) and at run start. Guided Sheep 600t, Rapid Fire 2000t, Explosive Shot 400t.
+	// Class-ability (drop-triggered) cooldowns.  Each map stores the tick that ability is next usable.  Reset on
+	// entering a boss fight (WitherLord.start) and at run start.  Guided Sheep 600t, Rapid Fire 2000t, Explosive Shot 400t.
 	private static final Map<UUID, Integer> guidedSheepReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> rapidFireReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> explosiveShotReady = new ConcurrentHashMap<>();
-	// Salvation (Terminator left-click) cooldown — stores the tick the next Salvation beam is usable. The shared
-	// left-click guard only caps to 1/tick; this enforces the ability's own 5-tick cooldown. NOTE: the Terminator
-	// and Salvation are weapons, NOT abilities, so they are deliberately exempt from the Mage cooldown reduction.
+	// Salvation (Terminator left-click) cooldown: the tick the next Salvation beam is usable.  The shared left-click
+	// guard only caps to 1/tick, so this enforces the ability's own 5-tick cooldown.  Note that the Terminator and
+	// Salvation are weapons, NOT abilities, so they deliberately skip the Mage cooldown reduction.
 	private static final int SALVATION_COOLDOWN_TICKS = 5;
 	private static final Map<UUID, Integer> salvationReady = new ConcurrentHashMap<>();
-	// Mage beam (Mage-class left-click) cooldown — the shared left-click guard only caps to 1/tick; this enforces
-	// the beam's own 5-tick cooldown (fired on tick N → next usable on tick N+5).
+	// Mage beam (Mage-class left-click) cooldown.  The shared left-click guard only caps to 1/tick, so this enforces
+	// the beam's own 5-tick cooldown: fired on tick N → next usable on tick N+5.
 	private static final int MAGE_BEAM_COOLDOWN_TICKS = 5;
 	private static final Map<UUID, Integer> mageBeamReady = new ConcurrentHashMap<>();
 	// Secondary mage weapons: in a MAGE's hand (same class gate as the Hyperion/Claymore) these fire the SAME mage
-	// beam on left-click — same 5-tick cooldown, same geometry and hit test — but only chip for a flat 1 damage; see
-	// mageBeam's damage switch. Their real ability is on the right-click and is unaffected. While the beam is armed,
-	// left-clicking them must also never break a block (leftClickAbilityItem below).
+	// beam on left-click, with the same 5-tick cooldown, geometry and hit test.  The only difference is that they
+	// chip for a flat 1 damage; see mageBeam's damage switch.  Their real ability is on the right-click and is
+	// unaffected.  While the beam is armed, left-clicking them must also never break a block (leftClickAbilityItem).
 	private static final Set<String> WEAK_BEAM_IDS = Set.of(
 			"skyblock/combat/bonzo",
 			"skyblock/combat/aotv",
 			"skyblock/combat/ice_spray",
 			"skyblock/combat/rag");
-	// Per-ability cooldowns (base ticks before the Mage class's 50% reduction — see effectiveCooldown). Each map
-	// stores the tick that ability is next usable, keyed by player. Reset in resetAbilityCooldowns().
+	// Per-ability cooldowns, in base ticks before the Mage class's 50% reduction (see effectiveCooldown).  Each map
+	// stores the tick that ability is next usable, keyed by player.  Reset in resetAbilityCooldowns().
 	private static final int GYRO_COOLDOWN_TICKS = 600;       // Gyrokinetic Wand: 30s
-	private static final int RAG_COOLDOWN_TICKS = 400;        // Ragnarok Axe: 20s
+	private static final int RAG_COOLDOWN_TICKS = 400;        // Ragnarock Axe: 20s
 	private static final int ICE_SPRAY_COOLDOWN_TICKS = 100;  // Ice Spray Wand: 5s
 	private static final int TAC_COOLDOWN_TICKS = 400;        // Tactical Insertion: 20s
 	private static final int GUIDED_SHEEP_COOLDOWN_TICKS = 600; // Guided Sheep: 30s
@@ -118,6 +118,11 @@ public class CustomItems implements Listener {
 	// Server tick the RagBuff currently expires at, per player. Each cast's buff lands at +60 and lasts 200 ticks
 	// (10s); a re-cast while still active pushes this out so the earlier cast's removal no-ops (see rag()).
 	private static final Map<UUID, Integer> ragBuffExpiry = new ConcurrentHashMap<>();
+	// Server tick the in-flight Ragnarock cast started at, per player. The 3s wind-up (ragWindup) polls the main hand
+	// every tick and drops the cast the moment the axe leaves it, so swapping off mid-wind-up no longer lands the
+	// buff. The stamp doubles as the chain's identity: a re-cast overwrites it, so an older chain sees a start tick
+	// that isn't its own and stops.
+	private static final Map<UUID, Integer> ragCastStart = new ConcurrentHashMap<>();
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 	// Crypt + Superboom-wall restorations. Mirrors the stonk maps above: a crypt/wall is temporarily set to AIR and
@@ -127,16 +132,17 @@ public class CustomItems implements Listener {
 	private static final Map<Location, BlockData> pendingBlockRestorations = new HashMap<>();
 	private static final List<BukkitTask> pendingBlockTasks = new ArrayList<>();
 	private static final List<Zombie> pendingCryptMobs = new ArrayList<>();
-	// DETECTION radius of every explosion that routes through triggerSuperboomRadius — Superboom TNT, Explosive Shot
-	// and Guided Sheep. This is the FIRST of the two searches: a cube half-extent around the impact block (Chebyshev
-	// distance, no line-of-sight test — air neither triggers nor blocks it) scanned for a *valid* crypt/wall block.
-	// 2 → a 5x5x5 box. The SECOND search is per hit block in triggerSuperboomAt: the crypt rectangle validation in
-	// checkAndActivateCrypt and the cracked-brick 6-face flood-fill, which decide how much is actually removed —
-	// deliberately NOT scaled by this constant. Reach is separate again: vanilla's interaction range (see superboom).
+	// DETECTION radius of every explosion that routes through triggerSuperboomRadius: Superboom TNT, Explosive Shot
+	// and Guided Sheep.  This is the FIRST of the two searches, a cube half-extent around the impact block scanned
+	// for a *valid* crypt/wall block.  It uses Chebyshev distance with no line-of-sight test, so air neither triggers
+	// nor blocks it.  2 → a 5x5x5 box.  The SECOND search runs per hit block in triggerSuperboomAt: the crypt
+	// rectangle validation in checkAndActivateCrypt and the cracked-brick 6-face flood-fill, which decide how much is
+	// actually removed.  That one is deliberately NOT scaled by this constant.  Reach is separate again, and comes
+	// from vanilla's interaction range (see superboom).
 	private static final int SUPERBOOM_RADIUS = 2;
-	// Tick of the last Superboom-TNT detonation per player. The TNT detonates either from the ability dispatch (any
-	// click path) or from a raw vanilla placement caught in onInfinityboomPlace — this caps it to one blast per player
-	// per tick so a click that somehow reaches both paths doesn't double-boom.
+	// Tick of the last Superboom-TNT detonation per player.  The TNT detonates either from the ability dispatch (any
+	// click path) or from a raw vanilla placement caught in onInfinityboomPlace, so this caps it to one blast per
+	// player per tick.  A click that somehow reaches both paths won't double-boom.
 	private static final Map<UUID, Integer> lastSuperboomTick = new ConcurrentHashMap<>();
 
 	public static boolean abilityFiredThisTick(Player p) {
@@ -222,17 +228,17 @@ public class CustomItems implements Listener {
 
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
-		// Right-clicking a button or a lever owns the click — the held item's right-click ability must not fire.
+		// Right-clicking a button or a lever owns the click, so the held item's right-click ability must not fire.
 		// Skip custom-item handling entirely so we also don't cancel the event (the block still actuates).
 		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null
 				&& (e.getClickedBlock().getType() == Material.LEVER || Tag.BUTTONS.isTagged(e.getClickedBlock().getType()))) {
 			return;
 		}
-		// Right-clicking a clear-phase secret (chest/essence) owns the click — don't fire the held item's ability.
+		// Right-clicking a clear-phase secret (chest/essence) owns the click, so don't fire the held item's ability.
 		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && instructions.clear.ClearManager.isSecretBlock(e.getClickedBlock())) {
 			return;
 		}
-		// getClickedBlock() is vanilla's own hit result (null for air clicks) — block abilities use it as their reach.
+		// getClickedBlock() is vanilla's own hit result, null for air clicks.  Block abilities use it as their reach.
 		handleCustomItems(e, e.getHand(), e.getItem(), e.getAction(), e.getPlayer(), e.getClickedBlock());
 	}
 
@@ -283,15 +289,15 @@ public class CustomItems implements Listener {
 	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
 		// Superboom TNT carries a can_break stamp purely so the adventure-mode client reports the clicked block on a
-		// left-click (see Utils.placeAndBreakAnythingInAdventure) — it must never actually break anything. The
-		// left-click interact event is already cancelled for it in handleCustomItems; this is the backstop, and it
+		// left-click (see Utils.placeAndBreakAnythingInAdventure).  It must never actually break anything.  The
+		// left-click interact event is already cancelled for it in handleCustomItems, so this is the backstop.  It
 		// matters because the fall-through below would otherwise remove the block PERMANENTLY.
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/infinityboom")) {
 			e.setCancelled(true);
 			return;
 		}
-		// Protected Goldor interactables and the Maxor Energy-Crystal pressure plates are unbreakable outright —
-		// any tool (stonk, dungeonbreaker, …), any phase.
+		// Protected Goldor interactables and the Maxor Energy-Crystal pressure plates are unbreakable outright, with
+		// any tool (stonk, dungeonbreaker, …) and in any phase.
 		if(Goldor.INSTANCE.isProtected(e.getBlock()) || Maxor.INSTANCE.isProtected(e.getBlock())) {
 			e.setCancelled(true);
 			return;
@@ -307,23 +313,23 @@ public class CustomItems implements Listener {
 			e.setCancelled(true);
 			return;
 		}
-		// The vertical faces (perimeter walls) of a room can't be broken through — only the floor/ceiling and the
-		// room interior can be stonked. We restrict by the room's horizontal perimeter at any Y (rooms have varying
-		// heights, so a Y-based floor/ceiling rule is impossible). Multi-cell rooms (e.g. the 2x2 Museum) protect only
-		// their OUTER perimeter, so the middle of the room stays stonkable. The three doors (start / wither / blood)
-		// sit in these walls and must remain stonkable, so they're exempt.
+		// The vertical faces (perimeter walls) of a room can't be broken through.  Only the floor/ceiling and the
+		// room interior can be stonked.  I restrict by the room's horizontal perimeter at any Y, because rooms have
+		// varying heights and a Y-based floor/ceiling rule is impossible.  Multi-cell rooms (e.g. the 2x2 Museum)
+		// protect only their OUTER perimeter, so the middle of the room stays stonkable.  The three doors (start /
+		// wither / blood) sit in these walls and must remain stonkable, so they're exempt.
 		Block b = e.getBlock();
 		if(instructions.clear.Rooms.isRoomFace(b.getX(), b.getZ())
 				&& !Server.inStartDoor(b) && !Server.inWitherDoor(b) && !Server.inBloodDoor(b)) {
 			e.setCancelled(true);
 			return;
 		}
-		// Do the removal ourselves WITHOUT physics instead of letting vanilla break the block. A vanilla break runs
-		// updateNeighbourShapes on the six neighbours, which is what tears out anything support-dependent sitting on/
-		// against the block — carpets, torches, flowers, rails, redstone — and cascades a nether portal to air via its
-		// frame-completeness check. That removal path (updateShape → destroyBlock) fires NO BlockPhysicsEvent, so it
-		// can't be vetoed from a listener; the only place to stop it is here, at the source. setType(AIR, false) uses
-		// applyPhysics=false, which skips the neighbour shape updates entirely — so nothing attached ever pops off.
+		// Do the removal ourselves WITHOUT physics instead of letting vanilla break the block.  A vanilla break runs
+		// updateNeighbourShapes on the six neighbours, which tears out anything support-dependent sitting on or
+		// against the block: carpets, torches, flowers, rails, redstone.  It also cascades a nether portal to air via
+		// its frame-completeness check.  That removal path (updateShape → destroyBlock) fires NO BlockPhysicsEvent, so
+		// it can't be vetoed from a listener.  The only place to stop it is here, at the source.  setType(AIR, false)
+		// uses applyPhysics=false, which skips the neighbour shape updates entirely, so nothing attached pops off.
 		e.setCancelled(true);
 		if(getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) {
 			stonk(e.getPlayer(), e.getBlock()); // temporary: removes the block no-physics + restores it after 200 ticks
@@ -347,10 +353,14 @@ public class CustomItems implements Listener {
 		Player p = e.getPlayer();
 		droppingPlayers.add(p.getUniqueId());
 		Utils.scheduleTask(() -> droppingPlayers.remove(p.getUniqueId()), 1);
-		boolean ultimate = !p.isSprinting();
-		boolean isClassPlayer = p.getName().equals("Archer") || p.getScoreboardTags().contains("Archer") || p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
-		if(!isClassPlayer) return;
+		// The drop key is an ABILITY key here, never a way to lose an item, so cancel FIRST, for everyone.  This used
+		// to be gated on being an Archer or a Mage (the only two classes with a drop ability), which meant a Berserk,
+		// Healer, Tank, or anyone with no class tag at all physically threw their kit item on the floor.  Whether the
+		// class has an ability to fire is a separate question, answered by dispatchDrop.
 		e.setCancelled(true);
+		boolean ultimate = !p.isSprinting();
+		// Real players get their ability from the interceptor's DROP_ITEM/DROP_ALL_ITEMS path, which is not
+		// rate-limited by vanilla's drop handling.  This handler only owns the cancel for them.
 		if(!FakePlayerManager.getFakePlayers().containsValue(p)) return;
 		dispatchDrop(p, ultimate);
 	}
@@ -390,10 +400,10 @@ public class CustomItems implements Listener {
 			String id = getID(p.getInventory().getItemInMainHand());
 			if(id.equals("skyblock/combat/explosive_bow")) {
 				if(e.getProjectile() instanceof Arrow primary) {
-					// Re-aim the vanilla primary IN PLACE (no cancel, no second entity) — just override its velocity
-					// with the clean eye direction to strip the random spread (inaccuracy 1.0). The bonus arrows are
-					// new entities, so they go through the deterministic spawner. aimFrom/speed captured once so the
-					// staggered bonus arrows spawn at the same point/direction (matching the old launchLoc/velocity).
+					// Re-aim the vanilla primary IN PLACE, with no cancel and no second entity: just override its
+					// velocity with the clean eye direction to strip the random spread (inaccuracy 1.0).  The bonus
+					// arrows are new entities, so they go through the deterministic spawner.  aimFrom/speed are
+					// captured once so the staggered bonus arrows spawn at the same point and direction.
 					Location aimFrom = p.getEyeLocation().clone();
 					float speed = (float) primary.getVelocity().length();
 					primary.setVelocity(aimFrom.getDirection().multiply(speed));
@@ -423,9 +433,10 @@ public class CustomItems implements Listener {
 			}
 			if(id.equals("skyblock/combat/last_breath")) {
 				if(!(e.getProjectile() instanceof Arrow primary)) return;
-				// Re-aim the vanilla primary IN PLACE (no cancel, no second entity) — override its velocity with the
-				// clean eye direction to strip the random spread. Bonus arrows are new entities → deterministic
-				// spawner. aimFrom/speed captured once so the staggered bonus arrows spawn at the same point/dir.
+				// Re-aim the vanilla primary IN PLACE, with no cancel and no second entity: override its velocity with
+				// the clean eye direction to strip the random spread.  Bonus arrows are new entities, so they go
+				// through the deterministic spawner.  aimFrom/speed are captured once so the staggered bonus arrows
+				// spawn at the same point and direction.
 				Location aimFrom = p.getEyeLocation().clone();
 				float speed = (float) primary.getVelocity().length();
 				boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
@@ -467,11 +478,12 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * @param clickedBlock the block VANILLA reported this click landed on — {@code PlayerInteractEvent.getClickedBlock()}
-	 *                     or {@code ServerboundUseItemOnPacket}'s hit result — or {@code null} for an air click, an
-	 *                     entity interaction, or a fake-player dispatch. Abilities that act on a block (Superboom TNT)
-	 *                     use this instead of ray-tracing a reach of their own, so their range is exactly vanilla's
-	 *                     block-interaction range and their target is exactly the block the client aimed at.
+	 * @param clickedBlock the block VANILLA reported this click landed on, either
+	 *                     {@code PlayerInteractEvent.getClickedBlock()} or {@code ServerboundUseItemOnPacket}'s hit
+	 *                     result.  It is {@code null} for an air click, an entity interaction, or a fake-player
+	 *                     dispatch.  Abilities that act on a block (Superboom TNT) use this instead of ray-tracing a
+	 *                     reach of their own, so their range is exactly vanilla's block-interaction range and their
+	 *                     target is exactly the block the client aimed at.
 	 */
 	public static void handleCustomItems(Cancellable e, EquipmentSlot hand, ItemStack item, Action action, Player p, Block clickedBlock) {
 		if(p.getGameMode() == org.bukkit.GameMode.SPECTATOR) return; // spectators never fire item abilities (e.g. a right-click on a block)
@@ -497,8 +509,8 @@ public class CustomItems implements Listener {
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
 					boolean isMage = p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
 					boolean isMageBeamItem = isMage && (item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD || WEAK_BEAM_IDS.contains(id));
-					// Items whose left-click is an ability are weapons/wands, never pickaxes — their left-click must
-					// NEVER break a block, even when the ability is on cooldown or capped by the 1/tick guard.
+					// Items whose left-click is an ability are weapons and wands, never pickaxes.  Their left-click
+					// must NEVER break a block, even when the ability is on cooldown or capped by the 1/tick guard.
 					boolean leftClickAbilityItem = isMageBeamItem || id.equals("skyblock/combat/terminator") || id.equals("skyblock/combat/gyro") || id.equals("skyblock/combat/infinityboom");
 					int currentTick = MinecraftServer.currentTick;
 					if(currentTick > lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1)) {
@@ -548,11 +560,11 @@ public class CustomItems implements Listener {
 				if(isRightClick) {
 					int currentTick = MinecraftServer.currentTick;
 					// A single physical right-click on a block sends UseItemOn (RIGHT_CLICK_BLOCK) immediately
-					// followed by UseItem (RIGHT_CLICK_AIR). These normally land on the same tick and collapse via
+					// followed by UseItem (RIGHT_CLICK_AIR).  These normally land on the same tick and collapse via
 					// the 1/tick `cooldowns` gate below, but the first click after a server restart can straddle a
-					// tick boundary (one-time warmup lag) — then the trailing AIR fires the ability a second time.
-					// Drop an AIR that trails a BLOCK click by at most one tick. Genuine standalone air-clicks carry
-					// no recent BLOCK so they still fire, and fake-player air-spam is unaffected (it sends no BLOCK).
+					// tick boundary from one-time warmup lag, and then the trailing AIR fires the ability twice.
+					// Drop an AIR that trails a BLOCK click by at most one tick.  Genuine standalone air-clicks
+					// carry no recent BLOCK so they still fire, and fake-player air-spam sends no BLOCK at all.
 					if(action.equals(Action.RIGHT_CLICK_BLOCK)) {
 						lastRightBlockTick.put(p.getUniqueId(), currentTick);
 					} else {
@@ -617,8 +629,8 @@ public class CustomItems implements Listener {
 								fired = true;
 							}
 							case "skyblock/combat/terminator" -> {
-								// Don't fire here — just record the right-click. pollTerminators() decides whether a
-								// shot fires this/next tick based on the 5-tick (or Thermo 4-tick) cooldown.
+								// Don't fire here, just record the right-click.  pollTerminators() decides whether a
+								// shot fires this tick or next based on the 5-tick (or Thermo 4-tick) cooldown.
 								termLastPacketTick.put(p.getUniqueId(), MinecraftServer.currentTick);
 								fired = true;
 							}
@@ -666,8 +678,9 @@ public class CustomItems implements Listener {
 		int damaged = 0;
 		double damage = 0;
 		for(Entity entity : entities) {
-			// Never damage players — real, fake or spectating. Matches the other AoE abilities (iceSpray, the
-			// AOTS beam, terminator); the old fake-player-only exclusion let implosion hit fellow practicers.
+			// Never damage players, whether real, fake or spectating.  This matches the other AoE abilities
+			// (iceSpray, the AOTS beam, terminator).  The old fake-player-only exclusion let implosion hit
+			// fellow practicers.
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 				Utils.hurtEntity(entity1, 1, p);
 				entity1.setNoDamageTicks(0);
@@ -681,7 +694,7 @@ public class CustomItems implements Listener {
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
-		// wither shield sound — 100-tick cooldown per player.
+		// wither shield sound, on a 100-tick cooldown per player.
 		playWitherShieldSound(p);
 
 		// Inside the F7 Goldor/Necron arena, Wither Impact implodes but does not teleport.
@@ -720,7 +733,7 @@ public class CustomItems implements Listener {
 						if(checkLoc.getY() >= originalY) {
 							Block aboveHead = checkHead.getRelative(BlockFace.UP);
 							if(!aboveHead.isPassable()) {
-								// This is a 1-block gap at or above original height - skip it
+								// This is a 1-block gap at or above original height, so skip it
 								continue;
 							}
 						}
@@ -781,7 +794,7 @@ public class CustomItems implements Listener {
 					Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 				}
 				default -> {
-					// Hit a side face - backtrack until we find a safe spot
+					// Hit a side face, so backtrack until we find a safe spot
 					Location hitLocation = result.getHitPosition().toLocation(p.getWorld());
 					Vector direction = origin.getDirection().normalize();
 
@@ -843,17 +856,17 @@ public class CustomItems implements Listener {
 	/**
 	 * Teleport a player without touching where they are looking. Yaw/pitch go out as RELATIVE in the position packet,
 	 * so the client applies a delta to whatever it is currently looking at instead of being snapped to an absolute
-	 * rotation — a high-ping player who turned their head between clicking and the teleport landing keeps the head
+	 * rotation.  A high-ping player who turned their head between clicking and the teleport landing keeps the head
 	 * they turned to, rather than being yanked back to the rotation the server last knew about.
 	 * <br>
 	 * The rotation delta must be ZERO (hence the 0/0 below): relative components are OFFSETS from the current
-	 * rotation, not absolutes (vanilla {@code PositionMoveRotation.calculateAbsolute}) — passing the player's own
+	 * rotation, not absolutes (vanilla {@code PositionMoveRotation.calculateAbsolute}), so passing the player's own
 	 * yaw in would add it on top and spin them.
 	 * <br>
 	 * Goes through the connection rather than {@code Player#teleport(Location, cause, TeleportFlag...)}: Paper
 	 * deprecated {@code TeleportFlag.Relative.X/Y/Z/YAW/PITCH} for removal in 1.21.3, leaving no Bukkit-API way to
-	 * ask for a relative rotation. This overload is CraftBukkit's own, so it still fires {@code PlayerTeleportEvent}
-	 * (cause PLUGIN) and honours a cancel. Same-world only, which every caller here is.
+	 * ask for a relative rotation.  This overload is CraftBukkit's own, so it still fires {@code PlayerTeleportEvent}
+	 * (cause PLUGIN) and honours a cancel.  Same-world only, which every caller here is.
 	 */
 	private static void noRotateTeleport(Player p, Location l) {
 		ServerPlayer sp = ((CraftPlayer) p).getHandle();
@@ -864,8 +877,8 @@ public class CustomItems implements Listener {
 	}
 
 	public static void aotv(Player p) {
-		// Aspect of the Void / etherwarp is disabled only inside the boss room while in adventure mode (the practice
-		// default) — so it can't be used to skip boss mechanics, but still works freely everywhere else.
+		// Aspect of the Void / etherwarp is disabled only inside the boss room while in adventure mode, the practice
+		// default.  It can't be used to skip boss mechanics, but still works freely everywhere else.
 		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE && LavaJump.isInBossArena(p.getLocation())) return;
 		Utils.debug(Utils.DebugType.SERVER, "Starting at " + Utils.round(p.getLocation().getX(), 2) + " " + Utils.round(p.getLocation().getY(), 2) + " " + Utils.round(p.getLocation().getZ(), 2) + " " + Utils.round(p.getLocation().getYaw(), 2) + " " + Utils.round(p.getLocation().getPitch(), 2));
 		if(p.isSneaking()) {
@@ -916,7 +929,7 @@ public class CustomItems implements Listener {
 							if(checkLoc.getY() >= originalY) {
 								Block aboveHead = checkHead.getRelative(BlockFace.UP);
 								if(!aboveHead.isPassable()) {
-									// This is a 1-block gap at or above original height - skip it
+									// This is a 1-block gap at or above original height, so skip it
 									continue;
 								}
 							}
@@ -975,7 +988,7 @@ public class CustomItems implements Listener {
 						Utils.debug(Utils.DebugType.SERVER, "Teleporting " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 					}
 					default -> {
-						// Hit a side face - backtrack until we find a safe spot
+						// Hit a side face, so backtrack until we find a safe spot
 						Location hitLocation = result.getHitPosition().toLocation(p.getWorld());
 						Vector direction = origin.getDirection().normalize();
 
@@ -1033,7 +1046,7 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	/** Crypts already blown up this run (keyed by min-corner) — a crypt can't be farmed for repeated kills. */
+	/** Crypts already blown up this run, keyed by min-corner.  A crypt can't be farmed for repeated kills. */
 	private static final Set<String> activatedCrypts = new HashSet<>();
 
 	/** Clear the per-run crypt-farm guard (called at run start). */
@@ -1160,9 +1173,9 @@ public class CustomItems implements Listener {
 			}
 			if(mob != null) {
 				if(mob.isValid()) {
-					// The lurker/prince was never killed before the crypt regenerated — so this crypt doesn't
-					// count as "used". Un-mark it so it can be blown up again for another attempt at the kill.
-					// (A killed lurker leaves the mob invalid here, so the key stays and the crypt is spent.)
+					// The lurker/prince was never killed before the crypt regenerated, so this crypt doesn't
+					// count as "used".  Un-mark it so it can be blown up again for another attempt at the kill.
+					// A killed lurker leaves the mob invalid here, so the key stays and the crypt is spent.
 					mob.remove();
 					activatedCrypts.remove(cryptKey);
 				}
@@ -1183,10 +1196,10 @@ public class CustomItems implements Listener {
 	 * <p>
 	 * Every click path now carries a block: RIGHT_CLICK_BLOCK from {@code PlayerInteractEvent.getClickedBlock()} /
 	 * {@code ServerboundUseItemOnPacket}'s hit result, LEFT_CLICK_BLOCK from {@code ServerboundPlayerActionPacket}'s
-	 * pos (that's why the TNT carries a can_break stamp — see {@code Utils.placeAndBreakAnythingInAdventure}; without
-	 * it the adventure-mode client sends no block-attack packet at all), and a real placement from
-	 * {@code BlockPlaceEvent.getBlockAgainst()}. A null {@code clicked} therefore means the client itself saw nothing
-	 * interactable (air click) or the click was consumed by an entity — vanilla would place no TNT, so nothing booms.
+	 * pos.  That is why the TNT carries a can_break stamp (see {@code Utils.placeAndBreakAnythingInAdventure}): without
+	 * it the adventure-mode client sends no block-attack packet at all.  A real placement comes from
+	 * {@code BlockPlaceEvent.getBlockAgainst()}.  A null {@code clicked} therefore means the client itself saw nothing
+	 * interactable (air click) or the click was consumed by an entity.  Vanilla would place no TNT, so nothing booms.
 	 */
 	public static void superboom(Player p, Block clicked) {
 		if(clicked == null) return;
@@ -1194,7 +1207,7 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * Detonate a Superboom TNT centred on {@code center}, at most once per player per tick. Shared by the ability
+	 * Detonate a Superboom TNT centred on {@code center}, at most once per player per tick.  Shared by the ability
 	 * dispatch (every click path) and by {@link #onInfinityboomPlace(BlockPlaceEvent)}, which covers the paths where
 	 * vanilla physically places the TNT block instead of a click firing the ability.
 	 */
@@ -1206,15 +1219,15 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * Catch-all so an Infinityboom TNT is NEVER left in the world as a real block. Most click paths fire the ability
-	 * and cancel the interact event, so vanilla never places anything — but every path where the click ISN'T consumed
+	 * Catch-all so an Infinityboom TNT is NEVER left in the world as a real block.  Most click paths fire the ability
+	 * and cancel the interact event, so vanilla never places anything.  But every path where the click ISN'T consumed
 	 * by the ability still lets vanilla place the TNT, since it carries can-place-on-anything for adventure mode:
 	 * sneak-right-click on a lever / button / clear-phase secret (all of which return early in onPlayerInteract so the
 	 * block keeps its click), a right-click inside the Trap room (right-click abilities disabled there), an off-hand
-	 * placement, and presumably more. Rather than chase each one, veto the placement here and detonate instead:
+	 * placement, and presumably more.  Rather than chase each one, veto the placement here and detonate instead.
 	 * BlockPlaceEvent fires exactly when vanilla decided to place, which is exactly when no ability consumed the click,
-	 * so the TNT behaves identically however it was used. Cancelling also keeps the stack intact (Infinityboom = no
-	 * consumption). Creative mode is left alone so setup/building can still place real TNT.
+	 * so the TNT behaves identically however it was used.  Cancelling also keeps the stack intact, since Infinityboom
+	 * is never consumed.  Creative mode is left alone so setup and building can still place real TNT.
 	 */
 	@EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
 	public void onInfinityboomPlace(BlockPlaceEvent e) {
@@ -1223,11 +1236,11 @@ public class CustomItems implements Listener {
 		org.bukkit.GameMode gm = p.getGameMode();
 		if(gm != org.bukkit.GameMode.SURVIVAL && gm != org.bukkit.GameMode.ADVENTURE) return;
 		e.setCancelled(true);
-		p.updateInventory(); // the client predicted the placement — resend the (unchanged) stack so it doesn't ghost
+		p.updateInventory(); // the client predicted the placement, so resend the unchanged stack and it won't ghost
 		// Mirror the Trap-room restriction in handleCustomItems: no right-click item abilities in there.
 		if(instructions.clear.ClearManager.isActive()
 				&& instructions.clear.Rooms.roomAt(p.getLocation()) == instructions.clear.Rooms.TRAP) return;
-		// Centre on the block clicked against — the same "block vanilla says was interacted with" the click path uses.
+		// Centre on the block clicked against, the same "block vanilla says was interacted with" the click path uses.
 		superboomAt(p, e.getBlockAgainst().getLocation());
 	}
 
@@ -1341,31 +1354,60 @@ public class CustomItems implements Listener {
 		pendingCryptMobs.clear();
 	}
 
+	/** Ragnarock Axe: a 3s wind-up (three lever clicks) and then the buff.  The axe must stay in the main hand for
+	*  the whole wind-up; see {@link #ragWindup}. */
 	public static void rag(Player p) {
 		Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
-		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 20);
-		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F), 40);
+		ragCastStart.put(p.getUniqueId(), MinecraftServer.currentTick);
+		ragWindup(p, MinecraftServer.currentTick, 0);
+	}
+
+	/**
+	 * One tick of the Ragnarock wind-up: the remaining lever clicks at +20/+40 and the buff at +60.  Re-checks EVERY
+	 * tick that the axe is still in the main hand and drops the cast the moment it isn't.  Holding the axe for the
+	 * full 3s is the ability's cost, so swapping to a weapon during the wind-up must not land the buff.  The cooldown
+	 * is deliberately NOT refunded, since it is spent at cast time, as on Hypixel.
+	 */
+	private static void ragWindup(Player p, int castStart, int elapsed) {
 		Utils.scheduleTask(() -> {
+			UUID uid = p.getUniqueId();
+			// Superseded by a later cast, or already cancelled/reset, so this chain is dead.
+
+			if(ragCastStart.getOrDefault(uid, Integer.MIN_VALUE) != castStart) return;
+			if(!p.isOnline() || !getID(p.getInventory().getItemInMainHand()).equals("skyblock/combat/rag")) {
+				ragCastStart.remove(uid);
+				Utils.debug(Utils.DebugType.SERVER, "Rag cast cancelled (axe left the hand) for " + Utils.getRealName(p));
+				return;
+			}
+			int tick = elapsed + 1;
+			if(tick == 20 || tick == 40) {
+				Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
+			}
+			if(tick < 60) {
+				ragWindup(p, castStart, tick);
+				return;
+			}
+			ragCastStart.remove(uid);
 			Utils.playLocalSound(p, Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
 			p.addScoreboardTag("RagBuff");
 			// Buff expires 200 ticks (10s) after THIS application; a later cast overwrites this, extending the buff.
-			ragBuffExpiry.put(p.getUniqueId(), MinecraftServer.currentTick + 200);
+			ragBuffExpiry.put(uid, MinecraftServer.currentTick + 200);
 			Utils.debug(Utils.DebugType.SERVER, "Rag Buff applied to " + Utils.getRealName(p));
 			if(p.getName().equals("Archer")) {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 3));
 			} else {
 				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 1));
 			}
-		}, 60);
-		// Remove only once the latest expiry is reached: a second cast refreshes ragBuffExpiry, so this earlier
-		// cast's removal sees currentTick < expiry and no-ops, leaving the tag for the later cast's removal to clear.
-		Utils.scheduleTask(() -> {
-			if(MinecraftServer.currentTick >= ragBuffExpiry.getOrDefault(p.getUniqueId(), 0)) {
-				p.removeScoreboardTag("RagBuff");
-				ragBuffExpiry.remove(p.getUniqueId());
-				Utils.debug(Utils.DebugType.SERVER, "Rag Buff expired for " + Utils.getRealName(p));
-			}
-		}, 260);
+			// Remove only once the latest expiry is reached: a second cast refreshes ragBuffExpiry, so this earlier
+			// cast's removal sees currentTick < expiry and no-ops, leaving the tag for the later cast to clear.
+			Utils.scheduleTask(() -> {
+				if(MinecraftServer.currentTick >= ragBuffExpiry.getOrDefault(uid, 0)) {
+					p.removeScoreboardTag("RagBuff");
+					ragBuffExpiry.remove(uid);
+					Utils.debug(Utils.DebugType.SERVER, "Rag Buff expired for " + Utils.getRealName(p));
+				}
+			}, 200);
+		}, 1);
 	}
 
 	public static void salvation(Player p) {
@@ -1474,7 +1516,7 @@ public class CustomItems implements Listener {
 				// Move 1 block per tick
 				currentLoc = nextLoc;
 
-				// The thrown axe doesn't damage the wither, but travelling through it still counts as aggro —
+				// The thrown axe doesn't damage the wither, but travelling through it still counts as aggro,
 				// note the thrower as the boss's damager the first tick the axe overlaps a wither boss.
 				if(!notedAggro) {
 					for(Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 2.0, 1.0)) {
@@ -1506,10 +1548,10 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * Golem Sword — kills the holder's vertical momentum: Y velocity is zeroed, X/Z are left alone. For a real
+	 * Golem Sword: kills the holder's vertical momentum.  Y velocity is zeroed, X/Z are left alone.  For a real
 	 * player this rides out as a velocity packet, and the client's {@code lerpMotion} SETS its delta movement, so
-	 * a fall/leap stalls on the spot instead of the value being added to whatever it was already doing.
-	 * 3s cooldown, halved/quartered for a Mage like every other ability (see {@link #effectiveCooldown}).
+	 * a fall or leap stalls on the spot instead of the value being added to whatever it was already doing.
+	 * 3s cooldown, halved or quartered for a Mage like every other ability (see {@link #effectiveCooldown}).
 	 */
 	public static void golemSword(Player p) {
 		Vector v = p.getVelocity();
@@ -1776,8 +1818,8 @@ public class CustomItems implements Listener {
 
 
 		for(Entity e : Objects.requireNonNull(l.getWorld()).getNearbyEntities(l, 10, 10, 10)) {
-			// The Watcher and the villager NPCs (Mort/Wizard) are immune to the Gyrokinetic Wand — never
-			// let the rift pull/hold them. Boss entities (withers, ender dragons) are also immune.
+			// The Watcher and the villager NPCs (Mort/Wizard) are immune to the Gyrokinetic Wand, so never
+			// let the rift pull or hold them.  Boss entities (withers, ender dragons) are also immune.
 			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)
 					&& !(entity instanceof EnderDragon)
 					&& !(entity instanceof Villager)
@@ -1931,8 +1973,8 @@ public class CustomItems implements Listener {
 		if(!arrow.getScoreboardTags().contains("ExplosiveBowArrow")) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
-		// On entity contact the arrow behaves like a normal arrow — its arrow damage + the hit ding are applied
-		// by the normal damage path (WithersNotImmuneToArrows for a vulnerable wither). On EITHER an entity or a
+		// On entity contact the arrow behaves like a normal arrow: its arrow damage and the hit ding are applied
+		// by the normal damage path (WithersNotImmuneToArrows for a vulnerable wither).  On EITHER an entity or a
 		// block hit it then detonates an added explosion bonus at the point of impact.
 		Location impact;
 		if(e.getHitEntity() != null) {
@@ -1959,8 +2001,8 @@ public class CustomItems implements Listener {
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
 
 		// In creative mode, vanilla's BowItem.use() will start the bow-draw animation even with
-		// PlayerInteractEvent cancelled (creative bypasses the arrow check). Cancel the draw next
-		// tick — by then vanilla has run and we can release it cleanly.
+		// PlayerInteractEvent cancelled, because creative bypasses the arrow check.  Cancel the draw
+		// next tick: by then vanilla has run and we can release it cleanly.
 		Utils.scheduleTask(() -> {
 			if(nmsPlayer.isUsingItem()) nmsPlayer.stopUsingItem();
 		}, 1);
@@ -2091,10 +2133,10 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * Berserk-exclusive damage ramp. Each successive hit a Berserk lands on the SAME mob deals +10% damage
-	 * (1.0×, 1.1×, 1.2×, …) capped at 3× (+200%). Each call counts as one hit — so the separate terminator
-	 * arrows from a single right-click each ramp the multiplier further. Returns {@code base} unchanged for
-	 * non-Berserk shooters. Per-mob counts are cleared at run start via {@link #resetBerserkDamage()}.
+	 * Berserk-exclusive damage ramp.  Each successive hit a Berserk lands on the SAME mob deals +10% damage
+	 * (1.0×, 1.1×, 1.2×, …) capped at 3× (+200%).  Each call counts as one hit, so the separate terminator
+	 * arrows from a single right-click each ramp the multiplier further.  Returns {@code base} unchanged for
+	 * non-Berserk shooters.  Per-mob counts are cleared at run start via {@link #resetBerserkDamage()}.
 	 */
 	public static double scaleBerserkDamage(Player p, LivingEntity target, double base) {
 		if(p == null || target == null) return base;
@@ -2106,12 +2148,12 @@ public class CustomItems implements Listener {
 		return base * multiplier;
 	}
 
-	/** Clear all Berserk per-mob hit counts — called at the start of every /tas and /practice run. */
+	/** Clear all Berserk per-mob hit counts.  Called at the start of every /tas and /practice run. */
 	public static void resetBerserkDamage() {
 		berserkHitCounts.clear();
 	}
 
-	/** Clear terminator cooldown state — called at the start of every /tas and /practice run. */
+	/** Clear terminator cooldown state.  Called at the start of every /tas and /practice run. */
 	public static void resetTerminatorCooldowns() {
 		termLastPacketTick.clear();
 		termLastFireTick.clear();
@@ -2119,8 +2161,8 @@ public class CustomItems implements Listener {
 		mageBeamReady.clear();
 	}
 
-	/** Reset all class-ability + weapon-ability cooldowns (Guided Sheep / Rapid Fire / Explosive Shot, plus Gyro /
-	 *  Ragnarok / Ice Spray / Tactical Insertion) — called on entering a boss fight (WitherLord.start) and at run start. */
+	/** Reset all class-ability and weapon-ability cooldowns (Guided Sheep / Rapid Fire / Explosive Shot, plus Gyro /
+	*  Ragnarock / Ice Spray / Tactical Insertion).  Called on entering a boss fight (WitherLord.start) and at run start. */
 	public static void resetAbilityCooldowns() {
 		guidedSheepReady.clear();
 		rapidFireReady.clear();
@@ -2128,15 +2170,16 @@ public class CustomItems implements Listener {
 		gyroReady.clear();
 		ragReady.clear();
 		ragBuffExpiry.clear();
+		ragCastStart.clear(); // also kills any wind-up chain still in flight (it no longer sees its own start tick)
 		iceSprayReady.clear();
 		tacReady.clear();
 		golemSwordReady.clear();
 	}
 
-	/** True if {@code p} is the Mage CLASS (drives ability-cooldown reduction). Real players carry an exclusive class
-	 *  scoreboard tag (set by /getcustomitems); fake players carry none and are identified by name. All four fake
-	 *  "MageN" players run the Mage inventory and cast Mage abilities, so every "Mage*"-named fake counts as a Mage
-	 *  (Mage2/3/4 cosplay Tank/Berserk/Healer's ROLE but are mechanically mages). */
+	/** True if {@code p} is the Mage CLASS, which drives the ability-cooldown reduction.  Real players carry an
+	*  exclusive class scoreboard tag (set by /class); fake players carry none and are identified by name.  All four
+	*  fake "MageN" players run the Mage inventory and cast Mage abilities, so every "Mage*"-named fake counts as a
+	*  Mage.  Mage2/3/4 cosplay Tank/Berserk/Healer's ROLE but are mechanically mages. */
 	public static boolean isMageClass(Player p) {
 		if(p.getScoreboardTags().contains("Mage")) return true;
 		for(String other : new String[]{"Archer", "Berserk", "Healer", "Tank"}) {
@@ -2146,8 +2189,8 @@ public class CustomItems implements Listener {
 	}
 
 	/** A base ability cooldown after the Mage class's cooldown reduction: a SOLO mage gets −75% (quarter cooldown),
-	 *  but with two or more Mage-class players it's the standard −50% (half). Non-mages are unchanged. NOT used for
-	 *  the Terminator/Salvation — those are weapons, not abilities. */
+	*  but with two or more Mage-class players it's the standard −50% (half).  Non-mages are unchanged.  NOT used for
+	*  the Terminator or Salvation, which are weapons, not abilities. */
 	public static int effectiveCooldown(Player p, int baseTicks) {
 		if(!isMageClass(p)) return baseTicks;
 		return mageCount() <= 1 ? baseTicks / 4 : baseTicks / 2;
@@ -2159,12 +2202,12 @@ public class CustomItems implements Listener {
 	}
 
 	/** Tell {@code p} their ability is on cooldown, showing the remaining time in seconds (e.g. "...for 3.45
-	 *  seconds!"). {@code ticksRemaining} is the ticks left until the ability is usable again. */
+	*  seconds!").  {@code ticksRemaining} is the ticks left until the ability is usable again. */
 	private static void sendCooldownMessage(Player p, int ticksRemaining) {
 		String format = String.format("%.2f", Math.max(0, ticksRemaining) / 20.0);
 		p.sendMessage(Utils.msg("<red>This ability is on cooldown for " + format + " seconds!"));
-		// During a TAS run (not practice) an ability fired on cooldown means the choreography mistimed it — flag it
-		// with the offending tick/player. Gated behind regular verbose (ON+) so it doesn't spam the console otherwise.
+		// During a TAS run (not practice) an ability fired on cooldown means the choreography mistimed it, so flag
+		// it with the offending tick and player.  Gated behind regular verbose (ON+) so it doesn't spam the console.
 		if(!instructions.bosses.WitherActions.isPracticeMode() && Utils.isVerbose()) {
 			ItemStack held = p.getInventory().getItemInMainHand();
 			String ability = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
@@ -2200,10 +2243,10 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * Per-tick terminator cooldown poller. For each player who has recorded a terminator right-click since their
-	 * last shot, fires a bow shot on the first tick at/after {@code lastFire + cooldown} (5 ticks, or 4 with the
-	 * full Thermodynamic set). Shots are anchored to the first shot and clamp to one per cooldown — spamming the
-	 * right-click can't exceed it. Started from {@link plugin.M7tas}.
+	 * Per-tick terminator cooldown poller.  For each player who has recorded a terminator right-click since their
+	 * last shot, fires a bow shot on the first tick at or after {@code lastFire + cooldown} (5 ticks, or 4 with the
+	 * full Thermodynamic set).  Shots are anchored to the first shot and clamp to one per cooldown, so spamming the
+	 * right-click can't exceed it.  Started from {@link plugin.M7tas}.
 	 */
 	public static void pollTerminators() {
 		int now = MinecraftServer.currentTick;
@@ -2224,7 +2267,7 @@ public class CustomItems implements Listener {
 	}
 
 	public static void tac(Player p) {
-		// Tactical Insertion is disabled inside the boss room while in adventure mode (the practice default) — so it
+		// Tactical Insertion is disabled inside the boss room while in adventure mode, the practice default.  It
 		// can't be used to cheat boss mechanics, but still works freely everywhere else.
 		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE && LavaJump.isInBossArena(p.getLocation())) return;
 		Location l = p.getLocation();
@@ -2403,27 +2446,27 @@ public class CustomItems implements Listener {
 		// Apply offsets
 		l.add(offsetX, offsetY, offsetZ);
 
-		// GEOMETRY: the beam is DRAWN from the right hand (`l`) but AIMED from the eye — i.e. it converges on the
-		// crosshair. The trail is a straight line from the hand to wherever the crosshair ray terminates, so the two
+		// GEOMETRY: the beam is DRAWN from the right hand (`l`) but AIMED from the eye, so it converges on the
+		// crosshair.  The trail is a straight line from the hand to wherever the crosshair ray terminates, so the two
 		// coincide at the target end (a mob under the crosshair is where the beam visibly lands) while still leaving
 		// the hand, which is what it looks like on Hypixel.
 		//
-		// This supersedes the earlier fix that cast the damage ray FROM the hand along the look direction: that made
+		// This supersedes the earlier fix that cast the damage ray FROM the hand along the look direction.  That made
 		// the ray match the trail exactly, but the trail was then *parallel* to the crosshair and permanently offset
-		// ~0.31 blocks right / ~0.81 down from it, so the beam visibly never went where you were aiming. Converging
+		// ~0.31 blocks right and ~0.81 down from it, so the beam visibly never went where you were aiming.  Converging
 		// the trail instead fixes the same visual/hit mismatch from the other side, and it re-aligns the real beam
 		// with Actions.mageBeamWouldHit, the fake-player fire gate, which has always aimed from the eye.
 		//
-		// Consequence to keep in mind: only the ENDPOINT is shared. A mob straddling the hand→target segment but not
-		// the crosshair ray is crossed by the trail without being hit — that's what MAGE_BEAM_LENIENCY (0.5 per face)
+		// Consequence to keep in mind: only the ENDPOINT is shared.  A mob straddling the hand→target segment but not
+		// the crosshair ray is crossed by the trail without being hit.  That's what MAGE_BEAM_LENIENCY (0.5 per face)
 		// absorbs, and it's inherent to any hand-origin trail that aims by crosshair.
 		Location eye = p.getEyeLocation();
 		Vector direction = eye.getDirection();
 		Vector eyeVec = eye.toVector();
 
-		// Raytrace both entities and blocks from the eye. Whichever is closer along the ray is what it actually
-		// hits — so if a wall is between the player and an entity, the wall stops the beam and the entity takes no
-		// damage. Entity hits get a MAGE_BEAM_LENIENCY-block margin (see findTargetEntity); blocks stay precise.
+		// Raytrace both entities and blocks from the eye.  Whichever is closer along the ray is what it actually
+		// hits, so if a wall is between the player and an entity, the wall stops the beam and the entity takes no
+		// damage.  Entity hits get a MAGE_BEAM_LENIENCY-block margin (see findTargetEntity); blocks stay precise.
 		RayTraceResult entityResult = findTargetEntity(p, eye, direction, range);
 		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eye, direction, range, FluidCollisionMode.NEVER, true);
 
@@ -2458,22 +2501,22 @@ public class CustomItems implements Listener {
 			l.add(v);
 		}
 
-		// A dead mob — or a boss wither pinned in its dying state (TASDying, HP frozen at 1, so isDead/health
-		// won't flag it) — takes no real damage, so the beam passing through it shouldn't emit a hurt sound.
+		// A dead mob takes no real damage, so the beam passing through it shouldn't emit a hurt sound.  This also
+		// covers a boss wither pinned in its dying state (TASDying, HP frozen at 1, so isDead/health won't flag it).
 		boolean targetDead = targetEntity instanceof LivingEntity dead
 				&& (dead.isDead() || dead.getHealth() <= 0 || dead.getScoreboardTags().contains("TASDying"));
 
-		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume —
-		// no at-location sound, so volume doesn't depend on how far the target is.
+		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume.
+		// There is no at-location sound, so volume doesn't depend on how far the target is.
 		if(targetEntity instanceof Wither wither && wither.getInvulnerableTicks() != 0) {
-			// Armored (e.g. mid-intro, before the fight is live): no damage lands, but still record the damager so
+			// Armored, e.g. mid-intro before the fight is live: no damage lands, but still record the damager so
 			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
 			boolean ragBuff = p.getScoreboardTags().contains("RagBuff");
 			// Per-weapon mage-beam damage (ID "...scylla" is the Hyperion, "...claymore" the Dark Claymore):
-			//   Hyperion: 195 (225 RagBuffed) — full vs minecraft:wither ONLY; −33% against any other mob type.
+			//   Hyperion: 195 (225 RagBuffed), full vs minecraft:wither ONLY; −33% against any other mob type.
 			//   Dark Claymore (and any other mage-beam item): 170 (200 RagBuffed) on ALL entities.
 			//   WEAK_BEAM_IDS (Bonzo Staff / AOTV / Ice Spray Wand / Rag Axe): flat 1, no buff or armour scaling.
 			String heldId = getID(p.getInventory().getItemInMainHand());
@@ -2516,11 +2559,12 @@ public class CustomItems implements Listener {
 
 	/**
 	 * Nearest valid living entity the beam hits, testing each candidate's bounding box inflated by
-	 * {@link #MAGE_BEAM_LENIENCY} on every face — so the beam can pass up to that far from the real hitbox and
-	 * still connect. We do the ray↔AABB test by hand (slab method) rather than Bukkit's
+	 * {@link #MAGE_BEAM_LENIENCY} on every face, so the beam can pass up to that far from the real hitbox and
+	 * still connect.  I do the ray↔AABB test by hand (slab method) rather than using Bukkit's
 	 * {@code rayTraceEntities(..., raySize, ...)}: an origin that lands inside an inflated box (common at close
 	 * range against big hitboxes like withers) is treated as an immediate hit at t=0, instead of Bukkit returning
-	 * an arbitrary exit face — the bug that forced the old precise raySize=0.
+	 * an arbitrary exit face.  That was the bug that forced the old precise raySize=0.
+
 	 */
 	private static RayTraceResult findTargetEntity(Player p, Location origin, Vector direction, double range) {
 		Vector start = origin.toVector();

@@ -53,7 +53,7 @@ public class JoinListener implements Listener {
 			var knockback = joiningPlayer.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
 			if(knockback != null) knockback.setBaseValue(1);
 
-			// Full EXPLOSION knockback resistance too — explosion knockback (e.g. Necron's fireballs) is governed by
+			// Full EXPLOSION knockback resistance too, since explosion knockback such as Necron's fireballs is governed by
 			// this separate attribute, NOT KNOCKBACK_RESISTANCE, so without it players still get blasted by blasts.
 			var explosionKb = joiningPlayer.getAttribute(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
 			if(explosionKb != null) explosionKb.setBaseValue(1);
@@ -65,7 +65,7 @@ public class JoinListener implements Listener {
 			// Instant block breaking for every joining player: BLOCK_BREAK_SPEED is the final MULTIPLIER on destroy
 			// speed (unlike MINING_EFFICIENCY, which is additive and only counts when the held tool already suits the
 			// block), so 1024 breaks anything in one tick with anything. Items that carry can_break but must NOT
-			// actually break blocks cancel this out with a -1024 modifier of their own — see
+			// actually break blocks cancel this out with a -1024 modifier of their own; see
 			// Utils.placeAndBreakAnythingInAdventure. Dungeonbreaker instead ADDS 1024 on top.
 			var breakSpeed = joiningPlayer.getAttribute(Attribute.BLOCK_BREAK_SPEED);
 			if(breakSpeed != null) breakSpeed.setBaseValue(1024);
@@ -91,7 +91,7 @@ public class JoinListener implements Listener {
 				}
 			}
 
-			// TAS-only: re-send fake-player spawn packets to joiners — disabled in the practice fork (no fakes).
+			// TAS-only: re-send fake-player spawn packets to joiners.  Disabled in the practice fork, since there are no fakes.
 //			ServerGamePacketListenerImpl conn = ((CraftPlayer) joiningPlayer).getHandle().connection;              // PlayerConnection
 //
 //			// Re-send each fake NPC’s “add + spawn” packets just to this connection:

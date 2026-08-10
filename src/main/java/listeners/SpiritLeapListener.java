@@ -43,7 +43,7 @@ public class SpiritLeapListener implements Listener {
 	@EventHandler
 	public void onMenuClick(InventoryClickEvent e) {
 		if(!(e.getInventory().getHolder() instanceof SpiritLeapMenu menu)) return;
-		e.setCancelled(true); // lock the menu — never move items
+		e.setCancelled(true); // lock the menu; never move items
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		Player target = menu.targetForSlot(e.getRawSlot());
 		if(target == null || !target.isOnline()) return;

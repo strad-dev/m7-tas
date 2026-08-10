@@ -45,7 +45,7 @@ public final class ClearManager {
 	// Wizard crystal-ball special (not one of the 47 secrets)
 	private static boolean crystalPickedUp, crystalHandedIn;
 
-	// blessing tally — tracked for future use (TAS v3), never consumed by gameplay yet
+	// blessing tally, tracked for future use in TAS v3 and never consumed by gameplay yet
 	private static final Map<Blessing, Integer> blessingTally = new LinkedHashMap<>();
 
 	private static boolean milestone300;
@@ -106,7 +106,7 @@ public final class ClearManager {
 		}
 		// Strip the offhand dungeon map (and restore slot 8's menu) from everyone. reset() runs from serverSetup
 		// before EVERY section, so this is what pulls the clear map out of the offhand when you jump straight to a
-		// boss (e.g. /practice witherking) — the clear tick loop that normally removes it is no longer running.
+		// boss such as /practice witherking, since the clear tick loop that normally removes it is not running.
 		restoreMenus();
 		// Tear down last run's placed chests / essence / secret entities so /reset and /setup start clean.
 		World w = world != null ? world : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst());
@@ -165,7 +165,7 @@ public final class ClearManager {
 			for(Secret s : r.secrets) {
 				if(s.isChest()) {
 					Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
-					// Mimic chests are TRAPPED chests (same tell as real Hypixel — that's how you spot one).
+					// Mimic chests are TRAPPED chests, the same tell as real Hypixel: that's how you spot one.
 					b.setType(s.mimic ? Material.TRAPPED_CHEST : Material.CHEST, false);
 					if(b.getBlockData() instanceof Directional dir) {
 						BlockFace face = CHEST_FACING.getOrDefault(s.blockX() + "," + s.blockY() + "," + s.blockZ(), openFace(b));
@@ -212,7 +212,7 @@ public final class ClearManager {
 		b.setBlockData(nd, false);
 	}
 
-	/** The first horizontal face whose neighbour isn't a solid block — the side a chest should open toward. */
+	/** The first horizontal face whose neighbour isn't a solid block, i.e. the side a chest should open toward. */
 	private static BlockFace openFace(Block b) {
 		for(BlockFace f : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
 			if(!b.getRelative(f).getType().isOccluding()) return f;
@@ -289,9 +289,9 @@ public final class ClearManager {
 		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "");
 	}
 
-	/** The Magical Map rides in the OFFHAND while inside the clear grid (removed in the boss arena, outside the
-	 *  grid); hotbar slot 8 ("slot 9") always holds the SkyBlock Menu during the clear. Only ever touches OUR own
-	 *  map / the menu star — never a Maxor crystal or any other item. */
+	/** The Magical Map rides in the OFFHAND while inside the clear grid, and is removed in the boss arena outside
+	*  the grid.  Hotbar slot 8 ("slot 9") always holds the SkyBlock Menu during the clear.  This only ever touches
+	*  OUR own map or the menu star, never a Maxor crystal or any other item. */
 	private static void manageMapAndMenu(Player p) {
 		// Slot 8 stays the SkyBlock Menu the whole clear (revert it if it's holding a stale dungeon map / is empty).
 		ItemStack slot8 = p.getInventory().getItem(8);
@@ -333,8 +333,8 @@ public final class ClearManager {
 		}
 	}
 
-	/** Force a room fully explored on the map without anyone entering it — used when a locked door opens and
-	 *  "explores" the room behind it (wither door → Deathmite, blood door → Blood). */
+	/** Force a room fully explored on the map without anyone entering it.  Used when a locked door opens and
+	*  "explores" the room behind it (wither door → Deathmite, blood door → Blood). */
 	public static void exploreRoom(Room r) {
 		if(r != null && !r.explored) {
 			r.explored = true;
@@ -351,12 +351,12 @@ public final class ClearManager {
 			collectItems(p);
 			updateActionBar(p);
 		}
-		// Spectators follow the fakes but are excluded from realPlayers() — give them the run-stats bar too.
+		// Spectators follow the fakes but are excluded from realPlayers(), so give them the run-stats bar too.
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue; // never the fakes themselves
 			if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) updateActionBar(p);
 		}
-		// Wizard has no miniboss — it earns its white check the moment a player first sets foot in it.
+		// Wizard has no miniboss, so it earns its white check the moment a player first sets foot in it.
 		if(!Rooms.WIZARD.cleared) {
 			for(Player p : players) {
 				if(Rooms.roomAt(p.getLocation()) == Rooms.WIZARD) {
@@ -385,12 +385,12 @@ public final class ClearManager {
 	}
 
 	private static void updateActionBar(Player p) {
-		if(!Rooms.inGrid(p.getLocation())) return; // fully outside the dungeon grid (e.g. boss arena) — leave the bar alone
+		if(!Rooms.inGrid(p.getLocation())) return; // fully outside the dungeon grid, e.g. boss arena, so leave the bar alone
 		Room room = Rooms.roomAt(p.getLocation()); // null when standing in a between-room buffer
 		// Between rooms there's no specific room to name, so drop the room-name + per-room "Secrets" segments and
 		// fall back to a neutral colour; the run-wide Total/Crypts/Score segments stay put.
 		String color = room != null ? hex(room.type.color) : "<gray>";
-		// Bonus flags: M (mimic), P (prince), B (bat) — e.g. "Crypts 3/5 (M, P, B)".
+		// Bonus flags: M (mimic), P (prince), B (bat), e.g. "Crypts 3/5 (M, P, B)".
 		List<String> flags = new ArrayList<>();
 		if(mimicKilled) flags.add("M");
 		if(firstPrince) flags.add("P");
@@ -455,9 +455,9 @@ public final class ClearManager {
 	}
 
 	/**
-	 * Mark a puzzle solved — green check + score straight away. With {@code awardBlessings} false the room's
-	 * clear blessings are left for a later {@link #awardRoomBlessings} call: the Quiz scores the instant its last
-	 * question is answered, but Oruo doesn't hand over Time V until his reward dialogue has played out.
+	 * Mark a puzzle solved, which gives the green check and the score straight away.  With {@code awardBlessings}
+	 * false the room's clear blessings are left for a later {@link #awardRoomBlessings} call: the Quiz scores the
+	 * instant its last question is answered, but Oruo doesn't hand over Time V until his dialogue has played out.
 	 */
 	public static void puzzleSolved(Room room, Player p, boolean awardBlessings) {
 		if(room == null || room.solved) return;
@@ -530,8 +530,8 @@ public final class ClearManager {
 		return null;
 	}
 
-	/** True if this block is a clear-phase secret you right-click (chest/essence) — such a click owns the
-	 *  interaction, so the held item's right-click ability must NOT also fire on top of it. */
+	/** True if this block is a clear-phase secret you right-click (chest or essence).  Such a click owns the
+	*  interaction, so the held item's right-click ability must NOT also fire on top of it. */
 	public static boolean isSecretBlock(Block b) {
 		return active && b != null && findSecretAtBlock(b.getX(), b.getY(), b.getZ()) != null;
 	}
@@ -592,7 +592,7 @@ public final class ClearManager {
 		s.entityId = z.getUniqueId();
 	}
 
-	/** Nearest real (non-spectator, non-fake) player to a location — for attributing a miniboss/secret kill. */
+	/** Nearest real (non-spectator, non-fake) player to a location, for attributing a miniboss or secret kill. */
 	public static Player nearestRealPlayer(Location loc) {
 		Player best = null;
 		double bestSq = Double.MAX_VALUE;
@@ -614,7 +614,7 @@ public final class ClearManager {
 	/** Recompute checkmark transitions + score milestone after any event. */
 	private static void afterEvent(Room room) {
 		// Progressing a room's objective (e.g. killing its miniboss with a beam) counts as exploring it, even if
-		// nobody stood inside — so a room cleared from outside still fills in and shows its checkmark on the map.
+		// nobody stood inside, so a room cleared from outside still fills in and shows its checkmark on the map.
 		exploreRoom(room);
 		DungeonMap.markDirty();
 		if(!milestone300 && teamScore() >= 300) {
@@ -624,7 +624,7 @@ public final class ClearManager {
 			Bukkit.broadcast(Utils.msg("<green><bold>300 score reached</bold> in " + spaced(t) + " ticks (" + String.format("%.2f", t / 20.0) + " seconds)"));
 			Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
 			// Report it NOW, not at run end: the milestone stands on its own, so it must count even if the team
-			// resets immediately after. score300Tick is assigned above first — the payload reads it.
+			// resets immediately after.  score300Tick is assigned above first, because the payload reads it.
 			instructions.bosses.WitherActions.signalScoreMilestone(300);
 		}
 		checkFullClear();
@@ -633,9 +633,9 @@ public final class ClearManager {
 	// ==================== leaderboard milestones ====================
 
 	/**
-	 * Stamp the "blood finished" tick — called from {@code Watcher.bloodCampFinished()}, i.e. the moment the
-	 * Watcher vanishes, which on a clear-only practice is also the end of the run. Safe to call when the clear
-	 * phase isn't running (a boss-only practice); it simply records nothing.
+	 * Stamp the "blood finished" tick.  Called from {@code Watcher.bloodCampFinished()}, i.e. the moment the
+	 * Watcher vanishes, which on a clear-only practice is also the end of the run.  Safe to call when the clear
+	 * phase isn't running, as in a boss-only practice; it simply records nothing.
 	 */
 	public static void noteBloodDone() {
 		if(!active || bloodDoneTick >= 0) return;
@@ -644,8 +644,8 @@ public final class ClearManager {
 	}
 
 	/**
-	 * A "full clear" is the maximum score AND blood finished. Either can land last — the score can max out after
-	 * blood (a late secret) or blood can finish after the score maxes — so both paths call this and whichever
+	 * A "full clear" is the maximum score AND blood finished.  Either can land last: the score can max out after
+	 * blood on a late secret, or blood can finish after the score maxes.  So both paths call this, and whichever
 	 * completes the pair stamps the tick.
 	 */
 	private static void checkFullClear() {
@@ -683,8 +683,8 @@ public final class ClearManager {
 		return n;
 	}
 
-	/** Cell-weighted count of "completed" room spaces (Museum = 4, etc.) out of 36 — the fraction Hypixel's
-	 *  room-clear score is built on. A room contributes its cells the moment it earns any checkmark. */
+	/** Cell-weighted count of "completed" room spaces (Museum = 4, etc.) out of 36, the fraction Hypixel's
+	*  room-clear score is built on.  A room contributes its cells the moment it earns any checkmark. */
 	private static int checkedCells() {
 		int cells = 0;
 		// Blood always counts as completed for scoring (matches Hypixel's live projection), even if its
@@ -744,7 +744,8 @@ public final class ClearManager {
 
 	// ==================== helpers ====================
 
-	/** Real, non-spectator, non-fake online players — the ones who get a HUD/map and can collect secrets. */
+	/** Real, non-spectator, non-fake online players: the ones who get a HUD and map and can collect secrets. */
+
 	public static List<Player> realPlayers() {
 		List<Player> out = new ArrayList<>();
 		for(Player p : Bukkit.getOnlinePlayers()) {

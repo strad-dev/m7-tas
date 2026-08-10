@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * Auto-sets a REAL player's movement speed when they equip or remove a speed-granting helmet
- * (Racing Helmet → 650, Cow Hat → 550, neither → 400) — the same transitions {@code Actions.swapItems}
+ * (Racing Helmet → 650, Cow Hat → 550, neither → 400), the same transitions {@code Actions.swapItems}
  * applies for fake players, but driven by a per-tick poll because real players equip helmets through the
  * vanilla inventory (right-click, drag, shift-click), which never calls {@code swapItems}.
  *
@@ -21,7 +21,7 @@ import java.util.UUID;
  * actually change which speed helmet they're wearing.
  *
  * <p>The same poll also applies a 50% movement-speed debuff (a separate, composing modifier) while a real
- * player carries a Wither-King relic without a Cow Hat equipped — cleared once the relic is placed or a Cow
+ * player carries a Wither-King relic without a Cow Hat equipped, and is cleared once the relic is placed or a Cow
  * Hat is worn.
  */
 public final class HelmetSpeedSync {
@@ -43,7 +43,7 @@ public final class HelmetSpeedSync {
 					ItemStack helmet = p.getInventory().getHelmet();
 					int implied = impliedSpeed(helmet);
 					Integer prev = lastHelmetSpeed.put(p.getUniqueId(), implied);
-					// Only on a real transition — never on first observation (avoids clobbering a manual speed).
+					// Only on a real transition, never on first observation, which avoids clobbering a manual speed.
 					if(prev != null && prev != implied) {
 						Utils.setSpeed(p, implied);
 					}

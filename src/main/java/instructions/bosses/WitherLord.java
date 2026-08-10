@@ -15,7 +15,7 @@ import java.util.List;
 
 /**
  * Shared base class for the four "real" wither bosses (Maxor, Storm, Goldor, Necron).
- * WitherKing is intentionally excluded — its 5-HP scale, MAGIC name formatting,
+ * WitherKing is intentionally excluded, because its 5-HP scale, MAGIC name formatting,
  * dragon-driven HP decrement, and single-arg constructor don't fit the abstraction.
  * <br>
  * Each subclass exposes a {@code public static final <Subclass> INSTANCE = new <Subclass>();}
@@ -98,7 +98,7 @@ public abstract class WitherLord {
 	 * arrow hit) runs before the heartbeat and reads it un-incremented. That split is the off-by-one.
 	 * <br>
 	 * This instead subtracts the phase-start server tick from the server's own tick counter, which is constant
-	 * across the whole server tick — so a scheduled action at phase-delay D and an entity event D ticks in BOTH
+	 * across the whole server tick, so a scheduled action at phase-delay D and an entity event D ticks in BOTH
 	 * read exactly D, with no +1, in every boss fight. {@link #tick} is deliberately left untouched for
 	 * behavior/relative checks (Goldor patrol slow window, Storm crush poll) so this is purely a display fix.
 	 */
@@ -108,7 +108,7 @@ public abstract class WitherLord {
 
 	// --- Subclass hooks ---
 
-	/** Raw identifier (no formatting) — used in scoreboard tags as "TAS" + name(). */
+	/** Raw identifier, with no formatting, used in scoreboard tags as "TAS" + name(). */
 	protected abstract String name();
 
 	/** Display string used in custom-name, boss-bar, and chat. Same as name() for the four real subclasses. */

@@ -6,7 +6,7 @@ import plugin.Utils;
 
 /**
  * Static helpers shared across wither bosses that aren't owned by any single
- * {@link WitherLord} subclass — in particular, setup-time block restoration
+ * {@link WitherLord} subclass.  In particular, setup-time block restoration
  * for the Storm pillars that runs at every {@code /tas} invocation.
  */
 public final class WitherSpawn {
@@ -16,12 +16,12 @@ public final class WitherSpawn {
 	 * Restore all three active Storm pillars to their initial state
 	 * (column y175..y196 of pillar material, with air below y175).
 	 * <br>
-	 * Runs as part of every {@code /tas} setup, not just at Storm fight start —
+	 * Runs as part of every {@code /tas} setup, not just at Storm fight start,
 	 * the user wants the world reset across all TAS invocations.
 	 * <br>
 	 * For each pillar:
 	 * <ol>
-	 *   <li>Air-clear y169..y175 — wipes any stale blocks left below the initial bottom
+	 *   <li>Air-clear y169..y175, which wipes any stale blocks left below the initial bottom
 	 *       if a previous run ended with the pillar over-extended down to y169..y174.
 	 *   <li>Exponentially clone-down from the anchor at y196: each step doubles the
 	 *       already-filled region, so a 21-row column rebuilds in ~5 clones instead of 21.

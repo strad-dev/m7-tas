@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * whether or not the run is then finished, so a listener can record it immediately instead of waiting for an end
  * that may never come (the team can reset right after hitting 300).
  * <br>
- * Same standalone contract as every other outbound signal here — M7 TAS depends on nothing external and this
+ * Same standalone contract as every other outbound signal here: M7 TAS depends on nothing external and this
  * fires into the void when nothing listens. {@link #json()} is the reflection-friendly door.
  * <br>
  * The payload's {@code runId} matches the one on this run's later {@link RunCompleteEvent}, so a consumer can
@@ -37,7 +37,7 @@ public class ScoreMilestoneEvent extends Event {
 		return result;
 	}
 
-	/** The result as compact JSON — see {@link RunCompleteEvent#json()}. */
+	/** The result as compact JSON; see {@link RunCompleteEvent#json()}. */
 	public String json() {
 		return result.toJson();
 	}
