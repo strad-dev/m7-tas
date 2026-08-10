@@ -121,7 +121,7 @@ public class FakePlayerInventory {
 		arr[8] = getSkyBlockItem(Material.NETHER_STAR, SKYBLOCK_MENU_NAME, "");
 		arr[9] = getSpiritMask();
 		arr[10] = getBonzoMask();
-		arr[11] = getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<light_purple>Renowned Spring Boots", "skyblock/combat/spring_boots");
+		arr[11] = getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<dark_purple>Renowned Spring Boots", "skyblock/combat/spring_boots");
 		arr[12] = getRacingHelmet();
 		arr[13] = getCowHat();
 		arr[28] = getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Bonzo Staff", "skyblock/combat/bonzo");
@@ -238,7 +238,7 @@ public class FakePlayerInventory {
 		inventory.setItem(8, getSkyBlockItem(Material.NETHER_STAR, SKYBLOCK_MENU_NAME, ""));
 		inventory.setItem(9, getSpiritMask());
 		inventory.setItem(10, getBonzoMask());
-		inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<light_purple>Renowned Spring Boots", "skyblock/combat/spring_boots"));
+		inventory.setItem(11, getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<dark_purple>Renowned Spring Boots", "skyblock/combat/spring_boots"));
 		inventory.setItem(12, getRacingHelmet());
 		inventory.setItem(13, getCowHat());
 		inventory.setItem(28, getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Bonzo Staff", "skyblock/combat/bonzo"));
@@ -395,8 +395,8 @@ public class FakePlayerInventory {
 		return getCustomHead("<light_purple>Renowned Thermodynamic Helmet", "thermoHelmet", "ewogICJ0aW1lc3RhbXAiIDogMTc3MjE1OTIwMzEzMywKICAicHJvZmlsZUlkIiA6ICJkZGRhNjc4ZmYyN2M0NjFhOWUyMjRiMTU1NjI4NDZmYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJSeWxlZTc1NDMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2FkNjdjZjMzMTg4YTU0YjZmNTVkMmVmNTI0OGNkM2I3MjE3Njk5NGUxZDIwMzczMWU4NmIzNjVhODU4MTcyNiIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9", "erdSAba2Gk9jBaa6fd87ZzBdUbuKFtDuo4m2+H9s3WISKq+i+VMi/IUa5WvN2dy7i2sFXA8jqtXh5LG87+I3bTSZKfvxlEgQfwBg0aG7HEsqn1OAAsT/4ZFWE7Flt79D22G8kZZe5IGkFj5T8pZpEC6NBKWX+k666Bd+G68TmGFcaSzKgKs/AGRtR6iwJKMp1U9CD9+jr7WAC5j/jDtwHLzYTv+zxEt8ufNv5ewSrGtnXelBkAQmAo8dhvrfik0G/rpB5RhM8FZOfhV+fqjLvtcBd0vOVrDMLHaZJ+2TpjDnjScA+GIS30EEwnx8TpsoJM5PLJUL7b9xNZEECQAklnZt59gSg2e0PF6rI2Q2Fb9HIVDETPKoNK/9X7MfWC9uWr/GEA4G61tLYq5NnMEAqj3+AT6YTWb3Vy5xDauTHftbAogQEWa/2S5GyHUVQ0zh850aOy9AQMCbUaN5hTk/x6AFJIY9bvFEGVJ3Wr8HZPIh/WAqgRqgnLRx6RxSqymBsh/I2SYLaWtM027hkUlcAfj3HbYMkBdD8UXx3AzPvXAwhDojUPMWwK74La9MwiDRDO+fxFdhOIhrbh4ib1MaH7dqrcnDX6OjdQfZ0QR3lNRYet8wKlxVL3xy3ppRfLys8Wrvhdi3kBplKJxW5CyoI4fEJLtyvC2NM3olt9ZvVbM=");
 	}
 
-	/** Epic rarity — light purple, matching the other epic items (Hyperion, Terminator, Last Breath, ...). */
-	public static final String GOLEM_SWORD_NAME = "<light_purple>Golem Sword";
+	/** Epic rarity — dark purple. (light_purple is MYTHIC in this palette: Hyperion, Terminator, Last Breath, ...) */
+	public static final String GOLEM_SWORD_NAME = "<dark_purple>Withered Golem Sword";
 
 	/** Golem Sword — right-click zeroes the holder's Y velocity. In no class's default kit; it exists for
 	 *  {@code /getcustomitems} and the loadout palette ({@link Catalog#extraPaletteItems()}). */

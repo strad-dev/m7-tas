@@ -1,5 +1,6 @@
 package listeners;
 
+import commands.Spectate;
 import instructions.Actions;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.goldor.GoldorLever;
@@ -78,9 +79,24 @@ public class GoldorListener implements Listener {
 	// only solved when EVERY lamp in this grid is lit.
 	private static final int LIGHTS_LAMP_Z = 143;
 
+	/**
+	 * True if {@code p} must not be able to progress a Goldor device: a spectator (the idle state on m7 — they are
+	 * watching, not running the phase) or a player spectating a fake. Not redundant with vanilla's own spectator
+	 * gating: CraftBukkit still fires the interact events for a spectator's clicks, and the raw
+	 * {@code ServerboundUseItemOnPacket} path in {@code PlayerPacketInterceptor} → {@link #tryRegisterSimonClick}
+	 * bypasses vanilla entirely, so without this a spectator could click a terminal or spam Simon Says.
+	 * <p>
+	 * Checked at every entry point AND again in the {@code process*} solvers, which can run a tick later off
+	 * {@link #runWhenPhaseActive} — same "re-check all state on the deferred path" rule the rest of this class uses.
+	 */
+	private static boolean cannotSolve(Player p) {
+		return p == null || p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p);
+	}
+
 	// =================== Terminal click (right-click) ===================
 	@EventHandler(priority = EventPriority.LOW)
 	public void onInteractAt(PlayerInteractAtEntityEvent e) {
+		if(cannotSolve(e.getPlayer())) return;
 		tryActivateTerminal(e.getRightClicked(), e.getPlayer());
 	}
 
@@ -88,6 +104,7 @@ public class GoldorListener implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void onLeftClickTerminal(org.bukkit.event.entity.EntityDamageByEntityEvent e) {
 		if(!(e.getDamager() instanceof Player p)) return;
+		if(cannotSolve(p)) return;
 		if(tryActivateTerminal(e.getEntity(), p)) e.setCancelled(true);
 	}
 
@@ -132,6 +149,9 @@ public class GoldorListener implements Listener {
 		if(b == null) return;
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
 		Player p = e.getPlayer();
+		// Spectators can't solve anything — return BEFORE the Lights branch so we also don't cancel their event or
+		// own the lever toggle on their behalf; vanilla ignores a spectator's click by itself.
+		if(cannotSolve(p)) return;
 
 		// Simon Says button (S1 device) — right-click only (it's a button). Defer if the phase hasn't spun up yet so a
 		// click in a chained full run (players scheduled on start, Goldor only active when Storm dies) counts.
@@ -202,6 +222,7 @@ public class GoldorListener implements Listener {
 	 */
 	public static void tryRegisterSimonClick(Player p, int bx, int by, int bz) {
 		if(INSTANCE == null) return;
+		if(cannotSolve(p)) return; // the interceptor path skips vanilla's spectator gating entirely
 		if(bx != SIMON_BX || by != SIMON_BY || bz != SIMON_BZ) return;
 		int now = MinecraftServer.currentTick;
 		if(INSTANCE.lastSimonClickTick.getOrDefault(p.getUniqueId(), -1) == now) return;
@@ -211,6 +232,7 @@ public class GoldorListener implements Listener {
 
 	/** Register one Simon Says click (global counter). Safe to call from the deferred path — re-checks state. */
 	private void processSimonClick(Player p, boolean wasDeferred) {
+		if(cannotSolve(p)) return;
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
 		if(s1 == null || s1.device.isActivated()) return;
 		simonClicks++;
@@ -228,11 +250,12 @@ public class GoldorListener implements Listener {
 	 *  The activation is credited to the completing click's own tick (the lamp lit this tick; we just observe it one
 	 *  tick later — hence wasDeferred=true). */
 	private void processLightsClick(Player p) {
+		if(cannotSolve(p)) return;
 		GoldorSection s2 = Goldor.INSTANCE.getSection(1);
 		if(s2 == null || s2.device.isActivated()) return;
 		World w = p.getWorld();
 		Utils.scheduleTask(() -> {
-			if(s2.device.isActivated()) return;
+			if(s2.device.isActivated() || cannotSolve(p)) return;
 			if(!allLightsLit(w)) return;
 			s2.device.markActivated();
 			Goldor.INSTANCE.onActivation(p, s2, "device", true);
@@ -305,6 +328,7 @@ public class GoldorListener implements Listener {
 	/** Solve the S3 Arrow Align device. Returns true if this call activated it (caller suppresses vanilla's
 	 *  rotation). Safe to call from the deferred path — re-checks all state. */
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
+		if(cannotSolve(p)) return false; // guarded here, not in onInteractEntity — frame PROTECTION still applies to spectators
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
 		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
 		if(!frame.equals(arrow)) return false;
@@ -396,8 +420,9 @@ public class GoldorListener implements Listener {
 		sharpHitCount++;
 		setTargetBlock(world, xIdx, yIdx, TARGET_HIT);
 		if(sharpHitCount >= 9) {
-			if(shooter == null) {
-				for(Player pl : Bukkit.getOnlinePlayers()) { shooter = pl; break; }
+			if(shooter == null || cannotSolve(shooter)) {
+				shooter = null;
+				for(Player pl : Bukkit.getOnlinePlayers()) { if(!cannotSolve(pl)) { shooter = pl; break; } }
 			}
 			s4.device.markActivated();
 			if(shooter != null) Goldor.INSTANCE.onActivation(shooter, s4, "device", wasDeferred);
@@ -406,8 +431,8 @@ public class GoldorListener implements Listener {
 	}
 
 	private boolean isPlayerOnPlate() {
-		Location plate = new Location(Bukkit.getWorlds().getFirst(), PLATE_X + 0.5, PLATE_Y, PLATE_Z + 0.5);
 		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(cannotSolve(p)) continue; // a spectator hovering over the plate must not hold it down
 			Location pl = p.getLocation();
 			if(Math.abs(pl.getX() - (PLATE_X + 0.5)) <= 0.6
 					&& Math.abs(pl.getZ() - (PLATE_Z + 0.5)) <= 0.6
