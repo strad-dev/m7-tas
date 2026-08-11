@@ -34,6 +34,8 @@ public final class Arrows {
 	private static final NamespacedKey HITS = key("arrow_hits");
 	/** 1 if this arrow may build a Last Breath stack, 0 if not.  See {@link #stamp}. */
 	private static final NamespacedKey BUILDS_LAST_BREATH = key("arrow_last_breath");
+	/** 1 if this arrow carries an ALREADY-FINISHED figure rather than a stat core.  See {@link #stampFlat}. */
+	private static final NamespacedKey DERIVED = key("arrow_derived");
 
 	/** Piercing I: an arrow passes through, and each mob AFTER the first takes 25% of its damage (§7). */
 	private static final double PIERCING_SHARE = 0.25;
@@ -89,8 +91,20 @@ public final class Arrows {
 
 	/**
 	 * Stamp an arrow whose damage is NOT the shooter's stat core but an already-decided figure - Rapid Fire's 75%
-	 * of the player's best recent arrow (§1.14).  It still picks up the target-dependent half at {@link #resolve},
-	 * which is what keeps the Rulers, Titan Killer and the debuffs applying to it like any other arrow.
+	 * of the player's best recent arrow (§1.14).
+	 * <p>
+	 * <b>A figure copied out of the rolling history is a FINISHED hit, so the target half must not run on it again.</b>
+	 * The best-arrow-in-the-last-minute it copied already had the Rulers, Titan Killer, Snipe, Power, the class
+	 * multiplier and everything else in it; putting the stamped number back through {@link Damage#bowFinish} charges
+	 * for all of that a second time, which is a x4-x10 on the ability before anything else goes wrong.  What DOES
+	 * still happen at {@link #resolve} is the debuffs the arrow applies (Rapid Fire arrows off a Last Breath build
+	 * its stacks, §1.14) and Piercing's 25% share, because those are properties of the projectile, not of the
+	 * damage formula.
+	 * <p>
+	 * Combined with {@code deal}'s history feedback, the second charge was also compounding: each arrow re-read the
+	 * history, multiplied it by the target half, landed several times the figure it read and recorded THAT, so 50
+	 * arrows over 200 ticks walked the number up until it overflowed.  Both halves of that are fixed, and both
+	 * halves are needed - either one alone still leaves the ability several times too strong.
 	 */
 	public static void stampFlat(AbstractArrow arrow, Player shooter, ItemStack weapon, double core) {
 		if(arrow == null || shooter == null) return;
@@ -104,6 +118,7 @@ public final class Arrows {
 		// Explosive Shot and Rapid Fire stamp the HELD weapon, so if that is a Last Breath these count as Last
 		// Breath arrows, which is exactly the rule.
 		pdc.set(BUILDS_LAST_BREATH, PersistentDataType.INTEGER, 1);
+		pdc.set(DERIVED, PersistentDataType.INTEGER, 1);
 		arrow.setDamage(0);
 	}
 
@@ -113,10 +128,41 @@ public final class Arrows {
 	}
 
 	/**
+	 * True if this arrow's damage came out of the rolling damage history rather than the shooter's stats, i.e. the
+	 * hit it lands must go through {@link Damage#dealDerived} and not feed that history back.
+	 */
+	public static boolean isDerived(AbstractArrow arrow) {
+		return arrow != null
+				&& arrow.getPersistentDataContainer().getOrDefault(DERIVED, PersistentDataType.INTEGER, 0) == 1;
+	}
+
+	/**
+	 * Resolve this arrow against {@code target} <b>and deal it</b>.  Every arrow hit goes through here so the
+	 * derived-arrow rule can't be forgotten at a call site: a Rapid Fire arrow carries a figure read out of the
+	 * damage history, so it must not feed that history back (see {@link Damage#dealDerived}).
+	 *
+	 * @return the reported hit, as {@link Damage#deal} defines it
+	 */
+	public static double hit(AbstractArrow arrow, Player shooter, LivingEntity target) {
+		return hit(arrow, shooter, target, true);
+	}
+
+	/** As above, with {@code countPierce} as {@link #resolve(AbstractArrow, Player, LivingEntity, boolean)} means it. */
+	public static double hit(AbstractArrow arrow, Player shooter, LivingEntity target, boolean countPierce) {
+		double sbDamage = resolve(arrow, shooter, target, countPierce);
+		return isDerived(arrow)
+				? Damage.dealDerived(target, sbDamage, DamageKind.NORMAL, shooter, DamagePath.BOW)
+				: Damage.deal(target, sbDamage, DamageKind.NORMAL, shooter, DamagePath.BOW);
+	}
+
+	/**
 	 * The SkyBlock damage this arrow does to {@code target}, applying the debuffs it carries first (§7's ordering
 	 * rule) and taking Piercing's 25% for every mob after the first.
+	 * <p>
+	 * <b>Private on purpose</b>: the figure and the way it must be dealt are one decision, so everything goes
+	 * through {@link #hit} rather than resolving here and picking a {@code deal} of its own.
 	 */
-	public static double resolve(AbstractArrow arrow, Player shooter, LivingEntity target) {
+	private static double resolve(AbstractArrow arrow, Player shooter, LivingEntity target) {
 		return resolve(arrow, shooter, target, true);
 	}
 
@@ -126,7 +172,7 @@ public final class Arrows {
 	 * weapon's <b>full</b> damage.  Piercing is about an arrow passing THROUGH successive mobs, which is a
 	 * different thing.
 	 */
-	public static double resolve(AbstractArrow arrow, Player shooter, LivingEntity target, boolean countPierce) {
+	private static double resolve(AbstractArrow arrow, Player shooter, LivingEntity target, boolean countPierce) {
 		if(arrow == null || shooter == null || target == null) return 0;
 		var pdc = arrow.getPersistentDataContainer();
 		Double core = pdc.get(CORE, PersistentDataType.DOUBLE);
@@ -142,6 +188,10 @@ public final class Arrows {
 			pdc.set(HITS, PersistentDataType.INTEGER, priorHits + 1);
 			if(priorHits > 0) piercing = PIERCING_SHARE;
 		}
+
+		// A derived arrow's core is a finished hit copied out of the damage history, not a stat core, so the target
+		// half is already inside it and running bowFinish here would charge for it twice.  See stampFlat.
+		if(isDerived(arrow)) return core * piercing;
 
 		return Damage.bowFinish(shooter, target, def, core, blocksTravelled(arrow), isHeadshot(arrow, target))
 				* piercing;

@@ -147,7 +147,11 @@ public final class CombatState {
 
 	// ===================== rolling damage history =====================
 
-	/** Record a finished hit.  Every damage instance feeds this, including procs and Cleave. */
+	/**
+	 * Record a finished hit.  <b>Only real hits go in</b> (DAMAGE_PLAN.md §1.14): {@code Damage.deal} keeps out both
+	 * secondary instances (procs, Cleave) and DERIVED ones - the abilities that read this history and copy a figure
+	 * out of it.  Either would close a loop where the buffer feeds on its own output.
+	 */
 	public static void recordDamage(Player p, double sbDamage) {
 		if(p == null || sbDamage <= 0) return;
 		Deque<Hit> q = history.computeIfAbsent(p.getUniqueId(), k -> new ArrayDeque<>());

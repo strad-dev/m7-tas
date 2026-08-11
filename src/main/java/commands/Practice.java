@@ -22,7 +22,9 @@ import java.util.Map;
  *    class tag, which is a silently broken run rather than an obviously refused one.
  * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
  *    teleports them to the chosen phase's default location, then starts it.
- * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.
+ * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.  A bare
+ *    "classic"/"realistic" arg sets the damage mode for the run (DAMAGE_PLAN.md §0); omitted, the current mode
+ *    stands, so a standalone player keeps whatever /toggledungeondifficulty last set.  The network always sends one.
  * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
  *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a
  *    pre-run delay of 60 ticks (3s) by default.  Pass a bare integer arg to override it: the network plugin
@@ -63,9 +65,17 @@ public class Practice implements CommandExecutor {
 		// Optional pre-run "get into position" delay in ticks (a bare integer arg). Defaults to 60 (3s); the
 		// network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in together.
 		int delayTicks = 60;
+		// Optional damage difficulty ("classic" / "realistic"). Null means "leave the mode alone", which is what a
+		// player running this standalone wants: their /toggledungeondifficulty choice stands. The network ALWAYS
+		// passes one, since damage.Difficulty is a server-wide global and a run must not inherit the last party's mode.
+		damage.Difficulty difficulty = null;
 		for(String arg : args) {
+			// Parsed up front so the mode branch below is one test: it has to come BEFORE the section fallback,
+			// which swallows any unrecognised word and would otherwise read "classic" as a section name.
+			damage.Difficulty mode = damage.Difficulty.parse(arg);
 			if(arg.equalsIgnoreCase("--no-teleport") || arg.equalsIgnoreCase("--noteleport")) noTeleport = true;
 			else if(arg.matches("\\d+")) delayTicks = Integer.parseInt(arg);
+			else if(mode != null) difficulty = mode;
 			else section = arg.toLowerCase();
 		}
 		if(!DEFAULT_LOCATIONS.containsKey(section)) {
@@ -121,6 +131,11 @@ public class Practice implements CommandExecutor {
 				participant.teleport(target, PlayerTeleportEvent.TeleportCause.PLUGIN);
 			}
 		}
+
+		// Set the mode BEFORE the run arms: every debuff, defense reducer and blessing lookup reads
+		// damage.Difficulty live, and RunResult.capture stamps the run with whatever it says at completion, so the
+		// leaderboard board a time lands on is decided here.
+		if(difficulty != null) damage.Difficulty.set(difficulty);
 
 		TAS.runPractice(world, section, delayTicks);
 		return true;

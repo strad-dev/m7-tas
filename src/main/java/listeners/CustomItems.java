@@ -381,8 +381,11 @@ public class CustomItems implements Listener {
 			e.setCancelled(true);
 			return;
 		}
-		// Clear-phase secret chests and the Quiz answer buttons are immune to Dungeonbreaker.
-		if(instructions.clear.ClearManager.isActive() && instructions.clear.ClearManager.isProtectedBlock(e.getBlock())) {
+		// Static-map fixtures: secret chests, the Quiz answer buttons, wither-skeleton skulls (Wither Essence)
+		// anywhere, and the Ice Fill puzzle's ice and polished andesite.  Gated on NOTHING - the Dungeonbreaker works
+		// whatever the run is doing, and its break writes AIR into the world for good, so one break outside a run
+		// takes that block out of every run after it as well.
+		if(instructions.clear.ClearManager.isMapFixture(e.getBlock())) {
 			e.setCancelled(true);
 			return;
 		}
@@ -484,7 +487,8 @@ public class CustomItems implements Listener {
 				if(now < berserkThrowReady.getOrDefault(id, 0)) { sendCooldownMessage(p, berserkThrowReady.getOrDefault(id, now) - now); return; }
 				berserkThrowReady.put(id, now + BERSERK_THROW_COOLDOWN_TICKS);
 				// "The axe throw copies the Axe of the Shredded ability but does NOT pierce", so one target only.
-				throwAxe(p, damage.CombatState.maxInLastTicks(p, 1200), false);
+				// The figure is the highest hit in the last 60s, i.e. already finished - hence derived.
+				throwAxe(p, damage.CombatState.maxInLastTicks(p, 1200), false, true);
 			}
 		}
 	}
@@ -799,9 +803,14 @@ public class CustomItems implements Listener {
 				// formula - so no Strength and no Crit Damage, which is why abilities read so differently from
 				// the beam.  That is deliberate: they are an option, not a damage strategy.
 				double sbDamage = damage.Damage.ability(p, entity1, wand);
-				damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
-				damaged += 1;
-				dealt += sbDamage;
+				// Sum what DEAL reports, not what we asked for: the message has to read the same as the numbers in
+				// the air, i.e. after the target's defense and resistance.  A target that took nothing at all (the
+				// Wither King, a villager NPC) isn't counted as hit either.
+				double hit = damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
+				if(hit > 0) {
+					dealt += hit;
+					damaged += 1;
+				}
 			}
 		}
 		if(damaged > 0) {
@@ -1586,15 +1595,22 @@ public class CustomItems implements Listener {
 		aotsStreakExpiry.put(id, now + AOTS_STREAK_TICKS);
 		double core = damage.Damage.meleeCore(p) * AOTS_THROW_SHARE
 				* Math.min(Math.pow(2, streak), AOTS_THROW_CAP);
-		throwAxe(p, core, true);
+		throwAxe(p, core, true, false);
 	}
 
 	/**
 	 * The shared thrown-axe projectile: an ItemDisplay flying 100 blocks, spinning, damaging what it passes
 	 * through.  Used by the Axe of the Shredded ({@code pierce} true) and by a Berserk's {@code drop stack}
 	 * ability, which copies it but does NOT pierce (§1.14).
+	 *
+	 * @param derived what {@code core} IS.  False for the Axe of the Shredded, whose core is a stat core and still
+	 *                needs the target half at {@code meleeFinish}.  True for the Berserk throw, whose core was read
+	 *                out of the damage history and is therefore a FINISHED hit: running the target half on it would
+	 *                charge for the Rulers, the repeated-hit stack and the class multiplier a second time, and
+	 *                recording the result would let each throw read the last one's inflated output (see
+	 *                {@link damage.Damage#dealDerived}).
 	 */
-	private static void throwAxe(Player p, double core, boolean pierce) {
+	private static void throwAxe(Player p, double core, boolean pierce, boolean derived) {
 		Utils.playLocalSound(p, Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
 		ItemStack weapon = p.getInventory().getItemInMainHand();
 
@@ -1661,8 +1677,15 @@ public class CustomItems implements Listener {
 					if(!(e instanceof LivingEntity mob) || e instanceof Player) continue;
 					if(mob.isDead() || mob.getHealth() <= 0 || !hit.add(mob.getUniqueId())) continue;
 					if(e instanceof Wither w2 && w2.getInvulnerableTicks() != 0) continue;
-					double sbDamage = damage.Damage.meleeFinish(p, mob, weapon, core);
-					damage.Damage.deal(mob, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+					if(derived) {
+						// The debuffs this hit carries still land (Lethality is a property of the hit, not of the
+						// formula); only the damage half is skipped, because it is already in the figure.
+						damage.Damage.applyOnHitDebuffs(p, mob, damage.DamagePath.MELEE, weapon);
+						damage.Damage.dealDerived(mob, core, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+					} else {
+						double sbDamage = damage.Damage.meleeFinish(p, mob, weapon, core);
+						damage.Damage.deal(mob, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+					}
 					if(!pierce) stop = true;
 				}
 				if(stop) {
@@ -2152,8 +2175,7 @@ public class CustomItems implements Listener {
 			if(!(nearby instanceof LivingEntity mob) || nearby instanceof Player) continue;
 			if(nearby.equals(e.getHitEntity()) || mob.isDead() || mob.getHealth() <= 0) continue;
 			if(nearby instanceof Wither wither && wither.getInvulnerableTicks() != 0) continue;
-			damage.Damage.deal(mob, damage.Arrows.resolve(arrow, p, mob, false),
-					damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
+			damage.Arrows.hit(arrow, p, mob, false);
 		}
 
 		triggerSuperboomRadius(impact, p);
@@ -2462,11 +2484,13 @@ public class CustomItems implements Listener {
 						Location impact = arrow.getLocation();
 
 						// Explosive Shot: each arrow deals 100% of the player's highest arrow damage in the last
-						// minute (DAMAGE_PLAN.md §1.14), read off the shared rolling damage history.
+						// minute (DAMAGE_PLAN.md §1.14), read off the shared rolling damage history.  Dealt as a
+						// DERIVED instance: the figure is already a finished hit, so it gets no second pass through
+						// the formula and never goes back into the history it came out of.
 						double sbDamage = damage.CombatState.maxInLastTicks(p, 1200);
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
 							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-								damage.Damage.deal(target, sbDamage, damage.DamageKind.NORMAL, p,
+								damage.Damage.dealDerived(target, sbDamage, damage.DamageKind.NORMAL, p,
 										damage.DamagePath.BOW);
 								alreadyHurt.add(target);
 							}
@@ -2564,6 +2588,10 @@ public class CustomItems implements Listener {
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				// Rapid Fire: each arrow deals 75% of the player's highest arrow damage in the last minute
 				// (DAMAGE_PLAN.md §1.14), off the same rolling history Explosive Shot and the axe throw read.
+				// 75% of a FINISHED hit, so stampFlat marks the arrow derived: it lands for this figure exactly and
+				// stays out of the history.  Both matter - each of the 50 arrows re-queries the history four ticks
+				// after the last one landed, so anything that let an arrow inflate what the next one reads compounds
+				// fifty times and overflows.
 				damage.Arrows.stampFlat(arrow, p, p.getInventory().getItemInMainHand(),
 						damage.CombatState.maxInLastTicks(p, 1200) * 0.75);
 			}, i);

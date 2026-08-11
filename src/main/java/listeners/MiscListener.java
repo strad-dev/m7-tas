@@ -222,11 +222,11 @@ public class MiscListener implements Listener {
 					// it), so consult WitherKing's dying set too.
 					boolean targetDead = hitEntity.isDead() || hitEntity.getHealth() <= 0
 							|| hitEntity.getScoreboardTags().contains("TASDying") || WitherKing.isDyingDragon(hitEntity);
-					// Arrows.resolve applies the arrow's debuffs, the target half of the formula and Piercing's 25%
-					// for every mob after the first.  dealArrow aggros only if the arrow does real damage; on a plain
-					// mob (this branch excludes withers) nothing has an aggro target anyway.
-					damage.Damage.deal(hitEntity, damage.Arrows.resolve(arrow, p, hitEntity),
-							damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
+					// Arrows.hit resolves the arrow's debuffs, the target half of the formula and Piercing's 25% for
+					// every mob after the first, then deals it - through the DERIVED entry for a Rapid Fire arrow, so
+					// the ability can't read its own output back.  Aggro is noted only if the arrow does real damage;
+					// on a plain mob (this branch excludes withers) nothing has an aggro target anyway.
+					damage.Arrows.hit(arrow, p, hitEntity);
 					if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					int newPierce = arrow.getPierceLevel() - 1;
 					if(newPierce <= 0) arrow.remove();

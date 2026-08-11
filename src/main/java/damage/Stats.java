@@ -132,7 +132,7 @@ public final class Stats {
 	 */
 	public static double ragnarockStrength(Player p, Pet pet) {
 		if(p == null || !RagnarockBuff.isActive(p)) return 0;
-		ItemDef axe = Items.byName("Withered Ragnarock Axe");
+		ItemDef axe = Items.byName("Withered Ragnarοck Axe");
 		if(axe == null) return 0;
 		return 1.5 * axe.stats(pet).get(Stat.STRENGTH);
 	}

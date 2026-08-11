@@ -50,7 +50,7 @@ public final class ItemRefresh {
 	private static final Map<String, String> RENAMED = Map.of(
 			"Withered Golem Sword", "Suspicious Golem Sword",
 			"Withered Axe of the Shredded", "Suspicious Axe of the Shredded",
-			"Withered Ragnarok Axe", "Withered Ragnarock Axe",
+			"Withered Ragnarok Axe", "Withered Ragnarοck Axe",
 			"Bonzo Staff", "Heroic Bonzo Staff");
 
 	/**

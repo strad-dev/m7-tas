@@ -87,6 +87,17 @@ public final class Damage {
 	private static final double BOOK_OF_PROGRESSION = 1.05;
 	private static final double TARANTULA_RING = 1.15;
 
+	// ===================== ammunition =====================
+	/**
+	 * <b>Armorshred Arrow: a ranged hit is worked out against x0.95 of the target's defense.</b>  Assumed to be what
+	 * everyone is shooting, exactly like the Archery IV potion and Overload - the model has no ammunition types, so
+	 * this is a maxed input, not a per-shot choice.
+	 * <p>
+	 * It is a factor on the defense THIS HIT divides by and nothing else: the target's own defense is not touched,
+	 * so it is not a debuff, nothing is written back, and the next melee hit divides by the full figure again.
+	 */
+	private static final double ARMORSHRED_DEFENSE = 0.95;
+
 	// ===================== §7 mage beam =====================
 	/** The Mage Staff passive: 30% base plus 0.09% per Intelligence, ADDED to the 30%, not multiplied by it. */
 	private static final double BEAM_BASE = 0.30;
@@ -472,6 +483,11 @@ public final class Damage {
 	/**
 	 * Deal a computed SkyBlock-scale hit.  Counts as the primary instance for procs and Cleave.
 	 * <p>
+	 * Returns the hit as it is REPORTED - SkyBlock scale, after the target's defense and resistance but before any
+	 * boss clamp, i.e. exactly the figure {@link DamageNumbers} puts in the air.  Callers that print their own
+	 * summary (Implosion's "hit N enemies for X") must use this rather than the sbDamage they passed in, or they
+	 * report the pre-defense number and disagree with every other display.
+	 * <p>
 	 * <b>Aggro is pulled only if the hit did real damage.</b>  Melee, beam, bow and ability all follow the same rule:
 	 * a hit that took health off a boss makes you its target, and one that took nothing does not - not on an armoured
 	 * Maxor, and not on Goldor mid-terminals or Necron mid-interlude, where the hit is deliberately feedback-only and
@@ -483,8 +499,25 @@ public final class Damage {
 	 * - only melee and mage-beam hits do".  That rule is gone; arrows and melee are the same case now, so the two
 	 * methods collapsed back into this one.
 	 */
-	public static void deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path) {
-		deal(target, sbDamage, kind, attacker, path, true, true);
+	public static double deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path) {
+		return deal(target, sbDamage, kind, attacker, path, true, true, true);
+	}
+
+	/**
+	 * A <b>derived</b> instance: a hit whose figure was copied out of the rolling damage history and so is
+	 * <b>already a finished hit</b> - Rapid Fire's 75%, Explosive Shot's 100%, a Berserk's thrown axe.  Identical to
+	 * {@link #deal} in every way but one: <b>it does not feed the history it read</b>.
+	 * <p>
+	 * That is DAMAGE_PLAN.md §1.14's "only real hits go in the buffer" rule, and it is load-bearing rather than
+	 * tidy, exactly as it is for procs.  A derived hit that records itself makes the ability read its own output the
+	 * next time: Rapid Fire fires 50 arrows over 200 ticks and re-queries the history for every one, so any factor
+	 * above 1 between the figure it reads and the damage it lands compounds fifty times over and runs off the top of
+	 * a double.  Even at exactly 1.0 it is wrong, because "highest in the last minute" would then never decay - each
+	 * derived hit would re-stamp the old maximum with the current tick and hold it alive forever.
+	 */
+	public static double dealDerived(LivingEntity target, double sbDamage, DamageKind kind, Player attacker,
+			DamagePath path) {
+		return deal(target, sbDamage, kind, attacker, path, true, true, false);
 	}
 
 	/**
@@ -492,26 +525,27 @@ public final class Damage {
 	 * not itself generate Cleave or procs: one level of propagation, always.  Never pulls aggro, which
 	 * {@link DamageKind#pullsAggro} enforces as well.
 	 */
-	public static void dealSecondary(LivingEntity target, double sbDamage, DamageKind kind, Player attacker) {
-		deal(target, sbDamage, kind, attacker, DamagePath.MELEE, false, false);
+	public static double dealSecondary(LivingEntity target, double sbDamage, DamageKind kind, Player attacker) {
+		return deal(target, sbDamage, kind, attacker, DamagePath.MELEE, false, false, false);
 	}
 
-	private static void deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path,
-			boolean primary, boolean aggro) {
-		if(target == null || sbDamage <= 0) return;
+	/** @return the reported hit (SkyBlock scale, after defense and resistance, before any boss clamp), 0 if nothing landed. */
+	private static double deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path,
+			boolean primary, boolean aggro, boolean feedsHistory) {
+		if(target == null || sbDamage <= 0) return 0;
 
 		// Targets that must never be touched at all, checked before anything else.
 		// Villager NPCs (Mort / the Wizard) never take plugin-dealt damage.  Blocking it here rather than only in
 		// MiscListener matters: this used to hit with genericKill, the exact source vanilla's /kill uses, so the
 		// two were indistinguishable once they reached the damage event.  Keeping ability damage away from
 		// villagers at the source is what lets a KILL-cause event on a villager mean a real /kill.
-		if(target instanceof Villager) return;
+		if(target instanceof Villager) return 0;
 		// The Watcher cannot be damaged at all; the fight is won by killing its Undeads.
-		if(target.getScoreboardTags().contains("TASWatcher")) return;
+		if(target.getScoreboardTags().contains("TASWatcher")) return 0;
 		// A blood mob is shielded for its first ~2 ticks so a spawn-tick arrow can't kill it before it registers
 		// toward progress.  This used to be enforced only in MiscListener.onWatcherDamage, i.e. on the vanilla
 		// damage event; nothing on this path fires one, so the guard has to live here too.
-		if(target.getScoreboardTags().contains("WatcherMobSpawning")) return;
+		if(target.getScoreboardTags().contains("WatcherMobSpawning")) return 0;
 		// Aggro used to be noted HERE, ahead of the immunity returns below, so a boss chased whoever was hitting it
 		// through an armoured window the moment that window ended.  It is now noted further down, inside the branch
 		// where health actually moved: a hit that deals nothing does not pull aggro.  The three abilities that DO
@@ -521,13 +555,18 @@ public final class Damage {
 		// boundary as well so a Cleave hit or a proc can't slip past one.  WithersNotImmuneToArrows' deliberate
 		// "vulnerable then re-armoured on the same tick" exception clears the counter itself before calling in,
 		// so it is unaffected.
-		if(target instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) return;
+		if(target instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) return 0;
 
 		// The Wither King is immune to all direct player damage.  Its HP is driven solely by dragon kills.  Aggro
 		// is still noted above, and the debuffs the hit carried have already landed at the call site.
-		if(target.getScoreboardTags().contains("TASWitherKing")) return;
+		if(target.getScoreboardTags().contains("TASWitherKing")) return 0;
 
 		double defense = TargetDebuffs.reducedDefense(target, MobStats.defenseOf(target));
+		// Armorshred Arrows (see the constant): a BOW-path hit divides by x0.95 of that defense.  A factor on this
+		// hit's divisor, not a change to the target.  Gated on the path rather than on "is there an arrow entity",
+		// so it covers the Terminator's Salvation beam and Explosive Shot's blast as well - the same treatment those
+		// already get from Power VII, Archery IV, Skeletor and Overload.
+		if(path == DamagePath.BOW) defense *= ARMORSHRED_DEFENSE;
 		double resistance = MobStats.resistanceOf(target);
 		double mcDamage = sbDamage * resistance / Scale.defenseDivisor(defense) / Scale.SB_PER_MC_HP;
 		double preClamp = mcDamage;
@@ -585,10 +624,12 @@ public final class Damage {
 		}
 
 		if(attacker != null && primary) {
-			// Only PRIMARY instances go into the rolling history.  Its consumers all ask for a best HIT (Berserk's
-			// axe throw, Explosive Shot, Rapid Fire, Venomous's DPS term), and feeding a proc's own output back in
-			// would compound: a Venomous tick would raise the history, raising the next tick, and so on.
-			CombatState.recordDamage(attacker, sbDamage);
+			// Only PRIMARY instances go into the rolling history, and only ones that were not THEMSELVES read out of
+			// it.  Its consumers all ask for a best HIT (Berserk's axe throw, Explosive Shot, Rapid Fire, Venomous's
+			// DPS term), so anything that copies the history and then records what it dealt closes a loop: a Venomous
+			// tick would raise the figure the next tick reads, and a Rapid Fire arrow the figure the next arrow reads.
+			// See dealDerived - the two exclusions are the same rule, and neither is optional.
+			if(feedsHistory) CombatState.recordDamage(attacker, sbDamage);
 			CombatState.noteHit(attacker, target.getUniqueId(), path);
 			CombatState.spendPostKillBuff(attacker);
 		}
@@ -597,12 +638,14 @@ public final class Damage {
 		// never quantised.  Three separate figures exist by the end of this method and it is worth naming them:
 		// `preClamp` is what you hit for and is what gets displayed, `mcDamage` is what the clamp allowed, and
 		// `applied` is that rounded to HP_STEP and is the only one health ever sees.
-		DamageNumbers.show(target, preClamp * Scale.SB_PER_MC_HP, kind, attacker);
+		double reported = preClamp * Scale.SB_PER_MC_HP;
+		DamageNumbers.show(target, reported, kind, attacker);
 		verbose(attacker, target, sbDamage, mcDamage, preClamp, defense, resistance, kind);
 		if(primary) {
 			Procs.onHit(attacker, target, sbDamage, path);
 			Cleave.spread(attacker, target, sbDamage, path);
 		}
+		return reported;
 	}
 
 	/**
@@ -742,8 +785,8 @@ public final class Damage {
 
 	/**
 	 * The defense figure for the {@code Defense (...)} row: the EFFECTIVE value, or {@code raw -> effective} when
-	 * Lethality and Last Breath have actually reduced it, since which of the two is being read is the whole question
-	 * when a defense number looks wrong.
+	 * something actually reduced it - Lethality, Last Breath, or Armorshred on a bow hit - since which figure is
+	 * being read is the whole question when a defense number looks wrong.
 	 */
 	private static String defenseText(LivingEntity target, double effective) {
 		double raw = MobStats.defenseOf(target);

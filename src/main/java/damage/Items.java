@@ -125,7 +125,7 @@ public final class Items {
 		// ============================== §1.7 Ragnarock Axe - Withered, NOT dungeon-scaled ==============
 		// Its reforge really IS Withered, a different reforge that happens to share the Fabled alias's display
 		// name, so it does NOT get Fabled's x1.15 (§1.0.6).  Rare -> recombed Epic, pinned by its +11 Jasper.
-		register(ItemDef.of("Withered Ragnarock Axe", ItemCategory.SWORD)
+		register(ItemDef.of("Withered Ragnarοck Axe", ItemCategory.SWORD)
 				.loreId("skyblock/combat/rag").rarity(Rarity.RARE).notDungeon()
 				.base(Stat.DAMAGE, 200).stars(Stat.DAMAGE, 40)
 				.base(Stat.STRENGTH, 100).stars(Stat.STRENGTH, 20)

@@ -52,10 +52,9 @@ public class WithersNotImmuneToArrows implements Listener {
 		wither.setInvulnerableTicks(0);
 		// One damage path (DAMAGE_PLAN.md §7): this used to be Bukkit's no-source wither.damage(), the only route
 		// that reached the boss's clamps, which is exactly the split the unification removed.  The arrow carries
-		// its own stat damage from fire time; the target half resolves here, and Damage.deal calls the boss's
-		// clampDamage explicitly, and notes the aggro target if (and only if) health actually moves.
-		damage.Damage.deal(wither, damage.Arrows.resolve(arrow, p, wither),
-				damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
+		// its own stat damage from fire time; the target half resolves here, and the deal Arrows.hit picks calls the
+		// boss's clampDamage explicitly, and notes the aggro target if (and only if) health actually moves.
+		damage.Arrows.hit(arrow, p, wither);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 
 		int newPierce = arrow.getPierceLevel() - 1;

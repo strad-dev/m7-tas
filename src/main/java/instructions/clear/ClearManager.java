@@ -757,14 +757,47 @@ public final class ClearManager {
 		return out;
 	}
 
-	/** Is a broken block protected from Dungeonbreaker (a secret chest, or a Quiz answer button area)? */
-	public static boolean isProtectedBlock(Block b) {
+	/** Wither Essence, in both the floor and the wall skull form. */
+	private static final Set<Material> ESSENCE_SKULLS =
+			EnumSet.of(Material.WITHER_SKELETON_SKULL, Material.WITHER_SKELETON_WALL_SKULL);
+
+	/** What the Ice Fill puzzle is built out of: the three ice layers, and the polished andesite framing them. */
+	private static final Set<Material> ICE_FILL_FIXTURES =
+			EnumSet.of(Material.ICE, Material.PACKED_ICE, Material.POLISHED_ANDESITE);
+
+	/**
+	 * Blocks of the STATIC MAP that must never be broken, <b>at any point</b>: secret chests, the Quiz answer
+	 * buttons, Wither Essence skulls, and the Ice Fill puzzle's ice and polished andesite.
+	 * <p>
+	 * <b>Nothing here is gated on the clear phase</b>, because what it protects against isn't: the Dungeonbreaker is
+	 * the one item that breaks anything, it works whatever the run is doing, and its break is permanent
+	 * ({@code setType(AIR)} straight into the world).  So one break outside a run edits the map for every run after
+	 * it - a chest coordinate with something else sitting in it, an essence skull simply gone, or a hole in an Ice
+	 * Fill layer, which {@code PuzzleIceFill.begin} absorbs silently because it scans for the ice that is there.
+	 * (The Stonk's break is only a 200-tick removal, but losing any of these for 200 ticks mid-run is no better;
+	 * this check sits above the tool branch in {@code onBlockBreak} and so covers both.  Survival/creative would
+	 * bypass all of it, which is why nobody should be in either.)
+	 * <p>
+	 * This used to be two methods - a phase-gated {@code isProtectedBlock} for the chests and buttons alongside this
+	 * one - which was a distinction with no reason behind it once both answers were "never breakable".  Every
+	 * predicate here reads STATIC data (secret coordinates, button coordinates, materials, room bounds), so none of
+	 * it needs a run to be in progress to answer.
+	 * <p>
+	 * Wither skulls are matched by MATERIAL anywhere, not against the secret list, because a skull that is not a
+	 * registered secret is still part of the map and there is no reason to be able to break one.  Ice and polished
+	 * andesite are matched only inside the Ice Fill room, since both are ordinary building blocks elsewhere.
+	 */
+	public static boolean isMapFixture(Block b) {
+		if(b == null) return false;
+		if(ESSENCE_SKULLS.contains(b.getType())) return true;
+		if(ICE_FILL_FIXTURES.contains(b.getType()) && Rooms.roomAt(b.getLocation()) == Rooms.ICE_FILL) return true;
+		if(PuzzleQuiz.isButtonArea(b)) return true;
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
 				if(s.isChest() && b.getX() == s.blockX() && b.getY() == s.blockY() && b.getZ() == s.blockZ()) return true;
 			}
 		}
-		return PuzzleQuiz.isButtonArea(b);
+		return false;
 	}
 
 	private static String hex(Color c) {
