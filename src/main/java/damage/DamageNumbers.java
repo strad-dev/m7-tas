@@ -25,9 +25,15 @@ import java.util.UUID;
  * <p>
  * <b>The number shown is what the target actually lost</b> - after the boss resistance and the defense divisor -
  * because that is the number that matches the health bar moving.  The pre-defense figure belongs in
- * {@code /verbose}'s breakdown.  The one exception is a boss in a feedback-only window (Goldor on patrol, Necron
- * mid-interlude), which displays the hit it would have taken while losing no health at all; see
- * {@code Damage.deal}.
+ * {@code /verbose}'s breakdown.  Two deliberate exceptions:
+ * <ul>
+ *   <li>a boss in a feedback-only window (Goldor on patrol, Necron mid-interlude) displays the hit it WOULD have
+ *       taken, while losing no health at all;</li>
+ *   <li>the figure is the <b>true</b> damage, not the {@code HP_STEP}-quantised amount health is actually moved by.
+ *       Health is quantised so it stays a number you can reason about; the number in the air is the real one, since
+ *       reading your own damage is the entire point of it.</li>
+ * </ul>
+ * See {@code Damage.deal} for both.
  * <p>
  * <b>Never rounded, abbreviated or truncated.</b>  The full integer, every digit, thousands-separated:
  * {@code 726,525,143}, never {@code 726.5M}.
@@ -50,7 +56,7 @@ public final class DamageNumbers {
 	 */
 	private static final int MAX_PER_PLAYER = 100;
 	/** How far from the target's EYES a number may spawn, in any direction. */
-	private static final double SPAWN_RADIUS = 1.5;
+	private static final double SPAWN_RADIUS = 1.0;
 	/** Random points to try before falling back to the eye location itself. */
 	private static final int SPAWN_ATTEMPTS = 12;
 
@@ -92,8 +98,6 @@ public final class DamageNumbers {
 			d.text(Utils.msg(format(sbDamage, kind)));
 			d.setBillboard(Display.Billboard.CENTER);
 			d.setSeeThrough(false);
-			// A fully transparent background, so the number reads as text rather than as a chat bubble.
-			d.setBackgroundColor(org.bukkit.Color.fromARGB(0, 0, 0, 0));
 			d.setShadowed(true);
 			d.setViewRange(0.4f);
 			d.addScoreboardTag("TASNoName");

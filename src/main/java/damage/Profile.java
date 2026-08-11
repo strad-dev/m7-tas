@@ -37,11 +37,17 @@ public final class Profile {
 	 * <p>
 	 * The player's inherent +5 Damage is deliberately NOT here: it is the {@code 5 +} term of the formula
 	 * (§1.0.4), so it belongs to {@link Scale#PLAYER_BASE_DAMAGE} and must not be double-counted as a stat.
+	 * <p>
+	 * One entry is not a constant: Blessing of Stone's flat Damage reads {@link Difficulty}, like the multiplicative
+	 * blessings below, so realistic mode gets the party's real count with no second code path.
 	 */
 	public static StatBlock base() {
 		return StatBlock.EMPTY
 				// ----- Damage -----
 				.plus(Stat.DAMAGE, 4)            // Blazetekk Ham Radio (Bluertooth Ring)
+				// Blessing of Stone: +10.89 base Damage per level, +98.01 at the maxed 9.  FLAT, so it sums here
+				// rather than joining the other blessings in multiplicative() - see Difficulty.stoneDamage.
+				.plus(Stat.DAMAGE, Difficulty.stoneDamage())
 
 				// ----- Strength -----
 				.plus(Stat.STRENGTH, 124)        // SkyBlock Level, +1 per 5 levels (max 620)

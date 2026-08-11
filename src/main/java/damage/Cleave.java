@@ -23,6 +23,13 @@ import org.bukkit.entity.Wither;
  * generate its own Cleave - one level of propagation, always - which {@link Damage#dealSecondary} enforces by
  * marking the instance non-primary.
  * <p>
+ * <b>Nor does the MAGE BEAM sweep</b>, even though {@link DamagePath#isMelee()} is true for it.  That flag answers
+ * "does the sword enchantment list apply?", which for the beam is yes - it is a melee attack for Sharpness, Smite,
+ * First Strike and the rest.  Cleave is a different question: the beam is a single-target ranged hit that goes where
+ * the crosshair points, so <b>only the entity it hits takes damage</b>.  Testing {@code isMelee()} here quietly gave
+ * every Mage a free 30% sweep on every beam, which is why the test below is now the exact path rather than the
+ * category.
+ * <p>
  * I-frames do not swallow it: mobs have zero i-frames, so a Cleave hit lands in full alongside the main hit.
  */
 public final class Cleave {
@@ -36,7 +43,7 @@ public final class Cleave {
 	/** Spread a primary melee hit to everything else within the radius of the target it landed on. */
 	public static void spread(Player attacker, LivingEntity hit, double sbDamage, DamagePath path) {
 		if(attacker == null || hit == null || sbDamage <= 0) return;
-		if(!path.isMelee()) return;                                  // sword-only
+		if(path != DamagePath.MELEE) return;                         // an actual SWING - not a bow, not the mage beam
 
 		DungeonClass clazz = DungeonClass.of(attacker);
 		boolean berserk = clazz == DungeonClass.BERSERK;

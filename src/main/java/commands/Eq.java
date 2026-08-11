@@ -1,5 +1,7 @@
 package commands;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
@@ -121,8 +123,14 @@ public class Eq implements CommandExecutor, Listener {
 		lore.add(net.kyori.adventure.text.Component.empty());
 		lore.add(Utils.mm("<dark_gray>" + clazz + ", " + path.name().toLowerCase(java.util.Locale.ROOT) + " path"));
 		meta.lore(lore);
-		meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
 		item.setItemMeta(meta);
+		// The Magic Stats slot is a POTION, so vanilla appends its potion-effect lines under our lore.  This was
+		// ItemFlag.HIDE_ADDITIONAL_TOOLTIP, deprecated in favour of naming the component to hide: the flag was one
+		// switch covering a dozen unrelated "extra tooltip" sources, and the component form says which one is meant.
+		// Set AFTER setItemMeta, since that writes the whole component patch.  Harmless on the Offensive Stats sword,
+		// which has no potion contents to hide in the first place.
+		item.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay()
+				.addHiddenComponents(DataComponentTypes.POTION_CONTENTS));
 		return item;
 	}
 

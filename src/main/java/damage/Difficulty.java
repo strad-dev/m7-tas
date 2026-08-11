@@ -34,18 +34,24 @@ public enum Difficulty {
 	CLASSIC, REALISTIC;
 
 	// Maxed blessing levels, i.e. the classic table (§0).  These are TOTAL levels, the sum over every blessing of
-	// that type the party collected, which is what the multiplier formula below reads.
+	// that type the party collected, which is what the formulas below read.
 	private static final int MAX_POWER = 29;
 	private static final int MAX_TIME = 5;
 	private static final int MAX_WISDOM = 14;
+	private static final int MAX_STONE = 9;
+
+	/** Blessing of Stone's contribution: a FLAT {@code +10.89} base Damage per level, so +98.01 at the maxed 9. */
+	private static final double STONE_DAMAGE_PER_LEVEL = 10.89;
 
 	/**
 	 * A blessing's multiplicative bonus at a given total level: {@code 1 + 3.63% per level}, the same formula
 	 * {@code Utils.broadcastBlessing} announces.  At the maxed levels that is Power x2.0527, Time x1.1815 and
 	 * Wisdom x1.5082, matching §1.13.
 	 * <p>
-	 * A blessing's FLAT half (+7.26 per level) is deliberately not modelled: §1.13's base tables do not list it,
-	 * and the worked aggregate in §1.10 reproduces exactly without it.
+	 * The generic flat half of a blessing (+7.26 per level) is still not modelled - §1.13's base tables do not list
+	 * it, and the worked aggregate in §1.10 reproduces exactly without it.  <b>Blessing of Stone is the exception</b>
+	 * and is modelled, as {@link #stoneDamage()}: it is a real, measured source of base Damage rather than a
+	 * bookkeeping detail, and leaving it out understated every hit.
 	 */
 	private static double blessingMultiplier(int totalLevel) {
 		return 1.0 + 0.0363 * totalLevel;
@@ -92,19 +98,39 @@ public enum Difficulty {
 	 * there is no chest history to read, so the input falls back to the classic table.
 	 */
 	public static double blessing(Utils.BlessingType type) {
-		int level = switch(type) {
-			case POWER -> MAX_POWER;
-			case TIME -> MAX_TIME;
-			case WISDOM -> MAX_WISDOM;
-			default -> 0;
-		};
+		return blessingMultiplier(blessingLevel(type));
+	}
+
+	/**
+	 * Blessing of Stone's flat base-Damage contribution right now: {@code +10.89} per level, +98.01 at the maxed 9.
+	 * <p>
+	 * Flat, so it belongs to the base sum in {@link Profile#base()} and NOT to the multiplicative bucket the other
+	 * blessings use.  Getting that wrong is the §1.13 mistake the stat pipeline's own doc warns about - a base source
+	 * and a multiplier on the same stat are not interchangeable.
+	 */
+	public static double stoneDamage() {
+		return STONE_DAMAGE_PER_LEVEL * blessingLevel(Utils.BlessingType.STONE);
+	}
+
+	/**
+	 * The total collected level of one blessing type.  Classic answers from the maxed table; realistic reads the
+	 * run's actual chest history, and falls back to the maxed table when this session has no clear phase to read.
+	 */
+	private static int blessingLevel(Utils.BlessingType type) {
 		if(current == REALISTIC && clearPhaseInThisSession()) {
-			level = 0;
+			int level = 0;
 			for(Map.Entry<Blessing, Integer> e : ClearManager.blessingTally().entrySet()) {
 				if(e.getKey().type() == type) level += e.getKey().level() * e.getValue();
 			}
+			return level;
 		}
-		return blessingMultiplier(level);
+		return switch(type) {
+			case POWER -> MAX_POWER;
+			case TIME -> MAX_TIME;
+			case WISDOM -> MAX_WISDOM;
+			case STONE -> MAX_STONE;
+			default -> 0;
+		};
 	}
 
 	/**

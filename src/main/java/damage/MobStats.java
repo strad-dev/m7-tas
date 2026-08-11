@@ -102,12 +102,22 @@ public final class MobStats {
 	 * 300M, confirmed.  Wither + Undead, so a Hyperion hits it for x1.5 on top of Smite and Undead Ruler.  It does
 	 * NOT get Skeletal Ruler: Skeletal is Normal-mode only and this is Master Mode.
 	 * <p>
-	 * §5 leaves its defense and resistance [TBD].  Chosen here: 1200 defense, the wiki's F7 Master Mode row, and
-	 * no x0.1 - it is a regular mob rather than a boss or mini-boss.  One-line edits if that is ever measured.
+	 * <b>Zero defense, and no x0.1</b> - it is a regular mob rather than a boss or mini-boss.  This block covers the
+	 * Wither Guard, Wither Husk and Apostle too (see {@code of}), and none of them have defense either.
+	 * <p>
+	 * It used to carry <b>1200</b> defense, guessed off "the wiki's F7 Master Mode row" while §5 left the real figure
+	 * [TBD].  That guess was wrong and it was expensive: 1200 defense is a /13 divisor, so it was quietly throwing
+	 * away 92% of every hit on the most-hit trash mob on the floor, and made RCM read as roughly a tenth of its real
+	 * SkyBlock damage.  <b>Do not reintroduce a defense figure here without measuring it.</b>
 	 */
-	public static final MobStat WITHER_MINER = new MobStat("Wither Miner", 300_000_000d, 1200, false, false,
+	public static final MobStat WITHER_MINER = new MobStat("Wither Miner", 300_000_000d, 0, false, false,
 			types(MobType.WITHER, MobType.UNDEAD));
-	/** Humanoid + Subterranean, and a Mini-Boss, so Elite applies.  Its HP scales with room depth. */
+	/**
+	 * Humanoid + Subterranean, and a Mini-Boss, so Elite applies.  Its HP scales with room depth.
+	 * <p>
+	 * <b>1200 defense, confirmed</b> - it really is the one non-boss on the floor that has any.  It shares a figure
+	 * with nothing else now: the Wither trash and both Shadow Assassins were guessed off this same row and are 0.
+	 */
 	public static final MobStat ANGRY_ARCHAEOLOGIST = new MobStat("Angry Archaeologist", 12_000_000d, 1200, true, true,
 			types(MobType.HUMANOID, MobType.SUBTERRANEAN));
 	/**
@@ -115,16 +125,19 @@ public final class MobStats {
 	 * scale by - the boss arena is not on the room grid.
 	 * <p>
 	 * Humanoid + Arcane, so it takes those two Rulers and <b>no Smite at all</b> - the softest-looking mob on the
-	 * floor is the one that resists the whole undead package.  §5 leaves its defense [TBD]; 1200 is chosen, the
-	 * same F7 row as the Archaeologist.
+	 * floor is the one that resists the whole undead package.
+	 * <p>
+	 * <b>Zero defense</b>, measured.  The only thing softening it is the x0.1 mini-boss resistance, which it does
+	 * keep.  It used to carry 1200, guessed off the Archaeologist's row purely because both are mini-bosses - and
+	 * that guess was a /13 divisor on a mob four players burn down under a timer.
 	 */
-	public static final MobStat SHADOW_ASSASSIN = new MobStat("Shadow Assassin", 145_000_000d, 1200, true, true,
+	public static final MobStat SHADOW_ASSASSIN = new MobStat("Shadow Assassin", 145_000_000d, 0, true, true,
 			types(MobType.HUMANOID, MobType.ARCANE));
 	/**
 	 * The Shadow Assassin in the CLEAR phase's Yellow room, which is a different mob from the boss-fight ones:
-	 * <b>140M base</b>, and Yellow is depth II, so <b>154M</b> in play.
+	 * <b>140M base</b>, and Yellow is depth II, so <b>154M</b> in play.  Zero defense and the x0.1, as above.
 	 */
-	public static final MobStat YELLOW_SHADOW_ASSASSIN = new MobStat("Shadow Assassin", 140_000_000d, 1200, true, true,
+	public static final MobStat YELLOW_SHADOW_ASSASSIN = new MobStat("Shadow Assassin", 140_000_000d, 0, true, true,
 			types(MobType.HUMANOID, MobType.ARCANE));
 
 	/**

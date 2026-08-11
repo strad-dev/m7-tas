@@ -44,8 +44,8 @@ public class ToggleDungeonDifficulty implements CommandExecutor {
 		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><mode>",
 				Placeholder.unparsed("mode", next.id())));
 		Bukkit.broadcast(Utils.msg(next == Difficulty.CLASSIC
-				? "<gray>     Debuffs are assumed applied and blessings are maxed."
-				: "<gray>     Debuffs must be built, and blessings are whatever the party collected."));
+				? "<gray>Debuffs are automatically applied and blessings are always maxed."
+				: "<gray>Debuffs must be applied manually and blessings reflect collected secrets (if clear is part of the practice)."));
 		return true;
 	}
 }
