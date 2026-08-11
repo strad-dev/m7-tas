@@ -18,7 +18,11 @@ import java.util.Map;
 import java.util.UUID;
 
 public class LavaJump {
-	private static final double LAUNCH_VELOCITY = 3.5D;
+	/** Hypixel gates the bounce on where you're looking: pitch <= -40 (looking up steeply) gives the
+	 *  super bounce, anything else the normal one. */
+	private static final float SUPER_BOUNCE_PITCH = -40.0F;
+	private static final double SUPER_LAUNCH_VELOCITY = 3.0375D;
+	private static final double NORMAL_LAUNCH_VELOCITY = 2.25D;
 	private static final int RELAUNCH_COOLDOWN_TICKS = 10;
 	/** Player fluid-jump threshold: LivingEntity#getFluidJumpThreshold returns 0.4 for eye height ≥ 0.4.
 	 *  Lava height ≤ this is "shallow" (travelInLava keeps vertical ×0.8 → big); above is "deep" (×0.5 → small). */
@@ -86,10 +90,17 @@ public class LavaJump {
 
 		ServerPlayer npc = ((CraftPlayer) p).getHandle();
 		Utils.scheduleTask(() -> {
+			float pitch = npc.getXRot();
+			boolean superBounce = pitch <= SUPER_BOUNCE_PITCH;
+			double launch = superBounce ? SUPER_LAUNCH_VELOCITY : NORMAL_LAUNCH_VELOCITY;
+
 			Vec3 m = npc.getDeltaMovement();
-			npc.setDeltaMovement(new Vec3(m.x(), LAUNCH_VELOCITY, m.z()));
+			npc.setDeltaMovement(new Vec3(m.x(), launch, m.z()));
 			npc.hurtMarked = true;
 			MovementAudit.startAirborneAudit(p, "lavajump");
+
+			Utils.debug(Utils.DebugType.SERVER, p.getName() + (superBounce ? " SUPER" : " normal") + " bounce (pitch "
+					+ Utils.round(pitch, 2) + ") launched at " + launch);
 
 			// Classify big and small deterministically from lava DEPTH, since vanilla's own shallow/deep test
 			// (LivingEntity.travelInLava: getFluidHeight(LAVA) <= getFluidJumpThreshold()). Shallow lava keeps
