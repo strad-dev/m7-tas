@@ -17,16 +17,32 @@ import java.util.UUID;
  * <table>
  *   <caption>The procs</caption>
  *   <tr><th>Source</th><th>Behaviour</th></tr>
- *   <tr><td>Fire Aspect III</td><td>9% of the hit as bonus, at ticks 0, 20, 40, 60, 80 - five procs over 80t.
- *       Re-hitting only refreshes the timer; it does not reset the proc cadence.</td></tr>
- *   <tr><td>Thunderlord VII</td><td>Every third hit, 60% of that hit's damage as bonus.</td></tr>
+ *   <tr><td>Fire Aspect III</td><td>9% of the hit as bonus, at ticks 0, 20, 40, 60, 80 - five procs over 80t.</td></tr>
+ *   <tr><td>Thunderlord VII</td><td>Every third hit, 60% of that hit's damage as bonus.  Not a DoT: it fires once,
+ *       on the hit, and keeps no state beyond the hit counter.</td></tr>
  *   <tr><td>Venomous VII</td><td>Each hit on a mob adds a stack worth 2% of DPS, to a 40-stack cap (so 80% of
  *       DPS), delivered every 20t for 100t.  <b>DPS is 8x the highest hit in the last 100 ticks</b>, so a capped
  *       proc is 640% of that hit.</td></tr>
  * </table>
  *
- * The shared shape - "a % of the hit, on a fixed cadence, refreshed but not reset by re-hitting" - is why Fire
- * Aspect and Venomous run through one abstraction here rather than two schedulers.
+ * <h2>What "refresh" means, and what it does not</h2>
+ * A running effect has a <b>cadence</b> ({@code nextTick}, every 20t) and an <b>end time</b> ({@code expiresAt}).
+ * Re-hitting the same target moves the <b>end time only</b>: it pushes expiry out to {@code now + duration}, updates
+ * the per-tick damage, and touches nothing else.  It does <b>not</b> deal damage there and then, and it does not move
+ * the cadence - the effect keeps ticking on the 20t phase it has been on since it was first applied.
+ * <p>
+ * Both halves of that used to be wrong, and together they were the largest damage bug in the system:
+ * <ul>
+ *   <li>{@code onHit} dealt an <b>immediate</b> Fire and Venomous instance on <i>every</i> primary hit, not just on
+ *       a fresh application.  A mage beam lands every 5-7 ticks, so a "5 procs over 80t" effect was really firing
+ *       three or four times a second, on top of its own chain - and Venomous is the biggest number in the system, so
+ *       this roughly tripled total damage.</li>
+ *   <li>refresh restored a {@code procsLeft} COUNTER rather than extending an end time, which is "reset the
+ *       cooldown" wearing the word refresh: the remaining lifetime was however long 4 more procs took, so the effect
+ *       could never actually end while anyone was hitting, and its phase drifted with every proc.</li>
+ * </ul>
+ * The shared shape - "a % of the hit, on a fixed cadence, expiry extended but never re-phased by re-hitting" - is why
+ * Fire Aspect and Venomous run through one abstraction here rather than two schedulers.
  * <p>
  * All three are sword-only (§7's bow exclusion list), so a bow hit produces none of them.
  */
@@ -34,65 +50,76 @@ public final class Procs {
 	private Procs() {}
 
 	private static final double FIRE_ASPECT_SHARE = 0.09;
-	private static final int FIRE_ASPECT_PROCS = 5;
 	private static final int FIRE_ASPECT_INTERVAL = 20;
+	/** Fire Aspect's window: procs at 0, 20, 40, 60, 80, so the effect ends 80 ticks after the hit that applied it. */
+	private static final int FIRE_ASPECT_DURATION = 80;
 
 	private static final double THUNDERLORD_SHARE = 0.60;
 	private static final int THUNDERLORD_EVERY = 3;
 
 	private static final double VENOMOUS_PER_STACK = 0.02;
-	private static final int VENOMOUS_PROCS = 5;             // every 20t for 100t
 	private static final int VENOMOUS_INTERVAL = 20;
+	/** Venomous's window: "every 20t for 100t", so procs at 0, 20, 40, 60, 80, 100. */
+	private static final int VENOMOUS_DURATION = 100;
 
 	/**
-	 * One running proc chain.  {@code amount} and {@code procsLeft} are REFRESHED by a re-hit while
-	 * {@code nextTick} is left alone, which is what "refreshed but not reset" means: the cadence keeps its phase.
+	 * One running damage-over-time effect.
+	 * <p>
+	 * The two timing fields do different jobs and must not be conflated.  {@code nextTick} is the <b>cadence</b>, set
+	 * once when the effect is applied and thereafter only ever advanced by {@code interval}, so the effect keeps its
+	 * 20t phase for as long as it lives.  {@code expiresAt} is the <b>end time</b>, and is the ONLY field a re-hit
+	 * moves (alongside {@code amount}).  There is deliberately no remaining-procs counter: a count is a cooldown in
+	 * disguise, and restoring it on every hit is what made these effects unbounded.
 	 */
-	private static final class Chain {
+	private static final class Effect {
 		final UUID targetId;
 		final LivingEntity target;
 		final Player attacker;
 		final DamageKind kind;
 		final int interval;
 		double amount;
-		int procsLeft;
 		int nextTick;
+		int expiresAt;
 
-		Chain(LivingEntity target, Player attacker, DamageKind kind, double amount, int procs, int interval) {
+		Effect(LivingEntity target, Player attacker, DamageKind kind, double amount, int interval, int duration) {
 			this.targetId = target.getUniqueId();
 			this.target = target;
 			this.attacker = attacker;
 			this.kind = kind;
 			this.interval = interval;
 			this.amount = amount;
-			this.procsLeft = procs;
 			this.nextTick = MinecraftServer.currentTick + interval;
+			this.expiresAt = MinecraftServer.currentTick + duration;
 		}
 	}
 
-	private static final List<Chain> CHAINS = new ArrayList<>();
+	private static final List<Effect> EFFECTS = new ArrayList<>();
 	/** Melee hits per player, for Thunderlord's every-third-hit. */
 	private static final java.util.Map<UUID, Integer> thunderlordCount = new java.util.HashMap<>();
 
 	public static void reset() {
-		CHAINS.clear();
+		EFFECTS.clear();
 		thunderlordCount.clear();
 	}
 
-	/** Start the per-tick proc driver.  One repeating task for every chain, rather than one task per proc. */
+	/** Start the per-tick proc driver.  One repeating task for every effect, rather than one task per proc. */
 	public static void start() {
 		Bukkit.getScheduler().runTaskTimer(plugin.M7tas.getInstance(), Procs::tick, 1L, 1L);
 	}
 
 	/**
-	 * Called for every PRIMARY hit.  Thunderlord fires immediately when it is due; Fire Aspect and Venomous arm
-	 * (or refresh) their chains, and their first proc is the hit itself at tick 0.
+	 * Called for every PRIMARY hit.  Thunderlord fires immediately when it is due; Fire Aspect and Venomous apply or
+	 * refresh their effects.
+	 * <p>
+	 * <b>Nothing here deals Fire or Venomous damage directly.</b>  Their tick-0 proc is dealt by {@link #apply} and
+	 * only on a FRESH application, so re-hitting an already-burning target adds no extra instance - see the class doc
+	 * for why that mattered.
 	 */
 	public static void onHit(Player attacker, LivingEntity target, double sbDamage, DamagePath path) {
 		if(attacker == null || target == null || sbDamage <= 0) return;
 		if(!path.isMelee()) return;                                  // sword-only
 
-		// Thunderlord VII: every third hit, 60% of THAT hit's damage.
+		// Thunderlord VII: every third hit, 60% of THAT hit's damage.  Genuinely per-hit, so it stays inline.
 		int hits = thunderlordCount.merge(attacker.getUniqueId(), 1, Integer::sum);
 		if(hits % THUNDERLORD_EVERY == 0) {
 			Damage.dealSecondary(target, sbDamage * THUNDERLORD_SHARE, DamageKind.THUNDERLORD, attacker);
@@ -101,51 +128,60 @@ public final class Procs {
 		// Fire Aspect III: 9% of the hit, five procs over 80 ticks.  Duplex's debuff is FIRE damage only, so it
 		// scales these rather than the hit that spawned them.
 		double fire = sbDamage * FIRE_ASPECT_SHARE * TargetDebuffs.fireMultiplier(target);
-		Damage.dealSecondary(target, fire, DamageKind.FIRE, attacker);
-		arm(target, attacker, DamageKind.FIRE, fire, FIRE_ASPECT_PROCS - 1, FIRE_ASPECT_INTERVAL);
+		apply(target, attacker, DamageKind.FIRE, fire, FIRE_ASPECT_INTERVAL, FIRE_ASPECT_DURATION);
 
 		// Venomous VII.  Each hit on a mob adds one stack; one stack is 2% of "DPS", which is defined as EIGHT
 		// TIMES the highest hit in the last 100 ticks.  It caps at 40 stacks on the same mob, i.e. 80% of DPS -
-		// which is 640% of that highest hit - and each armed chain delivers every 20t for 100t.
+		// which is 640% of that highest hit - and it delivers every 20t for 100t.
 		//
 		// §7's parenthetical "(80% of the hit)" reads as a factor of 8 smaller than its own DPS definition; the
 		// owner ruled the DPS definition operative, so a capped proc really is several times the hit that
-		// triggered it.  That makes it easily the largest proc in the system, which is intended.
+		// triggered it.  That makes it easily the largest proc in the system, which is intended - and is exactly why
+		// it must fire on its own 20t cadence and not once per swing.
 		int stacks = CombatState.noteVenomousHit(attacker, target.getUniqueId());
 		double venom = CombatState.venomousDps(attacker) * VENOMOUS_PER_STACK * stacks;
-		if(venom > 0) {
-			Damage.dealSecondary(target, venom, DamageKind.VENOMOUS, attacker);
-			arm(target, attacker, DamageKind.VENOMOUS, venom, VENOMOUS_PROCS - 1, VENOMOUS_INTERVAL);
-		}
+		if(venom > 0) apply(target, attacker, DamageKind.VENOMOUS, venom, VENOMOUS_INTERVAL, VENOMOUS_DURATION);
 	}
 
-	/** Arm a chain, or refresh an existing one for the same (attacker, target, kind) without resetting its phase. */
-	private static void arm(LivingEntity target, Player attacker, DamageKind kind, double amount, int procs,
-			int interval) {
-		for(Chain c : CHAINS) {
-			if(c.kind == kind && c.targetId.equals(target.getUniqueId()) && c.attacker.equals(attacker)) {
-				c.amount = amount;
-				c.procsLeft = procs;
+	/**
+	 * Apply an effect, or refresh the one already running for this (attacker, target, kind).
+	 * <p>
+	 * A <b>fresh</b> application deals its tick-0 proc immediately and starts the cadence.  A <b>refresh</b> updates
+	 * the per-tick damage and pushes the end time out to {@code now + duration}, and does nothing else: no damage
+	 * here, and {@code nextTick} is left exactly where it was, so the 20t phase the effect has been running on
+	 * survives.  That distinction is the whole point of this method.
+	 */
+	private static void apply(LivingEntity target, Player attacker, DamageKind kind, double amount, int interval,
+			int duration) {
+		int now = MinecraftServer.currentTick;
+		for(Effect e : EFFECTS) {
+			if(e.kind == kind && e.targetId.equals(target.getUniqueId()) && e.attacker.equals(attacker)) {
+				e.amount = amount;
+				e.expiresAt = now + duration;
 				return;
 			}
 		}
-		CHAINS.add(new Chain(target, attacker, kind, amount, procs, interval));
+		EFFECTS.add(new Effect(target, attacker, kind, amount, interval, duration));
+		Damage.dealSecondary(target, amount, kind, attacker);
 	}
 
 	private static void tick() {
-		if(CHAINS.isEmpty()) return;
+		if(EFFECTS.isEmpty()) return;
 		int now = MinecraftServer.currentTick;
-		for(Iterator<Chain> it = CHAINS.iterator(); it.hasNext(); ) {
-			Chain c = it.next();
-			if(c.target.isDead() || c.target.getHealth() <= 0 || !c.attacker.isOnline() || c.procsLeft <= 0) {
+		for(Iterator<Effect> it = EFFECTS.iterator(); it.hasNext(); ) {
+			Effect e = it.next();
+			// Expiry is checked with a strict >, so the proc that lands exactly ON the end tick still lands.
+			if(e.target.isDead() || e.target.getHealth() <= 0 || !e.attacker.isOnline() || now > e.expiresAt) {
 				it.remove();
 				continue;
 			}
-			if(now < c.nextTick) continue;
-			Damage.dealSecondary(c.target, c.amount, c.kind, c.attacker);
-			c.procsLeft--;
-			// The cadence keeps its own phase: a re-hit refreshes amount and procsLeft but never nextTick.
-			c.nextTick = now + c.interval;
+			if(now < e.nextTick) continue;
+			Damage.dealSecondary(e.target, e.amount, e.kind, e.attacker);
+			// Advance from the SCHEDULED tick, not from `now`, so the 20t phase cannot drift.  The resync below only
+			// matters if the driver ever ran late, and it deliberately drops the missed procs rather than firing a
+			// burst to catch up.
+			e.nextTick += e.interval;
+			if(e.nextTick <= now) e.nextTick = now + e.interval;
 		}
 	}
 }
