@@ -25,7 +25,9 @@ public class WithersNotImmuneToArrows implements Listener {
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
-		// Note that arrows deliberately do NOT set the aggro target; only melee and mage-beam hits do (see WitherActions).
+		// An arrow that actually takes health off the boss DOES set the aggro target, same as a swing; one that lands
+		// for zero does not.  Damage.deal owns that call - see its javadoc, and note that the shield-up return below
+		// means an arrow on an armoured boss never gets there.
 
 		// Shield up (invulnerability ticks active) → bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow
 		// landing on a tick the boss was made vulnerable then re-armored within that same tick, since the live counter
@@ -51,8 +53,8 @@ public class WithersNotImmuneToArrows implements Listener {
 		// One damage path (DAMAGE_PLAN.md §7): this used to be Bukkit's no-source wither.damage(), the only route
 		// that reached the boss's clamps, which is exactly the split the unification removed.  The arrow carries
 		// its own stat damage from fire time; the target half resolves here, and Damage.deal calls the boss's
-		// clampDamage explicitly.  Arrows deliberately do NOT set the aggro target - only melee and beams do.
-		damage.Damage.dealNoAggro(wither, damage.Arrows.resolve(arrow, p, wither),
+		// clampDamage explicitly, and notes the aggro target if (and only if) health actually moves.
+		damage.Damage.deal(wither, damage.Arrows.resolve(arrow, p, wither),
 				damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 

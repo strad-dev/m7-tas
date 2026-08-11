@@ -211,6 +211,20 @@ public final class Damage {
 	private record BowContext(double blocksTravelled, boolean headshot) {}
 
 	/**
+	 * The granularity damage is actually applied at, in Minecraft health: <b>thousandths of a health point</b>.
+	 * <p>
+	 * One health point is a million SkyBlock damage, so a thousandth is a thousand - fine enough that nothing at this
+	 * scale notices the rounding, coarse enough that health stops being a 15-significant-digit double nobody can
+	 * reason about.  Tenths and hundredths were the alternatives; thousandths loses the least.
+	 */
+	private static final double HP_STEP = 0.001;
+
+	/** Quantise one hit to {@link #HP_STEP}.  Cheap on purpose - this runs on every instance at Terminator rates. */
+	private static double roundHp(double mcDamage) {
+		return Math.round(mcDamage / HP_STEP) * HP_STEP;
+	}
+
+	/**
 	 * The stat half of the melee/bow shape.  {@code crit} is true for everything except a partially drawn bow -
 	 * §7 rules every hit a crit, deliberately, because a random roll would make two identical runs incomparable.
 	 */
@@ -408,23 +422,28 @@ public final class Damage {
 
 	// ===================== the single application boundary =====================
 
-	/** Deal a computed SkyBlock-scale hit.  Notes aggro, and counts as the primary instance for procs and Cleave. */
+	/**
+	 * Deal a computed SkyBlock-scale hit.  Counts as the primary instance for procs and Cleave.
+	 * <p>
+	 * <b>Aggro is pulled only if the hit did real damage.</b>  Melee, beam, bow and ability all follow the same rule:
+	 * a hit that took health off a boss makes you its target, and one that took nothing does not - not on an armoured
+	 * Maxor, and not on Goldor mid-terminals or Necron mid-interlude, where the hit is deliberately feedback-only and
+	 * clamped away.  The three abilities that may aggro a <i>fully invulnerable</i> wither anyway (the mage beam, the
+	 * thrown-axe projectiles and the Flaming Flay arc) do it at their own armour checks, before calling in here -
+	 * which is the only place that state is visible as more than "the damage was zero".
+	 * <p>
+	 * There used to be a {@code dealNoAggro} for arrows, on the rule "arrows deliberately do NOT set the aggro target
+	 * - only melee and mage-beam hits do".  That rule is gone; arrows and melee are the same case now, so the two
+	 * methods collapsed back into this one.
+	 */
 	public static void deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path) {
 		deal(target, sbDamage, kind, attacker, path, true, true);
 	}
 
 	/**
-	 * As {@link #deal}, but without noting the attacker for boss aggro.  Arrows deliberately do NOT set the aggro
-	 * target - only melee and mage-beam hits do.
-	 */
-	public static void dealNoAggro(LivingEntity target, double sbDamage, DamageKind kind, Player attacker,
-			DamagePath path) {
-		deal(target, sbDamage, kind, attacker, path, true, false);
-	}
-
-	/**
 	 * A secondary instance - a Cleave hit or a proc.  It goes through the same boundary as the main hit, but does
-	 * not itself generate Cleave or procs: one level of propagation, always.
+	 * not itself generate Cleave or procs: one level of propagation, always.  Never pulls aggro, which
+	 * {@link DamageKind#pullsAggro} enforces as well.
 	 */
 	public static void dealSecondary(LivingEntity target, double sbDamage, DamageKind kind, Player attacker) {
 		deal(target, sbDamage, kind, attacker, DamagePath.MELEE, false, false);
@@ -446,12 +465,10 @@ public final class Damage {
 		// toward progress.  This used to be enforced only in MiscListener.onWatcherDamage, i.e. on the vanilla
 		// damage event; nothing on this path fires one, so the guard has to live here too.
 		if(target.getScoreboardTags().contains("WatcherMobSpawning")) return;
-		// Aggro is noted BEFORE the immunity returns below: a boss should aggro whoever was hitting it through an
-		// armoured window, the moment that window ends.
-		if(aggro && attacker != null && target instanceof Wither
-				&& target.getScoreboardTags().contains("TASWither")) {
-			WitherActions.noteDamager(attacker);
-		}
+		// Aggro used to be noted HERE, ahead of the immunity returns below, so a boss chased whoever was hitting it
+		// through an armoured window the moment that window ended.  It is now noted further down, inside the branch
+		// where health actually moved: a hit that deals nothing does not pull aggro.  The three abilities that DO
+		// aggro through a full shield note it themselves, at the armour check they already have.
 
 		// An armoured wither takes nothing.  Every call site already checks this, but it belongs at the single
 		// boundary as well so a Cleave hit or a proc can't slip past one.  WithersNotImmuneToArrows' deliberate
@@ -466,17 +483,34 @@ public final class Damage {
 		double defense = TargetDebuffs.reducedDefense(target, MobStats.defenseOf(target));
 		double resistance = MobStats.resistanceOf(target);
 		double mcDamage = sbDamage * resistance / Scale.defenseDivisor(defense) / Scale.SB_PER_MC_HP;
+		double preClamp = mcDamage;
 
 		// The hurt sound is judged on the PRE-clamp damage, i.e. "did this hit do anything?".  Otherwise a hit
 		// clamped to 0 - once Maxor's 75% or Storm's 55% stun cap is reached - would silently go quiet.
-		witherHurtSound(target, attacker, mcDamage);
+		witherHurtSound(target, attacker, mcDamage, kind);
 
 		// The bosses' own clamps (Maxor's 75% stun cap, Storm's 55% crush cap, Necron's thresholds, Goldor's
 		// patrol immunity, every dying state).  Called explicitly, since no EntityDamageEvent fires for our damage.
+		//
+		// A boss in a FEEDBACK-ONLY window (Goldor on patrol during the terminals, Necron mid-frenzy or
+		// mid-fireballs) is a deliberate exception to "the number shown is what the target actually lost": it takes
+		// nothing, but the hit still displays the figure it would have done, so a player working the terminals or
+		// waiting out an interlude can still read their own damage.  Every other clamp - the stun caps, the
+		// thresholds, the dying states - keeps showing the clamped number, because there the health bar really did
+		// move by that much.
+		boolean showPreClamp = false;
 		if(target instanceof Wither wither) {
 			WitherLord lord = WitherLord.activeFor(wither);
-			if(lord != null) mcDamage = lord.clampDamage(mcDamage);
+			if(lord != null) {
+				showPreClamp = lord.showsUnclampedDamage();
+				mcDamage = lord.clampDamage(mcDamage);
+			}
 		}
+
+		// Quantise to HP_STEP LAST, after the clamps, so what comes out is what the health bar moves by and what the
+		// floating number says - the same figure, exactly, rather than a raw double whose 15th digit nobody can see.
+		mcDamage = roundHp(mcDamage);
+		preClamp = roundHp(preClamp);
 
 		double healthBefore = target.getHealth();
 		if(mcDamage > 0) {
@@ -487,6 +521,9 @@ public final class Damage {
 			// setHealth bypasses the vanilla damage path, so the red hurt flash never plays.  Send it ourselves.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftLivingEntity) target).getHandle()));
 			Utils.changeName(target);
+			// Aggro, from inside the "health actually moved" branch - that IS the rule, for every path.  A hit worth
+			// zero, whether clamped by a stun cap or swallowed by a feedback-only window, does not redirect the fight.
+			if(aggro) noteAggro(target, attacker, kind);
 		}
 
 		// Kill chokepoints.  No event fires on this path, so the deaths that other systems watch for are detected
@@ -513,12 +550,26 @@ public final class Damage {
 			CombatState.spendPostKillBuff(attacker);
 		}
 
-		DamageNumbers.show(target, mcDamage * Scale.SB_PER_MC_HP, kind, attacker);
+		DamageNumbers.show(target, (showPreClamp ? preClamp : mcDamage) * Scale.SB_PER_MC_HP, kind, attacker);
 		verbose(attacker, target, sbDamage, mcDamage, defense, resistance, kind);
 		if(primary) {
 			Procs.onHit(attacker, target, sbDamage, path);
 			Cleave.spread(attacker, target, sbDamage, path);
 		}
+	}
+
+	/**
+	 * Make {@code attacker} the boss's aggro target, if this hit is allowed to.
+	 * <p>
+	 * Called only from inside the "health actually moved" branch, so <b>a hit worth zero never reaches it</b>.  The
+	 * per-KIND gate lives here too: <b>only a direct hit pulls aggro</b>, so Fire Aspect, Venomous, Thunderlord and a
+	 * Cleave sweep never do, whatever the caller passed.  Only the four boss withers have an aggro target at all,
+	 * hence the TASWither check.
+	 */
+	private static void noteAggro(LivingEntity target, Player attacker, DamageKind kind) {
+		if(attacker == null || !kind.pullsAggro()) return;
+		if(!(target instanceof Wither) || !target.getScoreboardTags().contains("TASWither")) return;
+		WitherActions.noteDamager(attacker);
 	}
 
 	/**
@@ -533,9 +584,13 @@ public final class Damage {
 	 *   <li>silent for a mage beam, which routes its own constant-volume sound to the beamer, so an at-location
 	 *       copy would double up and be distance-attenuated.</li>
 	 * </ul>
+	 * And one rule that is new: <b>only a DIRECT hit sounds</b>.  The damage-over-time kinds each fire five
+	 * instances off one swing, so letting them ring turned a single melee hit into six overlapping hurt noises and a
+	 * Terminator volley into a wall of them.  See {@link DamageKind#playsHurtSound}.
 	 */
-	private static void witherHurtSound(LivingEntity target, Player attacker, double preClampDamage) {
+	private static void witherHurtSound(LivingEntity target, Player attacker, double preClampDamage, DamageKind kind) {
 		if(!(target instanceof Wither wither) || preClampDamage <= 0) return;
+		if(!kind.playsHurtSound()) return;
 		WitherLord lord = WitherLord.activeFor(wither);
 		if(lord != null && lord.isDying()) return;
 		if(listeners.CustomItems.beamDamageInProgress) return;
@@ -570,9 +625,13 @@ public final class Damage {
 		Utils.debug(Utils.DebugType.BOSS, sb.toString());
 	}
 
-	/** A full integer with every digit, never abbreviated - the same rule the floating numbers follow (§7a). */
+	/**
+	 * A full integer with every digit, never abbreviated - the same rule the floating numbers follow (§7a) - and
+	 * thousands-separated, because {@code 726525143} is unreadable at a glance and {@code 726,525,143} is not.
+	 * {@code Locale.ROOT} so the separator is a comma on every host, not a dot or a space.
+	 */
 	public static String integer(double value) {
-		return String.valueOf((long) Math.floor(value));
+		return String.format(java.util.Locale.ROOT, "%,d", (long) Math.floor(value));
 	}
 
 	/**

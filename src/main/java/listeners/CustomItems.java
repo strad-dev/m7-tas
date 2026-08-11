@@ -161,9 +161,72 @@ public class CustomItems implements Listener {
 	// click path) or from a raw vanilla placement caught in onInfinityboomPlace, so this caps it to one blast per
 	// player per tick.  A click that somehow reaches both paths won't double-boom.
 	private static final Map<UUID, Integer> lastSuperboomTick = new ConcurrentHashMap<>();
+	// Tick of the last ordinary melee hit per player, so one swing lands exactly one hit (see meleeAttack).
+	private static final Map<UUID, Integer> lastMeleeTick = new ConcurrentHashMap<>();
 
 	public static boolean abilityFiredThisTick(Player p) {
 		return lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1) == MinecraftServer.currentTick;
+	}
+
+	/**
+	 * True if this item, in this player's hand, fires the mage beam on left-click: a Mage's Hyperion or Dark Claymore,
+	 * or one of the {@link #WEAK_BEAM_IDS} secondary mage weapons.  The class gate is the whole point - the same iron
+	 * sword in a Berserk's hand is a melee weapon.
+	 */
+	private static boolean isMageBeamItem(Player p, ItemStack item) {
+		if(item == null) return false;
+		// {@link #isMageClass}, not a second inline "named Mage* or tagged Mage" test.  The two used to differ, and the
+		// difference bites exactly here: a real player who PICKED Berserk but happens to be named Mage-something was a
+		// mage to the beam gate and a Berserk to everything else, so their Hyperion beamed instead of swinging.  The
+		// exclusive class tag wins in isMageClass, which is the answer that matches /class.
+		return isMageClass(p) && (item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD
+				|| WEAK_BEAM_IDS.contains(getID(item)));
+	}
+
+	/**
+	 * True if this item's LEFT click is an ability rather than a swing.  Two things read it: the block-break
+	 * suppression in {@link #handleCustomItems} (the ability must never break a block, even on cooldown), and
+	 * {@link #meleeAttack}, which stands down entirely for these so a Mage's beam or a Terminator volley is never
+	 * accompanied by a melee hit.
+	 */
+	private static boolean leftClickIsAbility(Player p, ItemStack item) {
+		String id = getID(item);
+		return isMageBeamItem(p, item) || id.equals("skyblock/combat/terminator")
+				|| id.equals("skyblock/combat/gyro") || id.equals("skyblock/combat/infinityboom");
+	}
+
+	/**
+	 * An ordinary melee swing on a mob - <b>the plugin's one melee damage path</b>, dispatched from
+	 * {@code PlayerPacketInterceptor}'s attack-packet branch.
+	 * <p>
+	 * There was no such path at all until now, and the gap was invisible because the Mage never needed one: a Mage's
+	 * swing fires the beam, which applies its own damage, so the only class whose sword mattered was already served.
+	 * Every other class fell through to VANILLA melee damage, and vanilla is not a participant in this model
+	 * (DAMAGE_PLAN.md §7) - so a swing did a couple of hearts against a mob whose HP is SB/1e6, and against a boss
+	 * wither it did precisely nothing, because {@code MiscListener.onWitherLordDamage} cancels every non-plugin hit on
+	 * a TASWither.  That is the whole of "a Berserk's melee hits do nothing": the class with the biggest melee
+	 * multipliers in the plan was the one class routed through the path that had been switched off.
+	 * <p>
+	 * Everything downstream already existed and simply had no caller: {@code Damage.melee} for the formula, and
+	 * {@code Damage.deal} for the application, which in turn drives the repeated-hit stack, the post-kill buff, Fire
+	 * Aspect / Venomous / Thunderlord and the Cleave sweep.
+	 */
+	public static void meleeAttack(Player p, org.bukkit.entity.Entity hit) {
+		if(p == null || !(hit instanceof LivingEntity target)) return;
+		if(p.getGameMode() == org.bukkit.GameMode.SPECTATOR) return;
+		if(Spectate.getSpectatorMap().containsKey(p)) return;
+		// Players are invulnerable in this model, and a spectated fake player must never be hittable either.
+		if(target instanceof Player) return;
+		ItemStack held = p.getInventory().getItemInMainHand();
+		if(leftClickIsAbility(p, held)) return;
+		// One hit per swing.  The attack packet arrives once per swing, but the drop-key ability path also swings, and
+		// a duplicate attack packet would otherwise double the damage AND the repeated-hit stack.
+		int now = MinecraftServer.currentTick;
+		if(lastMeleeTick.getOrDefault(p.getUniqueId(), -1) == now) return;
+		lastMeleeTick.put(p.getUniqueId(), now);
+
+		damage.Damage.deal(target, damage.Damage.melee(p, target, held), damage.DamageKind.NORMAL, p,
+				damage.DamagePath.MELEE);
 	}
 
 	public static String getID(ItemStack item) {
@@ -287,20 +350,19 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof LivingEntity entity && !entity.getScoreboardTags().contains("TASNoName")) {
 			Utils.scheduleTask(() -> Utils.changeName(entity), 1);
 		}
-		// Ability dispatch for real-player melee hits is handled by PlayerPacketInterceptor
+		// Ability dispatch AND the melee hit itself for real players are handled by PlayerPacketInterceptor
 		// (fires for every attack packet, including no-damage cases like iframe/dying mobs).
 		// Routing EDBEE through handleCustomItems caused double-fire because the interceptor's
 		// runTask landed on tick T+1 while EDBEE fired on tick T, bypassing the same-tick dedupe.
 		//
-		// Still suppress vanilla melee damage for Mage-class iron/stone swords so the target
-		// only takes mage-beam damage, not vanilla sword damage on top of it.
-		if(e.getDamager() instanceof Player p) {
-			ItemStack held = p.getInventory().getItemInMainHand();
-			boolean isMage = p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
-			if(isMage && (held.getType() == Material.IRON_SWORD || held.getType() == Material.STONE_SWORD)) {
-				e.setCancelled(true);
-			}
-		}
+		// So VANILLA melee damage is suppressed outright.  It used to be suppressed only for a Mage's iron/stone
+		// sword, back when the mage beam was the one melee-ish thing the plugin applied itself; every other class's
+		// swing fell through to vanilla, which is a handful of hearts against a mob whose HP is SB/1e6 and is the
+		// wrong number by six orders of magnitude.  Now that CustomItems.meleeAttack applies every swing at SkyBlock
+		// scale, vanilla must not land on top of any of them - the same "vanilla is not a participant" rule the rest
+		// of DAMAGE_PLAN.md §7 runs on.  Knockback goes with it, which is fine: nothing in the floor depends on
+		// melee knock.
+		if(e.getDamager() instanceof Player) e.setCancelled(true);
 	}
 
 	@EventHandler
@@ -558,11 +620,10 @@ public class CustomItems implements Listener {
 					e.setCancelled(true);
 				}
 				if(action.equals(Action.LEFT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_BLOCK)) {
-					boolean isMage = p.getName().startsWith("Mage") || p.getScoreboardTags().contains("Mage");
-					boolean isMageBeamItem = isMage && (item.getType() == Material.IRON_SWORD || item.getType() == Material.STONE_SWORD || WEAK_BEAM_IDS.contains(id));
+					boolean isMageBeamItem = isMageBeamItem(p, item);
 					// Items whose left-click is an ability are weapons and wands, never pickaxes.  Their left-click
 					// must NEVER break a block, even when the ability is on cooldown or capped by the 1/tick guard.
-					boolean leftClickAbilityItem = isMageBeamItem || id.equals("skyblock/combat/terminator") || id.equals("skyblock/combat/gyro") || id.equals("skyblock/combat/infinityboom");
+					boolean leftClickAbilityItem = leftClickIsAbility(p, item);
 					int currentTick = MinecraftServer.currentTick;
 					if(currentTick > lastLeftClickAbilityTick.getOrDefault(p.getUniqueId(), -1)) {
 						if(isMageBeamItem) {
@@ -1499,7 +1560,7 @@ public class CustomItems implements Listener {
 					damagedEntities.add(entity);
 					double sbDamage = damage.Damage.bow(p, entity1, weapon, 1.0,
 							l.distance(p.getLocation()), false);
-					damage.Damage.dealNoAggro(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
+					damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 					pierce--;
 				}
 			}
@@ -1588,7 +1649,9 @@ public class CustomItems implements Listener {
 				currentLoc = nextLoc;
 
 				// Taking aggro when it hits a wither is a REQUIREMENT of this ability, not incidental, so it is
-				// noted the first tick the axe overlaps a boss whether or not the damage lands.
+				// noted the first tick the axe overlaps a boss whether or not the damage lands.  These projectiles
+				// are one of only three things allowed to aggro a fully shielded wither - the mage beam and the
+				// Flaming Flay arc are the others; everything else needs the hit to have dealt real damage.
 				boolean stop = false;
 				for(Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 2.0, 1.0)) {
 					if(!notedAggro && e instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
@@ -1716,13 +1779,21 @@ public class CustomItems implements Listener {
 				// Check for mob hits
 				List<EntityType> doNotKill = doNotKill();
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
-					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-						// The Flaming Flay's ability deals the SAME as its melee hit (DAMAGE_PLAN.md §1.8), so it
-						// goes through the melee formula rather than the ability one.
-						double sbDamage = damage.Damage.melee(p, entity1, p.getInventory().getItemInMainHand());
-						damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
-						hitEntities.add(entity);
+					if(hitEntities.contains(entity) || doNotKill.contains(entity.getType())) continue;
+					if(!(entity instanceof LivingEntity entity1) || entity instanceof Player || entity1.getHealth() <= 0) continue;
+					// The arc is one of the three things that may pull a boss's aggro through a FULL shield - the
+					// mage beam and the thrown-axe projectiles are the others, and both note it at this same point,
+					// their own armour check.  Everywhere else aggro needs the hit to have actually dealt damage, so
+					// it has to be noted here rather than left to damage/Damage, which by then only sees a zero.
+					if(entity instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
+						instructions.bosses.WitherActions.noteDamager(p);
 					}
+					if(entity instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) continue;
+					// The Flaming Flay's ability deals the SAME as its melee hit (DAMAGE_PLAN.md §1.8), so it
+					// goes through the melee formula rather than the ability one.
+					double sbDamage = damage.Damage.melee(p, entity1, p.getInventory().getItemInMainHand());
+					damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+					hitEntities.add(entity);
 				}
 
 				totalDistance += distanceThisTick;
@@ -2081,7 +2152,7 @@ public class CustomItems implements Listener {
 			if(!(nearby instanceof LivingEntity mob) || nearby instanceof Player) continue;
 			if(nearby.equals(e.getHitEntity()) || mob.isDead() || mob.getHealth() <= 0) continue;
 			if(nearby instanceof Wither wither && wither.getInvulnerableTicks() != 0) continue;
-			damage.Damage.dealNoAggro(mob, damage.Arrows.resolve(arrow, p, mob, false),
+			damage.Damage.deal(mob, damage.Arrows.resolve(arrow, p, mob, false),
 					damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 		}
 
@@ -2221,12 +2292,13 @@ public class CustomItems implements Listener {
 		damage.Stats.invalidateAll();
 	}
 
-	/** Clear terminator cooldown state.  Called at the start of every /tas and /practice run. */
+	/** Clear terminator cooldown state.  Called at the start of every /tas and /m7practice run. */
 	public static void resetTerminatorCooldowns() {
 		termLastPacketTick.clear();
 		termLastFireTick.clear();
 		salvationReady.clear();
 		mageBeamReady.clear();
+		lastMeleeTick.clear();
 	}
 
 	/** Reset all class-ability and weapon-ability cooldowns (Guided Sheep / Rapid Fire / Explosive Shot, plus Gyro /
@@ -2394,7 +2466,7 @@ public class CustomItems implements Listener {
 						double sbDamage = damage.CombatState.maxInLastTicks(p, 1200);
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
 							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-								damage.Damage.dealNoAggro(target, sbDamage, damage.DamageKind.NORMAL, p,
+								damage.Damage.deal(target, sbDamage, damage.DamageKind.NORMAL, p,
 										damage.DamagePath.BOW);
 								alreadyHurt.add(target);
 							}
@@ -2585,7 +2657,9 @@ public class CustomItems implements Listener {
 		ItemStack held = p.getInventory().getItemInMainHand();
 		if(targetEntity instanceof Wither wither && wither.getInvulnerableTicks() != 0) {
 			// Armored, e.g. mid-intro before the fight is live: no damage lands, but still record the damager so
-			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.
+			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.  The mage
+			// beam is one of only three things allowed to do that - the thrown-axe projectiles and the Flaming Flay
+			// arc are the others; every other path needs the hit to have dealt real damage (see damage/Damage.deal).
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
 			// Debuff stacks land even when the damage does not (DAMAGE_PLAN.md §7): a beam on an armoured boss
 			// still builds Lethality, so the moment it opens up the stacks are already there.  Maxor and Storm

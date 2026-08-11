@@ -17,9 +17,11 @@ commands:
   # tas:
   #   description: Begin TAS
   #   usage: /tas <section>
-  practice:
+  # On the network the bare label belongs to StradDevHub's queue command (an alias of /m7), which force-claims
+  # it at boot; ours stays reachable as /m7tas:m7practice, and that is what M7Bridge dispatches.
+  m7practice:
     description: Begin practice (boss instructions only, for real players)
-    usage: /practice <section> [--no-teleport]
+    usage: /m7practice <section> [--no-teleport]
   eq:
     description: View your equipment and current speed
     usage: /eq

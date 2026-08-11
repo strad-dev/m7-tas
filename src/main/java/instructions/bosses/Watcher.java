@@ -362,7 +362,7 @@ public class Watcher {
 				// blood room, never reach Maxor, and the boss gauntlet (Storm, …) would never chain.
 				pl.teleport(boss);
 			}
-			// Chain the rest of the boss gauntlet in practice too, e.g. /practice all.  doContinue is armed from
+			// Chain the rest of the boss gauntlet in practice too, e.g. /m7practice all.  doContinue is armed from
 			// the section and is true for "all", so Maxor → Storm → … chains without fake-player routines.
 			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, doContinue), 1);
 		}

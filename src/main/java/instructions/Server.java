@@ -226,7 +226,7 @@ public class Server {
 	 * up across runs.  Nothing transient in the dungeon legitimately outlives a run, since every one of these is
 	 * respawned by the run that needs it, so nuking everything closes every leak path at once.  This replaces the
 	 * old targeted class-by-class {@code blanketKill}, which missed anything not on its hand-maintained list.
-	 * Called from {@code /reset}, {@code /setup}, {@code /practice} run start ({@code TAS.runPractice}), and
+	 * Called from {@code /reset}, {@code /setup}, {@code /m7practice} run start ({@code TAS.runPractice}), and
 	 * {@code M7tas.onDisable}, always BEFORE any spawns and NEVER from inside {@link #serverSetup} itself, since a
 	 * kill mid-startup would race the minibosses that method spawns.
 	 *

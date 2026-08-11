@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A snapshot of everything measurable about a finished /practice run, attached to {@link RunCompleteEvent}.
+ * A snapshot of everything measurable about a finished /m7practice run, attached to {@link RunCompleteEvent}.
  * <br>
  * This is M7 TAS reporting FACTS about the run: ticks, score, who was there.  It deliberately knows nothing
  * about leaderboards, categories or group sizes: deciding which boards a run qualifies for is the listening
@@ -26,7 +26,7 @@ import java.util.Map;
 public final class RunResult {
 	private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
-	/** The section /practice was invoked with: all, clear, boss, maxor, storm, goldor, necron, witherking. */
+	/** The section /m7practice was invoked with: all, clear, boss, maxor, storm, goldor, necron, witherking. */
 	public String section;
 
 	/** Unique id for this run, identical across every report it makes (see {@link WitherActions#runId()}). */
@@ -93,7 +93,7 @@ public final class RunResult {
 
 	/**
 	 * Snapshot the current run. Must be called at completion time, while the participants are still online and
-	 * still in Adventure, i.e. before anything forces them to spectator.  {@code /practice end} moves everyone
+	 * still in Adventure, i.e. before anything forces them to spectator.  {@code /m7practice end} moves everyone
 	 * to spectator, which would empty {@link ClearManager#realPlayers()}.
 	 */
 	public static RunResult capture(String section, boolean success) {

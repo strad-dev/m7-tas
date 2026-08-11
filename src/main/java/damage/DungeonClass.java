@@ -39,7 +39,7 @@ public enum DungeonClass {
 
 	/**
 	 * True if {@code p} is the ONLY player in the party on this class, which is the bracketed "solo" column of
-	 * every §1.14 table.  Party composition, so it has to be evaluated live: {@code /practice} parties are
+	 * every §1.14 table.  Party composition, so it has to be evaluated live: {@code /m7practice} parties are
 	 * whatever players picked with {@code /class}, and baking in the old fake-player layout (four Mages and one
 	 * Archer, so the Archer was always solo) would be wrong the moment a real party runs.
 	 * <p>

@@ -145,6 +145,20 @@ public abstract class WitherLord {
 		return incoming;
 	}
 
+	/**
+	 * True while this boss is in a <b>feedback-only</b> window: {@link #clampDamage} throws the hit away, but the
+	 * floating number should still show what the hit WOULD have done.
+	 * <p>
+	 * Two bosses have one - Goldor while he patrols during the terminals, and Necron during a frenzy or the fireball
+	 * attack - and both already render the hurt flash by hand for exactly the same reason: the hit is meant to read
+	 * as connecting, so a player can keep track of their own damage while waiting the window out.  This is
+	 * deliberately NOT true of the stun caps or the thresholds, where the health bar really does move by the clamped
+	 * amount and showing the pre-clamp figure would be a lie.
+	 */
+	public boolean showsUnclampedDamage() {
+		return false;
+	}
+
 	/** Subclass-specific fight setup: dialogue, movement, mob spawns, etc. */
 	protected abstract void onStart();
 

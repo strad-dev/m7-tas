@@ -93,7 +93,7 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 							Action.LEFT_CLICK_BLOCK, player, player.getWorld().getBlockAt(bx, by, bz)));
 			}
 		}
-		if(msg instanceof ServerboundAttackPacket) {
+		if(msg instanceof ServerboundAttackPacket attackPkt) {
 			// 26.2 split melee attacks into their own ServerboundAttackPacket (ServerboundInteractPacket is now
 			// interact / interact-at only). Dispatch the LEFT_CLICK_AIR ability path for every attack:
 			// EntityDamageByEntityEvent only fires when damage actually lands, which excludes shield-invulnerable
@@ -101,8 +101,18 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			// This is what fires the beam when a mob is in melee range, where no PlayerInteractEvent fires.  The
 			// same-tick cooldown in handleCustomItems (lastLeftClickAbilityTick) dedupes against the EDBEE dispatch
 			// when damage does land.
-			Bukkit.getScheduler().runTask(M7tas.getInstance(), () ->
-				CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player));
+			//
+			// The packet's entity id is ALSO the only place an ordinary melee hit can come from, for the same reason:
+			// vanilla's own damage is cancelled outright (CustomItems.onEntityDamageByEntity), so there is no event
+			// left to hang a swing on.  CustomItems.meleeAttack stands down for the items whose left-click is an
+			// ability, so a Mage's beam swing does not also melee.
+			int targetId = attackPkt.entityId();
+			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
+				CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player);
+				net.minecraft.world.entity.Entity target =
+						((org.bukkit.craftbukkit.CraftWorld) player.getWorld()).getHandle().getEntity(targetId);
+				if(target != null) CustomItems.meleeAttack(player, target.getBukkitEntity());
+			});
 		}
 		// Reset vanilla's interact dedupe so repeated clicks on the same block keep firing
 		// PlayerInteractEvent.  Without this, vanilla's ServerPlayerGameMode.useItemOn caches

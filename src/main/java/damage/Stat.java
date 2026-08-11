@@ -9,21 +9,23 @@ package damage;
  * crit), it is only stored because reforges grant it.
  */
 public enum Stat {
-	DAMAGE("Damage", "❁", "<red>", true),
-	STRENGTH("Strength", "❁", "<red>", true),
-	CRIT_DAMAGE("Crit Damage", "☠", "<blue>", true),
-	INTELLIGENCE("Intelligence", "✎", "<aqua>", true),
-	CRIT_CHANCE("Crit Chance", "☣", "<blue>", false),
-	ABILITY_DAMAGE("Ability Damage", "๑", "<red>", false);
+	DAMAGE("Damage", "<red>", true),
+	STRENGTH("Strength", "<red>", true),
+	CRIT_DAMAGE("Crit Damage", "<blue>", true),
+	INTELLIGENCE("Intelligence", "<aqua>", true),
+	CRIT_CHANCE("Crit Chance", "<blue>", false),
+	ABILITY_DAMAGE("Ability Damage", "<red>", false);
+
+	// The SkyBlock glyphs (❁ ☠ ✎ ☣ ๑) used to live here, one per stat, and were appended to every lore row and every
+	// /eq row.  They are gone rather than merely unused: Hypixel renders them from a resource-pack font, so on a
+	// vanilla client they came out as tofu boxes, and the stat's name already says which stat it is.
 
 	private final String display;
-	private final String symbol;
 	private final String colour;
 	private final boolean core;
 
-	Stat(String display, String symbol, String colour, boolean core) {
+	Stat(String display, String colour, boolean core) {
 		this.display = display;
-		this.symbol = symbol;
 		this.colour = colour;
 		this.core = core;
 	}
@@ -31,11 +33,6 @@ public enum Stat {
 	/** Human-readable name, as it appears on item lore ("Crit Damage"). */
 	public String display() {
 		return display;
-	}
-
-	/** SkyBlock's glyph for this stat, used on item lore. */
-	public String symbol() {
-		return symbol;
 	}
 
 	/** MiniMessage colour tag this stat is rendered in. */

@@ -51,7 +51,7 @@ public class Utils {
 	 * {@code CraftScheduler.cancelTask} walks the whole pending queue AND enqueues a cancellation task per call, so
 	 * cancelling N tasks is O(N * queue). This map used to be an append-only list holding every task ever scheduled
 	 * in the session (CustomItems schedules one per damage event, so hundreds/second), and cancelling ~100k dead
-	 * entries froze the main thread past the 60s watchdog on the next {@code /practice}.
+	 * entries froze the main thread past the 60s watchdog on the next {@code /m7practice}.
 	 *
 	 * <p>Main-thread only, so no synchronisation.
 	 */
@@ -622,7 +622,7 @@ public class Utils {
 
 	/**
 	 * Arm a fresh live overall-run timer: the next {@link #markPhaseStart()} (the run's first phase) anchors it.
-	 * Used by /practice, whose "Overall" timer is live rather than the hardcoded per-phase cumulative offset.
+	 * Used by /m7practice, whose "Overall" timer is live rather than the hardcoded per-phase cumulative offset.
 	 */
 	public static void markRunStart() {
 		runStarted = false;
@@ -755,6 +755,29 @@ public class Utils {
 		BigDecimal bd = new BigDecimal(Double.toString(value));
 		bd = bd.setScale(places, RoundingMode.HALF_UP);
 		return bd.toPlainString();
+	}
+
+	/**
+	 * {@link #round(double, int)} with thousands separators on the integer part - {@code "3,729.6"} rather than
+	 * {@code "3729.6"}.  Used by the stat readouts (item lore, {@code /eq}), where a dungeon-scaled stat is routinely
+	 * five or six digits.
+	 * <p>
+	 * Grouped by hand rather than with a {@code DecimalFormat}, so it inherits {@code round}'s exact
+	 * {@code BigDecimal} half-up behaviour instead of introducing a second rounding rule.
+	 */
+	public static String roundCommas(double value, int places) {
+		String s = round(value, places);
+		boolean negative = s.startsWith("-");
+		if(negative) s = s.substring(1);
+		int dot = s.indexOf('.');
+		String whole = dot < 0 ? s : s.substring(0, dot);
+		String frac = dot < 0 ? "" : s.substring(dot);
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < whole.length(); i++) {
+			if(i > 0 && (whole.length() - i) % 3 == 0) sb.append(',');
+			sb.append(whole.charAt(i));
+		}
+		return (negative ? "-" : "") + sb + frac;
 	}
 
 	public static void broadcastBlessing(Player p, BlessingType type, int level) {

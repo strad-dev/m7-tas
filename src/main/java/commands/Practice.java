@@ -26,7 +26,11 @@ import java.util.Map;
  * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
  *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a
  *    pre-run delay of 60 ticks (3s) by default.  Pass a bare integer arg to override it: the network plugin
- *    sends "practice <section> 400" for a 20s get-into-position window.  See Server.serverInstructions.
+ *    sends "m7tas:m7practice <section> 400" for a 20s get-into-position window.  See Server.serverInstructions.
+ *
+ * The label: /m7practice.  On the network the BARE label is StradDevHub's queue command (an alias of /m7,
+ * force-claimed at boot), so this one is only reachable there as /m7tas:m7practice - which is exactly what
+ * M7Bridge dispatches, and what it blocks players from typing.  Standalone, the bare label is ours.
  */
 public class Practice implements CommandExecutor {
 
@@ -47,7 +51,7 @@ public class Practice implements CommandExecutor {
 			return true;
 		}
 
-		// /practice end cancels the current session.
+		// /m7practice end cancels the current session.
 		if(args.length >= 1 && args[0].equalsIgnoreCase("end")) {
 			TAS.endPractice(p.getWorld());
 			p.sendMessage(Utils.msg("<yellow>Practice session ended"));
@@ -99,7 +103,7 @@ public class Practice implements CommandExecutor {
 		}
 
 		// Hand every participant the kit they saved for their selected class. This is THE way to get items now
-		// (/getcustomitems is gone): pick a class with /class, tune it with /m7loadout, then /practice. applyFor
+		// (/getcustomitems is gone): pick a class with /class, tune it with /m7loadout, then /m7practice. applyFor
 		// refreshes the saved copies to the current item definitions first, and sets the class scoreboard tag that
 		// gates the mage beam and the per-class damage paths.
 		// Idempotent on the network: M7Bridge already applied the same loadout from the same file on join.

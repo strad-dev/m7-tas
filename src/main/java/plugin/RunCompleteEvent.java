@@ -5,7 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Fired the moment a /practice run actually finishes, i.e. the boss is defeated (for Wither-King runs, only
+ * Fired the moment a /m7practice run actually finishes, i.e. the boss is defeated (for Wither-King runs, only
  * AFTER the death dialogue ends). M7 TAS fires this unconditionally in practice mode and depends on
  * nothing external: it fires into the void when nothing listens, so the plugin stays fully standalone.
  * An optional glue plugin may listen to it (e.g. to return players to spectator and free a network slot).

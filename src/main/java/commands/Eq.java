@@ -112,8 +112,11 @@ public class Eq implements CommandExecutor, Listener {
 		meta.displayName(Utils.mm(title));
 		java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
 		for(damage.Stat stat : stats) {
-			lore.add(Utils.mm("<gray>" + stat.display() + ": " + stat.colour() + "+"
-					+ Utils.round(block.get(stat), 1) + " " + stat.symbol()));
+			// No SkyBlock glyph and no leading "+": this is an aggregate TOTAL, not a bonus something else adds to,
+			// so a plus sign reads as "+3729.6 on top of what?".  Item lore still shows a "+", because there the
+			// number really is that item's contribution.
+			lore.add(Utils.mm("<gray>" + stat.display() + ": " + stat.colour()
+					+ Utils.roundCommas(block.get(stat), 1)));
 		}
 		lore.add(net.kyori.adventure.text.Component.empty());
 		lore.add(Utils.mm("<dark_gray>" + clazz + ", " + path.name().toLowerCase(java.util.Locale.ROOT) + " path"));

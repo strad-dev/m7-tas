@@ -179,6 +179,15 @@ public final class Necron extends WitherLord {
 		return incoming; // otherwise the hit passes through unmodified
 	}
 
+	/**
+	 * Necron's frenzy and fireball interludes are the feedback-only windows: numbers show, health does not move.  The
+	 * pre-fight intro is NOT one - it is fully immune with no feedback at all, so it shows nothing either.
+	 */
+	@Override
+	public boolean showsUnclampedDamage() {
+		return boss != null && !dying && inInterlude;
+	}
+
 	/** Next HP value (absolute) at which the upcoming interlude fires, or 0 (death) once all are consumed. */
 	private double nextThreshold() {
 		double maxHp = maxHealth();

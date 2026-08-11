@@ -47,7 +47,7 @@ public class TAS implements CommandExecutor {
 			return;
 		}
 
-		// A prior /practice may have left practice-mode aggro on, so turn it back off for a real TAS run.
+		// A prior /m7practice may have left practice-mode aggro on, so turn it back off for a real TAS run.
 		WitherActions.setPracticeMode(false);
 		// Clear any section splits recorded by a previous run (used by the Wither-King practice scoreboard).
 		WitherActions.clearSplits();
@@ -145,7 +145,7 @@ public class TAS implements CommandExecutor {
 	/**
 	 * Like runTAS but runs ONLY the boss and server instructions, with no fake-player routines, no player
 	 * handoffs and no spectator sync, so real players can practice the boss fights and mechanics.  Bosses still
-	 * chain (e.g. {@code /practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
+	 * chain (e.g. {@code /m7practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
 	 * chainNext spawns the next; runPlayerHandoff is simply a no-op since no handoff is armed here.
 	 *
 	 * <p>Note: Maxor/Storm/Necron aggro a fake player (e.g. {@code Tank.get()}), so those expect the fake

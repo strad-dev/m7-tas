@@ -5,7 +5,7 @@ import plugin.Utils;
 /**
  * Boss-to-boss arena transitions. When a boss dies, the wall/floor separating its arena from the next
  * boss's arena opens (fills with air) after a fixed delay; on the next setup ({@code /reset}, {@code /tas},
- * {@code /practice}) every wall is restored via {@link #resetAll()} from {@code Server.serverSetup}.
+ * {@code /m7practice}) every wall is restored via {@link #resetAll()} from {@code Server.serverSetup}.
  *
  * <p>Each {@code open*} is fired from the dying boss's death sequence at the tick offset noted below
  * (relative to the killing blow).  Resets clone a buried copy of the original blocks back into place, or

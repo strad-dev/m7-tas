@@ -22,7 +22,7 @@ public class TabCompletor implements TabCompleter {
 		String cmdName = command.getName().toLowerCase();
 
 		switch(cmdName) {
-			case "practice" -> {
+			case "m7practice" -> {
 				if(args.length == 1) {
 					String[] sections = {"all", "clear", "boss", "maxor", "storm", "goldor", "necron", "witherking", "end"};
 					String input = args[0].toLowerCase();
@@ -34,7 +34,7 @@ public class TabCompletor implements TabCompleter {
 						}
 					}
 				} else if(args.length >= 2) {
-					// /practice <section> [--no-teleport] [<delayTicks>]: both flags are order-independent
+					// /m7practice <section> [--no-teleport] [<delayTicks>]: both flags are order-independent
 					// (see Practice), so suggest whichever hasn't been typed yet.
 					String input = args[args.length - 1].toLowerCase();
 					boolean hasNoTeleport = false, hasDelay = false;

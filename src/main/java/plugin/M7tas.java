@@ -86,12 +86,12 @@ public final class M7tas extends JavaPlugin {
 
 		// TAS-only commands (tas, simulate, spectate/unspectate, reset, kickallfakes) are disabled in the practice fork.
 		LoadoutEditor loadoutEditor = new LoadoutEditor();
-		for(String cmd : List.of("setup", "practice", "eq", "reset", "verbose", "setspeed",
+		for(String cmd : List.of("setup", "m7practice", "eq", "reset", "verbose", "setspeed",
 				"class", "m7loadout", "toggledungeondifficulty")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
-				case "practice" -> command.setExecutor(new Practice());
+				case "m7practice" -> command.setExecutor(new Practice());
 				case "reset" -> command.setExecutor(new Reset());
 				case "eq" -> command.setExecutor(new Eq());
 				case "verbose" -> command.setExecutor(new Verbose());

@@ -63,8 +63,9 @@ public final class StatLore {
 		for(Stat stat : ROWS) {
 			double value = stats.get(stat);
 			if(value == 0) continue;
-			lore.add(Utils.mm("<gray>" + stat.display() + ": " + stat.colour() + "+" + trim(value)
-					+ " " + stat.symbol()));
+			// No SkyBlock glyph on the end: the real client renders ❁ ☠ ✎ from a resource-pack font, and on a vanilla
+			// client they come out as tofu boxes, so the stat name carries the whole meaning here.
+			lore.add(Utils.mm("<gray>" + stat.display() + ": " + stat.colour() + "+" + trim(value)));
 		}
 		meta.lore(lore);
 		item.setItemMeta(meta);
@@ -73,7 +74,7 @@ public final class StatLore {
 
 	/** Drop a trailing {@code .0} so whole numbers read as {@code +999} rather than {@code +999.0}. */
 	private static String trim(double value) {
-		String s = Utils.round(value, 2);
+		String s = Utils.roundCommas(value, 2);
 		if(s.endsWith(".00")) return s.substring(0, s.length() - 3);
 		if(s.endsWith("0")) return s.substring(0, s.length() - 1);
 		return s;

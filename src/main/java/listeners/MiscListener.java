@@ -223,8 +223,9 @@ public class MiscListener implements Listener {
 					boolean targetDead = hitEntity.isDead() || hitEntity.getHealth() <= 0
 							|| hitEntity.getScoreboardTags().contains("TASDying") || WitherKing.isDyingDragon(hitEntity);
 					// Arrows.resolve applies the arrow's debuffs, the target half of the formula and Piercing's 25%
-					// for every mob after the first.  Arrows never set the aggro target.
-					damage.Damage.dealNoAggro(hitEntity, damage.Arrows.resolve(arrow, p, hitEntity),
+					// for every mob after the first.  dealArrow aggros only if the arrow does real damage; on a plain
+					// mob (this branch excludes withers) nothing has an aggro target anyway.
+					damage.Damage.deal(hitEntity, damage.Arrows.resolve(arrow, p, hitEntity),
 							damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 					if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					int newPierce = arrow.getPierceLevel() - 1;
@@ -334,19 +335,18 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Remember whoever last damaged a TAS boss, fake or real, since bosses aggro that player.  MONITOR without
-	// ignoreCancelled, so the damager is recorded even when the boss clamps or cancels the hit in an immune window.
-	// This catches melee and by-entity hits; mage-beam and terminator use no-source damage and note the damager
-	// directly.
-	@EventHandler(priority = EventPriority.MONITOR)
-	public void onBossDamager(EntityDamageByEntityEvent e) {
-		if(!(e.getEntity() instanceof Wither w)) return;
-		if(!w.getScoreboardTags().contains("TASWither")) return;
-		Player damager = null;
-		if(e.getDamager() instanceof Player pl) damager = pl;
-		else if(e.getDamager() instanceof Projectile proj && proj.getShooter() instanceof Player sp) damager = sp;
-		if(damager != null) WitherActions.noteDamager(damager);
-	}
+	// onBossDamager lived here: a MONITOR EntityDamageByEntityEvent handler, deliberately WITHOUT ignoreCancelled,
+	// that made any Player damager (or player-shot projectile) a TASWither's aggro target.  It is DELETED, not moved.
+	//
+	// Aggro now requires the hit to have actually taken health off the boss (damage/Damage.deal), plus the three
+	// abilities allowed to aggro through a full shield, which note it themselves (mage beam, thrown-axe projectiles,
+	// Flaming Flay arc).  This listener could satisfy neither condition: it cannot see a damage KIND, and "without
+	// ignoreCancelled" means it fired precisely for the hits that dealt nothing.  Since vanilla melee damage is now
+	// cancelled outright for every Player damager (CustomItems.onEntityDamageByEntity), it would have fired on every
+	// single swing and re-noted aggro no matter what our own path decided - silently undoing the rule.
+	//
+	// Nothing is lost: every hit that should aggro reaches Damage.deal, and the vanilla-only damage that reaches a
+	// TASWither (a stray explosion, fire, a fall) is cancelled by onWitherLordDamage and was never meant to aggro.
 
 	// Blood-Mob deaths drive the Watcher's kill lines + portal progression.
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

@@ -194,7 +194,7 @@ public class FakePlayerInventory {
 	 * This used to be a hand-copied second listing of the same items, which had to be kept in step item-for-item;
 	 * it was only separate because {@code /getcustomitems} applied it to a live player while the catalog export
 	 * needed an array. That command is gone (players get their kit from {@code /class} + {@code /m7loadout} +
-	 * {@code /practice}), so this is now just "the array, applied to a player".
+	 * {@code /m7practice}), so this is now just "the array, applied to a player".
 	 */
 	public static void applyClassLoadout(Player p, String role) {
 		ItemStack[] arr = classLoadoutContents(role);

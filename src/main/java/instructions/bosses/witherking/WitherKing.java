@@ -25,7 +25,7 @@ import java.util.*;
 
 /**
  * The Wither King, the final encounter.  Runs AFTER Necron (chained via {@code Necron#chainNext})
- * or standalone via {@code /tas witherking} / {@code /practice witherking}.
+ * or standalone via {@code /tas witherking} / {@code /m7practice witherking}.
  *
  * <p>Two stages:
  * <ol>
@@ -48,7 +48,7 @@ import java.util.*;
 public class WitherKing {
 	private static World world;
 	private static Wither witherKing;
-	/** True only when reached via {@code /tas|/practice witherking} (Server case); the Necron→WK chain passes false. */
+	/** True only when reached via {@code /tas|/m7practice witherking} (Server case); the Necron→WK chain passes false. */
 	private static boolean standalone;
 	private static final Random random = new Random();
 	private static final String[] dragonDieMessage = {"Oh, this one hurts!", "I have more of those.", "My soul is disposable."};

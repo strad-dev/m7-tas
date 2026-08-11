@@ -11,13 +11,13 @@ A practice server is available at `mc.strad.dev` for Minecraft 26.2
 
 ### Getting Started
 
-Select a class using the `/class` command, then tune its kit with `/m7loadout`.  `/practice` hands you that kit and the corresponding class tag, allowing you to use the class's passives and abilities (if applicable).
+Select a class using the `/class` command, then tune its kit with `/m7loadout`.  `/m7practice` hands you that kit and the corresponding class tag, allowing you to use the class's passives and abilities (if applicable).
 
 The recommended Minecraft game mode is **Adventure Mode**
 
 ### Running Practice Mode
 
-Use the `/practice` command with 1-5 players.  By default, this will run all sections.
+Use the `/m7practice` command with 1-5 players.  By default, this will run all sections.
 
 You can also specify a specific section (`clear` `boss` `maxor` `storm` `goldor` `necron` `witherking`) to practice.
 
@@ -116,7 +116,7 @@ Two ways to *get* those items:
 ```java
 ItemStack[] kit = plugin.FakePlayerInventory.classLoadoutContents("Mage"); // 41 slots, see layout below
 plugin.FakePlayerInventory.applyClassLoadout(player, "Archer");            // the class's DEFAULT kit, ignoring saved edits
-loadout.Loadouts.applyFor(player);                                        // the player's SAVED kit + class tag (what /practice does)
+loadout.Loadouts.applyFor(player);                                        // the player's SAVED kit + class tag (what /m7practice does)
 ```
 
 Valid roles are `Archer`, `Berserk`, `Healer`, `Mage`, `Tank`.
@@ -152,7 +152,7 @@ file written by the server you're running on.)
 There are two events, both ordinary Bukkit `Event`s.  Neither is `Cancellable` and there's nothing to
 override.  They are notifications, not hooks:
 
-- **`plugin.RunCompleteEvent`**: fired the moment a `/practice` run finishes (for Wither-King runs, only
+- **`plugin.RunCompleteEvent`**: fired the moment a `/m7practice` run finishes (for Wither-King runs, only
   *after* the death dialogue ends).
 - **`plugin.ScoreMilestoneEvent`**: fired MID-RUN, the instant the team reaches a clear-score milestone
   (currently only 300).  That's the point of it: the milestone's time is a real achievement whether or not the
@@ -164,7 +164,7 @@ about leaderboards or categories.  Deciding what a run *qualifies for* is your p
 
 | Field | Meaning |
 |-------|---------|
-| `section` | what `/practice` was invoked with: `all` `clear` `boss` `maxor` `storm` `goldor` `necron` `witherking` |
+| `section` | what `/m7practice` was invoked with: `all` `clear` `boss` `maxor` `storm` `goldor` `necron` `witherking` |
 | `runId` | unique per run, **identical across every report that run makes** (see the dedupe note below) |
 | `success` | `false` only for a failed run (enraged Storm with no pillars left) |
 | `runTicks` | total run length in server ticks |

@@ -39,7 +39,7 @@ public class JoinListener implements Listener {
 	public void onJoin(PlayerJoinEvent ev) {
 		// Raw runTaskLater, NOT Utils.scheduleTask: this is join INFRASTRUCTURE (attributes, no-collision team,
 		// and crucially the packet-interceptor install), and must NOT be tracked by Utils' scheduledTasks. A
-		// network-warped practicer joins and, on the SAME tick, M7Bridge dispatches /practice → runPractice →
+		// network-warped practicer joins and, on the SAME tick, M7Bridge dispatches /m7practice → runPractice →
 		// Utils.cancelAllScheduled(), which would otherwise cancel this still-pending +1 task and leave the player
 		// with no interceptor (killing drop abilities, bow release, and the mob-melee mage beam).
 		Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
@@ -167,7 +167,7 @@ public class JoinListener implements Listener {
 	}
 
 	// Force every real player to the dungeon-entrance spawn on join so they stop appearing above the
-	// map. LOWEST priority so that if something runs /practice on the same join (e.g. the network
+	// map. LOWEST priority so that if something runs /m7practice on the same join (e.g. the network
 	// plugin sending a practicer in), that teleport runs afterwards and still wins.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onJoinSpawn(PlayerJoinEvent ev) {

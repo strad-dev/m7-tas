@@ -106,7 +106,7 @@ public final class ClearManager {
 		}
 		// Strip the offhand dungeon map (and restore slot 8's menu) from everyone. reset() runs from serverSetup
 		// before EVERY section, so this is what pulls the clear map out of the offhand when you jump straight to a
-		// boss such as /practice witherking, since the clear tick loop that normally removes it is not running.
+		// boss such as /m7practice witherking, since the clear tick loop that normally removes it is not running.
 		restoreMenus();
 		// Tear down last run's placed chests / essence / secret entities so /reset and /setup start clean.
 		World w = world != null ? world : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst());

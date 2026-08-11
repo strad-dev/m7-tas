@@ -51,7 +51,7 @@ public class WitherActions {
 	public static boolean isPracticeMode() { return practiceMode; }
 
 	/**
-	 * Announce that a /practice run just finished as a plain Bukkit event ({@link plugin.RunCompleteEvent}).
+	 * Announce that a /m7practice run just finished as a plain Bukkit event ({@link plugin.RunCompleteEvent}).
 	 * M7 TAS depends on nothing external.  The event fires into the void when nothing listens, so the plugin
 	 * stays fully standalone, and an optional glue plugin may listen to return players to spectator and free a
 	 * network slot.  Only fires in practice mode.  Wither-King runs must call this only AFTER the death dialogue
@@ -100,12 +100,12 @@ public class WitherActions {
 		pendingResult = plugin.RunResult.capture(runSection, true);
 	}
 
-	// --- Identity of the current run (/practice <section>), for the run-result payload ---
+	// --- Identity of the current run (/m7practice <section>), for the run-result payload ---
 	private static volatile String runSection = "all";
 	private static volatile String runId = "";
 
 	/**
-	 * Start tracking a new run: records which section /practice was invoked with and mints a fresh run id.
+	 * Start tracking a new run: records which section /m7practice was invoked with and mints a fresh run id.
 	 * Called once by {@code TAS.runPractice}.
 	 * <br>
 	 * The run id lets a consumer recognise two reports from the SAME run. That matters because a run reports
@@ -147,7 +147,7 @@ public class WitherActions {
 
 	// --- Live section splits (for the Wither-King practice scoreboard) ---
 	// Overall tick (Utils.runTick()) recorded at each section's finish. Populated as the boss chain progresses;
-	// the WitherKing practice scoreboard reads these to show the real per-section times from a /practice run.
+	// the WitherKing practice scoreboard reads these to show the real per-section times from a /m7practice run.
 	private static final Map<String, Integer> splitEnds = new java.util.LinkedHashMap<>();
 
 	/** Record the overall tick at which the named section finished. */
@@ -164,7 +164,7 @@ public class WitherActions {
 	// tick the death dialogue finishes and the boss chains to the next phase ("<Boss> finished in ..."), NOT the
 	// killing blow ("<Boss> killed in ..."), which is 80-200 ticks earlier.  This is distinct from splitEnds above,
 	// which is overall-run-relative and is stamped by the NEXT section's start, meaning a standalone
-	// "/practice maxor" never lands a Maxor split at all.  Each boss stamps its own duration here at the end of its
+	// "/m7practice maxor" never lands a Maxor split at all.  Each boss stamps its own duration here at the end of its
 	// own death sequence, so an individual-phase practice is timed exactly like a phase inside a full run.
 	private static final Map<String, Integer> phaseDurations = new java.util.LinkedHashMap<>();
 
@@ -177,7 +177,7 @@ public class WitherActions {
 	/** Every recorded phase duration, in completion order. */
 	public static Map<String, Integer> phaseDurations() { return new java.util.LinkedHashMap<>(phaseDurations); }
 
-	/** Clear all recorded splits and phase durations.  Called at the start of every /tas and /practice run. */
+	/** Clear all recorded splits and phase durations.  Called at the start of every /tas and /m7practice run. */
 	public static void clearSplits() {
 		splitEnds.clear();
 		phaseDurations.clear();
@@ -187,7 +187,7 @@ public class WitherActions {
 	// Players who changed game mode at any point during the current run; their scoreboard name shows white, not gold.
 	private static final Set<UUID> gameModeChanged = new HashSet<>();
 
-	/** Clear recorded game-mode changes.  Called at the start of every /tas and /practice run. */
+	/** Clear recorded game-mode changes.  Called at the start of every /tas and /m7practice run. */
 	public static void clearGameModeChanges() { gameModeChanged.clear(); }
 
 	/** Record that a player changed game mode during the run (disqualifies their golden name). */

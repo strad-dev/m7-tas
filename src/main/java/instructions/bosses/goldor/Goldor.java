@@ -723,6 +723,12 @@ public final class Goldor extends WitherLord {
 		return incoming;
 	}
 
+	/** Goldor's patrol - the whole terminals phase - is the feedback-only window: numbers show, health does not move. */
+	@Override
+	public boolean showsUnclampedDamage() {
+		return boss != null && !dying && !coreOpen;
+	}
+
 	private void enterDyingState() {
 		dying = true;
 		boss.addScoreboardTag("TASDying");
@@ -750,7 +756,7 @@ public final class Goldor extends WitherLord {
 			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
 			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
 			// come before chainNext, which spawns Necron and re-anchors the phase clock.  The board times the WHOLE
-			// Goldor phase, terminals and core, matching what /practice goldor times.  It is not the core-only
+			// Goldor phase, terminals and core, matching what /m7practice goldor times.  It is not the core-only
 			// column printed at the killing blow.
 
 			instructions.bosses.WitherActions.recordPhaseDuration("Goldor", displayTick());
