@@ -41,6 +41,9 @@ import java.util.UUID;
  * Format is {@code ✧<digits>✧❤} for a crit, with the digits taking their colours from a FIXED cadence rather than a
  * random roll, so two identical hits render identically.  A damage KIND overrides the cadence entirely, and grey
  * magic numbers drop the decoration and render as bare digits.
+ * <p>
+ * <b>See-through</b>, i.e. not depth-tested, so a boss model can never obscure the number reporting on it.  See the
+ * comment at the flag: there is no render-priority knob, only this.
  */
 public final class DamageNumbers {
 	private DamageNumbers() {}
@@ -97,7 +100,18 @@ public final class DamageNumbers {
 		TextDisplay display = target.getWorld().spawn(at, TextDisplay.class, d -> {
 			d.text(Utils.msg(format(sbDamage, kind)));
 			d.setBillboard(Display.Billboard.CENTER);
-			d.setSeeThrough(false);
+			// SEE THROUGH, so the number is never hidden behind the thing it is reporting on.  A wither is a big
+			// model and the numbers spawn within a block of its eyes, so with depth testing on it was eating them.
+			//
+			// This is a DEPTH TEST switch, not a sorting hint - verified in the 26.2 client: with the flag set,
+			// DisplayRenderer$TextDisplayRenderer picks Font.DisplayMode.SEE_THROUGH and
+			// RenderTypes.textBackgroundSeeThrough, and RenderPipelines.TEXT_SEE_THROUGH is built with
+			// withDepthStencilState(Optional.empty()) - no depth state at all.  So there is no "priority" to raise:
+			// the text simply stops being occlusion-tested and draws over whatever came before it.
+			//
+			// The cost is that it also draws through walls and the arena floor.  Bounded rather than fixed: a 20-tick
+			// life and a 0.4 view range (~25 blocks) keep it local to the fight you are already looking at.
+			d.setSeeThrough(true);
 			d.setShadowed(true);
 			d.setViewRange(0.4f);
 			d.addScoreboardTag("TASNoName");
