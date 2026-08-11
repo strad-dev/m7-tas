@@ -27,6 +27,18 @@ public abstract class WitherLord {
 	protected Wither boss;
 	protected World world;
 	protected int tick;
+	/**
+	 * What a killing blow leaves a boss on, in Minecraft health: <b>0.001</b>, a single {@code HP_STEP}.
+	 * <p>
+	 * A dying boss must stay above zero, or vanilla runs its death and despawns the entity before the death dialogue
+	 * has finished playing - which is the whole reason a killing blow is clamped at all.  <b>The sliver only has to be
+	 * non-zero.</b>  Maxor, Storm and Necron each used 1% of max health instead, which at these HP values is 8-14
+	 * million: a real slice of the health bar, so the killing blow visibly under-dealt and the bar sat at "14M" while
+	 * the boss was already dead.  Goldor and the Wither King already used 0.001; this is now the one figure for all of
+	 * them, and it is also what the dying state pins HP to.
+	 */
+	public static final double DYING_SLIVER = 0.001;
+
 	protected BukkitTask tickerTask;
 	protected boolean dying;
 	protected boolean doContinue;
@@ -145,19 +157,9 @@ public abstract class WitherLord {
 		return incoming;
 	}
 
-	/**
-	 * True while this boss is in a <b>feedback-only</b> window: {@link #clampDamage} throws the hit away, but the
-	 * floating number should still show what the hit WOULD have done.
-	 * <p>
-	 * Two bosses have one - Goldor while he patrols during the terminals, and Necron during a frenzy or the fireball
-	 * attack - and both already render the hurt flash by hand for exactly the same reason: the hit is meant to read
-	 * as connecting, so a player can keep track of their own damage while waiting the window out.  This is
-	 * deliberately NOT true of the stun caps or the thresholds, where the health bar really does move by the clamped
-	 * amount and showing the pre-clamp figure would be a lie.
-	 */
-	public boolean showsUnclampedDamage() {
-		return false;
-	}
+	// showsUnclampedDamage() lived here: a per-boss opt-in that let Goldor mid-terminals and Necron mid-interlude show
+	// the hit they had swallowed.  It is gone because the display now ALWAYS reports the unclamped figure - see
+	// damage/Damage.deal.  What a clamp decides is how much health moves, not what the player hit for.
 
 	/** Subclass-specific fight setup: dialogue, movement, mob spawns, etc. */
 	protected abstract void onStart();

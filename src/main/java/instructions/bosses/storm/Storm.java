@@ -474,14 +474,14 @@ public final class Storm extends WitherLord {
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
 		double crushDmg = maxHp * CRUSH_DAMAGE_FRACTION;
 		double currentHp = boss.getHealth();
-		double onePercent = maxHp * 0.01;
 
-		// Killing-blow path: the crush would drop Storm to 0 HP or below, so clamp to 1% and run the death sequence.
+		// Killing-blow path: the crush would drop Storm to 0 HP or below, so leave DYING_SLIVER and run the death
+		// sequence.  This used to leave 1% of max, which is a visible chunk of the health bar at these HP values.
 		if(crushDmg >= currentHp) {
 			clearAggro();
 			setArmor(false);
 			sendChatMessage(CRUSHED_MESSAGE[random.nextInt(CRUSHED_MESSAGE.length)]);
-			boss.setHealth(onePercent);
+			boss.setHealth(DYING_SLIVER);
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
 			// Arm the explosion BEFORE entering the dying state so the crush position is captured while Storm is
 			// still where the pillar caught him. The detonation itself keeps its normal T+20 timing and no longer
@@ -698,7 +698,6 @@ public final class Storm extends WitherLord {
 
 		double currentHp = boss.getHealth();
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
-		double onePercent = maxHp * 0.01;
 
 		double cappedDmg = incoming;
 		boolean willEnrage = false;
@@ -713,7 +712,7 @@ public final class Storm extends WitherLord {
 
 		boolean willDie = false;
 		if(cappedDmg >= currentHp) {
-			cappedDmg = Math.max(0, currentHp - onePercent);
+			cappedDmg = Math.max(0, currentHp - DYING_SLIVER);
 			willDie = true;
 			willEnrage = false;
 		}
@@ -745,7 +744,7 @@ public final class Storm extends WitherLord {
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
 		Utils.scheduleTask(() -> {
-			if(boss != null && boss.isValid()) boss.setHealth(1.0);
+			if(boss != null && boss.isValid()) boss.setHealth(DYING_SLIVER);
 		}, 1);
 		Utils.changeName(boss);
 		playDeathDialogue();

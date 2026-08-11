@@ -23,17 +23,15 @@ import java.util.UUID;
  * number that slides upward while a dozen others spawn around it reads as smearing rather than as separate hits, so
  * the spread is spatial instead: a random point anywhere within {@value #SPAWN_RADIUS} blocks of the target's eyes.
  * <p>
- * <b>The number shown is what the target actually lost</b> - after the boss resistance and the defense divisor -
- * because that is the number that matches the health bar moving.  The pre-defense figure belongs in
- * {@code /verbose}'s breakdown.  Two deliberate exceptions:
- * <ul>
- *   <li>a boss in a feedback-only window (Goldor on patrol, Necron mid-interlude) displays the hit it WOULD have
- *       taken, while losing no health at all;</li>
- *   <li>the figure is the <b>true</b> damage, not the {@code HP_STEP}-quantised amount health is actually moved by.
- *       Health is quantised so it stays a number you can reason about; the number in the air is the real one, since
- *       reading your own damage is the entire point of it.</li>
- * </ul>
- * See {@code Damage.deal} for both.
+ * <b>The number shown is what you HIT FOR</b>: after the boss resistance and the defense divisor, since those are
+ * properties of the hit landing on that target, but <b>before any boss clamp and before quantisation</b>.  A clamp
+ * decides how much health moves, which is a different question from how hard you hit - so a killing blow reads as the
+ * whole hit rather than as the sliver it was allowed to apply, a stun-capped hit reads full, and Goldor mid-terminals
+ * or Necron mid-interlude show a real number while losing nothing.  Health is separately quantised to
+ * {@code HP_STEP} so a boss's HP stays a number you can reason about; that rounding never reaches the display.
+ * <p>
+ * Three figures exist per hit and {@code Damage.deal} names all three: {@code preClamp} (shown here), {@code mcDamage}
+ * (what the clamp allowed) and {@code applied} (that, quantised - the only one health sees).
  * <p>
  * <b>Never rounded, abbreviated or truncated.</b>  The full integer, every digit, thousands-separated:
  * {@code 726,525,143}, never {@code 726.5M}.

@@ -717,16 +717,14 @@ public final class Goldor extends WitherLord {
 			return 0;
 		}
 		if(boss.getHealth() - incoming <= 0) {
+			// Killing blow: deal everything except DYING_SLIVER, rather than the 0 this used to return.  Returning 0
+			// meant the hit that killed Goldor moved his health bar not at all, and enterDyingState's deferred pin did
+			// all the work a tick later.
+			double currentHp = boss.getHealth();
 			enterDyingState();
-			return 0;
+			return Math.max(0, currentHp - DYING_SLIVER);
 		}
 		return incoming;
-	}
-
-	/** Goldor's patrol - the whole terminals phase - is the feedback-only window: numbers show, health does not move. */
-	@Override
-	public boolean showsUnclampedDamage() {
-		return boss != null && !dying && !coreOpen;
 	}
 
 	private void enterDyingState() {
@@ -736,7 +734,7 @@ public final class Goldor extends WitherLord {
 		if(coreApproachTask != null && !coreApproachTask.isCancelled()) coreApproachTask.cancel();
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) {
-				try { boss.setHealth(0.001); } catch (IllegalArgumentException ignored) {}
+				try { boss.setHealth(DYING_SLIVER); } catch (IllegalArgumentException ignored) {}
 				Utils.changeName(boss);
 			}
 		}, 1);

@@ -331,14 +331,14 @@ public final class Maxor extends WitherLord {
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
 		double laserDmg = maxHp * 0.05;
 		double currentHp = boss.getHealth();
-		double onePercent = maxHp * 0.01;
 
-		// Killing-blow path: the laser would drop Maxor to 0 HP or below, so clamp to 1% and run the death sequence.
+		// Killing-blow path: the laser would drop Maxor to 0 HP or below, so leave DYING_SLIVER and run the death
+		// sequence.  This used to leave 1% of max, which is a visible chunk of the health bar at these HP values.
 		if(laserDmg >= currentHp) {
 			clearAggro();
 			setArmor(false);
 			sendChatMessage(LASER_MESSAGE[random.nextInt(LASER_MESSAGE.length)]);
-			boss.setHealth(onePercent);
+			boss.setHealth(DYING_SLIVER);
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_HURT);
 			enterDyingState();
 			return;
@@ -387,10 +387,10 @@ public final class Maxor extends WitherLord {
 		cancelLaserScan();
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
-		// Pin internal HP to 1.  The display already shows "1" via the TASDying tag in formatHealthM.
+		// Pin internal HP to DYING_SLIVER.  The display already shows "1" via the TASDying tag in formatHealthM.
 		// Deferred 1 tick so vanilla's post-event setHealth doesn't overwrite us.
 		Utils.scheduleTask(() -> {
-			if(boss != null && boss.isValid()) boss.setHealth(1.0);
+			if(boss != null && boss.isValid()) boss.setHealth(DYING_SLIVER);
 		}, 1);
 		Utils.changeName(boss);
 		playDeathDialogue();
@@ -440,10 +440,9 @@ public final class Maxor extends WitherLord {
 
 		double currentHp = boss.getHealth();
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
-		double onePercent = maxHp * 0.01;
 
 		// Apply stun cap FIRST so that subsequent killing-blow check sees the already-capped value.
-		// Otherwise a single huge hit during stun bypasses the cap by clamping straight to "1% HP" via the kill clamp.
+		// Otherwise a single huge hit during stun bypasses the cap by clamping straight to the sliver via the kill clamp.
 		double cappedDmg = incoming;
 		boolean willEnrage = false;
 		if(inStun) {
@@ -458,7 +457,7 @@ public final class Maxor extends WitherLord {
 		// Killing-blow check on the (possibly cap-clamped) damage.
 		boolean willDie = false;
 		if(cappedDmg >= currentHp) {
-			cappedDmg = Math.max(0, currentHp - onePercent);
+			cappedDmg = Math.max(0, currentHp - DYING_SLIVER);
 			willDie = true;
 			willEnrage = false; // dying overrides, so no enrage
 		}

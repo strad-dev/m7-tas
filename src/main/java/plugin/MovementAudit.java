@@ -1,6 +1,7 @@
 package plugin;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
@@ -47,6 +48,7 @@ public class MovementAudit {
 	 *  and drives a per-tick trace until the player lands or the audit is cancelled. */
 	public static void startAirborneAudit(Player p, String source) {
 		if(!Utils.isSuperVerbose()) return;
+		if(isFlying(p)) return; // a flying player has no trajectory to trace
 		Location at = p.getLocation();
 		audits.put(p.getUniqueId(), new State(source, at));
 		Utils.debug(Utils.DebugType.SERVER, p.getName() + " [" + source + "] airborne trace START at Y="
@@ -85,6 +87,15 @@ public class MovementAudit {
 			Player p = Bukkit.getPlayer(entry.getKey());
 			if(p == null || !p.isOnline()) { it.remove(); continue; }
 			State st = entry.getValue();
+			// Flight kills the trajectory: creative/spectator flight replaces gravity, and being forced into
+			// spectator (end of a run, a death) also teleports the player around, so every remaining tick would
+			// print noise and the "landed" end condition might never come.
+			if(isFlying(p)) {
+				Utils.debug(Utils.DebugType.SERVER, p.getName() + " [" + st.source + "] airborne trace CANCELLED after "
+						+ st.ticks + "t (started flying), peak Y=" + Utils.round(st.peakY, 5));
+				it.remove();
+				continue;
+			}
 			st.ticks++;
 			Location cur = p.getLocation();
 			double dx = cur.getX() - st.lastX, dy = cur.getY() - st.lastY, dz = cur.getZ() - st.lastZ;
@@ -109,6 +120,12 @@ public class MovementAudit {
 			}
 		}
 		if(audits.isEmpty()) stopTask();
+	}
+
+	/** Spectator is checked as well as the flag itself because a gamemode change and the flying flag it implies
+	 *  don't necessarily land on the same tick. */
+	private static boolean isFlying(Player p) {
+		return p.isFlying() || p.getGameMode() == GameMode.SPECTATOR;
 	}
 
 	private static String fmtVec(Vector v) {

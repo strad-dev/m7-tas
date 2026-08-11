@@ -166,26 +166,17 @@ public final class Necron extends WitherLord {
 
 		if(currentHp - incoming <= threshold) {
 			if(threshold <= 0.0) {
-				// Killing blow: clamp to leave a 1% sliver so vanilla doesn't death-despawn the wither
-				// before the death dialogue.  enterDyingState pins HP to 1, shown as "1" via TASDying.
-				double onePercent = maxHealth() * 0.01;
+				// Killing blow: clamp to leave DYING_SLIVER so vanilla doesn't death-despawn the wither before the
+				// death dialogue.  enterDyingState pins HP there too, shown as "1" via TASDying.  This used to leave
+				// 1% of max - 14M on Necron - which the killing blow then visibly failed to deal.
 				enterDyingState();
-				return Math.max(0, currentHp - onePercent);
+				return Math.max(0, currentHp - DYING_SLIVER);
 			}
 			// Clamp the hit so HP lands exactly on the threshold, then start that interlude.
 			triggerInterlude(eventsDone);
 			return currentHp - threshold;
 		}
 		return incoming; // otherwise the hit passes through unmodified
-	}
-
-	/**
-	 * Necron's frenzy and fireball interludes are the feedback-only windows: numbers show, health does not move.  The
-	 * pre-fight intro is NOT one - it is fully immune with no feedback at all, so it shows nothing either.
-	 */
-	@Override
-	public boolean showsUnclampedDamage() {
-		return boss != null && !dying && inInterlude;
 	}
 
 	/** Next HP value (absolute) at which the upcoming interlude fires, or 0 (death) once all are consumed. */
@@ -339,7 +330,7 @@ public final class Necron extends WitherLord {
 		CustomBossBar.removeStunIndicator();
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) {
-				try { boss.setHealth(1.0); } catch (IllegalArgumentException ignored) {}
+				try { boss.setHealth(DYING_SLIVER); } catch (IllegalArgumentException ignored) {}
 				Utils.changeName(boss);
 			}
 		}, 1);

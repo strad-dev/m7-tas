@@ -539,19 +539,14 @@ public final class Damage {
 		// The bosses' own clamps (Maxor's 75% stun cap, Storm's 55% crush cap, Necron's thresholds, Goldor's
 		// patrol immunity, every dying state).  Called explicitly, since no EntityDamageEvent fires for our damage.
 		//
-		// A boss in a FEEDBACK-ONLY window (Goldor on patrol during the terminals, Necron mid-frenzy or
-		// mid-fireballs) is a deliberate exception to "the number shown is what the target actually lost": it takes
-		// nothing, but the hit still displays the figure it would have done, so a player working the terminals or
-		// waiting out an interlude can still read their own damage.  Every other clamp - the stun caps, the
-		// thresholds, the dying states - keeps showing the clamped number, because there the health bar really did
-		// move by that much.
-		boolean showPreClamp = false;
+		// A clamp decides HOW MUCH HEALTH MOVES.  It does not decide what the player hit for, so it never touches
+		// what is reported: `preClamp` is what the number in the air and /verbose's Final Damage both show, and
+		// `mcDamage` is what the health bar loses.  That is why Goldor mid-terminals and Necron mid-interlude display
+		// a full number while taking nothing, with no per-boss opt-in needed (showsUnclampedDamage is gone), and why
+		// a killing blow reads as the full hit rather than as the sliver-sized amount it was allowed to apply.
 		if(target instanceof Wither wither) {
 			WitherLord lord = WitherLord.activeFor(wither);
-			if(lord != null) {
-				showPreClamp = lord.showsUnclampedDamage();
-				mcDamage = lord.clampDamage(mcDamage);
-			}
+			if(lord != null) mcDamage = lord.clampDamage(mcDamage);
 		}
 
 		// What HEALTH moves by is quantised to HP_STEP, after the clamps, so a boss's HP stays a number you can
@@ -598,12 +593,12 @@ public final class Damage {
 			CombatState.spendPostKillBuff(attacker);
 		}
 
-		// What SkyBlock would show: the hit AFTER resistance, the defense divisor and the boss clamp - i.e. what the
-		// target actually lost.  What it must NOT be is quantised: `applied` is the HP_STEP-rounded figure health
-		// moves by, and reporting that put a number ending in three zeros in the air on every single hit.  So the
-		// unrounded `mcDamage` feeds the display, and `applied` feeds setHealth, and they are not the same variable.
-		DamageNumbers.show(target, (showPreClamp ? preClamp : mcDamage) * Scale.SB_PER_MC_HP, kind, attacker);
-		verbose(attacker, target, sbDamage, mcDamage, defense, resistance, kind);
+		// What SkyBlock would show: the hit after resistance and the defense divisor, but BEFORE any boss clamp, and
+		// never quantised.  Three separate figures exist by the end of this method and it is worth naming them:
+		// `preClamp` is what you hit for and is what gets displayed, `mcDamage` is what the clamp allowed, and
+		// `applied` is that rounded to HP_STEP and is the only one health ever sees.
+		DamageNumbers.show(target, preClamp * Scale.SB_PER_MC_HP, kind, attacker);
+		verbose(attacker, target, sbDamage, mcDamage, preClamp, defense, resistance, kind);
 		if(primary) {
 			Procs.onHit(attacker, target, sbDamage, path);
 			Cleave.spread(attacker, target, sbDamage, path);
@@ -698,7 +693,7 @@ public final class Damage {
 
 	private static Breakdown lastBreakdown;
 
-	private static void verbose(Player attacker, LivingEntity target, double sbDamage, double mcDamage,
+	private static void verbose(Player attacker, LivingEntity target, double sbDamage, double mcDamage, double preClamp,
 			double defense, double resistance, DamageKind kind) {
 		// Consumed unconditionally, whatever the verbose level: leaving it parked would let the NEXT hit that runs no
 		// formula of its own - a proc, a Cleave sweep - inherit these rows.
@@ -706,14 +701,21 @@ public final class Damage {
 		lastBreakdown = null;
 		if(Utils.getVerboseLevel().ordinal() < Utils.VerboseLevel.ON.ordinal()) return;
 
-		double finalDamage = mcDamage * Scale.SB_PER_MC_HP;
+		// Final Damage is the FULL hit after the two target-side reductions, with no boss clamp in it, so
+		// Total x defense x boss really does reach it - the breakdown is a complete factorisation again.  What the
+		// clamp allowed is a separate line, below, and only when it differs.
+		double finalDamage = preClamp * Scale.SB_PER_MC_HP;
+		double dealt = mcDamage * Scale.SB_PER_MC_HP;
 		double defenseFactor = 1.0 / Scale.defenseDivisor(defense);
+		boolean clamped = Math.abs(preClamp - mcDamage) > 1e-9;
 
 		if(!Utils.isSuperVerbose()) {
-			// `on`: the total, the two target-side reductions AS ONE factor, and the result.  Three lines.
+			// `on`: the total, the two target-side reductions AS ONE factor, and the result.  Three lines, plus a
+			// fourth only when a clamp actually took a bite - otherwise the boss's own mechanics are invisible here.
 			Utils.debug(Utils.DebugType.BOSS, "Total Damage: " + integer(sbDamage)
 					+ "\n  Defense & Boss Multiplier: " + factorText(defenseFactor * resistance)
-					+ "\n  Final Damage: " + integer(finalDamage));
+					+ "\n  Final Damage: " + integer(finalDamage)
+					+ (clamped ? "\n  Dealt (boss clamp): " + integer(dealt) : ""));
 			return;
 		}
 
@@ -730,6 +732,11 @@ public final class Damage {
 		sb.append("\n  Defense (").append(defenseText(target, defense)).append("): ").append(factorText(defenseFactor));
 		sb.append("\n  Boss Multiplier: ").append(factorText(resistance));
 		sb.append("\n  Final Damage: ").append(integer(finalDamage));
+		// What the boss's own mechanics let through, shown ONLY when it differs from the hit.  A stun cap, a Necron
+		// threshold, Goldor on patrol or a killing blow all rewrite the damage AFTER everything above, so this is a
+		// separate line rather than another factor - and it sits below Final Damage because Final Damage is now the
+		// honest end of the factorisation, not the end of the story.
+		if(clamped) sb.append("\n  Dealt (boss clamp): ").append(integer(dealt));
 		Utils.debug(Utils.DebugType.BOSS, sb.toString());
 	}
 
