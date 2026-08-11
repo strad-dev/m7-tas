@@ -14,7 +14,6 @@ import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
@@ -108,7 +107,7 @@ public final class Goldor extends WitherLord {
 	@Override protected String name() { return "Goldor"; }
 	@Override protected String displayName() { return "Goldor"; }
 	@Override protected Location spawnLocation() { return new Location(world, 80.5, 118, 40.5, -90f, 0f); }
-	@Override protected double maxHealth() { return 700; }
+	@Override protected double maxHealth() { return damage.MobStats.GOLDOR.internalHealth(); }
 	@Override protected String displayHealth() { return "1.2B"; }
 	@Override protected int previousTicks() { return PRE_GOLDOR_TICKS; }
 
@@ -701,33 +700,27 @@ public final class Goldor extends WitherLord {
 
 	// ---------- Damage / death ----------
 
-	/** Hooked from MiscListener.  Goldor dies silently, since vanilla death is suppressed. */
-	public void handleDamage(EntityDamageEvent e) {
-		if(boss == null || !boss.equals(e.getEntity())) return;
-		if(e.isCancelled()) return;
-		if(dying) {
-			e.setCancelled(true);
-			return;
-		}
-		double finalDmg = e.getFinalDamage();
-		if(finalDmg <= 0) return;
-		// While on patrol (pre-core), Goldor is "damageable" for feedback only: the hit registers
-		// (terminator arrow ding still plays in WithersNotImmuneToArrows after wither.damage() returns)
-		// but never reduces his health bar. A recent hit halves his patrol speed for 10 ticks.
+	/** Damage clamp for Goldor, called from {@code damage.Damage.deal}.  He dies silently, since vanilla death is
+	 *  suppressed. */
+	@Override
+	public double clampDamage(double incoming) {
+		if(boss == null) return incoming;
+		if(dying) return 0;
+		if(incoming <= 0) return 0;
+		// While on patrol (pre-core), Goldor is "damageable" for feedback only: the hit registers (the terminator
+		// arrow ding still plays) but never reduces his health bar.  A recent hit halves his patrol speed for 10
+		// ticks.  Blocking the damage means no hurt flash, so send the animation ourselves - one packet renders
+		// the red flash for ~10 ticks, re-armed by follow-up hits, which matches the slow window.
 		if(!coreOpen) {
 			lastDamagedTick = tick;
-			// Cancelling the damage below suppresses the vanilla hurt flash, so send the hurt animation
-			// ourselves.  One packet renders the red flash for ~10 ticks, re-armed by follow-up hits,
-			// which matches the slow window.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
-			e.setCancelled(true);
-			return;
+			return 0;
 		}
-		double currentHp = boss.getHealth();
-		if(currentHp - finalDmg <= 0) {
-			e.setCancelled(true);
+		if(boss.getHealth() - incoming <= 0) {
 			enterDyingState();
+			return 0;
 		}
+		return incoming;
 	}
 
 	private void enterDyingState() {

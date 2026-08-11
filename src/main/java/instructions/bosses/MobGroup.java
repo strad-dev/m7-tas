@@ -48,20 +48,32 @@ public final class MobGroup {
 
 			LivingEntity mob = (LivingEntity) world.spawnEntity(spawnLoc, spec.type());
 
-			mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(spec.maxHealth());
-			mob.setHealth(spec.maxHealth());
-			if(mob.getAttribute(Attribute.ARMOR) != null) {
-				mob.getAttribute(Attribute.ARMOR).setBaseValue(spec.armor());
-			}
-			if(mob.getAttribute(Attribute.ARMOR_TOUGHNESS) != null) {
-				mob.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(spec.armorToughness());
-			}
 			mob.setAI(spec.aiEnabled());
 			mob.setSilent(spec.silent());
 			mob.setPersistent(spec.persistent());
 			mob.setRemoveWhenFarAway(false);
+			// Name FIRST: damage/MobStats identifies these mobs by their display name, so the lookup below needs
+			// it in place.  The name's own health figure is then rewritten from the applied HP.
 			mob.customName(Utils.nameComponent(spec.customName()));
 			mob.setCustomNameVisible(true);
+
+			// Real HP, defense and mob types where the mob is modelled (DAMAGE_PLAN.md §5) - the Wither Guards and
+			// the boss-fight Shadow Assassins both are.  The spec's own maxHealth/armor are the fallback for
+			// anything that is not, and they are the old flat-kill values, so they should not be extended.
+			damage.MobStats.MobStat stat = damage.MobStats.of(mob);
+			if(stat != null) {
+				damage.MobStats.apply(mob, stat);
+				Utils.changeName(mob);
+			} else {
+				mob.getAttribute(Attribute.MAX_HEALTH).setBaseValue(spec.maxHealth());
+				mob.setHealth(spec.maxHealth());
+				if(mob.getAttribute(Attribute.ARMOR) != null) {
+					mob.getAttribute(Attribute.ARMOR).setBaseValue(spec.armor());
+				}
+				if(mob.getAttribute(Attribute.ARMOR_TOUGHNESS) != null) {
+					mob.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(spec.armorToughness());
+				}
+			}
 
 			if(spec.adult() && mob instanceof Zombie zombie) {
 				zombie.setAdult();

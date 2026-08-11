@@ -35,6 +35,17 @@ public final class RunResult {
 	/** False only for a run that ended in failure (enraged Storm with no pillars left). */
 	public boolean success;
 
+	/**
+	 * The damage difficulty this run was set under: {@code classic} or {@code realistic} (DAMAGE_PLAN.md §0).
+	 * <p>
+	 * <b>Times from the two modes are not comparable</b> - a realistic run pays for maintaining four debuffs and
+	 * for however many blessings the party actually collected - so anything recording this run has to key on it.
+	 * On the network that means the leaderboard key gains a third component,
+	 * {@code category|groupSize|difficulty}, with legacy 2-part keys migrated to {@code classic}: every run
+	 * recorded before the split was set under the hand-tuned damage that classic mode reproduces.
+	 */
+	public String difficulty;
+
 	/** Total run length: {@link Utils#runTick()} at the moment the run completed. */
 	public int runTicks;
 
@@ -90,6 +101,7 @@ public final class RunResult {
 		r.section = section;
 		r.runId = WitherActions.runId();
 		r.success = success;
+		r.difficulty = damage.Difficulty.current().id();
 		r.runTicks = Utils.runTick();
 		r.phaseDurations = WitherActions.phaseDurations();
 		r.splitEnds = WitherActions.splitEnds();

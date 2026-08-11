@@ -44,19 +44,17 @@ public class WithersNotImmuneToArrows implements Listener {
 		}
 
 		event.setCancelled(true);
-		wither.setNoDamageTicks(0);
 		// Clear the spawn-shield counter before damaging: vanilla WitherBoss.hurt() rejects all damage while
 		// invulnerabilityTicks > 0, so on the same-tick-re-armored exception above the hit would otherwise no-op.
 		// A re-armored boss's armorTask re-asserts the shield next tick, so this only lets THIS hit land.
 		wither.setInvulnerableTicks(0);
-		// Bukkit's no-source damage() uses a non-projectile cause, so the vanilla wither
-		// "powered" projectile shield doesn't apply. The fired EntityDamageEvent still reaches
-		// the WitherLord handleDamage dispatch (Maxor / Storm) for clamping.
-		// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
-		wither.damage(CustomItems.scaleBerserkDamage(p, wither, arrow.getDamage()));
-		wither.setNoDamageTicks(0);
+		// One damage path (DAMAGE_PLAN.md §7): this used to be Bukkit's no-source wither.damage(), the only route
+		// that reached the boss's clamps, which is exactly the split the unification removed.  The arrow carries
+		// its own stat damage from fire time; the target half resolves here, and Damage.deal calls the boss's
+		// clampDamage explicitly.  Arrows deliberately do NOT set the aggro target - only melee and beams do.
+		damage.Damage.dealNoAggro(wither, damage.Arrows.resolve(arrow, p, wither),
+				damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
-		Utils.changeName(wither);
 
 		int newPierce = arrow.getPierceLevel() - 1;
 		if(newPierce <= 0) arrow.remove();

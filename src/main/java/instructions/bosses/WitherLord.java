@@ -76,8 +76,12 @@ public abstract class WitherLord {
 		boss.customName(Utils.msg("<gold><bold>﴾ <red>" + displayName() + "<gold> ﴿ </bold><yellow>" + displayHealth() + "<red>❤"));
 		boss.setCustomNameVisible(true);
 		boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth());
-		boss.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-		boss.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
+		// minecraft:armor stays at 0 on every mob (DAMAGE_PLAN.md §5): SkyBlock defense is applied by
+		// damage.Damage at the boundary with def/(def+100), a different function from vanilla's 4%-per-point
+		// curve, and the unified damage path writes health directly, so vanilla never gets a cut either way.
+		// It used to sit at -30/-20 to claw damage back out of vanilla's reduction, which no longer runs.
+		boss.getAttribute(Attribute.ARMOR).setBaseValue(0);
+		boss.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(0);
 		boss.setHealth(maxHealth());
 		boss.addScoreboardTag("TASWither");
 		boss.addScoreboardTag("TAS" + name());
@@ -124,6 +128,22 @@ public abstract class WitherLord {
 
 	/** PRE_<NAME>_TICKS offset used by {@link #formatTick(int)} to render the run-overall column. */
 	protected abstract int previousTicks();
+
+	/**
+	 * Clamp one incoming plugin hit, in Minecraft health, and run whatever the clamp implies.  Returns the damage
+	 * actually allowed; 0 means fully blocked.
+	 * <p>
+	 * This used to be four {@code handleDamage(EntityDamageEvent)} interceptors hooked from {@code MiscListener}.
+	 * With the unified damage path writing health directly (DAMAGE_PLAN.md §7) no {@code EntityDamageEvent} fires
+	 * for our damage at all, so {@code damage.Damage.deal} calls this explicitly instead - which is also the only
+	 * way the clamps reach every damage source rather than only arrows-on-withers, as before.
+	 * <p>
+	 * Implementations own their side effects: entering the dying state, enraging out of a stun, consuming a
+	 * threshold.  A subclass with nothing to clamp inherits "let it through".
+	 */
+	public double clampDamage(double incoming) {
+		return incoming;
+	}
 
 	/** Subclass-specific fight setup: dialogue, movement, mob spawns, etc. */
 	protected abstract void onStart();

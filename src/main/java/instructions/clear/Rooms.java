@@ -27,6 +27,15 @@ public final class Rooms {
 	// Handy references for the puzzle / special-room logic.
 	public static final Room QUIZ, ICE_FILL, WIZARD, TRAP, YELLOW, BLOOD;
 
+	/**
+	 * Registers a room.  {@code level} is its DEPTH (see {@link Room#level}), which every mob in it scales its
+	 * stats by, so every room needs one - an Angry Archaeologist can spawn anywhere.
+	 * <p>
+	 * The eight NORMAL miniboss rooms carry the depths the dungeon itself shows.  The other seven are hand-written
+	 * (DAMAGE_PLAN.md §5 rules that the right approach, because grid adjacency is not the door graph, so deriving
+	 * them geometrically would be wrong for exactly these rooms).  Yellow's II is the one the plan pins directly,
+	 * because it holds the Shadow Assassin: 140M x 1.10 = 154M.
+	 */
 	private static Room reg(String name, RoomType type, int[][] cells, int level, boolean hasMiniboss, Blessing... blessings) {
 		Room r = new Room(name, type, cells, level, hasMiniboss, blessings);
 		ALL.add(r);
@@ -36,7 +45,7 @@ public final class Rooms {
 	}
 
 	static {
-		QUIZ = reg("Quiz", RoomType.PUZZLE, new int[][]{{0, 0}}, 0, false, new Blessing(BlessingType.TIME, 5));
+		QUIZ = reg("Quiz", RoomType.PUZZLE, new int[][]{{0, 0}}, 5, false, new Blessing(BlessingType.TIME, 5));
 		reg("Hallway", RoomType.NORMAL, new int[][]{{1, 0}, {2, 0}, {3, 0}, {4, 0}}, 5, true, new Blessing(BlessingType.LIFE, 5))
 				.addSecret(Secret.chest(-140, 69, -37))
 				.addSecret(Secret.chest(-114, 69, -35))
@@ -54,7 +63,7 @@ public final class Rooms {
 				.addSecret(Secret.item(-16.5, 69, -63.5))
 				.addSecret(Secret.essence(-38, 87, -58))
 				.addSecret(Secret.item(-36.5, 87, -59.5));
-		BLOOD = reg("Blood", RoomType.BLOOD, new int[][]{{3, 1}}, 0, false,
+		BLOOD = reg("Blood", RoomType.BLOOD, new int[][]{{3, 1}}, 5, false,
 				new Blessing(BlessingType.POWER, 5), new Blessing(BlessingType.LIFE, 5));
 		reg("Museum", RoomType.NORMAL, new int[][]{{4, 2}, {5, 2}, {4, 3}, {5, 3}}, 3, true, new Blessing(BlessingType.WISDOM, 5))
 				.addSecret(Secret.blessingChest(-169, 70, -134, BlessingType.STONE, 2))
@@ -74,12 +83,12 @@ public final class Rooms {
 				.addSecret(Secret.bat(-17.5, 47, -106.5))
 				.addSecret(Secret.item(-55.5, 57, -110.5))
 				.addSecret(Secret.chest(-64, 52, -125));
-		WIZARD = reg("Wizard", RoomType.NORMAL, new int[][]{{2, 3}, {2, 4}, {2, 5}}, 0, false);
+		WIZARD = reg("Wizard", RoomType.NORMAL, new int[][]{{2, 3}, {2, 4}, {2, 5}}, 2, false);
 		WIZARD.addSecret(Secret.item(-94.5, 76, -196.5))
 				.addSecret(Secret.blessingChest(-100, 92, -183, BlessingType.WISDOM, 2))
 				.addSecret(Secret.bat(-83.5, 53, -179.5))
 				.addSecret(Secret.blessingChest(-98, 89, -110, BlessingType.WISDOM, 1));
-		reg("Fairy", RoomType.FAIRY, new int[][]{{3, 3}}, 0, false);
+		reg("Fairy", RoomType.FAIRY, new int[][]{{3, 3}}, 2, false);
 		reg("Well", RoomType.NORMAL, new int[][]{{0, 4}, {0, 5}, {1, 5}}, 3, true, new Blessing(BlessingType.LIFE, 5))
 				.addSecret(Secret.chest(-70, 89, -185))
 				.addSecret(Secret.item(-68.5, 91, -173.5))
@@ -88,7 +97,7 @@ public final class Rooms {
 				.addSecret(Secret.essence(-17, 95, -194))
 				.addSecret(Secret.chest(-29, 91, -163))
 				.addSecret(Secret.item(-22.5, 57, -154.5));
-		ICE_FILL = reg("Ice Fill", RoomType.PUZZLE, new int[][]{{1, 4}}, 0, false);
+		ICE_FILL = reg("Ice Fill", RoomType.PUZZLE, new int[][]{{1, 4}}, 3, false);
 		// The two Power-V reward chests, revealed on solve but claimed by hand.  Not part of the 47.
 		ICE_FILL.addSecret(Secret.rewardChest(-71, 75, -152, BlessingType.POWER, 5))
 				.addSecret(Secret.rewardChest(-71, 75, -154, BlessingType.POWER, 5));
@@ -97,13 +106,14 @@ public final class Rooms {
 				.addSecret(Secret.item(-165.5, 86, -159.5))
 				.addSecret(Secret.blessingChest(-145, 90, -164, BlessingType.POWER, 2))
 				.addSecret(Secret.chest(-163, 70, -143));
-		reg("Start", RoomType.START, new int[][]{{3, 5}}, 0, false);
-		TRAP = reg("Trap", RoomType.TRAP, new int[][]{{4, 5}}, 0, false);
+		reg("Start", RoomType.START, new int[][]{{3, 5}}, 1, false);
+		TRAP = reg("Trap", RoomType.TRAP, new int[][]{{4, 5}}, 2, false);
 		// The Power-II chest whose opening earns Trap its white checkmark (see ClearManager).
 		TRAP.addSecret(Secret.chest(-143, 67, -182))
 				.addSecret(Secret.bat(-158.5, 92, -190.5))
 				.addSecret(Secret.blessingChest(-164, 90, -184, BlessingType.POWER, 2));
-		YELLOW = reg("Yellow", RoomType.YELLOW, new int[][]{{5, 5}}, 0, true, new Blessing(BlessingType.WISDOM, 5));
+		// Depth II, which DAMAGE_PLAN.md §5 pins directly: it holds the Shadow Assassin, and 140M x 1.10 = 154M.
+		YELLOW = reg("Yellow", RoomType.YELLOW, new int[][]{{5, 5}}, 2, true, new Blessing(BlessingType.WISDOM, 5));
 	}
 
 	private Rooms() {

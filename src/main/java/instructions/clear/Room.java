@@ -26,7 +26,17 @@ public class Room {
 	public final RoomType type;
 	/** Grid cells this room occupies, each {@code {gx, gz}}. */
 	public final int[][] cells;
-	/** Roman-numeral difficulty tier (1..5) for NORMAL miniboss rooms; 0 otherwise. */
+	/**
+	 * <b>Room depth</b> (1..5), the Roman numeral the dungeon shows on the room.  Every mob in the room has its
+	 * stats scaled by {@code 1 + 0.10 x (depth - 1)}, so depth I is x1.00 and depth V is x1.40 - see
+	 * {@code damage.MobStats.depthMultiplier}, and the observed 13.2M Angry Archaeologist in Deathmite (depth II)
+	 * which is 12M x 1.10.
+	 * <p>
+	 * This used to be documented as a "difficulty tier", which read as decorative and sent an earlier draft of
+	 * DAMAGE_PLAN.md off computing depth by BFS instead.  It is the depth; use it directly.  Note grid adjacency
+	 * is NOT the door graph, so a geometric BFS would give wrong answers for exactly the rooms whose depth was
+	 * missing.
+	 */
 	public final int level;
 	public final boolean hasMiniboss;
 	/** Blessing(s) granted when the room is cleared (miniboss kill / puzzle solve); empty for none. */

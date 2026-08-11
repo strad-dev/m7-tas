@@ -11,7 +11,6 @@ import listeners.CustomItems;
 import listeners.GoldorListener;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
@@ -328,21 +327,23 @@ public class Server {
 				new Location(world, -152.5, 69, -24.5, -90f, 0f), // Hallway (V)
 		};
 
-		double[] healthValues = {15, 16, 17, 17, 17, 18, 18, 19};
 
 		for(int i = 0; i < locations.length; i++) {
 			Zombie zombie = (Zombie) world.spawnEntity(locations[i], EntityType.ZOMBIE);
-			zombie.customName(Utils.msg("<light_purple><bold>Angry Archaeologist </bold><yellow>" + ((int) healthValues[i] * 2) + "M<red>❤"));
 			zombie.setCustomNameVisible(true);
 			zombie.setAI(false);
 			zombie.setSilent(true);
 			zombie.setAdult();
 			zombie.setPersistent(true);
 			zombie.setRemoveWhenFarAway(false);
-			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-			Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-			Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(healthValues[i]);
-			zombie.setHealth(healthValues[i]);
+			// Real HP, defense and mob types (DAMAGE_PLAN.md §5): 12M base, scaled by the DEPTH of the room the
+			// archaeologist stands in (+10% per tier), which is why the name is written after apply() rather than
+			// from a hand-picked figure.  It replaces the old flat-kill handful of health, and clears the negative
+			// armour attributes that used to claw damage back out of vanilla's reduction.
+			damage.MobStats.apply(zombie, damage.MobStats.ANGRY_ARCHAEOLOGIST
+					.atDepthOf(locations[i]));
+			zombie.customName(Utils.msg("<light_purple><bold>Angry Archaeologist </bold><yellow>"
+					+ Utils.formatHealthM(zombie) + "<red>❤"));
 
 			zombie.getEquipment().setHelmet(new ItemStack(Material.DIAMOND_HELMET));
 			zombie.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
@@ -363,8 +364,8 @@ public class Server {
 			yellowShadowAssassin.remove();
 		}
 
-		yellowShadowAssassin = (Zombie) world.spawnEntity(new Location(world, -184.5, 69, -184.5, 0f, 0f), EntityType.ZOMBIE);
-		yellowShadowAssassin.customName(Utils.msg("<light_purple><bold>Shadow Assassin </bold><yellow>60M<red>❤"));
+		Location assassinSpawn = new Location(world, -184.5, 69, -184.5, 0f, 0f);
+		yellowShadowAssassin = (Zombie) world.spawnEntity(assassinSpawn, EntityType.ZOMBIE);
 		yellowShadowAssassin.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, -1, 0));
 		yellowShadowAssassin.setCustomNameVisible(true);
 		yellowShadowAssassin.setAI(false);
@@ -373,10 +374,13 @@ public class Server {
 		yellowShadowAssassin.setPersistent(true);
 		yellowShadowAssassin.setRemoveWhenFarAway(false);
 		yellowShadowAssassin.addScoreboardTag("ClearMiniboss"); // Yellow miniboss → green check + Wisdom V on kill
-		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-		Objects.requireNonNull(yellowShadowAssassin.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
-		yellowShadowAssassin.setHealth(30);
+		// 140M base in Yellow, which is depth II, so 140M x 1.10 = 154M (DAMAGE_PLAN.md §5).  A DIFFERENT mob from
+		// the 145M Shadow Assassins in Storm's boss fight, despite the shared name.  Humanoid + Arcane, so it
+		// takes those two Rulers and NO Smite at all - the softest-looking mob on the floor is the one that
+		// resists the whole undead package.
+		damage.MobStats.apply(yellowShadowAssassin, damage.MobStats.YELLOW_SHADOW_ASSASSIN.atDepthOf(assassinSpawn));
+		yellowShadowAssassin.customName(Utils.msg("<light_purple><bold>Shadow Assassin </bold><yellow>"
+				+ Utils.formatHealthM(yellowShadowAssassin) + "<red>❤"));
 
 		ItemStack boots = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.PURPLE, Utils.mmLegacy("<light_purple>Shadow Assassin Boots"));
 		yellowShadowAssassin.getEquipment().setBoots(boots);
@@ -464,16 +468,16 @@ public class Server {
 		zombie.setPersistent(true);
 		zombie.setRemoveWhenFarAway(false);
 		zombie.setCustomNameVisible(true);
-		Objects.requireNonNull(zombie.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(1);
-		zombie.setHealth(1);
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-		Objects.requireNonNull(zombie.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
-		String mobName = isPrince ? "Prince" : "Crypt Lurker";
-		zombie.customName(Utils.msg("<red>" + mobName + " ❤<yellow>2M"));
 		// Bonus-score tracking: each Crypt Lurker kill = +1 (cap 5); a Prince kill also = +1 (see ClearListener).
+		// The tags are also what damage/MobStats identifies these two by, so they must be set before apply().
 		zombie.addScoreboardTag(instructions.clear.ClearManager.TAG_CRYPT);
 		if(isPrince) zombie.addScoreboardTag("SecretPrince");
+		// Crypt Undead 9M, Prince 1M, both Undead + Subterranean so they take Smite, Undead Ruler AND Subterranean
+		// Ruler, and both scaled by room depth (DAMAGE_PLAN.md §5).  They used to be 1-HP flat-kill props.
+		damage.MobStats.apply(zombie, (isPrince ? damage.MobStats.PRINCE : damage.MobStats.CRYPT_UNDEAD).atDepthOf(loc));
+		String mobName = isPrince ? "Prince" : "Crypt Lurker";
+		zombie.customName(Utils.msg("<red>" + mobName + " ❤<yellow>" + Utils.formatHealthM(zombie)));
 		return zombie;
 	}
 

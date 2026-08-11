@@ -27,7 +27,6 @@ import org.bukkit.block.data.type.Slab;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -43,7 +42,6 @@ import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -66,14 +64,15 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> lastRightBlockTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastWitherShieldSoundTick = new ConcurrentHashMap<>();
-	// True while mageBeam's hurtEntity call is on the stack.  Damage events fire synchronously, so
-	// onWitherHurtSound reads this to skip its at-location broadcast for beam hits (package-private).
-	static boolean beamDamageInProgress = false;
+	// True while mageBeam's damage call is on the stack.  Damage is applied synchronously, so
+	// damage/Damage.witherHurtSound reads this to skip its at-location broadcast for beam hits: the beam routes
+	// its own constant-volume hurt sound to the beamer, so an at-location one would double up and be
+	// distance-attenuated.
+	public static boolean beamDamageInProgress = false;
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
-	// Berserk-exclusive damage ramp: each successive hit on the SAME mob deals +10% damage, capped at 3x (+200%).
-	// Keyed player → (mob → number of prior hits). Different terminator arrows from one shot land as separate hits,
-	// so each ramps further. Reset at the start of every /tas and /practice run (CustomItems.resetBerserkDamage()).
-	private static final Map<UUID, Map<UUID, Integer>> berserkHitCounts = new HashMap<>();
+	// The Berserk damage ramp now lives in damage/CombatState, with DAMAGE_PLAN.md §1.14's real figures
+	// (+165% per repeated hit to a +950% cap, +180%/+1200% solo) rather than the old +10%-to-3x approximation.
+	// resetBerserkDamage() below still clears it, alongside the rest of the per-run combat state.
 	// Terminator firing is poller-driven (NOT fired directly on the right-click packet). A right-click records the
 	// packet tick; pollTerminators() fires on the first tick where a new packet exists AND the cooldown has elapsed
 	// (5 ticks, or 4 with 4/4 Thermodynamic armor). This caps the rate at 1 shot / cooldown regardless of spam.
@@ -94,9 +93,13 @@ public class CustomItems implements Listener {
 	private static final int MAGE_BEAM_COOLDOWN_TICKS = 5;
 	private static final Map<UUID, Integer> mageBeamReady = new ConcurrentHashMap<>();
 	// Secondary mage weapons: in a MAGE's hand (same class gate as the Hyperion/Claymore) these fire the SAME mage
-	// beam on left-click, with the same 5-tick cooldown, geometry and hit test.  The only difference is that they
-	// chip for a flat 1 damage; see mageBeam's damage switch.  Their real ability is on the right-click and is
-	// unaffected.  While the beam is armed, left-clicking them must also never break a block (leftClickAbilityItem).
+	// beam on left-click, with the same 5-tick cooldown, geometry and hit test.  Their real ability is on the
+	// right-click and is unaffected.  While the beam is armed, left-clicking them must also never break a block
+	// (leftClickAbilityItem).
+	// They used to chip for a flat 1 damage.  They no longer do: the beam is a formula output now, so each of
+	// these swings its OWN stat block (DAMAGE_PLAN.md §8) - which for the Aspect of the Void and the Ragnarock Axe
+	// is a real weapon, and for the Bonzo Staff a small one.  This set is now only "which items a Mage may beam
+	// with", not a damage tier.
 	private static final Set<String> WEAK_BEAM_IDS = Set.of(
 			"skyblock/combat/bonzo",
 			"skyblock/combat/aotv",
@@ -110,6 +113,20 @@ public class CustomItems implements Listener {
 	private static final int TAC_COOLDOWN_TICKS = 400;        // Tactical Insertion: 20s
 	private static final int GUIDED_SHEEP_COOLDOWN_TICKS = 600; // Guided Sheep: 30s
 	private static final int GOLEM_SWORD_COOLDOWN_TICKS = 60; // Golem Sword: 3s
+	// Berserk's two drop abilities (DAMAGE_PLAN.md §1.14): the ultimate is x1.5 melee for 15s on a 60s cooldown,
+	// and the regular ability throws an axe for the player's highest hit in the last 60s.  The ultimate's WINDOW
+	// lives in damage/CombatState, since that is what the damage math reads; only its cooldown lives here.
+	private static final int BERSERK_ULTIMATE_COOLDOWN_TICKS = 1200; // 60s
+	private static final int BERSERK_THROW_COOLDOWN_TICKS = 100;     // 5s
+	private static final Map<UUID, Integer> berserkUltimateReady = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> berserkThrowReady = new ConcurrentHashMap<>();
+	// Axe of the Shredded: the throw deals 10% of melee, and CONSECUTIVE throws double it to a x16 cap (§1.9).
+	// A throw counts as consecutive if it lands inside this window of the previous one.
+	private static final double AOTS_THROW_SHARE = 0.10;
+	private static final double AOTS_THROW_CAP = 16.0;
+	private static final int AOTS_STREAK_TICKS = 100;
+	private static final Map<UUID, Integer> aotsStreak = new ConcurrentHashMap<>();
+	private static final Map<UUID, Integer> aotsStreakExpiry = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> gyroReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> ragReady = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> iceSprayReady = new ConcurrentHashMap<>();
@@ -391,13 +408,34 @@ public class CustomItems implements Listener {
 				guidedSheepReady.put(id, now + effectiveCooldown(p, GUIDED_SHEEP_COOLDOWN_TICKS));
 				guidedSheep(p);
 			}
+		} else if(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk")) {
+			// DAMAGE_PLAN.md §1.14.  The ultimate (`drop`) is x1.5 melee for 15s on a 60s cooldown, read by
+			// damage/ClassBonuses through damage/CombatState; the regular ability (`drop stack`) throws an axe for
+			// the player's highest hit in the last 60s, off the shared rolling damage history.
+			if(ultimate) {
+				if(now < berserkUltimateReady.getOrDefault(id, 0)) { sendCooldownMessage(p, berserkUltimateReady.getOrDefault(id, now) - now); return; }
+				berserkUltimateReady.put(id, now + BERSERK_ULTIMATE_COOLDOWN_TICKS);
+				damage.CombatState.startBerserkUltimate(p);
+				Utils.playLocalSound(p, Sound.ENTITY_WITHER_SPAWN, 1.0F, 2.0F);
+				p.sendMessage(Utils.msg("<red>Ragnarok! <gray>Your melee hits deal <red>1.5x<gray> damage for 15 seconds."));
+			} else {
+				if(now < berserkThrowReady.getOrDefault(id, 0)) { sendCooldownMessage(p, berserkThrowReady.getOrDefault(id, now) - now); return; }
+				berserkThrowReady.put(id, now + BERSERK_THROW_COOLDOWN_TICKS);
+				// "The axe throw copies the Axe of the Shredded ability but does NOT pierce", so one target only.
+				throwAxe(p, damage.CombatState.maxInLastTicks(p, 1200), false);
+			}
 		}
 	}
 
 	@EventHandler
 	public void onEntityShootBow(EntityShootBowEvent e) {
 		if(e.getEntity() instanceof Player p) {
-			String id = getID(p.getInventory().getItemInMainHand());
+			ItemStack bow = p.getInventory().getItemInMainHand();
+			// Vanilla's charge, min(useTicks/20, 1).  A DRAWN bow scales its damage by this AND loses the whole
+			// crit term below a full draw (DAMAGE_PLAN.md §1.4), which makes a partial draw much worse than the
+			// fraction alone suggests.  The Terminator is a shortbow and never comes through here.
+			double charge = Math.clamp(e.getForce(), 0f, 1f);
+			String id = getID(bow);
 			if(id.equals("skyblock/combat/explosive_bow")) {
 				if(e.getProjectile() instanceof Arrow primary) {
 					// Re-aim the vanilla primary IN PLACE, with no cancel and no second entity: just override its
@@ -407,24 +445,32 @@ public class CustomItems implements Listener {
 					Location aimFrom = p.getEyeLocation().clone();
 					float speed = (float) primary.getVelocity().length();
 					primary.setVelocity(aimFrom.getDirection().multiply(speed));
-					primary.setDamage(1.0);
 					primary.addScoreboardTag("ExplosiveBowArrow");
 					primary.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+					damage.Arrows.stamp(primary, p, bow, charge, 1.0);
 					boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
 
 					Utils.scheduleTask(() -> {
-						Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0).addScoreboardTag("ExplosiveBowArrow");
+						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0);
+						a.addScoreboardTag("ExplosiveBowArrow");
+						damage.Arrows.stamp(a, p, bow, charge, 0.2); // Duplex's one extra arrow, at x0.2
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 					}, 3);
 
 					if(isArcher) {
+						// The Archer's two bonus arrows never build a Last Breath stack (moot here, since this is
+						// the Explosive Bow, but the flag is set consistently at every bonus-arrow site).
 						Utils.scheduleTask(() -> {
-							Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0).addScoreboardTag("ExplosiveBowArrow");
+							Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0);
+							a.addScoreboardTag("ExplosiveBowArrow");
+							damage.Arrows.stamp(a, p, bow, charge, 1.0, false);
 							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 						}, 5);
 
 						Utils.scheduleTask(() -> {
-							Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0).addScoreboardTag("ExplosiveBowArrow");
+							Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0);
+							a.addScoreboardTag("ExplosiveBowArrow");
+							damage.Arrows.stamp(a, p, bow, charge, 1.0, false);
 							p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 						}, 10);
 					}
@@ -442,30 +488,35 @@ public class CustomItems implements Listener {
 				boolean isArcher = p.getName().contains("Archer") || p.getScoreboardTags().contains("Archer");
 
 				primary.setVelocity(aimFrom.getDirection().multiply(speed));
-				primary.setDamage(isArcher ? 8.0 : 1.5);
 				primary.addScoreboardTag("TerminatorArrow");
 				primary.addScoreboardTag("LastBreathArrow");
 				primary.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+				damage.Arrows.stamp(primary, p, bow, charge, 1.0);
 
 				Utils.scheduleTask(() -> {
-					Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, isArcher ? 1.6 : 0.3);
+					Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0);
 					a.addScoreboardTag("TerminatorArrow");
 					a.addScoreboardTag("LastBreathArrow");
+					damage.Arrows.stamp(a, p, bow, charge, 0.2); // Duplex's one extra arrow, at x0.2
 					p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 				}, 3);
 
 				if(isArcher) {
+					// The Archer's two BONUS arrows do NOT build Last Breath stacks, unlike the shot itself and
+					// its Duplex arrow above.  Full damage, just no stack.
 					Utils.scheduleTask(() -> {
-						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 8.0);
+						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0);
 						a.addScoreboardTag("TerminatorArrow");
 						a.addScoreboardTag("LastBreathArrow");
+						damage.Arrows.stamp(a, p, bow, charge, 1.0, false);
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 5);
 
 					Utils.scheduleTask(() -> {
-						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 8.0);
+						Arrow a = Actions.fireDeterministicArrow(p, aimFrom, speed, 1.0);
 						a.addScoreboardTag("TerminatorArrow");
 						a.addScoreboardTag("LastBreathArrow");
+						damage.Arrows.stamp(a, p, bow, charge, 1.0, false);
 						p.getWorld().playSound(p.getLocation(), Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.2F);
 					}, 10);
 				}
@@ -676,21 +727,25 @@ public class CustomItems implements Listener {
 		List<Entity> entities = p.getNearbyEntities(10, 10, 10);
 		List<EntityType> doNotKill = CustomItems.doNotKill();
 		int damaged = 0;
-		double damage = 0;
+		double dealt = 0;
+		ItemStack wand = p.getInventory().getItemInMainHand();
 		for(Entity entity : entities) {
 			// Never damage players, whether real, fake or spectating.  This matches the other AoE abilities
 			// (iceSpray, the AOTS beam, terminator).  The old fake-player-only exclusion let implosion hit
 			// fellow practicers.
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-				Utils.hurtEntity(entity1, 1, p);
-				entity1.setNoDamageTicks(0);
-				Utils.changeName(entity1);
+				// Wither Impact: 10,000 base at 0.3 Intelligence scaling (DAMAGE_PLAN.md §7), through the ability
+				// formula - so no Strength and no Crit Damage, which is why abilities read so differently from
+				// the beam.  That is deliberate: they are an option, not a damage strategy.
+				double sbDamage = damage.Damage.ability(p, entity1, wand);
+				damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
 				damaged += 1;
-				damage += 1;
+				dealt += sbDamage;
 			}
 		}
 		if(damaged > 0) {
-			p.sendMessage(Utils.msg("<red>Your Implosion hit " + damaged + " enemies for " + ((int) damage) + " damage"));
+			p.sendMessage(Utils.msg("<red>Your Implosion hit " + damaged + " enemies for "
+					+ damage.Damage.integer(dealt) + " damage"));
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
@@ -1389,47 +1444,38 @@ public class CustomItems implements Listener {
 			}
 			ragCastStart.remove(uid);
 			Utils.playLocalSound(p, Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
-			p.addScoreboardTag("RagBuff");
+			p.addScoreboardTag(damage.RagnarockBuff.TAG);
 			// Buff expires 200 ticks (10s) after THIS application; a later cast overwrites this, extending the buff.
 			ragBuffExpiry.put(uid, MinecraftServer.currentTick + 200);
+			// The buff is +150% of the AXE'S OWN Strength stat, granted as a bonus stat through the stat layer
+			// (DAMAGE_PLAN.md §1.7) - not the vanilla Strength potion effect it used to be, and not the flat
+			// 220->250 damage swap either.  The stat layer reads the tag, so nothing is applied to the player
+			// here; damage/Stats.ragnarockStrength computes the figure from the axe's authored terms, which is
+			// why it tracks a retune of the axe automatically.
+			// It also keeps applying after the axe leaves the hand: casting Ragnarock and THEN switching to a
+			// hitting weapon is the entire point of the item.
+			damage.Stats.invalidate(p);
 			Utils.debug(Utils.DebugType.SERVER, "Rag Buff applied to " + Utils.getRealName(p));
-			if(p.getName().equals("Archer")) {
-				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 3));
-			} else {
-				p.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 200, 1));
-			}
 			// Remove only once the latest expiry is reached: a second cast refreshes ragBuffExpiry, so this earlier
 			// cast's removal sees currentTick < expiry and no-ops, leaving the tag for the later cast to clear.
 			Utils.scheduleTask(() -> {
 				if(MinecraftServer.currentTick >= ragBuffExpiry.getOrDefault(uid, 0)) {
-					p.removeScoreboardTag("RagBuff");
+					p.removeScoreboardTag(damage.RagnarockBuff.TAG);
 					ragBuffExpiry.remove(uid);
+					damage.Stats.invalidate(p);
 					Utils.debug(Utils.DebugType.SERVER, "Rag Buff expired for " + Utils.getRealName(p));
 				}
 			}, 200);
 		}, 1);
 	}
 
+	/**
+	 * The Terminator's left-click beam.  It is NOT a bow shot (DAMAGE_PLAN.md §1.4), so it is never draw-scaled -
+	 * it always resolves at full charge, and therefore always crits.  Its old flat 20 is gone; it is now the
+	 * Terminator's own stat block through the bow formula.
+	 */
 	public static void salvation(Player p) {
-		double powerBonus;
-		try {
-			int power = Objects.requireNonNull(p.getInventory().getItem(p.getInventory().getHeldItemSlot())).getEnchantmentLevel(Enchantment.POWER);
-			powerBonus = power * 0.25;
-			if(power == 7) {
-				powerBonus += 0.25;
-			}
-		} catch(Exception exception) {
-			powerBonus = 0;
-		}
-
-		double strengthBonus;
-		try {
-			strengthBonus = 0.75 + Objects.requireNonNull(p.getPotionEffect(PotionEffectType.STRENGTH)).getAmplifier();
-		} catch(Exception exception) {
-			strengthBonus = 0;
-		}
-
-		double add = powerBonus + strengthBonus;
+		ItemStack weapon = p.getInventory().getItemInMainHand();
 		Location l = p.getLocation();
 		l.add(0, 1.62, 0);
 
@@ -1451,9 +1497,9 @@ public class CustomItems implements Listener {
 			for(Entity entity : entities) {
 				if(!damagedEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
 					damagedEntities.add(entity);
-					Utils.hurtEntity(entity1, (float) (2.5 + add), p);
-					entity1.setNoDamageTicks(0);
-					Utils.changeName(entity1);
+					double sbDamage = damage.Damage.bow(p, entity1, weapon, 1.0,
+							l.distance(p.getLocation()), false);
+					damage.Damage.dealNoAggro(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 					pierce--;
 				}
 			}
@@ -1464,8 +1510,32 @@ public class CustomItems implements Listener {
 		Utils.playLocalSound(p, Sound.ENTITY_GUARDIAN_DEATH, 0.5f, 2.0F);
 	}
 
+	/**
+	 * The Axe of the Shredded's throw: <b>10% of the wielder's melee damage</b>, with consecutive throws doubling
+	 * it (and their mana cost) up to a x16 cap (DAMAGE_PLAN.md §1.9).  It also has to <b>take aggro when it hits a
+	 * wither</b>, which is a deliberate requirement rather than incidental, and is what the axe's flight already
+	 * did before it dealt any damage at all.
+	 */
 	public static void aots(Player p) {
+		UUID id = p.getUniqueId();
+		int now = MinecraftServer.currentTick;
+		// A "consecutive" throw is one inside the streak window; letting it lapse resets the doubling to x1.
+		int streak = now <= aotsStreakExpiry.getOrDefault(id, 0) ? aotsStreak.getOrDefault(id, 0) + 1 : 0;
+		aotsStreak.put(id, streak);
+		aotsStreakExpiry.put(id, now + AOTS_STREAK_TICKS);
+		double core = damage.Damage.meleeCore(p) * AOTS_THROW_SHARE
+				* Math.min(Math.pow(2, streak), AOTS_THROW_CAP);
+		throwAxe(p, core, true);
+	}
+
+	/**
+	 * The shared thrown-axe projectile: an ItemDisplay flying 100 blocks, spinning, damaging what it passes
+	 * through.  Used by the Axe of the Shredded ({@code pierce} true) and by a Berserk's {@code drop stack}
+	 * ability, which copies it but does NOT pierce (§1.14).
+	 */
+	private static void throwAxe(Player p, double core, boolean pierce) {
 		Utils.playLocalSound(p, Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
+		ItemStack weapon = p.getInventory().getItemInMainHand();
 
 		// Create the axe item display
 		Location startLoc = p.getEyeLocation();
@@ -1496,6 +1566,7 @@ public class CustomItems implements Listener {
 			Location currentLoc = startLoc.clone();
 			float spinRotation = 0;
 			boolean notedAggro = false;
+			final Set<UUID> hit = new HashSet<>();
 
 			@Override
 			public void run() {
@@ -1516,16 +1587,25 @@ public class CustomItems implements Listener {
 				// Move 1 block per tick
 				currentLoc = nextLoc;
 
-				// The thrown axe doesn't damage the wither, but travelling through it still counts as aggro,
-				// note the thrower as the boss's damager the first tick the axe overlaps a wither boss.
-				if(!notedAggro) {
-					for(Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 2.0, 1.0)) {
-						if(e instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
-							instructions.bosses.WitherActions.noteDamager(p);
-							notedAggro = true;
-							break;
-						}
+				// Taking aggro when it hits a wither is a REQUIREMENT of this ability, not incidental, so it is
+				// noted the first tick the axe overlaps a boss whether or not the damage lands.
+				boolean stop = false;
+				for(Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 2.0, 1.0)) {
+					if(!notedAggro && e instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
+						instructions.bosses.WitherActions.noteDamager(p);
+						notedAggro = true;
 					}
+					if(!(e instanceof LivingEntity mob) || e instanceof Player) continue;
+					if(mob.isDead() || mob.getHealth() <= 0 || !hit.add(mob.getUniqueId())) continue;
+					if(e instanceof Wither w2 && w2.getInvulnerableTicks() != 0) continue;
+					double sbDamage = damage.Damage.meleeFinish(p, mob, weapon, core);
+					damage.Damage.deal(mob, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+					if(!pierce) stop = true;
+				}
+				if(stop) {
+					axe.remove();
+					cancel();
+					return;
 				}
 
 				// Update spin rotation
@@ -1564,11 +1644,18 @@ public class CustomItems implements Listener {
 		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 512);
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
+		ItemStack wand = p.getInventory().getItemInMainHand();
 		for(Entity entity : entities) {
-			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-				Utils.hurtEntity(entity1, 1, p);
-				entity1.setNoDamageTicks(0);
-				Utils.changeName(entity1);
+			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0) {
+				// The cast applies its x1.1 damage debuff to EVERY enemy within 8 blocks of the caster's eyes for
+				// 5s, and it lands FIRST so the cast benefits from its own debuff (DAMAGE_PLAN.md §7).  The debuff
+				// applies even to a target the damage cannot reach, e.g. an armoured wither.
+				damage.TargetDebuffs.applyIceSpray(entity1);
+				if(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0) continue;
+				// Ice Spray: 19,000 base at 0.1 Intelligence scaling.  The bigger base does not make up for the
+				// scaling against Wither Impact's 0.3 (§7).
+				double sbDamage = damage.Damage.ability(p, entity1, wand);
+				damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
 			}
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
@@ -1630,10 +1717,10 @@ public class CustomItems implements Listener {
 				List<EntityType> doNotKill = doNotKill();
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
 					if(!hitEntities.contains(entity) && !doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-						// Deal 1 damage using NMS
-						Utils.hurtEntity(entity1, 1, p);
-						entity1.setNoDamageTicks(0);
-						Utils.changeName(entity1);
+						// The Flaming Flay's ability deals the SAME as its melee hit (DAMAGE_PLAN.md §1.8), so it
+						// goes through the melee formula rather than the ability one.
+						double sbDamage = damage.Damage.melee(p, entity1, p.getInventory().getItemInMainHand());
+						damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
 						hitEntities.add(entity);
 					}
 				}
@@ -1986,6 +2073,18 @@ public class CustomItems implements Listener {
 		}
 		impact.getWorld().spawnParticle(Particle.EXPLOSION, impact.clone().add(0.5, 0.5, 0.5), 10, 0.5, 0.5, 0.5, 0);
 		impact.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
+
+		// The Explosive Bow's own ability: every mob within 3 blocks takes the weapon's FULL damage
+		// (DAMAGE_PLAN.md §1.9).  The directly-hit entity already took its arrow damage on the normal path, so it
+		// is excluded here rather than hit twice.
+		for(Entity nearby : impact.getWorld().getNearbyEntities(impact, 3, 3, 3)) {
+			if(!(nearby instanceof LivingEntity mob) || nearby instanceof Player) continue;
+			if(nearby.equals(e.getHitEntity()) || mob.isDead() || mob.getHealth() <= 0) continue;
+			if(nearby instanceof Wither wither && wither.getInvulnerableTicks() != 0) continue;
+			damage.Damage.dealNoAggro(mob, damage.Arrows.resolve(arrow, p, mob, false),
+					damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
+		}
+
 		triggerSuperboomRadius(impact, p);
 		arrow.remove();
 	}
@@ -2046,36 +2145,25 @@ public class CustomItems implements Listener {
 		Arrow middle = (Arrow) nmsMiddle.getBukkitEntity();
 		Arrow right = (Arrow) nmsRight.getBukkitEntity();
 
-		// Calculate bonuses
-		double powerBonus;
-		try {
-			int power = p.getInventory().getItemInMainHand().getEnchantmentLevel(Enchantment.POWER);
-			powerBonus = power * 0.25;
-		} catch(Exception exception) {
-			powerBonus = 0;
-		}
-
-		double strengthBonus;
-		try {
-			strengthBonus = 0.75 + 0.75 * p.getPotionEffect(PotionEffectType.STRENGTH).getAmplifier();
-		} catch(Exception exception) {
-			strengthBonus = 0;
-		}
-
-		double add = powerBonus + strengthBonus;
-		// 4/4 Thermodynamic armor grants the 4-tick cooldown but a 97.5% terminator damage penalty (it isn't a
-		// dungeon item, so it carries no dungeon stats). Spring Boots add a 20% reduction and the Racing Helmet a
-		// 30% reduction (stacking multiplicatively). Bake them all into every arrow's damage at fire time.
-		final double dmgMult = (isThermoSet(p) ? 0.025 : 1.0) * springBootsMultiplier(p) * racingHelmetMultiplier(p);
+		// The Terminator is a SHORTBOW: it is never drawn, it just shoots, so draw scaling never applies and each
+		// of its three arrows is one shot's worth of damage, unchanged by release timing (DAMAGE_PLAN.md §1.2).
+		// Damage is stamped on each arrow at fire time (§1.0.5), so a mid-flight weapon swap cannot change it.
+		//
+		// The old hand-tuned terms are all gone: the Power/Strength-potion bonuses are now the weapon's own stat
+		// block through the formula, the 97.5% Thermodynamic penalty is deleted (that set exists only to raise the
+		// attack-speed cap to 150, i.e. the 4-tick cooldown below - it is a rate multiplier, not a per-hit one),
+		// and the Spring Boots / Racing Helmet reductions are deleted too, those wearables now costing only the
+		// stats their slot would otherwise carry.
+		ItemStack bow = p.getInventory().getItemInMainHand();
 
 		// Set Bukkit properties
 		for(Arrow arrow : Arrays.asList(left, middle, right)) {
-			arrow.setDamage((2.5 + add) * dmgMult);
 			arrow.setPierceLevel(4);
 			arrow.setShooter(p);
-			arrow.setWeapon(p.getInventory().getItemInMainHand());
+			arrow.setWeapon(bow);
 			arrow.addScoreboardTag("TerminatorArrow");
 			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+			damage.Arrows.stamp(arrow, p, bow, 1.0, 1.0);
 		}
 
 		for(Arrow arrow : Arrays.asList(left, middle, right)) {
@@ -2086,71 +2174,51 @@ public class CustomItems implements Listener {
 
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 
-		// Duplex Arrow
-		Utils.scheduleTask(() -> {
-			Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
-			arrow.setDamage((0.5 + add * 0.2) * dmgMult);
-			arrow.setPierceLevel(4);
-			arrow.setShooter(p);
-			arrow.setWeapon(p.getInventory().getItemInMainHand());
-			arrow.addScoreboardTag("TerminatorArrow");
-			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-			Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
-			Utils.scheduleTask(() -> {
-				if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
-			}, 1);
-		}, 3);
+		// Duplex V: ONE extra arrow per shot at x0.2 of the main arrow's damage - its own damage instance, not a
+		// multiplier on the shot.  Every bow runs Duplex, which is also why no bow ever carries Chimera (§7).
+		Utils.scheduleTask(() -> fireExtraArrow(p, l, bow, 0.2, true), 3);
 
 		if(p.getName().startsWith("Archer") || p.getScoreboardTags().contains("Archer")) {
-			Utils.scheduleTask(() -> {
-				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
-				arrow.setDamage((2.5 + add) * dmgMult);
-				arrow.setPierceLevel(4);
-				arrow.setShooter(p);
-				arrow.setWeapon(p.getInventory().getItemInMainHand());
-				arrow.addScoreboardTag("TerminatorArrow");
-				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-				Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
-				Utils.scheduleTask(() -> {
-					if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
-				}, 1);
-			}, 5);
-
-			Utils.scheduleTask(() -> {
-				Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
-				arrow.setDamage((2.5 + add) * dmgMult);
-				arrow.setPierceLevel(4);
-				arrow.setShooter(p);
-				arrow.setWeapon(p.getInventory().getItemInMainHand());
-				arrow.addScoreboardTag("TerminatorArrow");
-				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-				p.playSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
-				Utils.scheduleTask(() -> {
-					if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
-				}, 1);
-			}, 10);
+			// The Archer's two BONUS arrows never build a Last Breath stack (moot on the Terminator, which is not
+			// a Last Breath, but this method is the shared shape and the rule belongs with it).
+			Utils.scheduleTask(() -> fireExtraArrow(p, l, bow, 1.0, false), 5);
+			Utils.scheduleTask(() -> fireExtraArrow(p, l, bow, 1.0, false), 10);
 		}
 	}
 
 	/**
-	 * Berserk-exclusive damage ramp.  Each successive hit a Berserk lands on the SAME mob deals +10% damage
-	 * (1.0×, 1.1×, 1.2×, …) capped at 3× (+200%).  Each call counts as one hit, so the separate terminator
-	 * arrows from a single right-click each ramp the multiplier further.  Returns {@code base} unchanged for
-	 * non-Berserk shooters.  Per-mob counts are cleared at run start via {@link #resetBerserkDamage()}.
+	 * One follow-up Terminator arrow: the Duplex arrow at {@code share} 0.2, or an Archer's two extra full-damage
+	 * arrows at 1.0.  Stamped like the main volley, so it carries its own damage (§1.0.5).
 	 */
-	public static double scaleBerserkDamage(Player p, LivingEntity target, double base) {
-		if(p == null || target == null) return base;
-		if(!(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk"))) return base;
-		Map<UUID, Integer> perMob = berserkHitCounts.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
-		int hits = perMob.getOrDefault(target.getUniqueId(), 0);
-		double multiplier = Math.min(1.0 + 0.1 * hits, 3.0);
-		perMob.put(target.getUniqueId(), hits + 1);
-		return base * multiplier;
+	private static void fireExtraArrow(Player p, Location l, ItemStack bow, double share, boolean buildsLastBreath) {
+		Arrow arrow = p.getWorld().spawnArrow(l, l.getDirection(), 3.175f, 0);
+		arrow.setPierceLevel(4);
+		arrow.setShooter(p);
+		arrow.setWeapon(bow);
+		arrow.addScoreboardTag("TerminatorArrow");
+		arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+		damage.Arrows.stamp(arrow, p, bow, 1.0, share, buildsLastBreath);
+		Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
+		Utils.scheduleTask(() -> {
+			if(arrow.isValid() && arrow.getLocation().getBlock().getType().isSolid()) arrow.remove();
+		}, 1);
 	}
 
-	/** Clear all Berserk per-mob hit counts.  Called at the start of every /tas and /practice run. */
+	/**
+	 * Clear the per-run combat state: the Berserk repeated-hit stack, the post-kill and combo windows, the rolling
+	 * damage history, target debuff stacks, running procs and any floating damage numbers still in the world.
+	 * Called at the start of every run.
+	 * <p>
+	 * The old hand-tuned Berserk ramp (+10% per hit on the same mob, cap 3x) is gone: DAMAGE_PLAN.md §1.14's real
+	 * figures are +165% per repeated hit to a +950% cap (+180% / +1200% solo), applied as an additive damage
+	 * source in {@code damage/ClassBonuses}, with the counters in {@code damage/CombatState}.
+	 */
 	public static void resetBerserkDamage() {
-		berserkHitCounts.clear();
+		damage.CombatState.reset();
+		damage.TargetDebuffs.reset();
+		damage.Procs.reset();
+		damage.DamageNumbers.reset();
+		damage.Stats.invalidateAll();
 	}
 
 	/** Clear terminator cooldown state.  Called at the start of every /tas and /practice run. */
@@ -2174,6 +2242,10 @@ public class CustomItems implements Listener {
 		iceSprayReady.clear();
 		tacReady.clear();
 		golemSwordReady.clear();
+		berserkUltimateReady.clear();
+		berserkThrowReady.clear();
+		aotsStreak.clear();
+		aotsStreakExpiry.clear();
 	}
 
 	/** True if {@code p} is the Mage CLASS, which drives the ability-cooldown reduction.  Real players carry an
@@ -2217,18 +2289,13 @@ public class CustomItems implements Listener {
 		}
 	}
 
-	/** Outgoing-damage multiplier from Spring Boots: a 20% reduction (×0.8) while the boots are worn, else 1.0. */
-	public static double springBootsMultiplier(Player p) {
-		ItemStack boots = p.getInventory().getBoots();
-		return boots.getType() == Material.CHAINMAIL_BOOTS && boots.hasItemMeta() && boots.getItemMeta().hasDisplayName() && Utils.displayName(boots.getItemMeta()).contains("Spring Boots")
-				? 0.8 : 1.0;
-	}
-
-	/** Outgoing-damage multiplier from the Racing Helmet: a 30% reduction (×0.7) while worn, else 1.0. Stacks
-	 *  multiplicatively with {@link #springBootsMultiplier} (both are folded into the same damage multiplier). */
-	public static double racingHelmetMultiplier(Player p) {
-		return FakePlayerInventory.isRacingHelmet(p.getInventory().getHelmet()) ? 0.7 : 1.0;
-	}
+	// The Spring Boots (x0.80) and Racing Helmet (x0.70) outgoing-damage penalties are DELETED, not re-bucketed
+	// (DAMAGE_PLAN.md §1.10, §8), along with Utils.helmetDamageMultiplier's Cow Hat x0.70 and mask x0.85.  They
+	// were a hand-tuned proxy for exactly what the stat layer now models properly: a helmet slot is exclusive, so
+	// wearing a Cow Hat IS already giving up the Storm's Helmet's 3196.8 Intelligence, and keeping a x0.70 on top
+	// double-penalised the same swap.  Every wearable now affects damage only through the stats it contributes -
+	// or, for these three, doesn't.  Wearing a hat also costs the Golden Dragon (see damage/Pet), which is now the
+	// entire cost.
 
 	/** True if the player is wearing the full (4/4) Thermodynamic armor set. */
 	public static boolean isThermoSet(Player p) {
@@ -2322,11 +2389,13 @@ public class CustomItems implements Listener {
 					if(!arrow.isValid() || arrow.isDead() || arrow.isOnGround() || arrow.getLocation().getBlock().getType().isSolid()) {
 						Location impact = arrow.getLocation();
 
+						// Explosive Shot: each arrow deals 100% of the player's highest arrow damage in the last
+						// minute (DAMAGE_PLAN.md §1.14), read off the shared rolling damage history.
+						double sbDamage = damage.CombatState.maxInLastTicks(p, 1200);
 						for(Entity e : arrow.getNearbyEntities(4, 4, 4)) {
 							if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-								Utils.hurtEntity(target, 20, p);
-								target.setNoDamageTicks(0);
-								Utils.changeName(target);
+								damage.Damage.dealNoAggro(target, sbDamage, damage.DamageKind.NORMAL, p,
+										damage.DamagePath.BOW);
 								alreadyHurt.add(target);
 							}
 						}
@@ -2416,12 +2485,15 @@ public class CustomItems implements Listener {
 				nmsWorld.addFreshEntity(nmsArrow);
 
 				Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
-				arrow.setDamage(40);
 				arrow.setPierceLevel(4);
 				arrow.setShooter(p);
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+				// Rapid Fire: each arrow deals 75% of the player's highest arrow damage in the last minute
+				// (DAMAGE_PLAN.md §1.14), off the same rolling history Explosive Shot and the axe throw read.
+				damage.Arrows.stampFlat(arrow, p, p.getInventory().getItemInMainHand(),
+						damage.CombatState.maxInLastTicks(p, 1200) * 0.75);
 			}, i);
 		}
 	}
@@ -2429,8 +2501,10 @@ public class CustomItems implements Listener {
 	public static void mageBeam(Player p) {
 		Location l = p.getLocation();
 
-		// Range depends on boss fight state: 50 blocks during a boss fight, 25 otherwise.
-		double range = LavaJump.isInBossArena(p.getLocation()) ? 50.0 : 25.0;
+		// Three range tiers, each doubling the previous total (DAMAGE_PLAN.md §7): 10+15 = 25 by default,
+		// 35+15 = 50 in the boss arena, 70+30 = 100 in the Wither King fight.  The Wither King tier needs a PHASE
+		// check rather than a coordinate one, because the WK arena already sits inside the boss-arena box.
+		double range = damage.Damage.beamRange(p).maxRange();
 
 		// Get player's yaw in radians
 		double yaw = Math.toRadians(l.getYaw());
@@ -2508,31 +2582,24 @@ public class CustomItems implements Listener {
 
 		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume.
 		// There is no at-location sound, so volume doesn't depend on how far the target is.
+		ItemStack held = p.getInventory().getItemInMainHand();
 		if(targetEntity instanceof Wither wither && wither.getInvulnerableTicks() != 0) {
 			// Armored, e.g. mid-intro before the fight is live: no damage lands, but still record the damager so
 			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
+			// Debuff stacks land even when the damage does not (DAMAGE_PLAN.md §7): a beam on an armoured boss
+			// still builds Lethality, so the moment it opens up the stacks are already there.  Maxor and Storm
+			// cannot be arrow-debuffed before they become vulnerable, which is exactly the case this covers.
+			damage.Damage.applyOnHitDebuffs(p, wither, damage.DamagePath.BEAM, held);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
-			boolean ragBuff = p.getScoreboardTags().contains("RagBuff");
-			// Per-weapon mage-beam damage (ID "...scylla" is the Hyperion, "...claymore" the Dark Claymore):
-			//   Hyperion: 195 (225 RagBuffed), full vs minecraft:wither ONLY; −33% against any other mob type.
-			//   Dark Claymore (and any other mage-beam item): 170 (200 RagBuffed) on ALL entities.
-			//   WEAK_BEAM_IDS (Bonzo Staff / AOTV / Ice Spray Wand / Rag Axe): flat 1, no buff or armour scaling.
-			String heldId = getID(p.getInventory().getItemInMainHand());
-			float damage;
-			if(WEAK_BEAM_IDS.contains(heldId)) {
-				damage = 1;
-			} else {
-				if("skyblock/combat/scylla".equals(heldId)) {
-					damage = ragBuff ? 250 : 220;
-					if(!(temp instanceof Wither)) damage *= (1f - 0.33f);
-				} else {
-					damage = ragBuff ? 220 : 190;
-				}
-				damage *= (float) springBootsMultiplier(p); // Spring Boots: 20% outgoing-damage reduction while worn
-				damage *= (float) racingHelmetMultiplier(p); // Racing Helmet: 30% outgoing-damage reduction (stacks multiplicatively)
-			}
+			// The beam is the MELEE hit rescaled by the Mage Staff passive, then faded by distance across the
+			// three range tiers (§7).  Everything the old hardcoded table did is now a formula output: the
+			// Hyperion's "-33% against a non-wither" was this same mechanic written inside out (1/1.5 = 0.667)
+			// and is now the Hyperion's x1.5 vs Wither; the Rag buff is +150% of the axe's Strength through the
+			// stat layer; and the Spring Boots / Racing Helmet penalties are deleted outright, those wearables
+			// now costing only the stats their slot would otherwise carry.
+			double sbDamage = damage.Damage.beam(p, temp, held, distance);
 			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
 			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
 			// broadcast the same way (withers are permanently silent, so silence can't signal that).
@@ -2540,13 +2607,11 @@ public class CustomItems implements Listener {
 			temp.setSilent(true);
 			beamDamageInProgress = true;
 			try {
-				Utils.hurtEntity(temp, damage, p);
+				damage.Damage.deal(temp, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.BEAM);
 			} finally {
 				beamDamageInProgress = false;
 				temp.setSilent(wasSilent);
 			}
-			temp.setNoDamageTicks(0);
-			Utils.changeName(temp);
 			if(!targetDead) {
 				String hurtSound = Utils.getHurtSoundKey(temp);
 				if(hurtSound != null) Utils.playLocalSound(p, hurtSound, 1.0f, 1.0f);

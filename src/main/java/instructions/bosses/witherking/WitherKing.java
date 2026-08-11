@@ -36,7 +36,7 @@ import java.util.*;
  *   <li><b>Dragon phase</b>: the Wither King (5 HP) spawns and five dragons must be killed, each removing 1 HP.
  *       The first three spawn on timers (Soul/Ice together, then Flame); the last two (Power, then Apex) begin
  *       their spawn animation the tick the last living dragon is killed.  Dragon kills are detected
- *       automatically via {@link #handleDragonKilled} (called from {@code Utils.hurtEntity}'s EnderDragon
+ *       automatically via {@link #handleDragonKilled} (called from {@code damage.Damage.deal}'s kill
  *       chokepoint) and fire {@link #instaKillDragon} + {@link #playDragonDeathSound}.</li>
  * </ol>
  *
@@ -400,9 +400,9 @@ public class WitherKing {
 			dragon.setRemoveWhenFarAway(false);
 			dragon.customName(Utils.msg("<gold><bold>﴾ <red>" + dragonName + "<gold> ﴿ </bold><yellow>1B<red>❤"));
 			dragon.setCustomNameVisible(true);
-			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(800);
+			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(damage.MobStats.WITHERED_DRAGON.internalHealth());
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);
-			dragon.setHealth(800);
+			dragon.setHealth(damage.MobStats.WITHERED_DRAGON.internalHealth());
 			dragon.addScoreboardTag("WitherKingDragon");
 			aliveCount++;
 			if(color.equals("orange")) flameSpawned = true; // last timer dragon is now alive
@@ -473,7 +473,7 @@ public class WitherKing {
 	}
 
 	/**
-	 * Called the tick a Wither-King dragon's HP reaches 0 (from {@code Utils.hurtEntity}'s EnderDragon chokepoint).
+	 * Called the tick a Wither-King dragon's HP reaches 0 (from {@code damage.Damage.deal}'s kill chokepoint).
 	 * Forces the death animation in place and decrements the Wither King's HP.  Once all timer dragons have
 	 * spawned and the arena is clear, it begins the next event dragon's spawn animation (Power, then Apex).  When
 	 * the final dragon (Apex) dies, it kicks off the death sequence.

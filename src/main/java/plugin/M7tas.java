@@ -42,6 +42,38 @@ import java.util.Map;
 public final class M7tas extends JavaPlugin {
 	private static Plugin plugin;
 
+	/**
+	 * Ceiling we raise {@code minecraft:max_health} to.  Real SkyBlock HP is divided by
+	 * {@code damage.Scale.SB_PER_MC_HP} before it reaches an entity, so the largest value the plugin ever sets is
+	 * Necron's 1400 - this is a guardrail with four orders of magnitude of headroom, not a target.
+	 */
+	private static final double MAX_HEALTH_CEILING = 1_000_000.0;
+
+	/**
+	 * Raise the {@code minecraft:max_health} attribute's own ceiling before any world or entity loads.
+	 * <p>
+	 * Paper's shipped default is 1024, and {@code spigot.yml}'s {@code max-health} key is the only supported way to
+	 * change it - which means the boss HP in {@code damage/MobStats} would silently clamp on any server whose config
+	 * has not been hand-edited (a fresh install, a wiped config, a new box).  {@code RangedAttribute.maxValue} is
+	 * public and non-final on Paper (that is exactly how Spigot applies the config key), so the plugin sets it
+	 * itself and stops depending on per-server config at all.
+	 * <p>
+	 * This has to be {@code onLoad}: {@code AttributeInstance} caches its computed value and clamps a base value at
+	 * set time, so anything that loads with a lower ceiling stays clamped.  Entities already persisted in a world
+	 * under the old cap reload clamped too - the bosses set their HP in {@code onSpawn}, so only a boss currently
+	 * standing in the world is affected, and it needs one re-spawn.
+	 */
+	@Override
+	public void onLoad() {
+		net.minecraft.world.entity.ai.attributes.Attribute maxHealth =
+				net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value();
+		if(maxHealth instanceof net.minecraft.world.entity.ai.attributes.RangedAttribute ranged) {
+			if(ranged.maxValue < MAX_HEALTH_CEILING) ranged.maxValue = MAX_HEALTH_CEILING;
+		} else {
+			getLogger().warning("minecraft:max_health is not a RangedAttribute; boss HP may clamp.");
+		}
+	}
+
 	@Override
 	public void onEnable() {
 		plugin = this;
@@ -55,7 +87,7 @@ public final class M7tas extends JavaPlugin {
 		// TAS-only commands (tas, simulate, spectate/unspectate, reset, kickallfakes) are disabled in the practice fork.
 		LoadoutEditor loadoutEditor = new LoadoutEditor();
 		for(String cmd : List.of("setup", "practice", "eq", "reset", "verbose", "setspeed",
-				"class", "m7loadout")) {
+				"class", "m7loadout", "toggledungeondifficulty")) {
 			PluginCommand command = getCommand(cmd);
 			switch(cmd) {
 				case "setup" -> command.setExecutor(new Setup());
@@ -66,6 +98,7 @@ public final class M7tas extends JavaPlugin {
 				case "setspeed" -> command.setExecutor(new SetSpeed());
 				case "class" -> command.setExecutor(new ClassCommand());
 				case "m7loadout" -> command.setExecutor(loadoutEditor);
+				case "toggledungeondifficulty" -> command.setExecutor(new ToggleDungeonDifficulty());
 			}
 			command.setTabCompleter(new TabCompletor());
 		}
@@ -84,6 +117,12 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new LinkedSlots(), this);
 		getServer().getPluginManager().registerEvents(new listeners.ClearListener(), this);
 		getServer().getPluginManager().registerEvents(loadoutEditor, this);
+		// Keeps the (player, path) stat cache honest across equipment and inventory changes (DAMAGE_PLAN.md §7).
+		getServer().getPluginManager().registerEvents(new damage.StatListener(), this);
+
+		// One repeating driver for every running damage-over-time chain (Fire Aspect, Venomous), rather than one
+		// scheduler task per proc.
+		damage.Procs.start();
 
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();

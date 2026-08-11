@@ -13,7 +13,6 @@ import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.*;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -129,7 +128,7 @@ public final class Storm extends WitherLord {
 
 	@Override
 	protected double maxHealth() {
-		return 600;
+		return damage.MobStats.STORM.internalHealth();
 	}
 
 	@Override
@@ -682,33 +681,26 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * Damage interceptor for Storm. Hooked from MiscListener. Identical shape to
-	 * Maxor.handleDamage but with the 0.55 stun cap.
+	 * Damage clamp for Storm, called from {@code damage.Damage.deal}.  Identical shape to
+	 * {@code Maxor.clampDamage} but with the 0.55 crush cap.
 	 */
-	public void handleDamage(EntityDamageEvent e) {
-		if(boss == null || !boss.equals(e.getEntity())) return;
-		if(e.isCancelled()) return;
+	@Override
+	public double clampDamage(double incoming) {
+		if(boss == null) return incoming;
 
-		if(dying) {
-			e.setCancelled(true);
-			return;
-		}
+		if(dying) return 0;
 
 		// Crush cap already hit this stun → Storm has enraged (or is enraging this very tick). Reject everything,
-		// including same-tick arrows that resolved after the cap-hitting event, so the 55% cap can't be exceeded.
-		if(stunCapReached) {
-			e.setCancelled(true);
-			return;
-		}
+		// including same-tick arrows that resolved after the cap-hitting hit, so the 55% cap can't be exceeded.
+		if(stunCapReached) return 0;
 
-		double finalDmg = e.getFinalDamage();
-		if(finalDmg <= 0) return;
+		if(incoming <= 0) return 0;
 
 		double currentHp = boss.getHealth();
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
 		double onePercent = maxHp * 0.01;
 
-		double cappedDmg = finalDmg;
+		double cappedDmg = incoming;
 		boolean willEnrage = false;
 		if(inStun) {
 			double damageCap = maxHp * STUN_DAMAGE_CAP_FRACTION;
@@ -726,26 +718,17 @@ public final class Storm extends WitherLord {
 			willEnrage = false;
 		}
 
-		if(cappedDmg < finalDmg) {
-			scaleEventDamage(e, finalDmg, cappedDmg);
-		}
-
 		if(willDie) {
 			enterDyingState();
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * STUN_DAMAGE_CAP_FRACTION, stunDamageDealt + cappedDmg);
 			if(willEnrage) {
-				// Latch BEFORE enraging so any further same-tick damage event is rejected at the top of handleDamage.
+				// Latch BEFORE enraging so any further same-tick hit is rejected at the top of clampDamage.
 				stunCapReached = true;
 				enrageStorm();
 			}
 		}
-	}
-
-	private static void scaleEventDamage(EntityDamageEvent e, double currentFinal, double targetFinal) {
-		if(currentFinal <= 0) return;
-		double scale = Math.max(0, targetFinal) / currentFinal;
-		e.setDamage(e.getDamage() * scale);
+		return cappedDmg;
 	}
 
 	private void enterDyingState() {
@@ -914,13 +897,13 @@ public final class Storm extends WitherLord {
 		for(double[] coords : SENTRY_COORDS) {
 			Location loc = new Location(world, coords[0], coords[1], coords[2]);
 			WitherSkeleton sentry = (WitherSkeleton) world.spawnEntity(loc, EntityType.WITHER_SKELETON);
-			sentry.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
-			sentry.setHealth(4.0);
-			sentry.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-			sentry.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
+			// Wither-class trash, so it shares the Wither Miner's stat block (DAMAGE_PLAN.md §5 leaves the
+			// Guard's own figures [TBD]).  Wither + Undead, and no Skeletal Ruler on Master Mode.
+			damage.MobStats.apply(sentry, damage.MobStats.WITHER_MINER);
 			sentry.setAI(false);
 			sentry.getEquipment().setItemInMainHand(new ItemStack(Material.BOW));
-			sentry.customName(Utils.msg("Wither Guard <yellow>8M<red>❤"));
+			// The name is also how damage/MobStats identifies it, so the leading text has to stay.
+			sentry.customName(Utils.msg("Wither Guard <yellow>" + Utils.formatHealthM(sentry) + "<red>❤"));
 			sentry.setCustomNameVisible(true);
 
 			Location targetLoc = new Location(world, center.getX(), loc.getY(), center.getZ());

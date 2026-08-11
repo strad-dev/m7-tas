@@ -68,12 +68,59 @@ public class Eq implements CommandExecutor, Listener {
 		applySpeedCane(p); // must run after the menu exists, since it writes the cane via NMS (see below)
 	}
 
-	/** Mirror the player's worn armor into slots 0-3. The speed cane (slot 8) is set separately via NMS. */
+	/** Mirror the player's worn armor into slots 0-3, and the aggregate stats into 6-7.  Slot 8's speed cane is
+	 *  set separately via NMS. */
 	private static void refresh(Player p, Inventory gui) {
 		for(int i = 0; i < 4; i++) {
 			ItemStack worn = getArmor(p, i);
 			gui.setItem(i, worn == null ? null : worn.clone());
 		}
+		gui.setItem(MELEE_STATS_SLOT, meleeStatsItem(p));
+		gui.setItem(MAGIC_STATS_SLOT, magicStatsItem(p));
+	}
+
+	// =================== Aggregate stat readout (DAMAGE_PLAN.md §7b) ===================
+	// Item lore is per-item, so it can only show that item's contribution.  These two slots show the thing lore
+	// cannot: the player's whole aggregate, equipment, Accessory Power, tunings, profile sources and class bonus
+	// included.  Generated from the stat layer, never authored, for the same reason lore is.
+
+	private static final int MELEE_STATS_SLOT = 6;
+	private static final int MAGIC_STATS_SLOT = 7;
+
+	/** Slot 6: Damage, Strength and Crit Damage - the melee/beam half of the aggregate. */
+	private static ItemStack meleeStatsItem(Player p) {
+		return statsItem(p, Material.DIAMOND_SWORD, "<red>Offensive Stats",
+				damage.Stat.DAMAGE, damage.Stat.STRENGTH, damage.Stat.CRIT_DAMAGE);
+	}
+
+	/** Slot 7: Intelligence and Ability Damage - what the beam multiplier and the ability formula read. */
+	private static ItemStack magicStatsItem(Player p) {
+		return statsItem(p, Material.POTION, "<aqua>Magic Stats",
+				damage.Stat.INTELLIGENCE, damage.Stat.ABILITY_DAMAGE);
+	}
+
+	private static ItemStack statsItem(Player p, Material material, String title, damage.Stat... stats) {
+		// The aggregate is path-resolved, so the readout has to pick a path and say which: a Mage's ability-path
+		// Intelligence is a different number entirely from their beam-path one.
+		damage.DungeonClass clazz = damage.DungeonClass.of(p);
+		damage.DamagePath path = clazz.primaryPath();
+		damage.StatBlock block = damage.Stats.of(p, path);
+
+		ItemStack item = new ItemStack(material);
+		ItemMeta meta = item.getItemMeta();
+		if(meta == null) return item;
+		meta.displayName(Utils.mm(title));
+		java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+		for(damage.Stat stat : stats) {
+			lore.add(Utils.mm("<gray>" + stat.display() + ": " + stat.colour() + "+"
+					+ Utils.round(block.get(stat), 1) + " " + stat.symbol()));
+		}
+		lore.add(net.kyori.adventure.text.Component.empty());
+		lore.add(Utils.mm("<dark_gray>" + clazz + ", " + path.name().toLowerCase(java.util.Locale.ROOT) + " path"));
+		meta.lore(lore);
+		meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ADDITIONAL_TOOLTIP);
+		item.setItemMeta(meta);
+		return item;
 	}
 
 	/**
@@ -140,9 +187,14 @@ public class Eq implements CommandExecutor, Listener {
 		e.setCurrentItem(worn); // null clears the slot if nothing was worn
 		Inventory gui = e.getView().getTopInventory();
 		gui.setItem(idx, item.clone());
-		// A helmet swap changes speed next tick (HelmetSpeedSync poll), so refresh the cane afterwards.
+		// A helmet swap changes speed next tick (HelmetSpeedSync poll), so refresh the cane afterwards - and it
+		// changes the aggregate too, by thousands of Intelligence in the Storm's-helmet case, so redraw both.
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-			if(p.getOpenInventory().getTopInventory().getHolder() instanceof EqHolder) applySpeedCane(p);
+			if(p.getOpenInventory().getTopInventory().getHolder() instanceof EqHolder) {
+				gui.setItem(MELEE_STATS_SLOT, meleeStatsItem(p));
+				gui.setItem(MAGIC_STATS_SLOT, magicStatsItem(p));
+				applySpeedCane(p);
+			}
 		}, 2L);
 	}
 

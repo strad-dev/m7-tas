@@ -4,11 +4,7 @@ import commands.Spectate;
 import instructions.Server;
 import instructions.bosses.Watcher;
 import instructions.bosses.WitherActions;
-import instructions.bosses.WitherLord;
-import instructions.bosses.goldor.Goldor;
 import instructions.bosses.maxor.Maxor;
-import instructions.bosses.necron.Necron;
-import instructions.bosses.storm.Storm;
 import instructions.bosses.witherking.WitherKing;
 import io.papermc.paper.event.entity.EntityKnockbackEvent;
 import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
@@ -57,7 +53,8 @@ public class MiscListener implements Listener {
 	}
 
 	// The Watcher is a pre-boss you never damage; you kill its 19 blood mobs instead.  It relies on RESISTANCE 255,
-	// but genericKill (mage beam and hurtEntity) bypasses potion effects, so cancel ALL damage to it outright.
+	// but the plugin's own damage path bypasses potion effects entirely, so cancel ALL vanilla damage to it too.
+	// (damage/Damage.deal refuses a TASWatcher outright; this covers anything that never reaches it.)
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onWatcherDamage(EntityDamageEvent e) {
 		// The Watcher is never damageable; a freshly-spawned blood mob is shielded for ~2 ticks (practice) so a
@@ -213,22 +210,23 @@ public class MiscListener implements Listener {
 				if(hitEntity instanceof Player) {
 					e.setCancelled(true);
 				}
-				// Handle TerminatorArrow entity hits: cancel to preserve pierce, then apply damage manually.
+				// Handle OUR arrows' entity hits: cancel to preserve pierce, then apply damage manually.
 				// Wither hits are handled by WithersNotImmuneToArrows (which bypasses vanilla shield logic).
-				else if(arrow.getScoreboardTags().contains("TerminatorArrow") && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither)) {
+				// The gate is "we stamped this arrow" rather than a tag, so it covers the Terminator, Last Breath,
+				// the Explosive Bow and Rapid Fire uniformly, and never a genuinely vanilla arrow.
+				else if(damage.Arrows.isStamped(arrow) && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither)) {
 					e.setCancelled(true);
-					hitEntity.setNoDamageTicks(0);
 					// Capture dead/dying state BEFORE applying damage: a killing-blow arrow SHOULD still ding (the
 					// target was alive when hit), but an arrow striking an ALREADY dead/dying target should not. A
 					// Wither-King dragon in its death animation keeps HP pinned to 1 (isDead()/getHealth() won't catch
 					// it), so consult WitherKing's dying set too.
 					boolean targetDead = hitEntity.isDead() || hitEntity.getHealth() <= 0
 							|| hitEntity.getScoreboardTags().contains("TASDying") || WitherKing.isDyingDragon(hitEntity);
-					// Berserk's per-mob damage ramp (+10%/hit, cap 3×); each pierced arrow counts as its own hit.
-					Utils.hurtEntity(hitEntity, (float) CustomItems.scaleBerserkDamage(p, hitEntity, arrow.getDamage()), p);
-					hitEntity.setNoDamageTicks(0);
+					// Arrows.resolve applies the arrow's debuffs, the target half of the formula and Piercing's 25%
+					// for every mob after the first.  Arrows never set the aggro target.
+					damage.Damage.dealNoAggro(hitEntity, damage.Arrows.resolve(arrow, p, hitEntity),
+							damage.DamageKind.NORMAL, p, damage.DamagePath.BOW);
 					if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
-					Utils.changeName(hitEntity);
 					int newPierce = arrow.getPierceLevel() - 1;
 					if(newPierce <= 0) arrow.remove();
 					else arrow.setPierceLevel(newPierce);
@@ -320,12 +318,20 @@ public class MiscListener implements Listener {
 		}
 	}
 
+	/**
+	 * Every hit on a boss wither now goes through {@code damage.Damage.deal}, which writes health directly and
+	 * calls the boss's own {@code clampDamage} explicitly, so any {@code EntityDamageEvent} reaching a TASWither
+	 * is by definition NOT ours - a stray explosion, fire, a fall.  None of that is part of the SkyBlock damage
+	 * model, so cancel it outright rather than let it slip past the clamps.
+	 * <p>
+	 * This replaces the four {@code handleDamage(EntityDamageEvent)} interceptors that used to be dispatched from
+	 * here (DAMAGE_PLAN.md §7's damage-path unification).
+	 */
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onWitherLordDamage(EntityDamageEvent e) {
-		Maxor.INSTANCE.handleDamage(e);
-		Storm.INSTANCE.handleDamage(e);
-		Goldor.INSTANCE.handleDamage(e);
-		Necron.INSTANCE.handleDamage(e);
+		if(e.getEntity() instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
+			e.setCancelled(true);
+		}
 	}
 
 	// Remember whoever last damaged a TAS boss, fake or real, since bosses aggro that player.  MONITOR without
@@ -408,51 +414,11 @@ public class MiscListener implements Listener {
 		Utils.scheduleTask(() -> { if(wither.isValid()) Utils.changeName(wither); }, 1);
 	}
 
-	// Runs before the WitherLord handleDamage HIGH-priority clamp so the original (pre-clamp)
-	// damage is what we judge "did this hit do anything?" by. Otherwise hits that get
-	// clamped to 0 (e.g. once Maxor's 75% / Storm's 55% stun cap is hit) would silently skip the sound.
-	// Listens on the broader EntityDamageEvent so non-by-entity sources (e.g. mage beam's
-	// Utils.hurtEntity, which uses genericKill) also trigger the sound.
-	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
-	public void onWitherHurtSound(EntityDamageEvent e) {
-		if(!(e.getEntity() instanceof Wither wither)) return;
-		if(e.getFinalDamage() <= 0) return;
-		// Suffocation is cancelled by onWitherSuffocation, but Bukkit doesn't guarantee
-		// listener order within a class at the same priority, so explicitly skip it here.
-		if(e.getCause() == EntityDamageEvent.DamageCause.SUFFOCATION) return;
-		// While dying, only the death noise plays, with no hurt sound.
-		WitherLord activeLord = WitherLord.activeFor(wither);
-		if(activeLord != null && activeLord.isDying()) return;
-		// Mage beam routes a constant-volume hurt sound to the beamer itself, so skip the
-		// at-location broadcast and beam hits aren't distance-attenuated or doubled up close.
-		if(CustomItems.beamDamageInProgress) return;
-
-		Location loc = wither.getLocation();
-		wither.getWorld().playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-
-		Player damager = null;
-		if(e instanceof EntityDamageByEntityEvent be) {
-			damager = resolveDamager(be.getDamager());
-		}
-		if(damager == null) return;
-		damager.playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-
-		// If a fake player dealt the damage, route the sound to its spectators too.
-		if(FakePlayerManager.getFakePlayers().containsValue(damager)) {
-			java.util.Set<Player> spectators = Spectate.getReverseSpectatorMap().get(damager);
-			if(spectators != null) {
-				for(Player spec : spectators) {
-					spec.playSound(loc, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
-				}
-			}
-		}
-	}
-
-	private static Player resolveDamager(Entity damager) {
-		if(damager instanceof Player p) return p;
-		if(damager instanceof Projectile proj && proj.getShooter() instanceof Player p) return p;
-		return null;
-	}
+	// The wither hurt sound moved to damage/Damage.witherHurtSound.  It used to hang off EntityDamageEvent here,
+	// which the unified damage path (DAMAGE_PLAN.md §7) stopped firing: every hit now writes health directly, so
+	// the sound belongs at the one place every hit passes through.  Its three rules went with it - judged on the
+	// PRE-clamp damage, silent while the boss is dying, and silent for a mage beam (which routes its own
+	// constant-volume sound to the beamer).
 
 	@EventHandler
 	public void onEnergyCrystalRightClick(PlayerInteractAtEntityEvent e) {
@@ -500,9 +466,9 @@ public class MiscListener implements Listener {
 	// /kill is the one exception: it must still remove them.
 	//
 	// Vanilla's /kill (LivingEntity#kill) arrives as DamageCause.KILL, because DamageTypes.GENERIC_KILL maps
-	// to it. Utils.hurtEntity uses that SAME source for ability damage, so letting KILL through would once
-	// have let mage beams in too, which is why hurtEntity now refuses villagers outright.  With ability damage
-	// stopped at the source, a KILL-cause hit on a villager can only be a real /kill.
+	// to it. The old hurtEntity used that SAME source for ability damage, so letting KILL through would once
+	// have let mage beams in too, which is why damage/Damage.deal refuses villagers outright.  With ability
+	// damage stopped at the source, a KILL-cause hit on a villager can only be a real /kill.
 	// LOWEST so the hit is dead before any other handler acts on it.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVillagerDamage(EntityDamageEvent e) {

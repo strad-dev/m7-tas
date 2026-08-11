@@ -222,7 +222,7 @@ public class Watcher {
 	// ============================== Event-driven kills ==============================
 
 	// Blood-Mob kills already counted, by UUID.  A single kill can surface twice, via EntityDeathEvent AND the
-	// hurtEntity kill chokepoint, so dedupe to count each mob exactly once.
+	// damage/Damage.deal kill chokepoint, so dedupe to count each mob exactly once.
 	private final Set<UUID> countedMobKills = new HashSet<>();
 
 	/** Dispatched from the EntityDeathEvent listener. Counts Blood-Mob deaths, drives kill lines + portal. */
@@ -232,7 +232,7 @@ public class Watcher {
 
 	/**
 	 * Count one Blood-Mob kill exactly once, whether it arrives via {@link #handleMobDeath} (EntityDeathEvent) or
-	 * the {@code Utils.hurtEntity} kill chokepoint.  The chokepoint is the backstop for an instakill on the SAME
+	 * the {@code damage.Damage.deal} kill chokepoint.  The chokepoint is the backstop for an instakill on the SAME
 	 * tick the mob spawns: that death is unreliable through the EntityDeathEvent path, because the entity dies
 	 * before it has been fully ticked into the world, so it would otherwise be lost and never count toward the 19.
 	 */
@@ -416,7 +416,7 @@ public class Watcher {
 			stand.setCustomNameVisible(false);
 			stand.setInvulnerable(true);
 			// Marker means zero hitbox.  The head-travel stand drifts through the room right where players aim, so
-			// a normal hitbox lets arrows hit it, and genericKill (hurtEntity) ignores setInvulnerable and kills it,
+			// a normal hitbox lets arrows hit it, and the plugin's damage path ignores setInvulnerable and kills it,
 			// while even a cancelled hit still eats the arrow's pierce.  A marker has no AABB, so the projectile
 			// sweep can't register a hit at all, and the head equipment and pose still render.
 			stand.setMarker(true);
@@ -576,12 +576,12 @@ public class Watcher {
 		mob.setPersistent(true);
 		mob.setRemoveWhenFarAway(false);
 
+		// Real HP and defense (DAMAGE_PLAN.md §5).  These are no longer flat-kill targets: the Watcher itself
+		// stays totally immune, but its adds now have to actually be brought to 0 by damage.  All three carry the
+		// inherent x0.1 boss resistance, and the 6M rank-and-file carry 2000 defense on top.
 		if(mobName.equals("Diamante Giant")) {
-			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>80M"));
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(40);
-			mob.setHealth(40);
+			damage.MobStats.apply(mob, damage.MobStats.DIAMANTE_GIANT);
+			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>" + Utils.formatHealthM(mob)));
 			Objects.requireNonNull(mob.getAttribute(Attribute.SCALE)).setBaseValue(6);
 			Objects.requireNonNull(mob.getEquipment()).setHelmet(new ItemStack(Material.DIAMOND_HELMET));
 			mob.getEquipment().setChestplate(new ItemStack(Material.DIAMOND_CHESTPLATE));
@@ -589,18 +589,12 @@ public class Watcher {
 			mob.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			mob.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 		} else if(mobName.equals("Bonzo")) {
-			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>60M"));
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(30);
-			mob.setHealth(30);
+			damage.MobStats.apply(mob, damage.MobStats.BONZO);
+			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>" + Utils.formatHealthM(mob)));
 			Objects.requireNonNull(mob.getEquipment()).setItemInMainHand(new ItemStack(Material.BLAZE_ROD));
 		} else {
-			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>24M"));
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR)).setBaseValue(-30);
-			Objects.requireNonNull(mob.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
-			Objects.requireNonNull(mob.getAttribute(Attribute.MAX_HEALTH)).setBaseValue(12);
-			mob.setHealth(12);
+			damage.MobStats.apply(mob, damage.MobStats.WATCHER_UNDEAD);
+			mob.customName(Utils.msg("<yellow>" + mobName + "<red> ❤<yellow>" + Utils.formatHealthM(mob)));
 			Objects.requireNonNull(mob.getEquipment()).setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
 			mob.getEquipment().setLeggings(new ItemStack(Material.CHAINMAIL_LEGGINGS));
 			mob.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));

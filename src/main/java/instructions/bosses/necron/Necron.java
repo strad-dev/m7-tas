@@ -14,7 +14,6 @@ import org.bukkit.craftbukkit.entity.CraftWither;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Player;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -94,7 +93,7 @@ public final class Necron extends WitherLord {
 	@Override protected String name() { return "Necron"; }
 	@Override protected String displayName() { return "Necron"; }
 	@Override protected Location spawnLocation() { return new Location(world, 54.5, 66, 76.5, 0f, 0f); }
-	@Override protected double maxHealth() { return 1000; }
+	@Override protected double maxHealth() { return damage.MobStats.NECRON.internalHealth(); }
 	@Override protected String displayHealth() { return "1.4B"; }
 	@Override protected int previousTicks() { return PRE_NECRON_TICKS; }
 
@@ -147,49 +146,37 @@ public final class Necron extends WitherLord {
 	 *  except during the intro and the immune interludes. Each threshold (80% / 25% / 5%) is consumed in order:
 	 *  a hit that would cross the next threshold is clamped exactly to it and triggers that interlude; a hit at
 	 *  0% kills. Modeled on {@link instructions.bosses.storm.Storm#handleDamage}. */
-	public void handleDamage(EntityDamageEvent e) {
-		if(boss == null || !boss.equals(e.getEntity())) return;
-		if(e.isCancelled()) return;
-		if(dying) {
-			e.setCancelled(true);
-			return;
-		}
-
-		double finalDmg = e.getFinalDamage();
-		if(finalDmg <= 0) return;
+	@Override
+	public double clampDamage(double incoming) {
+		if(boss == null) return incoming;
+		if(dying) return 0;
+		if(incoming <= 0) return 0;
 
 		if(inInterlude) {
 			// Like Goldor on patrol, Necron stays "damageable" during a frenzy or fireball interlude.  Arrows
-			// connect (the terminator ding fires in WithersNotImmuneToArrows since his shield is down) and the
-			// hurt flash shows, but the hit never reduces his health.  Cancelling suppresses the vanilla flash,
-			// so render the hurt animation ourselves.
+			// connect and the hurt flash shows, but the hit never reduces his health.  Blocking the damage
+			// suppresses the flash, so render the hurt animation ourselves.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
-			e.setCancelled(true);
-			return;
+			return 0;
 		}
-		if(!damageable) {
-			// Intro (pre-fight): fully immune, no feedback.
-			e.setCancelled(true);
-			return;
-		}
+		if(!damageable) return 0; // Intro (pre-fight): fully immune, no feedback.
 
 		double currentHp = boss.getHealth();
 		double threshold = nextThreshold();
 
-		if(currentHp - finalDmg <= threshold) {
+		if(currentHp - incoming <= threshold) {
 			if(threshold <= 0.0) {
 				// Killing blow: clamp to leave a 1% sliver so vanilla doesn't death-despawn the wither
 				// before the death dialogue.  enterDyingState pins HP to 1, shown as "1" via TASDying.
 				double onePercent = maxHealth() * 0.01;
-				scaleEventDamage(e, finalDmg, Math.max(0, currentHp - onePercent));
 				enterDyingState();
-			} else {
-				// Clamp the hit so HP lands exactly on the threshold, then start that interlude.
-				scaleEventDamage(e, finalDmg, currentHp - threshold);
-				triggerInterlude(eventsDone);
+				return Math.max(0, currentHp - onePercent);
 			}
+			// Clamp the hit so HP lands exactly on the threshold, then start that interlude.
+			triggerInterlude(eventsDone);
+			return currentHp - threshold;
 		}
-		// Otherwise the hit passes through unmodified.
+		return incoming; // otherwise the hit passes through unmodified
 	}
 
 	/** Next HP value (absolute) at which the upcoming interlude fires, or 0 (death) once all are consumed. */
@@ -251,14 +238,6 @@ public final class Necron extends WitherLord {
 	private void cancelInterludeEndTask() {
 		if(interludeEndTask != null) BossScheduler.removeTicker(interludeEndTask);
 		interludeEndTask = null;
-	}
-
-	/** Vanilla-shape damage scaling so {@code e.getFinalDamage()} becomes {@code targetFinal} (copied from
-	 *  {@link instructions.bosses.storm.Storm} / {@link instructions.bosses.maxor.Maxor}). */
-	private static void scaleEventDamage(EntityDamageEvent e, double currentFinal, double targetFinal) {
-		if(currentFinal <= 0) return;
-		double scale = Math.max(0, targetFinal) / currentFinal;
-		e.setDamage(e.getDamage() * scale);
 	}
 
 	// ---------- Movement (snap to middle for a frenzy) ----------

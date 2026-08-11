@@ -82,6 +82,14 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
+			case "toggledungeondifficulty" -> {
+				if(args.length == 1) {
+					for(String val : new String[]{"classic", "realistic"}) {
+						if(val.startsWith(args[0].toLowerCase())) completions.add(val);
+					}
+				}
+			}
+
 			case "setspeed" -> {
 				String[] speedPresets = {"400", "500", "600", "650"};
 				if(args.length == 1) {

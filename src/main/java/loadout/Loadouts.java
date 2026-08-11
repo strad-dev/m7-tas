@@ -183,6 +183,31 @@ public final class Loadouts {
 	public static void applyClassTag(Player p, String role) {
 		for(String tag : CLASSES) p.removeScoreboardTag(tag);
 		p.addScoreboardTag(role);
+		applySwingRange(p);
+		damage.Stats.invalidate(p);
+	}
+
+	/**
+	 * A Berserk's extra swing range (DAMAGE_PLAN.md §1.14): +5, or +5.5 when it is the only Berserk in the party.
+	 * The same figure extends its Cleave radius (§7), so the two move together - {@code entity_interaction_range}
+	 * 3.0 to 8.0, Cleave radius 4.8 to 9.8 - which is why both read it from
+	 * {@code damage.ClassBonuses.swingRange} rather than each carrying its own number.
+	 * <p>
+	 * Applied as a named modifier so re-applying it is idempotent and switching class removes it.
+	 */
+	public static void applySwingRange(Player p) {
+		var attr = p.getAttribute(org.bukkit.attribute.Attribute.ENTITY_INTERACTION_RANGE);
+		if(attr == null) return;
+		org.bukkit.NamespacedKey key = new org.bukkit.NamespacedKey(M7tas.getInstance(), "swing_range");
+		attr.removeModifier(new org.bukkit.attribute.AttributeModifier(key, 0,
+				org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,
+				org.bukkit.inventory.EquipmentSlotGroup.ANY));
+		double bonus = damage.ClassBonuses.swingRange(damage.DungeonClass.of(p), damage.DungeonClass.isSoloOnClass(p));
+		if(bonus > 0) {
+			attr.addModifier(new org.bukkit.attribute.AttributeModifier(key, bonus,
+					org.bukkit.attribute.AttributeModifier.Operation.ADD_NUMBER,
+					org.bukkit.inventory.EquipmentSlotGroup.ANY));
+		}
 	}
 
 	/** On-disk shape - MUST match the network plugin's {@code Loadouts.LoadoutFile} (UUID is the filename). */

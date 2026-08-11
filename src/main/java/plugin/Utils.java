@@ -14,7 +14,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.PositionMoveRotation;
 import net.minecraft.world.entity.Relative;
@@ -286,7 +285,9 @@ public class Utils {
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
 		item.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
-		return item;
+		// Armour has no lore ID, so StatLore keeps a blank lore line 0 and appends its stat rows below it - which
+		// is what leaves Catalog.paletteKey's third component the empty string it has always been (§7b).
+		return damage.StatLore.apply(item);
 	}
 
 	/**
@@ -669,31 +670,23 @@ public class Utils {
 		}
 	}
 
-	// Scoreboard-tag → display-max in M for bosses whose displayed HP is decoupled from internal HP
-	private static final Map<String, Double> BOSS_DISPLAY_MAX_M = Map.of(
-			"TASMaxor", 800.0,
-			"TASStorm", 1000.0,
-			"TASGoldor", 1200.0,
-			"TASNecron", 1400.0,
-			"WitherKingDragon", 1000.0
-	);
-
+	/**
+	 * Displayed HP for a mob's nameplate / boss bar, e.g. {@code "800M"} or {@code "1.4B"}.
+	 * <p>
+	 * Internal HP IS the SkyBlock value divided by {@link damage.Scale#SB_PER_MC_HP}, so display is just
+	 * {@code internal x 1M} and there is nothing to decouple.  This used to carry a per-boss display-max table plus
+	 * a x2 fudge, because internal HP was hand-tuned (Maxor sat at 300 while displaying 800M) and the two numbers
+	 * had no relationship; DAMAGE_PLAN.md §8 retires all of that.
+	 */
 	public static String formatHealthM(LivingEntity entity) {
 		// Withers flagged as dying always display "1" regardless of internal HP.
 		if(entity.getScoreboardTags().contains("TASDying")) return "1";
-		double current = entity.getHealth() + entity.getAbsorptionAmount();
-		for(String tag : entity.getScoreboardTags()) {
-			Double displayMax = BOSS_DISPLAY_MAX_M.get(tag);
-			if(displayMax == null) continue;
-			double maxHealth = entity.getAttribute(Attribute.MAX_HEALTH).getValue();
-			double ratio = maxHealth > 0 ? Math.clamp(current / maxHealth, 0.0, 1.0) : 0.0;
-			return formatDisplayM(displayMax * ratio);
-		}
-		return formatHealthM(current);
+		return formatHealthM(entity.getHealth() + entity.getAbsorptionAmount());
 	}
 
+	/** Displayed HP for a raw internal health value.  Internal is SB/1e6, so one point of health is one million. */
 	public static String formatHealthM(double rawHealth) {
-		return formatDisplayM(rawHealth * 2);
+		return formatDisplayM(rawHealth);
 	}
 
 	private static String formatDisplayM(double displayM) {
@@ -705,62 +698,12 @@ public class Utils {
 		return (int) Math.round(displayM) + "M"; // round to nearest 1M
 	}
 
-	/** Outgoing-damage multiplier from the player's worn head item: Cow Hat 0.70, Spirit/Bonzo Mask 0.85, else 1.0. */
-	private static float helmetDamageMultiplier(Player p) {
-		ItemStack helmet = p.getInventory().getHelmet();
-		if(FakePlayerInventory.isCowHat(helmet)) return 0.70f;
-		if(FakePlayerInventory.isSpiritMask(helmet) || FakePlayerInventory.isBonzoMask(helmet)) return 0.85f;
-		return 1.0f;
-	}
-
-	public static void hurtEntity(LivingEntity entity, float damage, Player attacker) {
-		// Cosmetic head items cut the wearer's outgoing damage: Cow Hat −30%, Spirit/Bonzo Mask −15%. Fake players
-		// wear the diamond/storm head, so this only penalises a real player who equips a mask as a helmet.
-		if(attacker != null) damage *= helmetDamageMultiplier(attacker);
-		CraftLivingEntity craftEntity = (CraftLivingEntity) entity;
-		net.minecraft.world.entity.LivingEntity nmsEntity = craftEntity.getHandle();
-		ServerLevel level = (ServerLevel) nmsEntity.level();
-		// Boss aggro: a mage beam / hurtEntity hit uses a no-source damage type (no EntityDamageByEntityEvent), so
-		// record the attacker here for the last-damager aggro target.
-		if(attacker != null && entity instanceof org.bukkit.entity.Wither && entity.getScoreboardTags().contains("TASWither")) {
-			instructions.bosses.WitherActions.noteDamager(attacker);
-		}
-		// The Wither King is immune to all direct player damage (mage beam, AOTS, etc.).  Its HP is driven solely
-		// by dragon kills, each removing 1 via setHealth in WitherKing#playDragonDeathSound.  Aggro is still noted above.
-		if(entity.getScoreboardTags().contains("TASWitherKing")) return;
-		// Villager NPCs (Mort / the Wizard) never take plugin-dealt damage: mage beam, Salvation, AOTS or AoE.
-		// Blocking it HERE rather than only in MiscListener matters, because this method hits with genericKill, the
-		// exact same damage source vanilla's /kill uses, so the two are indistinguishable once they reach the damage
-		// event.  Keeping ability damage away from villagers at the source means a KILL-cause event on a villager
-		// can only be a real /kill, which is what lets MiscListener allow it through cleanly.
-		if(entity instanceof org.bukkit.entity.Villager) return;
-		if(nmsEntity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
-			// EnderDragon.hurtServer() delegates to hurt() which rejects damage sources without
-			// a Player entity or ALWAYS_HURTS_ENDER_DRAGONS tag. Using playerAttack() would pass
-			// the check but causes infinite recursion via EntityDamageByEntityEvent → handleCustomItems.
-			// Direct health manipulation avoids both issues.
-			entity.setHealth(Math.max(0, (float) (entity.getHealth() - damage)));
-			if(entity instanceof org.bukkit.entity.EnderDragon dragon && dragon.getScoreboardTags().contains("WitherKingDragon")) {
-				// Wither-King dragon kill chokepoint: dragon damage never fires an EntityDamageEvent (we setHealth
-				// directly), so detect the kill here and hand off to the death/spawn-next logic (idempotent).
-				if(entity.getHealth() <= 0) {
-					instructions.bosses.witherking.WitherKing.handleDragonKilled(dragon);
-				} else if(damage > 0) {
-					// setHealth bypasses the vanilla damage path, so the red hurt flash never plays.  Send it
-					// manually so a dragon flashes red when hit, like the withers do.
-
-					broadcastPacket(new net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket(nmsEntity));
-				}
-			}
-		} else {
-			nmsEntity.hurtServer(level, nmsEntity.damageSources().genericKill(), damage);
-			// Blood-Mob kill chokepoint: an instakill on the SAME tick a Watcher mob spawns can lose its
-			// EntityDeathEvent, so register the kill here too once its HP hits 0 (deduped in Watcher by UUID).
-			if(entity.getScoreboardTags().contains("WatcherMob") && entity.getHealth() <= 0) {
-				instructions.bosses.Watcher.INSTANCE.registerMobKill(entity);
-			}
-		}
-	}
+	// hurtEntity lived here.  It is now damage/Damage.deal - one path for every damage instance, applying damage
+	// by reading health, subtracting and setting it (DAMAGE_PLAN.md §7).  Three paths used to exist
+	// (hurtServer(genericKill), setHealth for dragons, wither.damage() for arrows-on-withers) with different
+	// i-frame, armor, event and aggro behaviour, and the split was already visible as workarounds here.
+	// The worn-head damage multiplier that used to sit alongside it (Cow Hat x0.70, masks x0.85) is deleted, not
+	// re-bucketed: helmet-slot exclusivity in the stat layer models the same thing properly (§1.10, §8).
 
 	public static void changeName(LivingEntity entity) {
 		if(!(entity instanceof Player)) {

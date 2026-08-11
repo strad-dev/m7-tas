@@ -10,7 +10,6 @@ import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.inventory.ItemStack;
 import plugin.BossScheduler;
 import plugin.FakePlayerInventory;
@@ -96,7 +95,7 @@ public final class Maxor extends WitherLord {
 
 	@Override
 	protected double maxHealth() {
-		return 300;
+		return damage.MobStats.MAXOR.internalHealth();
 	}
 
 	@Override
@@ -422,29 +421,22 @@ public final class Maxor extends WitherLord {
 	}
 
 	/**
-	 * Damage interceptor for Maxor.  Hook from a Bukkit listener.
+	 * Damage clamp for Maxor, called from {@code damage.Damage.deal}.
 	 * If a hit would kill him, clamp it to leave him on 1% HP and play the death dialogue.
 	 * Otherwise during a stun, clamp cumulative damage to 75% of max HP and trigger enrage.
 	 */
-	public void handleDamage(EntityDamageEvent e) {
-		if(boss == null || !boss.equals(e.getEntity())) return;
-		if(e.isCancelled()) return;
+	@Override
+	public double clampDamage(double incoming) {
+		if(boss == null) return incoming;
 
-		// Dying = completely immune. Cancel before any damage logic.
-		if(dying) {
-			e.setCancelled(true);
-			return;
-		}
+		// Dying = completely immune.  Blocked before any damage logic.
+		if(dying) return 0;
 
 		// Stun cap already hit this stun → Maxor has enraged (or is enraging this very tick). Reject everything,
-		// including same-tick arrows that resolved after the cap-hitting event, so the 75% cap can't be exceeded.
-		if(stunCapReached) {
-			e.setCancelled(true);
-			return;
-		}
+		// including same-tick arrows that resolved after the cap-hitting hit, so the 75% cap can't be exceeded.
+		if(stunCapReached) return 0;
 
-		double finalDmg = e.getFinalDamage();
-		if(finalDmg <= 0) return;
+		if(incoming <= 0) return 0;
 
 		double currentHp = boss.getHealth();
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
@@ -452,7 +444,7 @@ public final class Maxor extends WitherLord {
 
 		// Apply stun cap FIRST so that subsequent killing-blow check sees the already-capped value.
 		// Otherwise a single huge hit during stun bypasses the cap by clamping straight to "1% HP" via the kill clamp.
-		double cappedDmg = finalDmg;
+		double cappedDmg = incoming;
 		boolean willEnrage = false;
 		if(inStun) {
 			double damageCap = maxHp * 0.75;
@@ -471,26 +463,17 @@ public final class Maxor extends WitherLord {
 			willEnrage = false; // dying overrides, so no enrage
 		}
 
-		if(cappedDmg < finalDmg) {
-			scaleEventDamage(e, finalDmg, cappedDmg);
-		}
-
 		if(willDie) {
 			enterDyingState();
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * 0.75, stunDamageDealt + cappedDmg);
 			if(willEnrage) {
-				// Latch BEFORE enraging so any further same-tick damage event is rejected at the top of handleDamage.
+				// Latch BEFORE enraging so any further same-tick hit is rejected at the top of clampDamage.
 				stunCapReached = true;
 				enrageMaxor();
 			}
 		}
-	}
-
-	private static void scaleEventDamage(EntityDamageEvent e, double currentFinal, double targetFinal) {
-		if(currentFinal <= 0) return;
-		double scale = Math.max(0, targetFinal) / currentFinal;
-		e.setDamage(e.getDamage() * scale);
+		return cappedDmg;
 	}
 
 	private void playDeathDialogue() {
@@ -537,18 +520,17 @@ public final class Maxor extends WitherLord {
 
 			WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
 
-			// Set health to 4 HP
-			miner.getAttribute(Attribute.MAX_HEALTH).setBaseValue(4.0);
-			miner.setHealth(4.0);
-			miner.getAttribute(Attribute.ARMOR).setBaseValue(-30);
-			miner.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(-20);
+			// Real stats (DAMAGE_PLAN.md §5): 300M, Wither + Undead, so a Hyperion hits it for x1.5 on top of
+			// Smite and Undead Ruler.  It gets no Skeletal Ruler - Skeletal is Normal-mode only, and this is
+			// Master Mode.  This replaces the old 4 HP flat-kill value and the negative armour attributes.
+			damage.MobStats.apply(miner, damage.MobStats.WITHER_MINER);
 			miner.setAI(false);
 
 			// Give stone pickaxe
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
-			// Optional: Set custom name
-			miner.customName(Utils.msg("Wither Miner <yellow>8M<red>❤"));
+			// The name is also how damage/MobStats identifies it, so the leading text has to stay.
+			miner.customName(Utils.msg("Wither Miner <yellow>" + Utils.formatHealthM(miner) + "<red>❤"));
 			miner.setCustomNameVisible(true);
 
 			// Store in array

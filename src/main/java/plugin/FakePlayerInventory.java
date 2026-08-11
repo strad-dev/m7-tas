@@ -232,7 +232,7 @@ public class FakePlayerInventory {
 		meta.setPlayerProfile(profile);
 		helmet.setItemMeta(meta);
 		helmet.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
-		return helmet;
+		return damage.StatLore.apply(helmet);
 	}
 
 	public static ItemStack getDiamondHead() {
@@ -344,6 +344,12 @@ public class FakePlayerInventory {
 		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword");
 	}
 
+	/**
+	 * Build a custom item.  {@code id} becomes lore line 0, which is where {@code CustomItems.getID} and
+	 * {@code Catalog.paletteKey} both read it from - it must stay there.  Stat rows are APPENDED below it by
+	 * {@code damage.StatLore}, generated from the same term lists the damage math reads so the two cannot drift
+	 * (DAMAGE_PLAN.md §7b).
+	 */
 	public static ItemStack getSkyBlockItem(Material material, String name, String id) {
 		ItemStack item = new ItemStack(material);
 		ItemMeta meta = item.getItemMeta();
@@ -356,6 +362,6 @@ public class FakePlayerInventory {
 		meta.lore(lore);
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
-		return item;
+		return damage.StatLore.apply(item);
 	}
 }
