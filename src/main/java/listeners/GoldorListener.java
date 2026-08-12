@@ -1,6 +1,5 @@
 package listeners;
 
-import commands.Spectate;
 import instructions.Actions;
 import instructions.bosses.goldor.Goldor;
 import instructions.bosses.goldor.GoldorLever;
@@ -80,7 +79,8 @@ public class GoldorListener implements Listener {
 	private static final int LIGHTS_LAMP_Z = 143;
 
 	/**
-	 * True if {@code p} must not be able to progress a Goldor device: a spectator, which is the idle state on m7
+	 * True if {@code p} must not be able to progress a Goldor device (the shared {@link Utils#isSpectator}
+	 * predicate, named for what it means here): a spectator, which is the idle state on m7
 	 * where they are watching rather than running the phase, or a player spectating a fake.  This is not redundant
 	 * with vanilla's own spectator gating: CraftBukkit still fires the interact events for a spectator's clicks, and the raw
 	 * {@code ServerboundUseItemOnPacket} path in {@code PlayerPacketInterceptor} → {@link #tryRegisterSimonClick}
@@ -91,7 +91,7 @@ public class GoldorListener implements Listener {
 	 * this class uses.
 	 */
 	private static boolean cannotSolve(Player p) {
-		return p == null || p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p);
+		return Utils.isSpectator(p);
 	}
 
 	// =================== Terminal click (right-click) ===================

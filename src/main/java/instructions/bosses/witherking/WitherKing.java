@@ -249,8 +249,17 @@ public class WitherKing {
 		return relicColorOfItem(p.getInventory().getItem(8)) != null;
 	}
 
-	/** Picks up the given relic (by {@link Relic} name).  Called from the relic Interaction right-click. */
+	/**
+	 * Picks up the given relic (by {@link Relic} name).  Called from the relic Interaction right-click.
+	 * <br>
+	 * <b>Spectators are refused here, at the chokepoint.</b>  A relic pickup REMOVES the statue's display +
+	 * Interaction from the arena and puts the wool in that player's slot 8, and only the holder can place it, so
+	 * an idle m7 spectator clicking a relic used to strand the summon phase for the party actually running - and
+	 * a relic in a spectator's inventory is unrecoverable.  Vanilla doesn't gate this for us: it fires the
+	 * interact event for a spectator's click on an entity hitbox like anyone else's.
+	 */
 	public static void pickUpRelic(Player p, String color) {
+		if(Utils.isSpectator(p)) return;
 		// One relic at a time, so ignore this if the player is already carrying one and hasn't placed it.
 		if(isHoldingRelic(p)) return;
 		Relic relic = Relic.valueOf(color);
@@ -270,8 +279,11 @@ public class WitherKing {
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 	}
 
-	/** Places the held relic on its altar (by {@link Relic} name).  Called from the altar block right-click. */
+	/** Places the held relic on its altar (by {@link Relic} name).  Called from the altar block right-click.
+	 *  Spectator-gated for the same reason as {@link #pickUpRelic}: someone who is only watching must not be able
+	 *  to advance the summon, and this covers a relic carried into spectator rather than picked up there. */
 	public static void placeRelic(Player p, String color) {
+		if(Utils.isSpectator(p)) return;
 		Relic relic = Relic.valueOf(color);
 		if(placedRelics.contains(relic)) return;
 		placedRelics.add(relic);

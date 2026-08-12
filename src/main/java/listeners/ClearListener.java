@@ -52,33 +52,58 @@ public class ClearListener implements Listener {
 		}
 	}
 
+	/**
+	 * True if {@code p} must not be able to progress the clear: a spectator, which is the idle state on m7 where
+	 * they are watching someone else's run rather than in it, or a player spectating a fake.  The predicate is
+	 * shared ({@link Utils#isSpectator}); this name is what it means HERE, the way {@code GoldorListener.cannotSolve}
+	 * is for its devices.
+	 * <p>
+	 * <b>Not redundant with vanilla's own spectator gating, and the guard's PLACEMENT matters.</b>
+	 * {@code ServerPlayerGameMode.useItemOn} decides a spectator's click is a no-op only when the block has no
+	 * {@code MenuProvider} - a CHEST has one, because opening containers is a spectator feature - so a secret
+	 * chest fires {@link PlayerInteractEvent} with the block use still ALLOWED, and vanilla opens the GUI unless
+	 * something denies it.  Every other clear block (buttons, skulls, the crystal ball) arrives pre-cancelled,
+	 * but this handler doesn't {@code ignoreCancelled}, so those clicks reached the progress calls anyway.  So a
+	 * spectator could open the chest, take the secret's credit, collect essence and answer the Quiz for the party.
+	 * Hence: cancel FIRST (that's what shuts the chest GUI), then check this and return without progressing.
+	 */
+	private static boolean cannotInteract(Player p) {
+		return Utils.isSpectator(p);
+	}
+
 	@EventHandler
 	public void onRightClickBlock(PlayerInteractEvent e) {
 		if(!ClearManager.isActive()) return;
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 		Block b = e.getClickedBlock();
 		if(b == null) return;
+		Player p = e.getPlayer();
 
 		// Quiz answer buttons
 		int btn = PuzzleQuiz.buttonIndex(b);
 		if(btn >= 0) {
 			e.setCancelled(true);
-			PuzzleQuiz.answer(e.getPlayer(), btn);
+			if(cannotInteract(p)) return;
+			PuzzleQuiz.answer(p, btn);
 			return;
 		}
 		// Crystal ball (±1 block)
 		if(Math.abs(b.getX() - CRYSTAL[0]) <= 1 && Math.abs(b.getY() - CRYSTAL[1]) <= 1 && Math.abs(b.getZ() - CRYSTAL[2]) <= 1) {
 			e.setCancelled(true);
-			ClearManager.pickUpCrystal(e.getPlayer());
+			if(cannotInteract(p)) return;
+			ClearManager.pickUpCrystal(p);
 			return;
 		}
 		// Secret chests (right-click, no GUI) and essence skulls (right-click to collect).
 		Secret s = ClearManager.findSecretAtBlock(b.getX(), b.getY(), b.getZ());
 		if(s != null) {
-			e.setCancelled(true); // ALWAYS cancel so an already-opened chest never shows the vanilla GUI
+			// ALWAYS cancel: so an already-opened chest never shows the vanilla GUI, and so a SPECTATOR never gets
+			// it either (their click arrives here uncancelled - see cannotInteract).
+			e.setCancelled(true);
+			if(cannotInteract(p)) return;
 			if(!s.found) {
-				if(s.isChest()) ClearManager.openChest(e.getPlayer(), s);
-				else ClearManager.secretFound(e.getPlayer(), s); // essence
+				if(s.isChest()) ClearManager.openChest(p, s);
+				else ClearManager.secretFound(p, s); // essence
 			}
 		}
 	}
@@ -88,6 +113,7 @@ public class ClearListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onRightClickEntity(PlayerInteractEntityEvent e) {
 		if(!ClearManager.isActive()) return;
+		if(cannotInteract(e.getPlayer())) return; // a spectator can't hand the crystal in either
 		if(e.getRightClicked() instanceof Villager v && ClearManager.hasCrystal() && isWizard(v)) {
 			ClearManager.handInCrystal(e.getPlayer());
 		}
@@ -98,6 +124,7 @@ public class ClearListener implements Listener {
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onLeftClickEntity(io.papermc.paper.event.player.PrePlayerAttackEntityEvent e) {
 		if(!ClearManager.isActive()) return;
+		if(cannotInteract(e.getPlayer())) return;
 		if(e.getAttacked() instanceof Villager v && ClearManager.hasCrystal() && isWizard(v)) {
 			ClearManager.handInCrystal(e.getPlayer());
 		}

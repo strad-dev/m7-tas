@@ -98,6 +98,13 @@ public class MiscListener implements Listener {
 		if(b == null) return;
 		if(!Server.inWitherDoor(b) && !Server.inBloodDoor(b)) return;
 		if(!Server.isRunStarted() && CustomItems.getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) return;
+		// A spectator's click is consumed but never opens anything.  The key check is TEAM-wide (Server.hasWitherKey /
+		// hasBloodKey), so nothing about the CLICKER is tested: an idle watcher could otherwise open the wither or
+		// blood door on the running party's behalf, and the blood door starts the Watcher.
+		if(Utils.isSpectator(e.getPlayer())) {
+			e.setCancelled(true);
+			return;
+		}
 		if(Server.inWitherDoor(b)) {
 			e.setCancelled(true);
 			Server.tryOpenWitherDoor(e.getPlayer());

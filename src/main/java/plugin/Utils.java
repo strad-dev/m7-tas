@@ -552,6 +552,23 @@ public class Utils {
 		return playersInWorld.getFirst();
 	}
 
+	/**
+	 * True if {@code p} is WATCHING rather than running: vanilla spectator mode, which is the idle state on m7
+	 * (the network plugin parks everyone who isn't in the current party there), or a real player spectating a fake.
+	 * <br>
+	 * <b>Every player-driven dungeon mechanic must check this, and vanilla will not do it for you.</b>  Bukkit
+	 * still fires the interact events for a spectator's clicks, and a click on a block with a {@code MenuProvider}
+	 * (a chest) or on an ENTITY hitbox is not even pre-cancelled, so a spectator could otherwise take a secret,
+	 * solve a Goldor device, pocket a Wither-King relic or walk off with a Maxor Energy Crystal - the last two
+	 * being permanent griefs, since the entity is removed from the arena and the item lands in a spectator's
+	 * inventory where the running party can never reach it.  M7's own packet interceptor bypasses vanilla
+	 * entirely, so the check cannot live in vanilla either.  Put it at the mechanic's chokepoint where there is
+	 * one ({@code Maxor.pickUp}, {@code WitherKing.pickUpRelic}), so a future caller inherits it.
+	 */
+	public static boolean isSpectator(Player p) {
+		return p == null || p.getGameMode() == GameMode.SPECTATOR || commands.Spectate.isSpectating(p);
+	}
+
 	public enum DebugType {
 		CLIENT, SERVER, BOSS, ERROR
 	}

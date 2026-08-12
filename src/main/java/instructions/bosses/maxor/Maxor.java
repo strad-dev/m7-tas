@@ -191,7 +191,17 @@ public final class Maxor extends WitherLord {
 		topRightCrystal = spawnEnergyCrystal(new Location(world, 64.5, 238.48, 50.5));
 	}
 
+	/**
+	 * Collect a top Energy Crystal (right-click or left-click, both routed here by {@code MiscListener}).
+	 * <br>
+	 * <b>Spectators are refused here, at the chokepoint</b>, not in the two listeners, so every route in gets the
+	 * check.  A pickup DELETES the crystal from the arena and hands the item to that player, and only the holder
+	 * can walk it onto a plate, so an idle m7 spectator taking one used to leave the running party unable to
+	 * finish the mechanic at all, with the crystal sitting in an inventory they can never reach.  Vanilla is no
+	 * help: the interact event fires for a spectator's click on an entity hitbox exactly as it does for a runner's.
+	 */
 	public void pickUp(Player p, EnderCrystal crystal) {
+		if(Utils.isSpectator(p)) return;
 		if(notEnergyCrystal(crystal)) return;
 
 		// Already holding an Energy Crystal anywhere in inventory? Reject.
@@ -240,6 +250,10 @@ public final class Maxor extends WitherLord {
 	}
 
 	public void placeAtPlate(Player p, Location plate) {
+		// Re-checked here as well as at pickUp, because onPlateStep can DEFER this until the gate opens: the same
+		// "re-check all state on the deferred path" rule the other mechanics follow.  Also covers a crystal carried
+		// into spectator rather than picked up there.
+		if(Utils.isSpectator(p)) return;
 		ItemStack slot8 = p.getInventory().getItem(8);
 		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(CustomItems.getID(slot8))) return;
 
