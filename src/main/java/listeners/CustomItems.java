@@ -1201,6 +1201,13 @@ public class CustomItems implements Listener {
 	}
 
 	public static boolean checkAndActivateCrypt(Block clicked, Player p) {
+		// There are no crypts in the boss arena - it's a clear-phase secret - but the arena's decorative
+		// smooth-stone-slab / stone-brick-stair terrain passes the rectangle test anyway (a lone bottom slab with
+		// air under it is a valid 1x1 crypt, and any gold block in that layer makes it a Prince).  So every
+		// Superboom thrown in there opened a hole in the floor and handed out a free Crypt Lurker or Prince,
+		// which then counted toward the clear phase's bonus score.  Refuse before validating anything; returning
+		// false lets triggerSuperboomAt fall through to the cracked-brick flood-fill, which IS wanted in there.
+		if(LavaJump.isInBossArena(clicked.getLocation())) return false;
 		Material type = clicked.getType();
 		int slabY;
 
