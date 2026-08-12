@@ -1759,8 +1759,15 @@ public class CustomItems implements Listener {
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		ItemStack wand = p.getInventory().getItemInMainHand();
+		int debuffed = 0;
+		int alreadyDebuffed = 0;
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0) {
+				// Counted BEFORE the apply, which refreshes the window and would otherwise make every target read
+				// as already debuffed.  A refresh still counts as "already debuffed", the same split SkyBlock in
+				// Vanilla's wand reports - unlike that one, though, a refreshed target here still takes the damage.
+				if(damage.TargetDebuffs.iceSprayed(entity1)) alreadyDebuffed++;
+				else debuffed++;
 				// The cast applies its x1.1 damage debuff to EVERY enemy within 8 blocks of the caster's eyes for
 				// 5s, and it lands FIRST so the cast benefits from its own debuff (DAMAGE_PLAN.md §7).  The debuff
 				// applies even to a target the damage cannot reach, e.g. an armoured wither.
@@ -1771,6 +1778,12 @@ public class CustomItems implements Listener {
 				double sbDamage = damage.Damage.ability(p, entity1, wand);
 				damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
 			}
+		}
+		if(debuffed > 0) {
+			p.sendMessage(Utils.msg("<red>Your Ice Spray debuffed " + debuffed + " enemies."));
+		}
+		if(alreadyDebuffed > 0) {
+			p.sendMessage(Utils.msg("<red>" + alreadyDebuffed + " enemies have already been debuffed."));
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
 	}

@@ -149,7 +149,7 @@ file written by the server you're running on.)
 
 ### Custom events
 
-There are two events, both ordinary Bukkit `Event`s.  Neither is `Cancellable` and there's nothing to
+There are three events, all ordinary Bukkit `Event`s.  None is `Cancellable` and there's nothing to
 override.  They are notifications, not hooks:
 
 - **`plugin.RunCompleteEvent`**: fired the moment a `/m7practice` run finishes (for Wither-King runs, only
@@ -158,9 +158,12 @@ override.  They are notifications, not hooks:
   (currently only 300).  That's the point of it: the milestone's time is a real achievement whether or not the
   run is ever finished, since the team can reset straight after hitting 300.  Adds `int score()` on top of the
   same payload.
+- **`plugin.BlessingChangeEvent`**: fired MID-RUN whenever the blessing tally moves - a blessing was found, the
+  clear phase started, or the tally was cleared as a section was set up.  Carries a `plugin.BlessingState`
+  instead of a `RunResult`; see [The blessings](#the-blessings) below.
 
-Both carry a **`plugin.RunResult`**: a snapshot of every fact about the run, deliberately knowing nothing
-about leaderboards or categories.  Deciding what a run *qualifies for* is your plugin's business.
+The first two carry a **`plugin.RunResult`**: a snapshot of every fact about the run, deliberately knowing
+nothing about leaderboards or categories.  Deciding what a run *qualifies for* is your plugin's business.
 
 | Field | Meaning |
 |-------|---------|
@@ -187,6 +190,47 @@ Four things to know before you use them:
   relative to their own boss's start, and run to the **end of the phase** (after the death dialogue, the tick
   the next boss spawns), not to the killing blow, so they line up with the `splitEnds` deltas.
 
+### The blessings
+
+`plugin.BlessingChangeEvent` carries a **`plugin.BlessingState`**, and you can also ask for one at any moment
+without waiting for an event - useful if your plugin started up (or reloaded) mid-run and so missed the awards:
+
+```java
+String json = (String) Class.forName("plugin.BlessingState").getMethod("currentJson").invoke(null);
+```
+
+| Field | Meaning |
+|-------|---------|
+| `runId` | the run these belong to, the same id its `RunResult`s carry |
+| `difficulty` | `classic` or `realistic` |
+| `runActive` | whether a practice run is live at all - i.e. whether this is current, or a finished run's last word |
+| `clearActive` | whether the clear phase is live right now |
+| `hasClearData` | whether `level`/`count` describe this run at all (see below) |
+| `assumedMax` | whether the damage pipeline is using the maxed table instead of what was collected |
+| `blessings` | one entry per type, in the order Power, Wisdom, Time, Stone, Life |
+
+Each entry has `type` (`POWER` `WISDOM` `TIME` `STONE` `LIFE`), `level` (total level **collected**, so a Power V
+contributes 5), `count` (how many separate blessings of that type were found), `effectiveLevel` (the total level
+the damage formulas actually **used**), and the effect of that: `multiplier` for the three multiplicative
+blessings, `flatDamage` for Stone.  The two that aren't modelled are simply absent - Stone has no `multiplier`
+(its Defense half is unmodelled) and Life has neither.
+
+Two things will trip you up if you assume the obvious:
+
+- **`level` and `effectiveLevel` are different numbers and usually disagree.**  In classic mode - the default -
+  the formulas use the maxed table no matter what the party collected, so a run four blessings in is still being
+  damaged as though fully blessed.  `assumedMax` tells you which figure is the live one; a display showing only
+  `level` misreports every classic run.
+- **`hasClearData == false` means "there is no chest history", not "they collected nothing".**  A boss-only
+  practice never runs a clear phase, so there is nothing to collect and max blessings are assumed even in
+  realistic mode.
+- **The empty tally is reported too, not just the awards.**  The clear phase starting, and a section setup
+  clearing the tally, both fire this event.  A display fed only by awards keeps showing the previous run's
+  blessings for the whole of the next one, since a section that collects nothing never fires again.  Note the
+  *order* a finished run tears down in:
+  `/m7practice end` turns practice mode off first, so the last thing the run publishes has `runActive == false` -
+  check that flag rather than assuming a payload describes something live.
+
 ### Hooking in
 
 **Route A: no dependency (recommended).**  Read `m7-item-catalog.json` for items, and reach the event
@@ -207,7 +251,9 @@ try {
 ```
 
 Register the same way for `plugin.ScoreMilestoneEvent` if you want the live 300 (its extra `int score()` reads
-reflectively just like `json()` does).  Add `softdepend: [m7tas]` to your `plugin.yml` so you load *after* M7 TAS
+reflectively just like `json()` does) and for `plugin.BlessingChangeEvent` if you want the live blessings - every
+event here exposes that same `json()`, so one helper covers all three.  Add `softdepend: [m7tas]` to your
+`plugin.yml` so you load *after* M7 TAS
 and the class resolves.  This is how
 the strad.dev network plugin consumes it, and it means one jar can run on servers with and without M7 TAS.
 
@@ -215,7 +261,8 @@ the strad.dev network plugin consumes it, and it means one jar can run on server
 scope and `depend: [m7tas]` in your `plugin.yml`; at runtime Paper hands you M7 TAS's classes through its
 plugin classloader.  You get real types and IDE completion, at the cost of a hard dependency.
 
-The API classes (`RunCompleteEvent`, `RunResult`, `ItemSerial`, `Catalog`, `FakePlayerInventory`) are pure
+The API classes (`RunCompleteEvent`, `RunResult`, `BlessingChangeEvent`, `BlessingState`, `ItemSerial`,
+`Catalog`, `FakePlayerInventory`) are pure
 Bukkit, so `paper-nms` is *not* needed to compile against them, only to build M7 TAS itself.
 
 > **Don't copy `RunCompleteEvent` into your own plugin.**  Bukkit matches listeners by class identity; your

@@ -45,7 +45,8 @@ public final class ClearManager {
 	// Wizard crystal-ball special (not one of the 47 secrets)
 	private static boolean crystalPickedUp, crystalHandedIn;
 
-	// blessing tally, tracked for future use in TAS v3 and never consumed by gameplay yet
+	// blessing tally: read by damage/Difficulty in realistic mode, and published to other plugins as
+	// plugin/BlessingState (see #awardBlessing).
 	private static final Map<Blessing, Integer> blessingTally = new LinkedHashMap<>();
 
 	private static boolean milestone300;
@@ -122,7 +123,13 @@ public final class ClearManager {
 		crystalPickedUp = crystalHandedIn = false;
 		milestone300 = false;
 		score300Tick = bloodDoneTick = fullClearTick = -1;
-		blessingTally.clear();
+		// Report the clear as well as the awards: a consumer fed only by awardBlessing would keep showing the
+		// PREVIOUS run's blessings for the whole of the next one, since a section that collects nothing never
+		// fires again.  Only when there was something to clear, so /setup on an idle server is silent.
+		if(!blessingTally.isEmpty()) {
+			blessingTally.clear();
+			publishBlessings();
+		}
 	}
 
 	/** Begin the clear phase: spawn secrets, place chest blocks, hand out maps, start the HUD loop. */
@@ -139,6 +146,10 @@ public final class ClearManager {
 		giveMaps();
 		if(tickTask != null) tickTask.cancel();
 		tickTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), ClearManager::tick, 1L, 1L);
+		// Publish the (empty) opening tally, so a listener's display exists from the start of the clear rather than
+		// appearing out of nowhere on the first blessing.  This is also the first report that says "this run HAS a
+		// clear phase", which is the difference between "collected nothing" and "there was nothing to collect".
+		publishBlessings();
 	}
 
 	/** End the clear phase: remove secret entities, restore chest blocks + hotbar slot 8, stop the loop. */
@@ -609,6 +620,12 @@ public final class ClearManager {
 	public static void awardBlessing(Player p, Blessing b) {
 		Utils.broadcastBlessing(p, b.type(), b.level());
 		blessingTally.merge(b, 1, Integer::sum);
+		publishBlessings();
+	}
+
+	/** Tell anyone listening that the tally moved (the network plugin puts it in the tab list). */
+	private static void publishBlessings() {
+		Bukkit.getPluginManager().callEvent(new plugin.BlessingChangeEvent(plugin.BlessingState.capture()));
 	}
 
 	/** Recompute checkmark transitions + score milestone after any event. */
@@ -732,7 +749,7 @@ public final class ClearManager {
 		return "D";
 	}
 
-	// ==================== blessing tally (future use) ====================
+	// ==================== blessing tally ====================
 
 	public static Map<Blessing, Integer> blessingTally() {
 		return blessingTally;
@@ -740,6 +757,38 @@ public final class ClearManager {
 
 	public static int blessingCount(Blessing b) {
 		return blessingTally.getOrDefault(b, 0);
+	}
+
+	/**
+	 * Total level collected of one blessing type: every blessing of that type this run, summed by LEVEL, so a
+	 * Power V contributes 5.  This is the figure {@code damage/Difficulty} reads in realistic mode, and the one
+	 * {@code plugin/BlessingState} publishes - both go through here rather than walking the tally themselves,
+	 * since "level x how many of them" is the sort of sum that is only ever right in one place.
+	 */
+	public static int collectedLevel(Utils.BlessingType type) {
+		int level = 0;
+		for(Map.Entry<Blessing, Integer> e : blessingTally.entrySet()) {
+			if(e.getKey().type() == type) level += e.getKey().level() * e.getValue();
+		}
+		return level;
+	}
+
+	/** How many separate blessings of one type were collected this run, whatever their levels. */
+	public static int collectedCount(Utils.BlessingType type) {
+		int n = 0;
+		for(Map.Entry<Blessing, Integer> e : blessingTally.entrySet()) {
+			if(e.getKey().type() == type) n += e.getValue();
+		}
+		return n;
+	}
+
+	/**
+	 * Whether the tally describes THIS session, i.e. whether there is a real chest history to read.  The clear
+	 * being live covers a run in progress; a non-empty tally covers the stretch after the clear has handed off to
+	 * the boss chain.  False for a boss-only practice, which is exactly when maxed blessings are assumed.
+	 */
+	public static boolean hasBlessingData() {
+		return active || !blessingTally.isEmpty();
 	}
 
 	// ==================== helpers ====================

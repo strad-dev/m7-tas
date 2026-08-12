@@ -66,11 +66,11 @@ public final class Rooms {
 		BLOOD = reg("Blood", RoomType.BLOOD, new int[][]{{3, 1}}, 5, false,
 				new Blessing(BlessingType.POWER, 5), new Blessing(BlessingType.LIFE, 5));
 		reg("Museum", RoomType.NORMAL, new int[][]{{4, 2}, {5, 2}, {4, 3}, {5, 3}}, 3, true, new Blessing(BlessingType.WISDOM, 5))
-				.addSecret(Secret.blessingChest(-169, 70, -134, BlessingType.STONE, 2))
+				.addSecret(Secret.chest(-169, 70, -134))
 				.addSecret(Secret.essence(-180, 93, -127))
 				.addSecret(Secret.blessingChest(-172, 83, -85, BlessingType.STONE, 2))
 				.addSecret(Secret.mimicChest(-169, 70, -83))
-				.addSecret(Secret.chest(-186, 62, -80));
+				.addSecret(Secret.blessingChest(-186, 62, -80, BlessingType.STONE, 2));
 		reg("Deathmite", RoomType.NORMAL, new int[][]{{1, 2}, {2, 2}, {3, 2}}, 2, true, new Blessing(BlessingType.POWER, 5))
 				.addSecret(Secret.item(-130.5, 69, -79.5))
 				.addSecret(Secret.blessingChest(-111, 60, -84, BlessingType.LIFE, 2))
@@ -85,14 +85,14 @@ public final class Rooms {
 				.addSecret(Secret.chest(-64, 52, -125));
 		WIZARD = reg("Wizard", RoomType.NORMAL, new int[][]{{2, 3}, {2, 4}, {2, 5}}, 2, false);
 		WIZARD.addSecret(Secret.item(-94.5, 76, -196.5))
-				.addSecret(Secret.blessingChest(-100, 92, -183, BlessingType.WISDOM, 2))
+				.addSecret(Secret.chest(-100, 92, -183))
 				.addSecret(Secret.bat(-83.5, 53, -179.5))
-				.addSecret(Secret.blessingChest(-98, 89, -110, BlessingType.WISDOM, 1));
+				.addSecret(Secret.chest(-98, 89, -110));
 		reg("Fairy", RoomType.FAIRY, new int[][]{{3, 3}}, 2, false);
 		reg("Well", RoomType.NORMAL, new int[][]{{0, 4}, {0, 5}, {1, 5}}, 3, true, new Blessing(BlessingType.LIFE, 5))
-				.addSecret(Secret.chest(-70, 89, -185))
+				.addSecret(Secret.blessingChest(-70, 89, -185, BlessingType.WISDOM, 2))
 				.addSecret(Secret.item(-68.5, 91, -173.5))
-				.addSecret(Secret.chest(-22, 88, -188))
+				.addSecret(Secret.blessingChest(-22, 88, -188, BlessingType.WISDOM, 1))
 				.addSecret(Secret.essence(-12, 95, -197))
 				.addSecret(Secret.essence(-17, 95, -194))
 				.addSecret(Secret.chest(-29, 91, -163))
@@ -184,25 +184,25 @@ public final class Rooms {
 		Room r = byCell(cell[0], cell[1]);
 		if(r == null) return false;
 		// A perimeter column has at least one of its four horizontal neighbours outside this room's footprint.
-		return !inFootprint(worldX + 1, worldZ, r) || !inFootprint(worldX - 1, worldZ, r)
-				|| !inFootprint(worldX, worldZ + 1, r) || !inFootprint(worldX, worldZ - 1, r);
+		return notInFootprint(worldX + 1, worldZ, r) || notInFootprint(worldX - 1, worldZ, r)
+				|| notInFootprint(worldX, worldZ + 1, r) || notInFootprint(worldX, worldZ - 1, r);
 	}
 
 	/** Whether the column at (x,z) belongs to room {@code r}'s physical footprint: its own cells, plus the 1-block
 	 *  seams that fall BETWEEN two cells of the same room (so multi-cell rooms read as one solid blob). */
-	private static boolean inFootprint(int x, int z, Room r) {
+	private static boolean notInFootprint(int x, int z, Room r) {
 		long dx = (long) ORIGIN - x;
 		long dz = (long) ORIGIN - z;
-		if(dx < 0 || dz < 0) return false;
+		if(dx < 0 || dz < 0) return true;
 		int gx = (int) (dx / PITCH);
 		int gz = (int) (dz / PITCH);
-		if(gx > 5 || gz > 5) return false;
+		if(gx > 5 || gz > 5) return true;
 		boolean xSeam = (int) (dx - (long) gx * PITCH) == 31; // seam between cell gx and gx+1
 		boolean zSeam = (int) (dz - (long) gz * PITCH) == 31; // seam between cell gz and gz+1
-		if(!xSeam && !zSeam) return byCell(gx, gz) == r;
-		if(xSeam && !zSeam) return byCell(gx, gz) == r && byCell(gx + 1, gz) == r;
-		if(!xSeam) return byCell(gx, gz) == r && byCell(gx, gz + 1) == r;
-		return byCell(gx, gz) == r && byCell(gx + 1, gz) == r && byCell(gx, gz + 1) == r && byCell(gx + 1, gz + 1) == r;
+		if(!xSeam && !zSeam) return byCell(gx, gz) != r;
+		if(xSeam && !zSeam) return byCell(gx, gz) != r || byCell(gx + 1, gz) != r;
+		if(!xSeam) return byCell(gx, gz) != r || byCell(gx, gz + 1) != r;
+		return byCell(gx, gz) != r || byCell(gx + 1, gz) != r || byCell(gx, gz + 1) != r || byCell(gx + 1, gz + 1) != r;
 	}
 
 	public static void reset() {
