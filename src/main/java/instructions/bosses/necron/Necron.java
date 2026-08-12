@@ -5,6 +5,7 @@ import instructions.Server;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherLord;
 import instructions.bosses.witherking.WitherKing;
+import net.kyori.adventure.text.Component;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -81,6 +82,16 @@ public final class Necron extends WitherLord {
 	// at the start of its tick.  A beam on that tick sees the boss damageable again, not a tick late.
 	private Runnable interludeEndTask;
 
+	// Action-bar HUD (see updateActionBar), on its own boss ticker for the whole phase.
+	private Runnable barTicker;
+	// Phase tick the current interlude ends on, and which of the two it is, so the bar counts down the same clock
+	// interludeEndTask fires on rather than a counter of its own.
+	private int interludeEndTick;
+	private boolean interludeIsFireball;
+	// Whether the bar currently shows one of our segments, so the damageable stretch between interludes clears it
+	// once instead of broadcasting an empty bar to everyone every tick.
+	private boolean barShown;
+
 	private Necron() {
 		register(this);
 	}
@@ -100,15 +111,21 @@ public final class Necron extends WitherLord {
 	@Override
 	protected void resetState() {
 		cancelInterludeEndTask();
+		cancelBarTicker();
 		if(boss != null) clearAggro();
 		CustomBossBar.removeStunIndicator();
 		eventsDone = 0;
 		inInterlude = false;
 		damageable = false;
+		interludeEndTick = 0;
+		interludeIsFireball = false;
 	}
 
 	@Override
 	protected void onStart() {
+		startBarTicker();
+
+
 		// Goldor's section ends as Necron spawns, so record its end tick for the Wither-King practice scoreboard.
 		instructions.bosses.WitherActions.recordSplit("Goldor", Utils.runTick());
 		// --- Intro (160t): dialogue + a guarded platform destroy. Necron is not yet damageable and does not fly. ---
@@ -216,6 +233,12 @@ public final class Necron extends WitherLord {
 
 		cancelInterludeEndTask();
 		interludeEndTask = BossScheduler.schedule(() -> endInterlude(idx), duration);
+
+		// Action-bar anchors, then a re-render: this runs from the damage path, long after the HUD ticker drew this
+		// tick's bar from the pre-interlude state.
+		interludeEndTick = displayTick() + duration;
+		interludeIsFireball = idx == 1;
+		updateActionBar();
 	}
 
 	/** Interlude over, so resume the chase and become damageable again. */
@@ -233,11 +256,81 @@ public final class Necron extends WitherLord {
 		// After the FIRST frenzy (idx 0) Necron stays planted at the middle with AI off, so the upcoming 25%
 		// fireball attack finds him already at the correct spot. He resumes the chase after the other interludes.
 		if(idx != 0) setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+
+		// Clear the counter on the tick the interlude really ends: the HUD ticker is registered first, so it already
+		// drew this tick's bar (at 0t) before this ran.
+		updateActionBar();
 	}
 
 	private void cancelInterludeEndTask() {
 		if(interludeEndTask != null) BossScheduler.removeTicker(interludeEndTask);
 		interludeEndTask = null;
+	}
+
+	// ---------- Action-bar tick timers ----------
+
+	/**
+	 * Per-tick action-bar QoL for the Necron phase, the same HUD slot as Storm's pad/crush bar and Maxor's
+	 * laser/stun one.  One segment at a time, and every one of them counts down a window Necron is IMMUNE for -
+	 * which is the only thing worth knowing here, since between them he is simply damageable and chasing:
+	 * <ul>
+	 *   <li><b>Damageable In</b>: the intro, {@link #INTRO_END_TICK}t of dialogue before the armour drops and the
+	 *       chase starts.</li>
+	 *   <li><b>Frenzy</b>: the 80% and 5% interludes ({@link #FRENZY_DURATION_TICKS}t).</li>
+	 *   <li><b>Fireballs</b>: the 25% interlude ({@link #FIREBALL_DURATION_TICKS}t).</li>
+	 * </ul>
+	 * The interlude counter runs off a phase tick stamped in {@link #triggerInterlude}, so it can't drift from the
+	 * boss-lane task that actually ends the window.  Sent to every real player, spectators included, and the fakes
+	 * are skipped.  It doesn't collide with {@code ClearManager}'s bar: that one bails out for anyone outside the
+	 * dungeon room grid, which the arena is.
+	 */
+	private void updateActionBar() {
+		int t = displayTick();
+		String bar;
+		if(inInterlude) {
+			int left = Math.max(0, interludeEndTick - t);
+			bar = interludeIsFireball ? "<gold>Fireballs <white>" + left + "t" : "<red>Frenzy <white>" + left + "t";
+		} else if(!damageable) {
+			bar = "<yellow>Damageable In <white>" + Math.max(0, INTRO_END_TICK - t) + "t";
+		} else {
+			// Damageable and chasing: nothing to count, so clear once on the way in rather than broadcasting an
+			// empty bar to everyone every tick.
+			if(barShown) {
+				barShown = false;
+				Utils.broadcastActionBar(Component.empty());
+			}
+			return;
+		}
+		barShown = true;
+		Utils.broadcastActionBar(Utils.msg(bar));
+	}
+
+	private void startBarTicker() {
+		cancelBarTicker();
+		barTicker = new Runnable() {
+			@Override
+			public void run() {
+				if(boss == null || boss.isDead()) {
+					BossScheduler.removeTicker(this);
+					barTicker = null;
+					barShown = false;
+					Utils.broadcastActionBar(Component.empty());
+					return;
+				}
+				updateActionBar();
+			}
+		};
+		BossScheduler.addTicker(barTicker);
+	}
+
+	private void cancelBarTicker() {
+		if(barTicker != null) {
+			BossScheduler.removeTicker(barTicker);
+			barTicker = null;
+		}
+		// Wipe the HUD instead of letting the last "Frenzy 1t" sit on screen for its fade-out.
+		barShown = false;
+		Utils.broadcastActionBar(Component.empty());
 	}
 
 	// ---------- Movement (snap to middle for a frenzy) ----------
@@ -323,6 +416,7 @@ public final class Necron extends WitherLord {
 		dying = true;
 		boss.addScoreboardTag("TASDying");
 		cancelInterludeEndTask();
+		cancelBarTicker();
 		inInterlude = false;
 		damageable = false;
 		clearAggro();

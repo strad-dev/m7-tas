@@ -245,6 +245,23 @@ public class Utils {
 		}
 	}
 
+	/**
+	 * Sends an action bar to every real player, spectators included; the fakes are skipped (they have no client).
+	 * <p>
+	 * The home of the boss-phase tick-timer HUDs (Storm's pad/crush counters, Maxor's laser/stun, Necron's
+	 * interludes), which is why it lives here rather than as a private copy per boss: there is exactly one
+	 * action-bar slot, so anything writing it every tick has to agree about who it writes to.
+	 * Pass {@link Component#empty()} to clear it.
+	 *
+	 * @param bar The action bar to send
+	 */
+	public static void broadcastActionBar(Component bar) {
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
+			p.sendActionBar(bar);
+		}
+	}
+
 	/** The NMS server via the non-deprecated CraftServer bridge ({@code MinecraftServer.getServer()} is deprecated).
 	 *  Returns the same instance, so callers (tick counters, command source) are behaviour-identical. */
 	private static MinecraftServer nmsServer() {

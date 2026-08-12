@@ -347,10 +347,7 @@ public final class Storm extends WitherLord {
 	}
 
 	private static void broadcastActionBar(Component bar) {
-		for(Player p : Bukkit.getOnlinePlayers()) {
-			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			p.sendActionBar(bar);
-		}
+		Utils.broadcastActionBar(bar);
 	}
 
 	/** One 20-tick poll: advance each occupied pad's pillar, then run crush detection. Called by the cycle ticker
