@@ -51,6 +51,7 @@ public final class ItemRefresh {
 			"Withered Golem Sword", "Suspicious Golem Sword",
 			"Withered Axe of the Shredded", "Suspicious Axe of the Shredded",
 			"Withered Ragnarok Axe", "Withered Ragnarοck Axe",
+			"Withered Ragnarock Axe", "Withered Ragnarοck Axe",   // plain ASCII o -> the Greek omicron (U+03BF) it now uses
 			"Bonzo Staff", "Heroic Bonzo Staff");
 
 	/**

@@ -645,10 +645,11 @@ public final class Damage {
 		// it does suppress is every hit that lands on a corpse - a Cleave sweep or a proc tick arriving after the kill,
 		// a stray arrow, a beam swept through a body - and on a boss pinned in its DYING_SLIVER state, where TASDying
 		// is the only tell (HP is frozen at a non-zero sliver, so isDead and getHealth both read as alive).
-		if(healthBefore > 0 && !target.getScoreboardTags().contains("TASDying")) {
-			DamageNumbers.show(target, reported, kind, attacker);
-		}
-		verbose(attacker, target, sbDamage, mcDamage, preClamp, defense, resistance, kind);
+		boolean showsNumber = healthBefore > 0 && !target.getScoreboardTags().contains("TASDying");
+		if(showsNumber) DamageNumbers.show(target, reported, kind, attacker);
+		// /verbose follows the SAME gate, so the log and the numbers in the air are the same set of hits.  A corpse
+		// still absorbs procs and Cleave sweeps for a while after it dies, and those were the bulk of the log.
+		verbose(attacker, target, sbDamage, mcDamage, preClamp, defense, resistance, kind, showsNumber);
 		if(primary) {
 			Procs.onHit(attacker, target, sbDamage, path);
 			Cleave.spread(attacker, target, sbDamage, path);
@@ -744,12 +745,23 @@ public final class Damage {
 
 	private static Breakdown lastBreakdown;
 
+	/**
+	 * Print one hit's breakdown, at whichever level {@code /verbose} is on.
+	 * <p>
+	 * {@code showsNumber} is {@link DamageNumbers}' own gate, passed in rather than recomputed: <b>a hit that drew no
+	 * floating number logs nothing either.</b>  Both levels obey it.  Otherwise every proc tick and Cleave sweep that
+	 * lands on a corpse - and there are several per kill, since a dead mob stays a valid target for its remaining Fire
+	 * Aspect and Venomous windows - prints a full breakdown for damage nobody can see being dealt to something already
+	 * dead, which at Terminator/beam rates is most of the log.
+	 */
 	private static void verbose(Player attacker, LivingEntity target, double sbDamage, double mcDamage, double preClamp,
-			double defense, double resistance, DamageKind kind) {
-		// Consumed unconditionally, whatever the verbose level: leaving it parked would let the NEXT hit that runs no
-		// formula of its own - a proc, a Cleave sweep - inherit these rows.
+			double defense, double resistance, DamageKind kind, boolean showsNumber) {
+		// Consumed unconditionally, whatever the verbose level and even for a hit we are about to print nothing for:
+		// leaving it parked would let the NEXT hit that runs no formula of its own - a proc, a Cleave sweep - inherit
+		// these rows.
 		Breakdown b = lastBreakdown;
 		lastBreakdown = null;
+		if(!showsNumber) return;
 		if(Utils.getVerboseLevel().ordinal() < Utils.VerboseLevel.ON.ordinal()) return;
 
 		// Final Damage is the FULL hit after the two target-side reductions, with no boss clamp in it, so

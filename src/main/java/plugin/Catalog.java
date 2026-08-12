@@ -134,7 +134,8 @@ public final class Catalog {
 	 * <br>
 	 * Entries are {@link #orderName}: the PLAIN display name, or the material name for the one nameless stack (the
 	 * ender pearls). Renaming an item here without renaming it in {@link FakePlayerInventory} silently drops it to
-	 * the tail, so change both together.
+	 * the tail, so change both together. That includes a LOOKALIKE character: the Ragnarock Axe's name carries a
+	 * Greek omicron (U+03BF) rather than an ASCII o, and the two spellings read identically but do not match.
 	 * <br>
 	 * Anything not listed sorts to the end in discovery order, so a newly added item shows up at the back of the
 	 * palette instead of vanishing. The list currently covers every palette item exactly, so that tail is empty.
@@ -156,7 +157,7 @@ public final class Catalog {
 			// Page 2: situational weapons and the pearls.
 			"Heroic Ice Spray Wand",
 			"Precise Last Breath",
-			"Withered Ragnarock Axe",
+			"Withered Ragnarοck Axe",   // Greek omicron, matching FakePlayerInventory - see the note above
 			"Suspicious Axe of the Shredded",
 			"Withered Flaming Flay",
 			"Heroic Jerry-chine Gun",
