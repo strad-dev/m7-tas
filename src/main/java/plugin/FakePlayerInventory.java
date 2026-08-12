@@ -6,6 +6,9 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.datafixers.util.Pair;
+import de.tr7zw.nbtapi.NBT;
+import de.tr7zw.nbtapi.iface.ReadWriteItemNBT;
+import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import net.kyori.adventure.text.Component;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,6 +34,7 @@ import org.bukkit.potion.PotionEffectType;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.Consumer;
 
 public class FakePlayerInventory {
 
@@ -91,7 +95,7 @@ public class FakePlayerInventory {
 
 		ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
 		pearls.setAmount(16);
-		ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, "<red>Dungeonbreaker", "skyblock/combat/stonk");
+		ItemStack pickaxe = getSkyBlockItem(Material.DIAMOND_PICKAXE, "<red>Dungeonbreaker", "skyblock/combat/stonk", "DUNGEONBREAKER");
 		pickaxe.addUnsafeEnchantment(Enchantment.EFFICIENCY, 255);
 		ItemMeta pmeta = pickaxe.getItemMeta();
 		pmeta.addAttributeModifier(Attribute.BLOCK_BREAK_SPEED, new AttributeModifier(new NamespacedKey(M7tas.getInstance(), "stonk"), 1024, AttributeModifier.Operation.ADD_NUMBER, EquipmentSlotGroup.MAINHAND));
@@ -113,72 +117,76 @@ public class FakePlayerInventory {
 			}
 		}
 
-		arr[0] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Heroic Hyperion", "skyblock/combat/scylla");
-		arr[1] = getSkyBlockItem(Material.DIAMOND_SHOVEL, "<gold>Warped Aspect of the Void", "skyblock/combat/aotv");
+		arr[0] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Heroic Hyperion", "skyblock/combat/scylla", "HYPERION");
+		arr[1] = getSkyBlockItem(Material.DIAMOND_SHOVEL, "<gold>Warped Aspect of the Void", "skyblock/combat/aotv", nbt -> {
+            nbt.setString("id", "ASPECT_OF_THE_VOID");
+            nbt.setInteger("ethermerge", 1);
+            nbt.setInteger("tuned_transmission", 4);
+        });
 		arr[5] = pickaxe;
-		arr[6] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Gyrokinetic Wand", "skyblock/combat/gyro");
+		arr[6] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Gyrokinetic Wand", "skyblock/combat/gyro", "GYROKINETIC_WAND");
 		arr[7] = pearls;
-		arr[8] = getSkyBlockItem(Material.NETHER_STAR, SKYBLOCK_MENU_NAME, "");
+		arr[8] = getSkyBlockItem(Material.NETHER_STAR, SKYBLOCK_MENU_NAME, "", "SKYBLOCK_MENU");
 		arr[9] = getSpiritMask();
 		arr[10] = getBonzoMask();
-		arr[11] = getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<dark_purple>Renowned Spring Boots", "skyblock/combat/spring_boots");
+		arr[11] = getSkyBlockItem(Material.CHAINMAIL_BOOTS, "<dark_purple>Renowned Spring Boots", "skyblock/combat/spring_boots", "SPRING_BOOTS");
 		arr[12] = getRacingHelmet();
 		arr[13] = getCowHat();
-		arr[28] = getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Heroic Bonzo Staff", "skyblock/combat/bonzo");
-		arr[29] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Tactical Insertion", "skyblock/combat/tac");
-		arr[34] = getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine");
+		arr[28] = getSkyBlockItem(Material.BREEZE_ROD, "<dark_purple>Heroic Bonzo Staff", "skyblock/combat/bonzo", "BONZO_STAFF");
+		arr[29] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Tactical Insertion", "skyblock/combat/tac", "TACTICAL_INSERTION");
+		arr[34] = getSkyBlockItem(Material.GOLDEN_HORSE_ARMOR, "<gold>Heroic Jerry-chine Gun", "skyblock/combat/jerrychine", "JERRY_STAFF");
 
 		switch(role) {
 			case "Archer" -> {
-				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
-				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
+				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap", "INFINITE_SPIRIT_LEAP");
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom", "INFINITE_SUPERBOOM_TNT"));
+				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator", "TERMINATOR");
 				arr[18] = getThermodynamicHelmet();
 				arr[19] = Utils.createLeatherArmor(Material.LEATHER_CHESTPLATE, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Chestplate"));
 				arr[20] = Utils.createLeatherArmor(Material.LEATHER_LEGGINGS, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Leggings"));
 				arr[21] = Utils.createLeatherArmor(Material.LEATHER_BOOTS, Color.fromRGB(255, 112, 10),  Utils.mmLegacy("<light_purple>Renowned Thermodynamic Boots"));
 				// Slot 30 was the Rapid Bonemerang; dropped because it had no ability behind it at all.
-				arr[32] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
-				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarοck Axe", "skyblock/combat/rag");
-				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "");
+				arr[32] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath", "LAST_BREATH");
+				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarοck Axe", "skyblock/combat/rag", "RAGNAROCK_AXE");
+				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "", "ROD_OF_THE_SEA");
 			}
 			case "Berserk" -> {
-				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
-				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
-				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarοck Axe", "skyblock/combat/rag");
-				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "");
+				arr[2] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap", "INFINITE_SPIRIT_LEAP");
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom", "INFINITE_SUPERBOOM_TNT"));
+				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator", "TERMINATOR");
+				arr[33] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarοck Axe", "skyblock/combat/rag", "RAGNAROCK_AXE");
+				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "", "ROD_OF_THE_SEA");
 			}
 			case "Healer" -> {
-				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
-				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
-				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
-				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[32] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay");
-				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
-				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "");
+				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray", "ICE_SPRAY_WAND");
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom", "INFINTE_SUPERBOOM_TNT"));
+				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator", "TERMINATOR");
+				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap", "INFINITE_SPIRIT_LEAP");
+				arr[32] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay", "FLAMING_FLAY");
+				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath", "LAST_BREATH");
+				arr[35] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Pitchin' Rod of the Sea", "", "ROD_OF_THE_SEA");
 			}
 			case "Mage", "Mage1", "Mage2", "Mage3", "Mage4" -> {
-				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
-				arr[3] = getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore");
-				arr[4] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
+				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray", "ICE_SPRAY_WAND");
+				arr[3] = getSkyBlockItem(Material.STONE_SWORD, "<light_purple>Withered Dark Claymore", "skyblock/combat/claymore", "DARK_CLAYMORE");
+				arr[4] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap", "INFINITE_SPIRIT_LEAP");
 				// Storage row 2, middle, directly above the Infinityboom in slot 31.  No Power enchant: the class
 				// bake in Catalog.defaultFor only touches slot 4, and the Mage's Terminator Power is 0 anyway.
-				arr[22] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
-				arr[30] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla");
-				arr[31] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
-				arr[32] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarοck Axe", "skyblock/combat/rag");
-				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
-				arr[35] = getSkyBlockItem(Material.BOW, "<gold>Precise Explosive Bow", "skyblock/combat/explosive_bow");
+				arr[22] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator", "TERMINATOR");
+				arr[30] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Withered Hyperion", "skyblock/combat/scylla", "HYPERION");
+				arr[31] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom", "INFINITE_SUPERBOOM_TNT"));
+				arr[32] = getSkyBlockItem(Material.GOLDEN_AXE, "<dark_purple>Withered Ragnarοck Axe", "skyblock/combat/rag", "RAGNAROCK_AXE");
+				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath", "LAST_BREATH");
+				arr[35] = getSkyBlockItem(Material.BOW, "<gold>Precise Explosive Bow", "skyblock/combat/explosive_bow", "EXPLOSIVE_BOW");
 			}
 			case "Tank" -> {
-				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray");
-				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom"));
-				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator");
-				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap");
-				arr[31] = getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Suspicious Axe of the Shredded", "skyblock/combat/aots");
-				arr[32] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay");
-				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath");
+				arr[2] = getSkyBlockItem(Material.STICK, "<gold>Heroic Ice Spray Wand", "skyblock/combat/ice_spray", "ICE_SPRAY_WAND");
+				arr[3] = Utils.placeAndBreakAnythingInAdventure(getSkyBlockItem(Material.TNT, "<gold>Infinityboom TNT", "skyblock/combat/infinityboom", "INFINITE_SUPERBOOM_TNT"));
+				arr[4] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Terminator", "skyblock/combat/terminator", "TERMINATOR");
+				arr[30] = getSkyBlockItem(Material.ENDER_PEARL, "<gold>Infinileap", "skyblock/utility/infinileap", "INFINITE_SPIRIT_LEAP");
+				arr[31] = getSkyBlockItem(Material.DIAMOND_AXE, "<light_purple>Suspicious Axe of the Shredded", "skyblock/combat/aots", "AXE_OF_THE_SHREDDED");
+				arr[32] = getSkyBlockItem(Material.FISHING_ROD, "<light_purple>Withered Flaming Flay", "skyblock/combat/flaming_flay", "FLAMING_FLAY");
+				arr[33] = getSkyBlockItem(Material.BOW, "<light_purple>Precise Last Breath", "skyblock/combat/last_breath", "LAST_BREATH");
 			}
 		}
 		return arr;
@@ -341,7 +349,7 @@ public class FakePlayerInventory {
 	/** Golem Sword: right-click zeroes the holder's Y velocity.  In no class's default kit; it exists for
 	*  the loadout palette ({@link Catalog#extraPaletteItems()}), i.e. by picking it in /m7loadout. */
 	public static ItemStack getGolemSword() {
-		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword");
+		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword", "GOLDEN_SWORD");
 	}
 
 	/**
@@ -350,18 +358,23 @@ public class FakePlayerInventory {
 	 * {@code damage.StatLore}, generated from the same term lists the damage math reads so the two cannot drift
 	 * (DAMAGE_PLAN.md §7b).
 	 */
-	public static ItemStack getSkyBlockItem(Material material, String name, String id) {
-		ItemStack item = new ItemStack(material);
-		ItemMeta meta = item.getItemMeta();
-		assert meta != null;
-		meta.itemName(Utils.mm(name));
-		meta.setUnbreakable(true);
-		meta.displayName(Utils.mm(name));
-		List<Component> lore = new ArrayList<>();
-		lore.add(Utils.mm(id));
-		meta.lore(lore);
-		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-		item.setItemMeta(meta);
-		return damage.StatLore.apply(item);
+	public static ItemStack getSkyBlockItem(Material material, String name, String id, String sbId) {
+        return getSkyBlockItem(material, name, id, nbt -> nbt.setString("id", sbId));
 	}
+
+    public static ItemStack getSkyBlockItem(Material material, String name, String id, Consumer<ReadWriteItemNBT> nbtConsumer) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        assert meta != null;
+        meta.itemName(Utils.mm(name));
+        meta.setUnbreakable(true);
+        meta.displayName(Utils.mm(name));
+        List<Component> lore = new ArrayList<>();
+        lore.add(Utils.mm(id));
+        meta.lore(lore);
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        item.setItemMeta(meta);
+        NBT.modify(item, nbtConsumer);
+        return damage.StatLore.apply(item);
+    }
 }
