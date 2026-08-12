@@ -128,8 +128,9 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 		// Dispatch the right-click ability directly, bypassing whatever vanilla mechanism
 		// is suppressing PlayerInteractEvent for repeated same-block clicks. This is wired
 		// at the netty layer so every UseItem(On) packet hits CustomItems.handleCustomItems,
-		// which has its own 1-tick anti-spam cooldown to dedupe against vanilla's event if
-		// it also fires.
+		// which has its own anti-spam cooldown (RIGHT_CLICK_GATE_TICKS) to dedupe against
+		// vanilla's event if it also fires.  That gate is 2 ticks, not 1, because these two
+		// dispatches are separate main-thread tasks and a tick boundary can fall between them.
 		//
 		// ServerboundUseItemOnPacket → RIGHT_CLICK_BLOCK
 		// ServerboundUseItemPacket   → RIGHT_CLICK_AIR

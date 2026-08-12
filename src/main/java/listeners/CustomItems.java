@@ -58,6 +58,22 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> cooldowns = new ConcurrentHashMap<>();
+	// Hard rate cap on right-click abilities, in ticks. TWO, not one: a single physical right-click reaches
+	// handleCustomItems twice (PlayerPacketInterceptor's netty dispatch, and vanilla's own PlayerInteractEvent),
+	// as two separate main-thread tasks. They normally drain in the same tick and collapse, but the server stops
+	// draining its task queue when it runs out of tick time, so on a lagging tick the pair straddles a boundary and
+	// both fire - which is a DOUBLE etherwarp, since the second dispatch ray-traces from where the first one landed.
+	// They can only ever be ONE tick apart (adjacent tasks in one FIFO queue, so at most one boundary falls between
+	// them), which is why 2 is enough.  Note the pair can PRINT the same [tick: N]: Utils.debug stamps
+	// MinecraftServer.getTickCount(), which is bumped inside tickServer, i.e. AFTER runAllTasksAtTickStart drains the
+	// queue, while currentTick is bumped at the top of the runServer iteration - so a task drained at tick start
+	// reads currentTick N with the tick counter still on N-1.  A doubled ability on "one tick" is this, not a
+	// bypassed gate.
+	// lastRightBlockTick below already uses this same one-tick tolerance for the AIR that trails a BLOCK
+	// click, but that guard doesn't help a BLOCK+BLOCK or AIR+AIR pair. Nothing here wants a faster
+	// rate: every ability in the switch has its own longer cooldown, and the Terminator only records a packet tick
+	// for pollTerminators (4-5t). Vanilla-item right-clicks (ender pearls, food) never reach this gate.
+	private static final int RIGHT_CLICK_GATE_TICKS = 2;
 	// Tick of the last RIGHT_CLICK_BLOCK dispatch per player. A physical right-click on a block sends UseItemOn
 	// (RIGHT_CLICK_BLOCK) immediately followed by UseItem (RIGHT_CLICK_AIR); this lets the right-click handler drop
 	// the trailing AIR so the ability fires once even when the pair straddles a tick boundary (see handleCustomItems).
@@ -375,6 +391,11 @@ public class CustomItems implements Listener {
 			e.setCancelled(true);
 			return;
 		}
+		// CREATIVE BYPASS: a creative-mode player breaks anything, anywhere, past every protection below, and does it
+		// through vanilla (physics and all) rather than our no-physics path - that's what someone editing the map
+		// expects.  This is the same bypass GoldorListener already grants for the S3 item frames.  It sits BELOW the
+		// Superboom check on purpose: that one is item behaviour (the TNT must never break a block), not a protection.
+		if(e.getPlayer().getGameMode() == GameMode.CREATIVE) return;
 		// Protected Goldor interactables and the Maxor Energy-Crystal pressure plates are unbreakable outright, with
 		// any tool (stonk, dungeonbreaker, …) and in any phase.
 		if(Goldor.INSTANCE.isProtected(e.getBlock()) || Maxor.INSTANCE.isProtected(e.getBlock())) {
@@ -677,7 +698,7 @@ public class CustomItems implements Listener {
 					int currentTick = MinecraftServer.currentTick;
 					// A single physical right-click on a block sends UseItemOn (RIGHT_CLICK_BLOCK) immediately
 					// followed by UseItem (RIGHT_CLICK_AIR).  These normally land on the same tick and collapse via
-					// the 1/tick `cooldowns` gate below, but the first click after a server restart can straddle a
+					// the `cooldowns` gate below, but the first click after a server restart can straddle a
 					// tick boundary from one-time warmup lag, and then the trailing AIR fires the ability twice.
 					// Drop an AIR that trails a BLOCK click by at most one tick.  Genuine standalone air-clicks
 					// carry no recent BLOCK so they still fire, and fake-player air-spam sends no BLOCK at all.
@@ -688,7 +709,7 @@ public class CustomItems implements Listener {
 						if(currentTick == blockTick || currentTick == blockTick + 1) return;
 					}
 					if(currentTick >= cooldowns.getOrDefault(p.getUniqueId(), 0)) {
-						cooldowns.put(p.getUniqueId(), currentTick + 1);
+						cooldowns.put(p.getUniqueId(), currentTick + RIGHT_CLICK_GATE_TICKS);
 						switch(id) {
 							case "skyblock/combat/scylla" -> {
 								witherImpact(p);
@@ -1550,15 +1571,15 @@ public class CustomItems implements Listener {
 		l.add(0, 1.62, 0);
 
 		Vector v = l.getDirection();
-		v.setX(v.getX() / 4);
-		v.setY(v.getY() / 4);
-		v.setZ(v.getZ() / 4);
+		v.setX(v.getX() / 3);
+		v.setY(v.getY() / 3);
+		v.setZ(v.getZ() / 3);
 		World world = l.getWorld();
 		Set<Entity> damagedEntities = new HashSet<>();
 		List<EntityType> doNotKill = doNotKill();
 		damagedEntities.add(p);
 		int pierce = 5;
-		for(int i = 0; i < 256 && pierce > 0; i++) {
+		for(int i = 0; i < 192 && pierce > 0; i++) {
 			if(l.getBlock().getType().isSolid()) {
 				break;
 			}
@@ -2667,8 +2688,8 @@ public class CustomItems implements Listener {
 		handToTarget.normalize();
 
 		// Iterations based on distance to target, not max range
-		int iterations = (int) (distance / 0.25);
-		Vector v = handToTarget.multiply(0.25);
+		int iterations = (int) (distance / 0.33333);
+		Vector v = handToTarget.multiply(0.33333);
 
 		for(int i = 0; i < iterations; i++) {
 			spawnFireworkParticle(l);

@@ -639,7 +639,15 @@ public final class Damage {
 		// `preClamp` is what you hit for and is what gets displayed, `mcDamage` is what the clamp allowed, and
 		// `applied` is that rounded to HP_STEP and is the only one health ever sees.
 		double reported = preClamp * Scale.SB_PER_MC_HP;
-		DamageNumbers.show(target, reported, kind, attacker);
+		// A number is drawn only for a hit on something that was ALIVE to take it.  Judged on `healthBefore` and the
+		// dying tag rather than on current health, because this runs AFTER setHealth: testing the live value would
+		// suppress the killing blow's own number, which is the one number in the fight you least want to lose.  What
+		// it does suppress is every hit that lands on a corpse - a Cleave sweep or a proc tick arriving after the kill,
+		// a stray arrow, a beam swept through a body - and on a boss pinned in its DYING_SLIVER state, where TASDying
+		// is the only tell (HP is frozen at a non-zero sliver, so isDead and getHealth both read as alive).
+		if(healthBefore > 0 && !target.getScoreboardTags().contains("TASDying")) {
+			DamageNumbers.show(target, reported, kind, attacker);
+		}
 		verbose(attacker, target, sbDamage, mcDamage, preClamp, defense, resistance, kind);
 		if(primary) {
 			Procs.onHit(attacker, target, sbDamage, path);

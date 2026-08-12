@@ -34,6 +34,8 @@ public final class Arrows {
 	private static final NamespacedKey HITS = key("arrow_hits");
 	/** 1 if this arrow may build a Last Breath stack, 0 if not.  See {@link #stamp}. */
 	private static final NamespacedKey BUILDS_LAST_BREATH = key("arrow_last_breath");
+	/** 1 if this arrow was fired at full draw and so crits, 0 for a partial draw.  See {@link #isCrit}. */
+	private static final NamespacedKey CRIT = key("arrow_crit");
 	/** 1 if this arrow carries an ALREADY-FINISHED figure rather than a stat core.  See {@link #stampFlat}. */
 	private static final NamespacedKey DERIVED = key("arrow_derived");
 
@@ -84,6 +86,9 @@ public final class Arrows {
 		pdc.set(ORIGIN, PersistentDataType.STRING, o.getX() + "," + o.getY() + "," + o.getZ());
 		pdc.set(HITS, PersistentDataType.INTEGER, 0);
 		pdc.set(BUILDS_LAST_BREATH, PersistentDataType.INTEGER, buildsLastBreath ? 1 : 0);
+		// The draw decided the crit at FIRE time, along with the damage, so the answer travels with the arrow rather
+		// than being re-derived at the hit - by then the draw is long over.
+		pdc.set(CRIT, PersistentDataType.INTEGER, full ? 1 : 0);
 		// Keep the vanilla field roughly in step so anything that reads it (a hit path we do not intercept) sees a
 		// sane number rather than the default 2.0.  Our own paths never read it.
 		arrow.setDamage(0);
@@ -118,6 +123,8 @@ public final class Arrows {
 		// Explosive Shot and Rapid Fire stamp the HELD weapon, so if that is a Last Breath these count as Last
 		// Breath arrows, which is exactly the rule.
 		pdc.set(BUILDS_LAST_BREATH, PersistentDataType.INTEGER, 1);
+		// An ability arrow is never drawn, so there is no partial draw to lose the crit to.
+		pdc.set(CRIT, PersistentDataType.INTEGER, 1);
 		pdc.set(DERIVED, PersistentDataType.INTEGER, 1);
 		arrow.setDamage(0);
 	}
@@ -137,6 +144,17 @@ public final class Arrows {
 	}
 
 	/**
+	 * True if this arrow crits, i.e. it was fired at a full draw (or from something that is never drawn).  A partial
+	 * draw drops the crit term from the damage AND the crit form from the number, so both halves read this.
+	 * <p>
+	 * Defaults to true for anything stamped before this flag existed, which matches what those arrows were dealt.
+	 */
+	public static boolean isCrit(AbstractArrow arrow) {
+		return arrow == null
+				|| arrow.getPersistentDataContainer().getOrDefault(CRIT, PersistentDataType.INTEGER, 1) == 1;
+	}
+
+	/**
 	 * Resolve this arrow against {@code target} <b>and deal it</b>.  Every arrow hit goes through here so the
 	 * derived-arrow rule can't be forgotten at a call site: a Rapid Fire arrow carries a figure read out of the
 	 * damage history, so it must not feed that history back (see {@link Damage#dealDerived}).
@@ -150,9 +168,12 @@ public final class Arrows {
 	/** As above, with {@code countPierce} as {@link #resolve(AbstractArrow, Player, LivingEntity, boolean)} means it. */
 	public static double hit(AbstractArrow arrow, Player shooter, LivingEntity target, boolean countPierce) {
 		double sbDamage = resolve(arrow, shooter, target, countPierce);
+		// A partly drawn bow is not a crit, so it takes the non-crit form: grey digits, no ✧ decoration.  The damage
+		// already lost its crit term at stamp time; this is the display half of the same rule.
+		DamageKind kind = isCrit(arrow) ? DamageKind.NORMAL : DamageKind.MAGIC;
 		return isDerived(arrow)
-				? Damage.dealDerived(target, sbDamage, DamageKind.NORMAL, shooter, DamagePath.BOW)
-				: Damage.deal(target, sbDamage, DamageKind.NORMAL, shooter, DamagePath.BOW);
+				? Damage.dealDerived(target, sbDamage, kind, shooter, DamagePath.BOW)
+				: Damage.deal(target, sbDamage, kind, shooter, DamagePath.BOW);
 	}
 
 	/**

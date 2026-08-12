@@ -54,9 +54,11 @@ public class WitherActions {
 	 * Announce that a /m7practice run just finished as a plain Bukkit event ({@link plugin.RunCompleteEvent}).
 	 * M7 TAS depends on nothing external.  The event fires into the void when nothing listens, so the plugin
 	 * stays fully standalone, and an optional glue plugin may listen to return players to spectator and free a
-	 * network slot.  Only fires in practice mode.  Wither-King runs must call this only AFTER the death dialogue
-	 * ends (see {@code WitherKing.deathSequence}); other sections call it the moment their boss is defeated,
-	 * at their {@code chainNext(false)} or clear completion.
+	 * network slot.  Only fires in practice mode.  Every section calls it as soon as its ending is DECIDED - at
+	 * {@code chainNext(false)}, at clear completion, or, for a Wither-King run, with the scoreboard rather than at
+	 * the end of the death dialogue that follows it (see {@code WitherKing.deathSequence}).  The event says the run
+	 * is OVER, not that the room is quiet: a listener that wants to leave an ending on screen owns that delay
+	 * itself, which is exactly what the network plugin does.
 	 * <br>
 	 * Overload for a run that was actually WON. Storm's all-pillars-gone failure path fires
 	 * {@link #signalRunComplete(boolean)} with {@code false} instead, so a listener can tell the two apart, and
@@ -89,11 +91,12 @@ public class WitherActions {
 	 * Snapshot the run's result NOW, for a {@link #signalRunComplete()} that will come later.
 	 * <br>
 	 * <b>Why this exists.</b> A result records whoever is still in the run ({@code ClearManager.realPlayers()}), so
-	 * the instant it's captured matters.  The Wither King has to hold its signal until the death dialogue has played
-	 * out in full, but during those ~9 seconds a player can walk out, and capturing then would find an empty
-	 * roster and silently drop the entire run from the leaderboards.  So the numbers are frozen when the scoreboard
-	 * prints and merely *delivered* when the dialogue ends.  Bosses whose signal already fires at the moment they
-	 * finish don't need this; they can capture at signal time.
+	 * the instant it's captured matters.  The Wither King used to hold its signal until the death dialogue had played
+	 * out in full, and during those ~9 seconds a player could walk out - capturing then found an empty roster and
+	 * silently dropped the entire run from the leaderboards.  The signal has since moved forward to the scoreboard,
+	 * so the two now land on the same tick, but the split stays: the capture is pinned to the moment the numbers are
+	 * PRINTED, so it keeps agreeing with them no matter where the signal is fired from later.  Bosses that signal
+	 * the moment they finish don't need this; they can capture at signal time.
 	 */
 	public static void captureRunResult() {
 		if (!practiceMode) return;

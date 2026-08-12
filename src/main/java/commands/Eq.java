@@ -10,7 +10,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -31,8 +33,10 @@ import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
 import plugin.Utils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /*
@@ -49,6 +53,10 @@ public class Eq implements CommandExecutor, Listener {
 
 	private static final Component TITLE = Utils.msg("<dark_gray>Equipment");
 	private static final int SPEED_SLOT = 8;
+	/** Movement-speed modifiers {@link #currentSpeed} resolves the attribute WITHOUT: vanilla mechanics that
+	 *  aren't part of the SkyBlock speed stat.  Add a key here and it stops counting; Speed/Soul Speed and the
+	 *  plugin's own modifiers are deliberately absent, since those do belong in the stat. */
+	private static final Set<NamespacedKey> IGNORED_SPEED_MODIFIERS = Set.of(NamespacedKey.minecraft("sprinting"));
 	/** Last server tick a swap ran per player, which collapses a double-click's burst of events into one swap. */
 	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
 
@@ -164,11 +172,45 @@ public class Eq implements CommandExecutor, Listener {
 		return cane;
 	}
 
-	/** Player's current movement speed on the 100-based scale (100 = vanilla default), all modifiers included. */
+	/**
+	 * Player's current movement speed on the 100-based scale (100 = vanilla default).
+	 * <p>
+	 * Resolves the attribute here rather than calling {@code getValue()}, so that
+	 * {@link #IGNORED_SPEED_MODIFIERS} can be left out of the sum outright instead of undone afterwards.
+	 * {@code LivingEntity.setSprinting} adds {@code minecraft:sprinting} (+0.3 ADD_MULTIPLIED_TOTAL) as a
+	 * TRANSIENT modifier for as long as you sprint, and {@code getValue()} resolves it like every other one,
+	 * which is why a sprinting player read 30% high (a real 400 showed as 520).  Transient modifiers DO appear
+	 * in {@code getModifiers()}, so none of this needs NMS.
+	 * <p>
+	 * The three passes mirror {@code AttributeInstance.calculateValue}: base plus every ADD_NUMBER, then each
+	 * ADD_SCALAR against that summed base, then each MULTIPLY_SCALAR_1 in turn.  Each pass is internally
+	 * order-independent (two sums and a product), so walking one unordered collection three times matches
+	 * vanilla exactly.  Negatives are clamped like vanilla's {@code sanitizeValue}, whose floor for
+	 * movement_speed is 0; the ceiling is a Spigot config value and far out of reach here, so it is ignored.
+	 */
 	private static int currentSpeed(Player p) {
 		var attr = p.getAttribute(Attribute.MOVEMENT_SPEED);
 		if(attr == null || attr.getBaseValue() == 0) return 100;
-		return (int) Math.round(attr.getValue() / attr.getBaseValue() * 100);
+		double vanillaBase = attr.getBaseValue(); // the 100-point scale is relative to this, so keep it separate
+		Collection<AttributeModifier> mods = attr.getModifiers();
+
+		double base = vanillaBase;
+		for(AttributeModifier mod : mods) {
+			if(counts(mod, AttributeModifier.Operation.ADD_NUMBER)) base += mod.getAmount();
+		}
+		double value = base;
+		for(AttributeModifier mod : mods) {
+			if(counts(mod, AttributeModifier.Operation.ADD_SCALAR)) value += base * mod.getAmount();
+		}
+		for(AttributeModifier mod : mods) {
+			if(counts(mod, AttributeModifier.Operation.MULTIPLY_SCALAR_1)) value *= 1 + mod.getAmount();
+		}
+		return (int) Math.round(Math.max(0, value) / vanillaBase * 100);
+	}
+
+	/** Whether a modifier belongs in {@code op}'s pass of {@link #currentSpeed}'s sum. */
+	private static boolean counts(AttributeModifier mod, AttributeModifier.Operation op) {
+		return mod.getOperation() == op && !IGNORED_SPEED_MODIFIERS.contains(mod.getKey());
 	}
 
 	// =================== Click handling: swap armor from the player's inventory ===================

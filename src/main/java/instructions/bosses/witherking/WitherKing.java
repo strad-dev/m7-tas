@@ -565,11 +565,14 @@ public class WitherKing {
 
 		Utils.scheduleTask(WitherKing::printFinalMessage, END_DELAY_TICKS);
 
-		// Tell the network plugin the run is over, but only AFTER the last death-dialogue line (t=240) has
-		// been sent, so a networked witherking/all/boss run holds the player until the Wither-King finishes talking.
-		// The RESULT is not measured here: printFinalMessage already froze it at scoreboard time (see there), so a
-		// player leaving during the dialogue can't wipe the run off the leaderboards.
-		Utils.scheduleTask(WitherActions::signalRunComplete, 250);
+		// Tell the network plugin the run is over, at the SCOREBOARD (t=70), NOT at the end of the death dialogue
+		// (t=250) where this used to sit.  A run has to be SAVED even if the whole party walks out while the King is
+		// still talking; holding the signal that long meant a full clear could quietly vanish.  The RESULT itself is
+		// frozen by printFinalMessage on this same tick (see there), so nothing measured here depends on who stays.
+		// The dialogue still plays out in full: the network plugin holds its teardown 180t longer to cover the
+		// difference, so players drop to spectator at the same moment they always did (M7Bridge.dialogueHoldTicks).
+		// Standalone there is nothing to hold - the run just ends when /reset or the next /m7practice says so.
+		Utils.scheduleTask(WitherActions::signalRunComplete, END_DELAY_TICKS);
 	}
 
 	/** Final congratulation: hardcoded splits for a TAS run, live ticks for a practice run, a short line for
@@ -589,9 +592,9 @@ public class WitherKing {
 			printPracticeScoreboard();
 		}
 
-		// Freeze the run result HERE, with the scoreboard.  The run-complete signal itself is held back another
-		// ~180t so the death dialogue plays out in full (see deathSequence).  A result records whoever is still in
-		// the run, so measuring it at signal time meant a player leaving during the dialogue wiped the entire run
+		// Freeze the run result HERE, with the scoreboard, which is also when the run-complete signal now fires
+		// (see deathSequence).  A result records whoever is still in the run, so capturing it any later - the signal
+		// used to wait out the ~180t of death dialogue - meant a player leaving mid-dialogue wiped the entire run
 		// from the leaderboards.  Capturing here also makes the recorded total agree with the numbers just printed.
 		WitherActions.captureRunResult();
 	}
