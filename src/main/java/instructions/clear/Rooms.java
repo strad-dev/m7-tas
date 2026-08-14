@@ -14,7 +14,9 @@ import java.util.Map;
  * not counted). Also owns the room-grid coordinate math (see {@link #roomAt}).
  *
  * <p>Grid: 32-block pitch (31-block room + 1-block buffer), origin at world {@code (-10,-10)} = cell (0,0);
- * cell {@code (gx,gz)} occupies {@code X ∈ [-40-32gx, -10-32gx]}, likewise Z. The dungeon spans X/Z −10..−200.
+ * cell {@code (gx,gz)} occupies {@code X ∈ [-40-32gx, -10-32gx]}, likewise Z. The dungeon spans X/Z −10..−200,
+ * <b>except</b> that Start runs back to {@code Z -213} - see {@link #ANNEXES}, and don't assume a room is only
+ * its cells.
  */
 public final class Rooms {
 	public static final int ORIGIN = -10;
@@ -25,7 +27,7 @@ public final class Rooms {
 	private static final Map<String, Room> BY_NAME = new HashMap<>();
 
 	// Handy references for the puzzle / special-room logic.
-	public static final Room QUIZ, ICE_FILL, WIZARD, TRAP, YELLOW, BLOOD;
+	public static final Room QUIZ, ICE_FILL, WIZARD, TRAP, YELLOW, BLOOD, START;
 
 	/**
 	 * Registers a room.  {@code minY}/{@code maxY} are its vertical extent (see {@link Room#minY}).  {@code level}
@@ -107,7 +109,8 @@ public final class Rooms {
 				.addSecret(Secret.item(-165.5, 86, -159.5))
 				.addSecret(Secret.blessingChest(-145, 90, -164, BlessingType.POWER, 2))
 				.addSecret(Secret.chest(-163, 70, -143));
-		reg("Start", RoomType.START, new int[][]{{3, 5}}, 66, 98, 1, false);
+		// Start is the one room that is not just its cell - see ANNEXES.
+		START = reg("Start", RoomType.START, new int[][]{{3, 5}}, 66, 98, 1, false);
 		TRAP = reg("Trap", RoomType.TRAP, new int[][]{{4, 5}}, 60, 100, 2, false);
 		// The Power-II chest whose opening earns Trap its white checkmark (see ClearManager).
 		TRAP.addSecret(Secret.chest(-143, 67, -182))
@@ -144,10 +147,11 @@ public final class Rooms {
 
 	/**
 	 * The room whose <b>footprint</b> the block column at (x,z) belongs to, or {@code null} off the grid or in a
-	 * between-room seam.  A footprint is a room's own cells <b>plus the 1-block seams that fall between two (or four)
-	 * cells of the SAME room</b>, so a multi-cell room reads as one solid blob: walking the length of the 4-cell
-	 * Hallway or across Museum's 2x2 never leaves the room.  A seam between two DIFFERENT rooms belongs to neither -
-	 * that is a crevice, and the only legal way across one is a door.
+	 * between-room seam.  A footprint is a room's own cells, <b>plus the 1-block seams that fall between two (or four)
+	 * cells of the SAME room</b> - so a multi-cell room reads as one solid blob and walking the length of the 4-cell
+	 * Hallway or across Museum's 2x2 never leaves it - <b>plus any {@link #ANNEXES}</b>, the parts of a room that sit
+	 * off the grid entirely.  A seam between two DIFFERENT rooms belongs to neither: that is a crevice, and the only
+	 * legal way across one is a door.
 	 * <p>
 	 * <b>The intra-room seams are the whole reason this is not {@code cellAt}</b>, which hands back null for every
 	 * seam alike.  Routing the bounds test through that killed players walking from one cell of a room to the next
@@ -159,6 +163,12 @@ public final class Rooms {
 	 * room - the out-of-bounds test - has to go by the block.
 	 */
 	public static Room roomAtBlock(int worldX, int worldZ) {
+		Room r = gridRoomAt(worldX, worldZ);
+		return r != null ? r : annexRoomAt(worldX, worldZ);
+	}
+
+	/** The footprint lookup for the part of a room that IS on the 32-block grid. */
+	private static Room gridRoomAt(int worldX, int worldZ) {
 		long dx = (long) ORIGIN - worldX;
 		long dz = (long) ORIGIN - worldZ;
 		if(dx < 0 || dz < 0) return null;
@@ -174,6 +184,34 @@ public final class Rooms {
 		if(zSeam && byCell(gx, gz + 1) != r) return null;
 		if(xSeam && zSeam && byCell(gx + 1, gz + 1) != r) return null;
 		return r;
+	}
+
+	// --- annexes: the parts of a room that are NOT on the grid ---
+
+	/** An X/Z rectangle belonging to {@code room} but lying outside its grid cells. Y is still the room's own
+	 *  {@link Room#minY}..{@link Room#maxY}, so an annex only ever widens the footprint horizontally. */
+	private record Annex(Room room, int minX, int minZ, int maxX, int maxZ) {
+		boolean contains(int x, int z) {
+			return x >= minX && x <= maxX && z >= minZ && z <= maxZ;
+		}
+	}
+
+	private static final List<Annex> ANNEXES = new ArrayList<>();
+
+	static {
+		// THE ONE ROOM THAT IS NOT JUST ITS CELL. Start's cell (3,5) ends at Z -200, but the room physically runs back
+		// to Z -213 - the entrance area behind the spawn point at Z -183.5. Without this the whole of it is off-grid,
+		// so standing where players spawn and wait was out of bounds. Full cell width in X: only the Z extent is known
+		// to differ, and reading a few extra columns of solid rock as "inside" costs nothing, the same call the door
+		// frames make.
+		ANNEXES.add(new Annex(START, cellMinX(3), -213, cellMaxX(3), cellMinZ(5) - 1));
+	}
+
+	private static Room annexRoomAt(int worldX, int worldZ) {
+		for(Annex a : ANNEXES) {
+			if(a.contains(worldX, worldZ)) return a.room();
+		}
+		return null;
 	}
 
 	/** Whether a location sits within the overall room-grid rectangle, i.e. inside a room OR a 1-block between-room
