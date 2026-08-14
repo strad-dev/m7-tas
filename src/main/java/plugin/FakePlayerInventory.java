@@ -6,10 +6,8 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import com.mojang.datafixers.util.Pair;
-import de.tr7zw.nbtapi.NBT;
-import de.tr7zw.nbtapi.iface.ReadWriteItemNBT;
-import de.tr7zw.nbtapi.iface.ReadWriteNBT;
 import net.kyori.adventure.text.Component;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundSetEquipmentPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -31,6 +29,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import nms.NBT;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -119,9 +118,9 @@ public class FakePlayerInventory {
 
 		arr[0] = getSkyBlockItem(Material.IRON_SWORD, "<light_purple>Heroic Hyperion", "skyblock/combat/scylla", "HYPERION");
 		arr[1] = getSkyBlockItem(Material.DIAMOND_SHOVEL, "<gold>Warped Aspect of the Void", "skyblock/combat/aotv", nbt -> {
-            nbt.setString("id", "ASPECT_OF_THE_VOID");
-            nbt.setInteger("ethermerge", 1);
-            nbt.setInteger("tuned_transmission", 4);
+            nbt.putString("id", "ASPECT_OF_THE_VOID");
+            nbt.putInt("ethermerge", 1);
+            nbt.putInt("tuned_transmission", 4);
         });
 		arr[5] = pickaxe;
 		arr[6] = getSkyBlockItem(Material.BLAZE_ROD, "<gold>Gyrokinetic Wand", "skyblock/combat/gyro", "GYROKINETIC_WAND");
@@ -359,10 +358,10 @@ public class FakePlayerInventory {
 	 * (MAP.md §7b).
 	 */
 	public static ItemStack getSkyBlockItem(Material material, String name, String id, String sbId) {
-        return getSkyBlockItem(material, name, id, nbt -> nbt.setString("id", sbId));
+        return getSkyBlockItem(material, name, id, nbt -> nbt.putString("id", sbId));
 	}
 
-    public static ItemStack getSkyBlockItem(Material material, String name, String id, Consumer<ReadWriteItemNBT> nbtConsumer) {
+    public static ItemStack getSkyBlockItem(Material material, String name, String id, Consumer<CompoundTag> nbtConsumer) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         assert meta != null;
@@ -374,7 +373,7 @@ public class FakePlayerInventory {
         meta.lore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         item.setItemMeta(meta);
-        NBT.modify(item, nbtConsumer);
-        return damage.StatLore.apply(item);
+
+        return damage.StatLore.apply(NBT.modify(item, nbtConsumer));
     }
 }
