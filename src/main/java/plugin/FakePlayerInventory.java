@@ -348,7 +348,7 @@ public class FakePlayerInventory {
 	/** Golem Sword: right-click zeroes the holder's Y velocity.  In no class's default kit; it exists for
 	*  the loadout palette ({@link Catalog#extraPaletteItems()}), i.e. by picking it in /m7loadout. */
 	public static ItemStack getGolemSword() {
-		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword", "GOLDEN_SWORD");
+		return getSkyBlockItem(Material.IRON_SWORD, GOLEM_SWORD_NAME, "skyblock/combat/golem_sword", "GOLEM_SWORD");
 	}
 
 	/**
