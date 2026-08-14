@@ -23,13 +23,6 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <repositories>
-        <repository>
-            <id>CodeMC</id>
-            <url>https://repo.codemc.org/repository/maven-public/</url>
-        </repository>
-    </repositories>
-
     <build>
         <!-- Filter only plugin.yml so ${project.version} (and other pom props) are substituted at build
              time - this pom is the single source of truth for the version. Other resources copied as-is. -->
