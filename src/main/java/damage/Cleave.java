@@ -6,7 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Wither;
 
 /**
- * Cleave, the sweep mechanic (DAMAGE_PLAN.md §7).
+ * Cleave, the sweep mechanic (MAP.md §7).
  * <p>
  * <b>The radius is measured from the HIT ENEMY, not from the player.</b>  That settles the old "radius origin"
  * question and is what makes a Berserk's reach matter twice over: its swing range extends both the reach attribute

@@ -34,7 +34,7 @@ public class AllMobsHaveNames implements Listener {
 	@EventHandler
 	public void onEntitySpawn(EntitySpawnEvent e) {
 		if(e.getEntity() instanceof LivingEntity entity) {
-			// Mobs get ZERO invulnerability frames (DAMAGE_PLAN.md §7).  With the duration at 0 a hit sets
+			// Mobs get ZERO invulnerability frames (MAP.md §7).  With the duration at 0 a hit sets
 			// invulnerableTime = 0, vanilla's "> 10" branch is never reached and lastHurt is never consulted, so
 			// every computed hit lands in full.  Left alone, vanilla's rule would swallow a Cleave hit on the
 			// directly-hit target whole (it is smaller than the main hit) and make every other hit at a 4-5 tick

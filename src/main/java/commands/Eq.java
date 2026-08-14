@@ -89,7 +89,7 @@ public class Eq implements CommandExecutor, Listener {
 		gui.setItem(MAGIC_STATS_SLOT, magicStatsItem(p));
 	}
 
-	// =================== Aggregate stat readout (DAMAGE_PLAN.md §7b) ===================
+	// =================== Aggregate stat readout (MAP.md §7b) ===================
 	// Item lore is per-item, so it can only show that item's contribution.  These two slots show the thing lore
 	// cannot: the player's whole aggregate, equipment, Accessory Power, tunings, profile sources and class bonus
 	// included.  Generated from the stat layer, never authored, for the same reason lore is.

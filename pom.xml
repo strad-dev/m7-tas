@@ -106,7 +106,7 @@
         <dependency>
             <groupId>ca.bkaw</groupId>
             <artifactId>paper-nms</artifactId>
-            <version>26.2.build.60-beta</version>
+            <version>26.2.build.112-stable</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

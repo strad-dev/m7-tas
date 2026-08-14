@@ -14,7 +14,7 @@ import java.util.UUID;
  * buff, the kill combo, the Berserk ultimate window, the Tarantula Ring's every-tenth-hit counter, and the rolling
  * damage history.
  * <p>
- * <b>The rolling history is one abstraction serving four features</b> (DAMAGE_PLAN.md §1.14).  Berserk's axe throw
+ * <b>The rolling history is one abstraction serving four features</b> (MAP.md §1.14).  Berserk's axe throw
  * ("highest hit in the last 60s"), Explosive Shot and Rapid Fire ("highest arrow damage in the last minute") and
  * Venomous's DPS term ("8x the highest hit in the last 100 ticks") are all the same query at different windows, so
  * this is one ring buffer rather than three trackers.
@@ -148,7 +148,7 @@ public final class CombatState {
 	// ===================== rolling damage history =====================
 
 	/**
-	 * Record a finished hit.  <b>Only real hits go in</b> (DAMAGE_PLAN.md §1.14): {@code Damage.deal} keeps out both
+	 * Record a finished hit.  <b>Only real hits go in</b> (MAP.md §1.14): {@code Damage.deal} keeps out both
 	 * secondary instances (procs, Cleave) and DERIVED ones - the abilities that read this history and copy a figure
 	 * out of it.  Either would close a loop where the buffer feeds on its own output.
 	 */

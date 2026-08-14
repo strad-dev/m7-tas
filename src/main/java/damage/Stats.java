@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The player stat aggregate (DAMAGE_PLAN.md §2's {@code aggregate(player, path)}).
+ * The player stat aggregate (MAP.md §2's {@code aggregate(player, path)}).
  * <pre>
  * aggregate(player, path) = stats(weapon) + stats(helmet) + stats(chest) + stats(legs) + stats(boots)
  *                         + Equipment(class, path)      // ASSUMED, never items   (§1.11)

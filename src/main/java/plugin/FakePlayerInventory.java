@@ -356,7 +356,7 @@ public class FakePlayerInventory {
 	 * Build a custom item.  {@code id} becomes lore line 0, which is where {@code CustomItems.getID} and
 	 * {@code Catalog.paletteKey} both read it from - it must stay there.  Stat rows are APPENDED below it by
 	 * {@code damage.StatLore}, generated from the same term lists the damage math reads so the two cannot drift
-	 * (DAMAGE_PLAN.md §7b).
+	 * (MAP.md §7b).
 	 */
 	public static ItemStack getSkyBlockItem(Material material, String name, String id, String sbId) {
         return getSkyBlockItem(material, name, id, nbt -> nbt.setString("id", sbId));

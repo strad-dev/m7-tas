@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Every item's stat definition, authored as TERMS (DAMAGE_PLAN.md §1.1-1.10 via §2.4).  This is the one place
+ * Every item's stat definition, authored as TERMS (MAP.md §1.1-1.10 via §2.4).  This is the one place
  * item numbers live.
  * <p>
  * <b>Keyed on the PLAIN DISPLAY NAME</b>, not the lore ID: armour carries no lore ID at all, and the two Hyperions

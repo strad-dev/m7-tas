@@ -1,7 +1,7 @@
 package damage;
 
 /**
- * Equipment (necklace / cloak / belt / gloves) - <b>assumed, never an item</b> (DAMAGE_PLAN.md §1.11).  There are
+ * Equipment (necklace / cloak / belt / gloves) - <b>assumed, never an item</b> (MAP.md §1.11).  There are
  * no ItemStacks, no inventory slots and no palette entries for these; each class is simply taken to be wearing the
  * right ones and their stats are added to the aggregate as a flat per-class source.
  * <p>

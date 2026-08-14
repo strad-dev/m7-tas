@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Damage-over-time procs (DAMAGE_PLAN.md §7).  <b>Each of these is a separate damage instance on its own timer.</b>
+ * Damage-over-time procs (MAP.md §7).  <b>Each of these is a separate damage instance on its own timer.</b>
  * They must not be folded into {@code sumAdditive}, and their own instances must not re-trigger themselves.
  *
  * <table>
  *   <caption>The procs</caption>
  *   <tr><th>Source</th><th>Behaviour</th></tr>
  *   <tr><td>Fire Aspect III</td><td>9% of the hit as bonus, at ticks 0, 20, 40, 60, 80 - five procs over 80t.</td></tr>
- *   <tr><td>Thunderlord VII</td><td>Every third hit, 60% of that hit's damage as bonus.  Not a DoT: it fires once,
- *       on the hit, and keeps no state beyond the hit counter.</td></tr>
+ *   <tr><td>Thunderlord VII</td><td>Every third hit <b>on the same mob</b>, 60% of that hit's damage as bonus.  Not a
+ *       DoT: it fires once, on the hit, and keeps no state beyond the per-target hit counter.</td></tr>
  *   <tr><td>Venomous VII</td><td>Each hit on a mob adds a stack worth 2% of DPS, to a 40-stack cap (so 80% of
  *       DPS), delivered every 20t for 100t.  <b>DPS is 8x the highest hit in the last 100 ticks</b>, so a capped
  *       proc is 640% of that hit.</td></tr>
@@ -94,8 +94,12 @@ public final class Procs {
 	}
 
 	private static final List<Effect> EFFECTS = new ArrayList<>();
-	/** Melee hits per player, for Thunderlord's every-third-hit. */
-	private static final java.util.Map<UUID, Integer> thunderlordCount = new java.util.HashMap<>();
+	/**
+	 * Melee hits per (attacker, target), for Thunderlord's every-third-hit.  Keyed on the TARGET as well as the
+	 * attacker: the third hit that procs has to be the third hit on <b>that mob</b>, so hitting something else must
+	 * neither advance nor reset the count on the mob you came from.  Outer key attacker, inner key target.
+	 */
+	private static final java.util.Map<UUID, java.util.Map<UUID, Integer>> thunderlordCount = new java.util.HashMap<>();
 
 	public static void reset() {
 		EFFECTS.clear();
@@ -119,8 +123,12 @@ public final class Procs {
 		if(attacker == null || target == null || sbDamage <= 0) return;
 		if(!path.isMelee()) return;                                  // sword-only
 
-		// Thunderlord VII: every third hit, 60% of THAT hit's damage.  Genuinely per-hit, so it stays inline.
-		int hits = thunderlordCount.merge(attacker.getUniqueId(), 1, Integer::sum);
+		// Thunderlord VII: every third hit ON THE SAME MOB, 60% of THAT hit's damage.  Genuinely per-hit, so it stays
+		// inline.  A single per-player counter was wrong: three hits spread over three mobs procced, and a mob two
+		// hits in lost its progress the moment you clipped something else.
+		int hits = thunderlordCount
+				.computeIfAbsent(attacker.getUniqueId(), k -> new java.util.HashMap<>())
+				.merge(target.getUniqueId(), 1, Integer::sum);
 		if(hits % THUNDERLORD_EVERY == 0) {
 			Damage.dealSecondary(target, sbDamage * THUNDERLORD_SHARE, DamageKind.THUNDERLORD, attacker);
 		}
@@ -170,8 +178,14 @@ public final class Procs {
 		int now = MinecraftServer.currentTick;
 		for(Iterator<Effect> it = EFFECTS.iterator(); it.hasNext(); ) {
 			Effect e = it.next();
+			boolean dead = e.target.isDead() || e.target.getHealth() <= 0;
+			// A dead mob's Thunderlord progress is meaningless, and dropping it here is what keeps the per-target map
+			// from growing for the whole run.  Every melee hit applies Fire Aspect, so every counted target has an
+			// Effect and so passes through this loop; the count deliberately does NOT expire with the effect, only
+			// with the mob.
+			if(dead) forgetTarget(e.targetId);
 			// Expiry is checked with a strict >, so the proc that lands exactly ON the end tick still lands.
-			if(e.target.isDead() || e.target.getHealth() <= 0 || !e.attacker.isOnline() || now > e.expiresAt) {
+			if(dead || !e.attacker.isOnline() || now > e.expiresAt) {
 				it.remove();
 				continue;
 			}
@@ -183,5 +197,10 @@ public final class Procs {
 			e.nextTick += e.interval;
 			if(e.nextTick <= now) e.nextTick = now + e.interval;
 		}
+	}
+
+	/** Forget every attacker's Thunderlord progress on one target, once that target is dead. */
+	private static void forgetTarget(UUID targetId) {
+		for(java.util.Map<UUID, Integer> perTarget : thunderlordCount.values()) perTarget.remove(targetId);
 	}
 }

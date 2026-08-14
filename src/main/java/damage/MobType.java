@@ -2,7 +2,7 @@ package damage;
 
 /**
  * A mob's SkyBlock type.  A mob can carry several, and <b>every matching damage buff applies - they all stack</b>
- * (DAMAGE_PLAN.md §7).
+ * (MAP.md §7).
  * <p>
  * The thirteen types with a Ruler attribute (+39% each) are listed first; WITHER and CUBIC/AQUATIC etc. exist
  * because enchantments key on them even where no Ruler does.  There is deliberately no Wither Ruler: a Wither-type

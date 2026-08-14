@@ -11,7 +11,7 @@ import org.bukkit.util.Vector;
 import plugin.M7tas;
 
 /**
- * Arrow damage (DAMAGE_PLAN.md §1.0.5).
+ * Arrow damage (MAP.md §1.0.5).
  * <p>
  * <b>Arrows carry their damage value with them.</b>  The STAT half of a shot is resolved at fire time and stamped
  * on the projectile, so swapping to a stronger weapon while an arrow is in flight cannot change what it hits for.

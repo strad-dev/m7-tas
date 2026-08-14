@@ -15,7 +15,7 @@ import java.util.UUID;
  * <p>
  * A saved loadout holds frozen copies of whatever the items looked like when the player picked them. Every later
  * change to an item, whether new lore, a new attribute modifier, a {@code can_break} stamp, or the whole stat
- * block DAMAGE_PLAN.md will hang on these items, would otherwise never reach a player who already saved one.  This class
+ * block MAP.md will hang on these items, would otherwise never reach a player who already saved one.  This class
  * is the reason that migration is automatic: on every open of the editor and on every kit hand-out, each saved
  * stack is looked up in the live catalog and REPLACED by today's definition. Nothing needs a one-off migration
  * script when items change; just change the item factory.
@@ -51,6 +51,7 @@ public final class ItemRefresh {
 			"Withered Golem Sword", "Suspicious Golem Sword",
 			"Withered Axe of the Shredded", "Suspicious Axe of the Shredded",
 			"Withered Ragnarok Axe", "Withered Ragnarοck Axe",
+			"Withered Ragnarock Axe", "Withered Ragnarοck Axe",   // plain ASCII o -> the Greek omicron (U+03BF) it now uses
 			"Bonzo Staff", "Heroic Bonzo Staff");
 
 	/**

@@ -17,7 +17,7 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 /**
  * Keeps the stat cache honest.
  * <p>
- * DAMAGE_PLAN.md §7 is explicit that invalidation has to cover <b>equipment</b> changes and not just inventory
+ * MAP.md §7 is explicit that invalidation has to cover <b>equipment</b> changes and not just inventory
  * ones: the masks and hats are hotbar items that get worn mid-fight, and a helmet swap is worth thousands of
  * Intelligence.  Every event here is one of the ways an item can move on or off a player.
  * <p>

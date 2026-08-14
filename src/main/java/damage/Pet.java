@@ -4,7 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.PlayerInventory;
 
 /**
- * The equipped pet.  Pets are assumed rather than owned (DAMAGE_PLAN.md §1.13): a player never picks one, it
+ * The equipped pet.  Pets are assumed rather than owned (MAP.md §1.13): a player never picks one, it
  * follows from what they are doing and what they are wearing.
  * <p>
  * A pet contributes in three separate places, and they are NOT the same numbers:

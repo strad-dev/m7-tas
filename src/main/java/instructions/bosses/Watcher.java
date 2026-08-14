@@ -576,7 +576,7 @@ public class Watcher {
 		mob.setPersistent(true);
 		mob.setRemoveWhenFarAway(false);
 
-		// Real HP and defense (DAMAGE_PLAN.md §5).  These are no longer flat-kill targets: the Watcher itself
+		// Real HP and defense (MAP.md §5).  These are no longer flat-kill targets: the Watcher itself
 		// stays totally immune, but its adds now have to actually be brought to 0 by damage.  All three carry the
 		// inherent x0.1 boss resistance, and the 6M rank-and-file carry 2000 defense on top.
 		if(mobName.equals("Diamante Giant")) {

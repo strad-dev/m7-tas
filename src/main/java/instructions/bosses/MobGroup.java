@@ -57,7 +57,7 @@ public final class MobGroup {
 			mob.customName(Utils.nameComponent(spec.customName()));
 			mob.setCustomNameVisible(true);
 
-			// Real HP, defense and mob types where the mob is modelled (DAMAGE_PLAN.md §5) - the Wither Guards and
+			// Real HP, defense and mob types where the mob is modelled (MAP.md §5) - the Wither Guards and
 			// the boss-fight Shadow Assassins both are.  The spec's own maxHealth/armor are the fallback for
 			// anything that is not, and they are the old flat-kill values, so they should not be extended.
 			damage.MobStats.MobStat stat = damage.MobStats.of(mob);

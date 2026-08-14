@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * One item's stat definition, built from independent terms rather than totals (DAMAGE_PLAN.md §2.4).
+ * One item's stat definition, built from independent terms rather than totals (MAP.md §2.4).
  * <p>
  * The four axes §2.4 requires to stay separate are separate fields here, so any one of them can gain a variant
  * without touching the others:

@@ -134,13 +134,14 @@ public final class Catalog {
 	 * <br>
 	 * Entries are {@link #orderName}: the PLAIN display name, or the material name for the one nameless stack (the
 	 * ender pearls). Renaming an item here without renaming it in {@link FakePlayerInventory} silently drops it to
-	 * the tail, so change both together.
+	 * the tail, so change both together. That includes a LOOKALIKE character: the Ragnarock Axe's name carries a
+	 * Greek omicron (U+03BF) rather than an ASCII o, and the two spellings read identically but do not match.
 	 * <br>
 	 * Anything not listed sorts to the end in discovery order, so a newly added item shows up at the back of the
 	 * palette instead of vanishing. The list currently covers every palette item exactly, so that tail is empty.
 	 * <br>
 	 * Names here are DISPLAY names, and the Fabled reforge is displayed as {@code Withered} on purpose (see
-	 * DAMAGE_PLAN.md §1.0.6), so Hyperion, Dark Claymore, Flaming Flay and Ragnarock Axe all read "Withered".
+	 * MAP.md §1.0.6), so Hyperion, Dark Claymore, Flaming Flay and Ragnarock Axe all read "Withered".
 	 */
 	private static final List<String> PALETTE_ORDER = List.of(
 			// Page 1: the core damage kit.
@@ -156,7 +157,7 @@ public final class Catalog {
 			// Page 2: situational weapons and the pearls.
 			"Heroic Ice Spray Wand",
 			"Precise Last Breath",
-			"Withered Ragnarock Axe",
+			"Withered Ragnarοck Axe",   // Greek omicron, matching FakePlayerInventory - see the note above
 			"Suspicious Axe of the Shredded",
 			"Withered Flaming Flay",
 			"Heroic Jerry-chine Gun",
@@ -215,7 +216,7 @@ public final class Catalog {
 	 * catalog with this exact rule, so keep all three in sync.
 	 * <br>
 	 * <b>Only the FIRST lore line is read.</b> That is what lets an item grow lore freely, with stat lines, ability
-	 * text, rarity and everything DAMAGE_PLAN.md will hang on these items, without breaking the match: a saved copy
+	 * text, rarity and everything MAP.md will hang on these items, without breaking the match: a saved copy
 	 * still keys to the same string and gets silently replaced by the new definition on the next refresh.  Keep the
 	 * item ID on lore line 0 (which {@code CustomItems.getID()} already requires) and item changes need no
 	 * migration; move it, or prepend a line above it, and every saved loadout in the network quietly stops updating.

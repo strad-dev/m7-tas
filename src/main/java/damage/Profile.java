@@ -8,7 +8,7 @@ import org.bukkit.inventory.PlayerInventory;
 import plugin.Utils;
 
 /**
- * Everything outside the item / equipment / power layers (DAMAGE_PLAN.md §1.13): skills, slayers, potions,
+ * Everything outside the item / equipment / power layers (MAP.md §1.13): skills, slayers, potions,
  * essence-shop perks, individual accessories' own stats, blessings and pets.
  * <p>
  * <b>The stat pipeline.</b> Each stat has its own additive and multiplicative sources.  All additive sources sum,

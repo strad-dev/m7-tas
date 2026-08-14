@@ -14,7 +14,7 @@ import java.util.Set;
 
 /**
  * HP, defense, mob types and the inherent boss resistance for every target the damage system computes against
- * (DAMAGE_PLAN.md §5).
+ * (MAP.md §5).
  * <p>
  * <b>The difficulty curve lives in the defense, not the HP.</b> The Withered Dragon has less HP than Necron but
  * 2500 defense makes it 84% as tough per point of damage.  On top of defense, every boss and mini-boss also takes

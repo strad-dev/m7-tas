@@ -1,7 +1,7 @@
 package damage;
 
 /**
- * An immutable bag of {@link Stat} values.  Every stat source in DAMAGE_PLAN.md §2 returns one of these and no
+ * An immutable bag of {@link Stat} values.  Every stat source in MAP.md §2 returns one of these and no
  * source knows about any other, so the aggregate is a plain sum.
  * <p>
  * Values are raw SkyBlock numbers (a Fabled Hyperion's Strength is 560 unscaled, 3729.6 after the dungeon stage).

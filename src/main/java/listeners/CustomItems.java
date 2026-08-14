@@ -86,7 +86,7 @@ public class CustomItems implements Listener {
 	// distance-attenuated.
 	public static boolean beamDamageInProgress = false;
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
-	// The Berserk damage ramp now lives in damage/CombatState, with DAMAGE_PLAN.md §1.14's real figures
+	// The Berserk damage ramp now lives in damage/CombatState, with MAP.md §1.14's real figures
 	// (+165% per repeated hit to a +950% cap, +180%/+1200% solo) rather than the old +10%-to-3x approximation.
 	// resetBerserkDamage() below still clears it, alongside the rest of the per-run combat state.
 	// Terminator firing is poller-driven (NOT fired directly on the right-click packet). A right-click records the
@@ -113,7 +113,7 @@ public class CustomItems implements Listener {
 	// right-click and is unaffected.  While the beam is armed, left-clicking them must also never break a block
 	// (leftClickAbilityItem).
 	// They used to chip for a flat 1 damage.  They no longer do: the beam is a formula output now, so each of
-	// these swings its OWN stat block (DAMAGE_PLAN.md §8) - which for the Aspect of the Void and the Ragnarock Axe
+	// these swings its OWN stat block (MAP.md §8) - which for the Aspect of the Void and the Ragnarock Axe
 	// is a real weapon, and for the Bonzo Staff a small one.  This set is now only "which items a Mage may beam
 	// with", not a damage tier.
 	private static final Set<String> WEAK_BEAM_IDS = Set.of(
@@ -129,7 +129,7 @@ public class CustomItems implements Listener {
 	private static final int TAC_COOLDOWN_TICKS = 400;        // Tactical Insertion: 20s
 	private static final int GUIDED_SHEEP_COOLDOWN_TICKS = 600; // Guided Sheep: 30s
 	private static final int GOLEM_SWORD_COOLDOWN_TICKS = 60; // Golem Sword: 3s
-	// Berserk's two drop abilities (DAMAGE_PLAN.md §1.14): the ultimate is x1.5 melee for 15s on a 60s cooldown,
+	// Berserk's two drop abilities (MAP.md §1.14): the ultimate is x1.5 melee for 15s on a 60s cooldown,
 	// and the regular ability throws an axe for the player's highest hit in the last 60s.  The ultimate's WINDOW
 	// lives in damage/CombatState, since that is what the damage math reads; only its cooldown lives here.
 	private static final int BERSERK_ULTIMATE_COOLDOWN_TICKS = 1200; // 60s
@@ -218,7 +218,7 @@ public class CustomItems implements Listener {
 	 * There was no such path at all until now, and the gap was invisible because the Mage never needed one: a Mage's
 	 * swing fires the beam, which applies its own damage, so the only class whose sword mattered was already served.
 	 * Every other class fell through to VANILLA melee damage, and vanilla is not a participant in this model
-	 * (DAMAGE_PLAN.md §7) - so a swing did a couple of hearts against a mob whose HP is SB/1e6, and against a boss
+	 * (MAP.md §7) - so a swing did a couple of hearts against a mob whose HP is SB/1e6, and against a boss
 	 * wither it did precisely nothing, because {@code MiscListener.onWitherLordDamage} cancels every non-plugin hit on
 	 * a TASWither.  That is the whole of "a Berserk's melee hits do nothing": the class with the biggest melee
 	 * multipliers in the plan was the one class routed through the path that had been switched off.
@@ -376,7 +376,7 @@ public class CustomItems implements Listener {
 		// swing fell through to vanilla, which is a handful of hearts against a mob whose HP is SB/1e6 and is the
 		// wrong number by six orders of magnitude.  Now that CustomItems.meleeAttack applies every swing at SkyBlock
 		// scale, vanilla must not land on top of any of them - the same "vanilla is not a participant" rule the rest
-		// of DAMAGE_PLAN.md §7 runs on.  Knockback goes with it, which is fine: nothing in the floor depends on
+		// of MAP.md §7 runs on.  Knockback goes with it, which is fine: nothing in the floor depends on
 		// melee knock.
 		if(e.getDamager() instanceof Player) e.setCancelled(true);
 	}
@@ -410,18 +410,23 @@ public class CustomItems implements Listener {
 			e.setCancelled(true);
 			return;
 		}
-		// Wither/Blood door blocks are unbreakable ONCE THE RUN HAS STARTED (opened via the key + door-click path
-		// in MiscListener, never broken). During the pre-run prep window they may still be stonked through.
-		if(Server.isRunStarted() && (Server.inWitherDoor(e.getBlock()) || Server.inBloodDoor(e.getBlock()))) {
+		// ONCE THE RUN HAS STARTED, two more things lock: every door (frame included, see Rooms.Door) and every room's
+		// ceiling.  Both are open during the pre-run prep window, which is the same deal the out-of-bounds kill gives
+		// the crevices: get into position however you like before the countdown ends, but no shortcuts during the run.
+		// The wither/blood doors were already covered by this rule; Rooms.inDoor now covers all 15 plus their frames,
+		// and the key + door-click path in MiscListener is still the only way to open one.
+		Block b = e.getBlock();
+		if(Server.isRunStarted()
+				&& (instructions.clear.Rooms.inDoor(b.getX(), b.getY(), b.getZ())
+				|| instructions.clear.Rooms.isCeiling(b.getX(), b.getY(), b.getZ()))) {
 			e.setCancelled(true);
 			return;
 		}
-		// The vertical faces (perimeter walls) of a room can't be broken through.  Only the floor/ceiling and the
-		// room interior can be stonked.  I restrict by the room's horizontal perimeter at any Y, because rooms have
-		// varying heights and a Y-based floor/ceiling rule is impossible.  Multi-cell rooms (e.g. the 2x2 Museum)
-		// protect only their OUTER perimeter, so the middle of the room stays stonkable.  The three doors (start /
-		// wither / blood) sit in these walls and must remain stonkable, so they're exempt.
-		Block b = e.getBlock();
+		// The vertical faces (perimeter walls) of a room can't be broken through.  Only the floor and the room interior
+		// can be stonked.  I restrict by the room's horizontal perimeter at any Y, because rooms have varying heights
+		// and a Y-based wall rule is impossible.  Multi-cell rooms (e.g. the 2x2 Museum) protect only their OUTER
+		// perimeter, so the middle of the room stays stonkable.  The three doors (start / wither / blood) sit in these
+		// walls and must remain stonkable pre-run, so they're exempt.
 		if(instructions.clear.Rooms.isRoomFace(b.getX(), b.getZ())
 				&& !Server.inStartDoor(b) && !Server.inWitherDoor(b) && !Server.inBloodDoor(b)) {
 			e.setCancelled(true);
@@ -495,7 +500,7 @@ public class CustomItems implements Listener {
 				guidedSheep(p);
 			}
 		} else if(p.getName().startsWith("Berserk") || p.getScoreboardTags().contains("Berserk")) {
-			// DAMAGE_PLAN.md §1.14.  The ultimate (`drop`) is x1.5 melee for 15s on a 60s cooldown, read by
+			// MAP.md §1.14.  The ultimate (`drop`) is x1.5 melee for 15s on a 60s cooldown, read by
 			// damage/ClassBonuses through damage/CombatState; the regular ability (`drop stack`) throws an axe for
 			// the player's highest hit in the last 60s, off the shared rolling damage history.
 			if(ultimate) {
@@ -519,7 +524,7 @@ public class CustomItems implements Listener {
 		if(e.getEntity() instanceof Player p) {
 			ItemStack bow = p.getInventory().getItemInMainHand();
 			// Vanilla's charge, min(useTicks/20, 1).  A DRAWN bow scales its damage by this AND loses the whole
-			// crit term below a full draw (DAMAGE_PLAN.md §1.4), which makes a partial draw much worse than the
+			// crit term below a full draw (MAP.md §1.4), which makes a partial draw much worse than the
 			// fraction alone suggests.  The Terminator is a shortbow and never comes through here.
 			double charge = Math.clamp(e.getForce(), 0f, 1f);
 			String id = getID(bow);
@@ -820,7 +825,7 @@ public class CustomItems implements Listener {
 			// (iceSpray, the AOTS beam, terminator).  The old fake-player-only exclusion let implosion hit
 			// fellow practicers.
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-				// Wither Impact: 10,000 base at 0.3 Intelligence scaling (DAMAGE_PLAN.md §7), through the ability
+				// Wither Impact: 10,000 base at 0.3 Intelligence scaling (MAP.md §7), through the ability
 				// formula - so no Strength and no Crit Damage, which is why abilities read so differently from
 				// the beam.  That is deliberate: they are an option, not a damage strategy.
 				double sbDamage = damage.Damage.ability(p, entity1, wand);
@@ -1546,7 +1551,7 @@ public class CustomItems implements Listener {
 			// Buff expires 200 ticks (10s) after THIS application; a later cast overwrites this, extending the buff.
 			ragBuffExpiry.put(uid, MinecraftServer.currentTick + 200);
 			// The buff is +150% of the AXE'S OWN Strength stat, granted as a bonus stat through the stat layer
-			// (DAMAGE_PLAN.md §1.7) - not the vanilla Strength potion effect it used to be, and not the flat
+			// (MAP.md §1.7) - not the vanilla Strength potion effect it used to be, and not the flat
 			// 220->250 damage swap either.  The stat layer reads the tag, so nothing is applied to the player
 			// here; damage/Stats.ragnarockStrength computes the figure from the axe's authored terms, which is
 			// why it tracks a retune of the axe automatically.
@@ -1568,7 +1573,7 @@ public class CustomItems implements Listener {
 	}
 
 	/**
-	 * The Terminator's left-click beam.  It is NOT a bow shot (DAMAGE_PLAN.md §1.4), so it is never draw-scaled -
+	 * The Terminator's left-click beam.  It is NOT a bow shot (MAP.md §1.4), so it is never draw-scaled -
 	 * it always resolves at full charge, and therefore always crits.  Its old flat 20 is gone; it is now the
 	 * Terminator's own stat block through the bow formula.
 	 */
@@ -1610,7 +1615,7 @@ public class CustomItems implements Listener {
 
 	/**
 	 * The Axe of the Shredded's throw: <b>10% of the wielder's melee damage</b>, with consecutive throws doubling
-	 * it (and their mana cost) up to a x16 cap (DAMAGE_PLAN.md §1.9).  It also has to <b>take aggro when it hits a
+	 * it (and their mana cost) up to a x16 cap (MAP.md §1.9).  It also has to <b>take aggro when it hits a
 	 * wither</b>, which is a deliberate requirement rather than incidental, and is what the axe's flight already
 	 * did before it dealt any damage at all.
 	 */
@@ -1755,14 +1760,21 @@ public class CustomItems implements Listener {
 
 	public static void iceSpray(Player p) {
 		Location l = p.getEyeLocation();
-		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 512);
+		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 256);
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		ItemStack wand = p.getInventory().getItemInMainHand();
+		int debuffed = 0;
+		int alreadyDebuffed = 0;
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0) {
+				// Counted BEFORE the apply, which refreshes the window and would otherwise make every target read
+				// as already debuffed.  A refresh still counts as "already debuffed", the same split SkyBlock in
+				// Vanilla's wand reports - unlike that one, though, a refreshed target here still takes the damage.
+				if(damage.TargetDebuffs.iceSprayed(entity1)) alreadyDebuffed++;
+				else debuffed++;
 				// The cast applies its x1.1 damage debuff to EVERY enemy within 8 blocks of the caster's eyes for
-				// 5s, and it lands FIRST so the cast benefits from its own debuff (DAMAGE_PLAN.md §7).  The debuff
+				// 5s, and it lands FIRST so the cast benefits from its own debuff (MAP.md §7).  The debuff
 				// applies even to a target the damage cannot reach, e.g. an armoured wither.
 				damage.TargetDebuffs.applyIceSpray(entity1);
 				if(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0) continue;
@@ -1771,6 +1783,12 @@ public class CustomItems implements Listener {
 				double sbDamage = damage.Damage.ability(p, entity1, wand);
 				damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
 			}
+		}
+		if(debuffed > 0) {
+			p.sendMessage(Utils.msg("<red>Your Ice Spray debuffed " + debuffed + " enemies."));
+		}
+		if(alreadyDebuffed > 0) {
+			p.sendMessage(Utils.msg("<red>" + alreadyDebuffed + " enemies have already been debuffed."));
 		}
 		Utils.playLocalSound(p, Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0F, 1.0F);
 	}
@@ -1840,7 +1858,7 @@ public class CustomItems implements Listener {
 						instructions.bosses.WitherActions.noteDamager(p);
 					}
 					if(entity instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) continue;
-					// The Flaming Flay's ability deals the SAME as its melee hit (DAMAGE_PLAN.md §1.8), so it
+					// The Flaming Flay's ability deals the SAME as its melee hit (MAP.md §1.8), so it
 					// goes through the melee formula rather than the ability one.
 					double sbDamage = damage.Damage.melee(p, entity1, p.getInventory().getItemInMainHand());
 					damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
@@ -2197,7 +2215,7 @@ public class CustomItems implements Listener {
 		impact.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 
 		// The Explosive Bow's own ability: every mob within 3 blocks takes the weapon's FULL damage
-		// (DAMAGE_PLAN.md §1.9).  The directly-hit entity already took its arrow damage on the normal path, so it
+		// (MAP.md §1.9).  The directly-hit entity already took its arrow damage on the normal path, so it
 		// is excluded here rather than hit twice.
 		for(Entity nearby : impact.getWorld().getNearbyEntities(impact, 3, 3, 3)) {
 			if(!(nearby instanceof LivingEntity mob) || nearby instanceof Player) continue;
@@ -2267,7 +2285,7 @@ public class CustomItems implements Listener {
 		Arrow right = (Arrow) nmsRight.getBukkitEntity();
 
 		// The Terminator is a SHORTBOW: it is never drawn, it just shoots, so draw scaling never applies and each
-		// of its three arrows is one shot's worth of damage, unchanged by release timing (DAMAGE_PLAN.md §1.2).
+		// of its three arrows is one shot's worth of damage, unchanged by release timing (MAP.md §1.2).
 		// Damage is stamped on each arrow at fire time (§1.0.5), so a mid-flight weapon swap cannot change it.
 		//
 		// The old hand-tuned terms are all gone: the Power/Strength-potion bonuses are now the weapon's own stat
@@ -2330,7 +2348,7 @@ public class CustomItems implements Listener {
 	 * damage history, target debuff stacks, running procs and any floating damage numbers still in the world.
 	 * Called at the start of every run.
 	 * <p>
-	 * The old hand-tuned Berserk ramp (+10% per hit on the same mob, cap 3x) is gone: DAMAGE_PLAN.md §1.14's real
+	 * The old hand-tuned Berserk ramp (+10% per hit on the same mob, cap 3x) is gone: MAP.md §1.14's real
 	 * figures are +165% per repeated hit to a +950% cap (+180% / +1200% solo), applied as an additive damage
 	 * source in {@code damage/ClassBonuses}, with the counters in {@code damage/CombatState}.
 	 */
@@ -2412,7 +2430,7 @@ public class CustomItems implements Listener {
 	}
 
 	// The Spring Boots (x0.80) and Racing Helmet (x0.70) outgoing-damage penalties are DELETED, not re-bucketed
-	// (DAMAGE_PLAN.md §1.10, §8), along with Utils.helmetDamageMultiplier's Cow Hat x0.70 and mask x0.85.  They
+	// (MAP.md §1.10, §8), along with Utils.helmetDamageMultiplier's Cow Hat x0.70 and mask x0.85.  They
 	// were a hand-tuned proxy for exactly what the stat layer now models properly: a helmet slot is exclusive, so
 	// wearing a Cow Hat IS already giving up the Storm's Helmet's 3196.8 Intelligence, and keeping a x0.70 on top
 	// double-penalised the same swap.  Every wearable now affects damage only through the stats it contributes -
@@ -2512,7 +2530,7 @@ public class CustomItems implements Listener {
 						Location impact = arrow.getLocation();
 
 						// Explosive Shot: each arrow deals 100% of the player's highest arrow damage in the last
-						// minute (DAMAGE_PLAN.md §1.14), read off the shared rolling damage history.  Dealt as a
+						// minute (MAP.md §1.14), read off the shared rolling damage history.  Dealt as a
 						// DERIVED instance: the figure is already a finished hit, so it gets no second pass through
 						// the formula and never goes back into the history it came out of.
 						double sbDamage = damage.CombatState.maxInLastTicks(p, 1200);
@@ -2615,7 +2633,7 @@ public class CustomItems implements Listener {
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 				// Rapid Fire: each arrow deals 75% of the player's highest arrow damage in the last minute
-				// (DAMAGE_PLAN.md §1.14), off the same rolling history Explosive Shot and the axe throw read.
+				// (MAP.md §1.14), off the same rolling history Explosive Shot and the axe throw read.
 				// 75% of a FINISHED hit, so stampFlat marks the arrow derived: it lands for this figure exactly and
 				// stays out of the history.  Both matter - each of the 50 arrows re-queries the history four ticks
 				// after the last one landed, so anything that let an arrow inflate what the next one reads compounds
@@ -2629,7 +2647,7 @@ public class CustomItems implements Listener {
 	public static void mageBeam(Player p) {
 		Location l = p.getLocation();
 
-		// Three range tiers, each doubling the previous total (DAMAGE_PLAN.md §7): 10+15 = 25 by default,
+		// Three range tiers, each doubling the previous total (MAP.md §7): 10+15 = 25 by default,
 		// 35+15 = 50 in the boss arena, 70+30 = 100 in the Wither King fight.  The Wither King tier needs a PHASE
 		// check rather than a coordinate one, because the WK arena already sits inside the boss-arena box.
 		double range = damage.Damage.beamRange(p).maxRange();
@@ -2717,7 +2735,7 @@ public class CustomItems implements Listener {
 			// beam is one of only three things allowed to do that - the thrown-axe projectiles and the Flaming Flay
 			// arc are the others; every other path needs the hit to have dealt real damage (see damage/Damage.deal).
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
-			// Debuff stacks land even when the damage does not (DAMAGE_PLAN.md §7): a beam on an armoured boss
+			// Debuff stacks land even when the damage does not (MAP.md §7): a beam on an armoured boss
 			// still builds Lethality, so the moment it opens up the stacks are already there.  Maxor and Storm
 			// cannot be arrow-debuffed before they become vulnerable, which is exactly the case this covers.
 			damage.Damage.applyOnHitDebuffs(p, wither, damage.DamagePath.BEAM, held);

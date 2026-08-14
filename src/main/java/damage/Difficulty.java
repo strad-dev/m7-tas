@@ -1,13 +1,10 @@
 package damage;
 
-import instructions.clear.Blessing;
 import instructions.clear.ClearManager;
 import plugin.Utils;
 
-import java.util.Map;
-
 /**
- * Classic vs realistic mode (DAMAGE_PLAN.md §0).
+ * Classic vs realistic mode (MAP.md §0).
  * <p>
  * <b>This is a flag on inputs, not a second damage path.</b> Every one of the five things that differ is already
  * modelled as a target state or a stat input - never as a constant folded into a formula - so classic mode is
@@ -113,17 +110,16 @@ public enum Difficulty {
 	}
 
 	/**
-	 * The total collected level of one blessing type.  Classic answers from the maxed table; realistic reads the
-	 * run's actual chest history, and falls back to the maxed table when this session has no clear phase to read.
+	 * The total level of one blessing type that the formulas are actually using.  Classic answers from the maxed
+	 * table; realistic reads the run's actual chest history, and falls back to the maxed table when this session
+	 * has no clear phase to read.
+	 * <p>
+	 * Public because it is half of what {@code plugin/BlessingState} publishes to other plugins: what the party
+	 * collected and what the damage pipeline used are different numbers whenever {@link #blessingsAssumedMax()}
+	 * is true, and a display showing only one of them misreports every classic run.
 	 */
-	private static int blessingLevel(Utils.BlessingType type) {
-		if(current == REALISTIC && clearPhaseInThisSession()) {
-			int level = 0;
-			for(Map.Entry<Blessing, Integer> e : ClearManager.blessingTally().entrySet()) {
-				if(e.getKey().type() == type) level += e.getKey().level() * e.getValue();
-			}
-			return level;
-		}
+	public static int blessingLevel(Utils.BlessingType type) {
+		if(current == REALISTIC && clearPhaseInThisSession()) return ClearManager.collectedLevel(type);
 		return switch(type) {
 			case POWER -> MAX_POWER;
 			case TIME -> MAX_TIME;
@@ -134,10 +130,20 @@ public enum Difficulty {
 	}
 
 	/**
+	 * True while {@link #blessingLevel} is answering from the maxed table rather than from what the party actually
+	 * collected - always in classic mode, and in realistic mode too when the session has no clear phase behind it.
+	 * <p>
+	 * Published on {@code plugin/BlessingState} so a display can say which of the two it is showing.
+	 */
+	public static boolean blessingsAssumedMax() {
+		return !(current == REALISTIC && clearPhaseInThisSession());
+	}
+
+	/**
 	 * Whether this session has a clear phase to read blessings from.  The clear being live covers a run in
 	 * progress; a non-empty tally covers the stretch after the clear has handed off to the boss chain.
 	 */
 	private static boolean clearPhaseInThisSession() {
-		return ClearManager.isActive() || !ClearManager.blessingTally().isEmpty();
+		return ClearManager.hasBlessingData();
 	}
 }

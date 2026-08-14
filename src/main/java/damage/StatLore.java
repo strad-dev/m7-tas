@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Renders an item's stats into its lore (DAMAGE_PLAN.md §7b).
+ * Renders an item's stats into its lore (MAP.md §7b).
  * <p>
  * <b>Lore is output, never input.</b>  Nothing reads a stat back off a lore line; the numbers are computed from
  * {@link Items}' term lists, the same lists the damage math reads, so the two cannot drift.  Hand-writing them

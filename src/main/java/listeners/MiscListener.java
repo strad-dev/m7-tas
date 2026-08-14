@@ -333,7 +333,7 @@ public class MiscListener implements Listener {
 	 * model, so cancel it outright rather than let it slip past the clamps.
 	 * <p>
 	 * This replaces the four {@code handleDamage(EntityDamageEvent)} interceptors that used to be dispatched from
-	 * here (DAMAGE_PLAN.md §7's damage-path unification).
+	 * here (MAP.md §7's damage-path unification).
 	 */
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onWitherLordDamage(EntityDamageEvent e) {
@@ -422,7 +422,7 @@ public class MiscListener implements Listener {
 	}
 
 	// The wither hurt sound moved to damage/Damage.witherHurtSound.  It used to hang off EntityDamageEvent here,
-	// which the unified damage path (DAMAGE_PLAN.md §7) stopped firing: every hit now writes health directly, so
+	// which the unified damage path (MAP.md §7) stopped firing: every hit now writes health directly, so
 	// the sound belongs at the one place every hit passes through.  Its three rules went with it - judged on the
 	// PRE-clamp damage, silent while the boss is dying, and silent for a mage beam (which routes its own
 	// constant-volume sound to the beamer).

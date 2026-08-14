@@ -3,7 +3,7 @@ package damage;
 import org.bukkit.entity.Player;
 
 /**
- * Dungeon class bonuses (DAMAGE_PLAN.md §1.14).  Every figure is at <b>class level 50</b>; sub-50 scaling is
+ * Dungeon class bonuses (MAP.md §1.14).  Every figure is at <b>class level 50</b>; sub-50 scaling is
  * deliberately not modelled at all - level 50 is the practice assumption, like maxed gear everywhere else.  If a
  * class level ever needs to matter it becomes a new source here, not a rewrite.
  * <p>

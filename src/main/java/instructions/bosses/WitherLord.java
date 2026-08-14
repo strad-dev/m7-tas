@@ -88,7 +88,7 @@ public abstract class WitherLord {
 		boss.customName(Utils.msg("<gold><bold>﴾ <red>" + displayName() + "<gold> ﴿ </bold><yellow>" + displayHealth() + "<red>❤"));
 		boss.setCustomNameVisible(true);
 		boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth());
-		// minecraft:armor stays at 0 on every mob (DAMAGE_PLAN.md §5): SkyBlock defense is applied by
+		// minecraft:armor stays at 0 on every mob (MAP.md §5): SkyBlock defense is applied by
 		// damage.Damage at the boundary with def/(def+100), a different function from vanilla's 4%-per-point
 		// curve, and the unified damage path writes health directly, so vanilla never gets a cut either way.
 		// It used to sit at -30/-20 to claw damage back out of vanilla's reduction, which no longer runs.
@@ -146,7 +146,7 @@ public abstract class WitherLord {
 	 * actually allowed; 0 means fully blocked.
 	 * <p>
 	 * This used to be four {@code handleDamage(EntityDamageEvent)} interceptors hooked from {@code MiscListener}.
-	 * With the unified damage path writing health directly (DAMAGE_PLAN.md §7) no {@code EntityDamageEvent} fires
+	 * With the unified damage path writing health directly (MAP.md §7) no {@code EntityDamageEvent} fires
 	 * for our damage at all, so {@code damage.Damage.deal} calls this explicitly instead - which is also the only
 	 * way the clamps reach every damage source rather than only arrows-on-withers, as before.
 	 * <p>

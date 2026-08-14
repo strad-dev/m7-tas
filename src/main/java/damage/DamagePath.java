@@ -1,7 +1,7 @@
 package damage;
 
 /**
- * Which of the four damage formulas a hit is going through (DAMAGE_PLAN.md §7).
+ * Which of the four damage formulas a hit is going through (MAP.md §7).
  * <p>
  * The path is also half the stat cache key, not just a formula selector: a Mage's equipment and Accessory Power
  * are path-dependent (§1.11, §1.12), so the same Mage has different Strength, Crit Damage, Intelligence AND

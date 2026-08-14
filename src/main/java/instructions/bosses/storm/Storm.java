@@ -347,10 +347,7 @@ public final class Storm extends WitherLord {
 	}
 
 	private static void broadcastActionBar(Component bar) {
-		for(Player p : Bukkit.getOnlinePlayers()) {
-			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			p.sendActionBar(bar);
-		}
+		Utils.broadcastActionBar(bar);
 	}
 
 	/** One 20-tick poll: advance each occupied pad's pillar, then run crush detection. Called by the cycle ticker
@@ -896,7 +893,7 @@ public final class Storm extends WitherLord {
 		for(double[] coords : SENTRY_COORDS) {
 			Location loc = new Location(world, coords[0], coords[1], coords[2]);
 			WitherSkeleton sentry = (WitherSkeleton) world.spawnEntity(loc, EntityType.WITHER_SKELETON);
-			// Wither-class trash, so it shares the Wither Miner's stat block (DAMAGE_PLAN.md §5 leaves the
+			// Wither-class trash, so it shares the Wither Miner's stat block (MAP.md §5 leaves the
 			// Guard's own figures [TBD]).  Wither + Undead, and no Skeletal Ruler on Master Mode.
 			damage.MobStats.apply(sentry, damage.MobStats.WITHER_MINER);
 			sentry.setAI(false);

@@ -5,6 +5,7 @@ import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherLord;
 import instructions.bosses.storm.Storm;
 import listeners.CustomItems;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -32,7 +33,16 @@ public final class Maxor extends WitherLord {
 	private static final double LASER_CENTER_Z = 73.5;
 	private static final double LASER_RADIUS_SQ = 2.5 * 2.5;
 	private static final int CHARGE_DELAY_TICKS = 30;
+	// Laser scan cadence: the scan only tests Maxor's position on phase ticks divisible by this (the real-Hypixel
+	// 20-tick grid, same as Storm's pad poll).  Also the action bar's countdown period.
+	private static final int LASER_CYCLE_TICKS = 20;
+	// Phase tick Maxor gets his aggro and starts moving (see onStart).  Nothing can be in the middle of the arena
+	// before it, so it's also where the action bar's laser countdown starts.
+	private static final int AGGRO_TICK = 160;
 	private static final int STUN_COOLDOWN_TICKS = 200;
+	// Ticks from the stun to the automatic enrage.  The action bar counts this down, so it has to be the same
+	// number the enrage is scheduled on - hence a constant rather than a literal at the schedule site.
+	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
 	private static final int PLATE_GATE_TICKS = 160;
 	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
 
@@ -66,6 +76,17 @@ public final class Maxor extends WitherLord {
 	// over-DPSing: enrage flips inStun=false mid-tick, which would re-open the uncapped path for the rest of the tick.
 	private boolean stunCapReached;
 	private final List<Runnable> pendingPlateChecks = new ArrayList<>();
+
+	// Action-bar HUD (see updateActionBar).  Its own boss ticker rather than a job on the laser scan's, because two
+	// of the three segments outlive that scan: it's removed the moment the stun triggers.
+	private Runnable barTicker;
+	// Phase ticks the two stun countdowns run out on, so the bar counts down the same clocks the mechanic uses
+	// instead of a counter of its own.
+	private int stunEndTick;
+	private int laserImmuneUntilTick;
+	// Whether the bar currently shows one of our segments, so an idle phase clears it once instead of broadcasting
+	// an empty bar to everyone every tick.
+	private boolean barShown;
 
 	private Maxor() {
 		register(this);
@@ -112,11 +133,14 @@ public final class Maxor extends WitherLord {
 	protected void resetState() {
 		cancelLaserScan();
 		cancelStunEnrageTask();
+		cancelBarTicker();
 		CustomBossBar.removeStunIndicator();
 		inStun = false;
 		stunDamageDealt = 0;
 		stunCapReached = false;
 		stunCooldownActive = false;
+		stunEndTick = 0;
+		laserImmuneUntilTick = 0;
 		platesActive = false;
 		pendingPlateChecks.clear();
 		// EnderCrystal handles cleared by resetCrystals() inside onStart.
@@ -124,6 +148,8 @@ public final class Maxor extends WitherLord {
 
 	@Override
 	protected void onStart() {
+		startBarTicker();
+
 		Utils.scheduleTask(() -> {
 			platesActive = true;
 			List<Runnable> snapshot = new ArrayList<>(pendingPlateChecks);
@@ -141,7 +167,7 @@ public final class Maxor extends WitherLord {
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
-		}, 160);
+		}, AGGRO_TICK);
 	}
 
 	@Override
@@ -319,7 +345,7 @@ public final class Maxor extends WitherLord {
 				}
 				// On real Hypixel the laser check is a 20-tick cycle (like Storm's crush detection), not every tick.
 				// Anchor to phase ticks divisible by 20 so the stun can only trigger on the 20-tick grid.
-				if(displayTick() % 20 != 0) return;
+				if(displayTick() % LASER_CYCLE_TICKS != 0) return;
 				if(stunCooldownActive) return;
 
 				double dx = boss.getLocation().getX() - LASER_CENTER_X;
@@ -339,6 +365,80 @@ public final class Maxor extends WitherLord {
 			BossScheduler.removeTicker(laserTicker);
 			laserTicker = null;
 		}
+	}
+
+	/**
+	 * Per-tick action-bar QoL for the Maxor phase, in the same slot as Storm's pad/crush bar.  One segment at a
+	 * time, checked in that order because the later states overlap the earlier ones:
+	 * <ul>
+	 *   <li><b>Laser</b>: ticks until the next laser check, i.e. how long Maxor can sit in the middle of the arena
+	 *       before it stuns him.  Counts {@link #LASER_CYCLE_TICKS} → 1t on the same grid {@link #startLaserScan}
+	 *       polls and resets on the poll tick itself.  Shown from {@link #AGGRO_TICK}, when Maxor starts moving,
+	 *       NOT from the moment the scan arms: the grid is absolute (it's phase tick mod 20, the same clock the
+	 *       scan gates on), so the countdown is already the right answer to "when does the next check land" while
+	 *       the crystals are still being walked over.  Before he moves he can't be in the middle at all.</li>
+	 *   <li><b>Stunned</b>: ticks until the stun's auto-enrage.  Replaced early if the 75% damage cap ends the stun
+	 *       first, since {@link #enrageMaxor} re-renders the bar itself.</li>
+	 *   <li><b>Immune</b>: ticks left on {@link #STUN_COOLDOWN_TICKS}, the window the laser cannot stun him in.  That
+	 *       window runs from the STUN, not from the enrage, so this is normally the 40t remainder - but after a
+	 *       cap-enrage it shows however much is really left, which is the point of counting the real clock.</li>
+	 * </ul>
+	 * Both stun counters run off phase ticks stamped at {@link #triggerStun} rather than counters of their own, so
+	 * the bar can't drift from the mechanic.  Sent to every real player, spectators included, and the fakes are
+	 * skipped.  It doesn't collide with {@code ClearManager}'s bar: that one bails out for anyone outside the
+	 * dungeon room grid, which the arena is.
+	 */
+	private void updateActionBar() {
+		int t = displayTick();
+		String bar;
+		if(inStun) {
+			bar = "<yellow>Stunned <white>" + Math.max(0, stunEndTick - t) + "t";
+		} else if(stunCooldownActive) {
+			bar = "<yellow>Immune <white>" + Math.max(0, laserImmuneUntilTick - t) + "t";
+		} else if(t >= AGGRO_TICK) {
+			bar = "<red>Laser <white>" + (LASER_CYCLE_TICKS - Math.floorMod(t, LASER_CYCLE_TICKS)) + "t";
+		} else {
+			// Nothing to count (the opening dialogue, before Maxor moves): clear once on the way in rather than
+			// broadcasting an empty bar to everyone every tick.
+			if(barShown) {
+				barShown = false;
+				Utils.broadcastActionBar(Component.empty());
+			}
+			return;
+		}
+		barShown = true;
+		Utils.broadcastActionBar(Utils.msg(bar));
+	}
+
+	/** The HUD's own boss ticker.  Registered for the whole phase (from {@link #onStart}), because the laser scan
+	 *  it started life on is removed the moment the stun triggers - which is exactly when two of the three
+	 *  segments apply. */
+	private void startBarTicker() {
+		cancelBarTicker();
+		barTicker = new Runnable() {
+			@Override
+			public void run() {
+				if(boss == null || boss.isDead()) {
+					BossScheduler.removeTicker(this);
+					barTicker = null;
+					barShown = false;
+					Utils.broadcastActionBar(Component.empty());
+					return;
+				}
+				updateActionBar();
+			}
+		};
+		BossScheduler.addTicker(barTicker);
+	}
+
+	private void cancelBarTicker() {
+		if(barTicker != null) {
+			BossScheduler.removeTicker(barTicker);
+			barTicker = null;
+		}
+		// Wipe the HUD instead of letting the last "Immune 1t" sit on screen for its fade-out.
+		barShown = false;
+		Utils.broadcastActionBar(Component.empty());
 	}
 
 	private void triggerStun() {
@@ -361,10 +461,19 @@ public final class Maxor extends WitherLord {
 		stunCooldownActive = true;
 		// Boss-lane: the cooldown must lift at the START of its tick so the laser ticker (also start-of-tick) sees
 		// it cleared the same tick, not a tick late.
-		BossScheduler.schedule(() -> stunCooldownActive = false, STUN_COOLDOWN_TICKS);
+		BossScheduler.schedule(() -> {
+			stunCooldownActive = false;
+			// Swap "Immune" back to "Laser" on the tick the window really closes: the HUD ticker registers first, so
+			// it already drew this tick's bar from the pre-clear state.
+			updateActionBar();
+		}, STUN_COOLDOWN_TICKS);
 		inStun = true;
 		stunDamageDealt = 0;
 		stunCapReached = false;
+		// Action-bar anchors for the "Stunned"/"Immune" counters.  Both windows open HERE, so the immune one is the
+		// stun's 160t plus a 40t tail, not a fresh 200t after the enrage.
+		stunEndTick = displayTick() + STUN_AUTO_ENRAGE_TICKS;
+		laserImmuneUntilTick = displayTick() + STUN_COOLDOWN_TICKS;
 
 		clearAggro();
 		setArmor(false);
@@ -391,7 +500,11 @@ public final class Maxor extends WitherLord {
 		// Auto-enrage exactly 160 ticks after the stun (start of tick), regardless of damage taken: stun at the start
 		// of tick T → enrage at the start of tick T+160, so a beam on the enrage tick sees the re-armored boss.
 		cancelStunEnrageTask();
-		stunEnrageTask = BossScheduler.schedule(this::enrageMaxor, 160L);
+		stunEnrageTask = BossScheduler.schedule(this::enrageMaxor, STUN_AUTO_ENRAGE_TICKS);
+
+		// Re-render now: the HUD ticker registers before the laser scan does, so it already drew this tick's bar
+		// from the pre-stun state.
+		updateActionBar();
 	}
 
 	private void enterDyingState() {
@@ -399,6 +512,7 @@ public final class Maxor extends WitherLord {
 		boss.addScoreboardTag("TASDying");
 		cancelStunEnrageTask();
 		cancelLaserScan();
+		cancelBarTicker();
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
 		// Pin internal HP to DYING_SLIVER.  The display already shows "1" via the TASDying tag in formatHealthM.
@@ -432,6 +546,10 @@ public final class Maxor extends WitherLord {
 		Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0F, 0.5F);
 		CustomBossBar.removeStunIndicator();
 		setAggro(3.0, 1.0, 0.5);
+
+		// Flip "Stunned" to "Immune" on the tick the stun really ends, which a cap-enrage (called from the damage
+		// path, mid-tick) reaches long after the HUD ticker ran.
+		updateActionBar();
 	}
 
 	/**
@@ -533,7 +651,7 @@ public final class Maxor extends WitherLord {
 
 			WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
 
-			// Real stats (DAMAGE_PLAN.md §5): 300M, Wither + Undead, so a Hyperion hits it for x1.5 on top of
+			// Real stats (MAP.md §5): 300M, Wither + Undead, so a Hyperion hits it for x1.5 on top of
 			// Smite and Undead Ruler.  It gets no Skeletal Ruler - Skeletal is Normal-mode only, and this is
 			// Master Mode.  This replaces the old 4 HP flat-kill value and the negative armour attributes.
 			damage.MobStats.apply(miner, damage.MobStats.WITHER_MINER);

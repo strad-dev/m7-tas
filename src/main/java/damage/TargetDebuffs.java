@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * State applied to a TARGET rather than to an attacker (DAMAGE_PLAN.md §7).  Because it lives on the target it
+ * State applied to a TARGET rather than to an attacker (MAP.md §7).  Because it lives on the target it
  * helps <b>every</b> attacker, not just the one who applied it, and none of it stacks with itself.
  *
  * <table>
@@ -158,6 +158,16 @@ public final class TargetDebuffs {
 		if(ice) m *= DEBUFF_MULTIPLIER;
 		if(twilight) m *= DEBUFF_MULTIPLIER;
 		return m;
+	}
+
+	/**
+	 * Whether the target's Ice Spray window is currently live.  Deliberately reads the REAL state and ignores
+	 * {@link Difficulty#debuffsAssumed()}, unlike {@link #damageMultiplier}: this only feeds the wand's
+	 * "debuffed N enemies" message, and in classic mode the assumed-everything answer would report every
+	 * enemy as already debuffed on the very first cast.
+	 */
+	public static boolean iceSprayed(LivingEntity target) {
+		return target != null && live(state(target).iceSprayExpiry);
 	}
 
 	/** Duplex's x1.5, which applies to FIRE damage only - so to the Fire Aspect procs, never to the hit. */

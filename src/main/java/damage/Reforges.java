@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The reforge table, keyed {@code (reforgeId, category, rarity)} exactly as Hypixel computes it (DAMAGE_PLAN.md
+ * The reforge table, keyed {@code (reforgeId, category, rarity)} exactly as Hypixel computes it (MAP.md
  * §2.1) - <b>not</b> a per-item constant.  Correcting one cell here fixes every item that uses it.
  * <p>
  * The Heroic / Suspicious / Precise rows are the wiki's full tables.  They reproduce §1's per-item reforge terms

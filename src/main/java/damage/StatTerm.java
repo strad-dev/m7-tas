@@ -1,7 +1,7 @@
 package damage;
 
 /**
- * One named contribution to one stat on one item (DAMAGE_PLAN.md §2.4).
+ * One named contribution to one stat on one item (MAP.md §2.4).
  * <p>
  * <b>Author terms, never totals.</b> The Ragnarock Axe's Strength is seven independent terms - base, stars, potato
  * books, art of war, reforge, gemstone, Chimera - not the number 626.  Editing the base moves nothing else; retuning
