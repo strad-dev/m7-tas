@@ -7,6 +7,7 @@ import plugin.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Renders an item's stats into its lore (MAP.md §7b).
@@ -53,7 +54,7 @@ public final class StatLore {
 
 		ItemMeta meta = item.getItemMeta();
 		if(meta == null) return item;
-		List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(meta.lore());
+		List<Component> lore = meta.lore() == null ? new ArrayList<>() : new ArrayList<>(Objects.requireNonNull(meta.lore()));
 		// An item with no ability carries no lore ID, so it has no lore at all - the armour pieces and the
 		// wearable heads.  Its palette key's third component is therefore the empty string, and appending a stat
 		// row straight onto nothing would make the FIRST stat line the key instead, silently orphaning every saved
