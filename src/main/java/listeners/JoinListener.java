@@ -23,6 +23,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import plugin.FakePlayerManager;
 
 import java.lang.reflect.Field;
@@ -45,39 +46,7 @@ public class JoinListener implements Listener {
 		Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
 			Player joiningPlayer = ev.getPlayer();
 
-			// Remove the vanilla attack cooldown for every joining player (instant re-attack).
-			var attackSpeed = joiningPlayer.getAttribute(Attribute.ATTACK_SPEED);
-			if(attackSpeed != null) attackSpeed.setBaseValue(100);
-
-			// Full knockback resistance for every joining player (so no armor needs to grant it).
-			var knockback = joiningPlayer.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
-			if(knockback != null) knockback.setBaseValue(1);
-
-			// Full EXPLOSION knockback resistance too, since explosion knockback such as Necron's fireballs is governed by
-			// this separate attribute, NOT KNOCKBACK_RESISTANCE, so without it players still get blasted by blasts.
-			var explosionKb = joiningPlayer.getAttribute(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
-			if(explosionKb != null) explosionKb.setBaseValue(1);
-
-			// Large safe-fall distance so players don't take fall damage during practice.
-			var safeFall = joiningPlayer.getAttribute(Attribute.SAFE_FALL_DISTANCE);
-			if(safeFall != null) safeFall.setBaseValue(1024);
-
-			// Instant block breaking for every joining player: BLOCK_BREAK_SPEED is the final MULTIPLIER on destroy
-			// speed (unlike MINING_EFFICIENCY, which is additive and only counts when the held tool already suits the
-			// block), so 1024 breaks anything in one tick with anything. Items that carry can_break but must NOT
-			// actually break blocks cancel this out with a -1024 modifier of their own; see
-			// Utils.placeAndBreakAnythingInAdventure. Dungeonbreaker instead ADDS 1024 on top.
-			var breakSpeed = joiningPlayer.getAttribute(Attribute.BLOCK_BREAK_SPEED);
-			if(breakSpeed != null) breakSpeed.setBaseValue(1024);
-
-			// Put every player in the no-collision team so real players don't push each other (or the fakes).
-			plugin.PlayerCollision.addToNoCollisionTeam(joiningPlayer);
-
-			// Default real players to 400 speed, bumped if their helmet entitles them (Cow Hat 550 / Racing 650).
-			// Fakes are script-managed, so leave their speed alone.
-			if(!FakePlayerManager.getFakePlayers().containsValue(joiningPlayer)) {
-				plugin.HelmetSpeedSync.initSpeed(joiningPlayer);
-			}
+			applyPlayerSetup(joiningPlayer);
 
 			if (!FakePlayerManager.getFakePlayers().containsValue(joiningPlayer)) {
 				try {
@@ -166,6 +135,54 @@ public class JoinListener implements Listener {
 		}, 1L);
 	}
 
+	/**
+	 * The attributes and team membership a real player needs to practice: no attack cooldown, no knockback of either
+	 * kind, no fall damage, one-tick block breaking, no collisions, and the class speed.  Idempotent, and re-applied
+	 * on respawn as well as join, since a respawn builds a fresh {@code ServerPlayer} and nothing here is worth
+	 * betting on surviving that.
+	 */
+	static void applyPlayerSetup(Player p) {
+		// Remove the vanilla attack cooldown (instant re-attack).
+		var attackSpeed = p.getAttribute(Attribute.ATTACK_SPEED);
+		if(attackSpeed != null) attackSpeed.setBaseValue(100);
+
+		// Full knockback resistance (so no armor needs to grant it).
+		var knockback = p.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
+		if(knockback != null) knockback.setBaseValue(1);
+
+		// Full EXPLOSION knockback resistance too, since explosion knockback such as Necron's fireballs is governed by
+		// this separate attribute, NOT KNOCKBACK_RESISTANCE, so without it players still get blasted by blasts.
+		var explosionKb = p.getAttribute(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
+		if(explosionKb != null) explosionKb.setBaseValue(1);
+
+		// Large safe-fall distance so players don't take fall damage during practice.
+		var safeFall = p.getAttribute(Attribute.SAFE_FALL_DISTANCE);
+		if(safeFall != null) safeFall.setBaseValue(1024);
+
+		// Instant block breaking: BLOCK_BREAK_SPEED is the final MULTIPLIER on destroy speed (unlike MINING_EFFICIENCY,
+		// which is additive and only counts when the held tool already suits the block), so 1024 breaks anything in one
+		// tick with anything. Items that carry can_break but must NOT actually break blocks cancel this out with a
+		// -1024 modifier of their own; see Utils.placeAndBreakAnythingInAdventure. Dungeonbreaker instead ADDS 1024.
+		var breakSpeed = p.getAttribute(Attribute.BLOCK_BREAK_SPEED);
+		if(breakSpeed != null) breakSpeed.setBaseValue(1024);
+
+		// Put every player in the no-collision team so real players don't push each other (or the fakes).
+		plugin.PlayerCollision.addToNoCollisionTeam(p);
+
+		// Default real players to 400 speed, bumped if their helmet entitles them (Cow Hat 550 / Racing 650).
+		// Fakes are script-managed, so leave their speed alone.
+		if(!FakePlayerManager.getFakePlayers().containsValue(p)) {
+			plugin.HelmetSpeedSync.initSpeed(p);
+		}
+	}
+
+	/** Inside the Start room, facing the first door: where "spawn" means for this plugin.  The world spawn is above
+	 *  the map, so nothing may use that. */
+	private static Location dungeonEntrance() {
+		World w = Bukkit.getWorld("world");
+		return w == null ? null : new Location(w, -120.5, 71, -183.5, 0.0f, 0.0f);
+	}
+
 	// Force every real player to the dungeon-entrance spawn on join so they stop appearing above the
 	// map. LOWEST priority so that if something runs /m7practice on the same join (e.g. the network
 	// plugin sending a practicer in), that teleport runs afterwards and still wins.
@@ -174,8 +191,24 @@ public class JoinListener implements Listener {
 		Player jp = ev.getPlayer();
 		if (FakePlayerManager.getFakePlayers().containsValue(jp)) return; // never the fakes
 		if (jp.getGameMode() == GameMode.SPECTATOR) return;              // don't yank spectators
-		World w = Bukkit.getWorld("world");
-		if (w != null) jp.teleport(new Location(w, -120.5, 71, -183.5, 0.0f, 0.0f));
+		Location entrance = dungeonEntrance();
+		if (entrance != null) jp.teleport(entrance);
+	}
+
+	// Respawn where a join lands, for the same reason: vanilla would send them to the world spawn above the map, from
+	// where they'd fall into the boss arena with the clear still running. Matters because OutOfBounds kills players
+	// mid-run and expects them to be able to carry on from spawn.
+	@EventHandler
+	public void onRespawn(PlayerRespawnEvent ev) {
+		Player p = ev.getPlayer();
+		if (FakePlayerManager.getFakePlayers().containsValue(p)) return;
+		Location entrance = dungeonEntrance();
+		if (entrance != null) ev.setRespawnLocation(entrance);
+		// Raw runTaskLater for the same reason onJoin uses one: this is infrastructure, and it must run after the
+		// respawn has actually placed the new player, not from inside the event.
+		Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
+			if (p.isOnline()) applyPlayerSetup(p);
+		}, 1L);
 	}
 
 	@EventHandler

@@ -3,7 +3,7 @@ package damage;
 /**
  * Item rarity.  Reforge (§2.1) and gemstone (§2.2) values are keyed on it.
  * <p>
- * DAMAGE_PLAN.md §2.4: <b>rarity is an input, not a stat.</b> An {@link ItemDef} stores its BASE rarity plus a
+ * MAP.md §2.4: <b>rarity is an input, not a stat.</b> An {@link ItemDef} stores its BASE rarity plus a
  * recombobulated flag and derives the effective one, so changing whether an item is recombed is a one-word edit.
  * Everything in this plugin is recombed (§1.0.9), which is why the effective rarity is also the item's display
  * colour - and why the tables must always be read at the effective rarity, never the base.

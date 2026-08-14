@@ -50,7 +50,7 @@ public class WithersNotImmuneToArrows implements Listener {
 		// invulnerabilityTicks > 0, so on the same-tick-re-armored exception above the hit would otherwise no-op.
 		// A re-armored boss's armorTask re-asserts the shield next tick, so this only lets THIS hit land.
 		wither.setInvulnerableTicks(0);
-		// One damage path (DAMAGE_PLAN.md §7): this used to be Bukkit's no-source wither.damage(), the only route
+		// One damage path (MAP.md §7): this used to be Bukkit's no-source wither.damage(), the only route
 		// that reached the boss's clamps, which is exactly the split the unification removed.  The arrow carries
 		// its own stat damage from fire time; the target half resolves here, and the deal Arrows.hit picks calls the
 		// boss's clampDamage explicitly, and notes the aggro target if (and only if) health actually moves.

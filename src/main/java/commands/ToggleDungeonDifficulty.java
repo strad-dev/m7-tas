@@ -10,7 +10,7 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /toggledungeondifficulty [classic|realistic]} - flip this server's damage difficulty (DAMAGE_PLAN.md §0).
+ * {@code /toggledungeondifficulty [classic|realistic]} - flip this server's damage difficulty (MAP.md §0).
  * <p>
  * <b>Classic</b> assumes all four debuffs are permanently applied and blessings are maxed, so a practising player
  * can concentrate on movement and routing.  <b>Realistic</b> makes each of those a live input: the debuffs have to

@@ -2,7 +2,7 @@ package damage;
 
 /**
  * Global upgrades: books and enchantments whose value is the SAME everywhere they appear, so they are defined once
- * here and an item records only WHICH it carries (DAMAGE_PLAN.md §2.4).  Retuning potato books then moves every
+ * here and an item records only WHICH it carries (MAP.md §2.4).  Retuning potato books then moves every
  * item at once, which is the correct behaviour.
  * <p>
  * Chimera is deliberately absent: it is an item source with a player-scoped input (it copies the equipped pet), so

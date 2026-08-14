@@ -710,7 +710,7 @@ public class Utils {
 	 * Internal HP IS the SkyBlock value divided by {@link damage.Scale#SB_PER_MC_HP}, so display is just
 	 * {@code internal x 1M} and there is nothing to decouple.  This used to carry a per-boss display-max table plus
 	 * a x2 fudge, because internal HP was hand-tuned (Maxor sat at 300 while displaying 800M) and the two numbers
-	 * had no relationship; DAMAGE_PLAN.md §8 retires all of that.
+	 * had no relationship; MAP.md §8 retires all of that.
 	 */
 	public static String formatHealthM(LivingEntity entity) {
 		// Withers flagged as dying always display "1" regardless of internal HP.
@@ -733,7 +733,7 @@ public class Utils {
 	}
 
 	// hurtEntity lived here.  It is now damage/Damage.deal - one path for every damage instance, applying damage
-	// by reading health, subtracting and setting it (DAMAGE_PLAN.md §7).  Three paths used to exist
+	// by reading health, subtracting and setting it (MAP.md §7).  Three paths used to exist
 	// (hurtServer(genericKill), setHealth for dragons, wither.damage() for arrows-on-withers) with different
 	// i-frame, armor, event and aggro behaviour, and the split was already visible as workarounds here.
 	// The worn-head damage multiplier that used to sit alongside it (Cow Hat x0.70, masks x0.85) is deleted, not

@@ -4,7 +4,7 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Gemstone values, keyed {@code (type, quality, item rarity)} (DAMAGE_PLAN.md §2.2).  Same story as
+ * Gemstone values, keyed {@code (type, quality, item rarity)} (MAP.md §2.2).  Same story as
  * {@link Reforges}: an {@link ItemDef} stores a SLOT LIST, never a resolved number, so changing an item's gems is a
  * one-word edit and correcting a cell here fixes every item at once.
  * <p>

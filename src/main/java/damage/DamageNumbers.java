@@ -16,7 +16,7 @@ import java.util.Random;
 import java.util.UUID;
 
 /**
- * Floating damage numbers (DAMAGE_PLAN.md §7a).
+ * Floating damage numbers (MAP.md §7a).
  * <p>
  * A {@link TextDisplay}, not an armour stand or a hologram plugin: it spawns somewhere around the hit, holds
  * perfectly still for its lifetime, then is removed.  <b>No drift, no interpolation, no transformation</b> - a

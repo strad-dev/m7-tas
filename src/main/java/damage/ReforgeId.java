@@ -3,7 +3,7 @@ package damage;
 import java.util.Locale;
 
 /**
- * A reforge.  DAMAGE_PLAN.md §2 requires the reforge to be decoupled from the item: an {@link ItemDef} stores this
+ * A reforge.  MAP.md §2 requires the reforge to be decoupled from the item: an {@link ItemDef} stores this
  * id and nothing else, and the numbers come from {@link Reforges} at lookup time, so re-reforging an item is a
  * one-word change and correcting a table cell fixes every item that uses it at once.
  * <p>

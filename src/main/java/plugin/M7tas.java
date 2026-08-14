@@ -116,8 +116,9 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new Eq(), this);
 		getServer().getPluginManager().registerEvents(new LinkedSlots(), this);
 		getServer().getPluginManager().registerEvents(new listeners.ClearListener(), this);
+		getServer().getPluginManager().registerEvents(new listeners.OutOfBounds(), this);
 		getServer().getPluginManager().registerEvents(loadoutEditor, this);
-		// Keeps the (player, path) stat cache honest across equipment and inventory changes (DAMAGE_PLAN.md §7).
+		// Keeps the (player, path) stat cache honest across equipment and inventory changes (MAP.md §7).
 		getServer().getPluginManager().registerEvents(new damage.StatListener(), this);
 
 		// One repeating driver for every running damage-over-time chain (Fire Aspect, Venomous), rather than one
@@ -136,6 +137,7 @@ public final class M7tas extends JavaPlugin {
 		Spectate.startSpectatorSync();
 		SpringBoots.start();
 		LavaJump.start();
+		listeners.OutOfBounds.start();
 
 		// Export the item catalog (palette + per-class default kits) to the shared data folder so the network
 		// plugin's lobby loadout editor can load the real M7 items. M7 is the sole writer of this file.
@@ -177,6 +179,7 @@ public final class M7tas extends JavaPlugin {
 		Spectate.stopSpectatorSync();
 		SpringBoots.stop();
 		LavaJump.stop();
+		listeners.OutOfBounds.stop();
 		BossScheduler.stop();
 
 		CustomItems.flushStonkRestorations();

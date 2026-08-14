@@ -188,7 +188,7 @@ public final class Loadouts {
 	}
 
 	/**
-	 * A Berserk's extra swing range (DAMAGE_PLAN.md §1.14): +5, or +5.5 when it is the only Berserk in the party.
+	 * A Berserk's extra swing range (MAP.md §1.14): +5, or +5.5 when it is the only Berserk in the party.
 	 * The same figure extends its Cleave radius (§7), so the two move together - {@code entity_interaction_range}
 	 * 3.0 to 8.0, Cleave radius 4.8 to 9.8 - which is why both read it from
 	 * {@code damage.ClassBonuses.swingRange} rather than each carrying its own number.

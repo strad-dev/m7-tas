@@ -3,7 +3,7 @@ package damage;
 import org.bukkit.entity.Player;
 
 /**
- * The Ragnarock Axe's buff window (DAMAGE_PLAN.md §1.7).
+ * The Ragnarock Axe's buff window (MAP.md §1.7).
  * <p>
  * The window itself is owned by {@code listeners/CustomItems} - it runs the 3s wind-up, arms the buff and expires
  * it, and marks the state with the {@code RagBuff} scoreboard tag.  This class is only the reader the stat layer

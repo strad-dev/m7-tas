@@ -23,7 +23,7 @@ import java.util.Map;
  * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
  *    teleports them to the chosen phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.  A bare
- *    "classic"/"realistic" arg sets the damage mode for the run (DAMAGE_PLAN.md §0); omitted, the current mode
+ *    "classic"/"realistic" arg sets the damage mode for the run (MAP.md §0); omitted, the current mode
  *    stands, so a standalone player keeps whatever /toggledungeondifficulty last set.  The network always sends one.
  * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
  *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a

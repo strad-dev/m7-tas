@@ -1,7 +1,7 @@
 package damage;
 
 /**
- * The handful of scale constants the whole damage system is built on.  DAMAGE_PLAN.md §2.4's hard rule is that
+ * The handful of scale constants the whole damage system is built on.  MAP.md §2.4's hard rule is that
  * nothing pre-scaled or pre-summed may appear anywhere else in the code, so these are each used in exactly one
  * place and every "in dungeons" figure in the plan is derived from them at runtime.
  */

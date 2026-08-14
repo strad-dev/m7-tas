@@ -651,7 +651,7 @@ public final class Maxor extends WitherLord {
 
 			WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
 
-			// Real stats (DAMAGE_PLAN.md §5): 300M, Wither + Undead, so a Hyperion hits it for x1.5 on top of
+			// Real stats (MAP.md §5): 300M, Wither + Undead, so a Hyperion hits it for x1.5 on top of
 			// Smite and Undead Ruler.  It gets no Skeletal Ruler - Skeletal is Normal-mode only, and this is
 			// Master Mode.  This replaces the old 4 HP flat-kill value and the negative armour attributes.
 			damage.MobStats.apply(miner, damage.MobStats.WITHER_MINER);

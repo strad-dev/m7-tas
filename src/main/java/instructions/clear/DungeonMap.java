@@ -65,12 +65,9 @@ public final class DungeonMap {
 	private static final Color UNEXPLORED = new Color(65, 65, 65);
 	private static final Color QUESTION = new Color(13, 13, 13);
 
-	// The 15 doors, as cell pairs {gx,gz}→{gx,gz}. Coloured by door type in doorColor(); see DOOR_* constants.
-	private static final int[][][] DOORS = {
-			{{0, 0}, {0, 1}}, {{4, 0}, {5, 0}}, {{5, 1}, {5, 2}}, {{3, 2}, {4, 2}}, {{3, 2}, {3, 1}},
-			{{3, 2}, {3, 3}}, {{2, 2}, {2, 1}}, {{0, 1}, {0, 2}}, {{3, 3}, {3, 4}}, {{3, 4}, {3, 5}},
-			{{4, 4}, {4, 5}}, {{5, 4}, {5, 5}}, {{3, 3}, {2, 3}}, {{2, 5}, {1, 5}}, {{0, 4}, {1, 4}}
-	};
+	// The 15 doors live in Rooms (the out-of-bounds test and the block protection need them too). Coloured by door
+	// type in doorColor(); see the DOOR_* constants.
+	private static final int[][][] DOORS = Rooms.DOORS;
 
 	private static MapView view;
 	private static int version = 1;

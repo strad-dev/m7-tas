@@ -336,7 +336,7 @@ public class Server {
 			zombie.setAdult();
 			zombie.setPersistent(true);
 			zombie.setRemoveWhenFarAway(false);
-			// Real HP, defense and mob types (DAMAGE_PLAN.md §5): 12M base, scaled by the DEPTH of the room the
+			// Real HP, defense and mob types (MAP.md §5): 12M base, scaled by the DEPTH of the room the
 			// archaeologist stands in (+10% per tier), which is why the name is written after apply() rather than
 			// from a hand-picked figure.  It replaces the old flat-kill handful of health, and clears the negative
 			// armour attributes that used to claw damage back out of vanilla's reduction.
@@ -374,7 +374,7 @@ public class Server {
 		yellowShadowAssassin.setPersistent(true);
 		yellowShadowAssassin.setRemoveWhenFarAway(false);
 		yellowShadowAssassin.addScoreboardTag("ClearMiniboss"); // Yellow miniboss → green check + Wisdom V on kill
-		// 140M base in Yellow, which is depth II, so 140M x 1.10 = 154M (DAMAGE_PLAN.md §5).  A DIFFERENT mob from
+		// 140M base in Yellow, which is depth II, so 140M x 1.10 = 154M (MAP.md §5).  A DIFFERENT mob from
 		// the 145M Shadow Assassins in Storm's boss fight, despite the shared name.  Humanoid + Arcane, so it
 		// takes those two Rulers and NO Smite at all - the softest-looking mob on the floor is the one that
 		// resists the whole undead package.
@@ -474,7 +474,7 @@ public class Server {
 		zombie.addScoreboardTag(instructions.clear.ClearManager.TAG_CRYPT);
 		if(isPrince) zombie.addScoreboardTag("SecretPrince");
 		// Crypt Undead 9M, Prince 1M, both Undead + Subterranean so they take Smite, Undead Ruler AND Subterranean
-		// Ruler, and both scaled by room depth (DAMAGE_PLAN.md §5).  They used to be 1-HP flat-kill props.
+		// Ruler, and both scaled by room depth (MAP.md §5).  They used to be 1-HP flat-kill props.
 		damage.MobStats.apply(zombie, (isPrince ? damage.MobStats.PRINCE : damage.MobStats.CRYPT_UNDEAD).atDepthOf(loc));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
 		zombie.customName(Utils.msg("<red>" + mobName + " ❤<yellow>" + Utils.formatHealthM(zombie)));

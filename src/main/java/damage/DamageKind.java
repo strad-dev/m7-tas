@@ -1,7 +1,7 @@
 package damage;
 
 /**
- * What kind of damage instance this is (DAMAGE_PLAN.md §7a).  It has to be plumbed through the damage call rather
+ * What kind of damage instance this is (MAP.md §7a).  It has to be plumbed through the damage call rather
  * than inferred, because §7 deliberately makes every proc its own instance - without the kind, the renderer cannot
  * tell a Thunderlord proc from the hit that triggered it.
  * <p>

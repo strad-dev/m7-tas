@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The damage formulas and the single application boundary (DAMAGE_PLAN.md §7).
+ * The damage formulas and the single application boundary (MAP.md §7).
  *
  * <pre>
  * melee   = (5 + Damage) x (1 + Strength/100) x (1 + CritDamage/100)      // ALWAYS crits
@@ -508,7 +508,7 @@ public final class Damage {
 	 * <b>already a finished hit</b> - Rapid Fire's 75%, Explosive Shot's 100%, a Berserk's thrown axe.  Identical to
 	 * {@link #deal} in every way but one: <b>it does not feed the history it read</b>.
 	 * <p>
-	 * That is DAMAGE_PLAN.md §1.14's "only real hits go in the buffer" rule, and it is load-bearing rather than
+	 * That is MAP.md §1.14's "only real hits go in the buffer" rule, and it is load-bearing rather than
 	 * tidy, exactly as it is for procs.  A derived hit that records itself makes the ability read its own output the
 	 * next time: Rapid Fire fires 50 arrows over 200 ticks and re-queries the history for every one, so any factor
 	 * above 1 between the figure it reads and the damage it lands compounds fifty times over and runs off the top of

@@ -141,7 +141,7 @@ public final class Catalog {
 	 * palette instead of vanishing. The list currently covers every palette item exactly, so that tail is empty.
 	 * <br>
 	 * Names here are DISPLAY names, and the Fabled reforge is displayed as {@code Withered} on purpose (see
-	 * DAMAGE_PLAN.md §1.0.6), so Hyperion, Dark Claymore, Flaming Flay and Ragnarock Axe all read "Withered".
+	 * MAP.md §1.0.6), so Hyperion, Dark Claymore, Flaming Flay and Ragnarock Axe all read "Withered".
 	 */
 	private static final List<String> PALETTE_ORDER = List.of(
 			// Page 1: the core damage kit.
@@ -216,7 +216,7 @@ public final class Catalog {
 	 * catalog with this exact rule, so keep all three in sync.
 	 * <br>
 	 * <b>Only the FIRST lore line is read.</b> That is what lets an item grow lore freely, with stat lines, ability
-	 * text, rarity and everything DAMAGE_PLAN.md will hang on these items, without breaking the match: a saved copy
+	 * text, rarity and everything MAP.md will hang on these items, without breaking the match: a saved copy
 	 * still keys to the same string and gets silently replaced by the new definition on the next refresh.  Keep the
 	 * item ID on lore line 0 (which {@code CustomItems.getID()} already requires) and item changes need no
 	 * migration; move it, or prepend a line above it, and every saved loadout in the network quietly stops updating.

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * State applied to a TARGET rather than to an attacker (DAMAGE_PLAN.md §7).  Because it lives on the target it
+ * State applied to a TARGET rather than to an attacker (MAP.md §7).  Because it lives on the target it
  * helps <b>every</b> attacker, not just the one who applied it, and none of it stacks with itself.
  *
  * <table>

@@ -36,7 +36,7 @@ public final class RunResult {
 	public boolean success;
 
 	/**
-	 * The damage difficulty this run was set under: {@code classic} or {@code realistic} (DAMAGE_PLAN.md §0).
+	 * The damage difficulty this run was set under: {@code classic} or {@code realistic} (MAP.md §0).
 	 * <p>
 	 * <b>Times from the two modes are not comparable</b> - a realistic run pays for maintaining four debuffs and
 	 * for however many blessings the party actually collected - so anything recording this run has to key on it.

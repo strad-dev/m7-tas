@@ -27,13 +27,20 @@ public class Room {
 	/** Grid cells this room occupies, each {@code {gx, gz}}. */
 	public final int[][] cells;
 	/**
+	 * Bottommost and topmost block Y a player may legally be in, i.e. the room's vertical extent.  Rooms differ
+	 * wildly (Dino Dig Site drops to 36, Well and Museum reach 119), so there is no floor/ceiling rule to derive:
+	 * these are measured values.  Used by {@code listeners.OutOfBounds} for the kill test and by
+	 * {@link Rooms#isCeiling} to keep the roof unbreakable during a run.
+	 */
+	public final int minY, maxY;
+	/**
 	 * <b>Room depth</b> (1..5), the Roman numeral the dungeon shows on the room.  Every mob in the room has its
 	 * stats scaled by {@code 1 + 0.10 x (depth - 1)}, so depth I is x1.00 and depth V is x1.40 - see
 	 * {@code damage.MobStats.depthMultiplier}, and the observed 13.2M Angry Archaeologist in Deathmite (depth II)
 	 * which is 12M x 1.10.
 	 * <p>
 	 * This used to be documented as a "difficulty tier", which read as decorative and sent an earlier draft of
-	 * DAMAGE_PLAN.md off computing depth by BFS instead.  It is the depth; use it directly.  Note grid adjacency
+	 * MAP.md off computing depth by BFS instead.  It is the depth; use it directly.  Note grid adjacency
 	 * is NOT the door graph, so a geometric BFS would give wrong answers for exactly the rooms whose depth was
 	 * missing.
 	 */
@@ -51,10 +58,12 @@ public class Room {
 	/** True once any player has set foot inside this room.  Until then the map draws it grey with a "?". */
 	public boolean explored;
 
-	Room(String name, RoomType type, int[][] cells, int level, boolean hasMiniboss, Blessing[] clearBlessings) {
+	Room(String name, RoomType type, int[][] cells, int minY, int maxY, int level, boolean hasMiniboss, Blessing[] clearBlessings) {
 		this.name = name;
 		this.type = type;
 		this.cells = cells;
+		this.minY = minY;
+		this.maxY = maxY;
 		this.level = level;
 		this.hasMiniboss = hasMiniboss;
 		this.clearBlessings = clearBlessings;

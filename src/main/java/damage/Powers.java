@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Accessory Powers and tuning points (DAMAGE_PLAN.md §1.12).  Like equipment, accessories are <b>assumed, never
+ * Accessory Powers and tuning points (MAP.md §1.12).  Like equipment, accessories are <b>assumed, never
  * items</b>; what matters is the selected Power, whose stats scale off total Magical Power.
  * <p>
  * Everything here derives from ONE input, the accessory list.  Magical Power, the power multiplier and the tuning

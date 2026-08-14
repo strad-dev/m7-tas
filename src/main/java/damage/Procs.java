@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Damage-over-time procs (DAMAGE_PLAN.md §7).  <b>Each of these is a separate damage instance on its own timer.</b>
+ * Damage-over-time procs (MAP.md §7).  <b>Each of these is a separate damage instance on its own timer.</b>
  * They must not be folded into {@code sumAdditive}, and their own instances must not re-trigger themselves.
  *
  * <table>

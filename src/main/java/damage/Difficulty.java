@@ -4,7 +4,7 @@ import instructions.clear.ClearManager;
 import plugin.Utils;
 
 /**
- * Classic vs realistic mode (DAMAGE_PLAN.md §0).
+ * Classic vs realistic mode (MAP.md §0).
  * <p>
  * <b>This is a flag on inputs, not a second damage path.</b> Every one of the five things that differ is already
  * modelled as a target state or a stat input - never as a constant folded into a formula - so classic mode is
