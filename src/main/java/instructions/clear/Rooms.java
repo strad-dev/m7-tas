@@ -143,16 +143,37 @@ public final class Rooms {
 	}
 
 	/**
-	 * The room a BLOCK column belongs to, or {@code null} for a between-room seam / off the grid.
+	 * The room whose <b>footprint</b> the block column at (x,z) belongs to, or {@code null} off the grid or in a
+	 * between-room seam.  A footprint is a room's own cells <b>plus the 1-block seams that fall between two (or four)
+	 * cells of the SAME room</b>, so a multi-cell room reads as one solid blob: walking the length of the 4-cell
+	 * Hallway or across Museum's 2x2 never leaves the room.  A seam between two DIFFERENT rooms belongs to neither -
+	 * that is a crevice, and the only legal way across one is a door.
 	 * <p>
-	 * Not the same answer as {@link #roomAt} for a player: that takes the raw position, so someone standing on the
-	 * seam column at {@code x = -168.5} has {@code ox = 30.5} and reads as the room beside the seam, while the block
-	 * they are actually inside ({@code x = -169}) is the seam.  Anything deciding whether a player is in a room -
-	 * the out-of-bounds test - has to go by the block.
+	 * <b>The intra-room seams are the whole reason this is not {@code cellAt}</b>, which hands back null for every
+	 * seam alike.  Routing the bounds test through that killed players walking from one cell of a room to the next
+	 * (Hallway crosses x -73, -105 and -137).
+	 * <p>
+	 * Also not the same answer as {@link #roomAt} for a player: that takes the unfloored X/Z, so someone standing on
+	 * the seam column at {@code x = -168.5} has {@code ox = 30.5} and reads as the room beside the seam, while the
+	 * block they are actually inside ({@code x = -169}) is the seam.  Anything deciding whether a player is in a
+	 * room - the out-of-bounds test - has to go by the block.
 	 */
 	public static Room roomAtBlock(int worldX, int worldZ) {
-		int[] cell = cellAt(worldX, worldZ);
-		return cell == null ? null : byCell(cell[0], cell[1]);
+		long dx = (long) ORIGIN - worldX;
+		long dz = (long) ORIGIN - worldZ;
+		if(dx < 0 || dz < 0) return null;
+		int gx = (int) (dx / PITCH);
+		int gz = (int) (dz / PITCH);
+		if(gx > 5 || gz > 5) return null;
+		boolean xSeam = (int) (dx - (long) gx * PITCH) == 31; // seam between cell gx and gx+1
+		boolean zSeam = (int) (dz - (long) gz * PITCH) == 31; // seam between cell gz and gz+1
+		Room r = byCell(gx, gz);
+		if(r == null) return null;
+		// On a seam the column is only the room's if EVERY cell it touches is that same room.
+		if(xSeam && byCell(gx + 1, gz) != r) return null;
+		if(zSeam && byCell(gx, gz + 1) != r) return null;
+		if(xSeam && zSeam && byCell(gx + 1, gz + 1) != r) return null;
+		return r;
 	}
 
 	/** Whether a location sits within the overall room-grid rectangle, i.e. inside a room OR a 1-block between-room
@@ -254,9 +275,10 @@ public final class Rooms {
 	// --- vertical bounds ---
 
 	/**
-	 * Whether a location is inside a room's volume: its block column belongs to a room AND its block Y is within
-	 * that room's {@link Room#minY}..{@link Room#maxY}.  A seam between two rooms is NOT a room, which is the whole
-	 * point - the crevices are out of bounds and only the doors cross them.
+	 * Whether a location is inside a room's volume: its block column is in a room's footprint AND its block Y is
+	 * within that room's {@link Room#minY}..{@link Room#maxY}.  A seam between two DIFFERENT rooms is in no
+	 * footprint, which is the whole point - the crevices are out of bounds and only the doors cross them - while a
+	 * multi-cell room's own internal seams are interior, so moving between its cells stays in bounds.
 	 */
 	public static boolean inRoomBounds(Location loc) {
 		Room r = roomAtBlock(loc.getBlockX(), loc.getBlockZ());
@@ -276,35 +298,18 @@ public final class Rooms {
 	/**
 	 * True if the block column at world (x,z) sits on the vertical outer face (perimeter wall) of a room, at ANY
 	 * height. Used to stop blocks being broken through room walls without touching the floor (the ceiling has its
-	 * own run-gated rule, {@link #isCeiling}). A room is only its own outer perimeter: for a multi-cell room
-	 * (e.g. the 2x2 Museum) the internal seams between its cells count as interior, so the middle of the room is
-	 * NOT a face and stays breakable. Between-room seams and everything off the grid return false.
+	 * own run-gated rule, {@link #isCeiling}). A room is only its own outer perimeter, per {@link #roomAtBlock}'s
+	 * footprint: for a multi-cell room (e.g. the 2x2 Museum) the internal seams between its cells count as interior,
+	 * so the middle of the room is NOT a face and stays breakable - but where such a seam reaches the room's outer
+	 * wall line it IS a face, since one of its neighbours is then another room. Crevices between two different rooms
+	 * and everything off the grid return false.
 	 */
 	public static boolean isRoomFace(int worldX, int worldZ) {
-		int[] cell = cellAt(worldX, worldZ);
-		if(cell == null) return false; // between-room buffer or outside the grid, so not a room's own wall
-		Room r = byCell(cell[0], cell[1]);
-		if(r == null) return false;
+		Room r = roomAtBlock(worldX, worldZ);
+		if(r == null) return false; // between-room seam or outside the grid, so not a room's own wall
 		// A perimeter column has at least one of its four horizontal neighbours outside this room's footprint.
-		return notInFootprint(worldX + 1, worldZ, r) || notInFootprint(worldX - 1, worldZ, r)
-				|| notInFootprint(worldX, worldZ + 1, r) || notInFootprint(worldX, worldZ - 1, r);
-	}
-
-	/** Whether the column at (x,z) belongs to room {@code r}'s physical footprint: its own cells, plus the 1-block
-	 *  seams that fall BETWEEN two cells of the same room (so multi-cell rooms read as one solid blob). */
-	private static boolean notInFootprint(int x, int z, Room r) {
-		long dx = (long) ORIGIN - x;
-		long dz = (long) ORIGIN - z;
-		if(dx < 0 || dz < 0) return true;
-		int gx = (int) (dx / PITCH);
-		int gz = (int) (dz / PITCH);
-		if(gx > 5 || gz > 5) return true;
-		boolean xSeam = (int) (dx - (long) gx * PITCH) == 31; // seam between cell gx and gx+1
-		boolean zSeam = (int) (dz - (long) gz * PITCH) == 31; // seam between cell gz and gz+1
-		if(!xSeam && !zSeam) return byCell(gx, gz) != r;
-		if(xSeam && !zSeam) return byCell(gx, gz) != r || byCell(gx + 1, gz) != r;
-		if(!xSeam) return byCell(gx, gz) != r || byCell(gx, gz + 1) != r;
-		return byCell(gx, gz) != r || byCell(gx + 1, gz) != r || byCell(gx, gz + 1) != r || byCell(gx + 1, gz + 1) != r;
+		return roomAtBlock(worldX + 1, worldZ) != r || roomAtBlock(worldX - 1, worldZ) != r
+				|| roomAtBlock(worldX, worldZ + 1) != r || roomAtBlock(worldX, worldZ - 1) != r;
 	}
 
 	public static void reset() {

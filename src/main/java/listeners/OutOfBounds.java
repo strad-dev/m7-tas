@@ -39,6 +39,11 @@ import java.util.UUID;
  * stays true after a run finishes until the next {@code /setup} or run start; {@code TAS.endPractice} puts everyone
  * in spectator, and spectators are exempt, so that costs nothing in practice.
  *
+ * <p><b>Only SURVIVAL and ADVENTURE players are killed.</b>  Creative is exempt - the map-editing mode, the same
+ * bypass {@code CustomItems.onBlockBreak} grants above the door/ceiling lock - and so are spectators, both by game
+ * mode and by {@code Spectate.isSpectating}, which leaves the player in adventure.  Creative is not a hole in the
+ * anti-cheat either: the practice scoreboard already flags anyone who switched into it mid-run.
+ *
  * <p>The kill does NOT end the session: the player respawns at the dungeon entrance (see
  * {@code JoinListener.onRespawn}) with their kit intact and carries on.  Two different messages come out of it - the
  * death screen says what they did wrong, chat says what happened - which is why {@code deathScreenMessageOverride}
@@ -81,10 +86,14 @@ public final class OutOfBounds implements Listener {
 	private static void tick() {
 		if(!Server.isRunStarted()) return;
 		for(Player p : Bukkit.getOnlinePlayers()) {
+			// ONLY someone actually playing the run: survival or adventure.  Creative is the map-editing mode and gets
+			// the same bypass the block-break protections give it (CustomItems.onBlockBreak's creative branch sits above
+			// the door/ceiling lock for the same reason), and a spectator is not playing.  An allowlist rather than
+			// "not creative": there is no game mode this should newly apply to without someone saying so.
+			GameMode gm = p.getGameMode();
+			if(gm != GameMode.SURVIVAL && gm != GameMode.ADVENTURE) continue;
+			// Separate from the game mode: the plugin's own spectate state leaves the player in ADVENTURE.
 			if(Utils.isSpectator(p)) continue;
-			// Creative is the map-editing game mode (the same exception the block-break protections make for it), and
-			// the practice scoreboard already flags anyone who switched into it mid-run.
-			if(p.getGameMode() == GameMode.CREATIVE) continue;
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			if(p.isDead() || p.getHealth() <= 0.0) continue;
 			if(isInBounds(p.getLocation())) continue;
