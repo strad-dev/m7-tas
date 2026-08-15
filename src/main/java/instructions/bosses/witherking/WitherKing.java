@@ -301,7 +301,7 @@ public class WitherKing {
 		altarWoolDisplays.add(wool);
 
 		// Clear the relic out of hand (back to the SkyBlock-menu nether star).
-		p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", ""));
+		p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", "", "SKYBLOCK_MENU"));
 		instructions.Actions.setHotbarSlot(p, 8);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 

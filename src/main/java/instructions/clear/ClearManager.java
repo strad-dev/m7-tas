@@ -297,7 +297,7 @@ public final class ClearManager {
 	}
 
 	private static ItemStack skyblockMenu() {
-		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "");
+		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "", "SKYBLOCK_MENU");
 	}
 
 	/** The Magical Map rides in the OFFHAND while inside the clear grid, and is removed in the boss arena outside

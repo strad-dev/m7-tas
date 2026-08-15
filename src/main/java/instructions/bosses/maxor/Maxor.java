@@ -181,7 +181,7 @@ public final class Maxor extends WitherLord {
 	}
 
 	public static ItemStack getEnergyCrystalItem() {
-		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<red>Energy Crystal", ENERGY_CRYSTAL_ID);
+		return FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<red>Energy Crystal", ENERGY_CRYSTAL_ID, "MAXOR_ENERGY_CRYSTAL");
 	}
 
 	public boolean notEnergyCrystal(Entity e) {
@@ -299,7 +299,7 @@ public final class Maxor extends WitherLord {
 		}
 
 		ItemStack restore = previousSlot8.remove(p.getUniqueId());
-		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", ""));
+		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", "", "SKYBLOCK_MENU"));
 
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;
