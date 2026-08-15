@@ -24,6 +24,12 @@ public class LavaJump {
 	private static final double SUPER_LAUNCH_VELOCITY = 3.0375D;
 	private static final double NORMAL_LAUNCH_VELOCITY = 2.25D;
 	private static final int RELAUNCH_COOLDOWN_TICKS = 10;
+	/** How far above the launch position counts as the client having applied the bounce. The smallest launch is
+	 *  2.25 and a player left sitting in lava only ever sinks, so half a block cannot be anything else. */
+	private static final double RESPONSE_RISE = 0.5D;
+	/** Ticks to wait for that rise before bouncing again anyway. Long enough for a bad round trip, short enough
+	 *  that a bounce the client genuinely never applied cannot strand someone in the lava for good. */
+	private static final int RESPONSE_TIMEOUT_TICKS = 60;
 	/** Player fluid-jump threshold: LivingEntity#getFluidJumpThreshold returns 0.4 for eye height ≥ 0.4.
 	 *  Lava height ≤ this is "shallow" (travelInLava keeps vertical ×0.8 → big); above is "deep" (×0.5 → small). */
 	private static final double PLAYER_FLUID_JUMP_THRESHOLD = 0.4D;
@@ -39,7 +45,11 @@ public class LavaJump {
 				&& loc.getZ() >= MIN_Z && loc.getZ() <= MAX_Z;
 	}
 
-	private static final Map<UUID, Integer> lastLaunchTick = new HashMap<>();
+	/** The last bounce we served this player: the tick, the height they have to clear for us to believe the
+	 *  client applied it, and the block the contact was in. */
+	private record Launch(int tick, double y, int blockX, int blockY, int blockZ) {}
+
+	private static final Map<UUID, Launch> lastLaunch = new HashMap<>();
 	private static BukkitTask poller;
 
 	public static void start() {
@@ -57,13 +67,39 @@ public class LavaJump {
 			poller.cancel();
 			poller = null;
 		}
-		lastLaunchTick.clear();
+		lastLaunch.clear();
 	}
 
 	private static void tick() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			check(p);
 		}
+	}
+
+	/**
+	 * Whether a player still standing in lava may be bounced again.
+	 *
+	 * <p><b>The cooldown alone was not enough, and the reason is that we bounce REAL players.</b> Their movement
+	 * is client-authoritative, so {@code p.getLocation()} does not move until a position packet arrives. A client
+	 * that stalls leaves the server reading the lava block it launched them out of for the whole round trip, and
+	 * {@link #RELAUNCH_COOLDOWN_TICKS} expires inside that window. That is a live report: 8 ticks of silence at
+	 * 371 ms, a second 3.038 sent exactly 10 ticks after the first, and the two arcs landing on top of each other
+	 * as a 5.390 rise in one tick. StradDevHub's envelope check flagged it and killed the player, correctly by its
+	 * own lights - we really did launch someone twice for one lava contact.
+	 *
+	 * <p>So the wait is on EVIDENCE rather than on a timer: the launch is answered when we see them above where we
+	 * launched them from, and nothing but a bounce puts them there. Moving to a different block is the other way
+	 * out, because that is a new lava contact rather than the same one being served twice, and
+	 * {@link #RESPONSE_TIMEOUT_TICKS} is the third, so a bounce the client never applied cannot leave someone
+	 * stuck in the lava.
+	 */
+	private static boolean mayRelaunch(Location loc, Launch last, int now) {
+		int age = now - last.tick();
+		if(age < RELAUNCH_COOLDOWN_TICKS) return false;
+		if(loc.getBlockX() != last.blockX() || loc.getBlockY() != last.blockY() || loc.getBlockZ() != last.blockZ()) {
+			return true;
+		}
+		return loc.getY() > last.y() + RESPONSE_RISE || age >= RESPONSE_TIMEOUT_TICKS;
 	}
 
 	private static void check(Player p) {
@@ -76,14 +112,14 @@ public class LavaJump {
 		boolean touchingLava = isInBossArena(loc) && loc.getBlock().getType() == Material.LAVA;
 
 		if(!touchingLava) {
-			lastLaunchTick.remove(id);
+			lastLaunch.remove(id);
 			return;
 		}
 
 		int now = MinecraftServer.currentTick;
-		Integer last = lastLaunchTick.get(id);
-		if(last != null && now - last < RELAUNCH_COOLDOWN_TICKS) return;
-		lastLaunchTick.put(id, now);
+		Launch last = lastLaunch.get(id);
+		if(last != null && !mayRelaunch(loc, last, now)) return;
+		lastLaunch.put(id, new Launch(now, loc.getY(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()));
 
 		Utils.debug(Utils.DebugType.SERVER, p.getName() + (last == null ? " lava contact" : " still-in-lava rebounce") + " detected at Y=" + Utils.round(loc.getY(), 5));
 		Utils.playLocalSound(p, Sound.ENTITY_PLAYER_HURT, 1.0F, 1.0F);

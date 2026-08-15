@@ -1,5 +1,6 @@
 package loadout;
 
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import plugin.Catalog;
@@ -72,6 +73,20 @@ public final class ItemRefresh {
 	private static final Set<String> REMOVED = Set.of("Rapid Bonemerang");
 
 	/**
+	 * Materials of deleted items that carried NO display name, so {@link #REMOVED} has nothing to match them on (their
+	 * {@link #key} is {@code MATERIAL||}, and listing {@code ""} there would clear every unnamed item instead).
+	 * <p>
+	 * Matched on material alone, across any name or item ID, so only list a material NO current item uses: check the
+	 * palette and every default kit in {@code FakePlayerInventory} before adding one.  Permanent and mirrored in the
+	 * network plugin's copy, like the two tables above.
+	 * <ul>
+	 *   <li>SOUL_SAND: the old lava-jump block, a bare stack with a {@code can_place_on} stamp, no name and no ID.
+	 *       Dropped from the palette and every default kit when slot 34 became the Heroic Jerry-chine Gun.</li>
+	 * </ul>
+	 */
+	private static final Set<Material> REMOVED_MATERIALS = Set.of(Material.SOUL_SAND);
+
+	/**
 	 * Bring every item in every class this player has saved up to date, re-saving the file if anything changed.
 	 * Returns how many slots changed (0 if they have nothing saved).
 	 */
@@ -111,8 +126,13 @@ public final class ItemRefresh {
 		return changed;
 	}
 
-	/** True if this saved stack is an item that has been deleted outright ({@link #REMOVED}). */
+	/**
+	 * True if this saved stack is an item that has been deleted outright: by display name ({@link #REMOVED}) or, for
+	 * the ones that never had a name, by material ({@link #REMOVED_MATERIALS}).
+	 */
 	public static boolean isRemoved(ItemStack it) {
+		if(it == null || it.getType().isAir()) return false;
+		if(REMOVED_MATERIALS.contains(it.getType())) return true;
 		String k = key(it);
 		String name = k == null ? null : nameIn(k);
 		return name != null && REMOVED.contains(name);

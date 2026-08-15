@@ -300,23 +300,28 @@ public class MiscListener implements Listener {
 		WitherActions.noteGameModeChange(e.getPlayer().getUniqueId());
 	}
 
+	/**
+	 * Soul sand is the deleted lava-jump block, and any still in circulation must not become a real block.
+	 *
+	 * <p><b>Cancel, never place-then-revert.</b> This used to let vanilla place it and rewrite the block back a
+	 * tick later.  That acks the placement to the client as a SUCCESS and only corrects it a tick plus a round trip
+	 * afterwards, and for that whole window the client is stood on a block the server has already deleted.  On a
+	 * lava MLG that is a ground claim over lava with nothing underfoot, which is exactly what StradDevHub's Jesus
+	 * check counts, and at 84 ms the window is the three ticks it needs: two flags, two kills, on a player doing
+	 * nothing wrong.  Cancelling makes vanilla ack the placement as a failure instead, so the client rolls its own
+	 * prediction back with no ghost, and the item is never consumed so it needs no refund either.  Same pattern and
+	 * same reason as {@code CustomItems.onInfinityboomPlace}.
+	 */
 	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent e) {
 		if(e.getBlockPlaced().getType() != Material.SOUL_SAND) return;
-		// Revert in survival AND adventure, the dungeon play modes.  Only creative may place freely, for setup and building.
+		// Survival AND adventure, the dungeon play modes.  Only creative may place freely, for setup and building.
 		GameMode gm = e.getPlayer().getGameMode();
 		if(gm != GameMode.SURVIVAL && gm != GameMode.ADVENTURE) return;
-		Location loc = e.getBlockPlaced().getLocation();
-		double x = loc.getX(), y = loc.getY(), z = loc.getZ();
-		if(x >= -8 && x <= 134 && y >= 0 && y <= 254 && z >= -8 && z <= 147) {
-			org.bukkit.block.BlockState replacedState = e.getBlockReplacedState();
-			Player player = e.getPlayer();
-			ItemStack item = e.getItemInHand().clone();
-			plugin.Utils.scheduleTask(() -> {
-				replacedState.getBlock().setBlockData(replacedState.getBlockData());
-				player.getInventory().addItem(item);
-			}, 1);
-		}
+		// LavaJump.isInBossArena is the one region test; this used to carry a hand-rolled copy of its bounds.
+		if(!LavaJump.isInBossArena(e.getBlockPlaced().getLocation())) return;
+		e.setCancelled(true);
+		e.getPlayer().updateInventory(); // the client predicted the placement, so resend the stack and it won't ghost
 	}
 
 	@EventHandler

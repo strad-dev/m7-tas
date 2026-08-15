@@ -1760,7 +1760,7 @@ public class CustomItems implements Listener {
 
 	public static void iceSpray(Player p) {
 		Location l = p.getEyeLocation();
-		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 256);
+		p.getWorld().spawnParticle(Particle.SNOWFLAKE, l, 128);
 		List<Entity> entities = (List<Entity>) p.getWorld().getNearbyEntities(l, 8, 8, 8);
 		List<EntityType> doNotKill = doNotKill();
 		ItemStack wand = p.getInventory().getItemInMainHand();
@@ -1883,7 +1883,7 @@ public class CustomItems implements Listener {
 			return;
 		}
 		Location l = result.getHitBlock().getLocation();
-		p.getWorld().spawnParticle(Particle.PORTAL, l, 512);
+		p.getWorld().spawnParticle(Particle.PORTAL, l, 128);
 		l.setY(l.getY() + 1);
 		new BukkitRunnable() {
 			float pitch = 0.5f;
@@ -2491,7 +2491,7 @@ public class CustomItems implements Listener {
 			p.teleport(l);
 			Utils.debug(Utils.DebugType.SERVER, "Returning " + p.getName() + " to " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));
 			p.setVelocity(new Vector(0, 0, 0));
-			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 512), 1);
+			Utils.scheduleTask(() -> p.getWorld().spawnParticle(Particle.FLAME, p.getLocation(), 128), 1);
 		}, 60);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 63);
 		Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 1.0F), 66);
