@@ -84,6 +84,9 @@ public final class Storm extends WitherLord {
 	private Runnable stunEnrageTask;
 	private boolean crushEnabled;
 	private boolean inStun;
+	// Phase tick the stun's auto-enrage lands on, stamped at the crush so the action bar counts down the same clock
+	// the mechanic is scheduled on rather than a counter of its own.  Mirrors Maxor's stunEndTick.
+	private int stunEndTick;
 	private double stunDamageDealt;
 	// Latched true the moment the crush's 55% damage cap is reached.  Once set, handleDamage rejects ALL further
 	// damage until the next crush.  That stops same-tick arrows landing after the cap-enrage from over-DPSing:
@@ -148,6 +151,7 @@ public final class Storm extends WitherLord {
 		CustomBossBar.removeStunIndicator();
 		crushEnabled = false;
 		inStun = false;
+		stunEndTick = 0;
 		stunDamageDealt = 0;
 		stunCapReached = false;
 		currentCrushPillar = null;
@@ -289,6 +293,10 @@ public final class Storm extends WitherLord {
 	 *       so an armed window there is noise.</li>
 	 *   <li><b>Storm moves in</b>: only between the lightning volley and {@link #INTRO_END_TICK}, showing how long
 	 *       until Storm gets his aggro and crush detection arms.</li>
+	 *   <li><b>Stunned</b>: ticks left of the DPS window a crush opened, i.e. until {@link #STUN_AUTO_ENRAGE_TICKS}
+	 *       auto-enrages him.  Runs off {@link #stunEndTick}, an anchor stamped at the crush, so it can't drift from
+	 *       the scheduled enrage.  It also disappears early when the 55% cap enrages him ahead of the clock, which is
+	 *       the point: the bar says how long he is ACTUALLY stunned for, not how long the timer had left.</li>
 	 * </ul>
 	 * The armed counters use {@link #tick} (not {@link #displayTick()}) because that's the clock
 	 * {@link #pollCycle} feeds the crush detector.  The bar must agree with the mechanic, not with the pad counter.
@@ -299,6 +307,9 @@ public final class Storm extends WitherLord {
 	private void updateActionBar() {
 		int t = displayTick();
 		String pad = "Pad <white>" + (PAD_CYCLE_TICKS - Math.floorMod(t, PAD_CYCLE_TICKS)) + "t";
+		// The DPS window.  Sits right behind the pad counter, ahead of the armed pillars, since it's the segment
+		// people are actually reading while it's up.
+		String stun = inStun ? " <dark_gray>| <yellow>Stunned <white>" + Math.max(0, stunEndTick - t) + "t" : "";
 		// Nothing can be crushed during the dialogue, so the armed windows are noise until the lightning volley.
 		String armed = t >= LIGHTNING_TICK ? armedSegments() : "";
 		String moves = t >= LIGHTNING_TICK && t <= INTRO_END_TICK
@@ -306,7 +317,7 @@ public final class Storm extends WitherLord {
 				: "";
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			p.sendActionBar(Utils.msg(nearestPadColor(p.getLocation()) + pad + armed + moves));
+			p.sendActionBar(Utils.msg(nearestPadColor(p.getLocation()) + pad + stun + armed + moves));
 		}
 	}
 
@@ -491,6 +502,9 @@ public final class Storm extends WitherLord {
 		inStun = true;
 		stunDamageDealt = 0;
 		stunCapReached = false;
+		// Action-bar anchor for the "Stunned" counter.  The window opens HERE, on the same tick the auto-enrage is
+		// scheduled from, so the bar and the mechanic run out together.
+		stunEndTick = displayTick() + STUN_AUTO_ENRAGE_TICKS;
 
 		clearAggro();
 		setArmor(false);
@@ -511,6 +525,10 @@ public final class Storm extends WitherLord {
 
 		// Pillar destruction explosion fires 20 ticks after Storm is damaged.
 		scheduleCrushExplosion();
+
+		// Re-render now: the crush is detected from pollCycle, which the cycle ticker runs AFTER it has already drawn
+		// this tick's bar from the pre-stun state.
+		updateActionBar();
 	}
 
 	/**
@@ -632,6 +650,10 @@ public final class Storm extends WitherLord {
 		}
 		CustomBossBar.removeStunIndicator();
 		setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
+
+		// Drop the "Stunned" segment on the tick the stun really ends.  The scheduled enrage runs after the cycle
+		// ticker drew this tick's bar, and a cap-enrage comes from the damage path, mid-tick, long after it.
+		updateActionBar();
 	}
 
 	/** True once every active pillar has been consumed by a crush (all three exploded). */
