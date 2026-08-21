@@ -21,6 +21,10 @@ public final class GoldorSection {
 		this.levers = levers;
 		this.gate = gate;
 		this.totalItems = terminals.size() + 1 + levers.size();
+		// Here, not in GoldorTerminal: "at most one terminal of each puzzle type per section" is a property of the
+		// whole set, and this constructor is the one place that sees all of a section's terminals at once.  Every
+		// buildS1..buildS4 funnels through it, so no builder can forget.
+		GoldorTerminalGui.assignTypes(terminals);
 	}
 
 	public void cleanup() {

@@ -33,13 +33,25 @@ public final class GoldorTerminal {
 	private final TextDisplay displayBottom;
 	private boolean activated = false;
 	private boolean pending = false;
-	/** Which puzzle this terminal poses in ultra-realistic mode.  Rolled once, here, and never re-rolled. */
-	private final GoldorTerminalGui.Type type;
+	/**
+	 * Which puzzle this terminal poses in ultra-realistic mode.
+	 * <p>
+	 * <b>Assigned by the SECTION, not here</b> ({@link GoldorTerminalGui#assignTypes}, from
+	 * {@link GoldorSection}'s constructor).  A terminal cannot roll its own: the rule is "at most one of each type
+	 * per section", which is a property of the whole set and unknowable from inside one member of it.  Set once per
+	 * phase and never re-rolled, so a terminal keeps its puzzle however many times it is opened and abandoned.
+	 */
+	private GoldorTerminalGui.Type type;
+
+	/** Block the Interaction hitbox was spawned on.  Read by {@link GoldorTerminalGui} to place Melody. */
+	public final int x, y, z;
 
 	public GoldorTerminal(World world, int sectionIdx, int terminalIdx, int x, int y, int z) {
 		this.sectionIdx = sectionIdx;
 		this.terminalIdx = terminalIdx;
-		this.type = GoldorTerminalGui.randomTypeFor(x, y, z);
+		this.x = x;
+		this.y = y;
+		this.z = z;
 
 		Location interactionLoc = new Location(world, x + 0.5, y, z + 0.5);
 		// Two separate TextDisplays with vanilla backgrounds; gap between them has no background.
@@ -89,6 +101,11 @@ public final class GoldorTerminal {
 	/** The puzzle this terminal poses in ultra-realistic mode. */
 	public GoldorTerminalGui.Type type() {
 		return type;
+	}
+
+	/** Set by {@link GoldorTerminalGui#assignTypes} only, once, as the section is built. */
+	void setType(GoldorTerminalGui.Type type) {
+		this.type = type;
 	}
 
 	public void markActivated() {

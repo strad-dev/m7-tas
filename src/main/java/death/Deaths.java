@@ -3,13 +3,17 @@ package death;
 import instructions.Server;
 import instructions.bosses.WitherActions;
 import instructions.clear.ClearManager;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.FakePlayerManager;
@@ -18,7 +22,9 @@ import plugin.PlayerInventoryBackup;
 import plugin.Utils;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -52,6 +58,11 @@ import java.util.UUID;
  * <p><b>Revival is automatic and self-served.</b>  Infinite Revive Stones are assumed, so a ghost is always coming
  * back: the countdown starts on the tick they die and {@link #REVIVE_TICKS} later they are restored where they are
  * standing, with the inventory they died with.  They revive themselves, so the revival line names them twice.
+ *
+ * <p><b>A party wipe is the exception to all of that</b> ({@link #wipe}).  The last death never produces a ghost at
+ * all - there is nothing to come back to - so nobody is flipped into spectator only to be flipped straight back.
+ * The wipe ends the practice session itself, restores every earlier ghost's game mode and inventory, and gathers
+ * the whole party on one spot.
  */
 public final class Deaths {
 	private Deaths() {}
@@ -60,8 +71,6 @@ public final class Deaths {
 	private static final int REVIVE_TICKS = 100;
 	/** How long each countdown title stays up: one tick longer than its 20-tick slot, so the titles don't flicker apart. */
 	private static final int TITLE_STAY_TICKS = 21;
-	/** How often a worn saver's durability bar is redrawn.  A bar does not need per-tick resolution; the action bar does. */
-	private static final int DURABILITY_REFRESH_TICKS = 20;
 
 	/**
 	 * One dead player, keyed by uuid and held in death order.
@@ -93,11 +102,31 @@ public final class Deaths {
 		if(!damage.Difficulty.deathsEnabled()) return false;
 		if(!Server.isRunStarted()) return false;
 		if(!appliesTo(p)) return false;
+
+		// They were HIT.  This is the cue for the hit, not for the death, so it fires before anything decides
+		// whether the hit lands: a blocked one is still a hit, and a mask proc with no sound behind it reads as
+		// nothing having happened at all.
+		playHurtSound(p);
+
 		if(CheatDeath.tryProc(p)) return false;
 
-		// Bank the participant while they are still readable as one: the game-mode flip below takes them out of
-		// realPlayers(), and the run payload's roster is what the leaderboards derive group size from.
+		// Bank the participant while they are still readable as one: a ghost is out of realPlayers(), and the run
+		// payload's roster is what the leaderboards derive group size from.
 		WitherActions.noteInRun(p);
+
+		announceDeath(p, killer);
+		// The party-wide cue that somebody is DOWN, as opposed to the positional hurt sound above, which only says
+		// somebody was hit.  playGlobalSound plays AT each listener, so this carries wherever they are in the arena.
+		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0f, 0.5f);
+		Utils.debug(Utils.DebugType.SERVER, Utils.getRealName(p) + " was killed by " + killer);
+
+		// Asked BEFORE any ghosting: if this is the last one standing there is nothing to come back to, so they
+		// never become a ghost at all.  Flipping them into spectator only for the wipe to flip them straight back
+		// is a visible flicker and a pointless inventory round trip.
+		if(isLastAlive(p)) {
+			wipe(p);
+			return true;
+		}
 
 		ghosts.put(p.getUniqueId(),
 				new Ghost(p.getUniqueId(), new PlayerInventoryBackup(p), p.getGameMode(), Utils.serverTick()));
@@ -106,16 +135,7 @@ public final class Deaths {
 		p.closeInventory();
 		expectGameModeChange(p);
 		p.setGameMode(GameMode.SPECTATOR);
-
-		announceDeath(p, killer);
-		// Volume 1, not louder: playGlobalSound plays AT each listener, so volume only extends a range that is
-		// already zero.  The low pling is the party-wide cue that somebody is down.
-		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 0.5f);
-		Utils.debug(Utils.DebugType.SERVER, Utils.getRealName(p) + " was killed by " + killer);
-
-		// Last one standing has just fallen, so there is nobody left to finish the run.
-		if(!anyoneAlive()) wipe();
-		else showReviveTitle(p, REVIVE_TICKS);
+		showReviveTitle(p, REVIVE_TICKS);
 		return true;
 	}
 
@@ -138,40 +158,86 @@ public final class Deaths {
 		return !FakePlayerManager.getFakePlayers().containsValue(p);
 	}
 
+	/**
+	 * The "you were hit" cue: the vanilla player-hurt sound at the player's own position, so they hear it and so does
+	 * anybody standing near them.
+	 * <p>
+	 * <b>World-positioned, not {@code Utils.playLocalSound}</b> - that one only ever reaches the single player, and
+	 * the point here is that a teammate nearby hears where it happened.  Volume 1 for the ordinary vanilla radius.
+	 */
+	private static void playHurtSound(Player p) {
+		p.getWorld().playSound(p.getLocation(), Sound.ENTITY_PLAYER_HURT, 1.0f, 1.0f);
+	}
+
 	/** True if {@code p} is currently dead and waiting on a revival. */
 	public static boolean isGhost(Player p) {
 		return p != null && ghosts.containsKey(p.getUniqueId());
 	}
 
 	/**
-	 * Anyone left who could still finish the run.  This is {@code ClearManager.realPlayers()}, which already
-	 * excludes spectators (so every ghost) and fakes - the one definition of "in the run" the roster and the clear
-	 * HUD share, rather than a fourth opinion about it.
+	 * True if {@code p} is the only one left who could still finish the run, i.e. their death is a party wipe.
+	 * <p>
+	 * Asked while {@code p} is still in Adventure, so they are themselves still in
+	 * {@code ClearManager.realPlayers()} - the question is whether anybody ELSE is.  That list already excludes
+	 * spectators (so every existing ghost) and fakes; it is the one definition of "in the run" the roster and the
+	 * clear HUD share, rather than a fourth opinion about it.  A creative-mode onlooker counts as alive and will
+	 * hold a run open, the same way they are exempt from every other protection.
 	 */
-	private static boolean anyoneAlive() {
-		return !ClearManager.realPlayers().isEmpty();
+	private static boolean isLastAlive(Player p) {
+		for(Player other : ClearManager.realPlayers()) {
+			if(!other.equals(p)) return false;
+		}
+		return true;
 	}
 
 	// ==================== the wipe ====================
 
+	/** Where a wiped party is put down, facing yaw 0 / pitch 0. */
+	private static final double[] WIPE_RETURN = {28.5, 166, 118.5};
+
 	/**
-	 * Everybody is dead, so the run is over and lost.
+	 * Everybody is dead, so the run is over and lost.  {@code lastToDie} never became a ghost (see {@link #kill}).
 	 * <p>
-	 * Ends it through the SAME path as Storm's all-pillars-gone failure: {@code signalRunComplete(false)}, so the
-	 * network glue frees its slot and runs its staged session end, and standalone it no-ops exactly like a normal
-	 * completion.  The payload still carries every phase duration and clear milestone the party actually reached,
-	 * which is what lets the leaderboards keep the sections they finished - see the network's
-	 * {@code Leaderboards.submit}.
+	 * <b>This ends the session itself</b>, which the other failure path does not: standalone nothing listens to the
+	 * run-complete event, so a wiped party would otherwise be stranded as spectators inside a run that never stops -
+	 * bosses still ticking, Goldor still patrolling, and no way to start another.  So it does what
+	 * {@code /m7practice end} does, and then hands everybody their body back: game mode restored, inventory
+	 * restored, and the whole party teleported to one spot rather than scattered around a torn-down boss room.
 	 * <p>
-	 * The pending revivals are dropped rather than finished: there is nothing to come back to, and the session end
-	 * puts everyone in spectator anyway.
+	 * Order matters in three places.  The ghosts are restored <b>before</b> the teardown, so
+	 * {@code ClearManager.stop}'s hotbar cleanup sees them as real players instead of skipping them.  The
+	 * run-complete signal also goes out <b>before</b> the teardown, while the run's state is still intact for
+	 * {@code RunResult.capture}.  And {@code endPractice} is passed {@code toSpectator = false}, because this method
+	 * has already decided where everyone goes.
+	 * <p>
+	 * The signal is the same one Storm's all-pillars-gone failure uses, so the network still frees its slot and runs
+	 * its own session end - which re-asserts spectator, and that is its call: spectator is the m7 idle state.  The
+	 * payload still carries every phase duration and clear milestone the party reached, which is what lets the
+	 * leaderboards keep the sections they finished (see {@code Leaderboards.submit}).
 	 */
-	private static void wipe() {
-		ghosts.clear();
-		Bukkit.broadcast(Utils.msg("<red><bold>WIPED!<reset><red> Your whole party is dead."));
-		Bukkit.broadcast(Utils.msg("<red>You failed the run!"));
-		Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 0.5f);
+	private static void wipe(Player lastToDie) {
+		World world = lastToDie.getWorld();
+		Bukkit.broadcast(Utils.msg("<red>Your whole party is dead!  You failed the run."));
+
+		// Everyone to hand back: the ghosts, plus the one who just died without becoming one.
+		List<Player> party = new ArrayList<>();
+		party.add(lastToDie);
+		for(Ghost g : ghosts.values()) {
+			Player p = Bukkit.getPlayer(g.uuid());
+			if(p == null || !p.isOnline()) continue; // banked on the roster already; a relog re-enters normally
+			expectGameModeChange(p);
+			p.setGameMode(g.gameMode());
+			g.inventory().restore(p);
+			p.clearTitle();
+			party.add(p);
+		}
+		ghosts.clear(); // no revivals: there is nothing left to come back to
+
 		WitherActions.signalRunComplete(false);
+		commands.TAS.endPractice(world, false);
+
+		Location home = new Location(world, WIPE_RETURN[0], WIPE_RETURN[1], WIPE_RETURN[2], 0f, 0f);
+		for(Player p : party) p.teleport(home, PlayerTeleportEvent.TeleportCause.PLUGIN);
 	}
 
 	// ==================== revival ====================
@@ -216,21 +282,25 @@ public final class Deaths {
 			}
 		}
 
-		if(damage.Difficulty.deathsEnabled() && now % DURABILITY_REFRESH_TICKS == 0) {
+		// EVERY tick, not on a 20-grid: CheatDeath throttles the DRAWING itself and needs to hear about the tick a
+		// cooldown actually expires on, so a ready mask never sits there showing a part-empty bar.
+		if(damage.Difficulty.deathsEnabled()) {
 			for(Player p : Bukkit.getOnlinePlayers()) {
 				if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 				CheatDeath.refreshDurability(p);
 			}
 		}
 
-		// Cooldowns have to keep ticking down on screen through a stretch no boss HUD owns - the whole Goldor phase
-		// has no action bar of its own.  Only fill in the ticks nobody else claimed, so a live HUD is never fought
-		// over: Utils.sendActionBar stamps the tick, and every boss HUD runs at the start of the tick, ahead of this.
+		// Cooldowns have to keep ticking down on screen through a stretch no boss HUD owns - a phase without one, or
+		// the gap between phases.  Only fill in the ticks nobody else claimed, so a live HUD is never fought over:
+		// Utils.sendActionBar stamps the tick, and every boss HUD runs at the start of the tick, ahead of this.
+		//
+		// PASS AN EMPTY BASE.  sendActionBar is the thing that appends the cooldown segments, and handing it the
+		// segments as the bar to append them TO printed every timer twice.
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			if(Utils.actionBarOwnedThisTick(p)) continue;
-			String only = CheatDeath.actionBarOnly(p);
-			if(!only.isEmpty()) Utils.sendActionBar(p, Utils.msg(only));
+			if(CheatDeath.hasCooldowns(p)) Utils.sendActionBar(p, Component.empty());
 		}
 	}
 

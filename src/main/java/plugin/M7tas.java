@@ -138,6 +138,9 @@ public final class M7tas extends JavaPlugin {
 		SpringBoots.start();
 		LavaJump.start();
 		listeners.OutOfBounds.start();
+		// Watches the S4 Sharp Shooter plate: there is no "stepped off a pressure plate" event, so the sequential
+		// device's reset has to be polled.
+		listeners.GoldorListener.startSharpPlatePoll();
 		// Ultra-realistic death/revival driver: revival countdowns, the saver durability bars, and the action-bar
 		// cooldown fallback.  Raw and untracked on purpose, so a boss teardown flushing the scheduler can never
 		// strand a ghost in spectator (see death.Deaths.start).
@@ -184,6 +187,7 @@ public final class M7tas extends JavaPlugin {
 		SpringBoots.stop();
 		LavaJump.stop();
 		listeners.OutOfBounds.stop();
+		listeners.GoldorListener.stopSharpPlatePoll();
 		death.Deaths.stop();
 		BossScheduler.stop();
 

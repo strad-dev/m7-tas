@@ -57,12 +57,15 @@ Lightning will not actually kill you, *unless* the run is in **Ultra Realistic**
 
 **Goldor**
 
-- Goldor has no death ticks.
+- Goldor has no death ticks, except in **Ultra Realistic** mode, where they are checked every 3s (and the action bar counts down to the next check)
 - Goldor will not chase you around at his maximum speed even if you complete a section early
 - Terminals will automatically complete 1 tick after you click on them - *unless* the run is in **Ultra
   Realistic** mode, where clicking one opens a puzzle you have to solve
 - SS: You need to click the button 15 times total (i1 but very generous timing)
-- i4: You just need to hit each of the 9 spots at least once with arrows while on the pressure plate
+- i4: You just need to hit each of the 9 spots at least once with arrows while on the pressure plate.  In
+  **Ultra Realistic** mode it is sequential instead: stepping on the plate starts it, an emerald block marks the
+  target to shoot, and it walks -X then -Y from `68 130` to `64 126`.  Only the emerald counts - though two arrows
+  landing on the same tick can clear it and the next one together.  Step off the plate and the whole device resets
 
 **Wither King**
 
@@ -71,13 +74,15 @@ Lightning will not actually kill you, *unless* the run is in **Ultra Realistic**
 
 **Ultra Realistic mode**
 
-Everything Realistic mode does, plus death.  Standing out from under a pillar during Storm's lightning, being
-caught inside a pillar, being in a Goldor section that isn't open yet *or* one the party has already finished
-(checked every 3s - S4 is the one corridor that's always safe), and putting a relic in the wrong cauldron all kill
-you outright.  Goldor's ordinary damage still doesn't.  A Bonzo's Mask or Spirit Mask on your head, or your Phoenix
+Everything Realistic mode does, plus death.  Standing out from under one of the three real pillars during Storm's
+lightning (the inert Red one does not shelter you), being
+caught inside a pillar, being in a Goldor section that isn't open yet *or* one Goldor has physically walked past
+you into (checked every 3s - S4 is the one corridor that's always safe), and putting a relic in the wrong cauldron
+all kill you outright.  Finishing a section early never endangers you; Goldor has to actually catch up.  Goldor's ordinary damage still doesn't.  A Bonzo's Mask or Spirit Mask on your head, or your Phoenix
 pet, saves you once per cooldown and shows the cooldown on its own durability bar and in the action bar.  Die anyway
 and you become a ghost and revive yourself after 5 seconds, where you're standing, with the inventory you died with.
-If everyone is dead, the run ends in failure.
+If everyone is dead the run ends in failure: the session is ended for you, everyone gets their inventory and
+Adventure mode back, and the party is gathered at `28.5 166 118.5`.
 
 ## For Plugin Developers
 

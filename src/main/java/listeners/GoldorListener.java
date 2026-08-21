@@ -39,6 +39,9 @@ public class GoldorListener implements Listener {
 
 	public GoldorListener() {
 		INSTANCE = this;
+		// Java zero-fills sharpHitTick, and 0 is a real tick value: give every device a defined starting state
+		// rather than relying on the first /setup to have run.
+		resetSharpHits();
 	}
 
 	// ------ Per-device runtime state (cleared on each phase via Goldor's resetState by reference) ------
@@ -63,6 +66,31 @@ public class GoldorListener implements Listener {
 	// Sharp Shooter: hit state on the 9 target blocks
 	private final boolean[][] sharpHits = new boolean[3][3]; // [xIdx 0..2 → 68/66/64][yIdx 0..2 → 130/128/126]
 	private int sharpHitCount = 0;
+	/**
+	 * ULTRA-REALISTIC ONLY: which target the emerald block is on, as a sequence index 0..8, or -1 before the plate
+	 * has started the device and 9 once it has run off the end.
+	 * <p>
+	 * The sequence IS the array order: {@code seq = yIdx * 3 + xIdx}, so it walks -X across a row and then -Y down
+	 * to the next one - {@code TARGET_XS} and {@code TARGET_YS} are both already listed descending. First is
+	 * (68, 130), last is (64, 126), and each of the nine is the active block at most once; it never loops.
+	 */
+	private int sharpCursor = -1;
+	/**
+	 * ULTRA-REALISTIC ONLY: the server tick an arrow last struck each target, or {@code Integer.MIN_VALUE} for never.
+	 * <p>
+	 * <b>Scratch for one tick, not a bank.</b>  A hit on anything that is not the active target does not count - it
+	 * only leaves this stamp, and the stamp is worth something solely while the tick it names is still the current
+	 * one.  See {@link #registerSequentialHit}.
+	 */
+	private final int[][] sharpHitTick = new int[3][3];
+	/** World the sequential device was armed in, so {@link #pollSharpPlate} can reset it without guessing. */
+	private World sharpWorld;
+	/**
+	 * Server tick the plate was FIRST seen empty on while the device was running, or -1 while it is occupied.
+	 * <p>
+	 * This is the one tick of grace that makes a solve beat a reset - see {@link #pollSharpPlate}.
+	 */
+	private int sharpPlateEmptySince = -1;
 
 	// Simon Says button coord
 	private static final int SIMON_BX = 110, SIMON_BY = 121, SIMON_BZ = 91;
@@ -176,7 +204,7 @@ public class GoldorListener implements Listener {
 			term.markActivated();
 			Goldor.INSTANCE.onActivation(p, sec, "terminal");
 		}
-		Bukkit.getScheduler().runTask(plugin.M7tas.getInstance(), p::closeInventory);
+		Bukkit.getScheduler().runTask(plugin.M7tas.getInstance(), () -> p.closeInventory());
 	}
 
 	/** Dragging is another way to move items, so it is refused wholesale. */
@@ -436,6 +464,97 @@ public class GoldorListener implements Listener {
 		}
 	}
 
+	// =================== Sharp Shooter: the plate starts it (ultra-realistic only) ===================
+
+	/**
+	 * Stepping on the gold pressure plate BEGINS the S4 device: the emerald block appears on the first target and
+	 * the player shoots their way along the sequence.  Ultra-realistic only - the other two modes keep the original
+	 * device, where the nine targets are hit in any order and the plate has to be held for each hit.
+	 * <p>
+	 * {@code Action.PHYSICAL} is the pressure-plate event, which is why this is its own handler rather than a branch
+	 * in {@link #onInteract} - that one returns early for anything that is not a left or right click, and its
+	 * main-hand guard does not apply to a step.
+	 * <p>
+	 * <b>The plate must be HELD.</b>  Stepping on it begins the device; stepping off resets it outright - see
+	 * {@link #pollSharpPlate}.  Arrows that land BEFORE it is stepped on do nothing at all, since the device has not
+	 * begun, so the wall cannot be pre-fired at.
+	 */
+	@EventHandler(priority = EventPriority.LOW)
+	public void onPlateStep(PlayerInteractEvent e) {
+		if(e.getAction() != Action.PHYSICAL) return;
+		Block b = e.getClickedBlock();
+		if(b == null || b.getX() != PLATE_X || b.getY() != PLATE_Y || b.getZ() != PLATE_Z) return;
+		if(cannotSolve(e.getPlayer())) return;
+		if(!damage.Difficulty.deathsEnabled()) return;
+		if(Goldor.INSTANCE.isPhaseInactive()) return;
+		if(sharpCursor >= 0) return; // already running; a second step is not a restart
+
+		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
+		if(s4 == null || s4.device.isActivated()) return;
+
+		sharpCursor = 0;
+		sharpWorld = b.getWorld();
+		renderSharpTargets(sharpWorld);
+	}
+
+	/**
+	 * Reset the sequential device the moment nobody is on the plate any more.
+	 * <p>
+	 * <b>The plate has to be HELD after all.</b>  Stepping on it begins the device, and stepping off throws the whole
+	 * thing away - every target back to blue, every hit forgotten, the emerald gone - so it has to be started again
+	 * from the first target.  Progress is not banked, which is the point: the run is "stay on the plate and clear all
+	 * nine", not "chip away at it".
+	 * <p>
+	 * Polled per tick rather than driven by an event, because there is no "left the pressure plate" event to hook -
+	 * {@code Action.PHYSICAL} only fires on the way ON.  It reuses {@link #isPlayerOnPlate}, the same predicate the
+	 * classic device gates each hit on, so the two devices can never disagree about who counts as standing there
+	 * (spectators included: a hovering ghost has never held this plate down).
+	 * <p>
+	 * <b>A SOLVE BEATS A RESET on the same tick</b>, which is why the reset lands a tick after the plate is first
+	 * seen empty rather than immediately.  The two race: a scheduler task cannot see an arrow that has not landed
+	 * yet, so resetting on sight would wipe the hit state out from under a ninth arrow arriving later in the very
+	 * same tick, and {@link #registerSharpHit} would then reject it for the device not running.  One tick of grace
+	 * settles it in the player's favour - a completing hit clears {@code sharpCursor} and this poll goes quiet on
+	 * its own - and costs a genuine step-off one tick of latency that nobody can see.
+	 */
+	private static void pollSharpPlate() {
+		if(INSTANCE == null || INSTANCE.sharpCursor < 0) return; // not running
+		if(Goldor.INSTANCE.isPhaseInactive()) return;            // the next /setup resets it
+		if(INSTANCE.isPlayerOnPlate()) {
+			INSTANCE.sharpPlateEmptySince = -1;
+			return;
+		}
+		int now = plugin.Utils.serverTick();
+		if(INSTANCE.sharpPlateEmptySince < 0) {
+			INSTANCE.sharpPlateEmptySince = now; // first tick empty: give this tick's arrows their chance
+			return;
+		}
+		if(now == INSTANCE.sharpPlateEmptySince) return;
+		World w = INSTANCE.sharpWorld;
+		if(w != null) INSTANCE.resetSharpShooter(w);
+		else INSTANCE.resetSharpHits();
+	}
+
+	/**
+	 * Start the per-tick plate watch.  Registered from {@code M7tas.onEnable} as a raw repeating task, the same
+	 * shape as {@code OutOfBounds.start} - untracked, so a boss teardown flushing the scheduler cannot silently
+	 * stop it and leave a device that no longer resets.
+	 */
+	public static void startSharpPlatePoll() {
+		if(sharpPlateTask != null) return;
+		sharpPlateTask = org.bukkit.Bukkit.getScheduler().runTaskTimer(
+				plugin.M7tas.getInstance(), GoldorListener::pollSharpPlate, 1L, 1L);
+	}
+
+	public static void stopSharpPlatePoll() {
+		if(sharpPlateTask != null) {
+			sharpPlateTask.cancel();
+			sharpPlateTask = null;
+		}
+	}
+
+	private static org.bukkit.scheduler.BukkitTask sharpPlateTask;
+
 	// =================== Sharp Shooter arrows ===================
 	@EventHandler(priority = EventPriority.LOW)
 	public void onProjectileHit(ProjectileHitEvent e) {
@@ -470,18 +589,39 @@ public class GoldorListener implements Listener {
 		}, 1L);
 	}
 
-	/** Register a single Sharp Shooter target hit (idempotent per target). Completes the S4 device on the
-	 *  ninth distinct hit. Re-checks all gates itself so it is safe to call from a deferred (next-tick) task. */
+	/**
+	 * Register a single Sharp Shooter target hit (idempotent per target).  Completes the S4 device on the ninth
+	 * distinct hit either way.  Re-checks all gates itself so it is safe to call from a deferred (next-tick) task.
+	 * <p>
+	 * <b>Two devices behind one hit.</b>  Classic and realistic keep the original: any order, checked against the
+	 * plate per hit.  Ultra-realistic is sequential - {@link #onPlateStep} begins it and an emerald block marks the
+	 * target to shoot - and the plate is watched per tick instead, so stepping off resets the whole device.
+	 * <p>
+	 * <b>Only the ACTIVE target counts</b> in the sequential device.  An arrow anywhere else on the wall does
+	 * nothing at all - it is not banked for later, and the nine cannot be picked off out of order.
+	 * <p>
+	 * <b>The one exception is the SAME TICK</b>, and it exists only to make the ordering inside a tick irrelevant.
+	 * {@code ProjectileHitEvent} fires once per arrow, so a volley arrives as several calls in one tick: hit the
+	 * emerald and the next target together and both should complete, whichever of the two the server happens to
+	 * process first.  See {@link #registerSequentialHit}.  Arrows landing a tick apart need no exception - by then
+	 * the cursor has moved on and the second target IS the active one.
+	 */
 	private void registerSharpHit(World world, int xIdx, int yIdx, Player shooter, boolean wasDeferred) {
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
 		if(s4 == null || s4.device.isActivated()) return;
-		if(!isPlayerOnPlate()) return;
+		boolean sequential = damage.Difficulty.deathsEnabled();
+		// The plate is a per-hit requirement in the old device and a one-off start in the sequential one.
+		if(sequential ? sharpCursor < 0 : !isPlayerOnPlate()) return;
 		if(sharpHits[xIdx][yIdx]) return;
 
-		sharpHits[xIdx][yIdx] = true;
-		sharpHitCount++;
-		setTargetBlock(world, xIdx, yIdx, TARGET_HIT);
+		if(sequential) {
+			if(!registerSequentialHit(world, xIdx, yIdx)) return; // not the active target: nothing completed
+		} else {
+			sharpHits[xIdx][yIdx] = true;
+			sharpHitCount++;
+			setTargetBlock(world, xIdx, yIdx, TARGET_HIT);
+		}
 		if(sharpHitCount >= 9) {
 			if(shooter == null || cannotSolve(shooter)) {
 				shooter = null;
@@ -490,6 +630,50 @@ public class GoldorListener implements Listener {
 			s4.device.markActivated();
 			if(shooter != null) Goldor.INSTANCE.onActivation(shooter, s4, "device", wasDeferred);
 			resetSharpShooter(world);
+		}
+	}
+
+	/**
+	 * Take one arrow in the sequential device.
+	 * <p>
+	 * Every hit leaves a {@link #sharpHitTick} stamp, and then <b>only a hit on the ACTIVE target does anything</b>.
+	 * When one does, the emerald steps forward over every target stamped with THIS SAME TICK - which is the whole of
+	 * the same-tick exception, and the reason it is expressed as "stamped now" rather than "struck at some point".
+	 * <p>
+	 * Written this way so the order arrows are processed in within a tick cannot matter.  Emerald first: it advances,
+	 * finds the next target not yet stamped, stops - and the second arrow then lands on what is now the active
+	 * target and advances it.  Next target first: its stamp is set but nothing completes, and the emerald's arrow
+	 * then advances over both.  Either way two arrows complete two targets.  <b>Do not turn the stamp into a plain
+	 * boolean</b>: that is what let the whole wall be picked off out of order.
+	 *
+	 * @return true if at least one target was completed, i.e. whether the caller should check for the ninth.
+	 */
+	private boolean registerSequentialHit(World world, int xIdx, int yIdx) {
+		int now = Utils.serverTick();
+		sharpHitTick[xIdx][yIdx] = now;
+		if(yIdx * 3 + xIdx != sharpCursor) return false;
+		while(sharpCursor < 9 && sharpHitTick[sharpCursor % 3][sharpCursor / 3] == now) {
+			sharpHits[sharpCursor % 3][sharpCursor / 3] = true;
+			sharpHitCount++;
+			sharpCursor++;
+		}
+		renderSharpTargets(world);
+		return true;
+	}
+
+	/**
+	 * Redraw all nine targets from state: struck ones red, the emerald on the active one, the rest blue.
+	 * <p>
+	 * Drawn from state rather than patched per event, so a skipped target can never be left showing the wrong
+	 * colour - which is exactly what a per-hit {@code setTargetBlock} would do to a target the emerald jumped over.
+	 */
+	private void renderSharpTargets(World world) {
+		for(int xIdx = 0; xIdx < 3; xIdx++) {
+			for(int yIdx = 0; yIdx < 3; yIdx++) {
+				Material mat = sharpHits[xIdx][yIdx] ? TARGET_HIT
+						: (yIdx * 3 + xIdx == sharpCursor ? TARGET_ACTIVE : TARGET_RESTING);
+				setTargetBlock(world, xIdx, yIdx, mat);
+			}
 		}
 	}
 
@@ -507,8 +691,14 @@ public class GoldorListener implements Listener {
 	}
 
 	private void resetSharpHits() {
-		for(int i = 0; i < 3; i++) for(int j = 0; j < 3; j++) sharpHits[i][j] = false;
+		for(int i = 0; i < 3; i++) for(int j = 0; j < 3; j++) {
+			sharpHits[i][j] = false;
+			sharpHitTick[i][j] = Integer.MIN_VALUE;
+		}
 		sharpHitCount = 0;
+		sharpCursor = -1; // back to "not started": the plate has to begin it again
+		sharpWorld = null;
+		sharpPlateEmptySince = -1;
 	}
 
 	/** Reset the Simon Says global click counter. Invoked on server reset ({@link instructions.Server#serverSetup})
@@ -517,9 +707,11 @@ public class GoldorListener implements Listener {
 		simonClicks = 0;
 	}
 
-	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit.
+	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit, and in ultra-realistic an
+	// emerald block marks the ONE target currently being asked for.
 	private static final Material TARGET_RESTING = Material.BLUE_TERRACOTTA;
 	private static final Material TARGET_HIT = Material.RED_TERRACOTTA;
+	private static final Material TARGET_ACTIVE = Material.EMERALD_BLOCK;
 
 	/** Set the (xIdx, yIdx) Sharp Shooter target block to the given material (physics suppressed). */
 	private void setTargetBlock(World world, int xIdx, int yIdx, Material mat) {

@@ -8,8 +8,12 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
+import plugin.M7tas;
 import plugin.Utils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -30,7 +34,7 @@ import java.util.Random;
  */
 public final class GoldorTerminalGui implements InventoryHolder {
 
-	/** The one terminal Melody is allowed at: the S2 terminal whose Interaction spawns here. */
+	/** The one terminal Melody is pinned to: the S2 terminal whose Interaction spawns here. */
 	private static final int MELODY_X = 40, MELODY_Y = 124, MELODY_Z = 123;
 
 	private static final Random RANDOM = new Random();
@@ -60,20 +64,48 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		}
 	}
 
-	/** Every type Melody is NOT, i.e. what the other fifteen terminals roll from. */
-	private static final Type[] WITHOUT_MELODY = {Type.SAME_COLOR, Type.STARTS_WITH, Type.SELECT_ALL, Type.ON_OFF};
+	/** Every type Melody is NOT, i.e. what the other fifteen terminals draw from. */
+	private static final List<Type> WITHOUT_MELODY =
+			List.of(Type.SAME_COLOR, Type.STARTS_WITH, Type.SELECT_ALL, Type.ON_OFF);
 
 	/**
-	 * Roll a type for a terminal at these coordinates.
+	 * Give every terminal in one section its puzzle.  Called from {@link GoldorSection}'s constructor, which is the
+	 * one place that sees a whole section's terminals at once.
 	 * <p>
-	 * <b>Melody is position-locked</b> to the one S2 terminal above and rolls as a fifth option only there; every
-	 * other terminal picks from the other four.  Keyed on the coordinates rather than the section/terminal index so
-	 * the lock follows the terminal even if the build order in {@code Goldor.buildS2} is ever reshuffled.
+	 * <b>At most one terminal of each type per section</b>, so the four non-Melody types are dealt out WITHOUT
+	 * replacement from a shuffled pool - the composition of a section is therefore fixed and only the order is
+	 * random. That rule is why a terminal cannot roll its own type: uniqueness is a property of the set.
+	 * <p>
+	 * <b>Melody is pinned</b> to the one S2 terminal whose Interaction spawns at {@code 40 124 123} - it always
+	 * poses Melody, and no other terminal ever can. That falls out of the uniqueness rule rather than being a second
+	 * decision: S2 has five terminals and there are five types, so if that terminal took anything else, S2 would
+	 * need a fifth type at a terminal Melody is not allowed at. Keyed on the <b>coordinates</b>, not the
+	 * section/terminal index, so the pin follows the terminal if {@code Goldor.buildS2}'s order is ever reshuffled.
+	 * <p>
+	 * A section with more non-Melody terminals than there are types cannot satisfy the rule at all; that is a build
+	 * mistake rather than something to paper over, so it is logged and the pool reused.
 	 */
-	public static Type randomTypeFor(int x, int y, int z) {
-		boolean melodyAllowed = x == MELODY_X && y == MELODY_Y && z == MELODY_Z;
-		if(melodyAllowed) return Type.values()[RANDOM.nextInt(Type.values().length)];
-		return WITHOUT_MELODY[RANDOM.nextInt(WITHOUT_MELODY.length)];
+	static void assignTypes(List<GoldorTerminal> terminals) {
+		List<Type> pool = new ArrayList<>(WITHOUT_MELODY);
+		Collections.shuffle(pool, RANDOM);
+		int dealt = 0;
+		for(GoldorTerminal t : terminals) {
+			if(isMelodyTerminal(t)) {
+				t.setType(Type.MELODY);
+				continue;
+			}
+			if(dealt == pool.size()) {
+				M7tas.getInstance().getLogger().warning("Goldor S" + (t.sectionIdx + 1) + " has more than "
+						+ pool.size() + " non-Melody terminals, so its puzzle types cannot all be distinct.");
+				dealt = 0;
+			}
+			t.setType(pool.get(dealt++));
+		}
+	}
+
+	/** True for the single terminal Melody is pinned to. */
+	private static boolean isMelodyTerminal(GoldorTerminal t) {
+		return t.x == MELODY_X && t.y == MELODY_Y && t.z == MELODY_Z;
 	}
 
 	// ==================== layout constants ====================
@@ -223,6 +255,9 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * <p>
 	 * <b>Same Color takes a LEFT click only</b>, because that is the button that recolours its pane.  Every other
 	 * puzzle - On/Off included - accepts either button.
+	 * <p>
+	 * Clearing a Melody row plays the terminal-completion cue ({@code Goldor.playActivationSound}); the FOURTH row
+	 * does not, because completing the terminal plays it a moment later and two of them would stack on one tick.
 	 *
 	 * @param slot raw slot of the click, already known to be in the TOP inventory
 	 */
@@ -246,6 +281,9 @@ public final class GoldorTerminalGui implements InventoryHolder {
 				return true;
 			}
 			drawMelodyRow(melodyRow);
+			// Clearing a row sounds exactly like completing a terminal - the same cue, deliberately.  Only the
+			// non-final rows: the last one falls through to the activation, which plays it itself.
+			Goldor.playActivationSound();
 			return false;
 		}
 		solved = true;

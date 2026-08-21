@@ -226,10 +226,6 @@ public class WitherKing {
 				Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "", "SKYBLOCK_MENU"));
 		instructions.Actions.setHotbarSlot(p, 8);
 		spawnRelicEntities(relic);
-
-		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<red> put the " + relic.mm + relic.label
-				+ " Relic<red> in the wrong cauldron!  <gray>It has returned to its statue."));
-		Utils.playGlobalSound(Sound.BLOCK_ANVIL_LAND, 1.0f, 0.6f);
 	}
 
 	/** A 0.66666³-scale transform rotated {@code angle} radians about the Y axis.  Translation is zero, so it spins in place. */

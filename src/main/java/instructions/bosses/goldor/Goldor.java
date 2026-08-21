@@ -91,8 +91,20 @@ public final class Goldor extends WitherLord {
 	private final List<ItemFrame> protectedFrames = new ArrayList<>();
 	private ItemFrame arrowAlignFrame;
 
-	// S3 Arrow Align item frame block coord
-	private static final int ARROW_X = -2, ARROW_Y = 122, ARROW_Z = 77;
+	/**
+	 * S3 Arrow Align item frame block coord: the ONE frame in the wall that starts unrotated and has to be turned.
+	 * <p>
+	 * <b>Single source of truth.</b>  {@link #protectAllItemFrames} and {@link #resetS3Device} both pick the frame
+	 * nearest this point, and both used to carry the block centre as their own literal - so moving the device meant
+	 * finding three places, and these constants sat unused while the literals did the work.  Both now derive from
+	 * {@link #arrowTarget()}.
+	 */
+	private static final int ARROW_X = -2, ARROW_Y = 120, ARROW_Z = 78;
+
+	/** The block centre of {@link #ARROW_X}/{@link #ARROW_Y}/{@link #ARROW_Z}, which is where a wall frame sits. */
+	private static double[] arrowTarget() {
+		return new double[]{ARROW_X + 0.5, ARROW_Y, ARROW_Z + 0.5};
+	}
 	private final Map<Location, BlockData> coreSnapshot = new HashMap<>();
 	private boolean coreBarrierActive = false;
 
@@ -118,6 +130,7 @@ public final class Goldor extends WitherLord {
 		coreOpen = false;
 		lastDamagedTick = -1000;
 		currentSectionIdx = 0;
+		bossSectionIdx = 0;
 		sectionStartTick = 0;
 		coreOpenTick = 0;
 		for(GoldorSection s : sections) s.cleanup();
@@ -254,7 +267,8 @@ public final class Goldor extends WitherLord {
 		Collection<Entity> ents = world.getNearbyEntities(S3_FRAME_BOUNDS);
 
 		// First pass: protect all S3 frames and find the one closest to the Arrow Align target.
-		final double targetX = -1.5, targetY = 122.0, targetZ = 77.5;
+		double[] target = arrowTarget();
+		final double targetX = target[0], targetY = target[1], targetZ = target[2];
 		double bestDist = Double.MAX_VALUE;
 		ItemFrame best = null;
 		for(Entity e : ents) {
@@ -281,7 +295,8 @@ public final class Goldor extends WitherLord {
 	/** Reset the S3 Arrow Align item frame (used by /setup). Finds the frame closest to the Arrow Align
 	 *  target inside the S3 frame wall and rotates it back to NONE so the device starts the next run unsolved. */
 	public static void resetS3Device(World world) {
-		final double targetX = -1.5, targetY = 122.0, targetZ = 77.5;
+		double[] target = arrowTarget();
+		final double targetX = target[0], targetY = target[1], targetZ = target[2];
 		double bestDist = Double.MAX_VALUE;
 		ItemFrame best = null;
 		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
@@ -439,17 +454,21 @@ public final class Goldor extends WitherLord {
 
 	/**
 	 * Kill anyone standing somewhere they have no business being, every {@link #INVALID_LOCATION_POLL_TICKS} ticks
-	 * (ultra-realistic only).  Two cases:
+	 * (ultra-realistic only).  <b>Two independent rules, on two different clocks.</b>
 	 * <ul>
-	 *   <li><b>Ahead of the party</b>: a section that has not been opened yet, i.e. any section past the current
-	 *       one.  This is the one that stops a player skipping a gate.</li>
-	 *   <li><b>Behind Goldor</b>: a section the party has already finished, i.e. any section before the current one.
-	 *       <b>Not a grace period</b> - a straggler who hasn't finished S1-S3 in time is killed for it.</li>
+	 *   <li><b>Ahead of the party</b> - a section past the current one, i.e. one whose gate has not been opened.
+	 *       Judged against {@link #currentSectionIdx}, the party's progress, and unconditional: this is the rule
+	 *       that stops a gate being skipped.</li>
+	 *   <li><b>Overtaken by Goldor</b> - Goldor is <b>physically standing in a section past yours</b>.  Judged
+	 *       against {@link #bossSectionIdx}, his position, and <b>nothing to do with the party's progress</b>:
+	 *       finishing a section early does not put you in danger, and failing to finish one does not protect you.
+	 *       Two worked cases, both from live play: finish S2 while he is still walking S1 or S2 and you live;
+	 *       linger in S1 while he walks into S2 and you die, S1 complete or not.</li>
 	 * </ul>
 	 *
-	 * <p><b>Standing in S4 is never invalid</b>, whichever section is current - it is the one corridor the sweep
-	 * exempts, both ahead of the party and behind it.  Note which end that exemption is on: it is the PLAYER's
-	 * section that has to be S4, not Goldor's.
+	 * <p><b>Standing in S4 is never invalid</b>, whichever section is current and wherever Goldor is - it is the one
+	 * corridor the sweep exempts, under both rules.  Note which end that exemption is on: it is the PLAYER's section
+	 * that has to be S4, not Goldor's.
 	 *
 	 * <p>Being outside every corridor - the core approach, a gateway, the arena floor - is never invalid either.
 	 * The sweep only ever judges somebody who is definitely inside S1, S2 or S3.
@@ -460,6 +479,10 @@ public final class Goldor extends WitherLord {
 	private void startInvalidLocationTicker() {
 		invalidLocationTicker = () -> {
 			if(!phaseActive || dying) return;
+			// Both EVERY tick, not on the poll grid: the bar is a countdown, and the tracker is a state machine over
+			// Goldor's position that must not miss a crossing.  Only the sweep itself is throttled.
+			updateActionBar();
+			trackBossSection();
 			if(displayTick() % INVALID_LOCATION_POLL_TICKS != 0) return;
 			pollInvalidLocations();
 		};
@@ -470,7 +493,28 @@ public final class Goldor extends WitherLord {
 		if(invalidLocationTicker != null) {
 			BossScheduler.removeTicker(invalidLocationTicker);
 			invalidLocationTicker = null;
+			// Wipe the HUD rather than leaving the last "Death Ticks 3t" on screen for its fade-out, the same as
+			// Storm's cancelCycleTask.  A cheat-death cooldown still showing is intended - see Utils.sendActionBar.
+			Utils.broadcastActionBar(net.kyori.adventure.text.Component.empty());
 		}
+	}
+
+	/**
+	 * The Goldor phase's action bar: how long until the next death-tick sweep.
+	 * <p>
+	 * "Death ticks" is the Hypixel name for {@link #pollInvalidLocations} - the periodic check that kills anyone
+	 * standing where they should not be. The phase had no HUD of its own before this, which is worth knowing because
+	 * it was the one stretch where {@code death/Deaths}' action-bar fallback was the only thing drawing cooldowns;
+	 * that fallback now defers to this, since {@code Utils.sendActionBar} stamps the tick.
+	 * <p>
+	 * <b>Ultra-realistic only.</b> Nothing happens on the grid in the other two modes, and a countdown to nothing is
+	 * worse than no countdown. Counts {@code POLL} → 1 on the absolute phase-tick grid the sweep itself gates on, so
+	 * the bar can never drift from the mechanic - the same anchor-not-a-counter rule the other three boss HUDs follow.
+	 */
+	private void updateActionBar() {
+		if(!damage.Difficulty.deathsEnabled()) return;
+		int left = INVALID_LOCATION_POLL_TICKS - Math.floorMod(displayTick(), INVALID_LOCATION_POLL_TICKS);
+		Utils.broadcastActionBar(Utils.msg("<gold>Death Ticks <white>" + left + "t"));
 	}
 
 	private void pollInvalidLocations() {
@@ -485,12 +529,41 @@ public final class Goldor extends WitherLord {
 
 	/** True if being in section {@code idx} is fatal right now.  See {@link #startInvalidLocationTicker}. */
 	private boolean isInvalidSection(int idx) {
-		if(idx == S4_INDEX) return false;   // the one exempt corridor, in either direction
-		return idx != currentSectionIdx;    // ahead (not opened yet) or behind (already finished)
+		if(idx == S4_INDEX) return false;          // the one exempt corridor, under either rule
+		if(idx > currentSectionIdx) return true;   // gate not opened yet
+		return bossSectionIdx > idx;               // Goldor has physically walked past this corridor
 	}
 
 	/** S4's index in {@link #SECTION_BOUNDS}, the corridor {@link #isInvalidSection} exempts. */
 	private static final int S4_INDEX = 3;
+
+	/**
+	 * Which corridor Goldor is considered to be patrolling, as an index into {@link #SECTION_BOUNDS}.
+	 * <p>
+	 * <b>Tracked, not derived.</b> {@link #sectionAt} on his live position is wrong twice over. He <b>spawns at
+	 * (80.5, 40.5), which is inside S4's box</b> - reading that literally would say he is three corridors ahead of a
+	 * party still in S1 and kill all of them on the first sweep. And his patrol is a loop, so raw geometry falls
+	 * back to S1 every lap and would keep un-overtaking stragglers.
+	 * <p>
+	 * So this starts at S1 - Goldor starts with the party - and {@link #trackBossSection} only ever advances it to
+	 * the NEXT corridor in ring order. That ignores the pre-S1 spawn stretch (from S1, the only accepted step is to
+	 * S2) and makes the S4 → S1 wrap a real advance rather than a reset.
+	 */
+	private int bossSectionIdx = 0;
+
+	/**
+	 * Advance {@link #bossSectionIdx} if Goldor has just walked into the next corridor of the ring.
+	 * <p>
+	 * Only single forward steps are accepted, which is what makes it a monotonic lap counter rather than a position
+	 * readout. A sample that lands between corridors reads -1 and is simply ignored; his patrol speed is 0.1/tick
+	 * against ~90-block corridors, so no crossing can be missed at any sane sample rate.
+	 */
+	private void trackBossSection() {
+		if(boss == null || !boss.isValid()) return;
+		int geo = sectionAt(boss.getLocation());
+		if(geo < 0) return;
+		if(geo == (bossSectionIdx + 1) % SECTION_BOUNDS.length) bossSectionIdx = geo;
+	}
 
 	/** Index of the section containing {@code loc}, or -1 for none.  First match in progression order wins. */
 	private static int sectionAt(Location loc) {
@@ -622,6 +695,17 @@ public final class Goldor extends WitherLord {
 			pl.showTitle(Title.title(Utils.msg(""), Utils.msg(msg),
 					Title.Times.times(Duration.ofMillis(0L), Duration.ofMillis(40 * 50L), Duration.ofMillis(0L))));
 		}
+		playActivationSound();
+	}
+
+	/**
+	 * The activation cue: the pling every completed terminal, device and lever makes.
+	 * <p>
+	 * <b>One definition</b>, because Melody's per-row button deliberately makes the same noise
+	 * ({@link GoldorTerminalGui#onClick}) - clearing a row should sound like progress, and "the same as a completion"
+	 * is the spec, not a coincidence.  Move the sound and both move.
+	 */
+	public static void playActivationSound() {
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
 

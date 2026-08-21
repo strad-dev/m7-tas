@@ -212,6 +212,17 @@ public class TAS implements CommandExecutor {
 	 * boss chain so nothing re-spawns, turns practice mode off, and clears the boss entities.
 	 */
 	public static void endPractice(World world) {
+		endPractice(world, true);
+	}
+
+	/**
+	 * @param toSpectator whether to drop every player into spectator at the end, the idle state on m7.  Only
+	 *   {@code death/Deaths}' party wipe passes false: it has already decided where the wiped party goes and what
+	 *   game mode they are in, and flipping them to spectator here just to be undone a line later is a visible
+	 *   flicker.  <b>The network is unaffected either way</b> - it dispatches this as a command (so it always gets
+	 *   the spectator flip) and {@code M7Bridge.resetToSpectators} re-asserts spectator itself right afterwards.
+	 */
+	public static void endPractice(World world, boolean toSpectator) {
 		WitherActions.setPracticeMode(false);
 		// Before the mass spectator flip below, so a pending revival can't fight it, and so the saver durability
 		// bars come off the masks rather than being saved into someone's loadout.
@@ -251,8 +262,10 @@ public class TAS implements CommandExecutor {
 			}
 		}
 		// Put all practicers back into spectator mode.
-		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
-			if(p.getGameMode() != org.bukkit.GameMode.SPECTATOR) p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+		if(toSpectator) {
+			for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+				if(p.getGameMode() != org.bukkit.GameMode.SPECTATOR) p.setGameMode(org.bukkit.GameMode.SPECTATOR);
+			}
 		}
 	}
 }

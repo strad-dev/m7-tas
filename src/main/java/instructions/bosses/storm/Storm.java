@@ -255,6 +255,9 @@ public final class Storm extends WitherLord {
 	 * overlaps has to belong to a pillar footprint and have pillar material somewhere above the player's head.  A
 	 * player half out from under an edge is struck, which is what makes the pillar footprint a real place to stand
 	 * rather than a rough radius.
+	 * <p>
+	 * <b>Only the three ACTIVE pillars shelter anyone.</b>  Red has no pad and never oscillates, so it is not an
+	 * answer to the volley - see {@link #inShelteringPillarColumn}.
 	 */
 	private void strikeUnsheltered() {
 		if(!damage.Difficulty.deathsEnabled()) return;
@@ -278,7 +281,7 @@ public final class Storm extends WitherLord {
 		int aboveHead = (int) Math.floor(box.getMaxY()) + 1;
 		for(int x = minX; x <= maxX; x++) {
 			for(int z = minZ; z <= maxZ; z++) {
-				if(!inAnyPillarColumn(x, z)) return false;
+				if(!inShelteringPillarColumn(x, z)) return false;
 				if(!pillarMaterialAbove(x, z, aboveHead)) return false;
 			}
 		}
@@ -330,9 +333,26 @@ public final class Storm extends WitherLord {
 		return m == Material.DIORITE || m == Material.POLISHED_DIORITE;
 	}
 
+	/**
+	 * @return true if block column (x, z) is inside a pillar footprint that can actually SHELTER a player from the
+	 * lightning: the three {@link PadAndPillar#ACTIVE} ones only.
+	 * <p>
+	 * <b>Red does not count.</b>  It has no pad and never oscillates - it is in {@code ALL} for display alone - so
+	 * hiding under it is not a real answer to the volley, however solid its diorite looks.  Deliberately a different
+	 * question from {@link #inAnyPillarColumn}, which the crush uses: standing under Red saves nobody, but being
+	 * INSIDE its blocks is still being inside diorite.
+	 */
+	private static boolean inShelteringPillarColumn(int x, int z) {
+		return inPillarColumn(x, z, PadAndPillar.ACTIVE);
+	}
+
 	/** @return true if block column (x, z) is inside ANY pillar footprint, the inert Red one included. */
 	private static boolean inAnyPillarColumn(int x, int z) {
-		for(PadAndPillar p : PadAndPillar.ALL) {
+		return inPillarColumn(x, z, PadAndPillar.ALL);
+	}
+
+	private static boolean inPillarColumn(int x, int z, java.util.List<PadAndPillar> pillars) {
+		for(PadAndPillar p : pillars) {
 			if(x >= p.pillarX1() && x <= p.pillarX2() && z >= p.pillarZ1() && z <= p.pillarZ2()) return true;
 		}
 		return false;
