@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
+import plugin.BossScheduler;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -125,6 +126,7 @@ public final class Goldor extends WitherLord {
 		patrolTask = null;
 		if(coreApproachTask != null && !coreApproachTask.isCancelled()) coreApproachTask.cancel();
 		coreApproachTask = null;
+		cancelInvalidLocationTicker();
 		if(coreBarrierActive) restoreCoreOriginalBlocks();
 		coreSnapshot.clear();
 		coreBarrierActive = false;
@@ -177,6 +179,7 @@ public final class Goldor extends WitherLord {
 		snapshotCoreOriginalBlocks();
 		protectAllItemFrames();
 		startPatrolTask();
+		startInvalidLocationTicker();
 	}
 
 	private GoldorSection buildS1() {
@@ -392,6 +395,113 @@ public final class Goldor extends WitherLord {
 		Utils.broadcastPacket(pkt);
 	}
 
+
+	// ---------- Ultra-realistic: the invalid-location sweep ----------
+
+	/**
+	 * Each section's floor footprint as {@code {xMin, xMax, zMin, zMax}}, inclusive, in progression order S1..S4.
+	 * The four corridors ring the arena: S1 runs north, S2 west, S3 south, S4 east back to S1.
+	 * <p>
+	 * <b>Unbounded in Y on purpose.</b> A corridor is the only thing in the arena at its X/Z, so being anywhere in
+	 * one of these columns is being in that section - there is no height at which it stops counting.
+	 * <p>
+	 * <b>Measured calibration points</b>, each an in-game pair of "this block is outside / the next one is inside".
+	 * They pin four of the eight edges exactly, and every one of them agrees with the table:
+	 * <ul>
+	 *   <li>S2 starts at Z 122 (Z 121 is not S2)</li>
+	 *   <li>S2 ends at Z 145 (Z 146 is not S2)</li>
+	 *   <li>S3 ends at X 17 (X 18 is not S3 - it is the S2 side of their shared gate)</li>
+	 *   <li>S4 ends at Z 49 (Z 50 is not S4)</li>
+	 * </ul>
+	 * Two consequences of the geometry, inherited from that data rather than chosen here:
+	 * <ul>
+	 *   <li><b>S4 and S1 share the block line X 89.</b>  {@link #sectionAt} resolves overlaps in progression order,
+	 *       so that line reads as S1 (the section it is the START of), not S4's far end.  Moot in practice, since
+	 *       S4 is exempt either way.</li>
+	 *   <li><b>Z 50 belongs to no section</b>, the one-block gap between S3's near edge (Z 51) and S4's far edge
+	 *       (Z 49).  It sits inside S3's gate box, so it is the doorway between them, and standing in a doorway is
+	 *       deliberately never invalid.</li>
+	 * </ul>
+	 * The corridor widths (23 / 24 / 21 / 21 blocks) and lengths (93 / 94 / 95 / 93) are not uniform.  That is the
+	 * data as given, not an error here.
+	 */
+	private static final int[][] SECTION_BOUNDS = {
+			{89, 111, 29, 121},   // S1
+			{18, 111, 122, 145},  // S2
+			{-3, 17, 51, 145},    // S3
+			{-3, 89, 29, 49},     // S4
+	};
+
+	/** How often the sweep runs.  A player has this long to get out of a section they should not be in. */
+	private static final int INVALID_LOCATION_POLL_TICKS = 60;
+
+	private Runnable invalidLocationTicker;
+
+	/**
+	 * Kill anyone standing somewhere they have no business being, every {@link #INVALID_LOCATION_POLL_TICKS} ticks
+	 * (ultra-realistic only).  Two cases:
+	 * <ul>
+	 *   <li><b>Ahead of the party</b>: a section that has not been opened yet, i.e. any section past the current
+	 *       one.  This is the one that stops a player skipping a gate.</li>
+	 *   <li><b>Behind Goldor</b>: a section the party has already finished, i.e. any section before the current one.
+	 *       <b>Not a grace period</b> - a straggler who hasn't finished S1-S3 in time is killed for it.</li>
+	 * </ul>
+	 *
+	 * <p><b>Standing in S4 is never invalid</b>, whichever section is current - it is the one corridor the sweep
+	 * exempts, both ahead of the party and behind it.  Note which end that exemption is on: it is the PLAYER's
+	 * section that has to be S4, not Goldor's.
+	 *
+	 * <p>Being outside every corridor - the core approach, a gateway, the arena floor - is never invalid either.
+	 * The sweep only ever judges somebody who is definitely inside S1, S2 or S3.
+	 *
+	 * <p>A poll is 60 ticks and {@code CheatDeath}'s shortest immunity is 60, so a proc on one sweep has expired by
+	 * the next: a player who stays put is saved once and then dies, which is the intent.
+	 */
+	private void startInvalidLocationTicker() {
+		invalidLocationTicker = () -> {
+			if(!phaseActive || dying) return;
+			if(displayTick() % INVALID_LOCATION_POLL_TICKS != 0) return;
+			pollInvalidLocations();
+		};
+		BossScheduler.addTicker(invalidLocationTicker);
+	}
+
+	private void cancelInvalidLocationTicker() {
+		if(invalidLocationTicker != null) {
+			BossScheduler.removeTicker(invalidLocationTicker);
+			invalidLocationTicker = null;
+		}
+	}
+
+	private void pollInvalidLocations() {
+		if(!damage.Difficulty.deathsEnabled()) return;
+		for(Player p : world.getPlayers()) {
+			int section = sectionAt(p.getLocation());
+			if(section < 0) continue; // not in a corridor at all, so nothing to judge
+			if(!isInvalidSection(section)) continue;
+			death.Deaths.kill(p, "Goldor");
+		}
+	}
+
+	/** True if being in section {@code idx} is fatal right now.  See {@link #startInvalidLocationTicker}. */
+	private boolean isInvalidSection(int idx) {
+		if(idx == S4_INDEX) return false;   // the one exempt corridor, in either direction
+		return idx != currentSectionIdx;    // ahead (not opened yet) or behind (already finished)
+	}
+
+	/** S4's index in {@link #SECTION_BOUNDS}, the corridor {@link #isInvalidSection} exempts. */
+	private static final int S4_INDEX = 3;
+
+	/** Index of the section containing {@code loc}, or -1 for none.  First match in progression order wins. */
+	private static int sectionAt(Location loc) {
+		int x = loc.getBlockX(), z = loc.getBlockZ();
+		for(int i = 0; i < SECTION_BOUNDS.length; i++) {
+			int[] b = SECTION_BOUNDS[i];
+			if(x >= b[0] && x <= b[1] && z >= b[2] && z <= b[3]) return i;
+		}
+		return -1;
+	}
+
 	// ---------- Activation API ----------
 
 	public GoldorSection getSection(int idx) {
@@ -409,23 +519,6 @@ public final class Goldor extends WitherLord {
 
 	public boolean isPhaseInactive() {
 		return !phaseActive;
-	}
-
-	/** Force-end any lingering Goldor phase immediately. Called when a new run is triggered so a previous
-	 *  run's still-active phase (phaseActive=true with its S4 device already marked activated, since the
-	 *  fight never reached a clean end) doesn't reject this run's pre-fired sharpshooter arrows as
-	 *  "device already activated".  Mirrors the cleanup {@link #start} does, but runs now instead of waiting
-	 *  for the new phase to spin up, so the gap between trigger and new start() is a clean, inactive phase. */
-	public void forceEndPhase() {
-		if(boss != null) {
-			boss.remove();
-			boss = null;
-		}
-		if(tickerTask != null && !tickerTask.isCancelled()) {
-			tickerTask.cancel();
-			tickerTask = null;
-		}
-		resetState();
 	}
 
 	/** Called from GoldorListener when a terminal/device/lever is activated. */

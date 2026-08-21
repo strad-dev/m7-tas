@@ -10,8 +10,10 @@ import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.BoundingBox;
 import plugin.BossScheduler;
 import plugin.FakePlayerInventory;
 import plugin.Utils;
@@ -75,7 +77,9 @@ public final class Maxor extends WitherLord {
 	// damage until the next stun.  That is what stops same-tick arrows landing AFTER the cap-enrage from
 	// over-DPSing: enrage flips inStun=false mid-tick, which would re-open the uncapped path for the rest of the tick.
 	private boolean stunCapReached;
-	private final List<Runnable> pendingPlateChecks = new ArrayList<>();
+	// Polls the two plates' powered state (see plateTick).  A ticker, not an event, because the block's own
+	// powered flag is the whole trigger and it is a level, not an edge.
+	private Runnable plateTicker;
 
 	// Action-bar HUD (see updateActionBar).  Its own boss ticker rather than a job on the laser scan's, because two
 	// of the three segments outlive that scan: it's removed the moment the stun triggers.
@@ -134,6 +138,7 @@ public final class Maxor extends WitherLord {
 		cancelLaserScan();
 		cancelStunEnrageTask();
 		cancelBarTicker();
+		cancelPlateTicker();
 		CustomBossBar.removeStunIndicator();
 		inStun = false;
 		stunDamageDealt = 0;
@@ -142,20 +147,20 @@ public final class Maxor extends WitherLord {
 		stunEndTick = 0;
 		laserImmuneUntilTick = 0;
 		platesActive = false;
-		pendingPlateChecks.clear();
+		// The laser indicator is set red by beginLaserCharge and only ever set back inside triggerStun, so a run that
+		// ended between the two left it red.  resetState runs on teardown and at fight start, and black is the
+		// idle colour in both cases (serverSetup:289 sets the same block).
+		Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
 		// EnderCrystal handles cleared by resetCrystals() inside onStart.
 	}
 
 	@Override
 	protected void onStart() {
 		startBarTicker();
+		startPlateTicker();
 
-		Utils.scheduleTask(() -> {
-			platesActive = true;
-			List<Runnable> snapshot = new ArrayList<>(pendingPlateChecks);
-			pendingPlateChecks.clear();
-			for(Runnable r : snapshot) r.run();
-		}, PLATE_GATE_TICKS);
+		// No queued rechecks to drain: the poll picks up an already-pressed plate on the very next tick.
+		Utils.scheduleTask(() -> platesActive = true, PLATE_GATE_TICKS);
 
 		resetCrystals();
 
@@ -245,58 +250,53 @@ public final class Maxor extends WitherLord {
 
 		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<green> picked up an <aqua>Energy Crystal<green>!"));
 		Utils.timer(formatTick(displayTick()));
-
-		// If the player is already standing on a plate, place immediately,
-		// no PHYSICAL interact fires until they re-step on the plate.
-		Location feet = p.getLocation();
-		int fx = feet.getBlockX(), fy = feet.getBlockY(), fz = feet.getBlockZ();
-		if(fy == 224 && fz == 41 && (fx == 52 || fx == 94)) {
-			onPlateStep(p, feet);
-		}
 	}
 
 	/**
-	 * Plate-step entry point.  If plates are active, place immediately.
-	 * Otherwise schedule a recheck for when the gate opens: if the player is still
-	 * standing on the same plate at that moment and still holds a crystal, place then.
+	 * The whole plate mechanic, polled once a tick.
+	 * <br>
+	 * The trigger is the plate block's own {@code powered} flag - the real
+	 * {@code minecraft:stone_pressure_plate} at {@code (x, 224, 41)} deciding it is being stood on - and nothing
+	 * else.  Vanilla owns the hitbox rule, the sensitivity rule and the 20-tick release delay, so we never
+	 * reimplement any of them and never care how the plate came to be pressed.
+	 * <br>
+	 * Polling the flag rather than listening for the press is what makes that possible: {@code Action.PHYSICAL}
+	 * fires only on the unpowered -> powered EDGE, so a player standing on a plate before they hold a crystal, or
+	 * before {@link #PLATE_GATE_TICKS} opens the gate, never produced a second one.  A level has no such holes and
+	 * needs no deferred rechecks.
 	 */
-	public void onPlateStep(Player p, Location plate) {
-		if(platesActive) {
-			placeAtPlate(p, plate);
-			return;
-		}
-		// Gate not open yet, so queue a recheck.  The gate-open task drains and runs these.
-		final int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
-		pendingPlateChecks.add(() -> {
-			Location feet = p.getLocation();
-			if(feet.getBlockX() == px && feet.getBlockY() == py && feet.getBlockZ() == pz) {
-				placeAtPlate(p, plate);
-			}
-		});
+	private void plateTick() {
+		if(!platesActive) return;
+		if(plateLeftCrystal == null) tryPlate(PLATE_LEFT_X);
+		if(plateRightCrystal == null) tryPlate(PLATE_RIGHT_X);
 	}
 
-	public void placeAtPlate(Player p, Location plate) {
-		// Re-checked here as well as at pickUp, because onPlateStep can DEFER this until the gate opens: the same
-		// "re-check all state on the deferred path" rule the other mechanics follow.  Also covers a crystal carried
-		// into spectator rather than picked up there.
-		if(Utils.isSpectator(p)) return;
-		ItemStack slot8 = p.getInventory().getItem(8);
-		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(CustomItems.getID(slot8))) return;
-
+	/** Place a crystal on the plate at {@code plateX} if that plate is currently pressed down. */
+	private void tryPlate(int plateX) {
 		if(world == null) world = Bukkit.getWorlds().getFirst();
-		// Pressure-plate placement is disabled until 160 ticks into the fight.
-		if(!platesActive) return;
-		int px = plate.getBlockX(), py = plate.getBlockY(), pz = plate.getBlockZ();
+		if(!(world.getBlockAt(plateX, PLATE_Y, PLATE_Z).getBlockData() instanceof Powerable plate)) return;
+		if(!plate.isPowered()) return;
 
-		if(px == 94 && py == 224 && pz == 41) {
-			if(plateLeftCrystal != null) return;
-			plateLeftCrystal = spawnEnergyCrystal(new Location(world, 94.5, 224.48, 41.5));
-		} else if(px == 52 && py == 224 && pz == 41) {
-			if(plateRightCrystal != null) return;
-			plateRightCrystal = spawnEnergyCrystal(new Location(world, 52.5, 224.48, 41.5));
-		} else {
-			return;
+		// The flag says the plate is down, not who put it there, and the crystal has to leave somebody's inventory -
+		// so ask the world who is inside the plate's block.  A lookup, not a second gate: a pressed plate with no
+		// crystal holder standing in it just places nothing this tick, and the next tick asks again.
+		BoundingBox column = new BoundingBox(plateX, PLATE_Y, PLATE_Z, plateX + 1, PLATE_Y + 1, PLATE_Z + 1);
+		for(Entity e : world.getNearbyEntities(column)) {
+			if(e instanceof Player p && placeAtPlate(p, plateX)) return;
 		}
+	}
+
+	/** @return true if {@code p}'s crystal was consumed and placed. */
+	private boolean placeAtPlate(Player p, int plateX) {
+		if(Utils.isSpectator(p)) return false;
+		ItemStack slot8 = p.getInventory().getItem(8);
+		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(CustomItems.getID(slot8))) return false;
+
+		boolean left = plateX == PLATE_LEFT_X;
+		if((left ? plateLeftCrystal : plateRightCrystal) != null) return false;
+		EnderCrystal placedCrystal = spawnEnergyCrystal(new Location(world, plateX + 0.5, PLATE_Y + 0.48, PLATE_Z + 0.5));
+		if(left) plateLeftCrystal = placedCrystal;
+		else plateRightCrystal = placedCrystal;
 
 		ItemStack restore = previousSlot8.remove(p.getUniqueId());
 		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", "", "SKYBLOCK_MENU"));
@@ -315,6 +315,7 @@ public final class Maxor extends WitherLord {
 		if(bothPlaced) {
 			beginLaserCharge();
 		}
+		return true;
 	}
 
 	private void beginLaserCharge() {
@@ -429,6 +430,31 @@ public final class Maxor extends WitherLord {
 			}
 		};
 		BossScheduler.addTicker(barTicker);
+	}
+
+	/** Runs {@link #plateTick} for the whole phase.  Its own boss ticker, like the HUD's - the plates outlive the
+	 *  laser scan, and the crystals respawn mid-fight, so there is no point at which it should stop early. */
+	private void startPlateTicker() {
+		cancelPlateTicker();
+		plateTicker = new Runnable() {
+			@Override
+			public void run() {
+				if(boss == null || boss.isDead()) {
+					BossScheduler.removeTicker(this);
+					plateTicker = null;
+					return;
+				}
+				plateTick();
+			}
+		};
+		BossScheduler.addTicker(plateTicker);
+	}
+
+	private void cancelPlateTicker() {
+		if(plateTicker != null) {
+			BossScheduler.removeTicker(plateTicker);
+			plateTicker = null;
+		}
 	}
 
 	private void cancelBarTicker() {

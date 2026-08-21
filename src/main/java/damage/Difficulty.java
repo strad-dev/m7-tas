@@ -4,7 +4,7 @@ import instructions.clear.ClearManager;
 import plugin.Utils;
 
 /**
- * Classic vs realistic mode (MAP.md §0).
+ * Classic vs realistic vs ultra-realistic mode (MAP.md §0).
  * <p>
  * <b>This is a flag on inputs, not a second damage path.</b> Every one of the five things that differ is already
  * modelled as a target state or a stat input - never as a constant folded into a formula - so classic mode is
@@ -12,8 +12,8 @@ import plugin.Utils;
  * if any of the five gets baked into a hit calculation as a literal, realistic mode becomes a rewrite.
  *
  * <table>
- *   <caption>What the two modes change</caption>
- *   <tr><th>Input</th><th>Classic</th><th>Realistic</th></tr>
+ *   <caption>What the modes change</caption>
+ *   <tr><th>Input</th><th>Classic</th><th>Realistic and ultra-realistic</th></tr>
  *   <tr><td>Last Breath (up to x0.5 defense)</td><td>all 5 stacks</td><td>built by landing arrows</td></tr>
  *   <tr><td>Lethality (x0.91^4 defense)</td><td>all 4 stacks</td><td>built by hitting</td></tr>
  *   <tr><td>Ice Spray debuff (x1.1)</td><td>always</td><td>cast, 8 blocks, 5s</td></tr>
@@ -24,11 +24,17 @@ import plugin.Utils;
  * Classic exists so a practising player can concentrate on movement and routing without also maintaining four
  * debuffs and a blessing count.  It is the mode the TAS was reasoned about in, and it is the default.
  * <p>
- * <b>Times from the two modes are not comparable</b>, so anything that records a run has to carry the mode with
+ * <b>Ultra-realistic takes realistic's damage inputs unchanged and adds death</b>, the one thing the rest of this
+ * plugin models as impossible: see {@code death/Deaths}.  It deliberately shares every lookup below, so nothing in
+ * {@code damage/} needs to know a third mode exists - {@link #deathsEnabled()} is the whole difference, and it is
+ * only read outside this package.  Ask "are the inputs live?" with {@link #liveInputs()}, never with
+ * {@code == REALISTIC}: that comparison silently drops ultra-realistic back to the classic tables.
+ * <p>
+ * <b>Times from the three modes are not comparable</b>, so anything that records a run has to carry the mode with
  * it - see {@code plugin/RunResult} and the network plugin's leaderboard key.
  */
 public enum Difficulty {
-	CLASSIC, REALISTIC;
+	CLASSIC, REALISTIC, ULTRA_REALISTIC;
 
 	// Maxed blessing levels, i.e. the classic table (§0).  These are TOTAL levels, the sum over every blessing of
 	// that type the party collected, which is what the formulas below read.
@@ -64,20 +70,30 @@ public enum Difficulty {
 		current = d;
 	}
 
-	/** Flip the mode and return the new one. */
+	/** Step to the next mode in declaration order, wrapping, and return it. */
 	public static Difficulty toggle() {
-		current = current == CLASSIC ? REALISTIC : CLASSIC;
+		Difficulty[] all = values();
+		current = all[(current.ordinal() + 1) % all.length];
 		return current;
 	}
 
-	/** Parse "classic" / "realistic" (any case), or null. */
+	/**
+	 * Parse a mode name (any case), or null.  Matches the enum name, so the network's ids go straight through
+	 * ({@code ultra_realistic} = {@code ULTRA_REALISTIC}), plus {@link #ALIASES} for what a person actually types.
+	 */
 	public static Difficulty parse(String s) {
 		if(s == null) return null;
 		for(Difficulty d : values()) if(d.name().equalsIgnoreCase(s)) return d;
-		return null;
+		return ALIASES.get(s.toLowerCase(java.util.Locale.ROOT));
 	}
 
-	/** Lower-case id, for the run payload and the leaderboard key. */
+	/** Spellings a player types by hand.  The canonical form is always {@link #id()}; these only feed {@link #parse}. */
+	private static final java.util.Map<String, Difficulty> ALIASES = java.util.Map.of(
+			"ultrarealistic", ULTRA_REALISTIC,
+			"ultra-realistic", ULTRA_REALISTIC,
+			"ultra", ULTRA_REALISTIC);
+
+	/** Lower-case id, for the run payload and the leaderboard key.  Must keep matching the network's {@code m7.lb.Difficulty} ids. */
 	public String id() {
 		return name().toLowerCase(java.util.Locale.ROOT);
 	}
@@ -85,6 +101,26 @@ public enum Difficulty {
 	/** True while the debuff and defense-reduction lookups should answer "applied" without checking anything. */
 	public static boolean debuffsAssumed() {
 		return current == CLASSIC;
+	}
+
+	/**
+	 * True while the debuff and blessing lookups read live state rather than the maxed tables, i.e. in EITHER
+	 * realistic mode.  <b>Every such test goes through here</b>, never through {@code == REALISTIC}, or
+	 * ultra-realistic silently gets classic's inputs.
+	 */
+	public static boolean liveInputs() {
+		return current != CLASSIC;
+	}
+
+	/**
+	 * True while a player can actually die (ultra-realistic only) - the gate on every instakill in
+	 * {@code death/Deaths}.
+	 * <p>
+	 * Read live at each kill site rather than latched at run start, exactly like the damage lookups: the mode is a
+	 * server-wide global that {@code /m7practice} sets before the run arms, so there is one place it can change.
+	 */
+	public static boolean deathsEnabled() {
+		return current == ULTRA_REALISTIC;
 	}
 
 	/**
@@ -119,7 +155,7 @@ public enum Difficulty {
 	 * is true, and a display showing only one of them misreports every classic run.
 	 */
 	public static int blessingLevel(Utils.BlessingType type) {
-		if(current == REALISTIC && clearPhaseInThisSession()) return ClearManager.collectedLevel(type);
+		if(liveInputs() && clearPhaseInThisSession()) return ClearManager.collectedLevel(type);
 		return switch(type) {
 			case POWER -> MAX_POWER;
 			case TIME -> MAX_TIME;
@@ -136,7 +172,7 @@ public enum Difficulty {
 	 * Published on {@code plugin/BlessingState} so a display can say which of the two it is showing.
 	 */
 	public static boolean blessingsAssumedMax() {
-		return !(current == REALISTIC && clearPhaseInThisSession());
+		return !(liveInputs() && clearPhaseInThisSession());
 	}
 
 	/**

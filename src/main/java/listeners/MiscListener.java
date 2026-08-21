@@ -295,8 +295,13 @@ public class MiscListener implements Listener {
 
 	// Track game-mode changes during a run so the practice scoreboard shows golden names only for players who
 	// stayed in Adventure Mode the whole time.  It's a minor anti-cheat: any change disqualifies the gold name.
+	//
+	// Except the plugin's own flips.  Ultra-realistic death drops a player into spectator and revival puts them
+	// back, and dying is not cheating: death.Deaths announces each of those two changes ahead of time and this
+	// consumes the announcement.  Nothing else is exempt - an /gamemode still costs the gold name.
 	@EventHandler
 	public void onGameModeChange(PlayerGameModeChangeEvent e) {
+		if(death.Deaths.ownsGameModeChange(e.getPlayer().getUniqueId())) return;
 		WitherActions.noteGameModeChange(e.getPlayer().getUniqueId());
 	}
 
@@ -449,17 +454,6 @@ public class MiscListener implements Listener {
 		if(Maxor.INSTANCE.notEnergyCrystal(crystal)) return;
 		e.setCancelled(true);
 		Maxor.INSTANCE.pickUp(p, crystal);
-	}
-
-	@EventHandler
-	public void onEnergyCrystalPlate(PlayerInteractEvent e) {
-		if(e.getAction() != Action.PHYSICAL) return;
-		Block b = e.getClickedBlock();
-		if(b == null) return;
-		int x = b.getX(), y = b.getY(), z = b.getZ();
-		if(y == 224 && z == 41 && (x == 52 || x == 94)) {
-			Maxor.INSTANCE.onPlateStep(e.getPlayer(), b.getLocation());
-		}
 	}
 
 	// Mort and the Wizard are villagers, so block right-clicks and the vanilla trade GUI won't open.

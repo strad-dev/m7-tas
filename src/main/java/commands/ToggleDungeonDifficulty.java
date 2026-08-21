@@ -10,20 +10,22 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /toggledungeondifficulty [classic|realistic]} - flip this server's damage difficulty (MAP.md §0).
+ * {@code /toggledungeondifficulty [classic|realistic|ultra_realistic]} - set this server's damage difficulty
+ * (MAP.md §0).  With no argument it steps to the next mode, wrapping.
  * <p>
  * <b>Classic</b> assumes all four debuffs are permanently applied and blessings are maxed, so a practising player
  * can concentrate on movement and routing.  <b>Realistic</b> makes each of those a live input: the debuffs have to
- * be built and the blessings are whatever the party actually collected.
+ * be built and the blessings are whatever the party actually collected.  <b>Ultra-realistic</b> is realistic plus
+ * death - the storm, Goldor and relic instakills in {@code death/Deaths}, and terminals you have to solve in a GUI.
  * <p>
  * It is a flag on inputs, not a second damage path - see {@link Difficulty}.
  * <p>
- * On the network the party leader sets it instead, with {@code /p settings difficulty <classic|realistic>}, and it
- * rides along with the practice request so everyone in the party inherits it: a mixed-mode party would make the
- * same boss take different damage per player.  This command is the standalone equivalent, so M7 keeps working on
- * its own.
+ * On the network the party leader sets it instead, with
+ * {@code /p settings difficulty <classic|realistic|ultra_realistic>}, and it rides along with the practice request
+ * so everyone in the party inherits it: a mixed-mode party would make the same boss take different damage per
+ * player, and would let half of it die.  This command is the standalone equivalent, so M7 keeps working on its own.
  * <p>
- * <b>Times from the two modes are not comparable</b>, which is why the mode travels on the run payload
+ * <b>Times from the three modes are not comparable</b>, which is why the mode travels on the run payload
  * ({@code plugin/RunResult}) and the network's leaderboards key on it as a third axis.
  */
 public class ToggleDungeonDifficulty implements CommandExecutor {
@@ -34,7 +36,7 @@ public class ToggleDungeonDifficulty implements CommandExecutor {
 		if(args.length >= 1) {
 			next = Difficulty.parse(args[0]);
 			if(next == null) {
-				sender.sendMessage(Utils.msg("<red>Usage: /toggledungeondifficulty [classic|realistic]"));
+				sender.sendMessage(Utils.msg("<red>Usage: /toggledungeondifficulty [classic|realistic|ultra_realistic]"));
 				return true;
 			}
 			Difficulty.set(next);
@@ -43,9 +45,11 @@ public class ToggleDungeonDifficulty implements CommandExecutor {
 		}
 		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><mode>",
 				Placeholder.unparsed("mode", next.id())));
-		Bukkit.broadcast(Utils.msg(next == Difficulty.CLASSIC
-				? "<gray>Debuffs are automatically applied and blessings are always maxed."
-				: "<gray>Debuffs must be applied manually and blessings reflect collected secrets (if clear is part of the practice)."));
+		Bukkit.broadcast(Utils.msg(switch(next) {
+			case CLASSIC -> "<gray>Debuffs are automatically applied and blessings are always maxed.";
+			case REALISTIC -> "<gray>Debuffs must be applied manually and blessings reflect collected secrets (if clear is part of the practice).";
+			case ULTRA_REALISTIC -> "<gray>Realistic, plus <red>you can die<gray> and terminals must be solved by hand.";
+		}));
 		return true;
 	}
 }

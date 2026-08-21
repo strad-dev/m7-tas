@@ -53,19 +53,31 @@ Maxor, Storm, and Necron will aggro onto the player that last hit them.  If they
 
 **Storm**
 
-Lightning will not actually kill you.
+Lightning will not actually kill you, *unless* the run is in **Ultra Realistic** mode.
 
 **Goldor**
 
 - Goldor has no death ticks.
 - Goldor will not chase you around at his maximum speed even if you complete a section early
-- Terminals will automatically complete 1 tick after you click on them
+- Terminals will automatically complete 1 tick after you click on them - *unless* the run is in **Ultra
+  Realistic** mode, where clicking one opens a puzzle you have to solve
 - SS: You need to click the button 15 times total (i1 but very generous timing)
 - i4: You just need to hit each of the 9 spots at least once with arrows while on the pressure plate
 
 **Wither King**
 
-Dragons will always spawn in this order: `purple` `blue` `orange` `red` `green`
+- Dragons will always spawn in this order: `purple` `blue` `orange` `red` `green`
+- Putting a relic in the wrong cauldron sends it back to its statue (and, in Ultra Realistic, kills you)
+
+**Ultra Realistic mode**
+
+Everything Realistic mode does, plus death.  Standing out from under a pillar during Storm's lightning, being
+caught inside a pillar, being in a Goldor section that isn't open yet *or* one the party has already finished
+(checked every 3s - S4 is the one corridor that's always safe), and putting a relic in the wrong cauldron all kill
+you outright.  Goldor's ordinary damage still doesn't.  A Bonzo's Mask or Spirit Mask on your head, or your Phoenix
+pet, saves you once per cooldown and shows the cooldown on its own durability bar and in the action bar.  Die anyway
+and you become a ghost and revive yourself after 5 seconds, where you're standing, with the inventory you died with.
+If everyone is dead, the run ends in failure.
 
 ## For Plugin Developers
 
@@ -169,21 +181,27 @@ nothing about leaderboards or categories.  Deciding what a run *qualifies for* i
 |-------|---------|
 | `section` | what `/m7practice` was invoked with: `all` `clear` `boss` `maxor` `storm` `goldor` `necron` `witherking` |
 | `runId` | unique per run, **identical across every report that run makes** (see the dedupe note below) |
-| `success` | `false` only for a failed run (enraged Storm with no pillars left) |
+| `difficulty` | the mode the run was set under: `classic`, `realistic` or `ultra_realistic`.  **Times from the three are not comparable** |
+| `success` | `false` for a failed run: an enraged Storm with no pillars left, or, in ultra realistic, the whole party dead |
 | `runTicks` | total run length in server ticks |
 | `clearEndTick`, `bloodDoneTick`, `score300Tick`, `fullClearTick` | clear-phase milestones, as overall ticks |
 | `teamScore`, `grade` | final score and its letter grade (`S+`, `S`, `A`, …) |
 | `phaseDurations` | per-boss durations, relative to that boss's own start, measured to the end of that boss's phase (the tick it chains to the next one), not to its killing blow |
 | `splitEnds` | overall tick each section ended: `Clear` `Maxor` `Storm` `Terminals` `Goldor` `Necron` `WitherKing` |
-| `participants` | uuid, name, and `stayedAdventure` for everyone still in the run at completion |
+| `participants` | uuid, name, and `stayedAdventure` for everyone who took part, **disconnected players included** |
 
-Four things to know before you use them:
+Five things to know before you use them:
 
 - **`RunCompleteEvent` fires for failed runs too** (`success == false`).  That's intentional, so a listener
-  holding a session or a slot still gets told to let go.  Check `success` before recording anything.
+  holding a session or a slot still gets told to let go.  A failed run's payload still carries every phase
+  duration and clear milestone the party actually reached, so if you record per-section times you can keep the
+  sections they finished; what it can never be is a whole-run time.
 - **Deduplicate on `runId`.**  A run that hits 300 and then finishes reports its `score300Tick` *twice* - once
   live on `ScoreMilestoneEvent`, once again in the final `RunCompleteEvent`.  Both payloads share the same
   `runId`, so ignore a milestone you've already recorded for that id rather than counting it twice.
+- **`participants` is the run's ROSTER, not a roll call at the finish.**  A player who lags out at 64 seconds is
+  still on it, with the state they left with, so a group size derived from it can't shrink under the survivors.
+  Spectators and mid-run leavers who went to spectator are never on it; someone who joins mid-run is.
 - **`Integer`/`String` fields are `null` when not reached.**  Every clear milestone is `null` on a boss-only
   practice; `witherKing` is `null` for a run that stopped at Necron.  A score of `null` is not a score of 0.
 - All ticks are server ticks (20/s).  "Overall" ticks are relative to the run's t=0; phase durations are
@@ -202,7 +220,7 @@ String json = (String) Class.forName("plugin.BlessingState").getMethod("currentJ
 | Field | Meaning |
 |-------|---------|
 | `runId` | the run these belong to, the same id its `RunResult`s carry |
-| `difficulty` | `classic` or `realistic` |
+| `difficulty` | `classic`, `realistic` or `ultra_realistic` |
 | `runActive` | whether a practice run is live at all - i.e. whether this is current, or a finished run's last word |
 | `clearActive` | whether the clear phase is live right now |
 | `hasClearData` | whether `level`/`count` describe this run at all (see below) |

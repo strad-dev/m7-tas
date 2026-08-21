@@ -215,6 +215,12 @@ public class JoinListener implements Listener {
 	public void onQuit(PlayerQuitEvent ev) {
 		Player p = ev.getPlayer();
 		if (FakePlayerManager.getFakePlayers().containsValue(p)) return;
+		// Bank them on the run roster BEFORE they're gone: this is the last moment a player who lags out mid-run is
+		// still readable, and the run's result has to keep reporting them or the group size shrinks under the
+		// survivors (a duo losing its second player at 64s used to record a 65s solo). No-op outside a run.
+		instructions.bosses.WitherActions.noteInRun(p);
+		// A ghost who logs out can't be revived, so drop the pending revival; the line above already banked them.
+		death.Deaths.onQuit(p);
 		// Drop cached helmet-speed / relic-debuff transition state so a relog re-evaluates cleanly.
 		plugin.HelmetSpeedSync.forget(p.getUniqueId());
 		try {

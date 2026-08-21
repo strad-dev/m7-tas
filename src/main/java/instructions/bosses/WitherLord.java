@@ -79,6 +79,28 @@ public abstract class WitherLord {
 		startTicker();
 	}
 
+	/**
+	 * Force-end this boss's phase immediately: drop the entity and ticker, then {@link #resetState()}.
+	 * <br>
+	 * Exactly the cleanup {@link #start} does up front, but run now instead of waiting for the next
+	 * {@code start()}, so the gap between two runs is a clean, inactive phase.  Two callers need that:
+	 * {@code Server.serverInstructions} (a previous run's still-active phase would reject the new run's
+	 * pre-fired sharpshooter arrows as "device already activated") and {@code TAS.endPractice} (nothing else
+	 * calls {@code resetState}, so an early end used to leave Goldor's gates in the world and every boss's
+	 * flags set).
+	 */
+	public final void forceEndPhase() {
+		if(boss != null) {
+			boss.remove();
+			boss = null;
+		}
+		if(tickerTask != null && !tickerTask.isCancelled()) {
+			tickerTask.cancel();
+			tickerTask = null;
+		}
+		resetState();
+	}
+
 	private void spawn() {
 		boss = (Wither) world.spawnEntity(spawnLocation(), EntityType.WITHER);
 		boss.setAI(false);

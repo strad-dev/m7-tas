@@ -15,6 +15,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
+import plugin.BossScheduler;
 import plugin.FakePlayerManager;
 import plugin.MovementAudit;
 import plugin.Utils;
@@ -179,6 +180,8 @@ public class TAS implements CommandExecutor {
 		listeners.CustomItems.resetAbilityCooldowns();
 		// Reset the per-run crypt-farm guard.
 		listeners.CustomItems.resetCrypts();
+		// Reset ultra-realistic death state: no ghosts and no cheat-death cooldowns carried in from a previous run.
+		death.Deaths.reset();
 
 		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
 		// disarm every player-side handoff + the Watcher so the boss chain spawns each boss WITHOUT starting a
@@ -210,6 +213,9 @@ public class TAS implements CommandExecutor {
 	 */
 	public static void endPractice(World world) {
 		WitherActions.setPracticeMode(false);
+		// Before the mass spectator flip below, so a pending revival can't fight it, and so the saver durability
+		// bars come off the masks rather than being saved into someone's loadout.
+		death.Deaths.reset();
 		instructions.clear.ClearManager.stop(world); // remove secrets/chests, restore hotbar map slot, stop HUD loop
 		Utils.cancelAllScheduled();
 		MovementAudit.cancelAll();
@@ -219,6 +225,19 @@ public class TAS implements CommandExecutor {
 		Goldor.INSTANCE.armPlayerHandoff(null);
 		Necron.INSTANCE.armPlayerHandoff(null);
 		Watcher.INSTANCE.arm(world, false, null);
+		// arm() only sets fields, so the Watcher's raw portal detector would keep scanning every player - including
+		// the spectators we make below - and warp them to Maxor after the run ended.  forceCleanup stops it and
+		// closes the portal.
+		Watcher.forceCleanup();
+		// Drop the boss lane before tearing the bosses down: Utils.cancelAllScheduled above cannot reach it, and its
+		// un-held one-shots (Maxor's crystal respawn, the Wither King's) would otherwise fire into a dead session.
+		BossScheduler.clearAll();
+		// The only thing that calls each boss's resetState.  Without it an early end left Goldor's phase active with
+		// its section gates still blown open, the core entrance an invisible barrier, and every boss's flags set.
+		Maxor.INSTANCE.forceEndPhase();
+		Storm.INSTANCE.forceEndPhase();
+		Goldor.INSTANCE.forceEndPhase();
+		Necron.INSTANCE.forceEndPhase();
 		// Clear the boss entities + energy crystals + Wither King dragons/relics so the dungeon resets.
 		for(org.bukkit.entity.Entity e : world.getEntities()) {
 			if(e instanceof org.bukkit.entity.Wither

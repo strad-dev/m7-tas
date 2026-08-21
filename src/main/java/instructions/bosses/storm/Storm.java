@@ -231,13 +231,111 @@ public final class Storm extends WitherLord {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0F, 1.0F);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 1.0F);
 			spamLightning();
+			strikeUnsheltered();
 		}, 535);
 		Utils.scheduleTask(() -> {
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0F, 1.0F);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 1.0F, 1.0F);
 			spamLightning();
+			strikeUnsheltered();
 		}, 545);
+	}
+
+	// --- Ultra-realistic deaths: the lightning volley, and a pillar closing on a player ---
+
+	/**
+	 * The lightning volley's kill: anyone not fully sheltered under a pillar dies (ultra-realistic only).
+	 * <p>
+	 * Fired at each of the two volleys ({@link #LIGHTNING_TICK} and +10), which is what "during lightning" means -
+	 * they are 10 ticks apart, so one {@code CheatDeath} proc covers both, and that is intended: this is one
+	 * mechanic going off twice, not two separate demands on the party.
+	 * <p>
+	 * <b>Sheltered means the WHOLE hitbox</b>, not the block a player is standing on: every block column the hitbox
+	 * overlaps has to belong to a pillar footprint and have pillar material somewhere above the player's head.  A
+	 * player half out from under an edge is struck, which is what makes the pillar footprint a real place to stand
+	 * rather than a rough radius.
+	 */
+	private void strikeUnsheltered() {
+		if(!damage.Difficulty.deathsEnabled()) return;
+		for(Player p : world.getPlayers()) {
+			// Gate the BOLT on the same answer the kill will give, so nothing is struck for show - but strike before
+			// the kill, not after it: a mask or the Phoenix saving somebody does not mean the bolt missed them.
+			if(!death.Deaths.appliesTo(p)) continue;
+			if(fullySheltered(p)) continue;
+			world.strikeLightning(p.getLocation());
+			death.Deaths.kill(p, "Storm");
+		}
+	}
+
+	/** True if every block column {@code p}'s hitbox occupies is a pillar column with pillar material overhead. */
+	private boolean fullySheltered(Player p) {
+		BoundingBox box = p.getBoundingBox();
+		// The max edge is exclusive in collision, so nudge it inside before flooring or a player stood exactly on a
+		// block line reads as occupying one column too many.
+		int minX = (int) Math.floor(box.getMinX()), maxX = (int) Math.floor(box.getMaxX() - 1e-7);
+		int minZ = (int) Math.floor(box.getMinZ()), maxZ = (int) Math.floor(box.getMaxZ() - 1e-7);
+		int aboveHead = (int) Math.floor(box.getMaxY()) + 1;
+		for(int x = minX; x <= maxX; x++) {
+			for(int z = minZ; z <= maxZ; z++) {
+				if(!inAnyPillarColumn(x, z)) return false;
+				if(!pillarMaterialAbove(x, z, aboveHead)) return false;
+			}
+		}
+		return true;
+	}
+
+	private boolean pillarMaterialAbove(int x, int z, int fromY) {
+		for(int y = fromY; y <= PadAndPillar.PILLAR_ANCHOR_Y; y++) {
+			if(isPillarMaterial(world.getBlockAt(x, y, z).getType())) return true;
+		}
+		return false;
+	}
+
+	/**
+	 * The crush kill: anyone whose hitbox is inside pillar material dies (ultra-realistic only).
+	 * <p>
+	 * Covers both ways in - a descending pillar closing over a player, and a player walking into one that has
+	 * already come down - because it asks the same question Storm's own crush detector asks about the boss, just
+	 * every tick and about players.  Unlike the boss test this uses <b>every</b> pillar footprint, the inert Red one
+	 * included: leftover diorite crushes whether or not the pillar it belongs to still has a job to do.
+	 */
+	private void pollPlayerCrush() {
+		if(!damage.Difficulty.deathsEnabled()) return;
+		for(Player p : world.getPlayers()) {
+			if(!insidePillar(p)) continue;
+			death.Deaths.kill(p, "Storm");
+		}
+	}
+
+	private boolean insidePillar(Player p) {
+		BoundingBox box = p.getBoundingBox();
+		int minX = (int) Math.floor(box.getMinX()), maxX = (int) Math.floor(box.getMaxX() - 1e-7);
+		int minY = (int) Math.floor(box.getMinY()), maxY = (int) Math.floor(box.getMaxY() - 1e-7);
+		int minZ = (int) Math.floor(box.getMinZ()), maxZ = (int) Math.floor(box.getMaxZ() - 1e-7);
+		for(int x = minX; x <= maxX; x++) {
+			for(int y = minY; y <= maxY; y++) {
+				for(int z = minZ; z <= maxZ; z++) {
+					if(!isPillarMaterial(world.getBlockAt(x, y, z).getType())) continue;
+					if(inAnyPillarColumn(x, z)) return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/** What a pillar is made of.  Both diorites, matching {@link #stormInCrushablePillar} and the crush explosion's
+	 *  own filter, so no two places in the phase disagree about which blocks are pillar. */
+	private static boolean isPillarMaterial(Material m) {
+		return m == Material.DIORITE || m == Material.POLISHED_DIORITE;
+	}
+
+	/** @return true if block column (x, z) is inside ANY pillar footprint, the inert Red one included. */
+	private static boolean inAnyPillarColumn(int x, int z) {
+		for(PadAndPillar p : PadAndPillar.ALL) {
+			if(x >= p.pillarX1() && x <= p.pillarX2() && z >= p.pillarZ1() && z <= p.pillarZ2()) return true;
+		}
+		return false;
 	}
 
 	private void initialMovement() {
@@ -270,6 +368,9 @@ public final class Storm extends WitherLord {
 				return;
 			}
 			updateActionBar();
+			// Every tick, not on the 20-grid: a pillar's clone ops land on a 4-tick cadence of their own, and a
+			// player who is inside the diorite is inside it the instant it is placed.
+			pollPlayerCrush();
 			if(displayTick() % PAD_CYCLE_TICKS == 0) pollCycle();
 		};
 		BossScheduler.addTicker(cycleTicker);
@@ -317,7 +418,7 @@ public final class Storm extends WitherLord {
 				: "";
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			p.sendActionBar(Utils.msg(nearestPadColor(p.getLocation()) + pad + stun + armed + moves));
+			Utils.sendActionBar(p, Utils.msg(nearestPadColor(p.getLocation()) + pad + stun + armed + moves));
 		}
 	}
 

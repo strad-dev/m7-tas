@@ -138,6 +138,10 @@ public final class M7tas extends JavaPlugin {
 		SpringBoots.start();
 		LavaJump.start();
 		listeners.OutOfBounds.start();
+		// Ultra-realistic death/revival driver: revival countdowns, the saver durability bars, and the action-bar
+		// cooldown fallback.  Raw and untracked on purpose, so a boss teardown flushing the scheduler can never
+		// strand a ghost in spectator (see death.Deaths.start).
+		death.Deaths.start();
 
 		// Export the item catalog (palette + per-class default kits) to the shared data folder so the network
 		// plugin's lobby loadout editor can load the real M7 items. M7 is the sole writer of this file.
@@ -180,14 +184,26 @@ public final class M7tas extends JavaPlugin {
 		SpringBoots.stop();
 		LavaJump.stop();
 		listeners.OutOfBounds.stop();
+		death.Deaths.stop();
 		BossScheduler.stop();
 
+		// Both flushes, not just the stonk one: the superboom/crypt regen is a raw runTaskLater that the shutdown
+		// outruns, so a disable inside its 100-tick window used to save the world with the hole still in it.
 		CustomItems.flushStonkRestorations();
+		CustomItems.flushBlockRestorations();
 
 		// Stop the clear HUD/map loop (hardMobCleanup below removes the secret entities).
 		if(!org.bukkit.Bukkit.getWorlds().isEmpty()) instructions.clear.ClearManager.stop(org.bukkit.Bukkit.getWorlds().getFirst());
 
 		Goldor.INSTANCE.shutdownRegenerateGates();
+
+		// Neither of these has a restore of its own, so a server stopped mid-boss-chain used to save the world with
+		// the transition walls open and a Storm pillar frozen wherever it happened to be.  serverSetup already does
+		// both on the next run; disable is the other end that was missing them.
+		instructions.bosses.BossTransition.resetAll();
+		if(!org.bukkit.Bukkit.getWorlds().isEmpty()) {
+			instructions.bosses.WitherSpawn.restoreStormPillars(org.bukkit.Bukkit.getWorlds().getFirst());
+		}
 
 		PlayerCollision.cleanup();
 

@@ -34,13 +34,14 @@ public class TabCompletor implements TabCompleter {
 						}
 					}
 				} else if(args.length >= 2) {
-					// /m7practice <section> [--no-teleport] [<delayTicks>]: both flags are order-independent
-					// (see Practice), so suggest whichever hasn't been typed yet.
+					// /m7practice <section> [--no-teleport] [<delayTicks>] [<mode>]: every arg is
+					// order-independent (see Practice), so suggest whichever hasn't been typed yet.
 					String input = args[args.length - 1].toLowerCase();
-					boolean hasNoTeleport = false, hasDelay = false;
+					boolean hasNoTeleport = false, hasDelay = false, hasMode = false;
 					for(int i = 1; i < args.length - 1; i++) {
 						if(args[i].equalsIgnoreCase("--no-teleport") || args[i].equalsIgnoreCase("--noteleport")) hasNoTeleport = true;
 						else if(args[i].matches("\\d+")) hasDelay = true;
+						else if(damage.Difficulty.parse(args[i]) != null) hasMode = true;
 					}
 					if(!hasNoTeleport && "--no-teleport".startsWith(input)) {
 						completions.add("--no-teleport");
@@ -49,6 +50,11 @@ public class TabCompletor implements TabCompleter {
 						// Pre-run "get into position" delay in ticks: default 60 (3s); network warp-in uses 400 (20s).
 						for(String preset : new String[]{"60", "100", "200", "400"}) {
 							if(preset.startsWith(input)) completions.add(preset);
+						}
+					}
+					if(!hasMode) {
+						for(damage.Difficulty d : damage.Difficulty.values()) {
+							if(d.id().startsWith(input)) completions.add(d.id());
 						}
 					}
 				}
@@ -83,9 +89,10 @@ public class TabCompletor implements TabCompleter {
 			}
 
 			case "toggledungeondifficulty" -> {
+				// Read off the enum, never a literal list, so a new mode can't become executable-but-unlistable.
 				if(args.length == 1) {
-					for(String val : new String[]{"classic", "realistic"}) {
-						if(val.startsWith(args[0].toLowerCase())) completions.add(val);
+					for(damage.Difficulty d : damage.Difficulty.values()) {
+						if(d.id().startsWith(args[0].toLowerCase())) completions.add(d.id());
 					}
 				}
 			}

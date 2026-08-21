@@ -5,11 +5,7 @@ import instructions.bosses.WitherLord;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
-import org.bukkit.entity.Villager;
-import org.bukkit.entity.Wither;
+import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import plugin.Utils;
 
@@ -49,7 +45,8 @@ import java.util.Set;
  * every place it tried to be had already been suppressed by hand.
  */
 public final class Damage {
-	private Damage() {}
+	private Damage() {
+	}
 
 	// ===================== §7 damage-level additive sources =====================
 	private static final double SHARPNESS_VII = 50;
@@ -99,7 +96,9 @@ public final class Damage {
 	private static final double ARMORSHRED_DEFENSE = 0.95;
 
 	// ===================== §7 mage beam =====================
-	/** The Mage Staff passive: 30% base plus 0.09% per Intelligence, ADDED to the 30%, not multiplied by it. */
+	/**
+	 * The Mage Staff passive: 30% base plus 0.09% per Intelligence, ADDED to the 30%, not multiplied by it.
+	 */
 	private static final double BEAM_BASE = 0.30;
 	private static final double BEAM_PER_INTELLIGENCE = 0.0009;
 
@@ -113,7 +112,9 @@ public final class Damage {
 		public static final BeamRange BOSS_ARENA = new BeamRange(35, 50);
 		public static final BeamRange WITHER_KING = new BeamRange(70, 100);
 
-		/** The share of full damage a beam does at this distance. */
+		/**
+		 * The share of full damage a beam does at this distance.
+		 */
 		public double falloff(double distance) {
 			if(distance <= cutoff) return 1.0;
 			if(distance >= maxRange) return 0.0;
@@ -133,7 +134,9 @@ public final class Damage {
 
 	// ===================== computing a hit =====================
 
-	/** A melee swing.  The weapon is whatever is in the main hand at the time. */
+	/**
+	 * A melee swing.  The weapon is whatever is in the main hand at the time.
+	 */
 	public static double melee(Player p, LivingEntity target, ItemStack weapon) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.MELEE, def);
@@ -171,7 +174,9 @@ public final class Damage {
 		return statCore(p, DamagePath.MELEE, true, null);
 	}
 
-	/** The TARGET-dependent half of a melee hit, applied when a thrown axe actually connects. */
+	/**
+	 * The TARGET-dependent half of a melee hit, applied when a thrown axe actually connects.
+	 */
 	public static double meleeFinish(Player p, LivingEntity target, ItemStack weapon, double core) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.MELEE, def);
@@ -197,8 +202,7 @@ public final class Damage {
 	 *
 	 * @param blocksTravelled how far the arrow flew, for Snipe IV's +4% per 10 blocks
 	 */
-	public static double bowFinish(Player p, LivingEntity target, ItemDef weapon, double core,
-			double blocksTravelled, boolean headshot) {
+	public static double bowFinish(Player p, LivingEntity target, ItemDef weapon, double core, double blocksTravelled, boolean headshot) {
 		Breakdown b = Breakdown.begin();
 		// Stamped on the arrow at fire time, so - as with a thrown axe - it can only be shown as one figure.
 		if(b != null) b.base("Stat core", core);
@@ -209,8 +213,7 @@ public final class Damage {
 	 * A whole bow shot in one call, for the paths that resolve at hit time anyway (the Terminator's Salvation
 	 * beam, which is not a bow shot and so is never draw-scaled).
 	 */
-	public static double bow(Player p, LivingEntity target, ItemStack weapon, double chargeFraction,
-			double blocksTravelled, boolean headshot) {
+	public static double bow(Player p, LivingEntity target, ItemStack weapon, double chargeFraction, double blocksTravelled, boolean headshot) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.BOW, def);
 		boolean full = chargeFraction >= 1.0;
@@ -248,8 +251,11 @@ public final class Damage {
 		return finish(p, target, DamagePath.ABILITY, def, core, null, b);
 	}
 
-	/** Extra inputs only the bow path has. */
-	private record BowContext(double blocksTravelled, boolean headshot) {}
+	/**
+	 * Extra inputs only the bow path has.
+	 */
+	private record BowContext(double blocksTravelled, boolean headshot) {
+	}
 
 	/**
 	 * The granularity health is actually moved by, in Minecraft health: <b>thousandths of a health point</b>.
@@ -264,7 +270,9 @@ public final class Damage {
 	 */
 	private static final double HP_STEP = 0.001;
 
-	/** Quantise one hit to {@link #HP_STEP}.  Cheap on purpose - this runs on every instance at Terminator rates. */
+	/**
+	 * Quantise one hit to {@link #HP_STEP}.  Cheap on purpose - this runs on every instance at Terminator rates.
+	 */
 	private static double roundHp(double mcDamage) {
 		return Math.round(mcDamage / HP_STEP) * HP_STEP;
 	}
@@ -288,9 +296,10 @@ public final class Damage {
 		return base * strength * critDamage;
 	}
 
-	/** The damage-level stage: one additive factor, then the multiplicative product. */
-	private static double finish(Player p, LivingEntity target, DamagePath path, ItemDef weapon, double core,
-			BowContext bow, Breakdown b) {
+	/**
+	 * The damage-level stage: one additive factor, then the multiplicative product.
+	 */
+	private static double finish(Player p, LivingEntity target, DamagePath path, ItemDef weapon, double core, BowContext bow, Breakdown b) {
 		if(target == null || core <= 0) return 0;
 		double additive = additivePercent(p, target, path, weapon, bow);
 		double multiplicative = multiplicative(p, target, path, weapon);
@@ -312,8 +321,7 @@ public final class Damage {
 	 * enchantments (Execute, Prosecute, First Strike, Triple Strike, Giant Killer, Titan Killer and Sharpness are
 	 * all sword-only), so an Archer's arrows miss Prosecute's +100% and Titan Killer's +80% entirely.
 	 */
-	private static double additivePercent(Player p, LivingEntity target, DamagePath path, ItemDef weapon,
-			BowContext bow) {
+	private static double additivePercent(Player p, LivingEntity target, DamagePath path, ItemDef weapon, BowContext bow) {
 		Set<MobType> types = MobStats.typesOf(target);
 		boolean sword = path.isMelee() || path == DamagePath.ABILITY;
 		double sum = 0;
@@ -380,18 +388,24 @@ public final class Damage {
 		return GIANT_KILLER_VII;
 	}
 
-	/** Titan Killer VII: +20% per 100 of the target's defense, capped at +80%.  Zero against a 0-defense mob. */
+	/**
+	 * Titan Killer VII: +20% per 100 of the target's defense, capped at +80%.  Zero against a 0-defense mob.
+	 */
 	private static double titanKiller(LivingEntity target) {
 		double defense = MobStats.defenseOf(target);
 		return Math.min(TITAN_KILLER_CAP, TITAN_KILLER_PER_100_DEFENSE * defense / 100.0);
 	}
 
-	/** Execute VI: +1.25% per 1% of the target's MISSING health.  Overtakes Prosecute below ~44% health. */
+	/**
+	 * Execute VI: +1.25% per 1% of the target's MISSING health.  Overtakes Prosecute below ~44% health.
+	 */
 	private static double execute(LivingEntity target) {
 		return EXECUTE_VI_PER_PERCENT_MISSING * (100.0 - healthPercent(target));
 	}
 
-	/** Prosecute VI: +1% per 1% of the target's REMAINING health, so +100% at full health. */
+	/**
+	 * Prosecute VI: +1% per 1% of the target's REMAINING health, so +100% at full health.
+	 */
 	private static double prosecute(LivingEntity target) {
 		return PROSECUTE_VI_PER_PERCENT_REMAINING * healthPercent(target);
 	}
@@ -405,7 +419,9 @@ public final class Damage {
 
 	// ===================== multiplicative =====================
 
-	/** The {@code product(Multiplicative_i)} for one hit.  Ordering does not matter. */
+	/**
+	 * The {@code product(Multiplicative_i)} for one hit.  Ordering does not matter.
+	 */
 	private static double multiplicative(Player p, LivingEntity target, DamagePath path, ItemDef def) {
 		double product = BOOK_OF_PROGRESSION;
 
@@ -413,8 +429,7 @@ public final class Damage {
 		// wither-class trash - but NOT the Withered Dragons, which are Arcane + Ender + Airborne.  This is the same
 		// mechanic the code used to write inside out as "-33% against anything that isn't a wither" (1/1.5 = 0.667);
 		// only one of the two survives, and it is this one.
-		if(def != null && "skyblock/combat/scylla".equals(def.loreId())
-				&& MobStats.typesOf(target).contains(MobType.WITHER)) {
+		if(def != null && "skyblock/combat/scylla".equals(def.loreId()) && MobStats.typesOf(target).contains(MobType.WITHER)) {
 			product *= HYPERION_VS_WITHER;
 		}
 		if(def != null && path.isMelee()) product *= def.reforge().meleeMultiplier();   // Fabled x1.15
@@ -430,13 +445,13 @@ public final class Damage {
 		return product;
 	}
 
-	/** The Loving reforge's x1.05, which is abilities-only and comes off whatever armour is worn. */
+	/**
+	 * The Loving reforge's x1.05, which is abilities-only.  <b>Loving is a CHESTPLATE reforge</b>, so the chest slot
+	 * is the only one worth reading - scanning all four pieces would just be four lookups that can never match.
+	 */
 	private static double lovingMultiplier(Player p) {
-		var inv = p.getInventory();
-		for(ItemStack piece : new ItemStack[]{inv.getHelmet(), inv.getChestplate(), inv.getLeggings(), inv.getBoots()}) {
-			ItemDef def = Items.of(piece);
-			if(def != null && def.reforge() == ReforgeId.LOVING) return def.reforge().abilityMultiplier();
-		}
+		ItemDef def = Items.of(p.getInventory().getChestplate());
+		if(def != null && def.reforge() == ReforgeId.LOVING) return def.reforge().abilityMultiplier();
 		return 1.0;
 	}
 
@@ -459,8 +474,7 @@ public final class Damage {
 	 * As above, with {@code buildsLastBreath} false for an arrow that came off a Last Breath but must not stack
 	 * it - the Archer's two bonus arrows.  See {@link Arrows#stamp} for the full rule.
 	 */
-	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemDef weapon,
-			boolean buildsLastBreath) {
+	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemDef weapon, boolean buildsLastBreath) {
 		if(target == null) return;
 		// Lethality is a sword enchantment, so a bow never builds its stacks.
 		if(path.isMelee()) TargetDebuffs.applyLethality(target);
@@ -473,7 +487,9 @@ public final class Damage {
 		}
 	}
 
-	/** As above, for a call site that has the held stack rather than its definition. */
+	/**
+	 * As above, for a call site that has the held stack rather than its definition.
+	 */
 	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemStack weapon) {
 		applyOnHitDebuffs(p, target, path, Items.of(weapon));
 	}
@@ -515,8 +531,7 @@ public final class Damage {
 	 * a double.  Even at exactly 1.0 it is wrong, because "highest in the last minute" would then never decay - each
 	 * derived hit would re-stamp the old maximum with the current tick and hold it alive forever.
 	 */
-	public static double dealDerived(LivingEntity target, double sbDamage, DamageKind kind, Player attacker,
-			DamagePath path) {
+	public static double dealDerived(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path) {
 		return deal(target, sbDamage, kind, attacker, path, true, true, false);
 	}
 
@@ -529,9 +544,10 @@ public final class Damage {
 		return deal(target, sbDamage, kind, attacker, DamagePath.MELEE, false, false, false);
 	}
 
-	/** @return the reported hit (SkyBlock scale, after defense and resistance, before any boss clamp), 0 if nothing landed. */
-	private static double deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path,
-			boolean primary, boolean aggro, boolean feedsHistory) {
+	/**
+	 * @return the reported hit (SkyBlock scale, after defense and resistance, before any boss clamp), 0 if nothing landed.
+	 */
+	private static double deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path, boolean primary, boolean aggro, boolean feedsHistory) {
 		if(target == null || sbDamage <= 0) return 0;
 
 		// Targets that must never be touched at all, checked before anything else.
@@ -615,8 +631,7 @@ public final class Damage {
 			if(target.getScoreboardTags().contains("WatcherMob")) {
 				instructions.bosses.Watcher.INSTANCE.registerMobKill(target);
 			}
-			if(target instanceof org.bukkit.entity.EnderDragon dragon
-					&& dragon.getScoreboardTags().contains("WitherKingDragon")) {
+			if(target instanceof org.bukkit.entity.EnderDragon dragon && dragon.getScoreboardTags().contains("WitherKingDragon")) {
 				instructions.bosses.witherking.WitherKing.handleDragonKilled(dragon);
 			}
 			if(attacker != null) CombatState.noteKill(attacker);
@@ -754,8 +769,7 @@ public final class Damage {
 	 * Aspect and Venomous windows - prints a full breakdown for damage nobody can see being dealt to something already
 	 * dead, which at Terminator/beam rates is most of the log.
 	 */
-	private static void verbose(Player attacker, LivingEntity target, double sbDamage, double mcDamage, double preClamp,
-			double defense, double resistance, DamageKind kind, boolean showsNumber) {
+	private static void verbose(Player attacker, LivingEntity target, double sbDamage, double mcDamage, double preClamp, double defense, double resistance, DamageKind kind, boolean showsNumber) {
 		// Consumed unconditionally, whatever the verbose level and even for a hit we are about to print nothing for:
 		// leaving it parked would let the NEXT hit that runs no formula of its own - a proc, a Cleave sweep - inherit
 		// these rows.
@@ -775,18 +789,14 @@ public final class Damage {
 		if(!Utils.isSuperVerbose()) {
 			// `on`: the total, the two target-side reductions AS ONE factor, and the result.  Three lines, plus a
 			// fourth only when a clamp actually took a bite - otherwise the boss's own mechanics are invisible here.
-			Utils.debug(Utils.DebugType.BOSS, "Total Damage: " + integer(sbDamage)
-					+ "\n  Defense & Boss Multiplier: " + factorText(defenseFactor * resistance)
-					+ "\n  Final Damage: " + integer(finalDamage)
-					+ (clamped ? "\n  Dealt (boss clamp): " + integer(dealt) : ""));
+			Utils.debug(Utils.DebugType.BOSS, "Total Damage: " + integer(sbDamage) + "\n  Defense & Boss Multiplier: " + factorText(defenseFactor * resistance) + "\n  Final Damage: " + integer(finalDamage) + (clamped ? "\n  Dealt (boss clamp): " + integer(dealt) : ""));
 			return;
 		}
 
 		// `super`: every term. The player-side rows come from the Breakdown, so a path that genuinely has no Strength
 		// or Crit Damage term (an ability) simply has no such row - rather than a misleading x1.
 		StringBuilder sb = new StringBuilder();
-		sb.append(kind).append(' ').append(attacker == null ? "?" : Utils.getRealName(attacker))
-				.append(" -> ").append(target.getName());
+		sb.append(kind).append(' ').append(attacker == null ? "?" : Utils.getRealName(attacker)).append(" -> ").append(target.getName());
 		if(b != null && Math.abs(b.total - sbDamage) <= 1e-6) {
 			sb.append("\n  ").append(b.baseLabel).append(": +").append(trimZeros(Utils.roundCommas(b.baseValue, 2)));
 			for(String row : b.rows) sb.append("\n  ").append(row);
@@ -815,12 +825,16 @@ public final class Damage {
 		return trimZeros(Utils.roundCommas(raw, 2)) + " -> " + shown;
 	}
 
-	/** One multiplier as it reads in the breakdown: {@code x100}, {@code x1.05}, {@code x0.0769}. */
+	/**
+	 * One multiplier as it reads in the breakdown: {@code x100}, {@code x1.05}, {@code x0.0769}.
+	 */
 	private static String factorText(double value) {
 		return "x" + trimZeros(Utils.roundCommas(value, 4));
 	}
 
-	/** Drop a trailing {@code .0000} / {@code .10} so a round factor reads as {@code x100}, not {@code x100.0000}. */
+	/**
+	 * Drop a trailing {@code .0000} / {@code .10} so a round factor reads as {@code x100}, not {@code x100.0000}.
+	 */
 	private static String trimZeros(String s) {
 		if(s.indexOf('.') < 0) return s;
 		int end = s.length();

@@ -313,6 +313,9 @@ public class Watcher {
 			@Override
 			public void run() {
 				for(Player p : world.getPlayers()) {
+					// A spectator flying through must not warp the party to Maxor: they have no collision and no
+					// business triggering the handoff, and after a run ends everyone IS a spectator.
+					if(Utils.isSpectator(p)) continue;
 					if(inPortal(p.getLocation())) {
 						enterPortal(p);
 						cancel();
@@ -321,6 +324,13 @@ public class Watcher {
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
+	}
+
+	/** Clear the portal blocks.  Paired with the fill in {@link #openPortal}; called from {@link #enterPortal}
+	 *  (normal exit) and {@link #cleanup} (teardown). */
+	private void closePortal() {
+		if(world == null) return;
+		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
 	}
 
 	/** Portal block region: x [-122,-120], y [69,72], z = -43. */
@@ -367,7 +377,7 @@ public class Watcher {
 			Utils.scheduleTask(() -> Maxor.maxorInstructions(world, doContinue), 1);
 		}
 
-		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
+		closePortal();
 		active = false;
 	}
 
@@ -662,6 +672,10 @@ public class Watcher {
 			portalDetectTask.cancel();
 		}
 		portalDetectTask = null;
+		// Close the portal too.  enterPortal is the only other place that clears these blocks, so a run that ended
+		// after openPortal but before anyone walked in used to leave them in the world permanently: no serverSetup
+		// fill covers this region, and the next run's openPortal just re-fills what is already there.
+		closePortal();
 		active = false;
 		mobsKilled = 0;
 		mobCount = 0;

@@ -156,31 +156,80 @@ public class WitherKing {
 
 	/** Spawn the five relics as an ItemDisplay (0.66666³ wool) + an Interaction (1 × 1.1875 × 1 hitbox) per statue. */
 	private static void spawnRelics() {
-		for(Relic relic : Relic.values()) {
-			// Floating wool sits at displayY (7.25, or 9.25 for Purple); the Interaction hitbox stays on the statue.
-			ItemDisplay display = world.spawn(new Location(world, relic.x, relic.displayY(), relic.z), ItemDisplay.class, d -> {
-				d.setItemStack(new ItemStack(relic.wool));
-				d.setTransformation(rotationTransform(0f)); // 0.66666³ cube; the rotation task animates the spin (per-tick snap)
-				d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
-				d.setPersistent(true);
-				d.addScoreboardTag("TASWitherKingRelic");
-				d.addScoreboardTag("TASNoName");
-			});
-
-			Interaction interaction = world.spawn(new Location(world, relic.x, relic.y, relic.z), Interaction.class, i -> {
-				i.setInteractionWidth(1.0f);
-				i.setInteractionHeight(1.1875f);
-				i.setResponsive(true);
-				i.setPersistent(true);
-				i.addScoreboardTag("TASWitherKingRelic");
-				i.addScoreboardTag("TASNoName");
-			});
-
-			statueDisplays.put(relic, display);
-			statueInteractions.put(relic, interaction);
-			interactionRelic.put(interaction.getUniqueId(), relic);
-		}
+		for(Relic relic : Relic.values()) spawnRelicEntities(relic);
 		startRotation();
+	}
+
+	/**
+	 * Put one relic back on its statue: the floating wool and the hitbox that picks it up.
+	 * <p>
+	 * Shared by the initial spawn and by {@link #returnRelicToStatue}, so a relic that comes home after a
+	 * wrong-cauldron mistake is identical to one that was never taken - same position, same hitbox, same spin.
+	 * Idempotent: a relic that is already on its statue is left alone rather than given a second copy.
+	 */
+	private static void spawnRelicEntities(Relic relic) {
+		ItemDisplay existing = statueDisplays.get(relic);
+		if(existing != null && existing.isValid()) return;
+
+		// Floating wool sits at displayY (7.25, or 9.25 for Purple); the Interaction hitbox stays on the statue.
+		ItemDisplay display = world.spawn(new Location(world, relic.x, relic.displayY(), relic.z), ItemDisplay.class, d -> {
+			d.setItemStack(new ItemStack(relic.wool));
+			// Start at the CURRENT angle, not 0: the rotation task is already running for a mid-phase respawn, and
+			// a relic snapping back to zero would be the one thing out of step with the other four.
+			d.setTransformation(rotationTransform(rotationAngle));
+			d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
+			d.setPersistent(true);
+			d.addScoreboardTag("TASWitherKingRelic");
+			d.addScoreboardTag("TASNoName");
+		});
+
+		Interaction interaction = world.spawn(new Location(world, relic.x, relic.y, relic.z), Interaction.class, i -> {
+			i.setInteractionWidth(1.0f);
+			i.setInteractionHeight(1.1875f);
+			i.setResponsive(true);
+			i.setPersistent(true);
+			i.addScoreboardTag("TASWitherKingRelic");
+			i.addScoreboardTag("TASNoName");
+		});
+
+		statueDisplays.put(relic, display);
+		statueInteractions.put(relic, interaction);
+		interactionRelic.put(interaction.getUniqueId(), relic);
+	}
+
+	/**
+	 * Take a relic out of {@code p}'s hand and put it back on its own statue - the wrong-cauldron undo.
+	 * <p>
+	 * <b>The relic must never just vanish.</b> The summon needs all five, so a relic lost to a mistake would strand
+	 * the phase; returning it to the statue is the only outcome that leaves the run finishable. It is also why this
+	 * has to run <b>before</b> the death that follows it in ultra-realistic: {@code death/Deaths} snapshots the
+	 * inventory for the revival, so a relic still in hand at that moment would be handed straight back on revival
+	 * while the statue held a second copy of it.
+	 * <p>
+	 * <b>A relic that has been successfully placed is never returned.</b> The caller only reaches this on a WRONG
+	 * cauldron, so the two outcomes are already exclusive branches - but the rule is enforced here rather than left
+	 * to that structure, because getting it wrong un-places a relic the party has already banked. The test is "is
+	 * this relic still in that player's hand": a placed relic isn't, and neither is one somebody else is carrying.
+	 * That also makes a repeated interact event a no-op, since the first call empties the hand.
+	 * <p>
+	 * Spectator-gated at the chokepoint, the same as {@link #pickUpRelic} and {@link #placeRelic}: somebody who is
+	 * only watching must not be able to move a relic around the arena.
+	 */
+	public static void returnRelicToStatue(Player p, String color) {
+		if(Utils.isSpectator(p)) return;
+		Relic relic = Relic.valueOf(color);
+		if(placedRelics.contains(relic)) return;                 // already banked on its altar
+		if(!relic.name().equals(relicColorOfItem(p.getInventory().getItem(8)))) return; // not in this player's hand
+
+		// Clear the relic out of hand (back to the SkyBlock-menu nether star), exactly as placeRelic does.
+		p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(
+				Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "", "SKYBLOCK_MENU"));
+		instructions.Actions.setHotbarSlot(p, 8);
+		spawnRelicEntities(relic);
+
+		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<red> put the " + relic.mm + relic.label
+				+ " Relic<red> in the wrong cauldron!  <gray>It has returned to its statue."));
+		Utils.playGlobalSound(Sound.BLOCK_ANVIL_LAND, 1.0f, 0.6f);
 	}
 
 	/** A 0.66666³-scale transform rotated {@code angle} radians about the Y axis.  Translation is zero, so it spins in place. */

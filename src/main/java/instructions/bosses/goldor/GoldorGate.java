@@ -18,6 +18,9 @@ import java.util.Map;
  * See plan §8 for state transitions.
  */
 public final class GoldorGate {
+	/** Ticks from the blocks leaving the world to them coming back (see {@link #removeBlocksNow}). */
+	private static final long REGEN_TICKS = 200L;
+
 	private final World world;
 	/** Index of the section this gate belongs to (0=S1, 1=S2, 2=S3). Reported back to Goldor on destruction. */
 	private final int sectionIdx;
@@ -120,8 +123,8 @@ public final class GoldorGate {
 		// Blocks are gone and the section's items were already done, so this is the true section-complete
 		// moment. Tell Goldor so it reports the section timing and advances to the next section.
 		Goldor.INSTANCE.onGateDestroyed(sectionIdx);
-		// Regen always fires exactly 100 ticks after blocks are removed from the world.
-		pendingRegen = Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), this::regenerate, 100L);
+		// Regen always fires exactly REGEN_TICKS after blocks are removed from the world.
+		pendingRegen = Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), this::regenerate, REGEN_TICKS);
 	}
 
 	private void announceDestroyed() {

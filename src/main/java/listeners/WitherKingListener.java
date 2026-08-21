@@ -14,6 +14,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -35,11 +36,27 @@ public class WitherKingListener implements Listener {
 		WitherKing.pickUpRelic(e.getPlayer(), color);
 	}
 
-	/** Right-click a block while holding a relic: the wool is never placed as a real block, and only a click on the
-	 *  matching altar (Y 6/7) places the relic. Anything else is silently cancelled (prevents misplacement). */
+	/**
+	 * Right-click a block while holding a relic: the wool is never placed as a real block, and only a click on the
+	 * matching altar (Y 6/7) places the relic. Anything else is silently cancelled (prevents misplacement).
+	 * <p>
+	 * <b>The WRONG cauldron sends the relic back to its statue</b>, in every mode, and in ultra-realistic it kills
+	 * you too ({@code death/Deaths}).  The relic can never be destroyed or kept: the summon needs all five, so
+	 * losing one to a mistake would strand the phase.  <b>The return has to come first</b> - {@code Deaths}
+	 * snapshots the inventory for the revival, so a relic still in hand at that moment would be handed straight
+	 * back on revival while the statue held a second copy.
+	 * <p>
+	 * Clicking anything that is not an altar at all is still just cancelled: the mistake is putting a relic in the
+	 * wrong cauldron, not missing one.  <b>Placing and returning are exclusive branches</b> - a relic that goes onto
+	 * its own altar is never also sent home, and {@code returnRelicToStatue} re-checks that itself.
+	 */
 	@EventHandler
 	public void onPlace(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		// Main hand only.  Cancelling the main-hand attempt makes vanilla try the off hand, which fires a SECOND
+		// event for the same physical click; the same reason GoldorListener gates on this.  Both would read the main
+		// hand and re-run whichever branch below already ran.
+		if(e.getHand() != EquipmentSlot.HAND) return;
 		Player p = e.getPlayer();
 		String heldColor = WitherKing.relicColorOfItem(p.getInventory().getItemInMainHand());
 		if(heldColor == null) return; // not holding a relic, so ignore
@@ -48,9 +65,14 @@ public class WitherKingListener implements Listener {
 		Block b = e.getClickedBlock();
 		if(b == null || (b.getY() != 6 && b.getY() != 7)) return;
 		String altarColor = WitherKing.altarColorAt(b.getX(), b.getZ());
-		if(altarColor == null || !altarColor.equals(heldColor)) return; // wrong altar, so do nothing
+		if(altarColor == null) return; // not an altar, so do nothing
 
-		WitherKing.placeRelic(p, altarColor);
+		if(altarColor.equals(heldColor)) {
+			WitherKing.placeRelic(p, altarColor);
+		} else {
+			WitherKing.returnRelicToStatue(p, heldColor);
+			death.Deaths.kill(p, "Wither King"); // no-op outside ultra-realistic
+		}
 	}
 
 	// --- Lock a held relic into the hotbar until it's placed on its altar ---

@@ -5,8 +5,17 @@ import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Interaction;
 import org.bukkit.entity.TextDisplay;
+import org.bukkit.entity.Player;
 import plugin.Utils;
 
+/**
+ * One Goldor terminal: the Interaction hitbox players click and the two floating labels above it.
+ * <p>
+ * <b>Two behaviours, one terminal.</b>  In classic and realistic mode a click activates it outright.  In
+ * ultra-realistic mode the click opens {@link GoldorTerminalGui} and only solving the puzzle activates it - hence
+ * {@link #type}, rolled once at construction so a terminal keeps the same puzzle for the whole phase however many
+ * times it is opened and abandoned.  Either way {@link #markActivated} is the single finish line.
+ */
 public final class GoldorTerminal {
 	public static final String TAG_PREFIX = "goldor_terminal_";
 
@@ -24,10 +33,13 @@ public final class GoldorTerminal {
 	private final TextDisplay displayBottom;
 	private boolean activated = false;
 	private boolean pending = false;
+	/** Which puzzle this terminal poses in ultra-realistic mode.  Rolled once, here, and never re-rolled. */
+	private final GoldorTerminalGui.Type type;
 
 	public GoldorTerminal(World world, int sectionIdx, int terminalIdx, int x, int y, int z) {
 		this.sectionIdx = sectionIdx;
 		this.terminalIdx = terminalIdx;
+		this.type = GoldorTerminalGui.randomTypeFor(x, y, z);
 
 		Location interactionLoc = new Location(world, x + 0.5, y, z + 0.5);
 		// Two separate TextDisplays with vanilla backgrounds; gap between them has no background.
@@ -69,6 +81,16 @@ public final class GoldorTerminal {
 		pending = true;
 	}
 
+	/** Give the terminal back up, so somebody else can open it.  Closing a puzzle without solving it lands here. */
+	public void clearPending() {
+		pending = false;
+	}
+
+	/** The puzzle this terminal poses in ultra-realistic mode. */
+	public GoldorTerminalGui.Type type() {
+		return type;
+	}
+
 	public void markActivated() {
 		activated = true;
 		pending = false;
@@ -78,6 +100,13 @@ public final class GoldorTerminal {
 	}
 
 	public void cleanup() {
+		// A phase teardown must not leave somebody staring into a puzzle for a terminal that no longer exists.
+		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+			if(p.getOpenInventory().getTopInventory().getHolder() instanceof GoldorTerminalGui gui
+					&& gui.terminal() == this) {
+				p.closeInventory();
+			}
+		}
 		if(interaction != null && interaction.isValid()) interaction.remove();
 		if(displayTop != null && displayTop.isValid()) displayTop.remove();
 		if(displayBottom != null && displayBottom.isValid()) displayBottom.remove();

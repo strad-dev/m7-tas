@@ -73,28 +73,35 @@ public final class RunResult {
 	/** Overall tick at which each section finished: Clear, Maxor, Storm, Terminals, Goldor, Necron, WitherKing. */
 	public Map<String, Integer> splitEnds;
 
-	/** Who was actually in the run at the moment it completed. */
+	/**
+	 * Everyone who took part in the run, <b>including anyone who disconnected before it ended</b> - the run's
+	 * roster, not a roll call of who happened to be online at the finish (see {@link WitherActions#noteInRun}).
+	 * A consumer derives the group size from this, and a duo whose second player lags out is still a duo.
+	 */
 	public List<Participant> participants = new ArrayList<>();
 
 	public static final class Participant {
 		public String uuid;
 		public String name;
-		/** True only if they never left Adventure mode all run (the practice scoreboard's golden-name check). */
+		/**
+		 * True only if they never left Adventure mode all run (the practice scoreboard's golden-name check).
+		 * For a member who disconnected mid-run this is the state they left with; quitting is not a mode change.
+		 */
 		public boolean stayedAdventure;
 
-		Participant(Player p) {
-			this.uuid = p.getUniqueId().toString();
-			this.name = p.getName();
-			this.stayedAdventure = WitherActions.stayedAdventure(p);
+		Participant(WitherActions.RosterMember m) {
+			this.uuid = m.uuid().toString();
+			this.name = m.name();
+			this.stayedAdventure = m.stayedAdventure();
 		}
 	}
 
 	private RunResult() {}
 
 	/**
-	 * Snapshot the current run. Must be called at completion time, while the participants are still online and
-	 * still in Adventure, i.e. before anything forces them to spectator.  {@code /m7practice end} moves everyone
-	 * to spectator, which would empty {@link ClearManager#realPlayers()}.
+	 * Snapshot the current run.  Call it at completion time: the roster keeps anyone who has already left, but the
+	 * ticks and the score are read live, and only a player still in Adventure can be ADDED to the roster here -
+	 * {@code /m7practice end} moves everyone to spectator, so a capture after that adds nobody.
 	 */
 	public static RunResult capture(String section, boolean success) {
 		RunResult r = new RunResult();
@@ -118,7 +125,10 @@ public final class RunResult {
 			r.fullClearTick = nullIfUnset(ClearManager.fullClearTick());
 		}
 
-		for (Player p : ClearManager.realPlayers()) r.participants.add(new Participant(p));
+		// Refresh the roster with whoever is in the run right now, then report the WHOLE roster - anyone who
+		// disconnected earlier included.  Reporting only the survivors is what used to turn a duo into a solo.
+		for (Player p : ClearManager.realPlayers()) WitherActions.noteInRun(p);
+		for (WitherActions.RosterMember m : WitherActions.runRoster()) r.participants.add(new Participant(m));
 		return r;
 	}
 

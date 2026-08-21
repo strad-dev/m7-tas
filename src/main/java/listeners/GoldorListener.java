@@ -5,6 +5,7 @@ import instructions.bosses.goldor.Goldor;
 import instructions.bosses.goldor.GoldorLever;
 import instructions.bosses.goldor.GoldorSection;
 import instructions.bosses.goldor.GoldorTerminal;
+import instructions.bosses.goldor.GoldorTerminalGui;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -17,6 +18,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -127,6 +131,12 @@ public class GoldorListener implements Listener {
 
 			term.setPending();
 			Actions.clearMovementInput(p);
+			// Ultra-realistic: the click opens the terminal's puzzle and solving it is what activates.  The pending
+			// flag now spans the whole time the GUI is open, which is what makes a terminal one player's at a time.
+			if(damage.Difficulty.deathsEnabled()) {
+				GoldorTerminalGui.open(p, term);
+				return true;
+			}
 			Utils.scheduleTask(() -> {
 				if(term.isActivated()) return;
 				term.markActivated();
@@ -135,6 +145,57 @@ public class GoldorListener implements Listener {
 			return true;
 		}
 		return false;
+	}
+
+	// =================== Terminal puzzle GUI (ultra-realistic only) ===================
+
+	/**
+	 * Every click inside a terminal puzzle, in either inventory, is cancelled first and only then read as a possible
+	 * solve.  The puzzles are click targets, not inventories, so nothing may be picked up, moved, dropped,
+	 * shift-clicked in or number-keyed out - see {@link GoldorTerminalGui}.
+	 * <p>
+	 * A solve is credited to the tick the click landed on, not a tick later: there is no deferral to do here, unlike
+	 * the one-click path, because the phase is unquestionably active by the time a GUI is open.
+	 */
+	@EventHandler(priority = EventPriority.LOW)
+	public void onTerminalGuiClick(InventoryClickEvent e) {
+		if(!(e.getView().getTopInventory().getHolder() instanceof GoldorTerminalGui gui)) return;
+		e.setCancelled(true);
+		if(!(e.getWhoClicked() instanceof Player p)) return;
+		if(cannotSolve(p)) return;
+		// Only clicks in the puzzle itself count; a click down in the player's own inventory is just cancelled.
+		if(e.getClickedInventory() != e.getView().getTopInventory()) return;
+		if(!gui.onClick(e.getSlot(), e.getClick())) return;
+
+		GoldorTerminal term = gui.terminal();
+		GoldorSection sec = Goldor.INSTANCE.getSection(term.sectionIdx);
+		// Activate NOW, on the click's own tick, so the terminal's time is the time the player earned.  The close is
+		// deferred a tick: closing a view from inside its own click event is the one thing Bukkit asks you not to do,
+		// and a second click in the meantime is harmless - the GUI latches "solved" and answers no.
+		if(sec != null && !term.isActivated()) {
+			term.markActivated();
+			Goldor.INSTANCE.onActivation(p, sec, "terminal");
+		}
+		Bukkit.getScheduler().runTask(plugin.M7tas.getInstance(), p::closeInventory);
+	}
+
+	/** Dragging is another way to move items, so it is refused wholesale. */
+	@EventHandler(priority = EventPriority.LOW)
+	public void onTerminalGuiDrag(InventoryDragEvent e) {
+		if(e.getView().getTopInventory().getHolder() instanceof GoldorTerminalGui) e.setCancelled(true);
+	}
+
+	/**
+	 * Closing a puzzle without solving it hands the terminal back: the pending flag goes, so anyone (including the
+	 * same player) can open it again, and the progress is gone with the view - a half-finished Melody starts over.
+	 * A solved puzzle closes itself from the click handler above, and must NOT clear the flag, or the pending state
+	 * would outlive the activation it belongs to.
+	 */
+	@EventHandler
+	public void onTerminalGuiClose(InventoryCloseEvent e) {
+		if(!(e.getView().getTopInventory().getHolder() instanceof GoldorTerminalGui gui)) return;
+		if(gui.isSolved()) return;
+		gui.terminal().clearPending();
 	}
 
 	// =================== Lever flip + Simon Says button + Lights levers ===================

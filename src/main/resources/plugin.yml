@@ -53,5 +53,5 @@ commands:
     description: Edit the saved kit for your selected class
     usage: /m7loadout [reset]
   toggledungeondifficulty:
-    description: Flip the damage difficulty between classic and realistic
-    usage: /toggledungeondifficulty [classic|realistic]
+    description: Set the damage difficulty (classic, realistic or ultra_realistic)
+    usage: /toggledungeondifficulty [classic|realistic|ultra_realistic]

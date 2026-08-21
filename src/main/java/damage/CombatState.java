@@ -46,7 +46,15 @@ public final class CombatState {
 	/** Melee hits landed, for the Tarantula Ring's every-tenth-hit x1.15. */
 	private static final Map<UUID, Integer> meleeHits = new HashMap<>();
 	private static final Map<UUID, Deque<Hit>> history = new HashMap<>();
-	/** Venomous ramp: hits landed on one target, feeding its 2%-per-hit growth to a 40-hit cap. */
+	/**
+	 * Venomous ramp: hits landed on one target, feeding its 2%-per-hit growth to a 40-hit cap.  Outer key attacker,
+	 * inner key target, so <b>the ramp is one player's</b>: two players poisoning the same mob ramp separately, and
+	 * neither inherits the other's stacks.  Paired with the per-player {@link #history} that {@link #venomousDps}
+	 * reads, that makes both halves of a Venomous proc - its stack count and its DPS figure - the attacker's own.
+	 * <p>
+	 * <b>An entry lives exactly as long as the poison window it feeds</b> ({@link #resetVenomous}), so the ramp is a
+	 * measure of what this player has been doing to this mob for the last 100 ticks rather than a total for the run.
+	 */
 	private static final Map<UUID, Map<UUID, Integer>> venomousHits = new HashMap<>();
 
 	/** Clear every counter.  Called at the start of each run, alongside the ability-cooldown reset. */
@@ -201,5 +209,27 @@ public final class CombatState {
 		int next = Math.min(perTarget.getOrDefault(target, 0) + 1, 40);
 		perTarget.put(target, next);
 		return next;
+	}
+
+	/**
+	 * Drop ONE attacker's Venomous ramp on one target.  Called from {@code Procs} the moment that player's 100t
+	 * poison window lapses on that mob: <b>the ramp lives exactly as long as the poison it feeds</b>, so a player who
+	 * stops swinging loses their stacks and starts again at one, while everyone else's ramps on the same mob are
+	 * untouched.
+	 */
+	public static void resetVenomous(UUID attacker, UUID target) {
+		if(attacker == null || target == null) return;
+		Map<UUID, Integer> perTarget = venomousHits.get(attacker);
+		if(perTarget != null) perTarget.remove(target);
+	}
+
+	/**
+	 * Drop <b>every</b> attacker's Venomous ramp on one target, once that target is dead.  Called from
+	 * {@code Procs.forgetTarget} alongside the Thunderlord counts: a fresh mob starts everyone at one stack, and
+	 * without this the per-target maps grow for the whole run.
+	 */
+	public static void forgetVenomous(UUID target) {
+		if(target == null) return;
+		for(Map<UUID, Integer> perTarget : venomousHits.values()) perTarget.remove(target);
 	}
 }

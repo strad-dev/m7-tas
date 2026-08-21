@@ -970,7 +970,9 @@ public class Actions {
 	public static void mimicChest(Player p, Block b) {
 		BlockData originalData = b.getBlockData().clone();
 		org.bukkit.block.BlockState originalState = b.getState();
-		b.setType(Material.AIR);
+		// No physics, matching the originalState.update(true, false) restore below: an update here pops anything
+		// attached to the chest's neighbours (carpet, torch, ...) and it never comes back.
+		b.setType(Material.AIR, false);
 
 		Zombie zombie = (Zombie) p.getWorld().spawnEntity(b.getLocation().add(0.5, 0, 0.5), EntityType.ZOMBIE);
 		zombie.customName(Utils.msg("Mimic <yellow>4M<red>❤"));

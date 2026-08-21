@@ -65,6 +65,20 @@ public final class BossScheduler {
 	public static void stop() {
 		if(heartbeat != null && !heartbeat.isCancelled()) heartbeat.cancel();
 		heartbeat = null;
+		clearAll();
+	}
+
+	/**
+	 * Drop every registered ticker but leave the heartbeat running.  The run-teardown counterpart of
+	 * {@link #stop()}, for {@code TAS.endPractice}.
+	 * <br>
+	 * {@link Utils#cancelAllScheduled()} cannot reach this lane, and several {@link #schedule} one-shots do not
+	 * keep their handle anywhere (Maxor's crystal respawn, the Wither King's, the Watcher's), so without this a
+	 * one-shot armed just before the run ended still fires into a torn-down session - re-spawning entities the
+	 * teardown just deleted and setting blocks in a world that has already been reset.  Clearing the lane
+	 * wholesale is the point: once the run is over, nothing in it should tick.
+	 */
+	public static void clearAll() {
 		tickers.clear();
 		movementTickers.clear();
 	}

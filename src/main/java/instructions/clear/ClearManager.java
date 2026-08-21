@@ -109,6 +109,12 @@ public final class ClearManager {
 		// before EVERY section, so this is what pulls the clear map out of the offhand when you jump straight to a
 		// boss such as /m7practice witherking, since the clear tick loop that normally removes it is not running.
 		restoreMenus();
+		// Same puzzle teardown stop() does.  Ice Fill is the one that MUST be here: fail() airs a whole ice layer and
+		// restores it with Utils.scheduleTask, which /reset and /setup kill on their way through, and begin() only
+		// re-registers blocks that are already ICE or PACKED_ICE - so an AIR hole is dropped from the layer and stays
+		// in the world forever.  stop() restores AIR -> ICE from the retained coords, which is the only way back.
+		PuzzleQuiz.stop();
+		PuzzleIceFill.stop();
 		// Tear down last run's placed chests / essence / secret entities so /reset and /setup start clean.
 		World w = world != null ? world : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst());
 		if(w != null) {
@@ -416,7 +422,7 @@ public final class ClearManager {
 		bar += color + "Total <white>" + totalSecretsFound() + "/" + totalSecrets()
 				+ " <dark_gray>| " + color + crypts
 				+ " <dark_gray>| " + color + "Score <white>" + teamScore();
-		p.sendActionBar(Utils.msg(bar));
+		Utils.sendActionBar(p, Utils.msg(bar));
 	}
 
 	// ==================== gameplay events (Player-generic) ====================
@@ -798,12 +804,21 @@ public final class ClearManager {
 	public static List<Player> realPlayers() {
 		List<Player> out = new ArrayList<>();
 		for(Player p : Bukkit.getOnlinePlayers()) {
-			if(p.getGameMode() == GameMode.SPECTATOR) continue;
-			if(Spectate.isSpectating(p)) continue;
-			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			out.add(p);
+			if(isRealPlayer(p)) out.add(p);
 		}
 		return out;
+	}
+
+	/**
+	 * The {@link #realPlayers()} test for ONE player.  Same rule in one place, so the run roster
+	 * ({@link instructions.bosses.WitherActions#noteInRun}) can never disagree with the HUD about who is in the run
+	 * - it has to judge a player who is quitting, which never appears in a list of online players.
+	 */
+	public static boolean isRealPlayer(Player p) {
+		if(p == null) return false;
+		if(p.getGameMode() == GameMode.SPECTATOR) return false;
+		if(Spectate.isSpectating(p)) return false;
+		return !FakePlayerManager.getFakePlayers().containsValue(p);
 	}
 
 	/** Wither Essence, in both the floor and the wall skull form. */

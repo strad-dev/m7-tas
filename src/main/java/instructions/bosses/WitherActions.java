@@ -120,6 +120,7 @@ public class WitherActions {
 		runSection = section == null ? "all" : section;
 		runId = java.util.UUID.randomUUID().toString();
 		pendingResult = null; // never let a previous run's snapshot leak into this one
+		runRoster.clear();    // and never let a previous run's players count towards this one
 	}
 
 	/** The section the current run was started with. */
@@ -127,6 +128,32 @@ public class WitherActions {
 
 	/** Unique id for the current run, stable across every report this run makes. */
 	public static String runId() { return runId; }
+
+	// --- Run roster: everyone who took part, INCLUDING anyone who disconnected before the end ---
+	// Keyed by uuid, so a relog is still one member.  A consumer derives the run's group size from this list, so it
+	// must never be "whoever is online at the end": a duo whose second player lagged out at 64s used to report one
+	// participant and hand the survivor a 65s SOLO record.  Fed by noteInRun from the quit hook and from every
+	// RunResult.capture, cleared by startRunTracking.
+	private static final Map<UUID, RosterMember> runRoster = new LinkedHashMap<>();
+
+	/** One participant of the current run, as last SEEN: a member who disconnected keeps the state they left with. */
+	public record RosterMember(UUID uuid, String name, boolean stayedAdventure) {}
+
+	/**
+	 * Record (or refresh) a player as part of the current run.  Ignores anyone who isn't actually running it -
+	 * spectators and fakes - by the same test the clear HUD uses, and does nothing outside practice mode.
+	 * <br>
+	 * Safe to call from a quit handler: the player is still in Adventure at that point, so the state stored is the
+	 * one they left with.
+	 */
+	public static void noteInRun(Player p) {
+		if(!practiceMode || p == null) return;
+		if(!instructions.clear.ClearManager.isRealPlayer(p)) return;
+		runRoster.put(p.getUniqueId(), new RosterMember(p.getUniqueId(), p.getName(), stayedAdventure(p)));
+	}
+
+	/** Everyone recorded in the current run, in the order they were first seen. */
+	public static List<RosterMember> runRoster() { return new ArrayList<>(runRoster.values()); }
 
 	/**
 	 * Announce that the team just hit a score milestone, as {@link plugin.ScoreMilestoneEvent}. Fired the moment

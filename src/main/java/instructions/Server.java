@@ -650,7 +650,7 @@ public class Server {
 				public void run() {
 					Block below = player.getLocation().subtract(0, 1, 0).getBlock();
 					if(below.getType() == Material.ICE) {
-						below.setType(Material.PACKED_ICE);
+						below.setType(Material.PACKED_ICE, false);
 						frozenBlocks.add(below);
 						Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f);
 					}
@@ -666,7 +666,7 @@ public class Server {
 
 			for(Block block : frozenBlocks) {
 				if(block.getType() == Material.PACKED_ICE) {
-					block.setType(Material.ICE);
+					block.setType(Material.ICE, false);
 				}
 			}
 			frozenBlocks.clear();

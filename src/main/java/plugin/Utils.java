@@ -258,8 +258,51 @@ public class Utils {
 	public static void broadcastActionBar(Component bar) {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			p.sendActionBar(bar);
+			sendActionBar(p, bar);
 		}
+	}
+
+	/** Absolute server tick each player's action bar was last written, so a low-priority writer can tell whether
+	 *  someone else already owns the slot this tick.  See {@link #actionBarOwnedThisTick}. */
+	private static final Map<UUID, Integer> actionBarTick = new HashMap<>();
+
+	/**
+	 * <b>The one action-bar send.</b>  Every HUD in the plugin goes through here - {@link #broadcastActionBar} for
+	 * the three boss bars, and directly for the two that render per player (Storm's pad colour, the clear HUD).
+	 * <p>
+	 * It does two things no caller should repeat.  It appends the ultra-realistic cheat-death cooldown segments
+	 * ({@code death/CheatDeath}), which are per player and have to survive whatever else is on the bar - there is
+	 * one action-bar slot, so the only way two writers coexist is for one of them to own the append.  And it stamps
+	 * the tick, which is how {@code Deaths}' fallback knows not to overwrite a live HUD: the boss bars all draw at
+	 * the start of the tick, ahead of that fallback.
+	 * <p>
+	 * A cleared bar ({@link Component#empty()}) still shows the cooldowns, without the leading separator, so
+	 * clearing a boss HUD does not blank a timer the player is reading.
+	 */
+	public static void sendActionBar(Player p, Component bar) {
+		// Ordered so the common path is one boolean: actionBarSuffix answers "" outside ultra-realistic mode and
+		// whenever nothing is on cooldown, and only then do we pay to ask whether the bar we were handed is blank.
+		String extra = death.CheatDeath.actionBarSuffix(p);
+		if(!extra.isEmpty() && plain(bar).isEmpty()) extra = death.CheatDeath.actionBarOnly(p);
+		p.sendActionBar(extra.isEmpty() ? bar : bar.append(msg(extra)));
+		actionBarTick.put(p.getUniqueId(), nmsServer().getTickCount());
+	}
+
+	/** True if something already wrote {@code p}'s action bar on the current tick. */
+	public static boolean actionBarOwnedThisTick(Player p) {
+		return actionBarTick.getOrDefault(p.getUniqueId(), Integer.MIN_VALUE) == serverTick();
+	}
+
+	/**
+	 * The absolute server tick: the same clock {@link #runTick()} and {@link #phaseTick()} are measured against,
+	 * but un-anchored, so it does not jump when a run or a phase is re-anchored.
+	 * <p>
+	 * Use this for anything that has to outlive a phase - the cheat-death cooldowns and the revival countdown in
+	 * {@code death/} - rather than {@code MinecraftServer.currentTick}, so there is one answer to "what tick is it"
+	 * and no chance of two of them disagreeing.
+	 */
+	public static int serverTick() {
+		return nmsServer().getTickCount();
 	}
 
 	/** The NMS server via the non-deprecated CraftServer bridge ({@code MinecraftServer.getServer()} is deprecated).

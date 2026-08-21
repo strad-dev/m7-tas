@@ -159,12 +159,15 @@ public class CustomItems implements Listener {
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 	// Crypt + Superboom-wall restorations. Mirrors the stonk maps above: a crypt/wall is temporarily set to AIR and
-	// restored after 40 ticks via a raw scheduler task (NOT Utils.scheduleTask), so /reset and /setup can flush them
-	// immediately via flushBlockRestorations(). Using Utils.scheduleTask here would let Reset's cancelAllScheduled()
-	// kill the pending restoration, leaving permanent AIR holes and orphaned crypt mobs.
+	// restored after SUPERBOOM_REGEN_TICKS via a raw scheduler task (NOT Utils.scheduleTask), so /reset and /setup can
+	// flush them immediately via flushBlockRestorations(). Using Utils.scheduleTask here would let Reset's
+	// cancelAllScheduled() kill the pending restoration, leaving permanent AIR holes and orphaned crypt mobs.
 	private static final Map<Location, BlockData> pendingBlockRestorations = new HashMap<>();
 	private static final List<BukkitTask> pendingBlockTasks = new ArrayList<>();
 	private static final List<Zombie> pendingCryptMobs = new ArrayList<>();
+	// Ticks a crypt or a Superboom'd cracked-brick wall stays open before it grows back. Shared by both so the two
+	// halves of one explosion can't regenerate at different times.
+	private static final int SUPERBOOM_REGEN_TICKS = 100;
 	// DETECTION radius of every explosion that routes through triggerSuperboomRadius: Superboom TNT, Explosive Shot
 	// and Guided Sheep.  This is the FIRST of the two searches, a cube half-extent around the impact block scanned
 	// for a *valid* crypt/wall block.  It uses Chebyshev distance with no line-of-sight test, so air neither triggers
@@ -1340,7 +1343,7 @@ public class CustomItems implements Listener {
 				pendingCryptMobs.remove(mob);
 			}
 			pendingBlockTasks.remove(holder[0]);
-		}, 40);
+		}, SUPERBOOM_REGEN_TICKS);
 		pendingBlockTasks.add(holder[0]);
 
 		return true;
@@ -1461,14 +1464,13 @@ public class CustomItems implements Listener {
 				pendingBlockRestorations.remove(entry.getKey());
 			}
 			pendingBlockTasks.remove(holder[0]);
-		}, 40);
+		}, SUPERBOOM_REGEN_TICKS);
 		pendingBlockTasks.add(holder[0]);
 	}
 
 	public static void stonk(Player p, Block b) {
 		if(Goldor.INSTANCE.isProtected(b) || Maxor.INSTANCE.isProtected(b)) return;
 		if(b.getType().getHardness() != -1) {
-			Material m = b.getType();
 			BlockData data = b.getBlockData().clone();
 			Location loc = b.getLocation();
 			Utils.debug(Utils.DebugType.SERVER, p.getName() + " Stonking block at " + Utils.round(loc.getX(), 3) + " " + Utils.round(loc.getY(), 5) + " " + Utils.round(loc.getZ(), 3));
@@ -1476,8 +1478,11 @@ public class CustomItems implements Listener {
 			b.setType(Material.AIR, false); // no-physics: attached neighbours (carpets, portals, …) don't pop off
 			pendingStonkRestorations.put(loc, data);
 			BukkitTask task = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				b.setType(m);
-				b.setBlockData(data);
+				// applyPhysics=false, same as the break above and every other restore path.  With physics the block
+				// runs its own canSurvive check on placement, so a carpet whose support was stonked too pops straight
+				// back off and never comes back.  It also re-shapes the six neighbours, tearing off whatever is
+				// attached to them.  setBlockData carries the material, so no separate setType is needed.
+				b.setBlockData(data, false);
 				pendingStonkRestorations.remove(loc);
 				pendingStonkTasks.remove(loc);
 			}, 200);

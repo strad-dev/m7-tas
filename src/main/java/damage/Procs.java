@@ -22,7 +22,7 @@ import java.util.UUID;
  *       DoT: it fires once, on the hit, and keeps no state beyond the per-target hit counter.</td></tr>
  *   <tr><td>Venomous VII</td><td>Each hit on a mob adds a stack worth 2% of DPS, to a 40-stack cap (so 80% of
  *       DPS), delivered every 20t for 100t.  <b>DPS is 8x the highest hit in the last 100 ticks</b>, so a capped
- *       proc is 640% of that hit.</td></tr>
+ *       proc is 640% of that hit.  The ramp expires with the window: stop hitting and the stacks are gone.</td></tr>
  * </table>
  *
  * <h2>What "refresh" means, and what it does not</h2>
@@ -43,6 +43,19 @@ import java.util.UUID;
  * </ul>
  * The shared shape - "a % of the hit, on a fixed cadence, expiry extended but never re-phased by re-hitting" - is why
  * Fire Aspect and Venomous run through one abstraction here rather than two schedulers.
+ *
+ * <h2>One effect per (ATTACKER, target, kind)</h2>
+ * An effect's identity includes <b>who applied it</b>, so two players beating on the same mob each burn it with their
+ * own Fire Aspect and poison it with their own Venomous, on their own cadences and end times, and neither one's hit
+ * refreshes or overwrites the other's. Every input is the attacker's too: Fire Aspect is 9% of <i>that player's</i>
+ * hit, and Venomous reads <i>that player's</i> DPS figure and <i>that player's</i> stack ramp on this mob
+ * ({@link CombatState#venomousDps} / {@link CombatState#noteVenomousHit}, both keyed on the player). So an Archer who
+ * has been chipping and a Berserk who just landed a 100M swing carry completely different poisons on one Necron.
+ * <p>
+ * Identity is the attacker's <b>UUID</b>, not the {@link Player} object: Bukkit's equality on entities is entity-ID
+ * equality, which a relog changes, so a player who reconnected mid-fight would have failed to match their own running
+ * effect and started a duplicate alongside it.  The ticking attacker is looked up from the UUID, and the effect is
+ * dropped as soon as that lookup comes back empty.
  * <p>
  * All three are sword-only (§7's bow exclusion list), so a bow hit produces none of them.
  */
@@ -74,7 +87,8 @@ public final class Procs {
 	private static final class Effect {
 		final UUID targetId;
 		final LivingEntity target;
-		final Player attacker;
+		/** WHO applied it - part of the effect's identity, so every attacker gets their own chain on one mob. */
+		final UUID attackerId;
 		final DamageKind kind;
 		final int interval;
 		double amount;
@@ -84,7 +98,7 @@ public final class Procs {
 		Effect(LivingEntity target, Player attacker, DamageKind kind, double amount, int interval, int duration) {
 			this.targetId = target.getUniqueId();
 			this.target = target;
-			this.attacker = attacker;
+			this.attackerId = attacker.getUniqueId();
 			this.kind = kind;
 			this.interval = interval;
 			this.amount = amount;
@@ -146,6 +160,10 @@ public final class Procs {
 		// owner ruled the DPS definition operative, so a capped proc really is several times the hit that
 		// triggered it.  That makes it easily the largest proc in the system, which is intended - and is exactly why
 		// it must fire on its own 20t cadence and not once per swing.
+		//
+		// The ramp is bounded by the WINDOW as well as by the cap: it is cleared the moment this player's poison
+		// lapses (see tick), so it counts what they have done to this mob in the last 100 ticks and a player coming
+		// back to a mob they left has to build all 40 stacks again.
 		int stacks = CombatState.noteVenomousHit(attacker, target.getUniqueId());
 		double venom = CombatState.venomousDps(attacker) * VENOMOUS_PER_STACK * stacks;
 		if(venom > 0) apply(target, attacker, DamageKind.VENOMOUS, venom, VENOMOUS_INTERVAL, VENOMOUS_DURATION);
@@ -158,12 +176,17 @@ public final class Procs {
 	 * the per-tick damage and pushes the end time out to {@code now + duration}, and does nothing else: no damage
 	 * here, and {@code nextTick} is left exactly where it was, so the 20t phase the effect has been running on
 	 * survives.  That distinction is the whole point of this method.
+	 * <p>
+	 * The match is on all three of kind, target AND attacker, so a second player hitting a burning mob is a FRESH
+	 * application of their own effect rather than a refresh of somebody else's.
 	 */
 	private static void apply(LivingEntity target, Player attacker, DamageKind kind, double amount, int interval,
 			int duration) {
 		int now = MinecraftServer.currentTick;
+		UUID targetId = target.getUniqueId();
+		UUID attackerId = attacker.getUniqueId();
 		for(Effect e : EFFECTS) {
-			if(e.kind == kind && e.targetId.equals(target.getUniqueId()) && e.attacker.equals(attacker)) {
+			if(e.kind == kind && e.targetId.equals(targetId) && e.attackerId.equals(attackerId)) {
 				e.amount = amount;
 				e.expiresAt = now + duration;
 				return;
@@ -179,18 +202,26 @@ public final class Procs {
 		for(Iterator<Effect> it = EFFECTS.iterator(); it.hasNext(); ) {
 			Effect e = it.next();
 			boolean dead = e.target.isDead() || e.target.getHealth() <= 0;
-			// A dead mob's Thunderlord progress is meaningless, and dropping it here is what keeps the per-target map
-			// from growing for the whole run.  Every melee hit applies Fire Aspect, so every counted target has an
-			// Effect and so passes through this loop; the count deliberately does NOT expire with the effect, only
-			// with the mob.
+			// A dead mob's Thunderlord progress and Venomous ramp are meaningless, and dropping them here is what keeps
+			// the per-target maps from growing for the whole run.  Every melee hit applies Fire Aspect, so every counted
+			// target has an Effect and so passes through this loop.  Thunderlord's count deliberately does NOT expire
+			// with the effect, only with the mob; the Venomous ramp expires with both (see below).
 			if(dead) forgetTarget(e.targetId);
+			// Resolved from the UUID rather than held as a Player, so a relog neither strands the effect on a stale
+			// object nor lets the reconnected player start a second chain beside their own.
+			Player attacker = Bukkit.getPlayer(e.attackerId);
 			// Expiry is checked with a strict >, so the proc that lands exactly ON the end tick still lands.
-			if(dead || !e.attacker.isOnline() || now > e.expiresAt) {
+			if(dead || attacker == null || now > e.expiresAt) {
+				// The ramp dies with the poison it feeds: once this player's 100t window lapses on this mob their
+				// stacks are gone and the next hit starts again at one.  Only THEIR ramp - the mob keeps everyone
+				// else's, whose windows are still running on their own clocks.  (A dead target has already had every
+				// attacker's ramp dropped by forgetTarget above; removing it twice is a no-op.)
+				if(e.kind == DamageKind.VENOMOUS) CombatState.resetVenomous(e.attackerId, e.targetId);
 				it.remove();
 				continue;
 			}
 			if(now < e.nextTick) continue;
-			Damage.dealSecondary(e.target, e.amount, e.kind, e.attacker);
+			Damage.dealSecondary(e.target, e.amount, e.kind, attacker);
 			// Advance from the SCHEDULED tick, not from `now`, so the 20t phase cannot drift.  The resync below only
 			// matters if the driver ever ran late, and it deliberately drops the missed procs rather than firing a
 			// burst to catch up.
@@ -199,8 +230,9 @@ public final class Procs {
 		}
 	}
 
-	/** Forget every attacker's Thunderlord progress on one target, once that target is dead. */
+	/** Forget every attacker's Thunderlord progress and Venomous ramp on one target, once that target is dead. */
 	private static void forgetTarget(UUID targetId) {
 		for(java.util.Map<UUID, Integer> perTarget : thunderlordCount.values()) perTarget.remove(targetId);
+		CombatState.forgetVenomous(targetId);
 	}
 }
