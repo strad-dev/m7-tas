@@ -435,7 +435,7 @@ public final class Damage {
 		if(def != null && path.isMelee()) product *= def.reforge().meleeMultiplier();   // Fabled x1.15
 		if(path == DamagePath.BOW) product *= OVERLOAD;                                  // assumed always procs
 		if(path == DamagePath.ABILITY) product *= lovingMultiplier(p);
-		if(path.isMelee() && CombatState.isTarantulaHit(p)) product *= TARANTULA_RING;
+		if(path.isMelee() && CombatState.isTarantulaHit(p, target.getUniqueId())) product *= TARANTULA_RING;
 
 		DungeonClass clazz = DungeonClass.of(p);
 		product *= ClassBonuses.damageMultiplier(p, clazz, path, DungeonClass.isSoloOnClass(p));

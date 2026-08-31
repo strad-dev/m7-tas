@@ -11,8 +11,8 @@ import java.util.UUID;
 
 /**
  * Per-player and per-(player, target) combat state that damage sources read: the repeated-hit stack, the post-kill
- * buff, the kill combo, the Berserk ultimate window, the Tarantula Ring's every-tenth-hit counter, and the rolling
- * damage history.
+ * buff, the kill combo, the Berserk ultimate window, the Tarantula Ring's per-target tenth-hit counter, and the
+ * rolling damage history.
  * <p>
  * <b>The rolling history is one abstraction serving four features</b> (MAP.md §1.14).  Berserk's axe throw
  * ("highest hit in the last 60s"), Explosive Shot and Rapid Fire ("highest arrow damage in the last minute") and
@@ -43,8 +43,13 @@ public final class CombatState {
 	private static final Map<UUID, Integer> comboCount = new HashMap<>();
 	private static final Map<UUID, Integer> comboExpiry = new HashMap<>();
 	private static final Map<UUID, Integer> berserkUltimateEnd = new HashMap<>();
-	/** Melee hits landed, for the Tarantula Ring's every-tenth-hit x1.15. */
-	private static final Map<UUID, Integer> meleeHits = new HashMap<>();
+	/**
+	 * Melee hits landed, for the Tarantula Ring's every-tenth-hit x1.15.  Outer key attacker, inner key target, so
+	 * <b>the count is per mob</b>: the ring only ever procs on the tenth melee hit on the SAME target, and switching
+	 * targets neither advances nor resets the count on the one you left (same shape as Thunderlord's).  Dropped when
+	 * the mob dies ({@link #forgetTarget}).
+	 */
+	private static final Map<UUID, Map<UUID, Integer>> meleeHits = new HashMap<>();
 	private static final Map<UUID, Deque<Hit>> history = new HashMap<>();
 	/**
 	 * Venomous ramp: hits landed on one target, feeding its 2%-per-hit growth to a 40-hit cap.  Outer key attacker,
@@ -88,7 +93,7 @@ public final class CombatState {
 			lastTarget.put(id, target);
 			repeatCount.put(id, 1);
 		}
-		if(path.isMelee()) meleeHits.merge(id, 1, Integer::sum);
+		if(path.isMelee()) meleeHits.computeIfAbsent(id, k -> new HashMap<>()).merge(target, 1, Integer::sum);
 	}
 
 	/** True on the FIRST hit this player has landed on this target, i.e. First Strike's window. */
@@ -101,10 +106,13 @@ public final class CombatState {
 		return repeatHits(p, target) < 3;
 	}
 
-	/** True when THIS melee hit is the tenth, which is the Tarantula Ring's x1.15 (§7). */
-	public static boolean isTarantulaHit(Player p) {
-		if(p == null) return false;
-		return (meleeHits.getOrDefault(p.getUniqueId(), 0) + 1) % 10 == 0;
+	/**
+	 * True when THIS melee hit is the tenth <b>on this target</b>, which is the Tarantula Ring's x1.15 (§7).  The
+	 * count is per mob, not a running total across the fight: nine hits on one mob and one on another do not proc.
+	 */
+	public static boolean isTarantulaHit(Player p, UUID target) {
+		if(p == null || target == null) return false;
+		return (meleeHits.getOrDefault(p.getUniqueId(), Map.of()).getOrDefault(target, 0) + 1) % 10 == 0;
 	}
 
 	// ===================== kill-driven windows =====================
@@ -224,12 +232,13 @@ public final class CombatState {
 	}
 
 	/**
-	 * Drop <b>every</b> attacker's Venomous ramp on one target, once that target is dead.  Called from
-	 * {@code Procs.forgetTarget} alongside the Thunderlord counts: a fresh mob starts everyone at one stack, and
-	 * without this the per-target maps grow for the whole run.
+	 * Drop <b>every</b> attacker's Venomous ramp and Tarantula count on one target, once that target is dead.  Called
+	 * from {@code Procs.forgetTarget} alongside the Thunderlord counts: a fresh mob starts everyone at one Venomous
+	 * stack and hit one of the ring's ten, and without this the per-target maps grow for the whole run.
 	 */
-	public static void forgetVenomous(UUID target) {
+	public static void forgetTarget(UUID target) {
 		if(target == null) return;
 		for(Map<UUID, Integer> perTarget : venomousHits.values()) perTarget.remove(target);
+		for(Map<UUID, Integer> perTarget : meleeHits.values()) perTarget.remove(target);
 	}
 }

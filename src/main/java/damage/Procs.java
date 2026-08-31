@@ -230,9 +230,12 @@ public final class Procs {
 		}
 	}
 
-	/** Forget every attacker's Thunderlord progress and Venomous ramp on one target, once that target is dead. */
+	/**
+	 * Forget every attacker's Thunderlord progress, Venomous ramp and Tarantula count on one target, once that target
+	 * is dead.
+	 */
 	private static void forgetTarget(UUID targetId) {
 		for(java.util.Map<UUID, Integer> perTarget : thunderlordCount.values()) perTarget.remove(targetId);
-		CombatState.forgetVenomous(targetId);
+		CombatState.forgetTarget(targetId);
 	}
 }
