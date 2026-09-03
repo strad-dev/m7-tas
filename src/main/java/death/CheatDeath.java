@@ -6,7 +6,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.Damageable;
-import plugin.FakePlayerInventory;
 import plugin.Utils;
 
 import java.util.EnumMap;
@@ -151,18 +150,18 @@ public final class CheatDeath {
 	}
 
 	/**
-	 * True if {@code stack} IS the item behind {@code s}, wherever it happens to be.  Both masks are identified by
-	 * display name, as everywhere else in the plugin.
+	 * True if {@code stack} IS the item behind {@code s}, wherever it happens to be.
 	 * <p>
 	 * Asked of the helmet when deciding whether a saver is available (it has to be on the head to proc) and of every
 	 * slot when taking a cooldown bar back off (the item can have been moved by then).
+	 * <p>
+	 * The mapping lives on the ITEMS now ({@code Wearable.saver}), not in a switch here: this used to be two
+	 * display-name comparisons, which meant a third worn life-saver would have needed an edit in this file as
+	 * well as its own.  The Phoenix pet still answers false, since it has no item at all.
 	 */
 	private static boolean isSaverItem(Saver s, ItemStack stack) {
-		return switch(s) {
-			case BONZO -> FakePlayerInventory.isBonzoMask(stack);
-			case SPIRIT -> FakePlayerInventory.isSpiritMask(stack);
-			case PHOENIX -> false;
-		};
+		items.Wearable worn = items.ItemRegistry.wearable(stack);
+		return worn != null && worn.saver() == s;
 	}
 
 	/** The player's open immunity window, or null if it has shut (or never opened). */

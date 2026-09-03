@@ -231,7 +231,7 @@ public class Server {
 	 * kill mid-startup would race the minibosses that method spawns.
 	 *
 	 * <p>The exclusion list is exactly the entity types that are NOT spawned anywhere in the plugin (verified: the
-	 * only references to these types in the source are exclusion lists like this one and {@code CustomItems.doNotKill}),
+	 * only references to these types in the source are exclusion lists like this one and {@code items.ItemUtils.doNotKill}),
 	 * so preserving them can never leak a run entity.  It only protects state that isn't ours to destroy:
 	 * <ul>
 	 *   <li>{@code player}: real players AND the fake ServerPlayers that drive the run;
@@ -271,10 +271,10 @@ public class Server {
 	}
 
 	public static void serverSetup(World world) {
-		CustomItems.flushStonkRestorations();
+		items.ItemUtils.flushStonkRestorations();
 		// Replace every superboomed wall / crypt still set to AIR and despawn active crypt mobs, then clear ender pearl
 		// cooldowns so a fresh run/setup starts from a clean state.
-		CustomItems.flushBlockRestorations();
+		items.ItemUtils.flushBlockRestorations();
 		for(Player pl : Bukkit.getOnlinePlayers()) {
 			pl.setCooldown(Material.ENDER_PEARL, 0);
 		}

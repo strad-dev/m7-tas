@@ -8,7 +8,7 @@ import org.bukkit.entity.Player;
  * The five dungeon classes.  Which one a player is decides their equipment set (§1.11), their Accessory Power
  * (§1.12) and their class bonuses (§1.14).
  * <p>
- * Identification mirrors {@code CustomItems.isMageClass}: a real player carries an exclusive class scoreboard tag
+ * Identification mirrors {@code items.ItemUtils.isMageClass}: a real player carries an exclusive class scoreboard tag
  * set by {@code /class}, and a fake player carries none and is identified by name (all four {@code MageN} fakes run
  * the Mage inventory and cast Mage abilities, so every {@code Mage*}-named fake counts as a Mage).
  */

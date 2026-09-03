@@ -7,7 +7,6 @@ import plugin.Utils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -190,12 +189,44 @@ public final class Items {
 				.reforge(ReforgeId.SUSPICIOUS)
 				.build());
 
+		// ============================== Spirit Sceptre - Heroic ==============================
+		// The STARRED (Thorn Fragment) build, which is what the id STARRED_BAT_WAND says: 190/330 rather than the
+		// unupgraded 180/300, and a Guided Bat that casts from 2,250 rather than 2,000.  A dungeon item with one
+		// SAPPHIRE slot, like the Hyperion's and the Ice Spray Wand's, and Chimera like every other sword (§7).
+		// Its Catacombs Level Bonus is deliberately unauthored: the wiki publishes no figure for it, and a guessed
+		// cataLevel term is a number a table cannot answer.
+		register(ItemDef.of("Heroic Spirit Sceptre", ItemCategory.SWORD)
+				.loreId("skyblock/combat/spirit_sceptre").rarity(Rarity.LEGENDARY)
+				.base(Stat.DAMAGE, 190)
+				.base(Stat.INTELLIGENCE, 330)
+				.with(Upgrade.POTATO_BOOKS, Upgrade.ART_OF_WAR, Upgrade.CRITICAL)
+				.reforge(ReforgeId.HEROIC)
+				.typedGem(Gemstones.Type.SAPPHIRE)
+				.chimera()
+				.ability(2250, 0.2) // Guided Bat (§7)
+				.build());
+
+		// ============================== Death Bow - Precise ==============================
+		// A DUNGEON bow (Ophelia's, after Floor VI), so it takes the x6.65 like the Terminator and the Last Breath.
+		// The bow upgrade set is Overload rather than Critical - Critical VII is a sword enchantment - and no
+		// Chimera, because every bow runs Duplex instead (§7).  Its x2 against Undead is a MULTIPLICATIVE source in
+		// damage/Damage, not a stat, and its arrow-bounce ability is unmodelled.
+		register(ItemDef.of("Precise Death Bow", ItemCategory.RANGED)
+				.loreId("skyblock/combat/death_bow").rarity(Rarity.EPIC)
+				.base(Stat.DAMAGE, 300)
+				.with(Upgrade.POTATO_BOOKS, Upgrade.ART_OF_WAR, Upgrade.OVERLOAD)
+				.reforge(ReforgeId.PRECISE)
+				.build());
+
 		// ============================== §1.10 Armour ==============================
 		// No armour piece carries a Damage stat.
 		// The Necron Head Bonus is x2 and ALWAYS applies here, because this plugin only ever runs M7.  It doubles
-		// only the helmet's own stats, and commutes with the x6.66, so it sits on this item's own pipeline.
+		// only the helmet's own stats, and commutes with the x6.65, so it sits on this item's own pipeline.
+		// SPECIAL, not Legendary: it is a red item, and since a colour is DERIVED from the rarity now
+		// (Rarity.colour) a wrong rarity here would recolour the head.  Nothing recombobulates a special tier, so
+		// the effective rarity is SPECIAL too, which is the row Reforges holds for Ancient/ARMOR/SPECIAL.
 		register(ItemDef.of("Ancient Diamond Necron Head", ItemCategory.ARMOR)
-				.rarity(Rarity.LEGENDARY)
+				.rarity(Rarity.SPECIAL)
 				.base(Stat.STRENGTH, 40)
 				.with(Upgrade.BIG_BRAIN)
 				.reforge(ReforgeId.ANCIENT)
@@ -244,12 +275,26 @@ public final class Items {
 		// registered anyway so Profile can count them for the Renowned +1%-per-piece additive, and so the old
 		// x0.70/x0.80 worn-item damage penalties stay deleted rather than quietly reappearing: a wearable now
 		// affects damage only through the stats it contributes, and these contribute none.
-		for(String renowned : List.of("Renowned Spring Boots", "Renowned Racing Helmet", "Renowned Cow Hat",
-				"Renowned Thermodynamic Helmet", "Renowned Thermodynamic Chestplate",
-				"Renowned Thermodynamic Leggings", "Renowned Thermodynamic Boots")) {
-			register(ItemDef.of(renowned, ItemCategory.ARMOR).rarity(Rarity.EPIC).notDungeon()
-					.reforge(ReforgeId.RENOWNED).build());
-		}
+		// Their rarities are NOT all the same, and they matter now that the display colour is derived from the
+		// rarity rather than written into the item factory: the Cow Hat is green, the Spring Boots dark purple and
+		// the other five light purple.  Stat-wise every one of these is still nothing - Renowned grants
+		// StatBlock.EMPTY at every rarity in Reforges - so the tier here is purely what the item reads as.
+		register(renownedWearable("Renowned Cow Hat", Rarity.COMMON));
+		register(renownedWearable("Renowned Spring Boots", Rarity.RARE));
+		register(renownedWearable("Renowned Racing Helmet", Rarity.LEGENDARY));
+		register(renownedWearable("Renowned Thermodynamic Helmet", Rarity.LEGENDARY));
+		register(renownedWearable("Renowned Thermodynamic Chestplate", Rarity.LEGENDARY));
+		register(renownedWearable("Renowned Thermodynamic Leggings", Rarity.LEGENDARY));
+		register(renownedWearable("Renowned Thermodynamic Boots", Rarity.LEGENDARY));
+	}
+
+	/**
+	 * One Renowned cosmetic / Thermodynamic piece: no stat terms, no gemstones, and a BASE rarity that only
+	 * decides what colour the item reads as.  {@code notDungeon}, so nothing here is scaled either.
+	 */
+	private static ItemDef renownedWearable(String name, Rarity base) {
+		return ItemDef.of(name, ItemCategory.ARMOR).rarity(base).notDungeon()
+				.reforge(ReforgeId.RENOWNED).build();
 	}
 
 	/** The three Ancient Necron's body pieces: identical but for their one Intelligence enchantment. */

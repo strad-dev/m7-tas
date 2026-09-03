@@ -22,8 +22,9 @@ public class SpiritLeapListener implements Listener {
 	@EventHandler
 	public void onLeapItemRightClick(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-		ItemStack item = e.getItem();
-		if(item == null || !"skyblock/utility/infinileap".equals(CustomItems.getID(item))) return;
+		// Resolved through the registry rather than by comparing a lore ID, so the menu it opens is the item's
+		// own (items.MenuItem.open) and this listener only owns the GATES.
+		if(!(items.ItemRegistry.of(e.getItem()) instanceof items.MenuItem menu)) return;
 		Player p = e.getPlayer();
 		if(FakePlayerManager.getFakePlayers().containsValue(p)) return; // fakes leap via Actions.leap, never the menu
 		e.setCancelled(true);
@@ -37,7 +38,7 @@ public class SpiritLeapListener implements Listener {
 			p.sendMessage(Utils.msg("<red>Found no one to leap to!"));
 			return;
 		}
-		SpiritLeapMenu.open(p);
+		menu.open(p);
 	}
 
 	@EventHandler

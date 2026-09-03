@@ -16,7 +16,7 @@ import org.bukkit.inventory.PlayerInventory;
  * <b>Chimera stacks with the pet, it does not replace it</b> (§1.13): Chimera V copies a pet's BASE stats at 100%,
  * so a Golden Dragon gives +300 Strength and the weapon's Chimera copies another +300 - 600 in total.  It does not
  * copy the additive %, so there is no second +5%.  Because Chimera's copy lands on the WEAPON it is cata-scaled
- * (x6.66) while the pet's own stats are not, which is the whole reason the Mage wants the Golden Dragon and the
+ * (x6.65) while the pet's own stats are not, which is the whole reason the Mage wants the Golden Dragon and the
  * Archer (whose bow runs Duplex, not Chimera) is nearly indifferent - see §7's pet cross-check.
  */
 public enum Pet {

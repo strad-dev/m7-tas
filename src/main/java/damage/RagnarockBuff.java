@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
  * <p>
  * The real Hypixel gate is "take no damage for 3 seconds", which cannot exist here because players are
  * invulnerable (§4).  The stand-in is "keep the axe in the main hand for those 3 seconds", enforced by
- * {@code CustomItems.ragWindup} - a deliberate substitution, not a reading of the item.
+ * {@code items.combat.RagnarockAxe.ragWindup} - a deliberate substitution, not a reading of the item.
  */
 public final class RagnarockBuff {
 	private RagnarockBuff() {}

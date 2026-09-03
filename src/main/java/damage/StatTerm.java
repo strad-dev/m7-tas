@@ -17,7 +17,7 @@ public record StatTerm(Source source, Stat stat, double value) {
 	public enum Source {
 		/** The item's intrinsic stat, as the wiki prints it. */
 		BASE,
-		/** The item's Catacombs-level bonus, itemised beside the base so the x6.66 stays a pipeline stage. */
+		/** The item's Catacombs-level bonus, itemised beside the base so the x6.65 stays a pipeline stage. */
 		CATA_LEVEL,
 		/** A non-dungeon item's star bonus, which appears as a flat term because nothing scales it (§1.0.3). */
 		STARS,

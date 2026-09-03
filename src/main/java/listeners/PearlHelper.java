@@ -18,10 +18,12 @@ public class PearlHelper implements Listener {
 		if (!(e.getEntity() instanceof EnderPearl pearl)) return;
 		if (!(e.getEntity().getShooter() instanceof Player p)) return;
 
-		// Infinileap is an ender pearl item but must never be thrown, since leaping is done by
-		// Actions.leap directly. Normally handleCustomItems cancels the interact event first;
-		// this is the hard backstop in case any use path slips through.
-		if("skyblock/utility/infinileap".equals(CustomItems.getID(p.getInventory().getItemInMainHand()))) {
+		// The Infinileap IS an ender pearl item and must never be thrown, since leaping is done by Actions.leap
+		// directly.  Normally handleCustomItems cancels the interact event first; this is the hard backstop for
+		// any use path that slips through, and it asks the ITEM (items.MenuItem.blocksVanillaUse) rather than
+		// naming it, so a second pearl-shaped menu item is covered without touching this file.
+		items.Item held = items.ItemRegistry.of(p.getInventory().getItemInMainHand());
+		if(held instanceof items.MenuItem menu && menu.blocksVanillaUse()) {
 			e.setCancelled(true);
 			return;
 		}

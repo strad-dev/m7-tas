@@ -17,7 +17,7 @@ import java.util.Objects;
  * would create a second source of truth, which is exactly the failure §2.4 exists to prevent.
  *
  * <h2>The hard constraint: the ID stays on lore line 0</h2>
- * {@code CustomItems.getID} reads the FIRST lore line, and {@code Catalog.paletteKey}
+ * {@code items.ItemUtils.getID} reads the FIRST lore line, and {@code Catalog.paletteKey}
  * ({@code material | display name | first lore line}) is what {@code loadout/ItemRefresh} matches saved loadouts
  * against.  So <b>stat lines are APPENDED below line 0, never inserted above it</b>.  A SkyBlock-style tooltip
  * normally puts stats at the top; doing that here would move the ID off line 0 and every custom item would stop

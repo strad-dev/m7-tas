@@ -9,9 +9,9 @@ package damage;
  * {@code (player, path)} rather than {@code player}: the Soulweaver Gloves (beam) and the Manticore Claw (ability)
  * are the same slot and can never both apply, and the Balloon Snake changes reforge with them.
  * <p>
- * Values here are the plain SkyBlock numbers; the x6.66 is applied as a stage, exactly as for items.  The one
+ * Values here are the plain SkyBlock numbers; the x6.65 is applied as a stage, exactly as for items.  The one
  * exception is the Manticore Claw, which is not a dungeon item, so its 20 / 37.5 / 3 stay flat - and its Ability
- * Damage is not starred either, so it does not take the x1.81 either.
+ * Damage is not starred either, so it does not take the x1.80 either.
  * <p>
  * Per-piece reforge terms are authored inline rather than looked up.  §2.1 rules the equipment reforge table
  * "only needed if equipment reforges ever change", because §1.11 already publishes the resolved per-piece values -

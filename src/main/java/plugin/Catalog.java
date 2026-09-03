@@ -2,6 +2,17 @@ package plugin;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import damage.ItemDef;
+import damage.ReforgeId;
+import items.Item;
+import items.ItemRegistry;
+import items.armor.StormBoots;
+import items.armor.StormChestplate;
+import items.armor.StormLeggings;
+import items.armor.WitherGoggles;
+import items.bows.DeathBow;
+import items.combat.GolemSword;
+import items.combat.SpiritSceptre;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -114,17 +125,25 @@ public final class Catalog {
 	 * no longer reaches the palette at all; it had no ability behind it.
 	 */
 	private static boolean hiddenFromPalette(ItemStack it) {
-		return FakePlayerInventory.isSkyblockMenu(it);
+		return items.util.SkyblockMenu.INSTANCE.matches(it);
 	}
 
-	/** Custom items that are in no class's default kit but should still be offered by the loadout editor. */
+	/**
+	 * Custom items that are in no class's default kit but should still be offered by the loadout editor.
+	 * <p>
+	 * The three Storm pieces are ALTERNATE REFORGES of pieces the Mage already wears, which is why they are the
+	 * same item class built at a different {@code ReforgeId} rather than three more classes: the dye and the
+	 * colour are identical, because the reforge is the only difference.
+	 */
 	static List<ItemStack> extraPaletteItems() {
 		return List.of(
-				FakePlayerInventory.getGolemSword(),
-				FakePlayerInventory.getWitherGoggles(),
-				FakePlayerInventory.getLovingStormChestplate(),
-				FakePlayerInventory.getNecroticStormLeggings(),
-				FakePlayerInventory.getNecroticStormBoots());
+				GolemSword.INSTANCE.build(),
+				WitherGoggles.INSTANCE.build(),
+				SpiritSceptre.INSTANCE.build(),
+				DeathBow.INSTANCE.build(),
+				StormChestplate.INSTANCE.build(ReforgeId.LOVING),
+				StormLeggings.INSTANCE.build(ReforgeId.NECROTIC),
+				StormBoots.INSTANCE.build(ReforgeId.NECROTIC));
 	}
 
 	/**
@@ -133,9 +152,11 @@ public final class Catalog {
 	 * row), so <b>each block of 9 below is literally one page</b>.  Keep the blocks nine long or the pages shift.
 	 * <br>
 	 * Entries are {@link #orderName}: the PLAIN display name, or the material name for the one nameless stack (the
-	 * ender pearls). Renaming an item here without renaming it in {@link FakePlayerInventory} silently drops it to
-	 * the tail, so change both together. That includes a LOOKALIKE character: the Ragnarock Axe's name carries a
-	 * Greek omicron (U+03BF) rather than an ASCII o, and the two spellings read identically but do not match.
+	 * ender pearls). A name here is now COMPOSED by its item class, as {@code reforge + base name}, so renaming an
+	 * item means renaming its entry here too - and {@link #verify()} warns at boot if the two disagree rather than
+	 * letting the item drop silently to the tail. That includes a LOOKALIKE character: the Ragnarock Axe's base name
+	 * carries a Greek omicron (U+03BF) rather than an ASCII o, and the two spellings read identically but do not
+	 * match.
 	 * <br>
 	 * Anything not listed sorts to the end in discovery order, so a newly added item shows up at the back of the
 	 * palette instead of vanishing. The list currently covers every palette item exactly, so that tail is empty.
@@ -184,13 +205,69 @@ public final class Catalog {
 			"Necrotic Storm's Leggings",
 			"Necrotic Storm's Boots",
 			"Renowned Cow Hat",
-			// Page 5: the rest of the Renowned wearables.
+			// Page 5: the rest of the Renowned wearables, then the two weapons no default kit carries.  They sit
+			// here rather than beside the other weapons on purpose: this page is the only one short of nine, so
+			// appending costs nothing, where inserting on page 2 would push two items onto every later page.
 			"Renowned Spring Boots",
 			"Renowned Racing Helmet",
 			"Renowned Thermodynamic Helmet",
 			"Renowned Thermodynamic Chestplate",
 			"Renowned Thermodynamic Leggings",
-			"Renowned Thermodynamic Boots");
+			"Renowned Thermodynamic Boots",
+			"Heroic Spirit Sceptre",
+			"Precise Death Bow");
+
+	/**
+	 * <b>Boot self-check.</b>  Cross-checks the three places an item's identity is written down and logs a
+	 * warning for each disagreement.  Called from {@code M7tas.onEnable}, before the export.
+	 * <p>
+	 * It exists because two of those disagreements are silent and expensive:
+	 * <ul>
+	 *   <li><b>A variant missing from {@link #PALETTE_ORDER}</b> sorts to the tail of the palette instead of
+	 *       vanishing, so it stays usable and nothing looks broken - it just quietly stops being on the page it
+	 *       is meant to be on, and every later page shifts if a block of nine is left short.</li>
+	 *   <li><b>A rarity that disagrees with {@code damage/Items}</b> now changes the item's COLOUR, since the
+	 *       colour is derived.  Four of these were already in the tree when the derivation went in (the Cow Hat,
+	 *       the Spring Boots, the Racing Helmet and the Thermodynamic set were all registered as Epic), and
+	 *       nothing would have caught them.</li>
+	 * </ul>
+	 * It deliberately only WARNS.  A mislabelled palette page is not worth refusing to boot a practice server
+	 * over, and the log line names the item, which is enough to fix it.
+	 */
+	public static void verify() {
+		// The one palette-order exemption: the SkyBlock Menu is deliberately withheld from the editor.
+		final String HIDDEN = items.util.SkyblockMenu.INSTANCE.displayName();
+		java.util.logging.Logger log = M7tas.getInstance().getLogger();
+		int problems = 0;
+		for (Item item : ItemRegistry.ALL) {
+			for (ReforgeId reforge : item.reforges()) {
+				String name = item.displayName(reforge);
+				if (!PALETTE_ORDER.contains(name) && !name.equals(HIDDEN)) {
+					log.warning("Item " + name + " is not in Catalog.PALETTE_ORDER, so it sorts to the tail of the"
+							+ " loadout palette.  Add it to the right block of nine.");
+					problems++;
+				}
+				ItemDef def = item.stats(reforge);
+				if (def != null && def.rarity() != item.effectiveRarity()) {
+					log.warning("Item " + name + " is " + item.effectiveRarity() + " per its item class but "
+							+ def.rarity() + " per damage/Items, so it is being drawn in the wrong colour.");
+					problems++;
+				}
+			}
+		}
+		List<String> variants = ItemRegistry.variantNames();
+		for (String listed : PALETTE_ORDER) {
+			// ENDER_PEARL is the one palette entry that is not an Item: a bare vanilla stack with no name.
+			if (!variants.contains(listed) && !listed.equals(Material.ENDER_PEARL.name())) {
+				log.warning("Catalog.PALETTE_ORDER lists " + listed + ", which no item builds any more.  Remove it,"
+						+ " or fix the name (a lookalike character counts as a rename).");
+				problems++;
+			}
+		}
+		if (problems == 0) {
+			log.info("Item catalog self-check passed: " + variants.size() + " variants, palette order intact.");
+		}
+	}
 
 	/** Sort key for one palette item: its index in {@link #PALETTE_ORDER}, or the end of the list if unlisted. */
 	private static int paletteRank(ItemStack it) {
@@ -218,7 +295,7 @@ public final class Catalog {
 	 * <b>Only the FIRST lore line is read.</b> That is what lets an item grow lore freely, with stat lines, ability
 	 * text, rarity and everything MAP.md will hang on these items, without breaking the match: a saved copy
 	 * still keys to the same string and gets silently replaced by the new definition on the next refresh.  Keep the
-	 * item ID on lore line 0 (which {@code CustomItems.getID()} already requires) and item changes need no
+	 * item ID on lore line 0 (which {@code items.ItemUtils.getID()} already requires) and item changes need no
 	 * migration; move it, or prepend a line above it, and every saved loadout in the network quietly stops updating.
 	 */
 	public static String paletteKey(ItemStack it) {

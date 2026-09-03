@@ -265,7 +265,8 @@ public class WitherActions {
 	 *
 	 * @param wither       The Wither. Must have setAI(false).
 	 * @param stopDistance Horizontal distance (blocks) at which the wither stops chasing.
-	 * @param yOffset      Vertical offset above the target the wither hovers at.
+	 * @param yOffset      Vertical offset above the target the wither hovers at.  While the wither is above the
+	 *                     target, a jump is ignored until the target's hitbox top clears the wither's hitbox top.
 	 * @param maxSpeed     Steady-state horizontal displacement per tick along the XZ wither-to-target vector.
 	 */
 	public static void setWitherAggro(Wither wither, double stopDistance, double yOffset, double maxSpeed) {
@@ -283,6 +284,10 @@ public class WitherActions {
 		Runnable task = new Runnable() {
 			// Persistent velocity state across ticks (the PD's "v"). Reset to 0 on every snap-to-goal.
 			double vxState = 0, vzState = 0;
+			// Y the goal is built from, held back while the target is mid-jump (see below).  trackedId is the
+			// entity the tracked Y belongs to, so switching aggro target re-seeds it instead of carrying over.
+			int trackedId = -1;
+			double trackedY = 0;
 
 			@Override
 			public void run() {
@@ -324,7 +329,19 @@ public class WitherActions {
 					goalX = tx + dx * scale;
 					goalZ = tz + dz * scale;
 				}
-				double goalY = active.getY() + yOffset;
+				// Vertical goal.  A target that jumps must not drag the wither up with it: while the wither is
+				// above and the jump keeps the target's hitbox top under the wither's hitbox top, keep using the
+				// Y from before the jump.  Falling and any change made while on the ground (stairs, a landing on
+				// a higher block) track immediately, so the hold only ever lasts as long as the hop does.
+				double targetY = active.getY();
+				if(active.getId() != trackedId) {
+					trackedId = active.getId();
+				} else if(targetY > trackedY && !active.onGround()
+						&& targetY + active.getBbHeight() <= wy + w.getBbHeight()) {
+					targetY = trackedY;
+				}
+				trackedY = targetY;
+				double goalY = targetY + yOffset;
 
 				// Horizontal step: vanilla-shape PD (vxState += dir*A - vxState*0.6), then check
 				// for overshoot and snap if reached.  Velocity state persists across ticks so the

@@ -18,11 +18,33 @@ public final class Scale {
 	/**
 	 * Catacombs scaling for the four core stats on a DUNGEON item (§1.0.1).  Folds in stars and cata level
 	 * together, which is why the authored terms are the plain unscaled SkyBlock values.
+	 * <p>
+	 * <b>6.65, not 6.66</b> - the General's Medallion was nerfed and took 0.01x off the maxed buff on every stat,
+	 * which moves this and {@link #SB_STAR_MULT} together.  Both are measured rather than derived, so if the
+	 * medallion moves again they move again.
+	 * <p>
+	 * It applies to an ABILITY'S BASE DAMAGE as well, not only to stats (§7) - the wiki's damage-calculation page
+	 * lists the base as "increased by Catacombs Stat Bonus" like anything else on the item.  That is what pins the
+	 * value: Wither Impact's tooltip is {@code base x (1 + Int/100 x 0.3) x (1 + AbilityDamage/100)}, so dividing a
+	 * real tooltip by the two factors recovers the base exactly.  Four readings, eight significant figures, 10,000
+	 * outside dungeons and 66,500 = 10,000 x 6.65 inside:
+	 * <pre>
+	 * Int  6,175.88  AbilityDamage 144.5  ->    477,450.6  = 10,000 x  47.745
+	 * Int  3,390.55  AbilityDamage  90    ->    212,261.4  = 10,000 x  21.226
+	 * Int 17,695.39  AbilityDamage 134    ->  8,416,350.1  = 66,500 x 126.562
+	 * Int 23,403.71  AbilityDamage 220    -> 15,153,727.7  = 66,500 x 227.876
+	 * </pre>
+	 * The base used to skip the stage entirely, a flat 6.65x understatement of <b>every</b> ability in the plugin -
+	 * which is what made Wither Impact read ~65M on a 300M Wither Miner where a real M7 Mage does hundreds of
+	 * millions.  {@link Damage#abilityBase} is the one place it is applied.
 	 */
-	public static final double SB_CATA_MULT = 6.66;
+	public static final double SB_CATA_MULT = 6.65;
 
-	/** Stars-only scaling for every non-core stat on a dungeon item (§1.0.2), e.g. Ability Damage. */
-	public static final double SB_STAR_MULT = 1.81;
+	/**
+	 * Stars-only scaling for every non-core stat on a dungeon item (§1.0.2), e.g. Ability Damage.  <b>1.80, not
+	 * 1.81</b>, for the same General's Medallion nerf as {@link #SB_CATA_MULT}.
+	 */
+	public static final double SB_STAR_MULT = 1.80;
 
 	/**
 	 * The inherent damage resistance every dungeon boss and mini-boss carries (§5): a flat x0.1 on top of defense,

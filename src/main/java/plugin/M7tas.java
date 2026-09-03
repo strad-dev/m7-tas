@@ -128,7 +128,7 @@ public final class M7tas extends JavaPlugin {
 		PlayerInventoryBackup.startInventorySync();
 		HelmetSpeedSync.start();
 		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic), which runs every tick.
-		getServer().getScheduler().runTaskTimer(this, listeners.CustomItems::pollTerminators, 1L, 1L);
+		getServer().getScheduler().runTaskTimer(this, items.bows.Terminator::pollAll, 1L, 1L);
 		// Practice-only boss-movement driver: in practice the fake ticker gates its own runMovementTickers call off
 		// (and may not be running at all, since fakes are kicked), so drive the lane here. In a TAS this is a no-op
 		// (practiceMode is false → the fake ticker drives it), so the TAS tick ordering is untouched.
@@ -145,6 +145,10 @@ public final class M7tas extends JavaPlugin {
 		// cooldown fallback.  Raw and untracked on purpose, so a boss teardown flushing the scheduler can never
 		// strand a ghost in spectator (see death.Deaths.start).
 		death.Deaths.start();
+
+		// Cross-check the item registry against the palette order and against damage/Items' rarities.  Warns
+		// only, and runs BEFORE the export so a complaint is in the log above the file it describes.
+		Catalog.verify();
 
 		// Export the item catalog (palette + per-class default kits) to the shared data folder so the network
 		// plugin's lobby loadout editor can load the real M7 items. M7 is the sole writer of this file.
@@ -193,8 +197,8 @@ public final class M7tas extends JavaPlugin {
 
 		// Both flushes, not just the stonk one: the superboom/crypt regen is a raw runTaskLater that the shutdown
 		// outruns, so a disable inside its 100-tick window used to save the world with the hole still in it.
-		CustomItems.flushStonkRestorations();
-		CustomItems.flushBlockRestorations();
+		items.ItemUtils.flushStonkRestorations();
+		items.ItemUtils.flushBlockRestorations();
 
 		// Stop the clear HUD/map loop (hardMobCleanup below removes the secret entities).
 		if(!org.bukkit.Bukkit.getWorlds().isEmpty()) instructions.clear.ClearManager.stop(org.bukkit.Bukkit.getWorlds().getFirst());

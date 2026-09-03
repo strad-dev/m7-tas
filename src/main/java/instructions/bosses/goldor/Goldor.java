@@ -755,7 +755,7 @@ public final class Goldor extends WitherLord {
 		}
 	}
 
-	/** Hook called from CustomItems.superboom and other explosion sources. */
+	/** Hook called from the Superboom TNT and other explosion sources. */
 	public void notifyExplosionAt(Location loc) {
 		if(!phaseActive) return;
 		for(GoldorSection s : sections) {

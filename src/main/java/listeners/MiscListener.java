@@ -97,7 +97,7 @@ public class MiscListener implements Listener {
 		Block b = e.getClickedBlock();
 		if(b == null) return;
 		if(!Server.inWitherDoor(b) && !Server.inBloodDoor(b)) return;
-		if(!Server.isRunStarted() && CustomItems.getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) return;
+		if(!Server.isRunStarted() && items.ItemUtils.getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) return;
 		// A spectator's click is consumed but never opens anything.  The key check is TEAM-wide (Server.hasWitherKey /
 		// hasBloodKey), so nothing about the CLICKER is tested: an idle watcher could otherwise open the wither or
 		// blood door on the running party's behalf, and the blood door starts the Watcher.
@@ -122,7 +122,7 @@ public class MiscListener implements Listener {
 		if(e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
 		ItemStack item = e.getItem();
 		if(item == null || item.getType() != Material.ENDER_PEARL) return;
-		if(CustomItems.getID(item).equals("skyblock/utility/infinileap")) return; // leap ability is allowed
+		if(items.ItemUtils.getID(item).equals("skyblock/utility/infinileap")) return; // leap ability is allowed
 		if(FakePlayerManager.getFakePlayers().containsValue(e.getPlayer())) return;
 		if(LavaJump.isInBossArena(e.getPlayer().getLocation())) e.setCancelled(true);
 	}
@@ -283,7 +283,7 @@ public class MiscListener implements Listener {
 						serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
 						serverPlayer.hurtMarked = false;
 					}
-					Integer fireTick = CustomItems.bonzoFireTick.remove(windCharge.getEntityId());
+					Integer fireTick = items.combat.BonzoStaff.bonzoFireTick.remove(windCharge.getEntityId());
 					int travelTicks = fireTick != null ? MinecraftServer.currentTick - fireTick : -1;
 					Location loc = p.getLocation();
 					Utils.debug(Utils.DebugType.SERVER, p.getName() + " bonzostaff launched from " + Utils.round(loc.getX(), 2) + " " + Utils.round(loc.getY(), 2) + " " + Utils.round(loc.getZ(), 2) + " with velocity " + Utils.round(direction.getX(), 4) + " " + Utils.round(direction.getY(), 4) + " " + Utils.round(direction.getZ(), 4) + " after " + travelTicks + " ticks");
@@ -315,7 +315,7 @@ public class MiscListener implements Listener {
 	 * check counts, and at 84 ms the window is the three ticks it needs: two flags, two kills, on a player doing
 	 * nothing wrong.  Cancelling makes vanilla ack the placement as a failure instead, so the client rolls its own
 	 * prediction back with no ghost, and the item is never consumed so it needs no refund either.  Same pattern and
-	 * same reason as {@code CustomItems.onInfinityboomPlace}.
+	 * same reason as {@code CustomItems.onCustomBlockPlace}.
 	 */
 	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent e) {

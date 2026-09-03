@@ -18,7 +18,8 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SpringBoots {
-	private static final String ITEM_ID = "skyblock/combat/spring_boots";
+	/** The boots this drives, so the lore ID lives on the item and not in a second copy here. */
+	private static final items.Item BOOTS = items.armor.SpringBootsItem.INSTANCE;
 
 	// pitch values for BLOCK_NOTE_BLOCK_PLING (F#3=0 → F#5=24; pitch = 2^((n-12)/12))
 	private static final float PITCH_C4    = 0.7087f; // note 6  (existing code)
@@ -104,7 +105,7 @@ public class SpringBoots {
 	private static void tick() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			ItemStack boots = p.getInventory().getBoots();
-			boolean wearing = ITEM_ID.equals(CustomItems.getID(boots));
+			boolean wearing = BOOTS.matches(boots);
 			ChargeState st = states.get(p.getUniqueId());
 			if(!wearing) {
 				if(st != null) {

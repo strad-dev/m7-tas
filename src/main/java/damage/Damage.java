@@ -24,6 +24,7 @@ import java.util.Set;
  *
  * ability = BaseDamage x (1 + (Intelligence/100) x AbilityScaling) x (1 + AbilityDamage/100)
  *         x (1 + sumAdditive/100) x product(Multiplicative_i)             // no Strength, no Crit Damage
+ *           where BaseDamage is the authored figure x SB_CATA_MULT on a dungeon item (66,500 for Wither Impact)
  *
  * mageBeam = melee x (0.30 + 0.0009 x Intelligence)                       // the Mage Staff passive
  * </pre>
@@ -80,6 +81,8 @@ public final class Damage {
 
 	// ===================== §7 damage-level multiplicative sources =====================
 	private static final double HYPERION_VS_WITHER = 1.5;
+	/** The Death Bow's "deals +100% damage to Undead mobs", i.e. x2 against anything carrying {@link MobType#UNDEAD}. */
+	private static final double DEATH_BOW_VS_UNDEAD = 2.0;
 	private static final double OVERLOAD = 1.5;
 	private static final double BOOK_OF_PROGRESSION = 1.05;
 	private static final double TARANTULA_RING = 1.15;
@@ -229,26 +232,72 @@ public final class Damage {
 
 	/**
 	 * A right-click ability.  Abilities get neither Strength nor Crit Damage, which is the whole reason they
-	 * behave so differently from the melee/beam path - and why they come out at roughly 1/414 of a beam.  That is
-	 * intended: an option for anyone who wants to try them, not a damage strategy.
+	 * behave so differently from the melee/beam path.  That is intended: an option for anyone who wants to try
+	 * them, not a damage strategy.
+	 * <p>
+	 * <b>The base takes the Catacombs Stat Bonus</b> ({@link Scale#SB_CATA_MULT}), exactly like the item's own stats
+	 * do - it is a dungeon-item stat, not a constant.  Skipping it made every ability 6.65x too weak.
 	 */
 	public static double ability(Player p, LivingEntity target, ItemStack weapon) {
 		ItemDef def = Items.of(weapon);
 		if(def == null || def.ability() == null) return 0;
 		applyOnHitDebuffs(p, target, DamagePath.ABILITY, def);
 		StatBlock stats = Stats.of(p, DamagePath.ABILITY);
+		double base = abilityBase(def);
 		double intelligence = 1.0 + (stats.get(Stat.INTELLIGENCE) / 100.0) * def.ability().intelligenceScaling();
 		double abilityDamage = 1.0 + stats.get(Stat.ABILITY_DAMAGE) / 100.0;
-		double core = def.ability().baseDamage() * intelligence * abilityDamage;
+		double core = base * intelligence * abilityDamage;
 		Breakdown b = Breakdown.begin();
 		if(b != null) {
 			// No Strength and no Crit Damage rows here, because the ability formula genuinely has neither - printing
-			// them at x1 would suggest they were considered and came out neutral.
-			b.base("Base Damage", def.ability().baseDamage());
+			// them at x1 would suggest they were considered and came out neutral.  The SCALED base is the row, since
+			// that is the figure the item's own tooltip would show.
+			b.base("Base Damage", base);
 			b.factor("Intelligence", intelligence);
 			b.factor("Ability Damage", abilityDamage);
 		}
 		return finish(p, target, DamagePath.ABILITY, def, core, null, b);
+	}
+
+	/**
+	 * The STAT half of a cast: everything settled the moment the ability fires, with no target involved.  The
+	 * ability path's counterpart to {@link #bowCore}, and it exists for the same reason - the Spirit Sceptre's
+	 * Guided Bat decides its damage at FIRE time and only learns what it hit when the bat lands, so turning or
+	 * swapping weapons mid-flight cannot change the number.
+	 *
+	 * @return 0 if this weapon has no ability the damage system computes
+	 */
+	public static double abilityCore(Player p, ItemStack weapon) {
+		ItemDef def = Items.of(weapon);
+		if(def == null || def.ability() == null) return 0;
+		StatBlock stats = Stats.of(p, DamagePath.ABILITY);
+		double intelligence = 1.0 + (stats.get(Stat.INTELLIGENCE) / 100.0) * def.ability().intelligenceScaling();
+		double abilityDamage = 1.0 + stats.get(Stat.ABILITY_DAMAGE) / 100.0;
+		return abilityBase(def) * intelligence * abilityDamage;
+	}
+
+	/**
+	 * The TARGET-dependent half of a cast, applied when the ability actually connects.  Applies the debuffs the
+	 * cast carries first, exactly as {@link #meleeFinish} does.
+	 */
+	public static double abilityFinish(Player p, LivingEntity target, ItemDef weapon, double core) {
+		applyOnHitDebuffs(p, target, DamagePath.ABILITY, weapon);
+		Breakdown b = Breakdown.begin();
+		// The stat half was settled on an earlier tick, so the breakdown can only show it as the one number it
+		// already is - the same limitation bowFinish and meleeFinish have.
+		if(b != null) b.base("Stat core", core);
+		return finish(p, target, DamagePath.ABILITY, weapon, core, null, b);
+	}
+
+	/**
+	 * An ability's base damage after the dungeon stage: the authored figure is the plain SkyBlock number the wiki
+	 * prints, and a DUNGEON item's base takes the Catacombs Stat Bonus on top (§7).  Same rule, same constant and
+	 * same reason as {@link ItemDef#stats}, which is why the authored {@code 10_000} stays the overworld tooltip
+	 * value and Wither Impact casts from 66,500 in here.
+	 */
+	static double abilityBase(ItemDef def) {
+		double base = def.ability().baseDamage();
+		return def.dungeonItem() ? base * Scale.SB_CATA_MULT : base;
 	}
 
 	/**
@@ -431,6 +480,14 @@ public final class Damage {
 		// only one of the two survives, and it is this one.
 		if(def != null && "skyblock/combat/scylla".equals(def.loreId()) && MobStats.typesOf(target).contains(MobType.WITHER)) {
 			product *= HYPERION_VS_WITHER;
+		}
+		// The Death Bow's x2 against every Undead-type mob.  On this floor that is the four Wither Lords, the Wither
+		// Miners and wither-class trash (Wither + Undead), the Crypt Undead, the Watcher's Undeads and the Prince -
+		// but NOT the Withered Dragons or either Shadow Assassin, which carry no Undead type at all.  Keyed on the
+		// lore ID, like the Hyperion's, so it follows the WEAPON and not the shooter, and so it lands on the bow's
+		// Duplex and Archer-bonus arrows too: they stamp the same weapon.
+		if(def != null && "skyblock/combat/death_bow".equals(def.loreId()) && MobStats.typesOf(target).contains(MobType.UNDEAD)) {
+			product *= DEATH_BOW_VS_UNDEAD;
 		}
 		if(def != null && path.isMelee()) product *= def.reforge().meleeMultiplier();   // Fabled x1.15
 		if(path == DamagePath.BOW) product *= OVERLOAD;                                  // assumed always procs
@@ -707,7 +764,7 @@ public final class Damage {
 		if(!kind.playsHurtSound()) return;
 		WitherLord lord = WitherLord.activeFor(wither);
 		if(lord != null && lord.isDying()) return;
-		if(listeners.CustomItems.beamDamageInProgress) return;
+		if(items.ItemUtils.beamDamageInProgress) return;
 
 		org.bukkit.Location loc = wither.getLocation();
 		wither.getWorld().playSound(loc, org.bukkit.Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);

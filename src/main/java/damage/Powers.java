@@ -11,7 +11,7 @@ import java.util.Map;
  * count all follow from it, so changing an accessory is a one-line edit - §1.12 is explicit that hardcoding 2259
  * or 238 loses exactly that.
  * <p>
- * None of it is dungeon-scaled: accessories are not dungeon items, so no x6.66 and no x1.81.
+ * None of it is dungeon-scaled: accessories are not dungeon items, so no x6.65 and no x1.80.
  */
 public final class Powers {
 	private Powers() {}

@@ -66,6 +66,12 @@ public final class Reforges {
 				StatBlock.of(Stat.STRENGTH, 35, Stat.CRIT_DAMAGE, 50, Stat.INTELLIGENCE, 25));
 		put(ReforgeId.ANCIENT, ItemCategory.ARMOR, Rarity.EPIC,
 				StatBlock.of(Stat.STRENGTH, 18, Stat.CRIT_DAMAGE, 50, Stat.INTELLIGENCE, 16));
+		// The Diamond Necron Head is SPECIAL (hence red), and a special tier is NOT "above Mythic" on this table,
+		// so it needs its own row or the lookup misses and silently zeroes the head's reforge.  Same numbers as
+		// MYTHIC deliberately: this row exists to keep that item's output identical to what it was when the head
+		// was mis-registered as Legendary, not to introduce a new tier of reforge values.
+		put(ReforgeId.ANCIENT, ItemCategory.ARMOR, Rarity.SPECIAL,
+				StatBlock.of(Stat.STRENGTH, 35, Stat.CRIT_DAMAGE, 50, Stat.INTELLIGENCE, 25));
 		put(ReforgeId.NECROTIC, ItemCategory.ARMOR, Rarity.LEGENDARY, StatBlock.of(Stat.INTELLIGENCE, 150));
 		put(ReforgeId.NECROTIC, ItemCategory.ARMOR, Rarity.MYTHIC, StatBlock.of(Stat.INTELLIGENCE, 200));
 		put(ReforgeId.LOVING, ItemCategory.ARMOR, Rarity.MYTHIC, StatBlock.of(Stat.INTELLIGENCE, 120));

@@ -4,8 +4,8 @@ package damage;
  * The stats this damage system reads.  See MAP.md §1.
  * <p>
  * {@link #core} is what {@link Scale#SB_CATA_MULT} applies to: MAP.md §1.0.1 names Damage, Strength, Crit
- * Damage and Intelligence as "the four core stats" that get the full x6.66 Catacombs scaling, and §1.0.2 puts
- * everything else on the stars-only x1.81.  Crit Chance is not core; nothing reads it either (§7 rules every hit a
+ * Damage and Intelligence as "the four core stats" that get the full x6.65 Catacombs scaling, and §1.0.2 puts
+ * everything else on the stars-only x1.80.  Crit Chance is not core; nothing reads it either (§7 rules every hit a
  * crit), it is only stored because reforges grant it.
  */
 public enum Stat {

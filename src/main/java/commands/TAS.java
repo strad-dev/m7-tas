@@ -179,7 +179,7 @@ public class TAS implements CommandExecutor {
 		// Reset class-ability (drop) cooldowns.
 		listeners.CustomItems.resetAbilityCooldowns();
 		// Reset the per-run crypt-farm guard.
-		listeners.CustomItems.resetCrypts();
+		items.ItemUtils.resetCrypts();
 		// Reset ultra-realistic death state: no ghosts and no cheat-death cooldowns carried in from a previous run.
 		death.Deaths.reset();
 

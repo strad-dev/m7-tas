@@ -222,8 +222,7 @@ public class WitherKing {
 		if(!relic.name().equals(relicColorOfItem(p.getInventory().getItem(8)))) return; // not in this player's hand
 
 		// Clear the relic out of hand (back to the SkyBlock-menu nether star), exactly as placeRelic does.
-		p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(
-				Material.NETHER_STAR, FakePlayerInventory.SKYBLOCK_MENU_NAME, "", "SKYBLOCK_MENU"));
+		p.getInventory().setItem(8, items.util.SkyblockMenu.INSTANCE.build());
 		instructions.Actions.setHotbarSlot(p, 8);
 		spawnRelicEntities(relic);
 	}
@@ -346,7 +345,7 @@ public class WitherKing {
 		altarWoolDisplays.add(wool);
 
 		// Clear the relic out of hand (back to the SkyBlock-menu nether star).
-		p.getInventory().setItem(8, FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", "", "SKYBLOCK_MENU"));
+		p.getInventory().setItem(8, items.util.SkyblockMenu.INSTANCE.build());
 		instructions.Actions.setHotbarSlot(p, 8);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 

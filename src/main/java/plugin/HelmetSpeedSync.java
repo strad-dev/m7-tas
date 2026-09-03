@@ -49,7 +49,7 @@ public final class HelmetSpeedSync {
 					}
 
 					// Carrying a relic without a Cow Hat equipped → 50% speed debuff until it's placed.
-					boolean debuff = carryingRelic(p) && !FakePlayerInventory.isCowHat(helmet);
+					boolean debuff = carryingRelic(p) && !exemptsRelicDebuff(helmet);
 					Boolean prevDebuff = lastRelicDebuff.put(p.getUniqueId(), debuff);
 					if(prevDebuff == null || prevDebuff != debuff) {
 						Utils.setRelicDebuff(p, debuff);
@@ -81,9 +81,21 @@ public final class HelmetSpeedSync {
 		return false;
 	}
 
+	/**
+	 * The speed a helmet implies, straight off the worn item ({@code Wearable.impliedSpeed}), with 400 for a
+	 * helmet that grants none.  This used to be two hardcoded display-name comparisons and two magic numbers; the
+	 * numbers now live on the Racing Helmet and the Cow Hat themselves, so adding a third speed helmet is a
+	 * one-line change to that item and nothing here.
+	 */
 	private static int impliedSpeed(ItemStack helmet) {
-		if(FakePlayerInventory.isRacingHelmet(helmet)) return 650;
-		if(FakePlayerInventory.isCowHat(helmet)) return 550;
-		return 400;
+		items.Wearable worn = items.ItemRegistry.wearable(helmet);
+		int implied = worn == null ? -1 : worn.impliedSpeed();
+		return implied < 0 ? 400 : implied;
+	}
+
+	/** True if the worn helmet cancels the relic carry debuff.  Only the Cow Hat does. */
+	private static boolean exemptsRelicDebuff(ItemStack helmet) {
+		items.Wearable worn = items.ItemRegistry.wearable(helmet);
+		return worn != null && worn.exemptsRelicDebuff();
 	}
 }

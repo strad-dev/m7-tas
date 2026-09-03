@@ -60,7 +60,7 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					player.updateInventory();
 				});
 			} else if(action == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
-				String heldId = CustomItems.getID(player.getInventory().getItemInMainHand());
+				String heldId = items.ItemUtils.getID(player.getInventory().getItemInMainHand());
 				if("skyblock/combat/last_breath".equals(heldId) || "skyblock/combat/explosive_bow".equals(heldId)) {
 					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
 						ServerPlayer sp = ((CraftPlayer) player).getHandle();

@@ -22,7 +22,7 @@ import java.util.UUID;
  * script when items change; just change the item factory.
  * <p>
  * <b>Invariant this depends on:</b> {@link #key} is material + display name + the item's ID, and the ID is the
- * FIRST lore line ({@code CustomItems.getID()} reads {@code getLore().getFirst()}). So new lore may be APPENDED
+ * FIRST lore line ({@code items.ItemUtils.getID()} reads {@code getLore().getFirst()}). So new lore may be APPENDED
  * freely, whether stat lines, ability text or rarity, and matching still works.  Prepending a line above the ID, or moving
  * the ID out of lore, breaks this silently: every saved item stops matching, is left frozen (see {@link #refresh})
  * and quietly stops receiving updates. Keep the ID on line 0.

@@ -237,7 +237,7 @@ public final class Maxor extends WitherLord {
 
 		// Already holding an Energy Crystal anywhere in inventory? Reject.
 		for(ItemStack item : p.getInventory().getContents()) {
-			if(item != null && ENERGY_CRYSTAL_ID.equals(CustomItems.getID(item))) return;
+			if(item != null && ENERGY_CRYSTAL_ID.equals(items.ItemUtils.getID(item))) return;
 		}
 
 		ItemStack prev = p.getInventory().getItem(8);
@@ -290,7 +290,7 @@ public final class Maxor extends WitherLord {
 	private boolean placeAtPlate(Player p, int plateX) {
 		if(Utils.isSpectator(p)) return false;
 		ItemStack slot8 = p.getInventory().getItem(8);
-		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(CustomItems.getID(slot8))) return false;
+		if(slot8 == null || !ENERGY_CRYSTAL_ID.equals(items.ItemUtils.getID(slot8))) return false;
 
 		boolean left = plateX == PLATE_LEFT_X;
 		if((left ? plateLeftCrystal : plateRightCrystal) != null) return false;
@@ -299,7 +299,7 @@ public final class Maxor extends WitherLord {
 		else plateRightCrystal = placedCrystal;
 
 		ItemStack restore = previousSlot8.remove(p.getUniqueId());
-		p.getInventory().setItem(8, restore != null ? restore : FakePlayerInventory.getSkyBlockItem(Material.NETHER_STAR, "<green>SkyBlock Menu (Click)", "", "SKYBLOCK_MENU"));
+		p.getInventory().setItem(8, restore != null ? restore : items.util.SkyblockMenu.INSTANCE.build());
 
 		boolean bothPlaced = plateLeftCrystal != null && plateRightCrystal != null;
 		int placed = bothPlaced ? 2 : 1;

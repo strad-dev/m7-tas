@@ -520,7 +520,7 @@ public class Actions {
 	 * a damageable entity within {@link #MAGE_BEAM_RANGE}. Avoids the thousands of no-op
 	 * swing/dispatch packets that would otherwise be sent during Storm-phase beam spam.
 	 * <br>
-	 * Mirrors the raytrace logic in {@code CustomItems.mageBeam}: ignores Players and dead
+	 * Mirrors the raytrace logic in {@code items.ItemUtils.mageBeam}: ignores Players and dead
 	 * or resistance-255 living entities, but DOES include Withers, since the boss is a valid
 	 * target and the beam plays a stun sound even when the wither is invulnerable.  It also
 	 * skips firing if a solid block sits closer than the entity along the line of sight.
@@ -533,8 +533,8 @@ public class Actions {
 	private static boolean mageBeamWouldHit(Player p) {
 		Location eye = p.getEyeLocation();
 		Vector dir = eye.getDirection();
-		// raySize 0.5 mirrors CustomItems.MAGE_BEAM_LENIENCY so this gate is never stricter than the real beam
-		// (this only decides whether to bother firing; the actual target/hit is recomputed in CustomItems.mageBeam).
+		// raySize 0.5 mirrors ItemUtils.MAGE_BEAM_LENIENCY so this gate is never stricter than the real beam
+		// (this only decides whether to bother firing; the actual target/hit is recomputed in ItemUtils.mageBeam).
 		RayTraceResult entityHit = p.getWorld().rayTraceEntities(eye, dir, MAGE_BEAM_RANGE, 0.5, entity -> {
 			if(!(entity instanceof LivingEntity le)) return false;
 			if(le instanceof Player) return false;
@@ -554,7 +554,7 @@ public class Actions {
 	/**
 	 * Terminator-loop variant of {@link #rightClick}: simulates the middle Terminator arrow's
 	 * ballistic trajectory from the player's current facing direction and only sends the
-	 * use-item packet (which triggers {@code CustomItems.terminator}) if the arrow would
+	 * use-item packet (which triggers {@code items.bows.Terminator}) if the arrow would
 	 * intercept a valid living entity before hitting terrain or running out of horizontal
 	 * range. Mirrors {@link #loopLeftClick}'s purpose: avoid the per-tick arrow-spawn cost
 	 * when no target is in the line of fire.
@@ -831,7 +831,7 @@ public class Actions {
 		// state directly so the draw animation syncs (via entity-data LIVING_ENTITY_FLAGS bit 0)
 		// without needing real projectiles in the fake player's inventory. Other bows (e.g.
 		// Terminator) go through the normal packet path so their ability dispatch still fires.
-		String heldId = CustomItems.getID(p.getInventory().getItemInMainHand());
+		String heldId = items.ItemUtils.getID(p.getInventory().getItemInMainHand());
 		if("skyblock/combat/last_breath".equals(heldId) || "skyblock/combat/explosive_bow".equals(heldId)) {
 			// Only click path that sends no packet at all, so simulatePacket never logs it.  Log the click here
 			Utils.debug(Utils.DebugType.CLIENT, p.getName() + " Right Clicked" + (Utils.isSuperVerbose() ? (" at " + Utils.round(p.getLocation().getX(), 3) + " " + Utils.round(p.getLocation().getY(), 5) + " " + Utils.round(p.getLocation().getZ(), 3) + " " + p.getLocation().getYaw() + " " + p.getLocation().getPitch()) : ""));
@@ -917,14 +917,14 @@ public class Actions {
 	public static void leap(Player p, Player target) {
 		// Spirit Leap requires the Infinileap (ender pearl) in hand, so bail if the player isn't holding it.
 		ItemStack held = p.getInventory().getItemInMainHand();
-		if(!"skyblock/utility/infinileap".equals(CustomItems.getID(held))) {
+		if(!"skyblock/utility/infinileap".equals(items.ItemUtils.getID(held))) {
 			String heldDesc;
 			if(held.getType().isAir()) {
 				heldDesc = "an empty hand";
 			} else {
-				CustomItems.getID(held);
+				items.ItemUtils.getID(held);
 				heldDesc = held.getType() + (held.hasItemMeta() && held.getItemMeta().hasDisplayName() ? " (" + Utils.displayName(held.getItemMeta()) + ")" : "")
-						+ " [id=" + CustomItems.getID(held) + "]";
+						+ " [id=" + items.ItemUtils.getID(held) + "]";
 			}
 			Utils.debug(Utils.DebugType.ERROR, p.getName() + " tried to leap while holding " + heldDesc + " instead of an Infinileap");
 			return;
@@ -936,7 +936,7 @@ public class Actions {
 		MovementAudit.cancelAirborneAudit(p.getUniqueId());
 		for(WindCharge windCharge : p.getWorld().getEntitiesByClass(WindCharge.class)) {
 			if(windCharge.getScoreboardTags().contains("Bonzo") && windCharge.getShooter() == p) {
-				CustomItems.bonzoFireTick.remove(windCharge.getEntityId());
+				items.combat.BonzoStaff.bonzoFireTick.remove(windCharge.getEntityId());
 				windCharge.remove();
 			}
 		}
@@ -1000,7 +1000,7 @@ public class Actions {
 	 * tag and configure.  Bypasses {@code Player.launchProjectile} and the vanilla bow release, whose CraftBukkit
 	 * path calls {@code Arrow.shootFromRotation} with inaccuracy=1.0F, a random spread direction that varies run to
 	 * run.  Goes directly through NMS {@code shoot(..., 0)} for a perfectly clean, repeatable trajectory, the same
-	 * pattern as {@code CustomItems.terminator}'s shotgun arrows.
+	 * pattern as {@code items.bows.Terminator}'s shotgun arrows.
 	 * <br>
 	 * Both the spawn position (with the vanilla -0.1 Y offset {@code launchProjectile} applies) and the flight
 	 * direction come from {@code aimFrom}, so a caller can capture one aim {@link Location} at fire time and reuse
