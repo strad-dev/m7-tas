@@ -113,6 +113,9 @@ public final class Deaths {
 		// Bank the participant while they are still readable as one: a ghost is out of realPlayers(), and the run
 		// payload's roster is what the leaderboards derive group size from.
 		WitherActions.noteInRun(p);
+		// This death is now certain (the mode gate, the run check and CheatDeath are all behind us), so score it.
+		// HERE rather than in either branch below: a wipe is still a death, and the completed sections still score.
+		instructions.clear.ClearManager.noteDeath();
 
 		announceDeath(p, killer);
 		// The party-wide cue that somebody is DOWN, as opposed to the positional hurt sound above, which only says

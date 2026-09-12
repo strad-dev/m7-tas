@@ -454,7 +454,9 @@ public class WitherKing {
 			dragon.setSilent(true);
 			dragon.setPersistent(true);
 			dragon.setRemoveWhenFarAway(false);
-			dragon.customName(Utils.msg("<gold><bold>﴾ <red>" + dragonName + "<gold> ﴿ </bold><yellow>1B<red>❤"));
+			// Formatted, not the literal "1B": damage/Mayor's Derpy doubles every mob's HP, the dragons included.
+			dragon.customName(Utils.msg("<gold><bold>﴾ <red>" + dragonName + "<gold> ﴿ </bold><yellow>"
+					+ Utils.formatHealthM(damage.MobStats.WITHERED_DRAGON.internalHealth()) + "<red>❤"));
 			dragon.setCustomNameVisible(true);
 			dragon.getAttribute(Attribute.MAX_HEALTH).setBaseValue(damage.MobStats.WITHERED_DRAGON.internalHealth());
 			dragon.getAttribute(Attribute.ARMOR).setBaseValue(0);

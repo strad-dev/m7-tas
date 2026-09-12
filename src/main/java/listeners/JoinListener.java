@@ -137,9 +137,9 @@ public class JoinListener implements Listener {
 
 	/**
 	 * The attributes and team membership a real player needs to practice: no attack cooldown, no knockback of either
-	 * kind, no fall damage, one-tick block breaking, no collisions, and the class speed.  Idempotent, and re-applied
-	 * on respawn as well as join, since a respawn builds a fresh {@code ServerPlayer} and nothing here is worth
-	 * betting on surviving that.
+	 * kind, no fall damage, no burning, one-tick block breaking, no collisions, and the class speed.  Idempotent,
+	 * and re-applied on respawn as well as join, since a respawn builds a fresh {@code ServerPlayer} and nothing
+	 * here is worth betting on surviving that.
 	 */
 	static void applyPlayerSetup(Player p) {
 		// Remove the vanilla attack cooldown (instant re-attack).
@@ -158,6 +158,20 @@ public class JoinListener implements Listener {
 		// Large safe-fall distance so players don't take fall damage during practice.
 		var safeFall = p.getAttribute(Attribute.SAFE_FALL_DISTANCE);
 		if(safeFall != null) safeFall.setBaseValue(1024);
+
+		// No fire ticks ever, from lava or anything else.  BURNING_TIME is the multiplier LivingEntity applies to
+		// every ignite (Entity.igniteForSeconds -> LivingEntity.igniteForTicks scales the ticks by it), so a base of
+		// 0 means every source burns for 0 ticks.  MiscListener.onPlayerCombust cancels the combust EVENT, but that
+		// is only half the job: the client runs the same lava-ignite path for its own player (LavaFluid.entityInside
+		// requests LAVA_IGNITE on both sides, nothing there is server-gated), so a server-side cancel alone still
+		// leaves the practicer's own screen on fire for 15s after a lava jump.  BURNING_TIME is syncable, so the
+		// client's copy of the attribute is 0 too and its prediction never lights up.
+		var burningTime = p.getAttribute(Attribute.BURNING_TIME);
+		if(burningTime != null) burningTime.setBaseValue(0);
+
+		// Clear a burn already in progress.  While remainingFireTicks > 0, Entity.lavaIgnite takes its no-event
+		// branch and re-ignites straight from NMS, so a stale burn would re-arm itself on every lava contact.
+		p.setFireTicks(0);
 
 		// Instant block breaking: BLOCK_BREAK_SPEED is the final MULTIPLIER on destroy speed (unlike MINING_EFFICIENCY,
 		// which is additive and only counts when the held tool already suits the block), so 1024 breaks anything in one

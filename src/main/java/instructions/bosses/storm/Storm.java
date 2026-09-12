@@ -135,11 +135,6 @@ public final class Storm extends WitherLord {
 	}
 
 	@Override
-	protected String displayHealth() {
-		return "1B";
-	}
-
-	@Override
 	protected int previousTicks() {
 		return PRE_STORM_TICKS;
 	}

@@ -857,8 +857,15 @@ public class Utils {
 		return (negative ? "-" : "") + sb + frac;
 	}
 
+	/**
+	 * The "DUNGEON BUFF!" announcement, in Hypixel's own two-line shape: who found what, then what it granted.
+	 * <p>
+	 * <b>The stat line is generated from {@code damage/Blessings}</b>, not written out here.  It used to hard-code
+	 * 7.26 / 3.63% / 10.89 / 5.445%, which are the table's figures at the MAXED effect increase - so the message
+	 * silently lied the moment the mayor became a setting, promising Paul's numbers under Derpy.  Generating it
+	 * also means the message can never disagree with what the damage pipeline actually applied.
+	 */
 	public static void broadcastBlessing(Player p, BlessingType type, int level) {
-		String message1 = "<gold><bold>DUNGEON BUFF!<reset><gold> " + getRealName(p) + "<white> found a ";
 		String romanLevel;
 		switch(level) {
 			case 1 -> romanLevel = "I";
@@ -869,38 +876,20 @@ public class Utils {
 				return;
 			}
 		}
-		String message2;
-		switch(type) {
-			case LIFE -> {
-				message1 += "<light_purple>Blessing of Life " + romanLevel + "<white>!";
-				message2 = "<gray>     Granted you <green>+" + round(1 + (level * 5.445 / 100), 2) + "x<red> ❤ Health<gray> and <green>+" + round(1 + (level * 5.445 / 100), 2) + "x<red> ❣ Health Regen";
-			}
-			case POWER -> {
-				message1 += "<light_purple>Blessing of Power " + romanLevel + "<white>!";
-				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<red> ❁ Strength<gray> and <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<blue> ☠ Crit Damage";
-			}
-			case STONE -> {
-				message1 += "<light_purple>Blessing of Stone " + romanLevel + "<white>!";
-				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 2) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense<gray> and <green>+" + round(level * 10.89, 1) + "<red> ❁ Damage";
-			}
-			case WISDOM -> {
-				message1 += "<light_purple>Blessing of Wisdom " + romanLevel + "<white>!";
-				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<aqua> ✎ Intelligence<gray> and <green>+" + round(level * 7.26, 1) + "<white> ✦ Speed";
-			}
-			case TIME -> {
-				if(level != 5) {
-					Bukkit.broadcast(msg("<red>Error: Blessing of Time can only be level 5"));
-					return;
-				}
-				message1 += "<light_purple>Blessing of Time " + romanLevel + "<white>!";
-				message2 = "<gray>     Granted you <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<red> ❤ Health<gray>, <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<aqua> ✎ Intelligence<gray>, <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x ❈ Defense<gray>, and <green>+" + round(level * 7.26, 1) + "<gray> & <green>+" + round(1 + (level * 3.63 / 100), 2) + "x<red> ❁ Strength";
-			}
-			default -> {
-				Bukkit.broadcast(msg("<red>Error: Invalid blessing type " + type));
-				return;
-			}
+		// Blessing of Time is the Trivia puzzle's reward and only ever drops at V.
+		if(type == BlessingType.TIME && level != 5) {
+			Bukkit.broadcast(msg("<red>Error: Blessing of Time can only be level 5"));
+			return;
 		}
-		Bukkit.broadcast(msg(message1));
-		Bukkit.broadcast(msg(message2));
+		String name = switch(type) {
+			case LIFE -> "Life";
+			case POWER -> "Power";
+			case STONE -> "Stone";
+			case WISDOM -> "Wisdom";
+			case TIME -> "Time";
+		};
+		Bukkit.broadcast(msg("<gold><bold>DUNGEON BUFF!<reset><gold> " + getRealName(p)
+				+ "<white> found a <light_purple>Blessing of " + name + " " + romanLevel + "<white>!"));
+		Bukkit.broadcast(msg(damage.Blessings.describe(type, level)));
 	}
 }

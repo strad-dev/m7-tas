@@ -61,7 +61,8 @@ public final class Maxor extends WitherLord {
 	private EnderCrystal plateLeftCrystal;
 	private EnderCrystal plateRightCrystal;
 	private final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
-	private final WitherSkeleton[] miners = new WitherSkeleton[10];
+	/** Every Wither Miner of the opening wave, ACROSS ALL GROUPS, so a re-spawn can clear the previous set. */
+	private final List<WitherSkeleton> miners = new ArrayList<>();
 
 	// Laser/stun cycle state.
 	// The laser scan runs as a boss ticker (BossScheduler.addTicker) so the stun is detected and applied every
@@ -121,11 +122,6 @@ public final class Maxor extends WitherLord {
 	@Override
 	protected double maxHealth() {
 		return damage.MobStats.MAXOR.internalHealth();
-	}
-
-	@Override
-	protected String displayHealth() {
-		return "800M";
 	}
 
 	@Override
@@ -661,6 +657,13 @@ public final class Maxor extends WitherLord {
 		return c;
 	}
 
+	/**
+	 * The opening wave: <b>two groups</b>, spawned together on the aggro tick.
+	 * <ul>
+	 *   <li><b>10</b> around {@code 73.5 225 73.5}, radius <b>3</b> - the group that has always been here.</li>
+	 *   <li><b>20</b> around {@code 73.5 221 40.5}, radius <b>10</b>.</li>
+	 * </ul>
+	 */
 	private void spawnMiners() {
 		// Remove any old Wither Skeletons
 		for(WitherSkeleton witherSkeleton : miners) {
@@ -668,12 +671,24 @@ public final class Maxor extends WitherLord {
 				witherSkeleton.remove();
 			}
 		}
+		miners.clear();
 
-		for(int i = 0; i < 10; i++) {
-			// Random location within 3 blocks of center (73.5, 225, 73.5)
-			double x = 73.5 + (random.nextDouble() * 6 - 3); // -3 to +3
-			double z = 73.5 + (random.nextDouble() * 6 - 3); // -3 to +3
-			Location spawnLoc = new Location(world, x, 225, z);
+		spawnMinerGroup(10, 73.5, 225, 73.5, 3);
+		spawnMinerGroup(20, 73.5, 221, 40.5, 10);
+	}
+
+	/**
+	 * One group of Wither Miners, scattered uniformly inside a HORIZONTAL disc of {@code radius} around
+	 * {@code (x, y, z)}.  Y is fixed rather than spread: these have no AI and never fall, so their height is the
+	 * group's, not a per-miner roll.
+	 */
+	private void spawnMinerGroup(int count, double x, double y, double z, double radius) {
+		for(int i = 0; i < count; i++) {
+			// sqrt on the radius, or the group bunches up in the middle - a ring's area grows with r, so a flat
+			// roll puts far too many miners near the centre.
+			double r = radius * Math.sqrt(random.nextDouble());
+			double angle = random.nextDouble() * Math.PI * 2;
+			Location spawnLoc = new Location(world, x + r * Math.cos(angle), y, z + r * Math.sin(angle));
 
 			WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
 
@@ -690,8 +705,7 @@ public final class Maxor extends WitherLord {
 			miner.customName(Utils.msg("Wither Miner <yellow>" + Utils.formatHealthM(miner) + "<red>❤"));
 			miner.setCustomNameVisible(true);
 
-			// Store in array
-			miners[i] = miner;
+			miners.add(miner);
 		}
 	}
 }

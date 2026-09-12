@@ -18,7 +18,7 @@ import plugin.Utils;
  *   <tr><td>Lethality (x0.91^4 defense)</td><td>all 4 stacks</td><td>built by hitting</td></tr>
  *   <tr><td>Ice Spray debuff (x1.1)</td><td>always</td><td>cast, 8 blocks, 5s</td></tr>
  *   <tr><td>Twilight Arrow Poison (x1.1)</td><td>always</td><td>bow hit, 20s</td></tr>
- *   <tr><td>Blessings</td><td>maxed</td><td>the chests the party actually opened</td></tr>
+ *   <tr><td>Blessing LEVELS</td><td>maxed</td><td>the chests the party actually opened</td></tr>
  * </table>
  *
  * Classic exists so a practising player can concentrate on movement and routing without also maintaining four
@@ -32,6 +32,9 @@ import plugin.Utils;
  * <p>
  * <b>Times from the three modes are not comparable</b>, so anything that records a run has to carry the mode with
  * it - see {@code plugin/RunResult} and the network plugin's leaderboard key.
+ * <p>
+ * The difficulty is the FIRST of the dungeon settings {@code /dungeonsettings} owns; the other is {@link Mayor},
+ * which is independent of it and stacks with any of the three modes.
  */
 public enum Difficulty {
 	CLASSIC, REALISTIC, ULTRA_REALISTIC;
@@ -42,23 +45,6 @@ public enum Difficulty {
 	private static final int MAX_TIME = 5;
 	private static final int MAX_WISDOM = 14;
 	private static final int MAX_STONE = 9;
-
-	/** Blessing of Stone's contribution: a FLAT {@code +10.89} base Damage per level, so +98.01 at the maxed 9. */
-	private static final double STONE_DAMAGE_PER_LEVEL = 10.89;
-
-	/**
-	 * A blessing's multiplicative bonus at a given total level: {@code 1 + 3.63% per level}, the same formula
-	 * {@code Utils.broadcastBlessing} announces.  At the maxed levels that is Power x2.0527, Time x1.1815 and
-	 * Wisdom x1.5082, matching §1.13.
-	 * <p>
-	 * The generic flat half of a blessing (+7.26 per level) is still not modelled - §1.13's base tables do not list
-	 * it, and the worked aggregate in §1.10 reproduces exactly without it.  <b>Blessing of Stone is the exception</b>
-	 * and is modelled, as {@link #stoneDamage()}: it is a real, measured source of base Damage rather than a
-	 * bookkeeping detail, and leaving it out understated every hit.
-	 */
-	private static double blessingMultiplier(int totalLevel) {
-		return 1.0 + 0.0363 * totalLevel;
-	}
 
 	private static Difficulty current = CLASSIC;
 
@@ -123,27 +109,9 @@ public enum Difficulty {
 		return current == ULTRA_REALISTIC;
 	}
 
-	/**
-	 * The multiplier a blessing type contributes to its stats right now.
-	 * <p>
-	 * In realistic mode this reads the run's actual chest history from {@code ClearManager}'s tally.  <b>If the
-	 * clear phase is not part of the practice session, max blessings are assumed even in realistic mode</b> (§0) -
-	 * there is no chest history to read, so the input falls back to the classic table.
-	 */
-	public static double blessing(Utils.BlessingType type) {
-		return blessingMultiplier(blessingLevel(type));
-	}
-
-	/**
-	 * Blessing of Stone's flat base-Damage contribution right now: {@code +10.89} per level, +98.01 at the maxed 9.
-	 * <p>
-	 * Flat, so it belongs to the base sum in {@link Profile#base()} and NOT to the multiplicative bucket the other
-	 * blessings use.  Getting that wrong is the §1.13 mistake the stat pipeline's own doc warns about - a base source
-	 * and a multiplier on the same stat are not interchangeable.
-	 */
-	public static double stoneDamage() {
-		return STONE_DAMAGE_PER_LEVEL * blessingLevel(Utils.BlessingType.STONE);
-	}
+	// What a blessing is WORTH - the per-stat percent and flat tables, and the effect increase the mayor is one
+	// term of - is damage/Blessings.  This class owns only what LEVEL is in force, which is the part the difficulty
+	// decides; Blessings reads blessingLevel below and nothing here needs to know the figures.
 
 	/**
 	 * The total level of one blessing type that the formulas are actually using.  Classic answers from the maxed

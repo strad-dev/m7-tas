@@ -7,11 +7,12 @@ import org.bukkit.*;
 import org.bukkit.entity.*;
 
 /**
- * The Mage's regular drop ability: an AI-less, gravity-less sheep flown forwards a block a tick until it hits a
- * mob or something solid, then detonated.
+ * The Mage's regular drop ability: an AI-less, gravity-less sheep flown a block a tick along whatever the caster is
+ * looking at, until it hits a mob or something solid, then detonated.
  * <p>
  * The flight is {@link ItemUtils#launchGuided}, shared with the Spirit Sceptre's Guided Bat - the two are the same
- * projectile with a different animal and a different damage rule.  Only the rule is here.
+ * projectile with a different animal and a different damage rule.  Only the rule is here.  <b>It steers</b>: the
+ * heading is re-read every tick, so a Mage can walk a sheep round a corner, or into themselves.
  * <p>
  * The Mage has no ultimate, so a sprinting drop does nothing for them.
  */
@@ -70,7 +71,7 @@ public final class GuidedSheep implements ClassAbility {
 	public static void guidedSheep(Player p) {
 		Sheep sheep = (Sheep) p.getWorld().spawnEntity(p.getEyeLocation().add(0, -0.65, 0), EntityType.SHEEP);
 		sheep.setColor(DyeColor.WHITE);
-		GuidedCarriers.stampFlat(sheep, DAMAGE);
+		GuidedCarriers.stampFlat(sheep, "Guided Sheep", DAMAGE);
 		ItemUtils.launchGuided(p, sheep, BLAST_RADIUS);
 	}
 }

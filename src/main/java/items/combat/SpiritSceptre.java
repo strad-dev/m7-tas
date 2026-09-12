@@ -16,10 +16,11 @@ import org.bukkit.inventory.ItemStack;
  * The Spirit Sceptre, in its starred (Thorn Fragment) build: 190 Damage, 330 Intelligence, and a Guided Bat that
  * casts from 2,250 at 0.2 Intelligence scaling.
  * <p>
- * <b>Its damage is decided at FIRE time.</b>  {@code Damage.abilityCore} settles the base, Intelligence and Ability
- * Damage the moment the bat leaves, and only the target-dependent half - the Rulers, Smite, the target's own
- * debuffs - waits for the impact.  So turning, swapping weapons or losing a buff while the bat is in flight cannot
- * change what it hits for, which is the same rule arrows already follow (§1.0.5).
+ * <b>The bat's HEADING is live; its DAMAGE is not.</b>  It follows your aim, so turning your head steers it for the
+ * whole ten seconds it may be airborne - but {@code Damage.abilityCore} settles the base, Intelligence and Ability
+ * Damage the moment it leaves and {@code damage.GuidedCarriers} stamps that onto the entity, so only the
+ * target-dependent half (the Rulers, Smite, the target's own debuffs) waits for the impact.  Swapping weapons or
+ * losing a buff mid-flight therefore cannot change what it hits for, which is the same rule arrows follow (§1.0.5).
  * <p>
  * The flight itself is {@link ItemUtils#launchGuided}, shared with the Mage's Guided Sheep.
  */
@@ -90,7 +91,8 @@ public final class SpiritSceptre implements Weapon, AbilityItem {
 		Bat bat = (Bat) p.getWorld().spawnEntity(p.getEyeLocation().add(0, -0.65, 0), EntityType.BAT);
 		// Awake, or the client draws it hanging upside down from a ceiling it is nowhere near.
 		bat.setAwake(true);
-		GuidedCarriers.stamp(bat, wand, damage.Damage.abilityCore(p, wand));
+		// The chat line names the ITEM, not the ability: "Your Spirit Sceptre hit 1 enemy for 66,342.2 damage."
+		GuidedCarriers.stamp(bat, "Spirit Sceptre", wand, damage.Damage.abilityCore(p, wand));
 		ItemUtils.launchGuided(p, bat, BLAST_RADIUS);
 	}
 }

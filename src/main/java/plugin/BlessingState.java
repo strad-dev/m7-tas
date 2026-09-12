@@ -2,7 +2,10 @@ package plugin;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import damage.Blessings;
 import damage.Difficulty;
+import damage.Mayor;
+import damage.Stat;
 import instructions.bosses.WitherActions;
 import instructions.clear.ClearManager;
 
@@ -31,8 +34,16 @@ public final class BlessingState {
 	/** The run these blessings belong to, matching every other report it makes ({@link WitherActions#runId()}). */
 	public String runId;
 
-	/** The damage difficulty in force: {@code classic} or {@code realistic}. */
+	/** The damage difficulty in force: {@code classic}, {@code realistic} or {@code ultra_realistic}. */
 	public String difficulty;
+
+	/**
+	 * The mayor in office ({@code damage/Mayor}): {@code paul}, {@code derpy} or {@code other}.  On a blessing
+	 * report because Paul's Benediction perk is one term of {@link Blessings#effectIncrease()}, which scales every
+	 * blessing figure: without him it falls from 1.815 to 1.452, so {@link Entry#multiplier} AND
+	 * {@link Entry#flatDamage} below are different numbers at the same {@link Entry#effectiveLevel}.
+	 */
+	public String mayor;
 
 	/**
 	 * True while a practice run is live at all ({@code WitherActions.isPracticeMode}).
@@ -55,6 +66,13 @@ public final class BlessingState {
 	/** One entry per blessing type, in damage-relevance order: Power, Wisdom, Time, Stone, Life. */
 	public List<Entry> blessings = new ArrayList<>();
 
+	/**
+	 * How much stronger every blessing figure is right now ({@link Blessings#effectIncrease()}): <b>1.815</b> with
+	 * Mayor Paul, <b>1.452</b> without.  On the payload because it is the one number that explains why the same
+	 * {@link Entry#effectiveLevel} reports a different {@link Entry#multiplier} on two runs.
+	 */
+	public double effectIncrease;
+
 	/** The order the entries are emitted in, so a display can render the list as it arrives. */
 	private static final Utils.BlessingType[] ORDER = {
 			Utils.BlessingType.POWER, Utils.BlessingType.WISDOM, Utils.BlessingType.TIME,
@@ -70,9 +88,9 @@ public final class BlessingState {
 		public int count;
 		/** The total level the damage formulas are using - {@link #level}, or the maxed table (see {@link BlessingState#assumedMax}). */
 		public int effectiveLevel;
-		/** The multiplicative bonus at {@link #effectiveLevel}; null for the two types that don't have one. */
+		/** The multiplicative bonus at {@link #effectiveLevel}; null for a type that grants no percent at all. */
 		public Double multiplier;
-		/** Blessing of Stone's flat base-Damage contribution; null for every other type (only Stone is flat). */
+		/** Blessing of Stone's flat base-Damage contribution; null for every other type (only Stone grants Damage). */
 		public Double flatDamage;
 
 		Entry(Utils.BlessingType type) {
@@ -80,15 +98,13 @@ public final class BlessingState {
 			this.level = ClearManager.collectedLevel(type);
 			this.count = ClearManager.collectedCount(type);
 			this.effectiveLevel = Difficulty.blessingLevel(type);
-			// Only the three multiplicative blessings get a multiplier, and only Stone gets a flat figure. Stone's
-			// own multiplicative half (Defense) and Life entirely are unmodelled, and reporting a 1 + 3.63%/level
-			// for them would be inventing a number the damage pipeline never applies.
-			switch(type) {
-				case POWER, WISDOM, TIME -> this.multiplier = Difficulty.blessing(type);
-				case STONE -> this.flatDamage = Difficulty.stoneDamage();
-				default -> {
-				}
-			}
+			// Both read off damage/Blessings, and both are omitted when the table says there is nothing to say:
+			// every type has a multiplier now (Stone's is its Defense half, Life's its Health half), but only
+			// Stone grants flat DAMAGE.  Reporting a 0 or a 1.0 would read as a real figure.
+			double m = Blessings.multiplier(type);
+			if(m != 1.0) this.multiplier = m;
+			double d = Blessings.flat(type, Stat.DAMAGE);
+			if(d != 0.0) this.flatDamage = d;
 		}
 	}
 
@@ -99,6 +115,8 @@ public final class BlessingState {
 		BlessingState s = new BlessingState();
 		s.runId = WitherActions.runId();
 		s.difficulty = Difficulty.current().id();
+		s.mayor = Mayor.current().id();
+		s.effectIncrease = Blessings.effectIncrease();
 		s.runActive = WitherActions.isPracticeMode();
 		s.clearActive = ClearManager.isActive();
 		s.hasClearData = ClearManager.hasBlessingData();

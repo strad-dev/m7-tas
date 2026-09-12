@@ -5,7 +5,6 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import plugin.Utils;
 
 /**
  * Everything outside the item / equipment / power layers (MAP.md §1.13): skills, slayers, potions,
@@ -38,16 +37,14 @@ public final class Profile {
 	 * The player's inherent +5 Damage is deliberately NOT here: it is the {@code 5 +} term of the formula
 	 * (§1.0.4), so it belongs to {@link Scale#PLAYER_BASE_DAMAGE} and must not be double-counted as a stat.
 	 * <p>
-	 * One entry is not a constant: Blessing of Stone's flat Damage reads {@link Difficulty}, like the multiplicative
-	 * blessings below, so realistic mode gets the party's real count with no second code path.
+	 * <b>No blessing appears here.</b>  They are the last stage of the pipeline and have their own shape
+	 * ({@code (stat + flat) x percent}, see {@link Blessings}), so {@code Stats.compute} applies them after
+	 * everything in this class - including Blessing of Stone's flat Damage, which used to sum in here.
 	 */
 	public static StatBlock base() {
 		return StatBlock.EMPTY
 				// ----- Damage -----
 				.plus(Stat.DAMAGE, 4)            // Blazetekk Ham Radio (Bluertooth Ring)
-				// Blessing of Stone: +10.89 base Damage per level, +98.01 at the maxed 9.  FLAT, so it sums here
-				// rather than joining the other blessings in multiplicative() - see Difficulty.stoneDamage.
-				.plus(Stat.DAMAGE, Difficulty.stoneDamage())
 
 				// ----- Strength -----
 				.plus(Stat.STRENGTH, 124)        // SkyBlock Level, +1 per 5 levels (max 620)
@@ -133,19 +130,17 @@ public final class Profile {
 	}
 
 	/**
-	 * The product of every multiplicative factor on one stat.  These are the blessings and the Master Skull, and
-	 * they are read through {@link Difficulty} so realistic mode can supply the party's real blessing count
-	 * without any of this becoming a second code path.
+	 * The product of every multiplicative factor on one stat <b>except the blessings</b>.
+	 * <p>
+	 * The blessings used to be in here alongside the Master Skull, and they do not belong: Hypixel applies them
+	 * LAST, and their flat half lands inside their own percent ({@link Blessings}).  Folding them in here put the
+	 * flat outside the percent and left it exposed to {@link #additivePercent} as well.  {@code Stats.compute}
+	 * now runs this stage first and the blessing stage after it.
 	 */
 	public static double multiplicative(Stat stat) {
 		return switch(stat) {
-			case STRENGTH -> Difficulty.blessing(Utils.BlessingType.POWER)
-					* Difficulty.blessing(Utils.BlessingType.TIME)
-					* 1.1;                                // Master Skull, Tier 7
-			case CRIT_DAMAGE -> Difficulty.blessing(Utils.BlessingType.POWER);
-			case INTELLIGENCE -> Difficulty.blessing(Utils.BlessingType.WISDOM)
-					* Difficulty.blessing(Utils.BlessingType.TIME);
-			default -> 1.0;                               // Damage and Ability Damage have no multiplicative source
+			case STRENGTH -> 1.1;                         // Master Skull, Tier 7
+			default -> 1.0;                               // nothing else has a non-blessing multiplier
 		};
 	}
 

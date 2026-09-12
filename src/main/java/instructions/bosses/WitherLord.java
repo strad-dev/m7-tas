@@ -107,7 +107,10 @@ public abstract class WitherLord {
 		boss.setSilent(true);
 		boss.setPersistent(true);
 		boss.setRemoveWhenFarAway(false);
-		boss.customName(Utils.msg("<gold><bold>﴾ <red>" + displayName() + "<gold> ﴿ </bold><yellow>" + displayHealth() + "<red>❤"));
+		// The health suffix is FORMATTED from maxHealth(), never hardcoded: MobStats scales boss HP by the mayor
+		// (damage/Mayor: Derpy doubles it), so a literal "800M" would spawn Maxor showing half his real health.
+		boss.customName(Utils.msg("<gold><bold>﴾ <red>" + displayName() + "<gold> ﴿ </bold><yellow>"
+				+ Utils.formatHealthM(maxHealth()) + "<red>❤"));
 		boss.setCustomNameVisible(true);
 		boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth());
 		// minecraft:armor stays at 0 on every mob (MAP.md §5): SkyBlock defense is applied by
@@ -154,11 +157,9 @@ public abstract class WitherLord {
 
 	protected abstract Location spawnLocation();
 
-	/** Internal HP scale (300 for Maxor, 600 for Storm, etc.). Not the display HP. */
+	/** Internal HP for this boss, i.e. its {@code MobStats} block's {@code internalHealth()}. Not the display HP,
+	 *  which {@link #spawn()} formats from this. */
 	protected abstract double maxHealth();
-
-	/** Display HP string for the custom name suffix, e.g. "800M", "1B", "1.2B". */
-	protected abstract String displayHealth();
 
 	/** PRE_<NAME>_TICKS offset used by {@link #formatTick(int)} to render the run-overall column. */
 	protected abstract int previousTicks();

@@ -393,20 +393,27 @@ public class GoldorListener implements Listener {
 		Utils.scheduleTask(() -> { if(!Goldor.INSTANCE.isPhaseInactive()) action.accept(true); }, 1L);
 	}
 
-	// =================== Item frame rotation: only S3 frames affected (creative players bypass) ===================
+	// =================== Item frame rotation: ONLY the Arrow Align frame may be touched ===================
+	// PHASE-INDEPENDENT, matching the punch and break guards below.  This used to gate the whole thing on an active
+	// phase and simply return otherwise, so before Goldor spun up - in prep, and between phases - every frame in
+	// the wall could be freely rotated, which is not recoverable: nothing re-randomises the grid mid-run.
+	//
+	// Which frame is "correct" is Goldor.isArrowAlignFrame, a STATIC positional test, precisely so this can answer
+	// while the phase is still inactive, before any frame has been scanned for.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInteractEntity(PlayerInteractEntityEvent e) {
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
 		Player p = e.getPlayer();
-		if(Goldor.INSTANCE.isPhaseInactive()) {
-			// Defer an arrow-frame solve that lands before the phase spins up (full-run chain timing). Use a
-			// phase-independent bounds check since isProtectedFrame/getArrowAlignFrame need an active phase.
-			if(Goldor.INSTANCE.isInS3FrameRegion(frame)) runWhenPhaseActive(deferred -> processArrowFrame(frame, p, deferred));
-			return;
-		}
-		if(Goldor.INSTANCE.isProtectedFrame(frame)) return; // frames outside S3 behave normally
-		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
-		if(frame.equals(arrow)) {
+		if(!Goldor.INSTANCE.isInS3FrameRegion(frame)) return; // frames outside S3 behave normally
+		if(Goldor.isArrowAlignFrame(frame)) {
+			if(Goldor.INSTANCE.isPhaseInactive()) {
+				// Defer a solve that lands before the phase spins up (full-run chain timing) and cancel the vanilla
+				// rotation now - processArrowFrame turns the frame itself when it fires, so letting vanilla turn it
+				// too made an early click worth two steps.
+				runWhenPhaseActive(deferred -> processArrowFrame(frame, p, deferred));
+				e.setCancelled(true);
+				return;
+			}
 			// processArrowFrame rotates explicitly; cancel so vanilla doesn't ALSO rotate it (double-turn)
 			// when the held item happens to be exempt from CustomItems' interaction cancel.
 			if(processArrowFrame(frame, p, false)) e.setCancelled(true);
@@ -421,8 +428,7 @@ public class GoldorListener implements Listener {
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return false; // guarded here, not in onInteractEntity, since frame PROTECTION still applies to spectators
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
-		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
-		if(!frame.equals(arrow)) return false;
+		if(!Goldor.isArrowAlignFrame(frame)) return false;
 		GoldorSection s3 = Goldor.INSTANCE.getSection(2);
 		if(s3 == null || s3.device.isActivated()) return false;
 		s3.device.markActivated();
@@ -433,13 +439,15 @@ public class GoldorListener implements Listener {
 		return true;
 	}
 
+	/**
+	 * The same rule on {@code PlayerInteractAtEntityEvent}, which has its own handler list and so is NOT delivered
+	 * to the handler above.  Phase-independent for the same reason; the solve itself rides the other event.
+	 */
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInteractAtFrame(PlayerInteractAtEntityEvent e) {
-		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
-		if(Goldor.INSTANCE.isProtectedFrame(frame)) return;
-		ItemFrame arrow = Goldor.INSTANCE.getArrowAlignFrame();
-		if(frame.equals(arrow)) return;
+		if(!Goldor.INSTANCE.isInS3FrameRegion(frame)) return;
+		if(Goldor.isArrowAlignFrame(frame)) return;
 		if(e.getPlayer().getGameMode() == GameMode.CREATIVE) return; // creative bypass
 		e.setCancelled(true);
 	}

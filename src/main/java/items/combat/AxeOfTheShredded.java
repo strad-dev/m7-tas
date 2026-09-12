@@ -91,7 +91,7 @@ public final class AxeOfTheShredded implements Weapon, AbilityItem {
 		aotsStreakExpiry.put(id, now + AOTS_STREAK_TICKS);
 		double core = damage.Damage.meleeCore(p) * AOTS_THROW_SHARE
 				* Math.min(Math.pow(2, streak), AOTS_THROW_CAP);
-		ItemUtils.throwAxe(p, core, true, false);
+		ItemUtils.throwAxe(p, "Throwing Axe", core, true, false);
 	}
 
 	/** Forget every throw streak.  Part of the run reset, so a new run never inherits a x16 multiplier. */

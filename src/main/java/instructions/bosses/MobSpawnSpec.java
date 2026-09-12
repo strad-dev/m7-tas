@@ -16,7 +16,7 @@ import java.util.function.Function;
  * Specification for a group of mobs that all share configuration but spawn at
  * uniformly-random locations within a bounding box. Storm uses 16 of these for
  * its various Wither Miner / Sentry / Shadow Assassin clusters; Maxor could
- * also use this for his 10 center miners.
+ * also use this for the two groups of his opening miner wave.
  */
 public record MobSpawnSpec(
 		String groupName,

@@ -40,7 +40,7 @@ public final class AxeThrow implements ClassAbility {
 
 	@Override
 	public boolean cast(Player p) {
-		ItemUtils.throwAxe(p, damage.CombatState.maxInLastTicks(p, 1200), false, true);
+		ItemUtils.throwAxe(p, "Throwing Axe", damage.CombatState.maxInLastTicks(p, 1200), false, true);
 		return true;
 	}
 }

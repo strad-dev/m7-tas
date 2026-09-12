@@ -180,7 +180,17 @@ public class CustomItems implements Listener {
 		if(lastMeleeTick.getOrDefault(p.getUniqueId(), -1) == now) return;
 		lastMeleeTick.put(p.getUniqueId(), now);
 
-		damage.Damage.deal(target, damage.Damage.melee(p, target, held), DamageKind.NORMAL, p, DamagePath.MELEE);
+		// ONLY A MELEE WEAPON SWINGS.  Anything else - a bow, a wearable head held in the hand, a vanilla stack -
+		// lands a bare PUNCH instead, which is the melee formula with the held item contributing nothing.  This
+		// used to run the full melee path whatever was held, so hitting a mob with a Precise Terminator folded the
+		// bow's 310 Damage, its Strength and its 250 Crit Damage into the swing and punched for most of what a
+		// sword does.  Unregistered stacks are unaffected either way: they contribute no stats, so the two paths
+		// already agreed for them.
+		Item item = ItemRegistry.of(held);
+		double sbDamage = item instanceof Weapon weapon && weapon.swingsMelee()
+				? damage.Damage.melee(p, target, held)
+				: damage.Damage.punch(p, target);
+		damage.Damage.deal(target, sbDamage, DamageKind.NORMAL, p, DamagePath.MELEE);
 	}
 
 	// ===================================== listeners =====================================

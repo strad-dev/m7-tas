@@ -1,0 +1,130 @@
+package commands;
+
+import damage.Difficulty;
+import damage.Mayor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.jspecify.annotations.NonNull;
+import plugin.Utils;
+
+/**
+ * {@code /dungeonsettings [difficulty [<mode>] | mayor [<paul|derpy|other>]]} - this server's dungeon settings
+ * (MAP.md §0).  With no arguments it prints them; with a setting and no value it steps that one to its next value.
+ * <p>
+ * Two settings, and they are independent - any difficulty can be run under any mayor:
+ * <ul>
+ *   <li><b>difficulty</b> ({@link Difficulty}) - <i>classic</i> assumes all four debuffs are applied and blessings
+ *       are maxed, so a practising player can concentrate on movement and routing.  <i>realistic</i> makes each of
+ *       those a live input: the debuffs have to be built and the blessings are whatever the party actually
+ *       collected.  <i>ultra_realistic</i> is realistic plus death - the storm, Goldor and relic instakills in
+ *       {@code death/Deaths}, and terminals you have to solve in a GUI.</li>
+ *   <li><b>mayor</b> ({@link Mayor}) - <i>paul</i> (the default) gives the EZPZ +10 bonus score and boosted
+ *       blessings, <i>derpy</i> gives neither and doubles every mob's health, and <i>other</i> gives neither and
+ *       leaves health alone.</li>
+ * </ul>
+ * Both are flags on inputs, never second damage paths - see the two classes.
+ * <p>
+ * This replaced {@code /toggledungeondifficulty}, which was the difficulty half of it.
+ * <p>
+ * On the network the party leader sets these instead, with {@code /p settings difficulty <mode>} and
+ * {@code /p settings mayor <paul|derpy|other>}, and both ride along with the practice request so everyone in the
+ * party inherits them: a mixed-mode party would make the same boss take different damage per player, and would let
+ * half of it die.  This command is the standalone equivalent, so M7 keeps working on its own.
+ * <p>
+ * <b>Times from different settings are not comparable.</b>  That is why the difficulty travels on the run payload
+ * ({@code plugin/RunResult}) and the network's leaderboards key on it as a third axis; the mayor travels there too,
+ * though the boards do not currently split on it.
+ */
+public class DungeonSettings implements CommandExecutor {
+	private static final String USAGE =
+			"<red>Usage: /dungeonsettings [difficulty [classic|realistic|ultra_realistic] | mayor [paul|derpy|other]]";
+
+	@Override
+	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command command, @NonNull String label,
+			String @NonNull [] args) {
+		if(args.length == 0) {
+			show(sender);
+			return true;
+		}
+		switch(args[0].toLowerCase()) {
+			case "difficulty", "mode" -> difficulty(sender, args);
+			case "mayor" -> mayor(sender, args);
+			default -> sender.sendMessage(Utils.msg(USAGE));
+		}
+		return true;
+	}
+
+	/** The current settings, one line each.  What a bare {@code /dungeonsettings} prints. */
+	private static void show(CommandSender sender) {
+		sender.sendMessage(Utils.msg("<gold><bold>DUNGEON SETTINGS"));
+		sender.sendMessage(Utils.msg("<dark_gray>- <gray>difficulty: <yellow><value>  <dark_gray><desc>",
+				Placeholder.unparsed("value", Difficulty.current().id()),
+				Placeholder.unparsed("desc", describe(Difficulty.current()))));
+		sender.sendMessage(Utils.msg("<dark_gray>- <gray>mayor: <yellow><value>  <dark_gray><desc>",
+				Placeholder.unparsed("value", Mayor.current().id()),
+				Placeholder.unparsed("desc", describe(Mayor.current()))));
+		sender.sendMessage(Utils.msg("<dark_gray>Change one with <white>/dungeonsettings <setting> [value]"));
+	}
+
+	private static void difficulty(CommandSender sender, String[] args) {
+		Difficulty next;
+		if(args.length >= 2) {
+			next = Difficulty.parse(args[1]);
+			if(next == null) {
+				sender.sendMessage(Utils.msg(USAGE));
+				return;
+			}
+			Difficulty.set(next);
+		} else {
+			// No value given: step to the next mode, which is what the old /toggledungeondifficulty did bare.
+			next = Difficulty.toggle();
+		}
+		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><value>",
+				Placeholder.unparsed("value", next.id())));
+		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
+	}
+
+	private static void mayor(CommandSender sender, String[] args) {
+		Mayor next;
+		if(args.length >= 2) {
+			next = Mayor.parse(args[1]);
+			if(next == null) {
+				sender.sendMessage(Utils.msg(USAGE));
+				return;
+			}
+			Mayor.set(next);
+		} else {
+			next = Mayor.toggle();
+		}
+		Bukkit.broadcast(Utils.msg("<gold><bold>MAYOR<reset><gray> is now <yellow><value>",
+				Placeholder.unparsed("value", next.id())));
+		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
+		// Only the HP is latched at spawn, so a mid-session change leaves whatever is already on the floor alone.
+		if(instructions.bosses.WitherActions.isPracticeMode()) {
+			Bukkit.broadcast(Utils.msg("<dark_gray>Mob health is set when a mob spawns, so this only affects what spawns from now on."));
+		}
+	}
+
+	/**
+	 * One line on what a setting's value means.  PLAIN text: it is interpolated as an unparsed placeholder in
+	 * {@link #show}, so a MiniMessage tag in here would print as literal angle brackets.
+	 */
+	private static String describe(Difficulty d) {
+		return switch(d) {
+			case CLASSIC -> "Debuffs are automatically applied and blessings are always maxed.";
+			case REALISTIC -> "Debuffs must be applied manually and blessings reflect collected secrets (if clear is part of the practice).";
+			case ULTRA_REALISTIC -> "Realistic, plus you can die and terminals must be solved by hand.";
+		};
+	}
+
+	private static String describe(Mayor m) {
+		return switch(m) {
+			case PAUL -> "EZPZ gives +10 bonus score and blessings are boosted; a perfect clear scores 319.";
+			case DERPY -> "Mobs have double health, blessings are weaker and there is no +10 bonus score (max 309).";
+			case OTHER -> "A mayor with no dungeon perks: no +10 bonus score (max 309) and weaker blessings.";
+		};
+	}
+}

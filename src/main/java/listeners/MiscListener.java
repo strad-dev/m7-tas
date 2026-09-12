@@ -395,6 +395,11 @@ public class MiscListener implements Listener {
 	// Fire resistance stops fire and lava DAMAGE but the entity still visually catches fire and
 	// accrues fire ticks, so cancel combustion outright for ALL players: walking through fire,
 	// landing in lava on the Goldor lava-jump, and so on.
+	//
+	// This is the server-side half only.  The client predicts its own ignition in lava, which no event can reach,
+	// so the fire ticks are really killed by the BURNING_TIME = 0 attribute in JoinListener.applyPlayerSetup.  This
+	// stays because it stops the burn before NMS even asks the attribute, and because the paths that BYPASS the
+	// event (lavaIgnite when remainingFireTicks > 0) are only reachable once something has already lit the player.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerCombust(EntityCombustEvent e) {
 		if(e.getEntity() instanceof Player) {

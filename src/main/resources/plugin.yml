@@ -52,6 +52,6 @@ commands:
   m7loadout:
     description: Edit the saved kit for your selected class
     usage: /m7loadout [reset]
-  toggledungeondifficulty:
-    description: Set the damage difficulty (classic, realistic or ultra_realistic)
-    usage: /toggledungeondifficulty [classic|realistic|ultra_realistic]
+  dungeonsettings:
+    description: Show or change the dungeon settings (difficulty, mayor)
+    usage: /dungeonsettings [difficulty [classic|realistic|ultra_realistic] | mayor [paul|derpy|other]]

@@ -38,7 +38,12 @@ public final class Stats {
 	 */
 	private static final int CACHE_TICKS = 5;
 
-	private record Key(UUID player, DamagePath path) {}
+	/**
+	 * {@code weapon} is false for the UNARMED aggregate, i.e. a punch: the same player minus whatever is in their
+	 * main hand.  It is part of the key rather than a separate uncached call because a punch is landed at the same
+	 * rate as a swing - someone hitting a mob with a bow does it every tick they click.
+	 */
+	private record Key(UUID player, DamagePath path, boolean weapon) {}
 
 	private record Cached(int tick, StatBlock stats) {}
 
@@ -57,12 +62,27 @@ public final class Stats {
 
 	/** This player's finished stat aggregate on a damage path. */
 	public static StatBlock of(Player p, DamagePath path) {
+		return of(p, path, true);
+	}
+
+	/**
+	 * This player's aggregate with <b>nothing in their main hand</b>: what a bare punch is worked out from.
+	 * <p>
+	 * Armour, equipment, accessories, the pet, the class bonus and the profile all still count - a punch in
+	 * SkyBlock scales with your Strength and Crit Damage like anything else.  The only thing missing is the held
+	 * item, because you are not hitting with it.
+	 */
+	public static StatBlock unarmed(Player p) {
+		return of(p, DamagePath.MELEE, false);
+	}
+
+	private static StatBlock of(Player p, DamagePath path, boolean weapon) {
 		if(p == null) return StatBlock.EMPTY;
-		Key key = new Key(p.getUniqueId(), path);
+		Key key = new Key(p.getUniqueId(), path, weapon);
 		Cached hit = CACHE.get(key);
 		int now = MinecraftServer.currentTick;
 		if(hit != null && now - hit.tick() < CACHE_TICKS) return hit.stats();
-		StatBlock computed = compute(p, path);
+		StatBlock computed = compute(p, path, weapon);
 		CACHE.put(key, new Cached(now, computed));
 		return computed;
 	}
@@ -72,6 +92,10 @@ public final class Stats {
 	 * only built when someone is actually looking at it.
 	 */
 	public static Map<String, StatBlock> breakdown(Player p, DamagePath path) {
+		return breakdown(p, path, true);
+	}
+
+	private static Map<String, StatBlock> breakdown(Player p, DamagePath path, boolean weapon) {
 		Map<String, StatBlock> out = new LinkedHashMap<>();
 		if(p == null) return out;
 		DungeonClass clazz = DungeonClass.of(p);
@@ -79,7 +103,7 @@ public final class Stats {
 		Pet pet = Pet.forPlayer(p, path);
 		PlayerInventory inv = p.getInventory();
 
-		put(out, "weapon", itemStats(inv.getItemInMainHand(), pet));
+		if(weapon) put(out, "weapon", itemStats(inv.getItemInMainHand(), pet));
 		put(out, "helmet", itemStats(inv.getHelmet(), pet));
 		put(out, "chestplate", itemStats(inv.getChestplate(), pet));
 		put(out, "leggings", itemStats(inv.getLeggings(), pet));
@@ -97,9 +121,9 @@ public final class Stats {
 		if(stats != null && !stats.isEmpty()) out.put(label, stats);
 	}
 
-	private static StatBlock compute(Player p, DamagePath path) {
+	private static StatBlock compute(Player p, DamagePath path, boolean weapon) {
 		StatBlock sum = StatBlock.EMPTY;
-		for(StatBlock part : breakdown(p, path).values()) sum = sum.plus(part);
+		for(StatBlock part : breakdown(p, path, weapon).values()) sum = sum.plus(part);
 
 		// The stat stage.  Per stat, and WHOLE-stat: the sum above (items + armour + equipment + power + profile)
 		// is what gets multiplied, not just the profile half.
@@ -109,6 +133,10 @@ public final class Stats {
 			double value = sum.get(stat)
 					* (1.0 + Profile.additivePercent(p, stat, pet) / 100.0)
 					* Profile.multiplicative(stat);
+			// Blessings are the LAST stage, and their shape is (stat + flat) x percent - the flat lands INSIDE
+			// their own percent but OUTSIDE every other multiplier, which is exactly Hypixel's order (MAP.md
+			// §1.13).  Applying it any earlier exposes the flat to additivePercent and the Master Skull too.
+			value = (value + Blessings.flat(stat)) * Blessings.multiplier(stat);
 			staged = staged.plus(stat, value);
 		}
 		return staged;

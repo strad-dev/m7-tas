@@ -88,11 +88,20 @@ public class TabCompletor implements TabCompleter {
 				}
 			}
 
-			case "toggledungeondifficulty" -> {
-				// Read off the enum, never a literal list, so a new mode can't become executable-but-unlistable.
+			case "dungeonsettings" -> {
 				if(args.length == 1) {
+					for(String setting : new String[]{"difficulty", "mayor"}) {
+						if(setting.startsWith(args[0].toLowerCase())) completions.add(setting);
+					}
+				} else if(args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
+					// Read off the enum, never a literal list, so a new mode can't become executable-but-unlistable.
 					for(damage.Difficulty d : damage.Difficulty.values()) {
-						if(d.id().startsWith(args[0].toLowerCase())) completions.add(d.id());
+						if(d.id().startsWith(args[1].toLowerCase())) completions.add(d.id());
+					}
+				} else if(args.length == 2 && args[0].equalsIgnoreCase("mayor")) {
+					// Off the enum, same as the modes above.
+					for(damage.Mayor m : damage.Mayor.values()) {
+						if(m.id().startsWith(args[1].toLowerCase())) completions.add(m.id());
 					}
 				}
 			}

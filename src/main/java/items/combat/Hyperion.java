@@ -109,10 +109,7 @@ public final class Hyperion implements Weapon, AbilityItem {
 				}
 			}
 		}
-		if(damaged > 0) {
-			p.sendMessage(Utils.msg("<red>Your Implosion hit " + damaged + " enemies for "
-					+ damage.Damage.integer(dealt) + " damage"));
-		}
+		damage.Damage.reportAoe(p, "Implosion", damaged, dealt);
 		Utils.playLocalSound(p, Sound.ENTITY_GENERIC_EXPLODE, 1f, 1f);
 
 		// wither shield sound, on a 100-tick cooldown per player.

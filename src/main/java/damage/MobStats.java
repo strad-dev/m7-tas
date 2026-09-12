@@ -32,9 +32,10 @@ public final class MobStats {
 	 * One mob's stat block.
 	 *
 	 * @param id           a readable name, for debug output
-	 * @param displayHealth the SkyBlock HP as the game displays it (800M, 1.4B, ...).  Internal health is this
-	 *                      divided by {@link Scale#SB_PER_MC_HP}, so the displayed number is no longer a
-	 *                      hand-picked constant that has to be kept in step with it.
+	 * @param displayHealth the SkyBlock HP as the game displays it under Mayor Paul (800M, 1.4B, ...).  Internal
+	 *                      health is this divided by {@link Scale#SB_PER_MC_HP} and then scaled by the mayor
+	 *                      ({@link MobStat#internalHealth}), so the displayed number is no longer a hand-picked
+	 *                      constant that has to be kept in step with it.
 	 * @param defense      the real SkyBlock defense, BEFORE Lethality and Last Breath reduce it
 	 * @param bossResistance whether this target carries the inherent x0.1 every boss and mini-boss has
 	 * @param elite        whether the Elite attribute's +30% applies (Bosses and Mini-Bosses)
@@ -43,9 +44,18 @@ public final class MobStats {
 	public record MobStat(String id, double displayHealth, double defense, boolean bossResistance, boolean elite,
 			Set<MobType> types) {
 
-		/** Minecraft health for this mob: the SkyBlock figure at the {@code /1e6} scale. */
+		/**
+		 * Minecraft health for this mob: the SkyBlock figure at the {@code /1e6} scale, <b>doubled under Mayor
+		 * Derpy</b> ({@link Mayor}).
+		 * <p>
+		 * This is the ONE place the mayor's HP multiplier is applied, and every mob and boss on the floor takes its
+		 * health from here (bosses through {@code WitherLord.maxHealth}, everything else through {@link #apply}),
+		 * so nothing else has to know the mayor can change.  The displayed figure follows for free: the name
+		 * suffix is rewritten from LIVE health by {@code Utils.changeName}, and a boss's spawn name is formatted
+		 * off this.
+		 */
 		public double internalHealth() {
-			return displayHealth / Scale.SB_PER_MC_HP;
+			return displayHealth * Mayor.healthMultiplier() / Scale.SB_PER_MC_HP;
 		}
 
 		/** The same block with its HP scaled by room depth (§5's +10% per tier). */

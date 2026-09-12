@@ -89,21 +89,36 @@ public final class Goldor extends WitherLord {
 	private BukkitTask patrolTask;
 	private BukkitTask coreApproachTask;
 	private final List<ItemFrame> protectedFrames = new ArrayList<>();
-	private ItemFrame arrowAlignFrame;
 
 	/**
-	 * S3 Arrow Align item frame block coord: the ONE frame in the wall that starts unrotated and has to be turned.
+	 * The S3 Arrow Align frame - the ONE frame in the wall that starts unrotated, is the only one a player may
+	 * touch, and has to be turned to solve the device.  The bottom-left frame of the grid.
 	 * <p>
-	 * <b>Single source of truth.</b>  {@link #protectAllItemFrames} and {@link #resetS3Device} both pick the frame
-	 * nearest this point, and both used to carry the block centre as their own literal - so moving the device meant
-	 * finding three places, and these constants sat unused while the literals did the work.  Both now derive from
-	 * {@link #arrowTarget()}.
+	 * <b>Recorded as the frame ENTITY's own position</b> ({@code -1.969 120.5 78.5}, facing EAST, hanging on the
+	 * block at {@code -2 120 78}), and matched by {@link #isArrowAlignFrame}.  It used to be a NEAREST-frame search
+	 * against the block centre {@code (-1.5, 120, 78.5)}, and that was <b>ambiguous</b>: a frame on this wall sits
+	 * at {@code y = row + 0.5}, so 120 is exactly halfway between the y=119.5 and y=120.5 rows and both came out at
+	 * the same squared distance.  Which one won was whatever {@code getNearbyEntities} happened to return first, so
+	 * the "correct" frame could move between runs.  <b>Match the position; never hunt for the nearest.</b>
 	 */
-	private static final int ARROW_X = -2, ARROW_Y = 120, ARROW_Z = 78;
+	private static final double ARROW_FRAME_X = -1.969, ARROW_FRAME_Y = 120.5, ARROW_FRAME_Z = 78.5;
 
-	/** The block centre of {@link #ARROW_X}/{@link #ARROW_Y}/{@link #ARROW_Z}, which is where a wall frame sits. */
-	private static double[] arrowTarget() {
-		return new double[]{ARROW_X + 0.5, ARROW_Y, ARROW_Z + 0.5};
+	/**
+	 * How far off {@link #ARROW_FRAME_X} a frame may sit and still be the one.  Frames in the wall are a whole
+	 * block apart, so a quarter block is unambiguous while absorbing the 1/32 wall offset's rounding.
+	 */
+	private static final double ARROW_FRAME_TOLERANCE = 0.25;
+
+	/**
+	 * True if this is the Arrow Align frame.  <b>Static and positional</b>, so it answers before the phase has
+	 * spun up - which is what lets the interaction guard protect the wall in prep and between phases, not just
+	 * mid-phase.
+	 */
+	public static boolean isArrowAlignFrame(ItemFrame frame) {
+		if(frame == null) return false;
+		Location l = frame.getLocation();
+		double dx = l.getX() - ARROW_FRAME_X, dy = l.getY() - ARROW_FRAME_Y, dz = l.getZ() - ARROW_FRAME_Z;
+		return dx * dx + dy * dy + dz * dz <= ARROW_FRAME_TOLERANCE * ARROW_FRAME_TOLERANCE;
 	}
 	private final Map<Location, BlockData> coreSnapshot = new HashMap<>();
 	private boolean coreBarrierActive = false;
@@ -121,7 +136,6 @@ public final class Goldor extends WitherLord {
 	@Override protected String displayName() { return "Goldor"; }
 	@Override protected Location spawnLocation() { return new Location(world, 80.5, 118, 40.5, -90f, 0f); }
 	@Override protected double maxHealth() { return damage.MobStats.GOLDOR.internalHealth(); }
-	@Override protected String displayHealth() { return "1.2B"; }
 	@Override protected int previousTicks() { return PRE_GOLDOR_TICKS; }
 
 	@Override
@@ -264,55 +278,21 @@ public final class Goldor extends WitherLord {
 
 	private void protectAllItemFrames() {
 		// Per user: only frames in the S3 frame wall (-2,119,74 to -2,125,80) are immune.
-		Collection<Entity> ents = world.getNearbyEntities(S3_FRAME_BOUNDS);
-
-		// First pass: protect all S3 frames and find the one closest to the Arrow Align target.
-		double[] target = arrowTarget();
-		final double targetX = target[0], targetY = target[1], targetZ = target[2];
-		double bestDist = Double.MAX_VALUE;
-		ItemFrame best = null;
-		for(Entity e : ents) {
+		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
 			if(e instanceof ItemFrame frame) {
 				frame.setInvulnerable(true);
 				protectedFrames.add(frame);
-				Location floc = frame.getLocation();
-				double dx = floc.getX() - targetX;
-				double dy = floc.getY() - targetY;
-				double dz = floc.getZ() - targetZ;
-				double dist = dx * dx + dy * dy + dz * dz;
-				if(dist < bestDist) {
-					bestDist = dist;
-					best = frame;
-				}
+				if(isArrowAlignFrame(frame)) frame.setRotation(Rotation.NONE);
 			}
-		}
-		if(best != null) {
-			best.setRotation(Rotation.NONE);
-			arrowAlignFrame = best;
 		}
 	}
 
-	/** Reset the S3 Arrow Align item frame (used by /setup). Finds the frame closest to the Arrow Align
-	 *  target inside the S3 frame wall and rotates it back to NONE so the device starts the next run unsolved. */
+	/** Reset the S3 Arrow Align item frame (used by /setup): rotate it back to NONE so the device starts the next
+	 *  run unsolved.  Every other frame in the wall is left alone - nothing may turn them in the first place. */
 	public static void resetS3Device(World world) {
-		double[] target = arrowTarget();
-		final double targetX = target[0], targetY = target[1], targetZ = target[2];
-		double bestDist = Double.MAX_VALUE;
-		ItemFrame best = null;
 		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
-			if(e instanceof ItemFrame frame) {
-				Location floc = frame.getLocation();
-				double dx = floc.getX() - targetX;
-				double dy = floc.getY() - targetY;
-				double dz = floc.getZ() - targetZ;
-				double dist = dx * dx + dy * dy + dz * dz;
-				if(dist < bestDist) {
-					bestDist = dist;
-					best = frame;
-				}
-			}
+			if(e instanceof ItemFrame frame && isArrowAlignFrame(frame)) frame.setRotation(Rotation.NONE);
 		}
-		if(best != null) best.setRotation(Rotation.NONE);
 	}
 
 	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to
@@ -330,20 +310,9 @@ public final class Goldor extends WitherLord {
 		}
 	}
 
-	public ItemFrame getArrowAlignFrame() {
-		return arrowAlignFrame;
-	}
-
-	/** Returns true if this item frame is within the S3 protected zone (immune to rotation/punch/break).
-	 *  Uses live coord check rather than the cached set so frames loaded after phase-start still match. */
-	public boolean isProtectedFrame(ItemFrame frame) {
-		if(!phaseActive) return true;
-		return !S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
-	}
-
-	/** Phase-independent variant of {@link #isProtectedFrame}: is this frame within the S3 frame wall,
-	 *  regardless of whether the phase is active yet? Lets GoldorListener defer an arrow-frame solve that
-	 *  arrives before the phase spins up (the active-phase checks can't identify the frame yet). */
+	/** Is this frame inside the S3 frame wall, i.e. one this boss owns?  A live coord check rather than the cached
+	 *  {@code protectedFrames} set, so frames loaded after phase-start still match, and <b>phase-independent</b>,
+	 *  so the wall is protected in prep and between phases as well as mid-phase. */
 	public boolean isInS3FrameRegion(ItemFrame frame) {
 		return S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
 	}

@@ -60,8 +60,12 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					player.updateInventory();
 				});
 			} else if(action == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
-				String heldId = items.ItemUtils.getID(player.getInventory().getItemInMainHand());
-				if("skyblock/combat/last_breath".equals(heldId) || "skyblock/combat/explosive_bow".equals(heldId)) {
+				// ASK THE ITEM, never a list of lore IDs.  This was hardcoded to the Last Breath's and the Explosive
+				// Bow's ids, so the Death Bow drew and then fired nothing at all on release - a new drawn bow was a
+				// silent no-op with no error anywhere.  Bow.holdToDraw() is exactly this question, so a bow that
+				// declares it works the moment it is registered.
+				if(items.ItemRegistry.of(player.getInventory().getItemInMainHand()) instanceof items.Bow bow
+						&& bow.holdToDraw()) {
 					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
 						ServerPlayer sp = ((CraftPlayer) player).getHandle();
 						boolean was = sp.getAbilities().instabuild;

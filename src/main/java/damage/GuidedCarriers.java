@@ -39,6 +39,8 @@ public final class GuidedCarriers {
 	private static final NamespacedKey WEAPON = key("guided_weapon");
 	/** 1 if {@link #CORE} is an ALREADY-FINISHED figure rather than a stat core.  See {@link #stampFlat}. */
 	private static final NamespacedKey DERIVED = key("guided_derived");
+	/** The ability's display name, for the "hit N enemies" line the blast prints.  Travels with the carrier too. */
+	private static final NamespacedKey ABILITY = key("guided_ability");
 
 	private static NamespacedKey key(String name) {
 		return new NamespacedKey(M7tas.getInstance(), name);
@@ -47,23 +49,32 @@ public final class GuidedCarriers {
 	/**
 	 * Stamp a carrier with an ITEM ability's stat core, as {@link Damage#abilityCore} computed it at fire time.
 	 *
-	 * @param weapon the item that fired it, recorded by display name so the finish reads the right definition
+	 * @param ability the ability's display name, for the blast's "hit N enemies" line
+	 * @param weapon  the item that fired it, recorded by display name so the finish reads the right definition
 	 */
-	public static void stamp(LivingEntity carrier, ItemStack weapon, double core) {
+	public static void stamp(LivingEntity carrier, String ability, ItemStack weapon, double core) {
 		if(carrier == null) return;
 		var pdc = carrier.getPersistentDataContainer();
 		pdc.set(CORE, PersistentDataType.DOUBLE, core);
 		ItemDef def = Items.of(weapon);
 		pdc.set(WEAPON, PersistentDataType.STRING, def == null ? "" : def.displayName());
 		pdc.set(DERIVED, PersistentDataType.INTEGER, 0);
+		pdc.set(ABILITY, PersistentDataType.STRING, ability);
 	}
 
 	/** Stamp a carrier with an already-finished figure, which {@link #hit} deals derived.  See the class javadoc. */
-	public static void stampFlat(LivingEntity carrier, double sbDamage) {
+	public static void stampFlat(LivingEntity carrier, String ability, double sbDamage) {
 		if(carrier == null) return;
 		var pdc = carrier.getPersistentDataContainer();
 		pdc.set(CORE, PersistentDataType.DOUBLE, sbDamage);
 		pdc.set(DERIVED, PersistentDataType.INTEGER, 1);
+		pdc.set(ABILITY, PersistentDataType.STRING, ability);
+	}
+
+	/** The stamped ability name, or {@code ""} for a carrier nobody stamped. */
+	public static String abilityName(LivingEntity carrier) {
+		if(carrier == null) return "";
+		return carrier.getPersistentDataContainer().getOrDefault(ABILITY, PersistentDataType.STRING, "");
 	}
 
 	/**

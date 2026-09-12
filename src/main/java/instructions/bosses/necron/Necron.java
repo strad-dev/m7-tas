@@ -105,7 +105,6 @@ public final class Necron extends WitherLord {
 	@Override protected String displayName() { return "Necron"; }
 	@Override protected Location spawnLocation() { return new Location(world, 54.5, 66, 76.5, 0f, 0f); }
 	@Override protected double maxHealth() { return damage.MobStats.NECRON.internalHealth(); }
-	@Override protected String displayHealth() { return "1.4B"; }
 	@Override protected int previousTicks() { return PRE_NECRON_TICKS; }
 
 	@Override

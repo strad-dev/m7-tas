@@ -438,7 +438,7 @@ public final class ItemUtils {
 	/** How far a guided carrier moves each tick, in blocks. */
 	private static final double GUIDED_SPEED = 1;
 
-	/** Safety cap: a carrier that has hit nothing after this many ticks detonates where it is. */
+	/** How long a carrier may fly before it gives up and detonates where it is: <b>10 seconds</b>. */
 	private static final int GUIDED_MAX_TICKS = 200;
 
 	/** How close a mob has to be to the carrier's next position to stop it. */
@@ -454,12 +454,14 @@ public final class ItemUtils {
 	private static final String GUIDED_TAG = "TASGuidedCarrier";
 
 	/**
-	 * Fly an already-spawned animal forwards at {@link #GUIDED_SPEED} a tick in the direction its caster is facing
-	 * <b>at launch</b>, then detonate it on the first mob or solid block it reaches.
+	 * Fly an already-spawned animal at {@link #GUIDED_SPEED} a tick in the direction its caster is <b>currently</b>
+	 * looking, then detonate it on the first mob or solid block it reaches.
 	 * <p>
-	 * The direction is captured ONCE, so "guided" means aimed rather than homing - turning after the click does not
-	 * steer it.  The caller spawns the carrier so it can set whatever is specific to its species (the sheep's
-	 * colour, the bat's awake flag); everything that makes it an inert projectile is applied here.
+	 * <b>The direction is re-read EVERY tick, which is what "guided" means</b> - the Spirit Sceptre's tooltip says
+	 * the bat "follows your aim", so turning your head steers it in flight, and it will happily come back at you.
+	 * Only the DAMAGE is settled at launch (see below); the heading is live.  The caller spawns the carrier so it
+	 * can set whatever is specific to its species (the sheep's colour, the bat's awake flag); everything that makes
+	 * it an inert projectile is applied here.
 	 * <p>
 	 * The blast routes through {@link #triggerSuperboomRadius}, so both abilities open crypts and cracked-brick
 	 * walls exactly as the TNT does - which is what the Guided Sheep already did and is the whole reason it is
@@ -488,7 +490,6 @@ public final class ItemUtils {
 		carrier.addScoreboardTag(GUIDED_TAG);
 		PlayerCollision.addEntityToNoCollisionTeam(carrier);
 
-		Vector velocity = p.getEyeLocation().getDirection().normalize().multiply(GUIDED_SPEED);
 		// Built ONCE per launch, not per tick: doNotKill() allocates its list on every call and this scans for a
 		// target every tick for up to GUIDED_MAX_TICKS.
 		List<EntityType> doNotKill = doNotKill();
@@ -498,17 +499,24 @@ public final class ItemUtils {
 
 			@Override
 			public void run() {
-				if(ticks++ >= GUIDED_MAX_TICKS || !carrier.isValid()) {
+				// Out of time, gone, or the caster left - there is nothing left to steer it, so it goes off where
+				// it is.  The damage was stamped at launch, so a carrier whose caster has quit still hits for the
+				// figure they cast it with.
+				if(ticks++ >= GUIDED_MAX_TICKS || !carrier.isValid() || !p.isOnline()) {
 					detonateGuided(p, carrier, carrier.getLocation(), blastRadius, doNotKill);
 					cancel();
 					return;
 				}
+				Vector velocity = p.getEyeLocation().getDirection().normalize().multiply(GUIDED_SPEED);
 				Location next = carrier.getLocation().add(velocity);
 				if(next.getBlock().getType().isSolid() || firstMobNear(next, doNotKill) != null) {
 					detonateGuided(p, carrier, next, blastRadius, doNotKill);
 					cancel();
 					return;
 				}
+				// Point it where it is going, or a steered carrier keeps the heading it spawned facing and reads as
+				// a sheep sliding sideways through the air.
+				next.setDirection(velocity);
 				carrier.teleport(next);
 			}
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
@@ -516,23 +524,46 @@ public final class ItemUtils {
 
 	/**
 	 * Blow a carrier up at {@code center}: the effect, the Superboom pass, then the stamped damage against every mob
-	 * in range.  The carrier is removed LAST, because the stamp is read off it.
+	 * in range, then the "hit N enemies" line.  The carrier is removed LAST, because the stamp is read off it.
+	 * <p>
+	 * Only a hit that {@code deal} <b>reported</b> above zero is counted or summed, so a blast that catches an
+	 * armoured wither or a villager NPC does not claim it.
 	 */
 	private static void detonateGuided(Player p, LivingEntity carrier, Location center, double blastRadius,
 			List<EntityType> doNotKill) {
 		center.getWorld().spawnParticle(Particle.EXPLOSION, center, 10, 0.5, 0.5, 0.5, 0);
 		center.getWorld().playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 		triggerSuperboomRadius(center, p);
+		int damaged = 0;
+		double dealt = 0;
 		for(Entity nearby : center.getWorld().getNearbyEntities(center, blastRadius, blastRadius, blastRadius)) {
-			if(isGuidedTarget(nearby, doNotKill)) damage.GuidedCarriers.hit(carrier, p, (LivingEntity) nearby);
+			if(!isGuidedTarget(nearby, doNotKill)) continue;
+			double hit = damage.GuidedCarriers.hit(carrier, p, (LivingEntity) nearby);
+			if(hit > 0) {
+				dealt += hit;
+				damaged++;
+			}
 		}
+		damage.Damage.reportAoe(p, damage.GuidedCarriers.abilityName(carrier), damaged, dealt);
 		PlayerCollision.removeEntityFromNoCollisionTeam(carrier);
 		carrier.remove();
 	}
 
 	/** The first mob close enough to {@code point} to stop a carrier, or null. */
 	private static LivingEntity firstMobNear(Location point, List<EntityType> doNotKill) {
-		for(Entity nearby : point.getWorld().getNearbyEntities(point, GUIDED_HIT_RANGE, GUIDED_HIT_RANGE, GUIDED_HIT_RANGE)) {
+		return firstMobNear(point, GUIDED_HIT_RANGE, doNotKill);
+	}
+
+	/**
+	 * The first mob within {@code range} of {@code point}, or null.  Shared with Explosive Shot, whose arrows stop
+	 * and detonate on contact rather than piercing, and which wants the same "what counts as a mob" rule.
+	 */
+	public static LivingEntity firstMobNear(Location point, double range) {
+		return firstMobNear(point, range, doNotKill());
+	}
+
+	private static LivingEntity firstMobNear(Location point, double range, List<EntityType> doNotKill) {
+		for(Entity nearby : point.getWorld().getNearbyEntities(point, range, range, range)) {
 			if(isGuidedTarget(nearby, doNotKill)) return (LivingEntity) nearby;
 		}
 		return null;
@@ -603,6 +634,7 @@ public final class ItemUtils {
 	 * through.  Used by the Axe of the Shredded ({@code pierce} true) and by a Berserk's {@code drop stack}
 	 * ability, which copies it but does NOT pierce (§1.14).
 	 *
+	 * @param ability the ability's display name, for the "hit N enemies" line it prints when the axe is spent
 	 * @param derived what {@code core} IS.  False for the Axe of the Shredded, whose core is a stat core and still
 	 *                needs the target half at {@code meleeFinish}.  True for the Berserk throw, whose core was read
 	 *                out of the damage history and is therefore a FINISHED hit: running the target half on it would
@@ -610,7 +642,7 @@ public final class ItemUtils {
 	 *                recording the result would let each throw read the last one's inflated output (see
 	 *                {@link damage.Damage#dealDerived}).
 	 */
-	public static void throwAxe(Player p, double core, boolean pierce, boolean derived) {
+	public static void throwAxe(Player p, String ability, double core, boolean pierce, boolean derived) {
 		Utils.playLocalSound(p, Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
 		ItemStack weapon = p.getInventory().getItemInMainHand();
 
@@ -644,20 +676,28 @@ public final class ItemUtils {
 			float spinRotation = 0;
 			boolean notedAggro = false;
 			final Set<UUID> hit = new HashSet<>();
+			// The tally for the "hit N enemies" line, printed ONCE when the axe is spent rather than per mob: a
+			// piercing throw can pass through several, and one line per victim would be noise.
+			int damaged = 0;
+			double dealt = 0;
+
+			private void finish() {
+				damage.Damage.reportAoe(p, ability, damaged, dealt);
+				axe.remove();
+				cancel();
+			}
 
 			@Override
 			public void run() {
 				if(distance >= 100 || !axe.isValid()) {
-					axe.remove();
-					cancel();
+					finish();
 					return;
 				}
 
 				// Check if we hit a wall (solid block)
 				Location nextLoc = currentLoc.clone().add(direction);
 				if(nextLoc.getBlock().getType().isSolid()) {
-					axe.remove();
-					cancel();
+					finish();
 					return;
 				}
 
@@ -677,20 +717,24 @@ public final class ItemUtils {
 					if(!(e instanceof LivingEntity mob) || e instanceof Player) continue;
 					if(mob.isDead() || mob.getHealth() <= 0 || !hit.add(mob.getUniqueId())) continue;
 					if(e instanceof Wither w2 && w2.getInvulnerableTicks() != 0) continue;
+					double reported;
 					if(derived) {
 						// The debuffs this hit carries still land (Lethality is a property of the hit, not of the
 						// formula); only the damage half is skipped, because it is already in the figure.
 						damage.Damage.applyOnHitDebuffs(p, mob, damage.DamagePath.MELEE, weapon);
-						damage.Damage.dealDerived(mob, core, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+						reported = damage.Damage.dealDerived(mob, core, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
 					} else {
 						double sbDamage = damage.Damage.meleeFinish(p, mob, weapon, core);
-						damage.Damage.deal(mob, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+						reported = damage.Damage.deal(mob, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
+					}
+					if(reported > 0) {
+						dealt += reported;
+						damaged++;
 					}
 					if(!pierce) stop = true;
 				}
 				if(stop) {
-					axe.remove();
-					cancel();
+					finish();
 					return;
 				}
 

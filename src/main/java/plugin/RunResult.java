@@ -46,6 +46,17 @@ public final class RunResult {
 	 */
 	public String difficulty;
 
+	/**
+	 * The mayor the run was set under: {@code paul}, {@code derpy} or {@code other} ({@code damage/Mayor}).  Paul
+	 * gives the EZPZ +10 bonus score and boosted blessings; Derpy gives neither and puts every mob on double
+	 * health; other gives neither and leaves health alone.
+	 * <p>
+	 * Reported for the same reason as {@link #difficulty} - <b>times under different mayors are not
+	 * comparable</b>, and a Derpy full clear tops out at 309 rather than 319.  Whether to split boards on it is
+	 * the listener's call; the network's leaderboards currently do not.
+	 */
+	public String mayor;
+
 	/** Total run length: {@link Utils#runTick()} at the moment the run completed. */
 	public int runTicks;
 
@@ -109,6 +120,7 @@ public final class RunResult {
 		r.runId = WitherActions.runId();
 		r.success = success;
 		r.difficulty = damage.Difficulty.current().id();
+		r.mayor = damage.Mayor.current().id();
 		r.runTicks = Utils.runTick();
 		r.phaseDurations = WitherActions.phaseDurations();
 		r.splitEnds = WitherActions.splitEnds();

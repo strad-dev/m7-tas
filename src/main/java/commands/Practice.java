@@ -23,9 +23,9 @@ import java.util.Map;
  * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
  *    teleports them to the chosen phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.  A bare
- *    "classic"/"realistic"/"ultra_realistic" arg sets the damage mode for the run (MAP.md §0); omitted, the
- *    current mode stands, so a standalone player keeps whatever /toggledungeondifficulty last set.  The network
- *    always sends one.
+ *    "classic"/"realistic"/"ultra_realistic" arg sets the damage mode for the run (MAP.md §0), and a bare
+ *    "paul"/"derpy"/"other" sets the mayor; omitted, the current settings stand, so a standalone player keeps
+ *    whatever /dungeonsettings last set.  The network always sends both.
  * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
  *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a
  *    pre-run delay of 60 ticks (3s) by default.  Pass a bare integer arg to override it: the network plugin
@@ -67,17 +67,23 @@ public class Practice implements CommandExecutor {
 		// network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in together.
 		int delayTicks = 60;
 		// Optional damage difficulty ("classic" / "realistic" / "ultra_realistic"). Null means "leave the mode
-		// alone", which is what a player running this standalone wants: their /toggledungeondifficulty choice stands.
+		// alone", which is what a player running this standalone wants: their /dungeonsettings choice stands.
 		// The network ALWAYS passes one, since damage.Difficulty is a server-wide global and a run must not inherit
 		// the last party's mode - which in ultra-realistic decides whether anyone can die.
 		damage.Difficulty difficulty = null;
+		// Optional mayor ("paul" / "derpy" / "other").  Null means "leave it alone", for the same reason as the
+		// difficulty: damage.Mayor is a server-wide global, and the network always passes one so a run can't
+		// inherit the last party's mayor - which decides whether every mob on the floor has double health.
+		damage.Mayor mayorArg = null;
 		for(String arg : args) {
-			// Parsed up front so the mode branch below is one test: it has to come BEFORE the section fallback,
-			// which swallows any unrecognised word and would otherwise read "classic" as a section name.
+			// Both parsed up front so the branches below are one test each: they have to come BEFORE the section
+			// fallback, which swallows any unrecognised word and would otherwise read "classic" as a section name.
 			damage.Difficulty mode = damage.Difficulty.parse(arg);
+			damage.Mayor mayor = damage.Mayor.parse(arg);
 			if(arg.equalsIgnoreCase("--no-teleport") || arg.equalsIgnoreCase("--noteleport")) noTeleport = true;
 			else if(arg.matches("\\d+")) delayTicks = Integer.parseInt(arg);
 			else if(mode != null) difficulty = mode;
+			else if(mayor != null) mayorArg = mayor;
 			else section = arg.toLowerCase();
 		}
 		if(!DEFAULT_LOCATIONS.containsKey(section)) {
@@ -139,6 +145,9 @@ public class Practice implements CommandExecutor {
 		// leaderboard board a time lands on is decided here.  It also decides whether death is on, which
 		// TAS.runPractice reads when it clears the death state.
 		if(difficulty != null) damage.Difficulty.set(difficulty);
+		// Same window for the mayor, and it matters more: mob HP is written once at spawn, so the flag has to be
+		// right BEFORE anything spawns.
+		if(mayorArg != null) damage.Mayor.set(mayorArg);
 
 		TAS.runPractice(world, section, delayTicks);
 		return true;

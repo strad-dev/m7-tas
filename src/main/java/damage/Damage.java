@@ -170,6 +170,27 @@ public final class Damage {
 	}
 
 	/**
+	 * <b>A bare punch</b>: the melee formula with NO WEAPON at all - none of the held item's stats, and no
+	 * {@link ItemDef}, so no reforge multiplier and none of the lore-ID multipliers either.
+	 * <p>
+	 * This is what a hit with something that is not a melee weapon lands.  A bow used to run the FULL melee path,
+	 * which folded its Damage, Strength and Crit Damage into the swing through {@code Stats.of} and had a Precise
+	 * Terminator punching for most of what a sword does - in SkyBlock a bow melee is a punch, and the bow's stat
+	 * block has nothing to do with it.
+	 * <p>
+	 * <b>ENCHANTMENTS go, ATTRIBUTES stay.</b>  Sharpness, Smite, Giant Killer, Titan Killer, Execute, Prosecute,
+	 * First/Triple Strike and the four mob-type enchants are all on the sword you are <i>not</i> holding, so
+	 * {@link #additivePercent} is asked to skip them.  Everything else survives, because none of it comes from the
+	 * item: the thirteen Rulers, Warrior, Elite, Dominance, the combo, Combat 60, the Ring of Love, the pet, the
+	 * Draconic Artifact and the class bonuses, on top of every stat from armour, equipment and accessories.
+	 */
+	public static double punch(Player p, LivingEntity target) {
+		applyOnHitDebuffs(p, target, DamagePath.MELEE, (ItemDef) null);
+		Breakdown b = Breakdown.begin();
+		return finish(p, target, DamagePath.MELEE, null, statCore(Stats.unarmed(p), true, b), null, b, false);
+	}
+
+	/**
 	 * The STAT half of a melee hit, with no target involved.  Exists for the thrown-axe abilities, which decide
 	 * their damage as a share of the wielder's melee at THROW time and only learn their target later.
 	 */
@@ -331,7 +352,11 @@ public final class Damage {
 	 * §7 rules every hit a crit, deliberately, because a random roll would make two identical runs incomparable.
 	 */
 	private static double statCore(Player p, DamagePath path, boolean crit, Breakdown b) {
-		StatBlock stats = Stats.of(p, path);
+		return statCore(Stats.of(p, path), crit, b);
+	}
+
+	/** As above, against an aggregate the caller has already chosen - the unarmed one, for {@link #punch}. */
+	private static double statCore(StatBlock stats, boolean crit, Breakdown b) {
 		double base = Scale.PLAYER_BASE_DAMAGE + stats.get(Stat.DAMAGE);
 		double strength = 1.0 + stats.get(Stat.STRENGTH) / 100.0;
 		double critDamage = crit ? 1.0 + stats.get(Stat.CRIT_DAMAGE) / 100.0 : 1.0;
@@ -349,8 +374,16 @@ public final class Damage {
 	 * The damage-level stage: one additive factor, then the multiplicative product.
 	 */
 	private static double finish(Player p, LivingEntity target, DamagePath path, ItemDef weapon, double core, BowContext bow, Breakdown b) {
+		return finish(p, target, path, weapon, core, bow, b, true);
+	}
+
+	/**
+	 * As above, with {@code weaponEnchants} false for a hit landed with <b>no weapon</b> - see {@link #punch}.
+	 * Only the enchantment half of the additive sum is dropped; the attributes stay.
+	 */
+	private static double finish(Player p, LivingEntity target, DamagePath path, ItemDef weapon, double core, BowContext bow, Breakdown b, boolean weaponEnchants) {
 		if(target == null || core <= 0) return 0;
-		double additive = additivePercent(p, target, path, weapon, bow);
+		double additive = additivePercent(p, target, path, weapon, bow, weaponEnchants);
 		double multiplicative = multiplicative(p, target, path, weapon);
 		double total = core * (1.0 + additive / 100.0) * multiplicative;
 		if(b != null) {
@@ -370,7 +403,7 @@ public final class Damage {
 	 * enchantments (Execute, Prosecute, First Strike, Triple Strike, Giant Killer, Titan Killer and Sharpness are
 	 * all sword-only), so an Archer's arrows miss Prosecute's +100% and Titan Killer's +80% entirely.
 	 */
-	private static double additivePercent(Player p, LivingEntity target, DamagePath path, ItemDef weapon, BowContext bow) {
+	private static double additivePercent(Player p, LivingEntity target, DamagePath path, ItemDef weapon, BowContext bow, boolean weaponEnchants) {
 		Set<MobType> types = MobStats.typesOf(target);
 		boolean sword = path.isMelee() || path == DamagePath.ABILITY;
 		double sum = 0;
@@ -386,44 +419,50 @@ public final class Damage {
 		Pet pet = Pet.forPlayer(p, path);
 		sum += pet.damageAdditive(types);
 
-		// --- mob-type enchantments ---
-		// Cubism, Gravity, Impaling and Smoldering are on swords AND bows; the rest are sword-only.
-		if(types.contains(MobType.CUBIC)) sum += CUBISM_VI;
-		if(types.contains(MobType.AIRBORNE)) sum += GRAVITY_VI;
-		if(types.contains(MobType.AQUATIC)) sum += IMPALING_V;
-		if(types.contains(MobType.INFERNAL)) sum += SMOLDERING_V;
-		if(sword) {
-			if(types.contains(MobType.SKELETAL) || types.contains(MobType.WITHER) || types.contains(MobType.UNDEAD)) {
-				sum += SMITE_VII;
+		// --- ENCHANTMENTS, which live on the WEAPON.  A hit landed with none of it gets none of them: a bow melee
+		// is a punch, and Sharpness, Smite, Giant Killer and the rest are on the sword you are not holding.
+		// Everything OUTSIDE this block is an attribute, a potion, a pet or a class bonus - worn or drunk by the
+		// player rather than carried by the item - and a punch keeps every one of them.
+		if(weaponEnchants) {
+			// Cubism, Gravity, Impaling and Smoldering are on swords AND bows; the rest are sword-only.
+			if(types.contains(MobType.CUBIC)) sum += CUBISM_VI;
+			if(types.contains(MobType.AIRBORNE)) sum += GRAVITY_VI;
+			if(types.contains(MobType.AQUATIC)) sum += IMPALING_V;
+			if(types.contains(MobType.INFERNAL)) sum += SMOLDERING_V;
+			if(sword) {
+				if(types.contains(MobType.SKELETAL) || types.contains(MobType.WITHER) || types.contains(MobType.UNDEAD)) {
+					sum += SMITE_VII;
+				}
+				if(types.contains(MobType.ARTHROPOD)) sum += BANE_OF_ARTHROPODS_VII;
+				if(types.contains(MobType.ENDER)) sum += ENDER_SLAYER_VII;
+				if(types.contains(MobType.MAGMATIC)) sum += PYROCLASM_VI;
+
+				// --- either/or pairs: evaluate both and take the larger, NEVER sum them ---
+				sum += Math.max(giantKiller(), titanKiller(target));
+				sum += Math.max(execute(target), prosecute(target));
 			}
-			if(types.contains(MobType.ARTHROPOD)) sum += BANE_OF_ARTHROPODS_VII;
-			if(types.contains(MobType.ENDER)) sum += ENDER_SLAYER_VII;
-			if(types.contains(MobType.MAGMATIC)) sum += PYROCLASM_VI;
+			if(path.isMelee()) {
+				// First Strike and Triple Strike are melee-only, and are an either/or pair with each other.
+				double firstStrike = CombatState.isFirstHitOn(p, target.getUniqueId()) ? FIRST_STRIKE_V : 0;
+				double tripleStrike = CombatState.isTripleStrikeHitOn(p, target.getUniqueId()) ? TRIPLE_STRIKE_V : 0;
+				sum += Math.max(firstStrike, tripleStrike);
+				sum += SHARPNESS_VII;
+			}
+			if(path == DamagePath.BOW) {
+				sum += POWER_VII;
+				if(bow != null) {
+					sum += SNIPE_IV_PER_10_BLOCKS * (bow.blocksTravelled() / 10.0);
+					// The Precise headshot is the REFORGE's rather than an enchantment's, but it is still the weapon's.
+					if(bow.headshot() && weapon != null && weapon.reforge() == ReforgeId.PRECISE) sum += PRECISE_HEADSHOT;
+				}
+			}
 		}
 
-		// --- either/or pairs: evaluate both and take the larger, NEVER sum them ---
-		if(sword) {
-			sum += Math.max(giantKiller(), titanKiller(target));
-			sum += Math.max(execute(target), prosecute(target));
-		}
-		if(path.isMelee()) {
-			// First Strike and Triple Strike are melee-only, and are an either/or pair with each other.
-			double firstStrike = CombatState.isFirstHitOn(p, target.getUniqueId()) ? FIRST_STRIKE_V : 0;
-			double tripleStrike = CombatState.isTripleStrikeHitOn(p, target.getUniqueId()) ? TRIPLE_STRIKE_V : 0;
-			sum += Math.max(firstStrike, tripleStrike);
-			sum += SHARPNESS_VII;
-			sum += WARRIOR;
-		}
-
-		// --- bow-only ---
+		// --- attributes and potions: the PLAYER's, so they survive a punch ---
+		if(path.isMelee()) sum += WARRIOR;
 		if(path == DamagePath.BOW) {
-			sum += POWER_VII;
-			sum += ARCHERY_IV_POTION;
 			sum += SKELETOR;
-			if(bow != null) {
-				sum += SNIPE_IV_PER_10_BLOCKS * (bow.blocksTravelled() / 10.0);
-				if(bow.headshot() && weapon != null && weapon.reforge() == ReforgeId.PRECISE) sum += PRECISE_HEADSHOT;
-			}
+			sum += ARCHERY_IV_POTION;
 		}
 
 		// --- class bonuses (§1.14).  Berserk's repeated-hit stack is the largest additive source in the plan. ---
@@ -619,6 +658,15 @@ public final class Damage {
 		// toward progress.  This used to be enforced only in MiscListener.onWatcherDamage, i.e. on the vanilla
 		// damage event; nothing on this path fires one, so the guard has to live here too.
 		if(target.getScoreboardTags().contains("WatcherMobSpawning")) return 0;
+		// A Wither-King dragon playing its death animation is a corpse, and hitting a corpse must not touch it.
+		// Vanilla runs the dragon's death off its HEALTH: at 0 it ticks dragonDeathTime toward 200, and the phase's
+		// own doServerTick is what puts it there.  But a Bukkit setHealth(0) also calls die(), and an EnderDragon's
+		// handleKillingBlow answers that by setting health back to 1 - which stops the death tick for as long as the
+		// health stays there.  So every hit landing on the corpse rewound the animation by a tick, and a party
+		// swinging every tick froze it outright: the dragon just hung in the air.  It also drew a full damage number
+		// (healthBefore reads 1, not 0), fired procs and Cleave off a dead target, and re-ran vanilla's whole death
+		// sequence - EntityDeathEvent and loot included - once per hit.  Refusing at the boundary kills all of it.
+		if(instructions.bosses.witherking.WitherKing.isDyingDragon(target)) return 0;
 		// Aggro used to be noted HERE, ahead of the immunity returns below, so a boss chased whoever was hitting it
 		// through an armoured window the moment that window ended.  It is now noted further down, inside the branch
 		// where health actually moved: a hit that deals nothing does not pull aggro.  The three abilities that DO
@@ -668,11 +716,17 @@ public final class Damage {
 		double applied = roundHp(mcDamage);
 
 		double healthBefore = target.getHealth();
+		// What THIS hit wrote.  The kill chokepoint below is judged on it rather than on a fresh getHealth(), because
+		// a Bukkit setHealth(0) runs vanilla's whole death sequence, and an EnderDragon's handleKillingBlow answers
+		// that by putting its health straight back to 1 and flipping the phase to DYING.  Re-reading would therefore
+		// see a live 1-HP dragon on the very hit that killed it and never call handleDragonKilled.
+		double healthAfter = healthBefore;
 		if(applied > 0) {
 			// Belt and braces.  With direct health manipulation vanilla's invulnerability window is not consulted
 			// at all, but a mob that took vanilla damage a tick earlier would otherwise still be carrying one.
 			target.setNoDamageTicks(0);
-			target.setHealth(Math.max(0, healthBefore - applied));
+			healthAfter = Math.max(0, healthBefore - applied);
+			target.setHealth(healthAfter);
 			// setHealth bypasses the vanilla damage path, so the red hurt flash never plays.  Send it ourselves.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftLivingEntity) target).getHandle()));
 			Utils.changeName(target);
@@ -684,7 +738,7 @@ public final class Damage {
 		// Kill chokepoints.  No event fires on this path, so the deaths that other systems watch for are detected
 		// here.  Gated on the target having been ALIVE before this hit, so a Cleave hit or a proc landing on a
 		// corpse cannot re-arm the post-kill buff or inflate the combo; both handlers below are idempotent anyway.
-		if(healthBefore > 0 && target.getHealth() <= 0) {
+		if(healthBefore > 0 && healthAfter <= 0) {
 			if(target.getScoreboardTags().contains("WatcherMob")) {
 				instructions.bosses.Watcher.INSTANCE.registerMobKill(target);
 			}
@@ -898,6 +952,30 @@ public final class Damage {
 		while(end > 0 && s.charAt(end - 1) == '0') end--;
 		if(end > 0 && s.charAt(end - 1) == '.') end--;
 		return s.substring(0, end);
+	}
+
+	/**
+	 * <b>The one "you hit N enemies" line</b>, printed by every ability that damages a group: the Hyperion's
+	 * Implosion, the Guided Bat, Explosive Shot, the Guided Sheep and the thrown axe.
+	 * <p>
+	 * Says nothing when the ability connected with nothing, and counts only what {@code deal} actually
+	 * <b>reported</b> - so a target that soaked the hit to zero (an armoured wither, a villager NPC, a boss clamped
+	 * mid-terminals) is not counted and its zero is not summed.  That is what keeps this line agreeing with the
+	 * numbers in the air, which is the whole reason it goes through one method.
+	 *
+	 * <b>ONE decimal place</b>, matching the real message - {@code Your Spirit Sceptre hit 1 enemy for 66,342.2
+	 * damage.} - which is why this does not use {@link #integer}, the whole-number format the floating damage
+	 * numbers take (§7a). A whole total therefore reads {@code 66,342.0} rather than {@code 66,342}.
+	 *
+	 * @param ability the ability's display name as the message says it, which is <b>not always the ability</b>:
+	 *                the Hyperion's line names "Implosion" but the Spirit Sceptre's names the ITEM
+	 * @param hits    how many targets reported a hit above zero
+	 * @param dealt   the sum of what they reported, in SkyBlock damage
+	 */
+	public static void reportAoe(Player p, String ability, int hits, double dealt) {
+		if(p == null || hits <= 0) return;
+		p.sendMessage(Utils.msg("<gray>Your " + ability + " hit <red>" + hits + "</red> "
+				+ (hits == 1 ? "enemy" : "enemies") + " for <red>" + Utils.roundCommas(dealt, 1) + "</red> damage."));
 	}
 
 	/**

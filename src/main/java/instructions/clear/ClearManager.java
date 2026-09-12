@@ -40,7 +40,7 @@ public final class ClearManager {
 	// bonus counters
 	private static int cryptLurkers;
 	private static boolean firstPrince, firstBat, mimicKilled;
-	private static int deaths; // not tracked in practice today; kept so the Skill formula matches Hypixel
+	private static int deaths; // counted by noteDeath(), from death/Deaths.kill; cleared with everything else
 
 	// Wizard crystal-ball special (not one of the 47 secrets)
 	private static boolean crystalPickedUp, crystalHandedIn;
@@ -57,9 +57,9 @@ public final class ClearManager {
 	private static int bloodDoneTick = -1;
 	private static int fullClearTick = -1;
 
-	/** The literal maximum team score: skill 100 + explore 100 + speed 100 + bonus 19 (10 base + 5 crypt
-	 *  lurkers + first Prince + first Bat + 2 mimic). A "full clear" is this score AND blood finished. */
-	public static final int PERFECT_SCORE = 319;
+	/** The bonus score a party can actually EARN, i.e. everything in {@link #bonus()} except the mayor's flat
+	 *  term: 5 crypt lurkers + first Prince + first Bat + 2 mimic. */
+	private static final int MAX_EARNED_BONUS = 9;
 
 	// entity scoreboard tags for spawned secrets (also targeted by Server.blanketKill)
 	public static final String TAG_ITEM = "SecretItem";
@@ -673,7 +673,7 @@ public final class ClearManager {
 	 */
 	private static void checkFullClear() {
 		if(!active || fullClearTick >= 0) return;
-		if(bloodDoneTick < 0 || teamScore() < PERFECT_SCORE) return;
+		if(bloodDoneTick < 0 || teamScore() < perfectScore()) return;
 		fullClearTick = Utils.runTick();
 	}
 
@@ -683,7 +683,7 @@ public final class ClearManager {
 	/** Overall run tick at which blood finished, or -1 if it never did. */
 	public static int bloodDoneTick() { return bloodDoneTick; }
 
-	/** Overall run tick at which the run became a full clear ({@link #PERFECT_SCORE} + blood), or -1. */
+	/** Overall run tick at which the run became a full clear ({@link #perfectScore()} + blood), or -1. */
 	public static int fullClearTick() { return fullClearTick; }
 
 	// ==================== scoring ====================
@@ -716,8 +716,23 @@ public final class ClearManager {
 		return cells;
 	}
 
+	/**
+	 * Count one death against the Skill score.  <b>The one caller is {@code death/Deaths.kill}</b>, once per death
+	 * that actually happened - after the mode gate, after {@code CheatDeath} has had its chance, and for a wipe as
+	 * well as an ordinary ghosting.  So this only ever runs in ultra-realistic, the only mode a player can die in.
+	 * <p>
+	 * {@code OutOfBounds} deliberately does NOT call it: walking out of the map is a practice mishap, not a
+	 * dungeon death, and it is a hard kill with its own death screen that never goes through {@code Deaths}.
+	 */
+	public static void noteDeath() {
+		deaths++;
+	}
+
 	/** Skill = 20 base + up to 80 from room clears − 10 per incomplete puzzle − death penalty, clamped [20,100].
-	 *  (Matches the real Catacombs formula; deaths are not tracked in practice, so that term is 0.) */
+	 *  <p>
+	 *  <b>The death penalty is {@code 2n - 1}</b>, matching the real Catacombs formula: the first death costs 1 and
+	 *  every death after it costs 2, so 1 death is −1, 2 are −3, 3 are −5.  {@code Math.max(0, ...)} keeps a
+	 *  deathless run at 0 rather than the +1 the expression alone would give.  Fed by {@link #noteDeath()}. */
 	public static int skill() {
 		int skillRooms = (int) Math.min(80, Math.floor(80.0 * checkedCells() / 36.0));
 		int puzzlePenalty = 10 * unsolvedPuzzles();
@@ -737,8 +752,22 @@ public final class ClearManager {
 		return 100;
 	}
 
+	/**
+	 * Bonus score: the mayor's flat term plus what the party earned.  The flat +10 is <b>Mayor Paul's EZPZ
+	 * perk</b>, so it is 0 under any other mayor ({@code damage/Mayor}) - read live, never folded in as a literal.
+	 */
 	public static int bonus() {
-		return 10 + Math.min(cryptLurkers, 5) + (firstPrince ? 1 : 0) + (firstBat ? 1 : 0) + (mimicKilled ? 2 : 0);
+		return damage.Mayor.scoreBonus()
+				+ Math.min(cryptLurkers, 5) + (firstPrince ? 1 : 0) + (firstBat ? 1 : 0) + (mimicKilled ? 2 : 0);
+	}
+
+	/**
+	 * The literal maximum team score under the current dungeon settings: skill 100 + explore 100 + speed 100 +
+	 * the best {@link #bonus()}.  <b>319 under Mayor Paul, 309 under anyone else</b>, the only score effect the
+	 * mayor has being Paul's flat +10.  A "full clear" is this score AND blood finished.
+	 */
+	public static int perfectScore() {
+		return 300 + damage.Mayor.scoreBonus() + MAX_EARNED_BONUS;
 	}
 
 	public static int teamScore() {
