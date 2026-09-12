@@ -7,6 +7,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
@@ -27,6 +28,10 @@ import plugin.Utils;
  * </ul>
  * Both are flags on inputs, never second damage paths - see the two classes.
  * <p>
+ * A bare {@code /dungeonsettings} typed by a player opens {@link SettingsMenu} instead of printing, but only
+ * STANDALONE: on the network these are party settings and the lobby's own menu owns them, so the menu is
+ * suppressed and the text output stands.
+ * <p>
  * This replaced {@code /toggledungeondifficulty}, which was the difficulty half of it.
  * <p>
  * On the network the party leader sets these instead, with {@code /p settings difficulty <mode>} and
@@ -42,11 +47,20 @@ public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
 			"<red>Usage: /dungeonsettings [difficulty [classic|realistic|ultra_realistic] | mayor [paul|derpy|other]]";
 
+	/** The menu a bare {@code /dungeonsettings} opens standalone.  See {@link SettingsMenu#suppressed()}. */
+	private final SettingsMenu menu;
+
+	public DungeonSettings(SettingsMenu menu) {
+		this.menu = menu;
+	}
+
 	@Override
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command command, @NonNull String label,
 			String @NonNull [] args) {
 		if(args.length == 0) {
-			show(sender);
+			// A player standalone gets the menu; the console, and everyone on the network, gets the text.
+			if(sender instanceof Player p && !SettingsMenu.suppressed()) menu.open(p);
+			else show(sender);
 			return true;
 		}
 		switch(args[0].toLowerCase()) {
@@ -82,6 +96,15 @@ public class DungeonSettings implements CommandExecutor {
 			// No value given: step to the next mode, which is what the old /toggledungeondifficulty did bare.
 			next = Difficulty.toggle();
 		}
+		applyDifficulty(next);
+	}
+
+	/**
+	 * Announce a difficulty that has just been put in force.  Split out because {@link SettingsMenu} sets the same
+	 * global from a click and must say so the same way - a server-wide setting that changed silently is how one
+	 * player ends up scoring somebody else's run under a mode they never chose.
+	 */
+	static void applyDifficulty(Difficulty next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><value>",
 				Placeholder.unparsed("value", next.id())));
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
@@ -99,6 +122,11 @@ public class DungeonSettings implements CommandExecutor {
 		} else {
 			next = Mayor.toggle();
 		}
+		applyMayor(next);
+	}
+
+	/** Announce a mayor that has just taken office.  Same split, and same reason, as {@link #applyDifficulty}. */
+	static void applyMayor(Mayor next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>MAYOR<reset><gray> is now <yellow><value>",
 				Placeholder.unparsed("value", next.id())));
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));

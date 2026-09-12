@@ -735,6 +735,44 @@ public class GoldorListener implements Listener {
 			}
 		}
 		resetSharpHits();
+		unpowerPlate(world);
+	}
+
+	/**
+	 * Force the S4 plate at {@code 63 127 35} back to power 0.
+	 * <p>
+	 * <b>A plate left powered bricks the whole device, silently.</b>  Vanilla only presses a plate from
+	 * {@code BasePressurePlateBlock.entityInside}, and that reads
+	 * {@code if (getSignalForState(state) == 0) checkPressed(...)} - so a plate that is ALREADY powered never calls
+	 * {@code checkPressed}, never fires {@code PlayerInteractEvent} with {@code Action.PHYSICAL}, and
+	 * {@link #onPlateStep} is never reached.  Standing on it does nothing at all, with no error and nothing in the
+	 * log, and in ultra-realistic that means S4 can never be started and the phase can never be completed.
+	 * <p>
+	 * It gets stuck because the release is a SCHEDULED BLOCK TICK: a plate presses on contact and un-presses from a
+	 * tick it queues for itself. Anything that writes the block without that tick pending - a teardown mid-press, a
+	 * {@code clone}/{@code fill} out of a region that was captured while somebody was standing on it - leaves the
+	 * powered state with nothing scheduled to clear it, and it stays that way forever.
+	 * <p>
+	 * So it is forced back on both edges of a run: here (reached from {@code Server.serverSetup}, i.e. before the
+	 * run) and from {@code TAS.endPractice} (after it).  Written with {@code applyPhysics = false} like every other
+	 * block write in this plugin - nothing is wired to this plate, it is a puzzle prop.  Harmless if a player is
+	 * standing on it: the signal reads 0 again, so the next {@code entityInside} simply presses it back.
+	 */
+	public static void unpowerPlate(World world) {
+		if(world == null) return;
+		Block b = world.getBlockAt(PLATE_X, PLATE_Y, PLATE_Z);
+		org.bukkit.block.data.BlockData data = b.getBlockData();
+		// Gold is a LIGHT-weighted plate, so its state is an analogue power 0-15 rather than a boolean. The
+		// Powerable branch is there so swapping the plate's material can never quietly un-fix this.
+		if(data instanceof org.bukkit.block.data.AnaloguePowerable ap) {
+			if(ap.getPower() == 0) return;
+			ap.setPower(0);
+			b.setBlockData(ap, false);
+		} else if(data instanceof org.bukkit.block.data.Powerable pw) {
+			if(!pw.isPowered()) return;
+			pw.setPowered(false);
+			b.setBlockData(pw, false);
+		}
 	}
 
 	// =================== Item-frame indestructibility (S3 only, creative bypass) ===================

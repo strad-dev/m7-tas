@@ -43,6 +43,12 @@ public final class M7tas extends JavaPlugin {
 	private static Plugin plugin;
 
 	/**
+	 * The loadout editor, held only so {@link #onDisable} can shut it down: while one is open the player's real
+	 * inventory is parked in a field of it, and the shutdown has to hand that back.
+	 */
+	private LoadoutEditor loadoutEditor;
+
+	/**
 	 * Ceiling we raise {@code minecraft:max_health} to.  Real SkyBlock HP is divided by
 	 * {@code damage.Scale.SB_PER_MC_HP} before it reaches an entity, so the largest value the plugin ever sets is
 	 * Necron's 1400 - this is a guardrail with four orders of magnitude of headroom, not a target.
@@ -85,7 +91,8 @@ public final class M7tas extends JavaPlugin {
 		PlayerCollision.setupNoCollisionTeam();
 
 		// TAS-only commands (tas, simulate, spectate/unspectate, reset, kickallfakes) are disabled in the practice fork.
-		LoadoutEditor loadoutEditor = new LoadoutEditor();
+		loadoutEditor = new LoadoutEditor();
+		commands.SettingsMenu settingsMenu = new commands.SettingsMenu();
 		for(String cmd : List.of("setup", "m7practice", "eq", "reset", "verbose", "setspeed",
 				"class", "m7loadout", "dungeonsettings")) {
 			PluginCommand command = getCommand(cmd);
@@ -98,7 +105,7 @@ public final class M7tas extends JavaPlugin {
 				case "setspeed" -> command.setExecutor(new SetSpeed());
 				case "class" -> command.setExecutor(new ClassCommand());
 				case "m7loadout" -> command.setExecutor(loadoutEditor);
-				case "dungeonsettings" -> command.setExecutor(new DungeonSettings());
+				case "dungeonsettings" -> command.setExecutor(new DungeonSettings(settingsMenu));
 			}
 			command.setTabCompleter(new TabCompletor());
 		}
@@ -118,6 +125,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new listeners.ClearListener(), this);
 		getServer().getPluginManager().registerEvents(new listeners.OutOfBounds(), this);
 		getServer().getPluginManager().registerEvents(loadoutEditor, this);
+		getServer().getPluginManager().registerEvents(settingsMenu, this);
 		// Keeps the (player, path) stat cache honest across equipment and inventory changes (MAP.md §7).
 		getServer().getPluginManager().registerEvents(new damage.StatListener(), this);
 
@@ -185,6 +193,10 @@ public final class M7tas extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
+		// Hand back the real inventory of anyone still inside the loadout editor: it lives in a field while the
+		// editor is open (the editor IS the player's inventory now), so a shutdown that skipped this would leave
+		// them holding palette copies.  Before anything else, since the rest of this tears the run down.
+		if(loadoutEditor != null) loadoutEditor.restoreAll();
 		PlayerInventoryBackup.stopInventorySync();
 		FakePlayerManager.stopCustomConnection();
 		Spectate.stopSpectatorSync();

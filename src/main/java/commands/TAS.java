@@ -223,6 +223,13 @@ public class TAS implements CommandExecutor {
 	 *   the spectator flip) and {@code M7Bridge.resetToSpectators} re-asserts spectator itself right afterwards.
 	 */
 	public static void endPractice(World world, boolean toSpectator) {
+		// FIRST, before anything is torn down: bank whatever the party actually finished.  A run that is cancelled,
+		// timed out, force-ended or abandoned by its last player has no ending of its own to report, so without
+		// this the phase splits and clear milestones it DID reach are thrown away.  A no-op when the run has
+		// already reported (a win, a wipe, Storm's failure), and it has to precede setPracticeMode(false) -
+		// signalRunComplete refuses to fire outside practice mode - as well as ClearManager.stop and the spectator
+		// flip below, both of which destroy what the result reads.
+		WitherActions.signalRunAbandoned();
 		WitherActions.setPracticeMode(false);
 		// Before the mass spectator flip below, so a pending revival can't fight it, and so the saver durability
 		// bars come off the masks rather than being saved into someone's loadout.
@@ -243,6 +250,11 @@ public class TAS implements CommandExecutor {
 		// Drop the boss lane before tearing the bosses down: Utils.cancelAllScheduled above cannot reach it, and its
 		// un-held one-shots (Maxor's crystal respawn, the Wither King's) would otherwise fire into a dead session.
 		BossScheduler.clearAll();
+		// The S4 plate presses on contact and un-presses from a block tick it queues for itself, so a teardown
+		// mid-press can leave it powered with nothing pending to clear it - and a powered plate never fires
+		// Action.PHYSICAL again, which silently bricks the S4 device for every later run. Forced back on both
+		// edges of a run; Server.serverSetup is the other one.
+		listeners.GoldorListener.unpowerPlate(world);
 		// The only thing that calls each boss's resetState.  Without it an early end left Goldor's phase active with
 		// its section gates still blown open, the core entrance an invisible barrier, and every boss's flags set.
 		Maxor.INSTANCE.forceEndPhase();

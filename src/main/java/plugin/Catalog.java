@@ -161,11 +161,14 @@ public final class Catalog {
 	 * Anything not listed sorts to the end in discovery order, so a newly added item shows up at the back of the
 	 * palette instead of vanishing. The list currently covers every palette item exactly, so that tail is empty.
 	 * <br>
+	 * Each block of nine below is one ROW of the editor's palette, and the editor shows five rows a page - so all
+	 * 44 fit on one page today and its page buttons never appear.  A sixth block would create a second page.
+	 * <br>
 	 * Names here are DISPLAY names, and the Fabled reforge is displayed as {@code Withered} on purpose (see
 	 * MAP.md §1.0.6), so Hyperion, Dark Claymore, Flaming Flay and Ragnarock Axe all read "Withered".
 	 */
 	private static final List<String> PALETTE_ORDER = List.of(
-			// Page 1: the core damage kit.
+			// Row 1: the core damage kit.
 			"Heroic Hyperion",
 			"Withered Hyperion",
 			"Precise Terminator",
@@ -175,7 +178,7 @@ public final class Catalog {
 			"Heroic Bonzo Staff",
 			"Infinityboom TNT",
 			"Infinileap",
-			// Page 2: situational weapons and the pearls.
+			// Row 2: situational weapons and the pearls.
 			"Heroic Ice Spray Wand",
 			"Precise Last Breath",
 			"Withered Ragnarοck Axe",   // Greek omicron, matching FakePlayerInventory - see the note above
@@ -185,7 +188,7 @@ public final class Catalog {
 			"Suspicious Golem Sword",
 			"Precise Explosive Bow",
 			"ENDER_PEARL",
-			// Page 3: utility, the cosmetic heads, then the Necron set.
+			// Row 3: utility, the cosmetic heads, then the Necron set.
 			"Gyrokinetic Wand",
 			"Tactical Insertion",
 			"Pitchin' Rod of the Sea",
@@ -195,7 +198,7 @@ public final class Catalog {
 			"Ancient Necron's Chestplate",
 			"Ancient Necron's Leggings",
 			"Ancient Necron's Boots",
-			// Page 4: the Storm set, then its alternate-reforge pieces.
+			// Row 4: the Storm set, then its alternate-reforge pieces.
 			"Ancient Storm's Helmet",
 			"Ancient Storm's Chestplate",
 			"Ancient Storm's Leggings",
@@ -205,9 +208,9 @@ public final class Catalog {
 			"Necrotic Storm's Leggings",
 			"Necrotic Storm's Boots",
 			"Renowned Cow Hat",
-			// Page 5: the rest of the Renowned wearables, then the two weapons no default kit carries.  They sit
-			// here rather than beside the other weapons on purpose: this page is the only one short of nine, so
-			// appending costs nothing, where inserting on page 2 would push two items onto every later page.
+			// Row 5: the rest of the Renowned wearables, then the two weapons no default kit carries.  They sit
+			// here rather than beside the other weapons on purpose: this row is the only one short of nine, so
+			// appending costs nothing, where inserting on row 2 would push two items onto every later row.
 			"Renowned Spring Boots",
 			"Renowned Racing Helmet",
 			"Renowned Thermodynamic Helmet",
@@ -224,14 +227,14 @@ public final class Catalog {
 	 * It exists because two of those disagreements are silent and expensive:
 	 * <ul>
 	 *   <li><b>A variant missing from {@link #PALETTE_ORDER}</b> sorts to the tail of the palette instead of
-	 *       vanishing, so it stays usable and nothing looks broken - it just quietly stops being on the page it
-	 *       is meant to be on, and every later page shifts if a block of nine is left short.</li>
+	 *       vanishing, so it stays usable and nothing looks broken - it just quietly stops being on the row it
+	 *       is meant to be on, and every later row shifts if a block of nine is left short.</li>
 	 *   <li><b>A rarity that disagrees with {@code damage/Items}</b> now changes the item's COLOUR, since the
 	 *       colour is derived.  Four of these were already in the tree when the derivation went in (the Cow Hat,
 	 *       the Spring Boots, the Racing Helmet and the Thermodynamic set were all registered as Epic), and
 	 *       nothing would have caught them.</li>
 	 * </ul>
-	 * It deliberately only WARNS.  A mislabelled palette page is not worth refusing to boot a practice server
+	 * It deliberately only WARNS.  A mislabelled palette row is not worth refusing to boot a practice server
 	 * over, and the log line names the item, which is enough to fix it.
 	 */
 	public static void verify() {

@@ -63,6 +63,13 @@ public enum Difficulty {
 		return current;
 	}
 
+	/** Step BACK one mode, wrapping, and return it.  A right-click on the menu button that left-clicks forwards. */
+	public static Difficulty toggleBack() {
+		Difficulty[] all = values();
+		current = all[(current.ordinal() + all.length - 1) % all.length];
+		return current;
+	}
+
 	/**
 	 * Parse a mode name (any case), or null.  Matches the enum name, so the network's ids go straight through
 	 * ({@code ultra_realistic} = {@code ULTRA_REALISTIC}), plus {@link #ALIASES} for what a person actually types.

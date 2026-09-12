@@ -17,10 +17,14 @@ import java.util.*;
 
 /**
  * Practice-mode Spirit Leap GUI: a 5-row chest that lets a player teleport to up to four teammates. Teammates are
- * placed in the four corners (top-left, top-right, bottom-left, bottom-right), ordered by class alphabetically then
- * by name. Each teammate "owns" a quadrant filled with their class-colored stained glass (Archer green, Berserk red,
- * Healer yellow, Mage light blue, Tank gray) with their head in the corner; clicking anywhere in a quadrant leaps to
- * that teammate. The middle row + middle column are white stained glass dividers that do nothing.
+ * placed in the four corners (top-left, top-right, bottom-left, bottom-right). Each teammate "owns" a quadrant
+ * filled with their class-colored stained glass (Archer green, Berserk red, Healer yellow, Mage light blue, Tank
+ * gray) with their head in the corner; clicking anywhere in a quadrant leaps to that teammate. The middle row +
+ * middle column are white stained glass dividers that do nothing.
+ *
+ * <p><b>A class always lands in the same quadrant.</b>  {@link #CLASS_ORDER} minus the VIEWER'S OWN class is
+ * exactly four classes for four quadrants, so from a given seat a given party is always laid out the same way and
+ * the leap becomes muscle memory - see {@link #arrange}.
  *
  * <p>The instance is the inventory's {@link InventoryHolder}, carrying the slot→teammate map so the click handler
  * ({@link SpiritLeapListener}) can resolve the target.
@@ -36,6 +40,11 @@ public class SpiritLeapMenu implements InventoryHolder {
 			{32, 33, 34, 35, 41, 42, 43, 44}    // bottom-right
 	};
 	private static final int[] CORNERS = {0, 8, 36, 44};
+	/**
+	 * The five classes in the order they claim quadrants.  ALSO the sort order of {@link #candidates}, so which of
+	 * two players of one class gets the home quadrant is decided the same way every time.
+	 */
+	private static final List<String> CLASS_ORDER = List.of("Archer", "Berserk", "Healer", "Mage", "Tank");
 	// Middle row (18–26) and middle column (4,13,22,31,40) are plain glass dividers, with no action.
 	private static final int[] CROSS = {4, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 40};
 
@@ -70,9 +79,10 @@ public class SpiritLeapMenu implements InventoryHolder {
 		ItemStack divider = pane(Material.WHITE_STAINED_GLASS_PANE, " ");
 		for(int s : CROSS) inv.setItem(s, divider);
 
-		List<Player> targets = candidates(viewer);
-		for(int q = 0; q < QUADRANTS.length && q < targets.size(); q++) {
-			Player t = targets.get(q);
+		Player[] bySpot = arrange(viewer, candidates(viewer));
+		for(int q = 0; q < QUADRANTS.length; q++) {
+			Player t = bySpot[q];
+			if(t == null) continue;
 			String cls = resolveClass(t);
 			ItemStack glass = pane(classPane(cls), classColor(cls) + "Leap to " + t.getName());
 			for(int s : QUADRANTS[q]) {
@@ -81,6 +91,35 @@ public class SpiritLeapMenu implements InventoryHolder {
 			}
 			inv.setItem(CORNERS[q], head(t, cls)); // corner shows the teammate's head (still leaps on click)
 		}
+	}
+
+	/**
+	 * Which quadrant each teammate gets.  Every class has a HOME quadrant: {@link #CLASS_ORDER} with the viewer's
+	 * own class struck out, so Archer sits top-left for a Mage but top-left belongs to Berserk for an Archer.
+	 * <p>
+	 * A teammate whose home quadrant is already taken - a second player of the same class, or anyone at all when
+	 * the viewer's class matches nobody's - falls through to the lowest free quadrant, so a party never loses a
+	 * seat to a collision.  {@link #candidates} caps the list at four, so there is always room.
+	 */
+	private static Player[] arrange(Player viewer, List<Player> targets) {
+		List<String> home = new ArrayList<>(CLASS_ORDER);
+		home.remove(resolveClass(viewer)); // four classes left for four quadrants
+		Player[] spots = new Player[QUADRANTS.length];
+		List<Player> overflow = new ArrayList<>();
+		for(Player t : targets) {
+			int spot = home.indexOf(resolveClass(t));
+			if(spot >= 0 && spot < spots.length && spots[spot] == null) spots[spot] = t;
+			else overflow.add(t);
+		}
+		for(Player t : overflow) {
+			for(int s = 0; s < spots.length; s++) {
+				if(spots[s] == null) {
+					spots[s] = t;
+					break;
+				}
+			}
+		}
+		return spots;
 	}
 
 	/** Online, non-spectating, non-fake players (excluding the viewer), ordered by class then name, capped at 4. */
@@ -92,7 +131,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			list.add(p);
 		}
-		list.sort(Comparator.comparing(SpiritLeapMenu::resolveClass).thenComparing(Player::getName));
+		list.sort(Comparator.comparingInt((Player p) -> CLASS_ORDER.indexOf(resolveClass(p))).thenComparing(Player::getName));
 		return list.size() > 4 ? new ArrayList<>(list.subList(0, 4)) : list;
 	}
 

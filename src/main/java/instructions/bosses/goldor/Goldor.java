@@ -435,9 +435,17 @@ public final class Goldor extends WitherLord {
 	 *       linger in S1 while he walks into S2 and you die, S1 complete or not.</li>
 	 * </ul>
 	 *
-	 * <p><b>Standing in S4 is never invalid</b>, whichever section is current and wherever Goldor is - it is the one
-	 * corridor the sweep exempts, under both rules.  Note which end that exemption is on: it is the PLAYER's section
-	 * that has to be S4, not Goldor's.
+	 * <p><b>S4 is exempt from the OVERTAKEN rule only, and only once it has opened</b> - it is the single place in
+	 * the phase where death ticks do not happen when they otherwise would.  Standing in S4 <i>before</i> its gate is
+	 * open is as fatal as standing in any other unopened section: that is still the ahead-of-the-party rule, and
+	 * skipping three gates must not be the safe way to play the phase.  It used to be exempt under BOTH rules, which
+	 * made S4 a free parking space from the moment the phase started.
+	 *
+	 * <p>Nothing special enforces the surviving half, because the ring arithmetic already does: {@link #bossSectionIdx}
+	 * only ever holds 0-3, so {@code bossSectionIdx > 3} is unreachable and Goldor can never count as having walked
+	 * past the last corridor.  Once {@code currentSectionIdx} reaches 3 the first rule stops firing too, and S4 goes
+	 * quiet on its own.  Note which end the exemption is on either way: it is the PLAYER's section that has to be S4,
+	 * not Goldor's.
 	 *
 	 * <p>Being outside every corridor - the core approach, a gateway, the arena floor - is never invalid either.
 	 * The sweep only ever judges somebody who is definitely inside S1, S2 or S3.
@@ -496,15 +504,18 @@ public final class Goldor extends WitherLord {
 		}
 	}
 
-	/** True if being in section {@code idx} is fatal right now.  See {@link #startInvalidLocationTicker}. */
+	/**
+	 * True if being in section {@code idx} is fatal right now.  See {@link #startInvalidLocationTicker}.
+	 * <p>
+	 * <b>There is no S4 special case, deliberately.</b>  S4 ends up exempt from the second rule for free, because
+	 * {@link #bossSectionIdx} is a ring index that only ever holds 0-3 and so can never be greater than S4's 3; and
+	 * it stops being caught by the first the moment its gate opens.  An explicit exemption here also swallowed the
+	 * first rule, which let anyone stand in S4 from the start of the phase.
+	 */
 	private boolean isInvalidSection(int idx) {
-		if(idx == S4_INDEX) return false;          // the one exempt corridor, under either rule
 		if(idx > currentSectionIdx) return true;   // gate not opened yet
 		return bossSectionIdx > idx;               // Goldor has physically walked past this corridor
 	}
-
-	/** S4's index in {@link #SECTION_BOUNDS}, the corridor {@link #isInvalidSection} exempts. */
-	private static final int S4_INDEX = 3;
 
 	/**
 	 * Which corridor Goldor is considered to be patrolling, as an index into {@link #SECTION_BOUNDS}.

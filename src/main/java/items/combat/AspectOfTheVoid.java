@@ -57,12 +57,36 @@ public final class AspectOfTheVoid implements Weapon, AbilityItem {
 		return ReforgeId.WARPED;
 	}
 
+	/**
+	 * The only item that needs more NBT than a bare {@code id}, and the three keys are exactly what makes a client
+	 * read this as a <b>Warped</b> Aspect of the Void rather than a plain one.
+	 * <p>
+	 * They go in {@code minecraft:custom_data} at the TOP LEVEL, with no {@code ExtraAttributes} wrapper: that is
+	 * where SkyblockAPI looks ({@code DataType.simple} reads the custom-data compound directly), and Catharsis -
+	 * which is what actually retextures the item - resolves the model from {@code id} alone
+	 * ({@code skyblock:items/aspect_of_the_void.json}) and then picks the warped variant off a
+	 * {@code catharsis:data_type} condition on {@code ethermerge}.  A pack may also range on
+	 * {@code tuned_transmission}.  None of it is gated on being on Hypixel, so it works here.
+	 * <p>
+	 * {@code ethermerge} is written as an INT and still reads as {@code true}: a boolean lookup goes
+	 * {@code CompoundTag.getBoolean -> Tag.asBoolean -> NumericTag.asByte}, which any numeric tag answers.  The
+	 * display name is not part of the match - {@code colouredName} composes "Warped Aspect of the Void" from the
+	 * WARPED reforge for our own lore, and nothing client-side reads it.
+	 * <p>
+	 * <b>{@code modifier} is the REFORGE, and Hypixel spells it after the reforge STONE, not the reforge.</b>  The
+	 * Warped reforge comes from the Warped Stone, whose item id is {@code AOTE_STONE}, so the value is
+	 * {@code aote_stone} and not {@code warped}.  It is a separate key from {@code ethermerge} and means a
+	 * different thing - ethermerge is the Etherwarp upgrade, the modifier is the reforge - but a pack that selects
+	 * on the reforge needs it, and without it this item reads as unreforged.  It is only written for
+	 * {@link ReforgeId#WARPED}, so a hypothetical other reforge does not claim to be this one.
+	 */
 	@Override
 	public ItemStack build(ReforgeId reforge) {
 		return ItemFactory.item(material(), colouredName(reforge), loreId(), nbt -> {
 			nbt.putString("id", "ASPECT_OF_THE_VOID");
 			nbt.putInt("ethermerge", 1);
 			nbt.putInt("tuned_transmission", 4);
+			if(reforge == ReforgeId.WARPED) nbt.putString("modifier", "aote_stone");
 		});
 	}
 

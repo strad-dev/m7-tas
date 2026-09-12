@@ -87,6 +87,16 @@ public enum Mayor {
 	}
 
 	/**
+	 * Step BACK one mayor, wrapping, and return it.  A right-click on the menu button that left-clicks forwards.
+	 * Goes through {@link #set}, so it drops the stat cache exactly as {@link #toggle} does.
+	 */
+	public static Mayor toggleBack() {
+		Mayor[] all = values();
+		set(all[(current.ordinal() + all.length - 1) % all.length]);
+		return current;
+	}
+
+	/**
 	 * Parse a mayor name (any case), or null.  Matches the enum name, so the network's ids go straight through.
 	 * Both {@code /dungeonsettings mayor} and {@code /m7practice}'s content-matched arg list go through here, so
 	 * the two can never disagree about what a mayor is called.

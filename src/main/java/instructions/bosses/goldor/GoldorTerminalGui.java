@@ -42,18 +42,33 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/**
 	 * The five terminal types.  Each owns its size, its title and its layout; the solve rule lives in
 	 * {@link GoldorTerminalGui#onClick}, because two of them need more than "the right slot was clicked".
+	 * <p>
+	 * <b>None of these titles is Hypixel's string, and that is the point.</b>  Odin and the other SkyBlock
+	 * terminal-solver mods find a terminal by matching the GUI title, and then they take the clicks over: on
+	 * 2026-09-12 Odin swallowed every click in these puzzles client-side, so no packet ever reached the server
+	 * and the GUI looked simply dead.  Every title below is therefore altered just enough to miss an exact
+	 * match while still reading normally to a player:
+	 * <ul>
+	 *   <li>every lowercase {@code o} is a Greek omicron (U+03BF), not an ASCII {@code o};</li>
+	 *   <li>Select All's {@code B} in "BLUE" is a Greek capital beta (U+0392);</li>
+	 *   <li>Starts With drops the colon Hypixel has after "with".</li>
+	 * </ul>
+	 * Two of the five have no {@code o} to swap, which is why those two are altered another way.  The Greek
+	 * letters are the better trick of the two: they are invisible to a player and survive a rewording, where
+	 * the punctuation change is only as good as Hypixel's own punctuation staying put.
+	 * <b>Do not "correct" any of this back to the real strings.</b>
 	 */
 	public enum Type {
 		/** "Change all to same color!" - one green pane among blue; left-click it. */
-		SAME_COLOR(45, "Change all to same color!"),
-		/** "What starts with: 'D'?" - one diamond among barriers. */
-		STARTS_WITH(45, "What starts with: 'D'?"),
-		/** "Select all the BLUE items!" - one blue concrete among barriers. */
-		SELECT_ALL(54, "Select all the BLUE items!"),
+		SAME_COLOR(45, "Change all tο same cοlοr!"),
+		/** "What starts with 'D'?" - one diamond among barriers.  No colon, unlike Hypixel's. */
+		STARTS_WITH(45, "What starts with 'D'?"),
+		/** "Select all the BLUE items!" - one blue concrete among barriers.  The B is a Greek beta. */
+		SELECT_ALL(54, "Select all the ΒLUE items!"),
 		/** "Click the button on time!" - four rows, each cleared by clicking its lime terracotta button. */
-		MELODY(54, "Click the button on time!"),
+		MELODY(54, "Click the buttοn οn time!"),
 		/** "Correct all the panes!" - one red pane among lime; click it with either button. */
-		ON_OFF(45, "Correct all the panes!");
+		ON_OFF(45, "Cοrrect all the panes!");
 
 		public final int size;
 		public final String title;

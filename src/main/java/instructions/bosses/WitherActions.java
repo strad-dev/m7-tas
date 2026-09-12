@@ -81,7 +81,34 @@ public class WitherActions {
 				? pendingResult
 				: plugin.RunResult.capture(runSection, success);
 		pendingResult = null;
+		signalled = true;
 		Bukkit.getPluginManager().callEvent(new plugin.RunCompleteEvent(result));
+	}
+
+	/** Whether THIS run has already reported. Cleared by {@link #startRunTracking}, set by the signal itself. */
+	private static volatile boolean signalled = false;
+
+	/**
+	 * Report a run that is being torn down without an ending of its own: {@code /m7practice end}, a network
+	 * time-out or force-end, or the last player leaving.
+	 * <br>
+	 * <b>A party keeps what it actually finished.</b>  Every phase split and every clear milestone the run reached
+	 * is already in the result, and a consumer decides for itself what a {@code success=false} payload may be
+	 * credited for (the network drops only the two whole-run boards).  Before this existed, walking away from a run
+	 * after clearing and killing two bosses reported nothing at all, and those splits were simply gone.
+	 * <br>
+	 * It fires the SAME event with {@code success=false}, so a listener needs no new plumbing, and it is a no-op
+	 * once this run has already signalled - a win, a wipe or Storm's failure path all report first and tear down
+	 * afterwards, so a normal end can never report twice.  The duplicate would be harmless anyway (a report carries
+	 * the run id, and the network rejects a second one per board), but not reporting is clearer than relying on it.
+	 * <br>
+	 * <b>Call it BEFORE any teardown.</b>  {@code ClearManager.stop} drops the score and the milestones, and the
+	 * spectator flip empties the live roster, so the top of {@code TAS.endPractice} is the last instant the result
+	 * is still readable.
+	 */
+	public static void signalRunAbandoned() {
+		if (!practiceMode || signalled) return;
+		signalRunComplete(false);
 	}
 
 	/** A result snapshotted before the run-complete signal is due to fire. Null when nothing has snapshotted yet. */
@@ -120,6 +147,7 @@ public class WitherActions {
 		runSection = section == null ? "all" : section;
 		runId = java.util.UUID.randomUUID().toString();
 		pendingResult = null; // never let a previous run's snapshot leak into this one
+		signalled = false;    // this run has not reported yet, whatever the last one did
 		runRoster.clear();    // and never let a previous run's players count towards this one
 	}
 
