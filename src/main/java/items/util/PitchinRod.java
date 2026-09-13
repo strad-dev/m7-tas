@@ -4,13 +4,8 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.Item;
 import items.ItemFactory;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The Pitchin' Rod of the Sea.  A plain {@link Item}: it carries no lore ID and grants no stats, so it is a

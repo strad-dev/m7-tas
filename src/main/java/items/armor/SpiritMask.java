@@ -5,14 +5,9 @@ import damage.ReforgeId;
 import death.CheatDeath;
 import items.ItemFactory;
 import items.Wearable;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The Spirit Mask.  A worn cheat-death: 30s cooldown, 3s immune.  It cannot compete with Bonzo's Mask, since

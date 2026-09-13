@@ -19,6 +19,7 @@ import plugin.Utils;
 
 import java.awt.Color;
 import java.util.*;
+import java.util.List;
 
 /**
  * The central controller for the dungeon clear phase. Holds all per-run state (found secrets, room

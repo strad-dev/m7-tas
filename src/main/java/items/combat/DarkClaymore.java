@@ -4,13 +4,8 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.ItemFactory;
 import items.Weapon;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The Dark Claymore.  A pure mage weapon: no ability of its own at all, so it implements {@link Weapon} and

@@ -6,14 +6,10 @@ import items.AbilityItem;
 import items.Cast;
 import items.ItemFactory;
 import items.Weapon;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The Golem Sword.  Our ability is the Y-velocity zero, a movement tech, not the real item's Iron Punch - but

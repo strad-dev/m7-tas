@@ -3,8 +3,10 @@ package abilities;
 import damage.DungeonClass;
 import damage.GuidedCarriers;
 import items.ItemUtils;
-import org.bukkit.*;
-import org.bukkit.entity.*;
+import org.bukkit.DyeColor;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Sheep;
 
 /**
  * The Mage's regular drop ability: an AI-less, gravity-less sheep flown a block a tick along whatever the caster is

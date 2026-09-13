@@ -1,18 +1,16 @@
 package abilities;
 
-import abilities.ClassAbility;
 import damage.DungeonClass;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.*;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
-import plugin.*;
-
-import java.util.*;
+import plugin.Utils;
 
 /**
  * The Archer's ULTIMATE: fifty arrows over 200 ticks, one every four.

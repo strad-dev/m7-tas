@@ -4,14 +4,12 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.ItemFactory;
 import items.Wearable;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Color;
+import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Storm's Boots.  Ships in TWO reforges: the Ancient piece the Mage class wears, and the

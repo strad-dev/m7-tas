@@ -7,27 +7,26 @@ import com.mojang.authlib.properties.Property;
 import com.mojang.authlib.properties.PropertyMap;
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ProjectileItem;
-import items.Weapon;
+import items.*;
 import net.minecraft.server.level.ServerPlayer;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.joml.Vector3f;
-import plugin.*;
+import plugin.M7tas;
+import plugin.MovementAudit;
+import plugin.Utils;
 
-import java.util.*;
+import java.util.UUID;
 
 /**
  * The Jerry-chine Gun.  A gravity-less snowball with a Jerry head riding along as an {@code ItemDisplay}; on

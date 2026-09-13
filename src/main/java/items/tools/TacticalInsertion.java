@@ -6,14 +6,14 @@ import items.AbilityItem;
 import items.Cast;
 import items.ItemFactory;
 import listeners.LavaJump;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
-import plugin.*;
-
-import java.util.*;
+import plugin.Utils;
 
 /**
  * Tactical Insertion.  Marks the caster's position, then returns them to it 3 seconds later.

@@ -2,6 +2,7 @@ package instructions.bosses.goldor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.Inventory;
@@ -276,7 +277,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 *
 	 * @param slot raw slot of the click, already known to be in the TOP inventory
 	 */
-	public boolean onClick(int slot, ClickType click) {
+	public boolean onClick(Player clicker, int slot, ClickType click) {
 		if(solved) return false;
 		boolean hit = switch(type) {
 			case SAME_COLOR -> slot == SAME_COLOR_GREEN && click.isLeftClick();
@@ -296,9 +297,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 				return true;
 			}
 			drawMelodyRow(melodyRow);
-			// Clearing a row sounds exactly like completing a terminal - the same cue, deliberately.  Only the
-			// non-final rows: the last one falls through to the activation, which plays it itself.
-			Goldor.playActivationSound();
+			clicker.playSound(clicker, Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 			return false;
 		}
 		solved = true;

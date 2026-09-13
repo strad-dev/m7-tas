@@ -2,20 +2,21 @@ package items.combat;
 
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.Weapon;
-import org.bukkit.*;
+import items.*;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-import plugin.*;
+import plugin.M7tas;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /** The Flaming Flay.  Lobs a flame arc, angled up from the caster's look direction. */
 public final class FlamingFlay implements Weapon, AbilityItem {

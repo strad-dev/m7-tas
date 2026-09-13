@@ -1,39 +1,12 @@
 package items;
 
 import damage.ReforgeId;
-import items.armor.BonzoMask;
-import items.armor.CowHat;
-import items.armor.NecronBoots;
-import items.armor.NecronChestplate;
-import items.armor.NecronHead;
-import items.armor.NecronLeggings;
-import items.armor.RacingHelmet;
-import items.armor.SpiritMask;
-import items.armor.SpringBootsItem;
-import items.armor.StormBoots;
-import items.armor.StormChestplate;
-import items.armor.StormHelmet;
-import items.armor.StormLeggings;
-import items.armor.ThermodynamicBoots;
-import items.armor.ThermodynamicChestplate;
-import items.armor.ThermodynamicHelmet;
-import items.armor.ThermodynamicLeggings;
-import items.armor.WitherGoggles;
+import items.armor.*;
 import items.bows.DeathBow;
 import items.bows.ExplosiveBow;
 import items.bows.LastBreath;
 import items.bows.Terminator;
-import items.combat.AspectOfTheVoid;
-import items.combat.AxeOfTheShredded;
-import items.combat.BonzoStaff;
-import items.combat.DarkClaymore;
-import items.combat.FlamingFlay;
-import items.combat.GolemSword;
-import items.combat.Hyperion;
-import items.combat.IceSprayWand;
-import items.combat.JerrychineGun;
-import items.combat.RagnarockAxe;
-import items.combat.SpiritSceptre;
+import items.combat.*;
 import items.tools.Dungeonbreaker;
 import items.tools.GyrokineticWand;
 import items.tools.InfinityboomTNT;
@@ -45,11 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import plugin.Utils;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Every custom item, indexed two ways.

@@ -4,14 +4,9 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.ItemFactory;
 import items.Wearable;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The Renowned Cow Hat.  Uncommon once recombobulated, so it is the one green item in the game.  Worth 550

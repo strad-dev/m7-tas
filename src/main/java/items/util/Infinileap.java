@@ -5,13 +5,9 @@ import damage.ReforgeId;
 import items.ItemFactory;
 import items.MenuItem;
 import listeners.SpiritLeapMenu;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The Infinileap.  It IS an ender pearl, and it must never be thrown: leaping goes through

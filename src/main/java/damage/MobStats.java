@@ -1,13 +1,13 @@
 package damage;
 
+import instructions.clear.Room;
+import instructions.clear.Rooms;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Wither;
-import instructions.clear.Room;
-import instructions.clear.Rooms;
 
 import java.util.EnumSet;
 import java.util.Set;

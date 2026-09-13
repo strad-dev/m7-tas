@@ -1,13 +1,9 @@
 package abilities;
 
-import abilities.ClassAbility;
 import damage.DungeonClass;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
-import plugin.*;
-
-import java.util.*;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
+import plugin.Utils;
 
 /**
  * The Berserk's ULTIMATE: melee hits deal x1.5 for 15 seconds (§1.14).

@@ -4,7 +4,6 @@ import instructions.Server;
 import instructions.bosses.CustomBossBar;
 import instructions.bosses.WitherLord;
 import instructions.bosses.storm.Storm;
-import listeners.CustomItems;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;

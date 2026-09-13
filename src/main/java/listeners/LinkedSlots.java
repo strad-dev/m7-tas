@@ -1,5 +1,6 @@
 package listeners;
 
+import instructions.clear.DungeonMap;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -14,7 +15,6 @@ import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import instructions.clear.DungeonMap;
 import plugin.FakePlayerInventory;
 
 import java.util.HashMap;

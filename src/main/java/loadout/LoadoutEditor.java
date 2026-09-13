@@ -1,8 +1,8 @@
 package loadout;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -27,11 +27,7 @@ import org.jspecify.annotations.NonNull;
 import plugin.Catalog;
 import plugin.Utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * {@code /m7loadout} - the editor for the player's CURRENTLY SELECTED class loadout.

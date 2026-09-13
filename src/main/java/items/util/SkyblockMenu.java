@@ -4,13 +4,8 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.Item;
 import items.ItemFactory;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
 
 /**
  * The SkyBlock Menu, pinned to hotbar slot 8 in every kit.  A plain {@link Item}: no ability, no stats, no lore

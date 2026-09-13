@@ -33,11 +33,7 @@ import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
 import plugin.Utils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /*
  * Eq (/eq), a real Hypixel command.

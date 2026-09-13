@@ -3,11 +3,7 @@ package damage;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Per-player and per-(player, target) combat state that damage sources read: the repeated-hit stack, the post-kill

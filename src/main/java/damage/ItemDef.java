@@ -1,11 +1,6 @@
 package damage;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * One item's stat definition, built from independent terms rather than totals (MAP.md §2.4).

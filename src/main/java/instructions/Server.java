@@ -7,7 +7,6 @@ import instructions.bosses.maxor.Maxor;
 import instructions.bosses.necron.Necron;
 import instructions.bosses.storm.Storm;
 import instructions.bosses.witherking.WitherKing;
-import listeners.CustomItems;
 import listeners.GoldorListener;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.*;

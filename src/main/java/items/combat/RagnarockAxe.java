@@ -2,19 +2,16 @@ package items.combat;
 
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.Weapon;
+import items.*;
 import net.minecraft.server.MinecraftServer;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
+import plugin.Utils;
 
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

@@ -2,19 +2,12 @@ package items.tools;
 
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.Tool;
-import org.bukkit.*;
+import items.*;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
-
-import java.util.*;
+import plugin.Utils;
 
 /**
  * The Infinityboom TNT.  Both click sides detonate it against the block the CLIENT reported, and it is

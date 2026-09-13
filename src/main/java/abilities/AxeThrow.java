@@ -1,14 +1,8 @@
 package abilities;
 
-import abilities.ClassAbility;
 import damage.DungeonClass;
 import items.ItemUtils;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
-import plugin.*;
-
-import java.util.*;
+import org.bukkit.entity.Player;
 
 /**
  * The Berserk's regular drop ability: throws an axe for the player's highest hit in the last 60 seconds.

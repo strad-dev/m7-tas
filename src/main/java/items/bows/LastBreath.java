@@ -7,14 +7,11 @@ import items.Bow;
 import items.Cast;
 import items.ItemFactory;
 import net.minecraft.world.InteractionHand;
-import org.bukkit.*;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * The Last Breath.  A DRAWN bow, so its damage scales by the vanilla charge fraction and a partial draw loses

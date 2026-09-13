@@ -2,18 +2,16 @@ package items.combat;
 
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.Weapon;
-import org.bukkit.*;
+import items.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
+import plugin.Utils;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * The Ice Spray Wand.  Its cast lands its x1.1 damage debuff on EVERY enemy within 8 blocks BEFORE it deals any

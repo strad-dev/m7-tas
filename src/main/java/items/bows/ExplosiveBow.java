@@ -2,22 +2,18 @@ package items.bows;
 
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Bow;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.ProjectileItem;
+import items.*;
 import net.minecraft.world.InteractionHand;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * The Explosive Bow.  A drawn bow whose arrows detonate on impact: every mob within 3 blocks takes the weapon's

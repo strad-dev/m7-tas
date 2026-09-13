@@ -1,11 +1,7 @@
 package listeners;
 
 import instructions.Actions;
-import instructions.bosses.goldor.Goldor;
-import instructions.bosses.goldor.GoldorLever;
-import instructions.bosses.goldor.GoldorSection;
-import instructions.bosses.goldor.GoldorTerminal;
-import instructions.bosses.goldor.GoldorTerminalGui;
+import instructions.bosses.goldor.*;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -18,10 +14,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.player.PlayerInteractAtEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -193,7 +189,7 @@ public class GoldorListener implements Listener {
 		if(cannotSolve(p)) return;
 		// Only clicks in the puzzle itself count; a click down in the player's own inventory is just cancelled.
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;
-		if(!gui.onClick(e.getSlot(), e.getClick())) return;
+		if(!gui.onClick(p, e.getSlot(), e.getClick())) return;
 
 		GoldorTerminal term = gui.terminal();
 		GoldorSection sec = Goldor.INSTANCE.getSection(term.sectionIdx);

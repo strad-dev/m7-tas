@@ -3,13 +3,11 @@ package items.combat;
 import damage.GuidedCarriers;
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.Weapon;
-import org.bukkit.*;
-import org.bukkit.entity.*;
+import items.*;
+import org.bukkit.Material;
+import org.bukkit.entity.Bat;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**

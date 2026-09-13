@@ -4,8 +4,8 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Display;
 import org.bukkit.entity.Interaction;
-import org.bukkit.entity.TextDisplay;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.TextDisplay;
 import plugin.Utils;
 
 /**

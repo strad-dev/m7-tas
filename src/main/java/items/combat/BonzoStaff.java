@@ -7,13 +7,15 @@ import items.Cast;
 import items.ItemFactory;
 import items.Weapon;
 import net.minecraft.server.MinecraftServer;
-import org.bukkit.*;
-import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.WindCharge;
 import org.bukkit.inventory.ItemStack;
-import plugin.*;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The Bonzo Staff.  Fires a wind charge whose fire tick is recorded so {@code MiscListener} and {@code Actions}

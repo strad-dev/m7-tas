@@ -2,23 +2,21 @@ package items.combat;
 
 import damage.Rarity;
 import damage.ReforgeId;
-import items.AbilityItem;
-import items.Cast;
-import items.ItemFactory;
-import items.ItemUtils;
-import items.Weapon;
+import items.*;
 import listeners.LavaJump;
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
-import plugin.*;
+import plugin.Utils;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * The Hyperion.  <b>One base item, two reforges</b>: the Heroic and the Withered (Fabled) builds are not two
