@@ -60,8 +60,9 @@ public final class Goldor extends WitherLord {
 	private static final int SS_ZONE_Z1 = 91,  SS_ZONE_Z2 = 96;
 	// S2 "Lights" device: the blocks the wall levers are mounted on (levers at z=142, mount blocks at z=143).
 	private static final int LIGHTS_MOUNT_Z = 143, LIGHTS_MOUNT_X1 = 58, LIGHTS_MOUNT_X2 = 62, LIGHTS_MOUNT_Y1 = 133, LIGHTS_MOUNT_Y2 = 136;
-	// S4 Sharp Shooter: the block supporting the gold pressure plate (plate at 63,127,35).
-	private static final int PLATE_SUPPORT_BX = 63, PLATE_SUPPORT_BY = 126, PLATE_SUPPORT_BZ = 35;
+	// S4 Sharp Shooter: the gold pressure plate that starts the device, kept in sync with
+	// GoldorListener.PLATE_{X,Y,Z}.  The PLATE ITSELF and the block under it are both immune; see isProtected.
+	private static final int PLATE_BX = 63, PLATE_BY = 127, PLATE_BZ = 35;
 
 	// Section lever block coords, indexed [sectionIdx][leverIdx] → {x, y, z}. Single source of truth for both
 	// the GoldorLever placements (buildS1..buildS4) and the run-start reset (resetSectionLevers). These are the
@@ -695,8 +696,8 @@ public final class Goldor extends WitherLord {
 	 * losing any of these would soft-lock a section (they're the only way to complete it) or knock an interactable
 	 * off its mount.
 	 * Covers: the Simon Says button (S1) and the block behind it; the S2 "Lights" lamp backing (z=143) and its
-	 * levers (z=142); the S4 Sharp Shooter pressure-plate support; and every section lever plus the block directly
-	 * beneath it (from the static coord table, so it holds even before the phase spins up).
+	 * levers (z=142); the S4 Sharp Shooter gold pressure plate and its support; and every section lever plus
+	 * the block directly beneath it (from the static coord table, so it holds even before the phase spins up).
 	 */
 	public boolean isProtected(Block b) {
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
@@ -704,8 +705,12 @@ public final class Goldor extends WitherLord {
 		if(bx >= SS_ZONE_X1 && bx <= SS_ZONE_X2 && by >= SS_ZONE_Y1 && by <= SS_ZONE_Y2 && bz >= SS_ZONE_Z1 && bz <= SS_ZONE_Z2) return true;
 		// S2 "Lights" lamp backing (z=143) plus the levers hanging on the z-142 face.
 		if((bz == LIGHTS_MOUNT_Z || bz == LIGHTS_MOUNT_Z - 1) && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
-		// S4 Sharp Shooter gold pressure-plate support block.
-		if(bx == PLATE_SUPPORT_BX && by == PLATE_SUPPORT_BY && bz == PLATE_SUPPORT_BZ) return true;
+		// S4 Sharp Shooter: the gold pressure plate AND the block under it.  The support was already immune,
+		// the plate itself was not - and it is the interactable, the only way to start the device, so stonking
+		// it soft-locked S4 for the 200 ticks until the restoration ran (and for good if the run ended first,
+		// since flushStonkRestorations is what puts it back).  Same shape as Maxor's crystal plates, which
+		// covered both from the start.
+		if(bx == PLATE_BX && bz == PLATE_BZ && (by == PLATE_BY || by == PLATE_BY - 1)) return true;
 		// Section levers and the support block directly beneath each (static coords → phase-independent).
 		for(int[][] section : SECTION_LEVER_COORDS) {
 			for(int[] c : section) {

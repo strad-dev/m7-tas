@@ -2,6 +2,7 @@ package loadout;
 
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -437,13 +438,17 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	 * Row 5: the seam between the palette and the loadout.  It exists because the two halves of this window look
 	 * identical and mean opposite things - above is a catalogue you copy FROM, below is the kit you are building -
 	 * and a labelled bar between them is cheaper than explaining it in chat every time.
+	 * <p>
+	 * <b>Only the first line can be the NAME.</b>  An item display name is a single tooltip line and a newline in
+	 * it does nothing, so the rule and the second label are lore - in the name's own colour, so the three still
+	 * read as one block.
 	 */
 	private static void drawDivider(Inventory gui) {
 		for(int g = DIVIDER_START; g <= DIVIDER_END; g++) gui.setItem(g, divider());
 	}
 
 	private static ItemStack divider() {
-		return button(Material.GRAY_STAINED_GLASS_PANE, "<gray>▲ Item Palette<newline><dark_gray>--------------------------<newline><gray>▼ Your Armor & Inventory");
+		return button(Material.GRAY_STAINED_GLASS_PANE, "<gray>▲ Item Palette", List.of("<gray>--------------------------", "<gray>▼ Your Armor & Inventory"));
 	}
 
 	private static ItemStack filler() {
@@ -455,6 +460,22 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		ItemMeta m = it.getItemMeta();
 		if(m != null) {
 			m.displayName(Utils.msg(name).decoration(TextDecoration.ITALIC, false));
+			it.setItemMeta(m);
+		}
+		return it;
+	}
+
+	/**
+	 * A button with lore.  Only the seam uses it, but it lives beside {@link #button(Material, String)} so both
+	 * styles of item in this window are built the same way.
+	 */
+	private static ItemStack button(Material mat, String name, List<String> lore) {
+		ItemStack it = button(mat, name);
+		ItemMeta m = it.getItemMeta();
+		if(m != null) {
+			List<Component> rendered = new ArrayList<>();
+			for(String line : lore) rendered.add(Utils.msg(line).decoration(TextDecoration.ITALIC, false));
+			m.lore(rendered);
 			it.setItemMeta(m);
 		}
 		return it;
