@@ -293,9 +293,6 @@ public final class CheatDeath {
 
 	// ==================== the action bar ====================
 
-	/** What separates one action-bar segment from the next, matching the boss HUDs. */
-	private static final String SEPARATOR = " <dark_gray>| ";
-
 	/**
 	 * The cooldown segments to hang off the END of somebody else's action bar, each
 	 * {@code " | <colour>Label <white>Nt"}, in declaration order.  Empty when everything is ready.
@@ -305,15 +302,7 @@ public final class CheatDeath {
 	 * ultra-realistic, so no other mode has to know about it either.
 	 */
 	public static String actionBarSuffix(Player p) {
-		return segments(p, true);
-	}
-
-	/**
-	 * The same segments as their own whole action bar, i.e. with no leading separator.  Used when nothing else owns
-	 * the bar this tick - the Goldor phase has no HUD of its own, and a cooldown still has to be readable there.
-	 */
-	public static String actionBarOnly(Player p) {
-		return segments(p, false);
+		return segments(p);
 	}
 
 	/**
@@ -329,14 +318,14 @@ public final class CheatDeath {
 		return false;
 	}
 
-	private static String segments(Player p, boolean leadingSeparator) {
+	private static String segments(Player p) {
 		if(!damage.Difficulty.deathsEnabled()) return "";
 		int now = Utils.serverTick();
 		StringBuilder sb = new StringBuilder();
 		for(Saver s : Saver.values()) {
 			int left = segmentTicks(p, s, now);
 			if(left <= 0) continue;
-			if(leadingSeparator || !sb.isEmpty()) sb.append(SEPARATOR);
+			sb.append(Utils.ACTION_BAR_SEPARATOR);
 			sb.append(s.colour).append(s.label).append(" <white>").append(left).append("t");
 		}
 		return sb.toString();

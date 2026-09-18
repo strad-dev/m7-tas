@@ -279,11 +279,20 @@ public class Utils {
 	 * A cleared bar ({@link Component#empty()}) still shows the cooldowns, without the leading separator, so
 	 * clearing a boss HUD does not blank a timer the player is reading.
 	 */
+	/**
+	 * What separates one action-bar segment from the next, boss HUDs included.  <b>Every per-player segment
+	 * leads with it</b> and {@link #sendActionBar} drops the first one when the segments are the whole bar, so
+	 * a provider never has to know whether anything is in front of it.
+	 */
+	public static final String ACTION_BAR_SEPARATOR = " <dark_gray>| ";
+
 	public static void sendActionBar(Player p, Component bar) {
-		// Ordered so the common path is one boolean: actionBarSuffix answers "" outside ultra-realistic mode and
-		// whenever nothing is on cooldown, and only then do we pay to ask whether the bar we were handed is blank.
-		String extra = death.CheatDeath.actionBarSuffix(p);
-		if(!extra.isEmpty() && plain(bar).isEmpty()) extra = death.CheatDeath.actionBarOnly(p);
+		// Every per-player segment, in a fixed order so they never swap places under a player as their timers
+		// run out. Both providers answer "" on the common path, which is a map lookup each.
+		String extra = items.combat.RagnarockAxe.actionBarSegment(p) + death.CheatDeath.actionBarSuffix(p);
+		// The segments ARE the bar when nothing else owns it - the Goldor phase has no HUD of its own - and a
+		// bar opening with "| " reads like something in front of it got cut off.
+		if(!extra.isEmpty() && plain(bar).isEmpty()) extra = extra.substring(ACTION_BAR_SEPARATOR.length());
 		p.sendActionBar(extra.isEmpty() ? bar : bar.append(msg(extra)));
 		actionBarTick.put(p.getUniqueId(), nmsServer().getTickCount());
 	}

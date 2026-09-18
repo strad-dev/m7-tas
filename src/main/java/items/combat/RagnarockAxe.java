@@ -75,6 +75,11 @@ public final class RagnarockAxe implements Weapon, AbilityItem {
 		return 400; // 20s
 	}
 
+	/** The wind-up, and the buff window it lands. The action-bar timer counts the live one of the two down, so
+	 *  neither figure may be written out a second time. */
+	public static final int WINDUP_TICKS = 60;
+	public static final int BUFF_TICKS = 200;
+
 	@Override
 	public boolean onRightClick(Cast cast) {
 		rag(cast.player());
@@ -120,7 +125,7 @@ public final class RagnarockAxe implements Weapon, AbilityItem {
 			if(tick == 20 || tick == 40) {
 				Utils.playLocalSound(p, Sound.BLOCK_LEVER_CLICK, 1.0F, 2.0F);
 			}
-			if(tick < 60) {
+			if(tick < WINDUP_TICKS) {
 				ragWindup(p, castStart, tick);
 				return;
 			}
@@ -128,7 +133,7 @@ public final class RagnarockAxe implements Weapon, AbilityItem {
 			Utils.playLocalSound(p, Sound.ENTITY_WOLF_WHINE, 1.0F, 1.5F);
 			p.addScoreboardTag(damage.RagnarockBuff.TAG);
 			// Buff expires 200 ticks (10s) after THIS application; a later cast overwrites this, extending the buff.
-			ragBuffExpiry.put(uid, MinecraftServer.currentTick + 200);
+			ragBuffExpiry.put(uid, MinecraftServer.currentTick + BUFF_TICKS);
 			// The buff is +150% of the AXE'S OWN Strength stat, granted as a bonus stat through the stat layer
 			// (MAP.md §1.7) - not the vanilla Strength potion effect it used to be, and not the flat
 			// 220->250 damage swap either.  The stat layer reads the tag, so nothing is applied to the player
@@ -147,8 +152,38 @@ public final class RagnarockAxe implements Weapon, AbilityItem {
 					damage.Stats.invalidate(p);
 					Utils.debug(Utils.DebugType.SERVER, "Rag Buff expired for " + Utils.getRealName(p));
 				}
-			}, 200);
+			}, BUFF_TICKS);
 		}, 1);
+	}
+
+	/**
+	 * Ticks left on whichever Ragnarock window is live: the <b>wind-up</b> while one is in flight, then the
+	 * <b>buff</b>, and 0 when neither is.  One number rather than two segments because they are consecutive -
+	 * the wind-up runs straight into the buff, so the countdown simply carries on from 60 to 200.
+	 * <p>
+	 * Read off the same two maps the ability itself steers by, and on the same clock
+	 * ({@code MinecraftServer.currentTick}), so the timer cannot disagree with what the axe is doing. Both maps
+	 * are cleared as their window ends, which is what makes an absent key mean "not running".
+	 */
+	public static int ticksLeft(Player p) {
+		if(p == null) return 0;
+		UUID uid = p.getUniqueId();
+		Integer castStart = ragCastStart.get(uid);
+		if(castStart != null) return Math.max(0, WINDUP_TICKS - (MinecraftServer.currentTick - castStart));
+		Integer expiry = ragBuffExpiry.get(uid);
+		if(expiry != null) return Math.max(0, expiry - MinecraftServer.currentTick);
+		return 0;
+	}
+
+	/**
+	 * The axe's action-bar segment, {@code " | <red>Rag Axe <white>Nt"}, or nothing at all when no window is
+	 * running.  Appended by {@code Utils.sendActionBar}, the one place that does the appending, so every HUD in
+	 * the plugin picks it up without knowing about it - and {@code death/Deaths}' per-tick fallback draws it
+	 * through a stretch no boss HUD owns.
+	 */
+	public static String actionBarSegment(Player p) {
+		int left = ticksLeft(p);
+		return left <= 0 ? "" : Utils.ACTION_BAR_SEPARATOR + "<red>Rag Axe <white>" + left + "t";
 	}
 
 	/**

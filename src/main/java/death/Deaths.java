@@ -286,16 +286,20 @@ public final class Deaths {
 			}
 		}
 
-		// Cooldowns have to keep ticking down on screen through a stretch no boss HUD owns - a phase without one, or
-		// the gap between phases.  Only fill in the ticks nobody else claimed, so a live HUD is never fought over:
-		// Utils.sendActionBar stamps the tick, and every boss HUD runs at the start of the tick, ahead of this.
+		// Every PER-PLAYER action-bar segment has to keep ticking down through a stretch no boss HUD owns - a
+		// phase without one, or the gap between phases - so this fills in the ticks nobody else claimed. A live
+		// HUD is never fought over: Utils.sendActionBar stamps the tick, and every boss HUD runs at the start
+		// of the tick, ahead of this. It lives here rather than in a HUD module of its own because this is the
+		// plugin's one every-tick driver; the segments themselves belong to their own features.
 		//
-		// PASS AN EMPTY BASE.  sendActionBar is the thing that appends the cooldown segments, and handing it the
+		// PASS AN EMPTY BASE.  sendActionBar is the thing that appends the segments, and handing it the
 		// segments as the bar to append them TO printed every timer twice.
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			if(Utils.actionBarOwnedThisTick(p)) continue;
-			if(CheatDeath.hasCooldowns(p)) Utils.sendActionBar(p, Component.empty());
+			if(CheatDeath.hasCooldowns(p) || items.combat.RagnarockAxe.ticksLeft(p) > 0) {
+				Utils.sendActionBar(p, Component.empty());
+			}
 		}
 	}
 
