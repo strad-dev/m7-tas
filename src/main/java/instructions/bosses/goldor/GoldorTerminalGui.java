@@ -1,5 +1,6 @@
 package instructions.bosses.goldor;
 
+import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
