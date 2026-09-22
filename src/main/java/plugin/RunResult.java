@@ -57,6 +57,16 @@ public final class RunResult {
 	 */
 	public String mayor;
 
+	/**
+	 * True if the run was set under the <b>alpha timings</b> ({@code plugin/Alpha}).
+	 * <p>
+	 * <b>An alpha run is not a record.</b>  Unlike {@link #difficulty} and {@link #mayor}, which are axes a board
+	 * can honestly split on, the alpha timings are an experiment that moves whenever it is retuned, so a time set
+	 * under them is comparable with nothing - not even another alpha run from a different build.  This plugin only
+	 * reports the fact; the network's {@code Leaderboards.submit} is what drops the run.
+	 */
+	public boolean alpha;
+
 	/** Total run length: {@link Utils#runTick()} at the moment the run completed. */
 	public int runTicks;
 
@@ -121,6 +131,7 @@ public final class RunResult {
 		r.success = success;
 		r.difficulty = damage.Difficulty.current().id();
 		r.mayor = damage.Mayor.current().id();
+		r.alpha = Alpha.enabled();
 		r.runTicks = Utils.runTick();
 		r.phaseDurations = WitherActions.phaseDurations();
 		r.splitEnds = WitherActions.splitEnds();

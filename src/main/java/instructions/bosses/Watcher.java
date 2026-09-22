@@ -23,6 +23,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
+import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.FakePlayerManager;
 import plugin.M7tas;
@@ -47,13 +48,24 @@ public class Watcher {
 	private World world;
 	private static final Location ORIGINAL_POSITION = new Location(null, -120.5, 72.0, -56.5, -180, 0);
 	private final List<Location> MOB_SPAWN_LOCATIONS = new ArrayList<>();
-	private static final List<String> MOB_NAMES = List.of("Diamante Giant", "Bonzo", "Nucleararmadillo", "Jamie_2013", "JennAiel", "s3a3m3", "editqble", "valej", "Merlynade", "HenbotB", "Katsumi9877", "BananaBrigade", "derM0RITZZ", "TypeW", "aalatif_", "Cubpletionist", "akc0303", "AsapIcey", "Beethoven_");
+	/**
+	 * The names of this encounter's blood mobs, in spawn order, LATCHED at {@link #spawnEncounter} alongside
+	 * {@link #MOB_SPAWN_LOCATIONS} - the two are parallel and the alpha timings use a different, shorter table
+	 * (see {@link #fillMobTables()}).  Everything that used to say "19" asks {@link #mobTotal()} instead, so a
+	 * flip of {@link Alpha} mid-run can never leave the boss bar counting to a total nobody is spawning.
+	 */
+	private final List<String> mobNames = new ArrayList<>();
 	private static final List<String> SPAWN_LINES = List.of("This guy looks like a fighter.", "Hmmm... this one!", "You'll do.", "Go, fight!", "Go and live again!");
 	private static final List<String> KILLED_LINES = List.of("Not bad.", "That one was weak anyway.", "I'm impressed.", "Very nice.", "Aw, I liked that one.");
 	private int mobCount = 0;
 	private int mobsKilled = 0;
 	private static final Random random = new Random();
-	private static final double MAX_SPEED = 0.64; // blocks per tick
+	private static final double MAX_SPEED = 0.64;       // blocks per tick
+	private static final double ALPHA_MAX_SPEED = 1.0;  // blocks per tick, alpha timings
+	private static final double ACCEL = 0.08;           // blocks per tick per tick
+	private static final double ALPHA_ACCEL = 0.1;      // blocks per tick per tick, alpha timings
+	/** Alpha only: the phase tick the second wave starts, measured from the Blood Room opening. */
+	private static final int ALPHA_SECOND_WAVE_TICK = 440;
 
 	// Boss bar for the Watcher
 	private BossBar watcherBossBar;
@@ -188,35 +200,86 @@ public class Watcher {
 		Objects.requireNonNull(watcher.getAttribute(Attribute.ARMOR_TOUGHNESS)).setBaseValue(-20);
 		Objects.requireNonNull(watcher.getAttribute(Attribute.SCALE)).setBaseValue(1.5);
 
-		// Create the boss bar
+		// The mob table is latched BEFORE the boss bar, which counts down from its size.
+		fillMobTables();
 		createWatcherBossBar();
 
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -56.5)); // Diamante Giant
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 71, -60.5)); // Bonzo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -60.5)); // Nucleararmadillo
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -131.5, 75, -56.5)); // Jamie_2013
-		/* -------------------- "Let's see how you can handle this" -------------------- */
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -56.5)); // JennAiel
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -52.5)); // s3a3m3
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -45.5)); // editqble
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -45.5)); // valej
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -45.5)); // Merlynade
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -52.5)); // HenbotB
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -52.5)); // Katsumi9877
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -56.5)); // BananaBrigade
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 75, -60.5)); // derM0RITZZ
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 71, -60.5)); // TypeW
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 71, -67.5)); // aalatif_
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 75, -67.5)); // Cubpletionist
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -111.5, 79, -67.5)); // akc0303
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -60.5)); // AsapIcey
-		MOB_SPAWN_LOCATIONS.add(new Location(world, -109.5, 79, -56.5)); // Beethoven_
-
 		// Choreography start, anchored to the real entry tick.  This replaces the old hardcoded 3-tick "time to bounds".
-		sendChatMessage("Things feel a little more roomy now, eh?");
-		Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
-		Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
-		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), MOB_NAMES.getFirst()), 240);
+		if(Alpha.enabled()) {
+			sendChatMessage("Ah, we meet again.  As I foresaw...");
+		} else {
+			sendChatMessage("Things feel a little more roomy now, eh?");
+			Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
+			Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
+		}
+		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), mobNames.getFirst()),
+				Alpha.ticks(240, 80));
+	}
+
+	/**
+	 * Fill this encounter's parallel spawn-point and name tables.  Two tables, picked by {@link Alpha}:
+	 * <ul>
+	 *   <li><b>Normal</b>: the nineteen mobs the fight has always had.</li>
+	 *   <li><b>Alpha</b>: fifteen, in a different order.  Four are gone (Nucleararmadillo, Jamie_2013, s3a3m3 and
+	 *       editqble), and the first wave now starts at s3a3m3's and editqble's spawn points with the Diamante
+	 *       Giant and Bonzo standing on them, so the Watcher's opening trip is short.</li>
+	 * </ul>
+	 * The first four entries of either table are the first wave; the Watcher returns to his perch after them
+	 * (see {@link #returnToOriginalPosition()}).
+	 */
+	private void fillMobTables() {
+		MOB_SPAWN_LOCATIONS.clear();
+		mobNames.clear();
+		if(Alpha.enabled()) {
+			mob(-109.5, 71, -52.5, "Diamante Giant"); // s3a3m3's spawn point
+			mob(-111.5, 71, -45.5, "Bonzo");          // editqble's spawn point
+			mob(-111.5, 75, -45.5, "valej");
+			mob(-111.5, 79, -45.5, "Merlynade");
+			/* -------------------- back to the perch until tick 440 -------------------- */
+			mob(-109.5, 75, -52.5, "Katsumi9877");
+			mob(-109.5, 79, -52.5, "HenbotB");
+			mob(-109.5, 79, -56.5, "Beethoven_");
+			mob(-109.5, 79, -60.5, "AsapIcey");
+			mob(-111.5, 79, -67.5, "akc0303");
+			mob(-111.5, 75, -67.5, "Cubpletionist");
+			mob(-111.5, 71, -67.5, "aalatif_");
+			mob(-109.5, 71, -60.5, "TypeW");
+			mob(-109.5, 75, -60.5, "derM0RITZZ");
+			mob(-109.5, 75, -56.5, "BananaBrigade");
+			mob(-109.5, 71, -56.5, "JennAiel");
+			return;
+		}
+		mob(-131.5, 71, -56.5, "Diamante Giant");
+		mob(-131.5, 71, -60.5, "Bonzo");
+		mob(-131.5, 75, -60.5, "Nucleararmadillo");
+		mob(-131.5, 75, -56.5, "Jamie_2013");
+		/* -------------------- "Let's see how you can handle this" -------------------- */
+		mob(-109.5, 71, -56.5, "JennAiel");
+		mob(-109.5, 71, -52.5, "s3a3m3");
+		mob(-111.5, 71, -45.5, "editqble");
+		mob(-111.5, 75, -45.5, "valej");
+		mob(-111.5, 79, -45.5, "Merlynade");
+		mob(-109.5, 79, -52.5, "HenbotB");
+		mob(-109.5, 75, -52.5, "Katsumi9877");
+		mob(-109.5, 75, -56.5, "BananaBrigade");
+		mob(-109.5, 75, -60.5, "derM0RITZZ");
+		mob(-109.5, 71, -60.5, "TypeW");
+		mob(-111.5, 71, -67.5, "aalatif_");
+		mob(-111.5, 75, -67.5, "Cubpletionist");
+		mob(-111.5, 79, -67.5, "akc0303");
+		mob(-109.5, 79, -60.5, "AsapIcey");
+		mob(-109.5, 79, -56.5, "Beethoven_");
+	}
+
+	/** One row of the parallel tables: where the Watcher flies to, and who he drops there. */
+	private void mob(double x, double y, double z, String name) {
+		MOB_SPAWN_LOCATIONS.add(new Location(world, x, y, z));
+		mobNames.add(name);
+	}
+
+	/** How many blood mobs this encounter has, i.e. what the boss bar counts down from. */
+	private int mobTotal() {
+		return mobNames.size();
 	}
 
 	// ============================== Event-driven kills ==============================
@@ -243,9 +306,9 @@ public class Watcher {
 
 		mobsKilled++;
 		updateWatcherBossBar();
-		Utils.timer("<green>Blood Mob " + mobsKilled + "/19 killed | " + formatTick(phaseRel()));
+		Utils.timer("<green>Blood Mob " + mobsKilled + "/" + mobTotal() + " killed | " + formatTick(phaseRel()));
 
-		if(mobsKilled < 19) {
+		if(mobsKilled < mobTotal()) {
 			sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 		} else {
 			sendChatMessage("You have proven yourself.  You may pass.");
@@ -384,7 +447,7 @@ public class Watcher {
 	// ============================== Boss bar ==============================
 
 	private void createWatcherBossBar() {
-		String title = Utils.mmLegacy("<gold><bold>﴾ <red>The Watcher<gold> ﴿ </bold><yellow>19<red>❤");
+		String title = Utils.mmLegacy("<gold><bold>﴾ <red>The Watcher<gold> ﴿ </bold><yellow>" + mobTotal() + "<red>❤");
 
 		watcherBossBar = Bukkit.createBossBar(title, BarColor.RED, BarStyle.SOLID);
 		watcherBossBar.setProgress(1.0);
@@ -400,8 +463,8 @@ public class Watcher {
 			return;
 		}
 
-		int mobsRemaining = 19 - mobsKilled;
-		double progress = mobsRemaining / 19.0;
+		int mobsRemaining = mobTotal() - mobsKilled;
+		double progress = mobTotal() == 0 ? 0 : mobsRemaining / (double) mobTotal();
 
 		String title = Utils.mmLegacy("<gold><bold>﴾ <red>The Watcher<gold> ﴿ </bold><yellow>" + mobsRemaining + "<red>❤");
 
@@ -413,7 +476,7 @@ public class Watcher {
 
 	private void travelToAndSpawnMob(Location l, String mobName) {
 		Location current = watcher.getLocation();
-		moveEntitySmooth(watcher, current, l, MAX_SPEED, () -> {
+		moveEntitySmooth(watcher, current, l, watcherSpeed(), () -> {
 			mobCount++;
 			final int idx = mobCount; // 1-based index of THIS mob (mobCount advances as spawns chain)
 			Location headStart = l.clone();
@@ -442,23 +505,38 @@ public class Watcher {
 				// same-tick beam instead of after it.  The old mid-tick spawn lost the task-id race to the run-start beam.
 				BossScheduler.schedule(() -> {
 					spawnMob(endLoc, mobName);
-					Utils.timer("<green>Blood Mob " + idx + "/19 spawned (" + mobName + ") | " + formatTick(phaseRel()));
+					Utils.timer("<green>Blood Mob " + idx + "/" + mobTotal() + " spawned (" + mobName + ") | " + formatTick(phaseRel()));
 					stand.remove(); // Remove armor stand after reaching destination
 				}, 1);
 			});
 
 			sendChatMessage(SPAWN_LINES.get(random.nextInt(5)));
 
-			if(mobCount == 4 || mobCount == 19) {
+			if(mobCount == 4 || mobCount == mobTotal()) {
 				returnToOriginalPosition();
 			} else {
-				travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
+				travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), mobNames.get(mobCount));
 			}
 		});
 	}
 
+	/**
+	 * Fly one entity from {@code start} to {@code end} on a trapezoid speed profile: accelerate at {@code accel},
+	 * cruise at {@code maxSpeed}, decelerate back to a stop, one teleport per tick.
+	 *
+	 * <p><b>The profile is measured out in advance and then SCALED to the real distance.</b>  Both tick counts are
+	 * rounded up, so the raw profile covers a little more or a little less ground than the trip actually is, and
+	 * the old code absorbed the difference with a {@code teleport(end)} on the final tick - a visible snap at the
+	 * destination, worse the longer the trip.  {@code cumulative} holds the distance travelled by the end of each
+	 * tick and {@code scale} stretches it to land exactly on {@code end}, so the last tick is an ordinary step.
+	 * The tick count is untouched, so the choreography still hands off when it always did.
+	 *
+	 * <p><b>Alpha only.</b>  {@code scale} is 1 with alpha off, which reproduces the old accumulation to the bit,
+	 * snap included: the movement this fixes is timed against the old numbers everywhere else.
+	 */
 	private void moveEntitySmooth(Entity entity, Location start, Location end, double maxSpeed, Runnable onComplete) {
-		final double accel = 0.08;
+		// Only the Watcher's own acceleration moves under alpha; the head-travel armour stand keeps the original.
+		final double accel = entity.equals(watcher) ? Alpha.value(ACCEL, ALPHA_ACCEL) : ACCEL;
 		final Vector totalVector = end.toVector().subtract(start.toVector());
 		final double totalDistance = totalVector.length();
 		final Vector direction = totalVector.clone().normalize();
@@ -481,12 +559,25 @@ public class Watcher {
 		}
 
 		final int movementTicks = accelTicks + cruiseTicks + decelTicks;
+
+		// Distance covered by the END of each tick, before scaling.  Index 0 is the start, so this is one longer
+		// than the tick count and the runnable below reads cumulative[tick + 1].
+		final double[] cumulative = new double[movementTicks + 1];
+		double travelled = 0;
+		for(int i = 0; i < movementTicks; i++) {
+			double speed;
+			if(i < accelTicks) speed = accel * (i + 1);
+			else if(i < accelTicks + cruiseTicks) speed = maxSpeed;
+			else speed = Math.max(0, maxSpeed - accel * (i - accelTicks - cruiseTicks + 1));
+			travelled += speed;
+			cumulative[i + 1] = travelled;
+		}
+		final double scale = Alpha.enabled() && travelled > 1e-9 ? totalDistance / travelled : 1.0;
+
 		entity.teleport(start.clone());
 
 		new BukkitRunnable() {
 			int tick = 0;
-			double currentSpeed = 0;
-			final Location currentLoc = start.clone();
 
 			@Override
 			public void run() {
@@ -495,19 +586,8 @@ public class Watcher {
 					return;
 				}
 
-				// Phase-based motion
-				if(tick < accelTicks) {
-					currentSpeed = accel * (tick + 1);
-				} else if(tick < accelTicks + cruiseTicks) {
-					currentSpeed = maxSpeed;
-				} else {
-					int decelTick = tick - accelTicks - cruiseTicks;
-					currentSpeed = maxSpeed - accel * (decelTick + 1);
-					if(currentSpeed < 0) currentSpeed = 0;
-				}
-
-				Vector moveVec = direction.clone().multiply(currentSpeed);
-				currentLoc.add(moveVec);
+				// Position is read off the profile rather than accumulated, so a scaled trip lands on `end` exactly.
+				Location currentLoc = start.clone().add(direction.clone().multiply(cumulative[tick + 1] * scale));
 
 				if(entity.equals(watcher)) {
 					watcher.teleport(currentLoc.clone().setDirection(direction));
@@ -615,16 +695,26 @@ public class Watcher {
 
 	private void returnToOriginalPosition() {
 		if(watcher != null && world != null) {
-			if(mobCount != 19) {
-				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, () -> sendChatMessage("Let's see how you can handle this."));
+			if(mobCount != mobTotal()) {
+				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, watcherSpeed(),
+						() -> sendChatMessage("Let's see how you can handle this."));
+				// Alpha waits out an ABSOLUTE tick rather than a fixed pause: the second wave starts 22s after the
+				// Blood Room opened, however long the first four took, so the wait is whatever is left of it (and
+				// never zero, since the chain has to hand off through the scheduler).
+				int wait = Alpha.enabled() ? Math.max(1, ALPHA_SECOND_WAVE_TICK - phaseRel()) : 60;
 				Utils.scheduleTask(() -> {
 					Utils.debug(Utils.DebugType.BOSS, "Watcher moved");
-					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), MOB_NAMES.get(mobCount));
-				}, 60);
+					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), mobNames.get(mobCount));
+				}, wait);
 			} else {
-				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, MAX_SPEED, null);
+				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, watcherSpeed(), null);
 			}
 		}
+	}
+
+	/** The Watcher's own top speed, in blocks per tick.  The head-travel armour stand keeps its own 0.4. */
+	private static double watcherSpeed() {
+		return Alpha.value(MAX_SPEED, ALPHA_MAX_SPEED);
 	}
 
 	private void sendChatMessage(String message) {
@@ -639,6 +729,7 @@ public class Watcher {
 		mobsKilled = 0;
 		countedMobKills.clear();
 		MOB_SPAWN_LOCATIONS.clear();
+		mobNames.clear();
 		if(portalDetectTask != null && !portalDetectTask.isCancelled()) {
 			portalDetectTask.cancel();
 		}

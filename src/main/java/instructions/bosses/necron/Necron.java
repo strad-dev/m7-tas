@@ -18,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.Utils;
 
@@ -59,9 +60,14 @@ public final class Necron extends WitherLord {
 	private static final double[] THRESHOLD_FRACTIONS = {0.80, 0.25, 0.05};
 
 	private static final int INTRO_END_TICK = 160;       // intro dialogue is exactly 160t; aggro + damageability begin here
+	/** Alpha: the intro is 80t, and the fireball salvo starts at 20 rather than 60 so the platform still goes at +40. */
+	private static final int ALPHA_INTRO_END_TICK = 80;
 	private static final int FRENZY_DURATION_TICKS = 140;
+	/** Alpha: both frenzies are 3 seconds. */
+	private static final int ALPHA_FRENZY_DURATION_TICKS = 60;
 	private static final int FIREBALL_DURATION_TICKS = 60;
 	private static final int DEATH_TO_WK_TICKS = 100;
+	private static final int ALPHA_DEATH_TO_WK_TICKS = 60;
 
 	// Middle of the arena Necron snaps to for a frenzy (his spawn point).
 	private static final double MIDDLE_X = 54.5, MIDDLE_Y = 66, MIDDLE_Z = 76.5;
@@ -127,13 +133,17 @@ public final class Necron extends WitherLord {
 
 		// Goldor's section ends as Necron spawns, so record its end tick for the Wither-King practice scoreboard.
 		instructions.bosses.WitherActions.recordSplit("Goldor", Utils.runTick());
-		// --- Intro (160t): dialogue + a guarded platform destroy. Necron is not yet damageable and does not fly. ---
+		// --- Intro: dialogue + a guarded platform destroy. Necron is not yet damageable and does not fly. ---
+		// 160t normally (salvo at 60, platform at 100, Goodbye at 120); 80t under alpha (salvo at 20, platform at
+		// 60, Goodbye at 80 with the intro's end).  The salvo always leads the platform by its own 40t, so it is
+		// scheduled off the destroy tick rather than being a second number to keep in step.
+		int introEnd = Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK);
+		int salvoTick = Alpha.ticks(60, 20);
 		sendChatMessage("You went further than any human before, congratulations.");
-		Utils.scheduleTask(() -> {
-			sendChatMessage("I'm afraid your journey ends now.");
-			destroyPlatform(true); // intro salvo, which may destroy the platform (guarded by platformIntact)
-		}, 60);
-		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), 120);
+		// The line is queued first so that when the two share a tick (normal mode, both 60) it still leads.
+		Utils.scheduleTask(() -> sendChatMessage("I'm afraid your journey ends now."), Alpha.ticks(60, 40));
+		Utils.scheduleTask(() -> destroyPlatform(true), salvoTick); // may destroy the platform (guarded by platformIntact)
+		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), Alpha.ticks(120, 80));
 
 		// --- After intro: drop armor, become damageable, and start the Maxor-style aggro chase. ---
 		Utils.scheduleTask(() -> {
@@ -142,8 +152,10 @@ public final class Necron extends WitherLord {
 			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 			// The ??? "damageable" indicator is shown ONLY after a frenzy ends, never after the intro and never
 			// after the fireball attack (see endInterlude).
-			sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself.");
-		}, INTRO_END_TICK);
+			// Alpha's intro is the three lines above and nothing else: this one has no slot left in an 80t window
+			// that already ends on "Goodbye.", so it is dropped rather than stacked onto the same tick.
+			if(!Alpha.enabled()) sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself.");
+		}, introEnd);
 	}
 
 	@Override
@@ -222,7 +234,7 @@ public final class Necron extends WitherLord {
 			destroyPlatform(false); // 25% replay: fireballs only, never destroy the platform
 		} else {
 			// 80% and 5% are the frenzy: teleport to the middle, blind players, hold still.
-			duration = FRENZY_DURATION_TICKS;
+			duration = Alpha.ticks(FRENZY_DURATION_TICKS, ALPHA_FRENZY_DURATION_TICKS);
 			moveBossToCenter();
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
 			applyBlindness();
@@ -290,7 +302,8 @@ public final class Necron extends WitherLord {
 			int left = Math.max(0, interludeEndTick - t);
 			bar = interludeIsFireball ? "<gold>Fireballs <white>" + left + "t" : "<red>Frenzy <white>" + left + "t";
 		} else if(!damageable) {
-			bar = "<yellow>Damageable In <white>" + Math.max(0, INTRO_END_TICK - t) + "t";
+			bar = "<yellow>Damageable In <white>"
+					+ Math.max(0, Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK) - t) + "t";
 		} else {
 			// Damageable and chasing: nothing to count, so clear once on the way in rather than broadcasting an
 			// empty bar to everyone every tick.
@@ -432,12 +445,14 @@ public final class Necron extends WitherLord {
 
 	private void playDeathDialogue() {
 		final int deathTick = displayTick(); // Necron-relative tick of the final blow (t=0 of the death sequence)
+		// The handoff tick every other delay below is measured from.
+		final int toWitherKing = Alpha.ticks(DEATH_TO_WK_TICKS, ALPHA_DEATH_TO_WK_TICKS);
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Necron killed in " + formatTick(displayTick()));
-		// Open the wall to the Wither King's arena 200t after the killing blow (restored on the next /reset).
-		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, 200);
-		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 60);
+		// Open the wall to the Wither King's arena 100t after the handoff (restored on the next /reset).
+		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, toWitherKing + 100);
+		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), Alpha.ticks(60, 40));
 		// note: In most mods, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
 		// This TAS fixes that. To compare to those timers, subtract 2 seconds here and add 2 seconds to Wither King time.
 		Utils.scheduleTask(() -> {
@@ -447,27 +462,27 @@ public final class Necron extends WitherLord {
 			instructions.bosses.WitherActions.recordPhaseDuration("Necron", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
-		}, DEATH_TO_WK_TICKS);
-		Utils.scheduleTask(() -> sendChatMessage("The Catacombs... are no more."), DEATH_TO_WK_TICKS + 20);
+		}, toWitherKing);
+		Utils.scheduleTask(() -> sendChatMessage("The Catacombs... are no more."), toWitherKing + 20);
 
 		/*
 		 * note: all of the wither partitions are one-ticked in this TAS, matching DPS achieved in normal f7
 		 * thus, there are no timesaves available in normal f7 VS master mode m7
 		 */
 		// A normal F7 completes 140t after the final blow, i.e. 40t after the t=100 phase transition, which matches
-		// the DEATH_TO_WK_TICKS + 40 print delay below, and not on the death tick itself.  Add that offset OUTSIDE
+		// the toWitherKing + 40 print delay below, and not on the death tick itself.  Add that offset OUTSIDE
 		// overallTick(): in practice mode overallTick() reports the LIVE run tick and ignores its argument, so a
 		// forward projection has to start from the overall DEATH tick and add the 140t death→finish gap itself.
-		final int normalF7Overall = overallTick(deathTick) + DEATH_TO_WK_TICKS + 40;
+		final int normalF7Overall = overallTick(deathTick) + toWitherKing + 40;
 		Utils.scheduleTask(() -> {
 			double secs = normalF7Overall / 20.0;
 			int mins = (int) (secs / 60);
 			double rem = secs - mins * 60.0;
 			Bukkit.broadcast(Utils.msg("<gold>Normal Floor 7 Finishes Here in " + formatWithSpaces(normalF7Overall)
 					+ " ticks (" + String.format("%.2f", secs) + " seconds | " + mins + ":" + String.format("%05.2f", rem) + ")"));
-		}, DEATH_TO_WK_TICKS + 40);
+		}, toWitherKing + 40);
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.remove();
-		}, DEATH_TO_WK_TICKS + 60);
+		}, toWitherKing + 60);
 	}
 }

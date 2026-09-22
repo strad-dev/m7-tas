@@ -23,9 +23,10 @@ import java.util.Map;
  * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
  *    teleports them to the chosen phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.  A bare
- *    "classic"/"realistic"/"ultra_realistic" arg sets the damage mode for the run (MAP.md §0), and a bare
- *    "paul"/"derpy"/"other" sets the mayor; omitted, the current settings stand, so a standalone player keeps
- *    whatever /dungeonsettings last set.  The network always sends both.
+ *    "classic"/"realistic"/"ultra_realistic" arg sets the damage mode for the run (MAP.md §0), a bare
+ *    "paul"/"derpy"/"other" sets the mayor, and a bare "on"/"off" sets the alpha timings; omitted, the current
+ *    settings stand, so a standalone player keeps whatever /dungeonsettings last set.  The network always sends
+ *    all three.
  * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
  *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a
  *    pre-run delay of 60 ticks (3s) by default.  Pass a bare integer arg to override it: the network plugin
@@ -75,15 +76,21 @@ public class Practice implements CommandExecutor {
 		// difficulty: damage.Mayor is a server-wide global, and the network always passes one so a run can't
 		// inherit the last party's mayor - which decides whether every mob on the floor has double health.
 		damage.Mayor mayorArg = null;
+		// Optional alpha timings ("on" / "off").  Null means "leave it alone", same as the two above: plugin.Alpha
+		// is a server-wide global, and a run that inherited the last party's alpha flag would be timed under
+		// timings nobody chose - and would be refused by the leaderboards for it.
+		plugin.Alpha alphaArg = null;
 		for(String arg : args) {
 			// Both parsed up front so the branches below are one test each: they have to come BEFORE the section
 			// fallback, which swallows any unrecognised word and would otherwise read "classic" as a section name.
 			damage.Difficulty mode = damage.Difficulty.parse(arg);
 			damage.Mayor mayor = damage.Mayor.parse(arg);
+			plugin.Alpha alpha = plugin.Alpha.parse(arg);
 			if(arg.equalsIgnoreCase("--no-teleport") || arg.equalsIgnoreCase("--noteleport")) noTeleport = true;
 			else if(arg.matches("\\d+")) delayTicks = Integer.parseInt(arg);
 			else if(mode != null) difficulty = mode;
 			else if(mayor != null) mayorArg = mayor;
+			else if(alpha != null) alphaArg = alpha;
 			else section = arg.toLowerCase();
 		}
 		if(!DEFAULT_LOCATIONS.containsKey(section)) {
@@ -148,6 +155,13 @@ public class Practice implements CommandExecutor {
 		// Same window for the mayor, and it matters more: mob HP is written once at spawn, so the flag has to be
 		// right BEFORE anything spawns.
 		if(mayorArg != null) damage.Mayor.set(mayorArg);
+		// Same window again: a phase arms its whole schedule the tick it starts, so the flag has to be right
+		// before the first one does.
+		if(alphaArg != null) plugin.Alpha.set(alphaArg);
+		if(plugin.Alpha.enabled()) {
+			org.bukkit.Bukkit.broadcast(Utils.msg("<gold><bold>ALPHA TIMINGS<reset><gray> are on.  "
+					+ "<red>This run is not valid for the leaderboards."));
+		}
 
 		TAS.runPractice(world, section, delayTicks);
 		return true;

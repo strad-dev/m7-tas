@@ -2,6 +2,7 @@ package commands;
 
 import damage.Difficulty;
 import damage.Mayor;
+import plugin.Alpha;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -12,10 +13,11 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /dungeonsettings [difficulty [<mode>] | mayor [<paul|derpy|other>]]} - this server's dungeon settings
- * (MAP.md §0).  With no arguments it prints them; with a setting and no value it steps that one to its next value.
+ * {@code /dungeonsettings [difficulty [<mode>] | mayor [<paul|derpy|other>] | alpha [<on|off>]]} - this server's
+ * dungeon settings (MAP.md §0).  With no arguments it prints them; with a setting and no value it steps that one
+ * to its next value.
  * <p>
- * Two settings, and they are independent - any difficulty can be run under any mayor:
+ * Three settings, and they are independent - any difficulty can be run under any mayor, with or without alpha:
  * <ul>
  *   <li><b>difficulty</b> ({@link Difficulty}) - <i>classic</i> assumes all four debuffs are applied and blessings
  *       are maxed, so a practising player can concentrate on movement and routing.  <i>realistic</i> makes each of
@@ -45,7 +47,7 @@ import plugin.Utils;
  */
 public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
-			"<red>Usage: /dungeonsettings [difficulty [classic|realistic|ultra_realistic] | mayor [paul|derpy|other]]";
+			"<red>Usage: /dungeonsettings [difficulty [classic|realistic|ultra_realistic] | mayor [paul|derpy|other] | alpha [on|off]]";
 
 	/** The menu a bare {@code /dungeonsettings} opens standalone.  See {@link SettingsMenu#suppressed()}. */
 	private final SettingsMenu menu;
@@ -66,6 +68,7 @@ public class DungeonSettings implements CommandExecutor {
 		switch(args[0].toLowerCase()) {
 			case "difficulty", "mode" -> difficulty(sender, args);
 			case "mayor" -> mayor(sender, args);
+			case "alpha" -> alpha(sender, args);
 			default -> sender.sendMessage(Utils.msg(USAGE));
 		}
 		return true;
@@ -80,6 +83,9 @@ public class DungeonSettings implements CommandExecutor {
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>mayor: <yellow><value>  <dark_gray><desc>",
 				Placeholder.unparsed("value", Mayor.current().id()),
 				Placeholder.unparsed("desc", describe(Mayor.current()))));
+		sender.sendMessage(Utils.msg("<dark_gray>- <gray>alpha: <yellow><value>  <dark_gray><desc>",
+				Placeholder.unparsed("value", Alpha.current().id()),
+				Placeholder.unparsed("desc", describe(Alpha.current()))));
 		sender.sendMessage(Utils.msg("<dark_gray>Change one with <white>/dungeonsettings <setting> [value]"));
 	}
 
@@ -136,6 +142,33 @@ public class DungeonSettings implements CommandExecutor {
 		}
 	}
 
+	private static void alpha(CommandSender sender, String[] args) {
+		Alpha next;
+		if(args.length >= 2) {
+			next = Alpha.parse(args[1]);
+			if(next == null) {
+				sender.sendMessage(Utils.msg(USAGE));
+				return;
+			}
+			Alpha.set(next);
+		} else {
+			next = Alpha.toggle();
+		}
+		applyAlpha(next);
+	}
+
+	/** Announce the alpha timings going on or off.  Same split, and same reason, as {@link #applyDifficulty}. */
+	static void applyAlpha(Alpha next) {
+		Bukkit.broadcast(Utils.msg("<gold><bold>ALPHA TIMINGS<reset><gray> are now <yellow><value>",
+				Placeholder.unparsed("value", next.id())));
+		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
+		// Timings are latched by the schedules a phase arms at its start, so a mid-run flip only reaches the
+		// phases that have not begun yet.
+		if(instructions.bosses.WitherActions.isPracticeMode()) {
+			Bukkit.broadcast(Utils.msg("<dark_gray>A phase arms its timings when it starts, so this only affects phases that have not begun."));
+		}
+	}
+
 	/**
 	 * One line on what a setting's value means.  PLAIN text: it is interpolated as an unparsed placeholder in
 	 * {@link #show}, so a MiniMessage tag in here would print as literal angle brackets.
@@ -145,6 +178,13 @@ public class DungeonSettings implements CommandExecutor {
 			case CLASSIC -> "Debuffs are automatically applied and blessings are always maxed.";
 			case REALISTIC -> "Debuffs must be applied manually and blessings reflect collected secrets (if clear is part of the practice).";
 			case ULTRA_REALISTIC -> "Realistic, plus you can die and terminals must be solved by hand.";
+		};
+	}
+
+	private static String describe(Alpha a) {
+		return switch(a) {
+			case OFF -> "The normal Hypixel timings.";
+			case ON -> "Experimental short timings.  Times set under alpha are NOT valid for the leaderboards.";
 		};
 	}
 

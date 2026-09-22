@@ -13,6 +13,7 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
+import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.FakePlayerInventory;
 import plugin.Utils;
@@ -40,10 +41,13 @@ public final class Maxor extends WitherLord {
 	// Phase tick Maxor gets his aggro and starts moving (see onStart).  Nothing can be in the middle of the arena
 	// before it, so it's also where the action bar's laser countdown starts.
 	private static final int AGGRO_TICK = 160;
+	/** Alpha: the dialogue is 40t per line instead of 60t, so Maxor starts moving at 80 rather than 160. */
+	private static final int ALPHA_AGGRO_TICK = 80;
 	private static final int STUN_COOLDOWN_TICKS = 200;
 	// Ticks from the stun to the automatic enrage.  The action bar counts this down, so it has to be the same
 	// number the enrage is scheduled on - hence a constant rather than a literal at the schedule site.
 	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
+	/** Crystal plates arm when the fight does, so this tracks the aggro tick rather than repeating its value. */
 	private static final int PLATE_GATE_TICKS = 160;
 	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
 
@@ -154,20 +158,24 @@ public final class Maxor extends WitherLord {
 		startBarTicker();
 		startPlateTicker();
 
+		// The plates arm the tick the fight does.  Alpha starts the fight at 80, and a plate that stayed shut for
+		// another 80t of live fight would be a mechanic nobody asked to change.
+		int aggroTick = Alpha.ticks(AGGRO_TICK, ALPHA_AGGRO_TICK);
 		// No queued rechecks to drain: the poll picks up an already-pressed plate on the very next tick.
-		Utils.scheduleTask(() -> platesActive = true, PLATE_GATE_TICKS);
+		Utils.scheduleTask(() -> platesActive = true, Alpha.ticks(PLATE_GATE_TICKS, ALPHA_AGGRO_TICK));
 
 		resetCrystals();
 
 		sendChatMessage("WELL WELL WELL, LOOK WHO'S HERE!");
-		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 60);
-		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 120);
+		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), Alpha.ticks(60, 40));
+		// Alpha lands the third line ON the aggro tick; normally it leads it by 40t.
+		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), Alpha.ticks(120, 80));
 		Utils.scheduleTask(() -> {
 			setAggro(3.0, 1.0, 0.5);
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
-		}, AGGRO_TICK);
+		}, aggroTick);
 	}
 
 	@Override
@@ -342,7 +350,9 @@ public final class Maxor extends WitherLord {
 				// On real Hypixel the laser check is a 20-tick cycle (like Storm's crush detection), not every tick.
 				// Anchor to phase ticks divisible by 20 so the stun can only trigger on the 20-tick grid.
 				if(displayTick() % LASER_CYCLE_TICKS != 0) return;
-				if(stunCooldownActive) return;
+				// Alpha removes the cooldown outright: the laser may stun again the moment it next comes round,
+				// even with the previous stun still running.
+				if(stunCooldownActive && !Alpha.enabled()) return;
 
 				double dx = boss.getLocation().getX() - LASER_CENTER_X;
 				double dz = boss.getLocation().getZ() - LASER_CENTER_Z;
@@ -479,15 +489,18 @@ public final class Maxor extends WitherLord {
 			return;
 		}
 
-		stunCooldownActive = true;
-		// Boss-lane: the cooldown must lift at the START of its tick so the laser ticker (also start-of-tick) sees
-		// it cleared the same tick, not a tick late.
-		BossScheduler.schedule(() -> {
-			stunCooldownActive = false;
-			// Swap "Immune" back to "Laser" on the tick the window really closes: the HUD ticker registers first, so
-			// it already drew this tick's bar from the pre-clear state.
-			updateActionBar();
-		}, STUN_COOLDOWN_TICKS);
+		// Alpha has no immune window at all, so nothing is armed and the bar never shows "Immune".
+		stunCooldownActive = !Alpha.enabled();
+		if(stunCooldownActive) {
+			// Boss-lane: the cooldown must lift at the START of its tick so the laser ticker (also start-of-tick)
+			// sees it cleared the same tick, not a tick late.
+			BossScheduler.schedule(() -> {
+				stunCooldownActive = false;
+				// Swap "Immune" back to "Laser" on the tick the window really closes: the HUD ticker registers
+				// first, so it already drew this tick's bar from the pre-clear state.
+				updateActionBar();
+			}, STUN_COOLDOWN_TICKS);
+		}
 		inStun = true;
 		stunDamageDealt = 0;
 		stunCapReached = false;
@@ -629,12 +642,14 @@ public final class Maxor extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
+		// The wall to Storm's arena and the handoff itself are the same tick, so they read the same number.
+		int handoffTick = Alpha.ticks(100, 60);
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
 		Utils.timer("<green>Maxor killed in " + formatTick(displayTick()));
 		Server.playWitherDeathSound(boss);
-		// Open the wall to Storm's arena 100t after the killing blow (restored on the next /reset).
-		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, 100);
-		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 60);
+		// Open the wall to Storm's arena as Storm starts (restored on the next /reset).
+		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, handoffTick);
+		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), Alpha.ticks(60, 40));
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Maxor finished in " + formatTick(displayTick()));
 			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
@@ -642,7 +657,7 @@ public final class Maxor extends WitherLord {
 			instructions.bosses.WitherActions.recordPhaseDuration("Maxor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
-		}, 100);
+		}, handoffTick);
 	}
 
 	public boolean isDyingWither(Wither w) {

@@ -17,6 +17,7 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
+import plugin.Alpha;
 import plugin.*;
 
 import java.lang.reflect.Field;
@@ -58,6 +59,8 @@ public class WitherKing {
 	private static final int PRE_WITHERKING_TICKS = 3002;
 	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − Apex kill 959). */
 	private static final int END_DELAY_TICKS = 70;
+	/** Alpha: the score prints the instant the last dragon dies, with no buffer at all. */
+	private static final int ALPHA_END_DELAY_TICKS = 0;
 
 	// --- Summon-phase relics ---
 	/** Each relic: wool material + chat color + label, its dragon-statue spawn point, and its altar block (X,Z). */
@@ -122,7 +125,18 @@ public class WitherKing {
 	/** Phase tick at which each dragon's spawn was announced, used to time its kill relative to its own spawn. */
 	private static final Map<String, Integer> dragonSpawnTick = new HashMap<>();
 	private static int aliveCount = 0;
-	/** True once the last TIMER dragon (Flame) has spawned.  This gates the event-driven Power/Apex spawns so the
+	/**
+	 * The last dragon that spawns on a timer rather than on a kill, i.e. the one {@link #flameSpawned} latches on.
+	 * <p>
+	 * Normally Flame, the third.  <b>Alpha drops Flame's 600t timer</b> and moves it to the head of the event
+	 * queue, so under alpha the last timer dragon is Ice and Flame begins the moment Soul and Ice are both down.
+	 * <p>
+	 * LATCHED in {@link #witherKingInstructions} next to the queue it has to agree with: read live, a settings flip
+	 * mid-phase would leave a queue holding Flame and a latch still waiting for it, and no dragon would ever spawn.
+	 */
+	private static String lastTimerDragon = "orange";
+
+	/** True once the last TIMER dragon (see {@link #lastTimerDragon}) has spawned.  This gates the event-driven Power/Apex spawns so the
 	*  early death of Soul or Ice, before Flame appears, can't trigger them. */
 	private static boolean flameSpawned = false;
 	/** Event-spawned dragons, in order: Power then Apex. Spawned when the last living dragon is killed. */
@@ -146,6 +160,10 @@ public class WitherKing {
 		WitherActions.recordSplit("Necron", Utils.runTick());
 
 		eventQueue.clear();
+		// Alpha: Flame is event-driven too, so it heads the queue instead of waiting out a 600t timer, and Ice
+		// becomes the last dragon on a clock.  The queue and the latch are set together for that reason.
+		lastTimerDragon = Alpha.enabled() ? "blue" : "orange";
+		if(Alpha.enabled()) eventQueue.add("orange"); // Flame
 		eventQueue.add("red");   // Power
 		eventQueue.add("green"); // Apex
 		aliveCount = 0;
@@ -360,15 +378,27 @@ public class WitherKing {
 
 	// ============================== Wither King intro ==============================
 
+	/**
+	 * The Wither King's arrival: the golem-repair and thunder beds, three lines, and the first dragons.
+	 *
+	 * <p><b>Alpha halves the whole approach.</b>  The five golem repairs play on a 10t grid rather than a 20t one
+	 * (20-60 instead of 20-100), the thunder bed ends with the last line, and Soul and Ice no longer spawn
+	 * together: Soul goes with "You... again?" at 60 and Ice with the second line at 120.  Flame's 600t timer is
+	 * gone entirely - see {@link #lastTimerDragon()}.
+	 */
 	private static void startWitherKingIntro() {
-		for(int i = 20; i <= 101; i += 20) {
+		int golemStep = Alpha.ticks(20, 10);
+		int firstLine = Alpha.ticks(100, 60);
+		int secondLine = Alpha.ticks(160, 120);
+		int lastLine = Alpha.ticks(220, 180);
+		for(int i = 20; i <= 20 + golemStep * 4; i += golemStep) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_IRON_GOLEM_REPAIR, 2.0f, 0.5f), i);
 		}
-		for(int i = 20; i <= 261; i += 20) {
+		for(int i = 20; i <= Alpha.ticks(261, 181); i += 20) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f), i);
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.0f), i);
 		}
-		Utils.scheduleTask(() -> sendChatMessage("You... again?"), 100);
+		Utils.scheduleTask(() -> sendChatMessage("You... again?"), firstLine);
 		// Spawn the Wither King 20 ticks before its "I no longer wish to fight" line, at scale 0.1, and grow it
 		// 0.1 scale per tick up to its full scale of 4, so it rises into existence over the lead-up to the line.
 		Utils.scheduleTask(() -> {
@@ -390,17 +420,18 @@ public class WitherKing {
 			startWitherKingGrowth();
 
 			Utils.scheduleTask(() -> CustomBossBar.setupWitherBossBar(witherKing, "<obfuscated>Wither-King"), 1);
-		}, 140);
+		}, secondLine - 20);
 		Utils.scheduleTask(() -> {
 			sendChatMessage("I no longer wish to fight, but I know that will not stop you.");
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
-		}, 160);
-		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), 220);
-		// First three dragons spawn on predetermined timers (Soul + Ice together, then Flame).
+		}, secondLine);
+		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), lastLine);
+		// The timer dragons.  Normally Soul + Ice together at 260 and Flame at 600; alpha spawns Soul and Ice with
+		// the first two lines and hands Flame to the event queue.
 		// Power and Apex are NOT timer-spawned: they fire from handleDragonKilled when the last living dragon dies.
-		Utils.scheduleTask(() -> spawnDragon("purple"), 260); // Soul
-		Utils.scheduleTask(() -> spawnDragon("blue"), 260);   // Ice
-		Utils.scheduleTask(() -> spawnDragon("orange"), 600); // Flame (last timer dragon)
+		Utils.scheduleTask(() -> spawnDragon("purple"), Alpha.ticks(260, 60)); // Soul
+		Utils.scheduleTask(() -> spawnDragon("blue"), Alpha.ticks(260, 120));  // Ice
+		if(!Alpha.enabled()) Utils.scheduleTask(() -> spawnDragon("orange"), 600); // Flame (last timer dragon)
 	}
 
 	/** Colored bold display name for a dragon color key (e.g. "orange" → gold-bold "Flame Dragon"). */
@@ -463,7 +494,7 @@ public class WitherKing {
 			dragon.setHealth(damage.MobStats.WITHERED_DRAGON.internalHealth());
 			dragon.addScoreboardTag("WitherKingDragon");
 			aliveCount++;
-			if(color.equals("orange")) flameSpawned = true; // last timer dragon is now alive
+			if(color.equals(lastTimerDragon)) flameSpawned = true; // last timer dragon is now alive
 			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
@@ -491,8 +522,11 @@ public class WitherKing {
 	}
 
 	/** Which players get a given dragon's spawn title. Ice → Berserk/Mage/Healer; Soul → Archer/Tank (and anyone
-	 *  without one of those class tags); all other dragons → everyone. */
+	 *  without one of those class tags); all other dragons → everyone.
+	 *  <p>The split exists only because Soul and Ice normally spawn on the SAME tick and one title would hide the
+	 *  other.  Alpha spawns them 60t apart, so there is nothing to split and both title the whole party. */
 	private static boolean shouldSeeDragonPopup(Player p, String color) {
+		if(Alpha.enabled()) return true;
 		var tags = p.getScoreboardTags();
 		boolean iceClass = tags.contains("Berserk") || tags.contains("Mage") || tags.contains("Healer");
 		return switch(color) {
@@ -614,6 +648,8 @@ public class WitherKing {
 	// ============================== Death / end ==============================
 
 	public static void deathSequence() {
+		// Alpha prints the score on the death tick itself, so the network has the full 250t of dialogue left to
+		// hold rather than 180 - see M7Bridge.dialogueHoldTicks, which reads the same flag off the run payload.
 		sendChatMessage("Incredible.  You did what I couldn't do myself.");
 		Utils.scheduleTask(() -> sendChatMessage("In a way, I should thank you.  I lost all hope centuries ago that it would ever end."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I hope you'll become the Heroes I could never be."), 120);
@@ -621,7 +657,8 @@ public class WitherKing {
 		Utils.scheduleTask(() -> sendChatMessage("My strengths are depleting.  This... this is it."), 240);
 		Utils.scheduleTask(() -> { if(witherKing != null && witherKing.isValid()) witherKing.remove(); }, 300);
 
-		Utils.scheduleTask(WitherKing::printFinalMessage, END_DELAY_TICKS);
+		int endDelay = Alpha.ticks(END_DELAY_TICKS, ALPHA_END_DELAY_TICKS);
+		Utils.scheduleTask(WitherKing::printFinalMessage, endDelay);
 
 		// Tell the network plugin the run is over, at the SCOREBOARD (t=70), NOT at the end of the death dialogue
 		// (t=250) where this used to sit.  A run has to be SAVED even if the whole party walks out while the King is
@@ -630,7 +667,7 @@ public class WitherKing {
 		// The dialogue still plays out in full: the network plugin holds its teardown 180t longer to cover the
 		// difference, so players drop to spectator at the same moment they always did (M7Bridge.dialogueHoldTicks).
 		// Standalone there is nothing to hold - the run just ends when /reset or the next /m7practice says so.
-		Utils.scheduleTask(WitherActions::signalRunComplete, END_DELAY_TICKS);
+		Utils.scheduleTask(WitherActions::signalRunComplete, endDelay);
 	}
 
 	/** Final congratulation: hardcoded splits for a TAS run, live ticks for a practice run, a short line for
@@ -742,6 +779,13 @@ public class WitherKing {
 			Bukkit.broadcast(Utils.nameComponent(ChatFont.centerPad(line)));
 		}
 		Bukkit.broadcast(Utils.msg(""));
+		// The one place a party is told their time did not count.  It has to be ON the scoreboard: anything earlier
+		// is long forgotten by the time the number they care about is on screen.
+		if(Alpha.enabled()) {
+			Bukkit.broadcast(Utils.nameComponent(ChatFont.centerPad(Utils.mmLegacy(
+					"<red><bold>ALPHA TIMINGS - NOT VALID FOR LEADERBOARDS"))));
+			Bukkit.broadcast(Utils.msg(""));
+		}
 		Bukkit.broadcast(Utils.msg("   <green><bold>Plugin by </bold><aqua>Stradivarius Violin<green>, also known as <aqua>Beethoven_"));
 		Bukkit.broadcast(Utils.msg("    <red><bold>YOUTUBE</bold><aqua>: https://www.youtube.com/@Stradivarius_Violin"));
 		Bukkit.broadcast(Utils.msg("               <blue><bold>DISCORD</bold><aqua>: https://discord.gg/gNfPwa8"));

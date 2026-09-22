@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
+import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.M7tas;
 import plugin.Utils;
@@ -904,14 +905,17 @@ public final class Goldor extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
+		// The floor to Necron's arena and the handoff itself are the same tick, so they read the same number.
+		int handoffTick = Alpha.ticks(80, 60);
 		sendChatMessage("...");
 		// Three columns: time-since-core-opened (S4 complete), then the shared Terminals (Goldor) + Overall columns.
 		int coreTicks = displayTick() - coreOpenTick;
 		Utils.timer("<green>" + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
 				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
-		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 60);
-		// Open the floor to Necron's arena 100t after the killing blow (restored on the next /reset).
-		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, 100);
+		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), Alpha.ticks(60, 40));
+		// Open the floor to Necron's arena (restored on the next /reset).  Normal opens it 20t after the handoff;
+		// alpha opens it with the handoff, since there is no longer 20t of dialogue left to cover the gap.
+		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, Alpha.ticks(100, 60));
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
 			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
@@ -922,7 +926,7 @@ public final class Goldor extends WitherLord {
 			instructions.bosses.WitherActions.recordPhaseDuration("Goldor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
-		}, 80);
+		}, handoffTick);
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.remove();
 		}, 160);

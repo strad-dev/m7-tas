@@ -10,6 +10,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jspecify.annotations.NonNull;
+import plugin.Alpha;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -159,17 +160,27 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	// --- On/Off: the one red pane among lime ---
 	private static final int ON_OFF_ANSWER = 31;
 
-	// --- Melody: four playable rows, the marker column, and where each row's button sits ---
+	// --- Melody: the playable rows, the marker column, and where each row's button sits ---
 	private static final int MELODY_FIRST_ROW = 1, MELODY_LAST_ROW = 4;
+	/** Alpha: one row fewer, so Melody is three clicks rather than four.  The chest and its markers are unchanged. */
+	private static final int ALPHA_MELODY_LAST_ROW = 3;
 	private static final int MELODY_MARKER_COL = 1;
 	private static final int MELODY_BUTTON_COL = 7;
+
+	/**
+	 * The last playable Melody row, i.e. how many clicks the terminal is.  Read live rather than latched: the rows
+	 * are drawn and cleared inside one open view, which cannot outlive a settings change worth caring about.
+	 */
+	private static int melodyLastRow() {
+		return Alpha.enabled() ? ALPHA_MELODY_LAST_ROW : MELODY_LAST_ROW;
+	}
 
 	// ==================== instance ====================
 
 	private final Inventory inv;
 	private final GoldorTerminal terminal;
 	public final Type type;
-	/** Melody only: the row currently accepting its button click.  Past {@link #MELODY_LAST_ROW} once solved. */
+	/** Melody only: the row currently accepting its button click.  Past {@link #melodyLastRow()} once solved. */
 	private int melodyRow = MELODY_FIRST_ROW;
 	/** Latched the moment the puzzle is solved, so a second click in the same tick can't activate twice. */
 	private boolean solved;
@@ -222,7 +233,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 				// The marker column, top and bottom, is what the rows line up against.
 				inv.setItem(slot(0, MELODY_MARKER_COL), MAGENTA);
 				inv.setItem(slot(5, MELODY_MARKER_COL), MAGENTA);
-				for(int row = MELODY_FIRST_ROW; row <= MELODY_LAST_ROW; row++) drawMelodyRow(row);
+				for(int row = MELODY_FIRST_ROW; row <= melodyLastRow(); row++) drawMelodyRow(row);
 			}
 		}
 	}
@@ -273,7 +284,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * <b>Same Color takes a LEFT click only</b>, because that is the button that recolours its pane.  Every other
 	 * puzzle - On/Off included - accepts either button.
 	 * <p>
-	 * Clearing a Melody row plays the terminal-completion cue ({@code Goldor.playActivationSound}); the FOURTH row
+	 * Clearing a Melody row plays the terminal-completion cue ({@code Goldor.playActivationSound}); the LAST row
 	 * does not, because completing the terminal plays it a moment later and two of them would stack on one tick.
 	 *
 	 * @param slot raw slot of the click, already known to be in the TOP inventory
@@ -293,7 +304,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 			int cleared = melodyRow;
 			melodyRow++;
 			drawMelodyRow(cleared); // back to inactive
-			if(melodyRow > MELODY_LAST_ROW) {
+			if(melodyRow > melodyLastRow()) {
 				solved = true;
 				return true;
 			}

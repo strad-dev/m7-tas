@@ -2,6 +2,7 @@ package commands;
 
 import damage.Difficulty;
 import damage.Mayor;
+import plugin.Alpha;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -24,10 +25,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The one-row <b>M7 Settings</b> menu behind a bare {@code /dungeonsettings}: the difficulty and the mayor, each
- * as one button whose lore lists every value with the one in force in bold, and each click stepping to the next.
+ * The one-row <b>M7 Settings</b> menu behind a bare {@code /dungeonsettings}: the difficulty, the mayor and the
+ * alpha timings, each as one button whose lore lists every value with the one in force in bold, and each click
+ * stepping to the next.
  *
- * <p><b>Standalone only.</b>  On the network those two are PARTY settings - they ride the practice request so a
+ * <p><b>Standalone only.</b>  On the network those three are PARTY settings - they ride the practice request so a
  * party can't be mixed-mode - and the lobby has its own copy of this menu that writes them there.  This one flips
  * the server-wide globals, which on a shared instance would silently change what somebody else's run is scored
  * under, so {@link #suppressed()} refuses to open it whenever the network plugin is installed and
@@ -35,7 +37,7 @@ import java.util.UUID;
  * is what the network gates to admins (see {@code M7Bridge}).
  */
 public final class SettingsMenu implements Listener {
-	private static final int DIFFICULTY_SLOT = 3, MAYOR_SLOT = 5;
+	private static final int DIFFICULTY_SLOT = 2, MAYOR_SLOT = 4, ALPHA_SLOT = 6;
 
 	/** One line, on both buttons, so the right-click half is never a secret. */
 	private static final String CYCLE_HINT = "<yellow>Click to change <dark_gray>(right-click to go back)";
@@ -70,6 +72,14 @@ public final class SettingsMenu implements Listener {
 		mayorLore.add(CYCLE_HINT);
 		inv.setItem(MAYOR_SLOT, mayorHead(mayorLore));
 
+		List<String> alphaLore = new ArrayList<>();
+		for(Alpha a : Alpha.values()) alphaLore.add(option(a == Alpha.current(), colour(a), label(a)));
+		alphaLore.add("");
+		alphaLore.add("<red>Alpha times are NOT valid for leaderboards");
+		alphaLore.add("");
+		alphaLore.add(CYCLE_HINT);
+		inv.setItem(ALPHA_SLOT, button(Material.SMITHING_TABLE, "<gold>Alpha Timings", alphaLore));
+
 		p.openInventory(inv);
 	}
 
@@ -87,6 +97,8 @@ public final class SettingsMenu implements Listener {
 			DungeonSettings.applyDifficulty(back ? Difficulty.toggleBack() : Difficulty.toggle());
 		} else if(e.getRawSlot() == MAYOR_SLOT) {
 			DungeonSettings.applyMayor(back ? Mayor.toggleBack() : Mayor.toggle());
+		} else if(e.getRawSlot() == ALPHA_SLOT) {
+			DungeonSettings.applyAlpha(back ? Alpha.toggleBack() : Alpha.toggle());
 		} else {
 			return;
 		}
@@ -117,6 +129,20 @@ public final class SettingsMenu implements Listener {
 			case PAUL -> "<green>";
 			case DERPY -> "<light_purple>";
 			case OTHER -> "<gray>";
+		};
+	}
+
+	private static String colour(Alpha a) {
+		return switch(a) {
+			case OFF -> "<gray>";
+			case ON -> "<gold>";
+		};
+	}
+
+	private static String label(Alpha a) {
+		return switch(a) {
+			case OFF -> "Off";
+			case ON -> "On";
 		};
 	}
 
