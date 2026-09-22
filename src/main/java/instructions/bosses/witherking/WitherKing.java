@@ -59,8 +59,8 @@ public class WitherKing {
 	private static final int PRE_WITHERKING_TICKS = 3002;
 	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − Apex kill 959). */
 	private static final int END_DELAY_TICKS = 70;
-	/** Alpha: the score prints the instant the last dragon dies, with no buffer at all. */
-	private static final int ALPHA_END_DELAY_TICKS = 0;
+	/** Alpha: the score lands on top of the kill rather than a second and a half later. */
+	private static final int ALPHA_END_DELAY_TICKS = 10;
 
 	// --- Summon-phase relics ---
 	/** Each relic: wool material + chat color + label, its dragon-statue spawn point, and its altar block (X,Z). */
@@ -392,7 +392,7 @@ public class WitherKing {
 		int secondLine = Alpha.ticks(160, 120);
 		int lastLine = Alpha.ticks(220, 180);
 		for(int i = 20; i <= 20 + golemStep * 4; i += golemStep) {
-			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_IRON_GOLEM_REPAIR, 2.0f, 0.5f), i);
+			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_ITEM_BREAK, 1.0f, 0.5f), i);
 		}
 		for(int i = 20; i <= Alpha.ticks(261, 181); i += 20) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f), i);
@@ -648,8 +648,9 @@ public class WitherKing {
 	// ============================== Death / end ==============================
 
 	public static void deathSequence() {
-		// Alpha prints the score on the death tick itself, so the network has the full 250t of dialogue left to
-		// hold rather than 180 - see M7Bridge.dialogueHoldTicks, which reads the same flag off the run payload.
+		// Alpha prints the score 60t earlier, so the network has 240t of dialogue left to hold rather than 180 -
+		// see M7Bridge.dialogueHoldTicks, which reads the same flag off the run payload.  Signal + hold is 250
+		// either way, which is what keeps the drop to spectator on the same absolute tick in both modes.
 		sendChatMessage("Incredible.  You did what I couldn't do myself.");
 		Utils.scheduleTask(() -> sendChatMessage("In a way, I should thank you.  I lost all hope centuries ago that it would ever end."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I hope you'll become the Heroes I could never be."), 120);
