@@ -20,7 +20,7 @@ public final class Powers {
 	 * Total Accessory Power from the profile's accessory bag OUTSIDE a dungeon.  It already includes one copy of
 	 * each dungeon accessory below; what those add in a dungeon is a SECOND copy, not a doubling of this figure.
 	 */
-	private static final double OVERWORLD_ACCESSORY_MP = 2121;
+	private static final double OVERWORLD_ACCESSORY_MP = 2162;
 
 	/**
 	 * The dungeon accessories held, with their own Accessory Power.  These are exactly the standard per-rarity
@@ -40,6 +40,7 @@ public final class Powers {
 		DUNGEON_ACCESSORIES.put("Wither Relic", 22.0);
 		DUNGEON_ACCESSORIES.put("Catacombs Expert Ring", 16.0);
 		DUNGEON_ACCESSORIES.put("General's Medallion", 12.0);
+		DUNGEON_ACCESSORIES.put("Infinipot", 12.0);
 	}
 
 	/**
