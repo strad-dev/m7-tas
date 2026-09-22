@@ -4,13 +4,15 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.ItemFactory;
 import items.Wearable;
+import plugin.Alpha;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * The Renowned Cow Hat.  Uncommon once recombobulated, so it is the one green item in the game.  Worth 550
- * movement speed, and wearing it cancels the Wither-King relic carry debuff.
+ * movement speed (600 under the alpha timings, {@link Alpha}), and wearing it cancels the Wither-King relic
+ * carry debuff.
  */
 public final class CowHat implements Wearable {
 	public static final CowHat INSTANCE = new CowHat();
@@ -49,9 +51,12 @@ public final class CowHat implements Wearable {
 		return EquipmentSlot.HEAD;
 	}
 
+	/** Movement speed while worn.  The bare-headed default it is measured against is in {@code HelmetSpeedSync}. */
+	private static final int SPEED = 550, ALPHA_SPEED = 600;
+
 	@Override
 	public int impliedSpeed() {
-		return 550;
+		return Alpha.enabled() ? ALPHA_SPEED : SPEED;
 	}
 
 	@Override

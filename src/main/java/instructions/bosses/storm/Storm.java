@@ -205,10 +205,11 @@ public final class Storm extends WitherLord {
 		Utils.scheduleTask(() -> sendChatMessage("Don't boast about beating this simple-minded Wither."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("My abilities are unparalleled, in may ways I am the last bastion."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("The memory of your death will be your fondest, focus up!"), 180);
-		Utils.scheduleTask(() -> {
-			sendChatMessage("The power of lightning is quite phenomenal.  A single strike can vaporize a person whole.");
-			Actions.turnHead(boss, 90f, 0f);
-		}, warning);
+		// The head turn belongs to the FLIGHT, not the dialogue: it is where the path finishes, so it stays on 400
+		// in both modes while only the line moves.  Same reason the flight itself is untouched.
+		Utils.scheduleTask(() -> Actions.turnHead(boss, 90f, 0f), 400);
+		Utils.scheduleTask(() -> sendChatMessage(
+				"The power of lightning is quite phenomenal.  A single strike can vaporize a person whole."), warning);
 		countdownTitle("4", Alpha.ticks(440, 420));
 		Utils.scheduleTask(() -> sendChatMessage("I'd be happy to show you what that's like!"), Alpha.ticks(460, 480));
 		countdownTitle("3", Alpha.ticks(465, 445));

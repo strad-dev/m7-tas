@@ -22,7 +22,8 @@ public interface Wearable extends Item {
 
 	/**
 	 * The movement speed wearing this implies, or -1 for a piece that does not set one.  Racing Helmet 650, Cow
-	 * Hat 550; a helmet that grants neither leaves the player at the default 400.  Read by
+	 * Hat 550; a helmet that grants neither leaves the player at the default 400.  Each is +50 under the alpha
+	 * timings ({@code plugin/Alpha}), and each item owns its own pair.  Read by
 	 * {@code plugin/HelmetSpeedSync}, which applies it only on a TRANSITION so a manual {@code /setspeed} is left
 	 * alone.
 	 */

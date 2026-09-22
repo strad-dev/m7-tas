@@ -4,13 +4,15 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.ItemFactory;
 import items.Wearable;
+import plugin.Alpha;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
  * The Renowned Racing Helmet.  Grants no stats at all (Renowned is empty at every rarity), and its whole effect
- * is the movement speed: wearing it is worth 650 where the default is 400.
+ * is the movement speed: wearing it is worth 650 where the default is 400, or 700 against 450 under the alpha
+ * timings ({@link Alpha}).
  * <p>
  * The old x0.70 outgoing-damage penalty that used to come with it is DELETED, not moved here: the helmet slot is
  * exclusive, so wearing this already costs the Storm's Helmet's Intelligence and the Golden Dragon pet, and a
@@ -53,8 +55,11 @@ public final class RacingHelmet implements Wearable {
 		return EquipmentSlot.HEAD;
 	}
 
+	/** Movement speed while worn.  The bare-headed default it is measured against is in {@code HelmetSpeedSync}. */
+	private static final int SPEED = 650, ALPHA_SPEED = 700;
+
 	@Override
 	public int impliedSpeed() {
-		return 650;
+		return Alpha.enabled() ? ALPHA_SPEED : SPEED;
 	}
 }

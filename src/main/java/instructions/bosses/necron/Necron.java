@@ -371,8 +371,7 @@ public final class Necron extends WitherLord {
 
 	/** Explosion + wither-ambient pulses across the frenzy window. */
 	private void frenzySounds(int duration) {
-		Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE);
-		for(int t = 20; t < duration; t += 20) {
+		for(int t = 0; t < duration; t += 20) {
 			Utils.scheduleTask(() -> {
 				Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 				Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
