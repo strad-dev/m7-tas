@@ -165,6 +165,13 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * The colour cycle, in click order: a LEFT click steps one forward through this array, a RIGHT click one back,
 	 * and both wrap.  {@link RubixSolver} indexes into it, so the order here IS the solver's numbering.
 	 */
+	/**
+	 * The count a FINISHED Same Color pane carries, and the top of the right-click range: one right click is
+	 * {@code RUBIX_DONE_AMOUNT - 1}, two is {@code - 2}.  64 because it is a full stack, so "done" reads as the
+	 * pane being full rather than as an arbitrary number.
+	 */
+	private static final int RUBIX_DONE_AMOUNT = 64;
+
 	private static final Material[] CYCLE = {
 			Material.ORANGE_STAINED_GLASS_PANE,
 			Material.YELLOW_STAINED_GLASS_PANE,
@@ -181,7 +188,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/** Ticks the mover spends on each cell. */
 	private static final int MELODY_STEP_TICKS = 10;
 	/** Ticks the mover stands still after the button is hit off target.  A miss costs time, never the row. */
-	private static final int MELODY_MISS_FREEZE_TICKS = 40;
+	private static final int MELODY_MISS_FREEZE_TICKS = 20;
 
 	/**
 	 * The last playable Melody row, i.e. how many clicks the terminal is.  Read live rather than latched: the rows
@@ -222,6 +229,13 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	private static List<Material> dyedPool;
 	private static List<Material> itemPool;
 	private static String startLetters;
+
+	/**
+	 * One in this many slots is an answer in a Select All / Starts With draw - a flat <b>1 in 6</b>, rolled per
+	 * slot.  Still a roll, so the number of answers on a board varies; what it does not do any more is vary with
+	 * the QUESTION.  See {@link #buildPick}.
+	 */
+	private static final int ANSWER_CHANCE_IN = 6;
 
 	/** Every dyed item, across all sixteen colours.  Built once; a suffix that ever stops existing is skipped. */
 	private static List<Material> dyedPool() {
@@ -328,6 +342,12 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 */
 	private int[] melodyTarget;
 	/** Melody: where the mover is, which way it is going, and the two counters that pace it. */
+	/**
+	 * Which row the BOTTOM purple marker sits on: directly under the last playable row, so alpha's shorter board
+	 * pulls it up a row rather than leaving it stranded at the bottom of the chest with an empty row between.
+	 * Row 5 normally, row 4 under alpha.  Latched in {@link #buildMelody()}.
+	 */
+	private int melodyBottomRow = MELODY_LAST_ROW + 1;
 	private int melodyPos = MELODY_FIRST_COL;
 	private int melodyDir = 1;
 	private int melodySince;
@@ -479,11 +499,13 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/**
 	 * Paint the nine panes and their hints.
 	 * <p>
-	 * <b>The stack size is how many clicks that pane is from the target</b>, so the chest carries its own solution
-	 * the way Odin's overlay does.  Two things it cannot carry: an {@link ItemStack} has no amount 0 and no sign,
-	 * so a pane already on the target renders as 1, exactly like a pane one left click away, and nothing on the
-	 * chest says whether those clicks are left or right.  Both fall out of the item format rather than the puzzle,
-	 * and the only fix would be to write the count into the item's NAME instead of its amount.
+	 * <b>The stack size is how many clicks that pane is from the target, and which button.</b>  Left clicks count
+	 * UP from 1 and right clicks count DOWN from {@value #RUBIX_DONE_AMOUNT}, so 1 and 2 are one and two left
+	 * clicks, 63 and 62 are one and two right clicks, and 64 is a pane that is already correct.  The chest carries
+	 * its own solution the way Odin's overlay does, and it carries the DIRECTION as well now - a count has no sign
+	 * of its own ({@link #rubixHint}), so counting one way down from the top of the stack is what stands in for
+	 * one.  The cycle is five long, so a pane is never more than two clicks either way and the two ranges cannot
+	 * meet in the middle.
 	 * <p>
 	 * Every pane is repainted on every click even though only the clicked one can have changed - the target is
 	 * frozen, so the other eight hints are still whatever they were - because nine writes is cheaper than a rule
@@ -491,9 +513,56 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 */
 	private void drawSameColor() {
 		for(int i = 0; i < SAME_COLOR_SLOTS.length; i++) {
-			int clicks = Math.abs(RubixSolver.signed(rubix[i], rubixTarget));
-			inv.setItem(SAME_COLOR_SLOTS[i], item(CYCLE[rubix[i]], Math.max(1, clicks)));
+			int signed = RubixSolver.signed(rubix[i], rubixTarget);
+			ItemStack pane = item(CYCLE[rubix[i]], rubixAmount(signed));
+			ItemMeta meta = pane.getItemMeta();
+			if(meta != null) {
+				meta.displayName(Utils.mm(rubixHint(signed)));
+				// A finished pane GLINTS, and the glint is the whole reason the stack size no longer has to carry
+				// "nothing to do": a locked pane is unmistakable at a glance, where an amount of 1 was invisible.
+				meta.setEnchantmentGlintOverride(signed == 0);
+				pane.setItemMeta(meta);
+			}
+			inv.setItem(SAME_COLOR_SLOTS[i], pane);
 		}
+	}
+
+	/**
+	 * The same instruction as the pane's count, spelled out as its NAME: the count is unambiguous but it is not
+	 * self-explanatory, and the name is what a player reads the first time they meet a 62.
+	 * <p>
+	 * <b>A negative stack size is not deliverable on this version</b>, which is the whole reason the right-click
+	 * range counts down from a full stack instead of being written as -1 and -2.  Verified against 26.2 rather
+	 * than assumed: {@code ItemStack$2.decode} reads the count first and does {@code ifgt} to a
+	 * {@code return ItemStack.EMPTY}, so a count of 0 or less is discarded before the item id is even read off the
+	 * buffer.  {@code isEmpty()} is a second barrier behind it ({@code count <= 0}), and the slot renderer skips an
+	 * empty stack.  Nothing the server sends changes that: the decision is the client's, and NMS on our side cannot
+	 * reach it.  <b>Older protocols were a different story</b> - before 1.20.5 the count was a raw byte with no such
+	 * short-circuit, which is why negative stacks were a real sight on old servers.
+	 * <p>
+	 * <b>A count of 1 draws no badge</b>, because the renderer only prints the number when it is not 1, so the one
+	 * value in the whole scheme that cannot be seen at a glance is "one left click".  A finished pane does not need
+	 * the badge anyway - it also GLINTS and refuses clicks ({@link #sameColorClick}) - and the count it carries is
+	 * 64, which prints.
+	 * <p>
+	 * <b>If a scheme with no gap ever matters more than the click count</b>, the other way out is Odin's "Left
+	 * Clicks Only" mode - every value becomes a forward 0..4, so no direction has to be encoded at all - which is
+	 * one branch in {@code RubixSolver.signed}.
+	 */
+	/**
+	 * The count for a pane {@code signed} clicks off the target: {@code signed} itself going left, and
+	 * {@link #RUBIX_DONE_AMOUNT} minus the clicks going right, which lands on 64 for a pane with nothing to do.
+	 */
+	private static int rubixAmount(int signed) {
+		if(signed == 0) return RUBIX_DONE_AMOUNT;
+		return signed > 0 ? signed : RUBIX_DONE_AMOUNT + signed;
+	}
+
+	private static String rubixHint(int signed) {
+		if(signed == 0) return "<dark_gray>Correct";
+		return signed > 0
+				? "<green>" + signed + " left-click" + (signed == 1 ? "" : "s")
+				: "<red>" + -signed + " right-click" + (signed == -1 ? "" : "s");
 	}
 
 	private boolean allSameColour() {
@@ -511,20 +580,38 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * way round here - barriers first, answers over the top - because the non-answers are never seen and building
 	 * them would be work thrown away.  A draw that produced no answer at all has one forced in, or the terminal
 	 * would be unsolvable.
+	 * <p>
+	 * <b>Whether a slot is an answer is rolled FIRST, at a flat {@link #ANSWER_CHANCE_IN}, and only then is an item
+	 * drawn from that side of the pool.</b>  Which is the whole point of splitting the pool in two: drawing from
+	 * the pool and seeing what came out makes the density of the board a property of the QUESTION, and the two
+	 * questions are wildly lopsided - one colour is 13 of the 208 dyed items, where a letter can own anything from
+	 * a handful of items to a couple of hundred.  Weighting the pool only rescales that lopsidedness; rolling the
+	 * slot removes it, so 'S' and 'Q' now open equally full boards and a chest stops landing on one lonely answer.
+	 * <p>
+	 * A board that rolled no answer at all still has one forced in, which is the one thing the flat chance cannot
+	 * rule out: at 1 in 6 over 21 slots it is about one board in fifty.
+	 * <p>
+	 * <b>Duplicates are allowed, deliberately.</b>  Every slot draws on its own, with replacement, so the same
+	 * item can sit in three slots at once and three of them can be answers.  Hypixel's own chests do the same, and
+	 * de-duplicating would quietly cap how many answers a board can hold at the size of the matching pool - which
+	 * for a letter with two items in the whole game would cap it at two.
 	 */
 	private void buildPick(List<Material> pool, Predicate<Material> matches) {
 		frameAndFill(Material.BARRIER);
 		int[] slots = innerSlots();
+		List<Material> answers = new ArrayList<>();
+		List<Material> others = new ArrayList<>();
+		for(Material m : pool) (matches.test(m) ? answers : others).add(m);
+		if(answers.isEmpty()) return;
 		Material[] drawn = new Material[slots.length];
 		boolean any = false;
 		for(int i = 0; i < slots.length; i++) {
-			drawn[i] = pool.get(RANDOM.nextInt(pool.size()));
-			any |= matches.test(drawn[i]);
+			boolean answer = RANDOM.nextInt(ANSWER_CHANCE_IN) == 0;
+			List<Material> from = answer ? answers : others;
+			drawn[i] = from.get(RANDOM.nextInt(from.size()));
+			any |= answer;
 		}
-		if(!any) {
-			List<Material> answers = pool.stream().filter(matches).toList();
-			if(!answers.isEmpty()) drawn[RANDOM.nextInt(drawn.length)] = answers.get(RANDOM.nextInt(answers.size()));
-		}
+		if(!any) drawn[RANDOM.nextInt(drawn.length)] = answers.get(RANDOM.nextInt(answers.size()));
 		for(int i = 0; i < slots.length; i++) {
 			if(!matches.test(drawn[i])) continue;
 			inv.setItem(slots[i], item(drawn[i]));
@@ -559,6 +646,10 @@ public final class GoldorTerminalGui implements InventoryHolder {
 
 	private void buildMelody() {
 		fill(FILLER);
+		// LATCHED, not read live.  Alpha decides which row the bottom marker sits on, and if that moved inside an
+		// open view the old marker would be stranded - the row it vacates is a PLAYABLE row in the other setting,
+		// so a blind repaint of both candidates would wipe a row of panes instead of cleaning up.
+		melodyBottomRow = melodyLastRow() + 1;
 		melodyTarget = new int[MELODY_LAST_ROW + 1];
 		for(int row = MELODY_FIRST_ROW; row <= MELODY_LAST_ROW; row++) melodyTarget[row] = rollMelodyTarget(row);
 		drawMelodyMarkers();
@@ -581,7 +672,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 */
 	private void drawMelodyMarkers() {
 		if(melodyRow > melodyLastRow()) return;
-		int bottom = inv.getSize() / 9 - 1;
+		int bottom = melodyBottomRow;
 		for(int col = MELODY_FIRST_COL; col <= MELODY_LAST_COL; col++) {
 			Material m = col == melodyTarget[melodyRow] ? Material.PURPLE_STAINED_GLASS_PANE : FILLER;
 			inv.setItem(slot(0, col), item(m));
@@ -680,53 +771,68 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * <b>No puzzle punishes a wrong click.</b>  Nothing resets, nothing is taken away, and a click that is not a
 	 * legal move is simply eaten - Melody's off-beat button is the one exception and even that only costs time.
 	 * <p>
-	 * Clearing a Melody row plays the terminal cue, the same pling a completed terminal makes; the LAST row does
-	 * not, because completing the terminal plays it a moment later and two of them would stack on one tick.
+	 * <b>Every click that moves a puzzle forward plays {@link #cue}</b>, in all six types, and the solving one does
+	 * not.  See that method for both halves of the rule.
+	 * <p>
+	 * <b>{@link ClickType#DOUBLE_CLICK} is dropped, in every type.</b>  It is not a second click a player made: the
+	 * client sends it as an EXTRA event behind the second half of a fast double-click, on top of the ordinary
+	 * {@code LEFT} that already went through, so one physical double-click reached the puzzle twice.  Same Color
+	 * was where it showed - a pane stepping two colours off one action - because it is the only type where a
+	 * repeat of the same click on the same slot does anything; everywhere else the second one lands on a pane that
+	 * has already moved on and is eaten.  It is also why {@code isLeftClick()} cannot be the test: Bukkit counts
+	 * {@code DOUBLE_CLICK} as a left click.
 	 *
 	 * @param slot raw slot of the click, already known to be in the TOP inventory
 	 */
 	public boolean onClick(Player clicker, int slot, ClickType click) {
-		if(solved) return false;
+		if(solved || click == ClickType.DOUBLE_CLICK) return false;
 		return switch(type) {
-			case ON_OFF -> onOffClick(slot);
-			case SAME_COLOR -> sameColorClick(slot, click);
-			case SELECT_ALL, STARTS_WITH -> pickClick(slot);
+			case ON_OFF -> onOffClick(clicker, slot);
+			case SAME_COLOR -> sameColorClick(clicker, slot, click);
+			case SELECT_ALL, STARTS_WITH -> pickClick(clicker, slot);
 			case MELODY -> melodyClick(clicker, slot);
-			case CLICK_IN_ORDER -> clickInOrderClick(slot);
+			case CLICK_IN_ORDER -> clickInOrderClick(clicker, slot);
 		};
 	}
 
 	/** A red pane goes green, either button.  A green one does nothing at all - there is no way to click wrong. */
-	private boolean onOffClick(int slot) {
+	private boolean onOffClick(Player clicker, int slot) {
 		if(indexOf(ON_OFF_SLOTS, slot) < 0) return false;
 		ItemStack at = inv.getItem(slot);
 		if(at == null || at.getType() != Material.RED_STAINED_GLASS_PANE) return false;
 		inv.setItem(slot, item(Material.LIME_STAINED_GLASS_PANE));
-		if(--onOffLeft > 0) return false;
+		if(--onOffLeft > 0) { cue(clicker); return false; }
 		solved = true;
 		return true;
 	}
 
 	/** Left steps the pane forward through {@link #CYCLE}, right steps it back, both wrapping. */
-	private boolean sameColorClick(int slot, ClickType click) {
+	private boolean sameColorClick(Player clicker, int slot, ClickType click) {
 		int i = indexOf(SAME_COLOR_SLOTS, slot);
 		if(i < 0) return false;
+		// A pane already on the target is FINISHED and locked: clicking it does nothing at all.  Without this a
+		// player could knock a solved pane back off the target, which the hints then dutifully told them to undo,
+		// and the puzzle had no state a player could see was safe to stop touching.
+		if(rubix[i] == rubixTarget) return false;
 		int step = click.isRightClick() ? -1 : click.isLeftClick() ? 1 : 0;
 		if(step == 0) return false;
 		rubix[i] = Math.floorMod(rubix[i] + step, CYCLE.length);
 		drawSameColor();
-		// Any colour counts, not just the one the hints point at: the hints are the SHORTEST way there, not the rule.
-		if(!allSameColour()) return false;
+		// Still "all nine match", not "all nine are the target".  The two are now the same reachable state, since
+		// locking a pane the moment it lands on the target means no other colour can ever be converged on - but
+		// the test stays written as the RULE rather than as the consequence, so unlocking would not silently
+		// change what counts as solved.
+		if(!allSameColour()) { cue(clicker); return false; }
 		solved = true;
 		return true;
 	}
 
 	/** An answer takes a glint and stops counting.  A barrier, or an answer already taken, does nothing. */
-	private boolean pickClick(int slot) {
+	private boolean pickClick(Player clicker, int slot) {
 		if(!unpicked.remove(slot)) return false;
 		ItemStack picked = inv.getItem(slot);
 		if(picked != null) inv.setItem(slot, glint(picked.clone()));
-		if(!unpicked.isEmpty()) return false;
+		if(!unpicked.isEmpty()) { cue(clicker); return false; }
 		solved = true;
 		return true;
 	}
@@ -739,6 +845,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		if(slot != slot(melodyRow, MELODY_BUTTON_COL)) return false;
 		if(melodyPos != melodyTarget[melodyRow]) {
 			melodyFreeze = MELODY_MISS_FREEZE_TICKS;
+			miss(clicker);
 			return false;
 		}
 		int cleared = melodyRow++;
@@ -748,14 +855,15 @@ public final class GoldorTerminalGui implements InventoryHolder {
 			stopMelodyTicker();
 			return true;
 		}
-		// The next row starts clean: mover back at the first cell, walking right, no freeze carried over.
-		melodyPos = MELODY_FIRST_COL;
-		melodyDir = 1;
-		melodySince = 0;
-		melodyFreeze = 0;
+		// The mover CARRIES OVER: it drops into the next row at the cell it was on, still walking the same way
+		// and still on the same 10-tick clock.  Nothing is reset here on purpose - resetting it to the first cell
+		// put a visible hitch between rows and made every row a fresh reaction test from the same start, where
+		// the terminal is meant to be one continuous walk the player clicks four times.
+		// A freeze cannot be live at this point: a freeze only starts on a click that was NOT on target, which
+		// parks the mover off the target, so no later click can succeed until it has expired.
 		drawMelodyMarkers();
 		drawMelodyRow(melodyRow);
-		clicker.playSound(clicker, Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
+		cue(clicker);
 		return false;
 	}
 
@@ -763,13 +871,41 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * The next number in ascending order.  Anything else is eaten: a pane already taken is green and its number is
 	 * behind the counter, and a filler pane is the wrong material however many items it holds.
 	 */
-	private boolean clickInOrderClick(int slot) {
+	private boolean clickInOrderClick(Player clicker, int slot) {
 		ItemStack at = inv.getItem(slot);
 		if(at == null || at.getType() != Material.RED_STAINED_GLASS_PANE || at.getAmount() != nextNumber) return false;
 		inv.setItem(slot, item(Material.GREEN_STAINED_GLASS_PANE, nextNumber));
-		if(nextNumber++ < lastNumber) return false;
+		if(nextNumber++ < lastNumber) { cue(clicker); return false; }
 		solved = true;
 		return true;
+	}
+
+	/**
+	 * The progress cue: one note-block pling to the player who clicked, on <b>every</b> click that moved a puzzle
+	 * forward, in every type.  It started as Melody's per-row noise and is now the shared feedback for all six,
+	 * because a click that lands and a click that is eaten looked identical everywhere else.
+	 * <p>
+	 * <b>The SOLVING click does not get one.</b>  Completing a terminal plays its own cue a moment later
+	 * ({@code Goldor.onActivation}) and two on one tick stack into a single louder note, which is the rule Melody
+	 * has always followed for its last row.  A wrong or illegal click gets nothing at all - no puzzle here
+	 * punishes one, and a noise would read as if it had.  <b>{@link #miss} is the one exception</b>, and it is
+	 * only an exception because Melody's off-beat button IS punished.
+	 * <p>
+	 * To the clicker only, not the room: terminals are solved one player at a time.
+	 */
+	private static void cue(Player clicker) {
+		clicker.playSound(clicker, Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
+	}
+
+	/**
+	 * Melody's off-beat button, and nothing else in the file.  The freeze it costs is invisible - the mover simply
+	 * stops - so without a noise a mistimed click and a click on a slot that is not the button looked identical.
+	 * <p>
+	 * To the clicker only, like {@link #cue}, and deliberately nothing like it: a low enderman teleport reads as a
+	 * fault where the pling reads as progress.
+	 */
+	private static void miss(Player clicker) {
+		clicker.playSound(clicker, Sound.ENTITY_ENDERMAN_TELEPORT, 2.0F, 0.5F);
 	}
 
 	private static int indexOf(int[] slots, int slot) {

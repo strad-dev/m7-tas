@@ -26,24 +26,21 @@ public enum Pet {
 	/** The ability pet.  Note this is why neither dragon's damage additive is live on a cast (§7). */
 	CROW(StatBlock.of(Stat.INTELLIGENCE, 225, Stat.ABILITY_DAMAGE, 30)),
 	/** Archer / Berserk during the Wither King phase. */
-	ENDER_DRAGON(StatBlock.of(Stat.STRENGTH, 50, Stat.CRIT_DAMAGE, 60)),
+	ENDER_DRAGON(StatBlock.of(Stat.STRENGTH, 75, Stat.CRIT_CHANCE, 15, Stat.CRIT_DAMAGE, 90)),
 	/**
-	 * The cheat-death pet ({@code death/CheatDeath}), and selectable in realistic mode.  <b>No assumption table
-	 * ever returns it</b>: it is only ever out because a player picked it in {@code /pets}.
-	 * <p>
-	 * <b>Its stats are a deliberate PLACEHOLDER, not a measurement.</b>  The other three carry figures MAP.md
-	 * §1.13 states outright (+300 Strength, +225 Intelligence / +30 Ability Damage, +50 Strength / +60 Crit
-	 * Damage) without recording how they were arrived at, and no single rule reproduces all three from the
-	 * level-100 tooltips: the Crow's pair is exactly its tooltip x1.5 (the Hephaestus Relic's "+50% pet stats"),
-	 * but the same x1.5 gives the Ender Dragon 75/75 rather than 50/60, and nothing gets the Golden Dragon near
-	 * 300.  So the Phoenix's own +60 Strength / +150 Intelligence cannot be carried across honestly, and an
-	 * invented number here would read as measured forever after.  EMPTY until the owner gives one - what that
-	 * costs today is that summoning the Phoenix trades your pet's whole stat block (and its Chimera copy, which
-	 * {@code ItemDef.breakdown} skips for an empty pet) for its cheat death.
+	 * The cheat-death pet ({@code death/CheatDeath}), and pickable in {@code /pets} in realistic mode.  <b>No
+	 * assumption table ever returns it</b>: it is only ever out because a player chose it.
 	 */
-	PHOENIX(StatBlock.EMPTY),
-	/** Worn with a Racing Helmet or Cow Hat.  Nothing damage-relevant, which is now the entire cost of a hat. */
-	BLACK_CAT(StatBlock.EMPTY);
+	PHOENIX(StatBlock.of(Stat.STRENGTH, 90, Stat.INTELLIGENCE, 225)),
+	/**
+	 * Worn with a Racing Helmet or Cow Hat in the assumed modes, and pickable in {@code /pets} in realistic.
+	 * <p>
+	 * <b>Its Intelligence is the entire damage-relevant part of it.</b>  The rest of the Black Cat's tooltip is
+	 * Speed, Magic Find and Pet Luck, and this plugin models none of the three, so picking it trades a dragon's
+	 * Strength for a Mage's mana pool.  It holds Unalloyed Speed rather than the relic the other four hold, which
+	 * raises a speed CAP and multiplies no stat - so unlike theirs, this figure is the raw level-100 one.
+	 */
+	BLACK_CAT(StatBlock.of(Stat.INTELLIGENCE, 100));
 
 	private final StatBlock ownStats;
 

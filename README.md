@@ -28,7 +28,7 @@ If you are practicing a section that is NOT clear or maxor, the plugin will, by 
 ### General
 
 - `/eq` is supported, and will also show your speed
-- Your speed automatically assumes Black Cat w/ Unalloyed Speed when equipping Racing Helmet or Cow Hat
+- Your speed automatically assumes Black Cat w/ Unalloyed Speed when equipping Racing Helmet or Cow Hat, and outside Realistic mode that pet swap is real: the hat costs you the Golden Dragon and gives you the Black Cat's +100 Intelligence
 - You can shift + left click an item in your inventory to swap it with whatever is in the hotbar slot directly below it.  Exception: items in the right-most column will be swapped with whatever is in your 8th slot
 
 ### Verbose Mode
@@ -53,36 +53,62 @@ Maxor, Storm, and Necron will aggro onto the player that last hit them.  If they
 
 **Storm**
 
-Lightning will not actually kill you, *unless* the run is in **Ultra Realistic** mode.
+Lightning will not actually kill you, *unless* the run is in **Perfect RNG** or **Realistic** mode.
 
 **Goldor**
 
-- Goldor has no death ticks, except in **Ultra Realistic** mode, where they are checked every 3s (and the action bar counts down to the next check)
+- Goldor has no death ticks, except in **Perfect RNG** and **Realistic** mode, where they are checked every 3s (and the action bar counts down to the next check)
 - Goldor will not chase you around at his maximum speed even if you complete a section early
-- Terminals will automatically complete 1 tick after you click on them - *unless* the run is in **Ultra
-  Realistic** mode, where clicking one opens a puzzle you have to solve
-- SS: You need to click the button 15 times total (i1 but very generous timing)
+- Terminals will automatically complete 1 tick after you click on them - *unless* the run is in **Realistic**
+  mode, where clicking one opens a randomly generated puzzle you have to solve
+- SS: You need to click the button 15 times total (i1 but very generous timing).  In **Realistic** mode it is the
+  real device: the wall flashes a sequence and you play it back on the buttons, and spamming the start button
+  inside its 10-tick window buys you skips
 - i4: You just need to hit each of the 9 spots at least once with arrows while on the pressure plate.  In
-  **Ultra Realistic** mode it is sequential instead: stepping on the plate starts it, an emerald block marks the
-  target to shoot, and it walks -X then -Y from `68 130` to `64 126`.  Only the emerald counts - though two arrows
+  **Realistic** mode it is sequential instead: stepping on the plate starts it and an emerald block marks the
+  target to shoot, in a fresh random order each time you step on.  Only the emerald counts - though two arrows
   landing on the same tick can clear it and the next one together.  Step off the plate and the whole device resets
+- i3: The first click on any arrow frame solves it.  In **Realistic** mode you have to turn all nine of them to
+  the same rotation
 
 **Wither King**
 
-- Dragons will always spawn in this order: `purple` `blue` `orange` `red` `green`
-- Putting a relic in the wrong cauldron sends it back to its statue (and, in Ultra Realistic, kills you)
+- The dragons spawn on the same schedule every run, but **which colour is in which slot is rolled**: two spawn
+  together on the first timer, a third on its own timer, and the last two when the last living dragon dies
+- Putting a relic in the wrong cauldron sends it back to its statue (and, in Perfect RNG and Realistic, kills you)
 
-**Ultra Realistic mode**
+**Perfect RNG mode**
 
-Everything Realistic mode does, plus death.  Standing out from under one of the three real pillars during Storm's
-lightning (the inert Red one does not shelter you), being
-caught inside a pillar, being in a Goldor section that isn't open yet *or* one Goldor has physically walked past
-you into (checked every 3s - S4 is the one corridor that's always safe), and putting a relic in the wrong cauldron
-all kill you outright.  Finishing a section early never endangers you; Goldor has to actually catch up.  Goldor's ordinary damage still doesn't.  A Bonzo's Mask or Spirit Mask on your head, or your Phoenix
-pet, saves you once per cooldown and shows the cooldown on its own durability bar and in the action bar.  Die anyway
+Everything real about the damage, plus death: live debuffs, the blessings you actually collected, and the
+instakills below.  What it does *not* do is make the dungeon fight back - the RNG always rolls your way, so
+terminals are one click, the devices are the short stand-ins, and the pet you need is the pet you have.
+
+**Realistic mode**
+
+Everything Perfect RNG does, plus all the work a real run makes you do by hand: generated terminal puzzles, the
+real Simon Says / Arrow Align / Sharp Shooter, and your own pet menu (`/pets` and `/petloadout`, below).
+
+**Death (both of the above)**
+
+Standing out from under one of the three real pillars during Storm's lightning (the inert Red one does not shelter
+you), being caught inside a pillar, being in a Goldor section that isn't open yet *or* one Goldor has physically
+walked past you into (checked every 3s - S4 is the one corridor that's always safe), and putting a relic in the
+wrong cauldron all kill you outright.  Finishing a section early never endangers you; Goldor has to actually catch
+up.  Goldor's ordinary damage still doesn't.  A Bonzo's Mask or Spirit Mask on your head saves you once per
+cooldown and shows the cooldown on its own durability bar and in the action bar; so does a Phoenix pet, which you
+are assumed to have out unless you're in Realistic mode, where you have to actually have it summoned.  Die anyway
 and you become a ghost and revive yourself after 5 seconds, where you're standing, with the inventory you died with.
 If everyone is dead the run ends in failure: the session is ended for you, everyone gets their inventory and
 Adventure mode back, and the party is gathered at `28.5 166 118.5`.
+
+**Pets (Realistic only)**
+
+`/pets` opens your pet menu - click a head and that pet comes out.  There are five: Golden Dragon, Ender Dragon,
+Phoenix, Crow and Black Cat, each with the held item and stats the real one has.  `/petloadout` is the same window
+in arranging mode, where you pick a pet up and drop it somewhere else.  Slot 46 is Autopet: a rule per trigger
+(run start, entering combat, Maxor spawning, and a Pitchin' Rod throw, which steps through a cycle instead),
+left click to change the pet it summons and right click to set a pet it won't interrupt.  In every other mode
+your pet is assumed from what you're doing and wearing, so both commands refuse.
 
 ## For Plugin Developers
 
@@ -186,8 +212,8 @@ nothing about leaderboards or categories.  Deciding what a run *qualifies for* i
 |-------|---------|
 | `section` | what `/m7practice` was invoked with: `all` `clear` `boss` `maxor` `storm` `goldor` `necron` `witherking` |
 | `runId` | unique per run, **identical across every report that run makes** (see the dedupe note below) |
-| `difficulty` | the mode the run was set under: `classic`, `realistic` or `ultra_realistic`.  **Times from the three are not comparable** |
-| `success` | `false` for a failed run: an enraged Storm with no pillars left, or, in ultra realistic, the whole party dead |
+| `difficulty` | the mode the run was set under: `classic`, `perfect_rng` or `rta`.  **`rta` is Realistic** - `realistic` was the old id of what is now Perfect RNG, so it is not reused, and this field is always the stored id even though players type `realistic`.  **Times from the three are not comparable** |
+| `success` | `false` for a failed run: an enraged Storm with no pillars left, or, in a mode where death is on, the whole party dead |
 | `runTicks` | total run length in server ticks |
 | `clearEndTick`, `bloodDoneTick`, `score300Tick`, `fullClearTick` | clear-phase milestones, as overall ticks |
 | `teamScore`, `grade` | final score and its letter grade (`S+`, `S`, `A`, …) |
@@ -225,7 +251,7 @@ String json = (String) Class.forName("plugin.BlessingState").getMethod("currentJ
 | Field | Meaning |
 |-------|---------|
 | `runId` | the run these belong to, the same id its `RunResult`s carry |
-| `difficulty` | `classic`, `realistic` or `ultra_realistic` |
+| `difficulty` | `classic`, `perfect_rng` or `rta` |
 | `runActive` | whether a practice run is live at all - i.e. whether this is current, or a finished run's last word |
 | `clearActive` | whether the clear phase is live right now |
 | `hasClearData` | whether `level`/`count` describe this run at all (see below) |
@@ -245,8 +271,8 @@ Two things will trip you up if you assume the obvious:
   damaged as though fully blessed.  `assumedMax` tells you which figure is the live one; a display showing only
   `level` misreports every classic run.
 - **`hasClearData == false` means "there is no chest history", not "they collected nothing".**  A boss-only
-  practice never runs a clear phase, so there is nothing to collect and max blessings are assumed even in
-  realistic mode.
+  practice never runs a clear phase, so there is nothing to collect and max blessings are assumed even in the
+  two live modes.
 - **The empty tally is reported too, not just the awards.**  The clear phase starting, and a section setup
   clearing the tally, both fire this event.  A display fed only by awards keeps showing the previous run's
   blessings for the whole of the next one, since a section that collects nothing never fires again.  Note the

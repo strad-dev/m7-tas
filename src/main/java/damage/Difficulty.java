@@ -144,6 +144,20 @@ public enum Difficulty {
 		return displayName;
 	}
 
+	/**
+	 * The spelling a player types and tab-completes, which is <b>not always {@link #id()}</b>: Realistic is typed
+	 * {@code realistic}, while the id it is stored under is {@code rta}.
+	 * <p>
+	 * <b>Every usage string, error message and tab completion uses this; every persisted value uses {@code id()}.</b>
+	 * The two only differ for Realistic, and they differ because the id is a permanent storage key while the typed
+	 * name is what the mode is actually called - a player told to type {@code rta} for a mode the FAQ and every
+	 * settings line call "Realistic" is being asked to know an implementation detail.  Both spellings parse
+	 * ({@code realistic} is in {@link #ALIASES}, {@code rta} is the id), so this only decides which one we teach.
+	 */
+	public String commandName() {
+		return this == REALISTIC ? "realistic" : id;
+	}
+
 	/** True while the debuff and defense-reduction lookups should answer "applied" without checking anything. */
 	public static boolean debuffsAssumed() {
 		return current == CLASSIC;

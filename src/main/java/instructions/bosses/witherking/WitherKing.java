@@ -432,6 +432,11 @@ public class WitherKing {
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");
 			witherKing.addScoreboardTag("TASWitherKing");
+			// That tag IS MobStats.witherKingPhaseActive, and Pet.forPlayer swaps Archer and Berserk onto the
+			// Ender Dragon behind it - so in the assumed modes their pet just changed, and the Chimera weapons in
+			// their hands are still printing the Golden Dragon's copy.  Cheap: the refresh is deferred a tick and
+			// writes nothing for a player whose pet did not move (every Mage, Healer and Tank here).
+			for(Player pl : Bukkit.getOnlinePlayers()) damage.StatLore.refreshChimeraLore(pl);
 			WitherActions.setWitherArmor(witherKing, true);
 			startWitherKingGrowth();
 

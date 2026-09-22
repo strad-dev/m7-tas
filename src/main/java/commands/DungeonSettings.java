@@ -50,10 +50,14 @@ public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
 			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [paul|derpy|other] | alpha [on|off]]";
 
-	/** The mode ids, joined from {@link Difficulty} itself so the usage line can never drift from the enum. */
+	/**
+	 * The mode names a player types, joined from {@link Difficulty} itself so the usage line can never drift
+	 * from the enum.  {@code commandName()}, not {@code id()}: Realistic is typed {@code realistic} and only
+	 * STORED as {@code rta}.
+	 */
 	private static String modeIds() {
 		return java.util.Arrays.stream(Difficulty.values())
-				.map(Difficulty::id)
+				.map(Difficulty::commandName)
 				.collect(java.util.stream.Collectors.joining("|"));
 	}
 

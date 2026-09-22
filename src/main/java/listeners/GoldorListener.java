@@ -274,6 +274,15 @@ public class GoldorListener implements Listener {
 		// so a click in a chained full run counts: players are scheduled on start, but Goldor is only active when
 		// Storm dies.
 		if(isSimonInput(p, bx, by, bz)) {
+			// CANCEL FIRST, before anything that can touch the block.  MiscListener.onStoneButtonInArena also
+			// cancels arena button presses, but at NORMAL priority and by re-reading getClickedBlock().getType()
+			// from the world - and we are at LOW.  A cell click that completes a phase makes GoldorSimonSays pull
+			// all 16 buttons in this very call, so that later guard would read AIR, decide the block is not a
+			// button and let the event through; vanilla then presses the button it captured BEFORE the click and
+			// writes it straight back into the slot we just cleared.  That is why the clicked button, and only
+			// the clicked button, used to survive the teardown.  The device owns this click outright, the same
+			// way it owns the S2 lever below.
+			e.setCancelled(true);
 			if(rightClick) tryRegisterSimonClick(p, bx, by, bz);
 			return;
 		}

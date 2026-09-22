@@ -8,11 +8,14 @@ import instructions.bosses.maxor.Maxor;
 import instructions.bosses.witherking.WitherKing;
 import io.papermc.paper.event.entity.EntityKnockbackEvent;
 import io.papermc.paper.event.entity.EntityPushedByEntityAttackEvent;
+import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
+import net.minecraft.network.protocol.game.ClientboundEntityPositionSyncPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -135,6 +138,29 @@ public class MiscListener implements Listener {
 		if(e.getEntity() instanceof WindCharge windCharge && windCharge.getScoreboardTags().contains("Bonzo")) {
 			e.setCancelled(true);
 		}
+	}
+
+	/**
+	 * A Bonzo charge is not a thing you can hit.  Punching a projectile in the
+	 * {@code minecraft:redirectable_projectile} tag redirects it along the puncher's aim, and the server side of
+	 * that is already shut off at the source ({@code BonzoStaff.makeUndeflectable}) - but the client runs
+	 * {@code Player.attack} too, and the flag that stops the server is not synched, so the puncher's own client
+	 * predicts a deflection the server never performs and the charge visibly flies off for them.
+	 * <p>
+	 * So the attack is refused here, and the charge's real position and motion are sent straight back to the one
+	 * player who mispredicted, on the same tick.  <b>Only to them</b>: nobody else's client ran the prediction, so
+	 * nobody else has anything to correct.  The immediate send is the same trick the bonzo launch itself uses -
+	 * waiting for the tracker costs a tick, and a tick is long enough to see.
+	 */
+	@EventHandler
+	public void onPunchBonzoCharge(PrePlayerAttackEntityEvent e) {
+		if(!(e.getAttacked() instanceof WindCharge windCharge)) return;
+		if(!windCharge.getScoreboardTags().contains("Bonzo")) return;
+		e.setCancelled(true);
+		if(!(e.getPlayer() instanceof CraftPlayer cp)) return;
+		net.minecraft.world.entity.Entity nms = ((CraftEntity) windCharge).getHandle();
+		cp.getHandle().connection.send(ClientboundEntityPositionSyncPacket.of(nms));
+		cp.getHandle().connection.send(new ClientboundSetEntityMotionPacket(nms));
 	}
 
 	@EventHandler

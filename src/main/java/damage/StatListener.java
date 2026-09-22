@@ -25,43 +25,58 @@ public final class StatListener implements Listener {
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onHeldItemChange(PlayerItemHeldEvent e) {
-		Stats.invalidate(e.getPlayer());
+		refresh(e.getPlayer());
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onInventoryClick(InventoryClickEvent e) {
-		if(e.getWhoClicked() instanceof Player p) Stats.invalidate(p);
+		if(e.getWhoClicked() instanceof Player p) refresh(p);
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onInventoryDrag(InventoryDragEvent e) {
-		if(e.getWhoClicked() instanceof Player p) Stats.invalidate(p);
+		if(e.getWhoClicked() instanceof Player p) refresh(p);
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onInventoryClose(InventoryCloseEvent e) {
-		if(e.getPlayer() instanceof Player p) Stats.invalidate(p);
+		if(e.getPlayer() instanceof Player p) refresh(p);
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onSwapHands(PlayerSwapHandItemsEvent e) {
-		Stats.invalidate(e.getPlayer());
+		refresh(e.getPlayer());
 	}
 
 	@EventHandler(priority = EventPriority.MONITOR)
 	public void onDrop(PlayerDropItemEvent e) {
-		Stats.invalidate(e.getPlayer());
+		refresh(e.getPlayer());
 	}
 
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
-		Stats.invalidate(e.getPlayer());
+		refresh(e.getPlayer());
 	}
 
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
 		// A player leaving changes everyone else's Legion stacks and can change who is solo on a class.
 		Stats.invalidateAll();
+	}
+
+	/**
+	 * One player's stats have moved: drop the cache, and re-render the lore on their Chimera weapons.
+	 * <p>
+	 * <b>The same events cover both.</b>  A helmet swap is the case that needs it - a Racing Helmet or Cow Hat
+	 * forces the Black Cat in the assumed modes, which changes what Chimera copies, so the weapon's tooltip is
+	 * wrong the moment the hat goes on.  {@code StatLore.refreshChimeraLore} defers itself a tick and does
+	 * nothing when the pet has not actually moved, so hanging it off every one of these is cheap.
+	 * <p>
+	 * Not on {@link #onQuit}: that invalidates EVERYONE (Legion), and nobody else's pet changed.
+	 */
+	private static void refresh(Player p) {
+		Stats.invalidate(p);
+		StatLore.refreshChimeraLore(p);
 	}
 
 	/**

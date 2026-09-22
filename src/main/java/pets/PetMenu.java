@@ -1,6 +1,7 @@
 package pets;
 
 import damage.Difficulty;
+import items.ItemFactory;
 import loadout.SpectatorGuiAccess;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -9,6 +10,7 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -73,6 +75,10 @@ public final class PetMenu implements CommandExecutor, Listener {
 
 	/** The four buttons. */
 	private static final int HEADER_SLOT = 4, AUTOPET_SLOT = 46, CLOSE_SLOT = 49, RESET_SLOT = 52;
+
+	/** Hypixel's Autopet head texture, taken off the real item.  See {@link #autopetButton()}. */
+	private static final String AUTOPET_TEXTURE =
+			"eyJ0aW1lc3RhbXAiOjE1MTgyODU5Njg3NjMsInByb2ZpbGVJZCI6ImIwZDczMmZlMDBmNzQwN2U5ZTdmNzQ2MzAxY2Q5OGNhIiwicHJvZmlsZU5hbWUiOiJPUHBscyIsInNpZ25hdHVyZVJlcXVpcmVkIjp0cnVlLCJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzMxNmE4Yjk2Y2I5YWVlYTUxNDBkZDkzNmM2ZWJiOTY0ZWZjYmZkNzFhZTIxN2Q5ZjcwODg4ZWZiMTRlN2MwIn19fQ==";
 
 	/**
 	 * Every slot a pet may sit in: whatever is left once the panes and the four buttons are taken out.
@@ -165,8 +171,7 @@ public final class PetMenu implements CommandExecutor, Listener {
 		PetType out = Pets.equipped(p);
 		gui.setItem(HEADER_SLOT, button(Material.BONE, "<green>Pets",
 				List.of("<gray>Currently summoned:", out.colouredName())));
-		gui.setItem(AUTOPET_SLOT, button(Material.BOOK, "<red>Autopet Settings",
-				List.of("<gray>Rules that summon a pet for you", "<gray>when something happens in the run.")));
+		gui.setItem(AUTOPET_SLOT, autopetButton());
 		gui.setItem(CLOSE_SLOT, button(Material.BARRIER, "<red>Close", List.of()));
 		gui.setItem(RESET_SLOT, button(Material.LAVA_BUCKET, "<yellow>Reset to Default",
 				List.of("<gray>Put your pets back on the first", "<gray>four slots of the menu.")));
@@ -238,7 +243,7 @@ public final class PetMenu implements CommandExecutor, Listener {
 	private void summonClick(Player p, Holder holder, int slot) {
 		PetType pet = Pets.layout(p).get(slot);
 		if(pet == null) return;
-		if(Pets.equip(p, pet, "<green>You summoned your ")) draw(p, holder);
+		if(Pets.equip(p, pet, "<green>You summoned your ")) draw(p, holder); // the pet name closes the line
 	}
 
 	/**
@@ -362,7 +367,7 @@ public final class PetMenu implements CommandExecutor, Listener {
 		// rewrites EVERY container click from this player, so if the save throws it must still come off, and the
 		// cursor must be cleared whatever happened or a pet head rides out of the menu with them.
 		try {
-			// A pet is never allowed to end up nowhere. There are 28 slots and four pets, so a free one exists.
+			// A pet is never allowed to end up nowhere. There are 28 slots and five pets, so a free one exists.
 			if(held != null) Pets.placeInFirstFree(layout, held);
 			Pets.setLayout(p, layout);
 		} finally {
@@ -390,6 +395,33 @@ public final class PetMenu implements CommandExecutor, Listener {
 
 	private static ItemStack filler() {
 		return button(Material.BLACK_STAINED_GLASS_PANE, " ", List.of());
+	}
+
+	/**
+	 * Hypixel's own Autopet head, rather than the book this used to be.
+	 * <p>
+	 * Built through {@code ItemFactory.head} like every other custom head here, then stripped of the Protection 5
+	 * that builder adds for a WEARABLE head - the same two-step {@link PetType#icon} does and for the same reason:
+	 * one copy of the profile/NBT assembly, per the CLAUDE.md warning, and no enchantment line on a menu button.
+	 * <p>
+	 * The real item carries a "Rules used: N/28" counter.  It is left off rather than faked: this menu has four
+	 * triggers, not 28, and a counter over a different denominator would read as Hypixel's own and be wrong.
+	 */
+	private static ItemStack autopetButton() {
+		ItemStack head = ItemFactory.head("<red>Autopet", "petsAutopet", AUTOPET_TEXTURE, null);
+		for(Enchantment e : new ArrayList<>(head.getEnchantments().keySet())) head.removeEnchantment(e);
+		ItemMeta m = head.getItemMeta();
+		if(m != null) {
+			m.displayName(Utils.msg("<red>Autopet").decoration(TextDecoration.ITALIC, false));
+			List<Component> lore = new ArrayList<>();
+			for(String line : List.of("<gray>Define custom <red>rules <gray>to automatically",
+					"<gray>equip your pets.", "", "<yellow>Click to setup autopet!")) {
+				lore.add(Utils.msg(line).decoration(TextDecoration.ITALIC, false));
+			}
+			m.lore(lore);
+			head.setItemMeta(m);
+		}
+		return head;
 	}
 
 	static ItemStack button(Material mat, String name, List<String> lore) {

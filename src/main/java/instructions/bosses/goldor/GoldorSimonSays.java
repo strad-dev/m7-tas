@@ -3,6 +3,8 @@ package instructions.bosses.goldor;
 import listeners.GoldorListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -51,6 +53,11 @@ import java.util.concurrent.ThreadLocalRandom;
  * ends, stay up for the whole input window, and all come down together the moment that phase's answer is complete.
  * That is the only reading that leaves a sequence longer than one cell playable.  See {@link #placeButtons} /
  * {@link #removeButtons}.
+ *
+ * <p><b>The device solves itself.</b>  The button it is waiting for is OAK and the other fifteen are stone, so the
+ * answer is readable straight off the wall - see {@link #paintButtons}.  Same bargain as Same Color's click-count
+ * hints in {@code GoldorTerminalGui}: the plugin ships the solver rather than leaving it to Odin, and the playback
+ * becomes a formality.
  *
  * <p><b>A wrong button is a no-op</b> - no reset, no penalty, nothing.  The spec gives re-clicking the start button
  * as the reset, and says nothing about punishing a misclick; every other puzzle in this plugin ignores an incorrect
@@ -185,6 +192,8 @@ public final class GoldorSimonSays {
 	/** The button block, built once on first use: {@code stone_button[face=wall,facing=west]}, the same convention
 	 *  the permanent start button proves.  Lazy, so nothing calls into Bukkit at class-init time. */
 	private BlockData buttonData;
+	/** The HINT button, same face and facing, oak instead of stone.  See {@link #paintButtons}. */
+	private BlockData hintButtonData;
 
 	private GoldorSimonSays() {
 	}
@@ -253,7 +262,9 @@ public final class GoldorSimonSays {
 		if(inputIdx >= sequence.size()) return;
 		if(sequence.get(inputIdx) != cellIdx) return; // wrong button: no reset, no penalty
 		inputIdx++;
-		if(inputIdx < sequence.size()) return;
+		// The hint has to move with the answer: the button just pressed goes back to stone and the next one owed
+		// becomes the oak one.
+		if(inputIdx < sequence.size()) { paintButtons(); cue(p); return; }
 
 		// The phase's answer is in, so the buttons come down.  complete() takes them down too (through
 		// resetRuntime), and playBack does it on the way into the next sequence; doing it here as well is what
@@ -263,8 +274,23 @@ public final class GoldorSimonSays {
 			complete(p, wasDeferred);
 			return;
 		}
+		// The press that finished a PHASE still counts as progress, so it gets the cue like any other correct one.
+		// Only the press that finishes the whole DEVICE is silent, because complete() -> Goldor.onActivation plays
+		// its own noise a moment later and two on one tick stack into a single louder note.
+		cue(p);
 		appendCell();
 		playBack(sequence);
+	}
+
+	/**
+	 * The progress cue for a correct button: the same note-block pling the terminal puzzles play, and for the same
+	 * reason - a press that lands and a press that is eaten looked identical, and this device eats every wrong one.
+	 * <p>
+	 * To the presser only, not the room.  A party spamming the grid would otherwise hear each other's presses as
+	 * well as their own, and the point of the noise is to tell YOU that yours registered.
+	 */
+	private static void cue(Player p) {
+		p.playSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
 
 	// ---------- The run ----------
@@ -427,13 +453,54 @@ public final class GoldorSimonSays {
 	private void placeButtons() {
 		if(deviceWorld == null || buttonsUp) return;
 		if(buttonData == null) buttonData = Bukkit.createBlockData("minecraft:stone_button[face=wall,facing=west]");
+		// The slots are only emptied and snapshotted here; paintButtons below is what puts the blocks in.
 		for(int i = 0; i < CELL_COUNT; i++) {
 			int[] b = BUTTONS[i];
 			Block block = deviceWorld.getBlockAt(b[0], b[1], b[2]);
-			buttonSnapshot.put(i, block.getState());
-			block.setBlockData(buttonData, false);
+			// NEVER snapshot a button as the thing to restore.  If one of ours somehow outlived a teardown, taking
+			// its picture here would make it the "original" and every later restore would faithfully put it back,
+			// so a single stray button would become permanent.  Air is what is really under them.
+			if(Tag.BUTTONS.isTagged(block.getType())) {
+				Block air = deviceWorld.getBlockAt(b[0], b[1], b[2]);
+				air.setType(Material.AIR, false);
+				buttonSnapshot.put(i, air.getState());
+			} else {
+				buttonSnapshot.put(i, block.getState());
+			}
 		}
 		buttonsUp = true;
+		paintButtons();
+	}
+
+	/**
+	 * <b>The built-in solver.</b>  Write all 16 buttons, the one the device is waiting for as OAK and the other
+	 * fifteen as stone, so the answer is readable off the wall the way Same Color's click counts are readable off
+	 * its panes ({@code GoldorTerminalGui.drawSameColor}) - this plugin ships the hint rather than leaving it to
+	 * Odin.  It makes the playback a formality, which is the point: the device is here to be practised as a
+	 * routine, not memorised.
+	 * <p>
+	 * <b>Paints all 16 every time</b>, not just the two that changed, because sixteen block writes are cheaper
+	 * than a rule about which ones to skip - and "exactly one button is oak" is then a property of the painter
+	 * rather than something each caller has to keep true.
+	 * <p>
+	 * <b>Never touches {@link #buttonSnapshot}</b>.  The snapshot is taken once, by {@link #placeButtons}, and
+	 * re-snapshotting here would photograph our own buttons and make them the blocks to restore.  Physics stays
+	 * suppressed for the same reason the place has it suppressed: a button pops off the wall on an update.
+	 */
+	private void paintButtons() {
+		if(deviceWorld == null || !buttonsUp) return;
+		if(hintButtonData == null) hintButtonData = Bukkit.createBlockData("minecraft:oak_button[face=wall,facing=west]");
+		int hint = hintCell();
+		for(int i = 0; i < CELL_COUNT; i++) {
+			int[] b = BUTTONS[i];
+			deviceWorld.getBlockAt(b[0], b[1], b[2]).setBlockData(i == hint ? hintButtonData : buttonData, false);
+		}
+	}
+
+	/** The cell the device is waiting for, or -1 when it is not waiting for one - then no button is oak. */
+	private int hintCell() {
+		if(state != State.AWAITING || inputIdx < 0 || inputIdx >= sequence.size()) return -1;
+		return sequence.get(inputIdx);
 	}
 
 	/**

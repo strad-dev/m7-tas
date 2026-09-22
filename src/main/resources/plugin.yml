@@ -56,9 +56,10 @@ commands:
   pets:
     description: Summon one of your pets
     usage: /pets
+    aliases: [pet]
   petloadout:
     description: Rearrange the pets in your pet menu
     usage: /petloadout
   dungeonsettings:
     description: Show or change the dungeon settings (difficulty, mayor, alpha)
-    usage: /dungeonsettings [difficulty [classic|perfect_rng|rta] | mayor [paul|derpy|other] | alpha [on|off]]
+    usage: /dungeonsettings [difficulty [classic|perfect_rng|realistic] | mayor [paul|derpy|other] | alpha [on|off]]

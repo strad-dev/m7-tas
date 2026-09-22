@@ -126,6 +126,17 @@ public final class ItemDef {
 		return out;
 	}
 
+	/**
+	 * Whether this item copies the pet's base stats (Chimera V).
+	 * <p>
+	 * <b>This is the one thing that makes an item's stats depend on the PET</b>, via the term above, which is why
+	 * {@code StatLore.refreshChimeraLore} asks it rather than keeping a list of weapon names: add a Chimera
+	 * weapon and the lore refresh picks it up with no second edit.
+	 */
+	public boolean chimera() {
+		return chimera;
+	}
+
 	/** The item-wide multiplier and the dungeon stage, applied once to the summed terms. */
 	private StatBlock finish(StatBlock sum) {
 		StatBlock scaled = sum.times(selfMultiplier);

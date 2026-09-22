@@ -74,7 +74,12 @@ public final class Pets {
 		PetType equipped = DEFAULT_PET;
 		/** Per-trigger autopet rules.  An absent trigger is off, the same as a rule with a null pet. */
 		final EnumMap<Autopet.Trigger, Autopet.Rule> rules = new EnumMap<>(Autopet.Trigger.class);
-		/** The Rod Swap cycle, in order.  Empty is off. */
+		/**
+		 * The Rod Swap cycle, in order.  Empty is off.
+		 * <p>
+		 * <b>Repeats are legal.</b>  [Golden Dragon, Crow, Golden Dragon, Phoenix] is a four-throw rotation, not
+		 * a three-pet one with a mistake in it, so this is a List and nothing anywhere dedupes it.
+		 */
 		final List<PetType> rodCycle = new ArrayList<>();
 	}
 
@@ -104,7 +109,7 @@ public final class Pets {
 		return profile(p.getUniqueId()).rules.get(t);
 	}
 
-	/** The Rod Swap cycle, in order.  A live view of the profile, so callers must not mutate it. */
+	/** The Rod Swap cycle, in order, repeats and all.  A live view of the profile, so callers must not mutate it. */
 	public static List<PetType> rodCycle(Player p) {
 		return profile(p.getUniqueId()).rodCycle;
 	}
@@ -129,7 +134,12 @@ public final class Pets {
 		prof.equipped = pet;
 		save(p.getUniqueId(), prof);
 		damage.Stats.invalidate(p);
-		if(announcement != null) p.sendMessage(Utils.msg(announcement + pet.colouredName() + "<green>!"));
+		// The two travel together: the cache drop fixes what the next HIT is worth, this fixes what the player's
+		// Chimera weapons SAY they are worth.  Both are stale for the same reason and at the same moment.
+		damage.StatLore.refreshChimeraLore(p);
+		// The caller owns the whole line except the pet's name, which always renders in the pet's rarity colour.
+		// No punctuation is bolted on here: the old trailing "!" landed inside a sentence autopet does not end with.
+		if(announcement != null) p.sendMessage(Utils.msg(announcement + pet.colouredName()));
 		return true;
 	}
 
@@ -141,7 +151,7 @@ public final class Pets {
 		save(p.getUniqueId(), prof);
 	}
 
-	/** Put the four pets back on the first four valid slots. */
+	/** Put the five pets back on the first five valid slots. */
 	public static void resetLayout(Player p) {
 		Profile prof = profile(p.getUniqueId());
 		prof.layout.clear();
@@ -166,7 +176,7 @@ public final class Pets {
 	// ==================== the default layout ====================
 
 	/**
-	 * The four pets on the first four valid slots, ascending: 10, 11, 12, 13.
+	 * The five pets on the first five valid slots, ascending: 10, 11, 12, 13, 14.
 	 * <p>
 	 * Derived from {@link PetMenu#petSlots()} rather than written out, so moving a filler pane moves the defaults
 	 * with it instead of leaving a pet on a slot the menu no longer treats as one.
@@ -246,7 +256,7 @@ public final class Pets {
 			}
 		}
 		// A file that resolved to nothing (empty, or every pet in it deleted) is indistinguishable from a first
-		// open, and the menu has to show four pets either way.
+		// open, and the menu has to show every pet either way.
 		if(prof.layout.isEmpty()) prof.layout.putAll(defaultLayout());
 		// A pet missing from the layout still needs a home, or it would be unreachable until a reset.
 		for(PetType pet : PetType.values()) if(!prof.layout.containsValue(pet)) placeInFirstFree(prof.layout, pet);
@@ -258,20 +268,48 @@ public final class Pets {
 			for(Map.Entry<String, RuleEntry> e : f.autopet.entrySet()) {
 				Autopet.Trigger t = Autopet.Trigger.parse(e.getKey());
 				if(t == null || e.getValue() == null) continue;
-				Autopet.Rule rule = new Autopet.Rule(PetType.parse(e.getValue().pet), PetType.parse(e.getValue().exception));
+				Autopet.Rule rule = new Autopet.Rule(PetType.parse(e.getValue().pet), readExceptions(e.getValue()));
 				if(!rule.isOff()) prof.rules.put(t, rule);
 			}
 		}
+		// REPEATS ARE KEPT.  This used to drop a pet already in the cycle, back when the menu could only append
+		// each pet once; the cycle editor now allows any pet at any position, so a filter here would silently
+		// shorten a saved rotation the first time it was loaded.
 		if(f.rodCycle != null) {
 			for(String name : f.rodCycle) {
 				PetType pet = PetType.parse(name);
-				if(pet != null && !prof.rodCycle.contains(pet)) prof.rodCycle.add(pet);
+				if(pet != null) prof.rodCycle.add(pet);
 			}
 		}
 		return prof;
 	}
 
-	/** Put a pet on the lowest valid slot nothing else occupies.  There are 28 slots and four pets, so one exists. */
+	/**
+	 * One saved rule's exceptions, folding the pre-list scalar field in.
+	 * <p>
+	 * <b>The old {@code exception} field is read forever.</b>  Rules were a single optional exception before the
+	 * list, and a file written by that jar is still a valid file - the player never did anything wrong, and a
+	 * backup or a rolled-back server can hand one over at any time, which is the same reason StradDevHub's
+	 * {@code m7/lb/Leaderboards} keeps its own migrations permanently.  It costs one null check per rule.
+	 * <p>
+	 * Nothing writes it again: {@link #save} leaves it null, Gson omits a null field, so the first save after a
+	 * load moves the value into {@code exceptions} and the old key disappears on its own.  {@code Autopet.Rule}'s
+	 * constructor dedupes, so folding a value that is already in the list is harmless.
+	 */
+	private static List<PetType> readExceptions(RuleEntry entry) {
+		List<PetType> out = new ArrayList<>();
+		PetType legacy = PetType.parse(entry.exception);
+		if(legacy != null) out.add(legacy);
+		if(entry.exceptions != null) {
+			for(String name : entry.exceptions) {
+				PetType pet = PetType.parse(name);
+				if(pet != null) out.add(pet);
+			}
+		}
+		return out;
+	}
+
+	/** Put a pet on the lowest valid slot nothing else occupies.  There are 28 slots and five pets, so one exists. */
 	static void placeInFirstFree(Map<Integer, PetType> layout, PetType pet) {
 		for(int slot : PetMenu.petSlots()) {
 			if(!layout.containsKey(slot)) {
@@ -298,7 +336,10 @@ public final class Pets {
 		for(Map.Entry<Autopet.Trigger, Autopet.Rule> e : prof.rules.entrySet()) {
 			RuleEntry entry = new RuleEntry();
 			entry.pet = e.getValue().pet() == null ? null : e.getValue().pet().name();
-			entry.exception = e.getValue().exception() == null ? null : e.getValue().exception().name();
+			// entry.exception is left null on purpose - see readExceptions.  Gson omits a null field, so the
+			// pre-list key vanishes from the file the first time the rule is saved, and never comes back.
+			entry.exceptions = new ArrayList<>();
+			for(PetType except : e.getValue().exceptions()) entry.exceptions.add(except.name());
 			f.autopet.put(e.getKey().name(), entry);
 		}
 		f.rodCycle = new ArrayList<>();
@@ -333,8 +374,14 @@ public final class Pets {
 		List<String> rodCycle;
 	}
 
+	/**
+	 * One rule on disk.  {@code exception} is the PRE-LIST field and is read-only: {@link #readExceptions} folds
+	 * it into {@code exceptions} and {@link #save} never writes it again.  Deleting it would turn every rule in
+	 * a file older than the list into "no exception" without a word.
+	 */
 	private static final class RuleEntry {
 		String pet;
 		String exception;
+		List<String> exceptions;
 	}
 }

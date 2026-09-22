@@ -53,8 +53,9 @@ public class TabCompletor implements TabCompleter {
 						}
 					}
 					if(!hasMode) {
+						// commandName, not id: we teach the spelling the FAQ and the settings lines use.
 						for(damage.Difficulty d : damage.Difficulty.values()) {
-							if(d.id().startsWith(input)) completions.add(d.id());
+							if(d.commandName().startsWith(input)) completions.add(d.commandName());
 						}
 					}
 				}
@@ -96,7 +97,7 @@ public class TabCompletor implements TabCompleter {
 				} else if(args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
 					// Read off the enum, never a literal list, so a new mode can't become executable-but-unlistable.
 					for(damage.Difficulty d : damage.Difficulty.values()) {
-						if(d.id().startsWith(args[1].toLowerCase())) completions.add(d.id());
+						if(d.commandName().startsWith(args[1].toLowerCase())) completions.add(d.commandName());
 					}
 				} else if(args.length == 2 && args[0].equalsIgnoreCase("mayor")) {
 					// Off the enum, same as the modes above.
