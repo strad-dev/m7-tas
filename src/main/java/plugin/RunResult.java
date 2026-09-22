@@ -36,13 +36,18 @@ public final class RunResult {
 	public boolean success;
 
 	/**
-	 * The damage difficulty this run was set under: {@code classic} or {@code realistic} (MAP.md §0).
+	 * The damage difficulty this run was set under, as {@code Difficulty.id()}: {@code classic},
+	 * {@code perfect_rng} or {@code rta} (MAP.md §0).
 	 * <p>
-	 * <b>Times from the two modes are not comparable</b> - a realistic run pays for maintaining four debuffs and
-	 * for however many blessings the party actually collected - so anything recording this run has to key on it.
-	 * On the network that means the leaderboard key gains a third component,
-	 * {@code category|groupSize|difficulty}, with legacy 2-part keys migrated to {@code classic}: every run
-	 * recorded before the split was set under the hand-tuned damage that classic mode reproduces.
+	 * <b>Times from the three modes are not comparable</b> - a live mode pays for maintaining four debuffs and for
+	 * however many blessings the party actually collected, and Realistic pays again for the puzzles and the pet -
+	 * so anything recording this run has to key on it.  On the network that means the leaderboard key gains a
+	 * third component, {@code category|groupSize|difficulty}, with legacy 2-part keys migrated to {@code classic}:
+	 * every run recorded before the split was set under the hand-tuned damage that classic mode reproduces.
+	 * <p>
+	 * <b>Realistic writes {@code rta}, not {@code realistic}.</b>  {@code realistic} is already on disk as the id
+	 * of every run recorded under what is now Perfect RNG, so reusing it would make two different modes share one
+	 * board key; the network's {@code Leaderboards} rewrites those old keys once, by raw string.
 	 */
 	public String difficulty;
 

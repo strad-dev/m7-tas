@@ -21,9 +21,11 @@ import java.time.Duration;
 import java.util.*;
 
 /**
- * Death and revival, the one thing ultra-realistic mode adds that the rest of the plugin models as impossible
- * (MAP.md § Ultra-realistic).  Players stay invulnerable in every mode - <b>nothing here is HP-driven</b>.  Every
- * death is an explicit instakill reported by a mechanic:
+ * Death and revival, which <b>both live modes</b> have and classic models as impossible (MAP.md § Death, revival
+ * and real terminals).  The gate is {@code Difficulty.deathsEnabled()}, i.e. anything but classic: Perfect RNG
+ * kills exactly as Realistic does, and only the work around the kill differs between the two.  Players stay
+ * invulnerable in every mode - <b>nothing here is HP-driven</b>.  Every death is an explicit instakill reported by
+ * a mechanic:
  * <ul>
  *   <li>Storm's lightning volley, when a player is not fully under a pillar ({@code storm/Storm.strikeUnsheltered});</li>
  *   <li>a Storm pillar closing on a player ({@code storm/Storm.pollPlayerCrush});</li>
@@ -33,7 +35,7 @@ import java.util.*;
  *
  * <p><b>{@link #kill} is the only way in</b>, and it owns the whole decision: the mode gate, the run gate, who
  * counts as killable, the {@link CheatDeath} proc and the wipe check.  A mechanic says "this player should die
- * now" and nothing else - do not let a call site pre-screen any of it, or the five sites will drift.
+ * now" and nothing else - do not let a call site pre-screen any of it, or the four sites will drift.
  *
  * <p><b>A ghost is a vanilla spectator.</b>  That is deliberate: {@code Utils.isSpectator} is already the one gate
  * every player-driven mechanic checks, so becoming a ghost locks a player out of terminals, devices, relics,

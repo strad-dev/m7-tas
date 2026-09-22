@@ -188,6 +188,7 @@ public class Server {
 		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
 		// so this is the one place that means "the run is now live".  See runStarted.
 		runStarted = true;
+		pets.Autopet.onRunStart(); // the "start door opens" autopet trigger; a no-op outside realistic mode
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.markPhaseStart();
@@ -302,6 +303,11 @@ public class Server {
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 		Goldor.resetS3Device(world);
 		Goldor.resetSectionLevers(world);
+		// Force-restore the S1 device's world blocks (any lit sea lantern, and the 16 input buttons with the "i1"
+		// sign under them) on this, the "before" edge of a run.  Unconditional, NOT inside the listener null-check
+		// below: a block left in the world outlives the listener instance, so the restore must not depend on it.
+		// Idempotent, and resetSimon calls it again for the ordinary path - one restore entry point, run twice.
+		instructions.bosses.goldor.GoldorSimonSays.INSTANCE.cleanup();
 		if(GoldorListener.INSTANCE != null) {
 			GoldorListener.INSTANCE.resetSharpShooter(world);
 			GoldorListener.INSTANCE.resetSimon();

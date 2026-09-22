@@ -270,7 +270,7 @@ public class Utils {
 	 * <b>The one action-bar send.</b>  Every HUD in the plugin goes through here - {@link #broadcastActionBar} for
 	 * the three boss bars, and directly for the two that render per player (Storm's pad colour, the clear HUD).
 	 * <p>
-	 * It does two things no caller should repeat.  It appends the ultra-realistic cheat-death cooldown segments
+	 * It does two things no caller should repeat.  It appends the cheat-death cooldown segments
 	 * ({@code death/CheatDeath}), which are per player and have to survive whatever else is on the bar - there is
 	 * one action-bar slot, so the only way two writers coexist is for one of them to own the append.  And it stamps
 	 * the tick, which is how {@code Deaths}' fallback knows not to overwrite a live HUD: the boss bars all draw at

@@ -180,7 +180,7 @@ public class TAS implements CommandExecutor {
 		listeners.CustomItems.resetAbilityCooldowns();
 		// Reset the per-run crypt-farm guard.
 		items.ItemUtils.resetCrypts();
-		// Reset ultra-realistic death state: no ghosts and no cheat-death cooldowns carried in from a previous run.
+		// Reset death state: no ghosts and no cheat-death cooldowns carried in from a previous run.
 		death.Deaths.reset();
 
 		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
@@ -255,6 +255,11 @@ public class TAS implements CommandExecutor {
 		// Action.PHYSICAL again, which silently bricks the S4 device for every later run. Forced back on both
 		// edges of a run; Server.serverSetup is the other one.
 		listeners.GoldorListener.unpowerPlate(world);
+		// The S1 device writes blocks too - a sea lantern over an obsidian cell, and the 16 input buttons - and its
+		// playback runs on tracked Utils.scheduleTasks, which cancelAllScheduled above has just killed.  Nothing is
+		// left to put them back, so the restore is synchronous and right here, next to the plate for the same
+		// reason: this is the "after" edge of a run, and Server.serverSetup is the "before" one.
+		instructions.bosses.goldor.GoldorSimonSays.INSTANCE.cleanup();
 		// The only thing that calls each boss's resetState.  Without it an early end left Goldor's phase active with
 		// its section gates still blown open, the core entrance an invisible barrier, and every boss's flags set.
 		Maxor.INSTANCE.forceEndPhase();

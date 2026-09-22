@@ -105,6 +105,8 @@ public final class Maxor extends WitherLord {
 	 */
 	public static void maxorInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
+		// The "boss fight starts" autopet trigger, after start() so the entity exists.  A no-op outside realistic.
+		pets.Autopet.onMaxorSpawn();
 	}
 
 	@Override

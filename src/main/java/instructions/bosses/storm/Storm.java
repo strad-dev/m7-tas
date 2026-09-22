@@ -231,7 +231,7 @@ public final class Storm extends WitherLord {
 		}, at);
 	}
 
-	/** One lightning volley: the sound stack, the arena-wide strikes and the ultra-realistic kill. */
+	/** One lightning volley: the sound stack, the arena-wide strikes and the kill. */
 	private void lightningVolley() {
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0F, 1.0F);
 		Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0F, 1.0F);
@@ -240,10 +240,10 @@ public final class Storm extends WitherLord {
 		strikeUnsheltered();
 	}
 
-	// --- Ultra-realistic deaths: the lightning volley, and a pillar closing on a player ---
+	// --- Deaths: the lightning volley, and a pillar closing on a player.  Both live modes; not classic ---
 
 	/**
-	 * The lightning volley's kill: anyone not fully sheltered under a pillar dies (ultra-realistic only).
+	 * The lightning volley's kill: anyone not fully sheltered under a pillar dies (any mode but classic).
 	 * <p>
 	 * Fired at each of the two volleys ({@link #LIGHTNING_TICK} and +10), which is what "during lightning" means -
 	 * they are 10 ticks apart, so one {@code CheatDeath} proc covers both, and that is intended: this is one
@@ -294,7 +294,7 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * The crush kill: anyone whose hitbox is inside pillar material dies (ultra-realistic only).
+	 * The crush kill: anyone whose hitbox is inside pillar material dies (any mode but classic).
 	 * <p>
 	 * Covers both ways in - a descending pillar closing over a player, and a player walking into one that has
 	 * already come down - because it asks the same question Storm's own crush detector asks about the boss, just

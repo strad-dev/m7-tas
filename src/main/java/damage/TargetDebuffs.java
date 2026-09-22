@@ -33,7 +33,7 @@ import java.util.UUID;
  * <p>
  * <b>Ordering: debuff first, then damage.</b>  A hit that both debuffs and damages applies its debuff FIRST, so it
  * benefits from its own debuff.  Mostly invisible in classic mode, where all four are assumed permanently applied
- * anyway, but it decides whether the opening shot of a fight is weak or already boosted in realistic mode - and it
+ * anyway, but it decides whether the opening shot of a fight is weak or already boosted in a live mode - and it
  * is one line of ordering that would be impossible to notice later.
  * <p>
  * Applies per damage INSTANCE, not per tick: each of the Terminator's three arrows applies its own debuff before
@@ -41,7 +41,7 @@ import java.util.UUID;
  * <p>
  * The two stack durations, which §7 left {@code [TBD]}: <b>Lethality lasts 4s and every further hit refreshes
  * it</b>, so it holds for free while anyone is attacking; <b>Last Breath is PERMANENT</b> and only clears when the
- * target dies or the run resets. They only matter in realistic mode - classic assumes both at max.
+ * target dies or the run resets. They only matter in a live mode - classic assumes both at max.
  */
 public final class TargetDebuffs {
 	private TargetDebuffs() {}

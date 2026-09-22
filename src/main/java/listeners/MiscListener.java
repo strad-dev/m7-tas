@@ -296,7 +296,7 @@ public class MiscListener implements Listener {
 	// Track game-mode changes during a run so the practice scoreboard shows golden names only for players who
 	// stayed in Adventure Mode the whole time.  It's a minor anti-cheat: any change disqualifies the gold name.
 	//
-	// Except the plugin's own flips.  Ultra-realistic death drops a player into spectator and revival puts them
+	// Except the plugin's own flips.  A death drops a player into spectator and revival puts them
 	// back, and dying is not cheating: death.Deaths announces each of those two changes ahead of time and this
 	// consumes the announcement.  Nothing else is exempt - an /gamemode still costs the gold name.
 	@EventHandler

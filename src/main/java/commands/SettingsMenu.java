@@ -61,7 +61,9 @@ public final class SettingsMenu implements Listener {
 		h.inv = inv;
 
 		List<String> diffLore = new ArrayList<>();
-		for(Difficulty d : Difficulty.values()) diffLore.add(option(d == Difficulty.current(), colour(d), label(d)));
+		// The mode's name is Difficulty.displayName(), not a label() switch here: one fewer place to fall out of
+		// sync when a mode is renamed.
+		for(Difficulty d : Difficulty.values()) diffLore.add(option(d == Difficulty.current(), colour(d), d.displayName()));
 		diffLore.add("");
 		diffLore.add(CYCLE_HINT);
 		inv.setItem(DIFFICULTY_SLOT, button(Material.WITHER_SKELETON_SKULL, "<gold>Difficulty", diffLore));
@@ -116,11 +118,12 @@ public final class SettingsMenu implements Listener {
 		return selected ? colour + "<bold>" + displayName : "<dark_gray>" + displayName;
 	}
 
+	/** Presentation only, so it stays a switch here rather than becoming a field on {@link Difficulty}. */
 	private static String colour(Difficulty d) {
 		return switch(d) {
 			case CLASSIC -> "<aqua>";
-			case REALISTIC -> "<light_purple>";
-			case ULTRA_REALISTIC -> "<red>";
+			case PERFECT_RNG -> "<light_purple>";
+			case REALISTIC -> "<red>";
 		};
 	}
 
@@ -143,14 +146,6 @@ public final class SettingsMenu implements Listener {
 		return switch(a) {
 			case OFF -> "Off";
 			case ON -> "On";
-		};
-	}
-
-	private static String label(Difficulty d) {
-		return switch(d) {
-			case CLASSIC -> "Classic";
-			case REALISTIC -> "Realistic";
-			case ULTRA_REALISTIC -> "Ultra Realistic";
 		};
 	}
 

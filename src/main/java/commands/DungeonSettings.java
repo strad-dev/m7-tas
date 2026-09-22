@@ -20,10 +20,11 @@ import plugin.Utils;
  * Three settings, and they are independent - any difficulty can be run under any mayor, with or without alpha:
  * <ul>
  *   <li><b>difficulty</b> ({@link Difficulty}) - <i>classic</i> assumes all four debuffs are applied and blessings
- *       are maxed, so a practising player can concentrate on movement and routing.  <i>realistic</i> makes each of
- *       those a live input: the debuffs have to be built and the blessings are whatever the party actually
- *       collected.  <i>ultra_realistic</i> is realistic plus death - the storm, Goldor and relic instakills in
- *       {@code death/Deaths}, and terminals you have to solve in a GUI.</li>
+ *       are maxed, so a practising player can concentrate on movement and routing.  <i>perfect_rng</i> makes each
+ *       of those a live input - the debuffs have to be built, the blessings are whatever the party actually
+ *       collected - and turns on the instakills in {@code death/Deaths}, but the dungeon still rolls your way:
+ *       one-click terminals, short devices, the assumed pet.  <i>rta</i> (shown as "Realistic") is that plus the
+ *       work a real run makes you do by hand: generated terminal puzzles, working devices and your own pet menu.</li>
  *   <li><b>mayor</b> ({@link Mayor}) - <i>paul</i> (the default) gives the EZPZ +10 bonus score and boosted
  *       blessings, <i>derpy</i> gives neither and doubles every mob's health, and <i>other</i> gives neither and
  *       leaves health alone.</li>
@@ -47,7 +48,14 @@ import plugin.Utils;
  */
 public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
-			"<red>Usage: /dungeonsettings [difficulty [classic|realistic|ultra_realistic] | mayor [paul|derpy|other] | alpha [on|off]]";
+			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [paul|derpy|other] | alpha [on|off]]";
+
+	/** The mode ids, joined from {@link Difficulty} itself so the usage line can never drift from the enum. */
+	private static String modeIds() {
+		return java.util.Arrays.stream(Difficulty.values())
+				.map(Difficulty::id)
+				.collect(java.util.stream.Collectors.joining("|"));
+	}
 
 	/** The menu a bare {@code /dungeonsettings} opens standalone.  See {@link SettingsMenu#suppressed()}. */
 	private final SettingsMenu menu;
@@ -77,8 +85,10 @@ public class DungeonSettings implements CommandExecutor {
 	/** The current settings, one line each.  What a bare {@code /dungeonsettings} prints. */
 	private static void show(CommandSender sender) {
 		sender.sendMessage(Utils.msg("<gold><bold>DUNGEON SETTINGS"));
+		// The NAME, not the id: "rta" is a storage key, not something to read off a settings line.  Every name is
+		// also a parse alias, so what a player sees here is still something they can type back.
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>difficulty: <yellow><value>  <dark_gray><desc>",
-				Placeholder.unparsed("value", Difficulty.current().id()),
+				Placeholder.unparsed("value", Difficulty.current().displayName()),
 				Placeholder.unparsed("desc", describe(Difficulty.current()))));
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>mayor: <yellow><value>  <dark_gray><desc>",
 				Placeholder.unparsed("value", Mayor.current().id()),
@@ -112,7 +122,7 @@ public class DungeonSettings implements CommandExecutor {
 	 */
 	static void applyDifficulty(Difficulty next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><value>",
-				Placeholder.unparsed("value", next.id())));
+				Placeholder.unparsed("value", next.displayName())));
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
 	}
 
@@ -176,8 +186,8 @@ public class DungeonSettings implements CommandExecutor {
 	private static String describe(Difficulty d) {
 		return switch(d) {
 			case CLASSIC -> "Debuffs are automatically applied and blessings are always maxed.";
-			case REALISTIC -> "Debuffs must be applied manually and blessings reflect collected secrets (if clear is part of the practice).";
-			case ULTRA_REALISTIC -> "Realistic, plus you can die and terminals must be solved by hand.";
+			case PERFECT_RNG -> "Live debuffs and real blessing levels, and you can die - but the dungeon always rolls your way: one-click terminals, short devices, the pet you need is the pet you have.";
+			case REALISTIC -> "Perfect RNG plus what a real run makes you do by hand: generated terminal puzzles, working devices, and your own pet menu.";
 		};
 	}
 

@@ -46,7 +46,7 @@ public final class ClearManager {
 	// Wizard crystal-ball special (not one of the 47 secrets)
 	private static boolean crystalPickedUp, crystalHandedIn;
 
-	// blessing tally: read by damage/Difficulty in realistic mode, and published to other plugins as
+	// blessing tally: read by damage/Difficulty in either live mode, and published to other plugins as
 	// plugin/BlessingState (see #awardBlessing).
 	private static final Map<Blessing, Integer> blessingTally = new LinkedHashMap<>();
 
@@ -720,7 +720,7 @@ public final class ClearManager {
 	/**
 	 * Count one death against the Skill score.  <b>The one caller is {@code death/Deaths.kill}</b>, once per death
 	 * that actually happened - after the mode gate, after {@code CheatDeath} has had its chance, and for a wipe as
-	 * well as an ordinary ghosting.  So this only ever runs in ultra-realistic, the only mode a player can die in.
+	 * well as an ordinary ghosting.  So this never runs in classic, the one mode a player cannot die in.
 	 * <p>
 	 * {@code OutOfBounds} deliberately does NOT call it: walking out of the map is a practice mishap, not a
 	 * dungeon death, and it is a hard kill with its own death screen that never goes through {@code Deaths}.
@@ -797,7 +797,7 @@ public final class ClearManager {
 
 	/**
 	 * Total level collected of one blessing type: every blessing of that type this run, summed by LEVEL, so a
-	 * Power V contributes 5.  This is the figure {@code damage/Difficulty} reads in realistic mode, and the one
+	 * Power V contributes 5.  This is the figure {@code damage/Difficulty} reads in either live mode, and the one
 	 * {@code plugin/BlessingState} publishes - both go through here rather than walking the tally themselves,
 	 * since "level x how many of them" is the sort of sum that is only ever right in one place.
 	 */

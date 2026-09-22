@@ -11,10 +11,10 @@ import plugin.Utils;
 /**
  * One Goldor terminal: the Interaction hitbox players click and the two floating labels above it.
  * <p>
- * <b>Two behaviours, one terminal.</b>  In classic and realistic mode a click activates it outright.  In
- * ultra-realistic mode the click opens {@link GoldorTerminalGui} and only solving the puzzle activates it - hence
- * {@link #type}, rolled once at construction so a terminal keeps the same puzzle for the whole phase however many
- * times it is opened and abandoned.  Either way {@link #markActivated} is the single finish line.
+ * <b>Two behaviours, one terminal.</b>  In classic and Perfect RNG mode a click activates it outright.  In
+ * realistic mode the click opens {@link GoldorTerminalGui} and only solving the puzzle activates it - hence
+ * {@link #type}, set once as the section is built so a terminal keeps the same puzzle for the whole phase however
+ * many times it is opened and abandoned.  Either way {@link #markActivated} is the single finish line.
  */
 public final class GoldorTerminal {
 	public static final String TAG_PREFIX = "goldor_terminal_";
@@ -34,7 +34,7 @@ public final class GoldorTerminal {
 	private boolean activated = false;
 	private boolean pending = false;
 	/**
-	 * Which puzzle this terminal poses in ultra-realistic mode.
+	 * Which puzzle this terminal poses in realistic mode.
 	 * <p>
 	 * <b>Assigned by the SECTION, not here</b> ({@link GoldorTerminalGui#assignTypes}, from
 	 * {@link GoldorSection}'s constructor).  A terminal cannot roll its own: the rule is "at most one of each type
@@ -43,7 +43,11 @@ public final class GoldorTerminal {
 	 */
 	private GoldorTerminalGui.Type type;
 
-	/** Block the Interaction hitbox was spawned on.  Read by {@link GoldorTerminalGui} to place Melody. */
+	/**
+	 * Block the Interaction hitbox was spawned on.  This used to be read by {@link GoldorTerminalGui} to find the
+	 * one terminal Melody was pinned to; there is no pin any more, so nothing reads it and it is kept only because
+	 * "where is this terminal" is the first thing anybody debugging one wants.
+	 */
 	public final int x, y, z;
 
 	public GoldorTerminal(World world, int sectionIdx, int terminalIdx, int x, int y, int z) {
@@ -98,7 +102,7 @@ public final class GoldorTerminal {
 		pending = false;
 	}
 
-	/** The puzzle this terminal poses in ultra-realistic mode. */
+	/** The puzzle this terminal poses in realistic mode. */
 	public GoldorTerminalGui.Type type() {
 		return type;
 	}

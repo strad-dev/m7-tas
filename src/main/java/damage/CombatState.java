@@ -69,6 +69,7 @@ public final class CombatState {
 		meleeHits.clear();
 		history.clear();
 		venomousHits.clear();
+		pets.Autopet.reset(); // the autopet "entered combat" edge is derived from hits, so it resets with them
 	}
 
 	// ===================== repeated-hit stack (Berserk) =====================
@@ -82,6 +83,9 @@ public final class CombatState {
 	/** Advance the stack for a PRIMARY hit.  Switching target resets it; nothing else does. */
 	public static void noteHit(Player p, UUID target, DamagePath path) {
 		if(p == null || target == null) return;
+		// The autopet "entered combat" trigger.  There is no in-combat FLAG here to hang it off, so this is the
+		// only chokepoint that means "a primary hit just landed"; Autopet works the entry edge out itself.
+		pets.Autopet.onCombatHit(p);
 		UUID id = p.getUniqueId();
 		if(target.equals(lastTarget.get(id))) {
 			repeatCount.merge(id, 1, Integer::sum);

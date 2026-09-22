@@ -4,8 +4,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.PlayerInventory;
 
 /**
- * The equipped pet.  Pets are assumed rather than owned (MAP.md §1.13): a player never picks one, it
- * follows from what they are doing and what they are wearing.
+ * The equipped pet.  In every mode but realistic, pets are assumed rather than owned (MAP.md §1.13): a player
+ * never picks one, it follows from what they are doing and what they are wearing.  In realistic
+ * ({@link Difficulty#manualPets()}) the player owns the choice and {@code pets/} answers instead.
  * <p>
  * A pet contributes in three separate places, and they are NOT the same numbers:
  * <ul>
@@ -26,6 +27,21 @@ public enum Pet {
 	CROW(StatBlock.of(Stat.INTELLIGENCE, 225, Stat.ABILITY_DAMAGE, 30)),
 	/** Archer / Berserk during the Wither King phase. */
 	ENDER_DRAGON(StatBlock.of(Stat.STRENGTH, 50, Stat.CRIT_DAMAGE, 60)),
+	/**
+	 * The cheat-death pet ({@code death/CheatDeath}), and selectable in realistic mode.  <b>No assumption table
+	 * ever returns it</b>: it is only ever out because a player picked it in {@code /pets}.
+	 * <p>
+	 * <b>Its stats are a deliberate PLACEHOLDER, not a measurement.</b>  The other three carry figures MAP.md
+	 * §1.13 states outright (+300 Strength, +225 Intelligence / +30 Ability Damage, +50 Strength / +60 Crit
+	 * Damage) without recording how they were arrived at, and no single rule reproduces all three from the
+	 * level-100 tooltips: the Crow's pair is exactly its tooltip x1.5 (the Hephaestus Relic's "+50% pet stats"),
+	 * but the same x1.5 gives the Ender Dragon 75/75 rather than 50/60, and nothing gets the Golden Dragon near
+	 * 300.  So the Phoenix's own +60 Strength / +150 Intelligence cannot be carried across honestly, and an
+	 * invented number here would read as measured forever after.  EMPTY until the owner gives one - what that
+	 * costs today is that summoning the Phoenix trades your pet's whole stat block (and its Chimera copy, which
+	 * {@code ItemDef.breakdown} skips for an empty pet) for its cheat death.
+	 */
+	PHOENIX(StatBlock.EMPTY),
 	/** Worn with a Racing Helmet or Cow Hat.  Nothing damage-relevant, which is now the entire cost of a hat. */
 	BLACK_CAT(StatBlock.EMPTY);
 
@@ -45,7 +61,12 @@ public enum Pet {
 		return ownStats;
 	}
 
-	/** This pet's additive % on one STAT (§1.13's additive tables), e.g. +5 meaning +5%. */
+	/**
+	 * This pet's additive % on one STAT (§1.13's additive tables), e.g. +5 meaning +5%.
+	 * <p>
+	 * The Crow, the Phoenix and the Black Cat take the default: none of the three grants a percent on a stat this
+	 * plugin models (the Phoenix's abilities are a cheat death, a burn and two island conveniences).
+	 */
 	public double statAdditive(Stat stat) {
 		return switch(this) {
 			case GOLDEN_DRAGON -> stat == Stat.STRENGTH ? 5.0 : 0.0;
@@ -57,6 +78,10 @@ public enum Pet {
 	/**
 	 * This pet's additive % on a HIT (§7's misc table).  The Ender Dragon's +200% is Ender-only, so it needs the
 	 * target; the Golden Dragon's +250% is unconditional.
+	 * <p>
+	 * The Phoenix takes the default with the Crow and the Black Cat.  Its Fourth Flare burn is a damage source of
+	 * its own rather than a percent on your hit, and nothing models it, so summoning the Phoenix really does give
+	 * up the dragon's damage additive - which is the trade the menu is offering.
 	 */
 	public double damageAdditive(java.util.Set<MobType> targetTypes) {
 		return switch(this) {
@@ -67,13 +92,24 @@ public enum Pet {
 	}
 
 	/**
-	 * Which pet a player is assumed to have out right now, per §1.13's table.  Evaluated live rather than stored,
-	 * because every input to it (the damage path, the phase, the worn helmet) changes mid-run.
+	 * Which pet a player has out right now.
+	 * <p>
+	 * <b>In realistic mode the player's own choice wins, whole</b> ({@link Difficulty#manualPets()}): they carry
+	 * a pet menu, so the table below would be answering a question they have already answered themselves.  The
+	 * lookup is a map read in {@code pets/Pets}, not a file read, because this is called per stat aggregate.
+	 * <b>That branch sits ABOVE the hat override on purpose</b>: a Racing Helmet or Cow Hat forces the Black Cat
+	 * only because nobody has said otherwise, and in this mode somebody has.  Wearing a hat therefore stops
+	 * costing a Realistic player their pet, which is a real balance change to the two hats - move this branch
+	 * below the hat test to put that cost back.
+	 * <p>
+	 * Everywhere else the pet is ASSUMED, per §1.13's table.  Evaluated live rather than stored, because every
+	 * input to it (the damage path, the phase, the worn helmet) changes mid-run.
 	 * <p>
 	 * Order matters: a hat overrides everything (it is the reason the Black Cat is out at all), then a cast, then
 	 * the Wither King phase for the two classes that swap, then the default.
 	 */
 	public static Pet forPlayer(Player p, DamagePath path) {
+		if(Difficulty.manualPets()) return pets.Pets.equippedDamagePet(p);
 		PlayerInventory inv = p.getInventory();
 		if(plugin.FakePlayerInventory.isRacingHelmet(inv.getHelmet()) || plugin.FakePlayerInventory.isCowHat(inv.getHelmet())) {
 			return BLACK_CAT;

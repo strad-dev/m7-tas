@@ -23,7 +23,7 @@ import java.util.List;
  * <br>
  * <b>Two different numbers, both real, and they routinely disagree.</b>  {@link Entry#level} is what the party
  * has actually picked up; {@link Entry#effectiveLevel} is what {@code damage/Difficulty} feeds the formulas.
- * In classic mode - the default - the second is the maxed table whatever the first says, and even in realistic
+ * In classic mode - the default - the second is the maxed table whatever the first says, and even in a live
  * mode a run with no clear phase has no chest history to read and so falls back to the same table
  * ({@link #assumedMax} says which of the two you are looking at, so a display can't accidentally claim a
  * boss-only run collected nothing).
@@ -34,7 +34,7 @@ public final class BlessingState {
 	/** The run these blessings belong to, matching every other report it makes ({@link WitherActions#runId()}). */
 	public String runId;
 
-	/** The damage difficulty in force: {@code classic}, {@code realistic} or {@code ultra_realistic}. */
+	/** The damage difficulty in force ({@code Difficulty.id()}): {@code classic}, {@code perfect_rng} or {@code rta}. */
 	public String difficulty;
 
 	/**

@@ -23,7 +23,7 @@ import java.util.Map;
  * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
  *    teleports them to the chosen phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.  A bare
- *    "classic"/"realistic"/"ultra_realistic" arg sets the damage mode for the run (MAP.md §0), a bare
+ *    "classic"/"perfect_rng"/"rta" arg sets the damage mode for the run (MAP.md §0), a bare
  *    "paul"/"derpy"/"other" sets the mayor, and a bare "on"/"off" sets the alpha timings; omitted, the current
  *    settings stand, so a standalone player keeps whatever /dungeonsettings last set.  The network always sends
  *    all three.
@@ -67,10 +67,10 @@ public class Practice implements CommandExecutor {
 		// Optional pre-run "get into position" delay in ticks (a bare integer arg). Defaults to 60 (3s); the
 		// network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in together.
 		int delayTicks = 60;
-		// Optional damage difficulty ("classic" / "realistic" / "ultra_realistic"). Null means "leave the mode
-		// alone", which is what a player running this standalone wants: their /dungeonsettings choice stands.
+		// Optional damage difficulty ("classic" / "perfect_rng" / "rta"). Null means "leave the mode alone", which
+		// is what a player running this standalone wants: their /dungeonsettings choice stands.
 		// The network ALWAYS passes one, since damage.Difficulty is a server-wide global and a run must not inherit
-		// the last party's mode - which in ultra-realistic decides whether anyone can die.
+		// the last party's mode - which decides whether anyone can die, since both live modes kill.
 		damage.Difficulty difficulty = null;
 		// Optional mayor ("paul" / "derpy" / "other").  Null means "leave it alone", for the same reason as the
 		// difficulty: damage.Mayor is a server-wide global, and the network always passes one so a run can't

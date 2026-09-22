@@ -53,9 +53,11 @@ public final class Goldor extends WitherLord {
 	// Block directly behind the Simon Says button (also stonk-immune so the button can't be knocked off).
 	private static final int SIMON_BEHIND_BX = 111, SIMON_BEHIND_BY = 121, SIMON_BEHIND_BZ = 91;
 	// S1 Simon Says ("SS") device protection zone: the whole device column (110..111, 119..124, 91..96),
-	// which covers the button, its backing, and the "i1" label sign at (110,121,93).  Every block in here is
+	// which covers the start button, its backing, and the "i1" label sign at (110,121,93).  Every block in here is
 	// stonk and break immune so nothing in the device can be knocked out.  That is also what keeps the sign's
 	// message intact across runs, since it can never be broken or replaced.  See isProtected.
+	// It ALREADY covers the real device's 16 input buttons - x=110, y 120..123, z 92..95, the grid's own cells
+	// shifted one west - so a stonk cannot knock one off the wall mid-input.  Nothing extra is needed for them.
 	private static final int SS_ZONE_X1 = 110, SS_ZONE_X2 = 111;
 	private static final int SS_ZONE_Y1 = 119, SS_ZONE_Y2 = 124;
 	private static final int SS_ZONE_Z1 = 91,  SS_ZONE_Z2 = 96;
@@ -93,34 +95,90 @@ public final class Goldor extends WitherLord {
 	private final List<ItemFrame> protectedFrames = new ArrayList<>();
 
 	/**
-	 * The S3 Arrow Align frame - the ONE frame in the wall that starts unrotated, is the only one a player may
-	 * touch, and has to be turned to solve the device.  The bottom-left frame of the grid.
+	 * How many frames the Arrow Align device has.  Only a sanity figure - the device is whatever
+	 * {@link #arrowFrames} finds, so a wall that has lost one is still playable rather than silently unsolvable -
+	 * but a mismatch is worth saying out loud, because the map is wrong if it ever happens.
+	 */
+	private static final int ARROW_FRAME_COUNT = 9;
+
+	/**
+	 * The rotation all nine frames have to read for the device to be solved: <b>ordinal 1</b>, one click clockwise
+	 * off the default.  Bukkit item frames have EIGHT rotation states ({@code Rotation.values()} 0..7), and
+	 * {@code rotateClockwise()} steps exactly one of them.
+	 */
+	private static final Rotation ARROW_SOLVED_ROTATION = Rotation.CLOCKWISE_45;
+
+	/**
+	 * True if this is one of the nine S3 Arrow Align frames: <b>in the frame wall and holding an arrow</b>.  Those
+	 * nine are the device, the only frames in the wall a player may touch, and all nine have to be turned to
+	 * ordinal 1 to solve it.
 	 * <p>
-	 * <b>Recorded as the frame ENTITY's own position</b> ({@code -1.969 120.5 78.5}, facing EAST, hanging on the
-	 * block at {@code -2 120 78}), and matched by {@link #isArrowAlignFrame}.  It used to be a NEAREST-frame search
-	 * against the block centre {@code (-1.5, 120, 78.5)}, and that was <b>ambiguous</b>: a frame on this wall sits
-	 * at {@code y = row + 0.5}, so 120 is exactly halfway between the y=119.5 and y=120.5 rows and both came out at
-	 * the same squared distance.  Which one won was whatever {@code getNearbyEntities} happened to return first, so
-	 * the "correct" frame could move between runs.  <b>Match the position; never hunt for the nearest.</b>
-	 */
-	private static final double ARROW_FRAME_X = -1.969, ARROW_FRAME_Y = 120.5, ARROW_FRAME_Z = 78.5;
-
-	/**
-	 * How far off {@link #ARROW_FRAME_X} a frame may sit and still be the one.  Frames in the wall are a whole
-	 * block apart, so a quarter block is unambiguous while absorbing the 1/32 wall offset's rounding.
-	 */
-	private static final double ARROW_FRAME_TOLERANCE = 0.25;
-
-	/**
-	 * True if this is the Arrow Align frame.  <b>Static and positional</b>, so it answers before the phase has
-	 * spun up - which is what lets the interaction guard protect the wall in prep and between phases, not just
-	 * mid-phase.
+	 * <b>Static, and answered off the frame itself</b>, so it holds before the phase has spun up - which is what
+	 * lets the interaction guard protect the wall in prep and between phases, not just mid-phase.  Nothing here
+	 * reads phase state or a cached scan.
+	 * <p>
+	 * <b>Never hunt for the nearest frame.</b>  This used to be one frame found by a NEAREST search against the
+	 * block centre {@code (-1.5, 120, 78.5)}, and that was <b>ambiguous</b>: a frame on this wall sits at
+	 * {@code y = row + 0.5}, so 120 was exactly halfway between the y=119.5 and y=120.5 rows and both came out at
+	 * the same squared distance.  Which one won was whatever {@code getNearbyEntities} returned first, so the
+	 * "correct" frame moved between runs.  It was then a hardcoded position, which is why the nine are found by
+	 * what they HOLD instead of by a coordinate table: the item is the map's own marking of which frames are the
+	 * device, and it survives the wall being rebuilt a block over.
 	 */
 	public static boolean isArrowAlignFrame(ItemFrame frame) {
 		if(frame == null) return false;
-		Location l = frame.getLocation();
-		double dx = l.getX() - ARROW_FRAME_X, dy = l.getY() - ARROW_FRAME_Y, dz = l.getZ() - ARROW_FRAME_Z;
-		return dx * dx + dy * dy + dz * dz <= ARROW_FRAME_TOLERANCE * ARROW_FRAME_TOLERANCE;
+		if(!S3_FRAME_BOUNDS.contains(frame.getLocation().toVector())) return false;
+		org.bukkit.inventory.ItemStack held = frame.getItem();
+		return held != null && held.getType() == Material.ARROW;
+	}
+
+	/** The nine Arrow Align frames, live out of the world.  Both the randomiser and the solve check scan the same
+	*  way, so they can never disagree about which frames are the device. */
+	private static List<ItemFrame> arrowFrames(World world) {
+		List<ItemFrame> found = new ArrayList<>(ARROW_FRAME_COUNT);
+		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
+			if(e instanceof ItemFrame frame && isArrowAlignFrame(frame)) found.add(frame);
+		}
+		return found;
+	}
+
+	/**
+	 * Roll every arrow frame a random rotation, and <b>re-roll while the roll is already the answer</b>.
+	 * <p>
+	 * "Already the answer" is all nine on {@link #ARROW_SOLVED_ROTATION}, so the guarantee is only that at least
+	 * one frame is off it - a device handed out pre-solved is not a puzzle.  One frame in eight is the answer, so a
+	 * second pass is a 1-in-8^9 event with a full wall; the loop is there for correctness, not for the common case.
+	 * <p>
+	 * Run at every device reset ({@link #resetS3Device} before a run, {@link #protectAllItemFrames} as the phase
+	 * builds), never mid-phase: nothing may re-randomise the wall under a party that is halfway through it.
+	 */
+	public static void randomiseArrowFrames(World world) {
+		List<ItemFrame> frames = arrowFrames(world);
+		if(frames.isEmpty()) return;
+		if(frames.size() != ARROW_FRAME_COUNT) {
+			Utils.debug(Utils.DebugType.ERROR, "Arrow Align: found " + frames.size()
+					+ " arrow frames in the S3 wall, expected " + ARROW_FRAME_COUNT);
+		}
+		Rotation[] all = Rotation.values(); // 8 states, ordinal 0..7
+		java.util.concurrent.ThreadLocalRandom rng = java.util.concurrent.ThreadLocalRandom.current();
+		boolean alreadySolved;
+		do {
+			alreadySolved = true;
+			for(ItemFrame f : frames) {
+				Rotation r = all[rng.nextInt(all.length)];
+				f.setRotation(r);
+				if(r != ARROW_SOLVED_ROTATION) alreadySolved = false;
+			}
+		} while(alreadySolved);
+	}
+
+	/** True only when every arrow frame reads {@link #ARROW_SOLVED_ROTATION}.  The solve test for the S3 device,
+	*  asked by {@code GoldorListener.processArrowFrame} after it has turned the clicked frame. */
+	public static boolean arrowFramesAligned(World world) {
+		List<ItemFrame> frames = arrowFrames(world);
+		if(frames.isEmpty()) return false;
+		for(ItemFrame f : frames) if(f.getRotation() != ARROW_SOLVED_ROTATION) return false;
+		return true;
 	}
 	private final Map<Location, BlockData> coreSnapshot = new HashMap<>();
 	private boolean coreBarrierActive = false;
@@ -284,17 +342,17 @@ public final class Goldor extends WitherLord {
 			if(e instanceof ItemFrame frame) {
 				frame.setInvulnerable(true);
 				protectedFrames.add(frame);
-				if(isArrowAlignFrame(frame)) frame.setRotation(Rotation.NONE);
 			}
 		}
+		// Deal the device a fresh board as the phase builds, so a chained full run doesn't inherit the last one's
+		// rotations.  All nine at once, which is why it is not a branch inside the loop above.
+		randomiseArrowFrames(world);
 	}
 
-	/** Reset the S3 Arrow Align item frame (used by /setup): rotate it back to NONE so the device starts the next
-	 *  run unsolved.  Every other frame in the wall is left alone - nothing may turn them in the first place. */
+	/** Reset the S3 Arrow Align device (used by /setup): re-randomise all nine arrow frames so the next run starts
+	 *  unsolved.  Every other frame in the wall is left alone - nothing may turn them in the first place. */
 	public static void resetS3Device(World world) {
-		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
-			if(e instanceof ItemFrame frame && isArrowAlignFrame(frame)) frame.setRotation(Rotation.NONE);
-		}
+		randomiseArrowFrames(world);
 	}
 
 	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to
@@ -382,7 +440,7 @@ public final class Goldor extends WitherLord {
 	}
 
 
-	// ---------- Ultra-realistic: the invalid-location sweep ----------
+	// ---------- Death ticks: the invalid-location sweep (both live modes) ----------
 
 	/**
 	 * Each section's floor footprint as {@code {xMin, xMax, zMin, zMax}}, inclusive, in progression order S1..S4.
@@ -425,7 +483,8 @@ public final class Goldor extends WitherLord {
 
 	/**
 	 * Kill anyone standing somewhere they have no business being, every {@link #INVALID_LOCATION_POLL_TICKS} ticks
-	 * (ultra-realistic only).  <b>Two independent rules, on two different clocks.</b>
+	 * (Perfect RNG and realistic - {@code deathsEnabled}, since this is death, not a puzzle).  <b>Two independent
+	 * rules, on two different clocks.</b>
 	 * <ul>
 	 *   <li><b>Ahead of the party</b> - a section past the current one, i.e. one whose gate has not been opened.
 	 *       Judged against {@link #currentSectionIdx}, the party's progress, and unconditional: this is the rule
@@ -486,8 +545,8 @@ public final class Goldor extends WitherLord {
 	 * it was the one stretch where {@code death/Deaths}' action-bar fallback was the only thing drawing cooldowns;
 	 * that fallback now defers to this, since {@code Utils.sendActionBar} stamps the tick.
 	 * <p>
-	 * <b>Ultra-realistic only.</b> Nothing happens on the grid in the other two modes, and a countdown to nothing is
-	 * worse than no countdown. Counts {@code POLL} → 1 on the absolute phase-tick grid the sweep itself gates on, so
+	 * <b>Both live modes, never classic.</b> Nothing happens on the grid where nobody can die, and a countdown to
+	 * nothing is worse than no countdown. Counts {@code POLL} → 1 on the absolute phase-tick grid the sweep itself gates on, so
 	 * the bar can never drift from the mechanic - the same anchor-not-a-counter rule the other three boss HUDs follow.
 	 */
 	private void updateActionBar() {
@@ -681,11 +740,13 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * The activation cue: the pling every completed terminal, device and lever makes.
+	 * The activation cue: the pling every completed terminal, device and lever makes.  <b>One definition</b>, so
+	 * moving the sound moves every activation with it.
 	 * <p>
-	 * <b>One definition</b>, because Melody's per-row button deliberately makes the same noise
-	 * ({@link GoldorTerminalGui#onClick}) - clearing a row should sound like progress, and "the same as a completion"
-	 * is the spec, not a coincidence.  Move the sound and both move.
+	 * Melody's per-row cue deliberately makes the same noise, but it does NOT come through here: it is a local
+	 * {@code clicker.playSound(BLOCK_NOTE_BLOCK_PLING, ...)} in {@link GoldorTerminalGui}, heard only by the player
+	 * solving the terminal.  Clearing a row should sound like progress to them without announcing it to the whole
+	 * arena, so the two are the same noise sent to different audiences - change one and the other does not follow.
 	 */
 	public static void playActivationSound() {
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);

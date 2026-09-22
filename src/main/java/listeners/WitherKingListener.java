@@ -40,7 +40,7 @@ public class WitherKingListener implements Listener {
 	 * Right-click a block while holding a relic: the wool is never placed as a real block, and only a click on the
 	 * matching altar (Y 6/7) places the relic. Anything else is silently cancelled (prevents misplacement).
 	 * <p>
-	 * <b>The WRONG cauldron sends the relic back to its statue</b>, in every mode, and in ultra-realistic it kills
+	 * <b>The WRONG cauldron sends the relic back to its statue</b>, in every mode, and outside classic it kills
 	 * you too ({@code death/Deaths}).  The relic can never be destroyed or kept: the summon needs all five, so
 	 * losing one to a mistake would strand the phase.  <b>The return has to come first</b> - {@code Deaths}
 	 * snapshots the inventory for the revival, so a relic still in hand at that moment would be handed straight
@@ -71,7 +71,7 @@ public class WitherKingListener implements Listener {
 			WitherKing.placeRelic(p, altarColor);
 		} else {
 			WitherKing.returnRelicToStatue(p, heldColor);
-			death.Deaths.kill(p, "Wither King"); // no-op outside ultra-realistic
+			death.Deaths.kill(p, "Wither King"); // no-op in classic
 		}
 	}
 

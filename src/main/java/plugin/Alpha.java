@@ -59,6 +59,21 @@ public enum Alpha {
 		return enabled() ? alpha : normal;
 	}
 
+	/**
+	 * {@link #ticks(int, int)} for a COUNT rather than a tick count: how many rows, cells or repetitions a puzzle
+	 * asks for.
+	 * <p>
+	 * <b>These are the exception to "alpha is a flag on timings only"</b>, and they are deliberate: the Goldor
+	 * puzzles are work, not schedule, so the only way to shorten them is to ask for less.  Three sites today -
+	 * Melody's row count, Click In Order's width and Simon Says' target sequence length - and they still obey the
+	 * shape rule, one call at the site that owns the number, so deleting the experiment is still deleting the
+	 * second argument.  Kept separate from {@link #ticks} so a reader can tell at a glance which kind of
+	 * difference they are looking at.
+	 */
+	public static int count(int normal, int alpha) {
+		return enabled() ? alpha : normal;
+	}
+
 	/** Step to the next value, wrapping, and return it. */
 	public static Alpha toggle() {
 		Alpha[] all = values();

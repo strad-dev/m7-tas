@@ -42,14 +42,23 @@ public class GoldorListener implements Listener {
 
 	// ------ Per-device runtime state (cleared on each phase via Goldor's resetState by reference) ------
 
-	// Simon Says: cumulative GLOBAL click count (15 activates, no time limit).  This is NOT per-player: any
-	// players' clicks accumulate toward 15.  Reset on device completion and on serverSetup (see resetSimon).
+	// Simon Says STAND-IN (classic + Perfect RNG): cumulative GLOBAL click count, 15 activates, no time limit.
+	// This is NOT per-player: any players' clicks accumulate toward 15.  Reset on device completion and on
+	// serverSetup (see resetSimon).  The REAL device is GoldorSimonSays, realistic mode only; the two live side by
+	// side behind one entry point, the same way the Sharp Shooter keeps two devices behind onPlateStep.
 	private int simonClicks = 0;
-	// Last server tick each player registered a Simon Says click on.  A single physical right-click can surface as
-	// TWO PlayerInteractEvents on the same tick: the off-hand event while sneaking, and/or vanilla re-firing after
-	// PlayerPacketInterceptor resets its interact-dedupe.  One click cannot span two ticks, so I collapse any
-	// repeat from the same player within the same tick.  That fixes the same-tick double-count without
-	// rate-limiting genuine clicks, which land on different ticks.  Stale entries self-expire via the comparison.
+	// Last server tick each player registered a Simon Says click on - the START button and, in realistic mode, the
+	// 16 grid buttons.  A single physical right-click can surface as TWO PlayerInteractEvents on the same tick: the
+	// off-hand event while sneaking, and/or vanilla re-firing after PlayerPacketInterceptor resets its
+	// interact-dedupe.  One click cannot span two ticks, so I collapse any repeat from the same player within the
+	// same tick.  That fixes the same-tick double-count without rate-limiting genuine clicks, which land on
+	// different ticks.  Stale entries self-expire via the comparison.
+	//
+	// THE SPAM WINDOW MAKES THIS LOAD-BEARING IN A NEW WAY.  It is no longer only cosmetic double-counting: a
+	// duplicate event inside the real device's 10-tick window would push a player over a skip threshold they never
+	// earned, and a skip is worth a whole phase.  The flip side is that it caps one player at one click per tick,
+	// so a single person tops out at 10 clicks (3 skips) in the window and the 15- and 21-click thresholds are a
+	// team's to reach - which is the intended reading of "sum across players".
 	private final Map<UUID, Integer> lastSimonClickTick = new HashMap<>();
 	// The last toggle of each S2 "Lights" lever, keyed by its "x_y_z".  In ADVENTURE a single physical click emits
 	// BOTH a right-click and a phantom left-click on the SAME lever a tick or two apart, and toggling on each
@@ -63,16 +72,26 @@ public class GoldorListener implements Listener {
 	private final boolean[][] sharpHits = new boolean[3][3]; // [xIdx 0..2 → 68/66/64][yIdx 0..2 → 130/128/126]
 	private int sharpHitCount = 0;
 	/**
-	 * ULTRA-REALISTIC ONLY: which target the emerald block is on, as a sequence index 0..8, or -1 before the plate
-	 * has started the device and 9 once it has run off the end.
+	 * REALISTIC ONLY: how far along {@link #sharpOrder} the emerald block is, 0..8, or -1 before the plate has
+	 * started the device and 9 once it has run off the end.
 	 * <p>
-	 * The sequence IS the array order: {@code seq = yIdx * 3 + xIdx}, so it walks -X across a row and then -Y down
-	 * to the next one - {@code TARGET_XS} and {@code TARGET_YS} are both already listed descending. First is
-	 * (68, 130), last is (64, 126), and each of the nine is the active block at most once; it never loops.
+	 * <b>An index into the permutation, not a target.</b>  The target it is currently on is
+	 * {@code sharpOrder[sharpCursor]}, itself encoded {@code seq = yIdx * 3 + xIdx} over {@code TARGET_XS} /
+	 * {@code TARGET_YS}.  It used to BE that encoding, which made the walk the fixed -X-then-Y order; the order is
+	 * now rolled per arming, so nothing may go back to treating the cursor as a position on the wall.  Each of the
+	 * nine is the active block at most once either way; it never loops.
 	 */
 	private int sharpCursor = -1;
 	/**
-	 * ULTRA-REALISTIC ONLY: the server tick an arrow last struck each target, or {@code Integer.MIN_VALUE} for never.
+	 * REALISTIC ONLY: the order the emerald walks the nine targets, as a permutation of the nine
+	 * {@code seq = yIdx * 3 + xIdx} encodings, or null while the device is not armed.
+	 * <p>
+	 * Rolled fresh every time the plate arms the device ({@link #onPlateStep}) and dropped by
+	 * {@link #resetSharpHits}, so stepping off and back on is a new wall, not the same one again.
+	 */
+	private int[] sharpOrder;
+	/**
+	 * REALISTIC ONLY: the server tick an arrow last struck each target, or {@code Integer.MIN_VALUE} for never.
 	 * <p>
 	 * <b>Scratch for one tick, not a bank.</b>  A hit on anything that is not the active target does not count - it
 	 * only leaves this stamp, and the stamp is worth something solely while the tick it names is still the current
@@ -88,7 +107,8 @@ public class GoldorListener implements Listener {
 	 */
 	private int sharpPlateEmptySince = -1;
 
-	// Simon Says button coord
+	// Simon Says START button coord - the one button the device actually has in the world today.  The 16 grid
+	// buttons the real device needs are NOT here: their coords derive from GoldorSimonSays' one grid table.
 	private static final int SIMON_BX = 110, SIMON_BY = 121, SIMON_BZ = 91;
 	// Sharp Shooter plate coord
 	private static final int PLATE_X = 63, PLATE_Y = 127, PLATE_Z = 35;
@@ -117,8 +137,11 @@ public class GoldorListener implements Listener {
 	 * Checked at every entry point AND again in the {@code process*} solvers, which can run a tick later off
 	 * {@link #runWhenPhaseActive}.  That is the same "re-check all state on the deferred path" rule the rest of
 	 * this class uses.
+	 * <p>
+	 * Public because {@link GoldorSimonSays} asks it too - the real S1 device credits a short-circuited solve to a
+	 * player it picks itself, and the one it picks has to pass the same gate every click does.
 	 */
-	private static boolean cannotSolve(Player p) {
+	public static boolean cannotSolve(Player p) {
 		return Utils.isSpectator(p);
 	}
 
@@ -155,9 +178,10 @@ public class GoldorListener implements Listener {
 
 			term.setPending();
 			Actions.clearMovementInput(p);
-			// Ultra-realistic: the click opens the terminal's puzzle and solving it is what activates.  The pending
+			// Realistic: the click opens the terminal's puzzle and solving it is what activates.  The pending
 			// flag now spans the whole time the GUI is open, which is what makes a terminal one player's at a time.
-			if(damage.Difficulty.deathsEnabled()) {
+			// realPuzzles(), never deathsEnabled(): Perfect RNG has death but keeps the one-click terminal.
+			if(damage.Difficulty.realPuzzles()) {
 				GoldorTerminalGui.open(p, term);
 				return true;
 			}
@@ -171,7 +195,7 @@ public class GoldorListener implements Listener {
 		return false;
 	}
 
-	// =================== Terminal puzzle GUI (ultra-realistic only) ===================
+	// =================== Terminal puzzle GUI (realistic only) ===================
 
 	/**
 	 * Every click inside a terminal puzzle, in either inventory, is cancelled first and only then read as a possible
@@ -214,10 +238,16 @@ public class GoldorListener implements Listener {
 	 * same player) can open it again, and the progress is gone with the view - a half-finished Melody starts over.
 	 * A solved puzzle closes itself from the click handler above, and must NOT clear the flag, or the pending state
 	 * would outlive the activation it belongs to.
+	 * <p>
+	 * <b>{@code onClosed()} runs BEFORE that early return</b>, so it covers the abandoned puzzle too.  It is the
+	 * GUI's teardown and Melody's mover is a repeating task, so the failure mode is a task still painting panes
+	 * into an inventory nobody has open - it would keep going for the rest of the run.  Idempotent, which is why
+	 * a solved Melody (which already stopped its own mover) can go through the same call.
 	 */
 	@EventHandler
 	public void onTerminalGuiClose(InventoryCloseEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof GoldorTerminalGui gui)) return;
+		gui.onClosed();
 		if(gui.isSolved()) return;
 		gui.terminal().clearPending();
 	}
@@ -239,10 +269,11 @@ public class GoldorListener implements Listener {
 		// or own the lever toggle on their behalf.  Vanilla ignores a spectator's click by itself.
 		if(cannotSolve(p)) return;
 
-		// Simon Says button (S1 device), right-click only since it's a button.  Defer if the phase hasn't spun up yet
+		// Simon Says buttons (S1 device), right-click only since they're buttons: the start button in every mode,
+		// and in realistic the 16 grid buttons of the real device as well.  Defer if the phase hasn't spun up yet
 		// so a click in a chained full run counts: players are scheduled on start, but Goldor is only active when
 		// Storm dies.
-		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) {
+		if(isSimonInput(p, bx, by, bz)) {
 			if(rightClick) tryRegisterSimonClick(p, bx, by, bz);
 			return;
 		}
@@ -295,10 +326,40 @@ public class GoldorListener implements Listener {
 	}
 
 	/**
-	 * Register a Simon Says button click from {@code p} when (bx,by,bz) is the button, deduped to once per player
-	 * per server tick.  A single physical click can surface twice on the same tick: the off-hand event while
-	 * sneaking, and/or vanilla re-firing the interact after {@code PlayerPacketInterceptor} resets its dedupe.
-	 * One click cannot span two ticks, so any same-tick repeat from a player is dropped.
+	 * True if (bx,by,bz) is a block the S1 device takes clicks on: the start button, in every mode, and in
+	 * realistic the 16 grid buttons too.  Lets {@link #onInteract} consume the click without duplicating the
+	 * lookup {@link #tryRegisterSimonClick} does.
+	 */
+	private static boolean isSimonInput(Player p, int bx, int by, int bz) {
+		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) return true;
+		return simonCellAt(p, bx, by, bz) >= 0;
+	}
+
+	/**
+	 * The Simon Says grid cell whose button sits at (bx,by,bz), or -1 for "not one of ours".
+	 * <p>
+	 * <b>The block has to really BE a button.</b>  The 16 grid buttons exist only while the device is taking an
+	 * answer - {@link GoldorSimonSays} puts them up when a playback ends and takes them down when the answer
+	 * lands - so this is what makes a click outside an input window a non-event.  Coordinates alone would also
+	 * make the "i1" sign at {@code 110 121 93} a Simon Says input, since it sits in one of the 16 slots.
+	 */
+	private static int simonCellAt(Player p, int bx, int by, int bz) {
+		if(!damage.Difficulty.realPuzzles()) return -1;
+		int idx = GoldorSimonSays.cellAtButton(bx, by, bz);
+		if(idx < 0) return -1;
+		return Tag.BUTTONS.isTagged(p.getWorld().getBlockAt(bx, by, bz).getType()) ? idx : -1;
+	}
+
+	/**
+	 * Register a Simon Says click from {@code p} when (bx,by,bz) is one of the device's buttons - the start button
+	 * in every mode, or a grid button in realistic - deduped to once per player per server tick.  A single physical
+	 * click can surface twice on the same tick: the off-hand event while sneaking, and/or vanilla re-firing the
+	 * interact after {@code PlayerPacketInterceptor} resets its dedupe.  One click cannot span two ticks, so any
+	 * same-tick repeat from a player is dropped.
+	 *
+	 * <p><b>The dedupe is load-bearing now, not just tidy.</b>  The real device's spam window turns start clicks
+	 * into skips, and a skip is worth a whole phase, so one physical click surfacing twice would hand a player a
+	 * threshold they never earned.  It is what makes one click count once toward a skip.
 	 *
 	 * <p>Called from two places, both main-thread and both funneling through this single guard:
 	 * <ul>
@@ -310,16 +371,29 @@ public class GoldorListener implements Listener {
 	public static void tryRegisterSimonClick(Player p, int bx, int by, int bz) {
 		if(INSTANCE == null) return;
 		if(cannotSolve(p)) return; // the interceptor path skips vanilla's spectator gating entirely
-		if(bx != SIMON_BX || by != SIMON_BY || bz != SIMON_BZ) return;
+		boolean start = bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ;
+		final int cellIdx = start ? -1 : simonCellAt(p, bx, by, bz);
+		if(!start && cellIdx < 0) return;
 		int now = MinecraftServer.currentTick;
 		if(INSTANCE.lastSimonClickTick.getOrDefault(p.getUniqueId(), -1) == now) return;
 		INSTANCE.lastSimonClickTick.put(p.getUniqueId(), now);
-		INSTANCE.runWhenPhaseActive(deferred -> INSTANCE.processSimonClick(p, deferred));
+		if(start) INSTANCE.runWhenPhaseActive(deferred -> INSTANCE.processSimonClick(p, deferred));
+		else INSTANCE.runWhenPhaseActive(deferred -> INSTANCE.processSimonCell(p, cellIdx, deferred));
 	}
 
-	/** Register one Simon Says click on the global counter.  Safe to call from the deferred path, since it re-checks state. */
+	/**
+	 * A start-button click, once the phase is live.  Safe to call from the deferred path, since it re-checks state.
+	 * <p>
+	 * <b>Two devices behind one entry point</b>, the same shape {@link #registerSharpHit} has always had: realistic
+	 * hands the click to the real {@link GoldorSimonSays}, and classic and Perfect RNG keep the 15-click stand-in
+	 * below untouched.
+	 */
 	private void processSimonClick(Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return;
+		if(damage.Difficulty.realPuzzles()) {
+			GoldorSimonSays.INSTANCE.onStartClick(p, wasDeferred);
+			return;
+		}
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
 		if(s1 == null || s1.device.isActivated()) return;
 		simonClicks++;
@@ -329,6 +403,14 @@ public class GoldorListener implements Listener {
 			Goldor.INSTANCE.onActivation(p, s1, "device", wasDeferred);
 			simonClicks = 0;
 		}
+	}
+
+	/** A grid-button click, once the phase is live.  Realistic only - the stand-in has no grid.  Re-checks the mode
+	*  as well as the spectator gate, since a deferred click can land after either has changed. */
+	private void processSimonCell(Player p, int cellIdx, boolean wasDeferred) {
+		if(cannotSolve(p)) return;
+		if(!damage.Difficulty.realPuzzles()) return;
+		GoldorSimonSays.INSTANCE.onCellClick(p, cellIdx, wasDeferred);
 	}
 
 	/** Activate the S2 Lights device, but ONLY once every redstone lamp is lit.  The clicked lever hasn't toggled
@@ -389,13 +471,14 @@ public class GoldorListener implements Listener {
 		Utils.scheduleTask(() -> { if(!Goldor.INSTANCE.isPhaseInactive()) action.accept(true); }, 1L);
 	}
 
-	// =================== Item frame rotation: ONLY the Arrow Align frame may be touched ===================
+	// =================== Item frame rotation: ONLY the nine Arrow Align frames may be touched ===================
 	// PHASE-INDEPENDENT, matching the punch and break guards below.  This used to gate the whole thing on an active
 	// phase and simply return otherwise, so before Goldor spun up - in prep, and between phases - every frame in
 	// the wall could be freely rotated, which is not recoverable: nothing re-randomises the grid mid-run.
 	//
-	// Which frame is "correct" is Goldor.isArrowAlignFrame, a STATIC positional test, precisely so this can answer
-	// while the phase is still inactive, before any frame has been scanned for.
+	// Which frames are the device is Goldor.isArrowAlignFrame - STATIC, and answered off the frame's own position
+	// and item - precisely so this can answer while the phase is still inactive, before any frame has been scanned
+	// for.  Every other frame in the wall stays untouchable in every phase.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInteractEntity(PlayerInteractEntityEvent e) {
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
@@ -419,19 +502,29 @@ public class GoldorListener implements Listener {
 		e.setCancelled(true);
 	}
 
-	/** Solve the S3 Arrow Align device.  Returns true if this call activated it, in which case the caller
-	*  suppresses vanilla's rotation.  Safe to call from the deferred path, since it re-checks all state. */
+	/**
+	 * Turn one Arrow Align frame and judge the device.
+	 * <p>
+	 * <b>Returns true whenever the click was taken</b>, not only when it solved, because the handler owns the turn:
+	 * CustomItems cancels this interaction when the player holds a non-exempt custom item, which skips vanilla's
+	 * rotation, so the one-step turn is done here - and the caller must then cancel the event so a click vanilla
+	 * DID reach isn't worth two steps.
+	 * <p>
+	 * In realistic all nine frames have to read ordinal 1 at once; in classic and Perfect RNG the first click on
+	 * any of them activates, which is the one-frame stand-in the device has always had in those modes.  Safe to
+	 * call from the deferred path, since it re-checks all state.
+	 */
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return false; // guarded here, not in onInteractEntity, since frame PROTECTION still applies to spectators
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
 		if(!Goldor.isArrowAlignFrame(frame)) return false;
 		GoldorSection s3 = Goldor.INSTANCE.getSection(2);
 		if(s3 == null || s3.device.isActivated()) return false;
+		frame.setRotation(frame.getRotation().rotateClockwise());
+		// Judged AFTER the turn, off the world, so the frame this click moved counts toward the answer.
+		if(damage.Difficulty.realPuzzles() && !Goldor.arrowFramesAligned(frame.getWorld())) return true;
 		s3.device.markActivated();
 		Goldor.INSTANCE.onActivation(p, s3, "device", wasDeferred);
-		// CustomItems cancels this interaction when the fake player holds a non-exempt custom item, which skips
-		// vanilla's rotation, so replicate the normal one-step turn here.
-		frame.setRotation(frame.getRotation().rotateClockwise());
 		return true;
 	}
 
@@ -468,12 +561,12 @@ public class GoldorListener implements Listener {
 		}
 	}
 
-	// =================== Sharp Shooter: the plate starts it (ultra-realistic only) ===================
+	// =================== Sharp Shooter: the plate starts it (realistic only) ===================
 
 	/**
-	 * Stepping on the gold pressure plate BEGINS the S4 device: the emerald block appears on the first target and
-	 * the player shoots their way along the sequence.  Ultra-realistic only - the other two modes keep the original
-	 * device, where the nine targets are hit in any order and the plate has to be held for each hit.
+	 * Stepping on the gold pressure plate BEGINS the S4 device: the emerald block appears on the first target of a
+	 * freshly rolled order and the player shoots their way along it.  Realistic only - the other two modes keep the
+	 * original device, where the nine targets are hit in any order and the plate has to be held for each hit.
 	 * <p>
 	 * {@code Action.PHYSICAL} is the pressure-plate event, which is why this is its own handler rather than a branch
 	 * in {@link #onInteract} - that one returns early for anything that is not a left or right click, and its
@@ -489,16 +582,33 @@ public class GoldorListener implements Listener {
 		Block b = e.getClickedBlock();
 		if(b == null || b.getX() != PLATE_X || b.getY() != PLATE_Y || b.getZ() != PLATE_Z) return;
 		if(cannotSolve(e.getPlayer())) return;
-		if(!damage.Difficulty.deathsEnabled()) return;
+		if(!damage.Difficulty.realPuzzles()) return;
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(sharpCursor >= 0) return; // already running; a second step is not a restart
 
 		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
 		if(s4 == null || s4.device.isActivated()) return;
 
+		// The order is rolled HERE, per arming, so stepping off and back on deals a new wall rather than the same
+		// one again.  resetSharpHits drops it, and until then sharpOrder is what the cursor indexes.
+		sharpOrder = randomSharpOrder();
 		sharpCursor = 0;
 		sharpWorld = b.getWorld();
 		renderSharpTargets(sharpWorld);
+	}
+
+	/** A fresh permutation of the nine {@code seq = yIdx * 3 + xIdx} target encodings (Fisher-Yates). */
+	private static int[] randomSharpOrder() {
+		int[] order = new int[9];
+		for(int i = 0; i < order.length; i++) order[i] = i;
+		java.util.concurrent.ThreadLocalRandom rng = java.util.concurrent.ThreadLocalRandom.current();
+		for(int i = order.length - 1; i > 0; i--) {
+			int j = rng.nextInt(i + 1);
+			int tmp = order[i];
+			order[i] = order[j];
+			order[j] = tmp;
+		}
+		return order;
 	}
 
 	/**
@@ -597,9 +707,10 @@ public class GoldorListener implements Listener {
 	 * Register a single Sharp Shooter target hit (idempotent per target).  Completes the S4 device on the ninth
 	 * distinct hit either way.  Re-checks all gates itself so it is safe to call from a deferred (next-tick) task.
 	 * <p>
-	 * <b>Two devices behind one hit.</b>  Classic and realistic keep the original: any order, checked against the
-	 * plate per hit.  Ultra-realistic is sequential - {@link #onPlateStep} begins it and an emerald block marks the
-	 * target to shoot - and the plate is watched per tick instead, so stepping off resets the whole device.
+	 * <b>Two devices behind one hit.</b>  Classic and Perfect RNG keep the original: any order, checked against the
+	 * plate per hit.  Realistic is sequential - {@link #onPlateStep} begins it, rolls the order and an emerald block
+	 * marks the target to shoot - and the plate is watched per tick instead, so stepping off resets the whole
+	 * device.
 	 * <p>
 	 * <b>Only the ACTIVE target counts</b> in the sequential device.  An arrow anywhere else on the wall does
 	 * nothing at all - it is not banked for later, and the nine cannot be picked off out of order.
@@ -614,7 +725,7 @@ public class GoldorListener implements Listener {
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
 		if(s4 == null || s4.device.isActivated()) return;
-		boolean sequential = damage.Difficulty.deathsEnabled();
+		boolean sequential = damage.Difficulty.realPuzzles();
 		// The plate is a per-hit requirement in the old device and a one-off start in the sequential one.
 		if(sequential ? sharpCursor < 0 : !isPlayerOnPlate()) return;
 		if(sharpHits[xIdx][yIdx]) return;
@@ -649,15 +760,24 @@ public class GoldorListener implements Listener {
 	 * target and advances it.  Next target first: its stamp is set but nothing completes, and the emerald's arrow
 	 * then advances over both.  Either way two arrows complete two targets.  <b>Do not turn the stamp into a plain
 	 * boolean</b>: that is what let the whole wall be picked off out of order.
+	 * <p>
+	 * <b>"Next" means next in {@link #sharpOrder}, not next on the wall.</b>  The cursor indexes the permutation, so
+	 * both the active-target test and the walk read {@code sharpOrder[sharpCursor]} and decode it to a target; the
+	 * stamps stay on the wall's own (x, y) grid, which is what the arrow knows. Nothing else about the mechanism
+	 * changes - the emerald can now jump anywhere on the wall, and that is exactly why the stamp still has to be a
+	 * tick and not a boolean.
 	 *
 	 * @return true if at least one target was completed, i.e. whether the caller should check for the ninth.
 	 */
 	private boolean registerSequentialHit(World world, int xIdx, int yIdx) {
 		int now = Utils.serverTick();
 		sharpHitTick[xIdx][yIdx] = now;
-		if(yIdx * 3 + xIdx != sharpCursor) return false;
-		while(sharpCursor < 9 && sharpHitTick[sharpCursor % 3][sharpCursor / 3] == now) {
-			sharpHits[sharpCursor % 3][sharpCursor / 3] = true;
+		if(sharpOrder == null || sharpCursor < 0 || sharpCursor >= sharpOrder.length) return false;
+		if(sharpOrder[sharpCursor] != yIdx * 3 + xIdx) return false;
+		while(sharpCursor < sharpOrder.length
+				&& sharpHitTick[sharpOrder[sharpCursor] % 3][sharpOrder[sharpCursor] / 3] == now) {
+			int seq = sharpOrder[sharpCursor];
+			sharpHits[seq % 3][seq / 3] = true;
 			sharpHitCount++;
 			sharpCursor++;
 		}
@@ -665,17 +785,25 @@ public class GoldorListener implements Listener {
 		return true;
 	}
 
+	/** True if (xIdx, yIdx) is the target the emerald is currently on, i.e. the one the cursor points at through
+	*  {@link #sharpOrder}.  False whenever the device is not armed, so the wall reads all blue. */
+	private boolean isActiveSharpTarget(int xIdx, int yIdx) {
+		if(sharpOrder == null || sharpCursor < 0 || sharpCursor >= sharpOrder.length) return false;
+		return sharpOrder[sharpCursor] == yIdx * 3 + xIdx;
+	}
+
 	/**
 	 * Redraw all nine targets from state: struck ones red, the emerald on the active one, the rest blue.
 	 * <p>
 	 * Drawn from state rather than patched per event, so a skipped target can never be left showing the wrong
 	 * colour - which is exactly what a per-hit {@code setTargetBlock} would do to a target the emerald jumped over.
+	 * Under a random order the emerald's jumps are bigger, not different in kind, so this is still the answer.
 	 */
 	private void renderSharpTargets(World world) {
 		for(int xIdx = 0; xIdx < 3; xIdx++) {
 			for(int yIdx = 0; yIdx < 3; yIdx++) {
 				Material mat = sharpHits[xIdx][yIdx] ? TARGET_HIT
-						: (yIdx * 3 + xIdx == sharpCursor ? TARGET_ACTIVE : TARGET_RESTING);
+						: (isActiveSharpTarget(xIdx, yIdx) ? TARGET_ACTIVE : TARGET_RESTING);
 				setTargetBlock(world, xIdx, yIdx, mat);
 			}
 		}
@@ -701,17 +829,20 @@ public class GoldorListener implements Listener {
 		}
 		sharpHitCount = 0;
 		sharpCursor = -1; // back to "not started": the plate has to begin it again
+		sharpOrder = null; // and the next arming rolls its own order
 		sharpWorld = null;
 		sharpPlateEmptySince = -1;
 	}
 
-	/** Reset the Simon Says global click counter. Invoked on server reset ({@link instructions.Server#serverSetup})
-	 *  so a new run never inherits clicks from a previous (possibly aborted) run. */
+	/** Reset BOTH S1 devices: the stand-in's global click counter and the real one's run (which also puts any lit
+	 *  sea lantern back to obsidian).  Invoked on server reset ({@link instructions.Server#serverSetup}) so a new
+	 *  run never inherits clicks, a half-played sequence or a flash in flight from a previous one. */
 	public void resetSimon() {
 		simonClicks = 0;
+		GoldorSimonSays.INSTANCE.cleanup();
 	}
 
-	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit, and in ultra-realistic an
+	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit, and in realistic an
 	// emerald block marks the ONE target currently being asked for.
 	private static final Material TARGET_RESTING = Material.BLUE_TERRACOTTA;
 	private static final Material TARGET_HIT = Material.RED_TERRACOTTA;
@@ -742,7 +873,7 @@ public class GoldorListener implements Listener {
 	 * {@code if (getSignalForState(state) == 0) checkPressed(...)} - so a plate that is ALREADY powered never calls
 	 * {@code checkPressed}, never fires {@code PlayerInteractEvent} with {@code Action.PHYSICAL}, and
 	 * {@link #onPlateStep} is never reached.  Standing on it does nothing at all, with no error and nothing in the
-	 * log, and in ultra-realistic that means S4 can never be started and the phase can never be completed.
+	 * log, and in realistic that means S4 can never be started and the phase can never be completed.
 	 * <p>
 	 * It gets stuck because the release is a SCHEDULED BLOCK TICK: a plate presses on contact and un-presses from a
 	 * tick it queues for itself. Anything that writes the block without that tick pending - a teardown mid-press, a

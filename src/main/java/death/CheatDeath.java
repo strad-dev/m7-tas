@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The three things that stop an ultra-realistic instakill: Bonzo's Mask, the Spirit Mask and the Phoenix pet.
+ * The three things that stop an instakill: Bonzo's Mask, the Spirit Mask and the Phoenix pet.
  * <p>
  * <b>One entry point.</b> {@link #tryProc(Player)} is called by {@link Deaths#kill} and by nothing else, so every
  * kill site in the plugin inherits the same order of precedence and the same immunity window without knowing any of
@@ -24,6 +24,10 @@ import java.util.UUID;
  * <b>Precedence.</b> A worn mask wins over the pet, and the two masks can never compete because both are helmets
  * and a player wears one hat.  The pet is the fallback: the player is ASSUMED to have a Phoenix out whenever no
  * mask is available, so there is no item to look for and nothing to show a durability bar on.
+ * <p>
+ * <b>The assumption ends in realistic mode</b>, where the player picks their own pet in {@code /pets}: the
+ * Phoenix only procs while it is actually summoned - see {@link #phoenixOut}.  Precedence is untouched by that;
+ * it decides availability, not order.
  * <p>
  * <b>A proc starts two clocks.</b> The immunity window, which is how long the next hit is free, and the item's
  * cooldown.  The action bar shows them on ONE segment in that order - the immunity counting down first, then the
@@ -126,16 +130,38 @@ public final class CheatDeath {
 		return true;
 	}
 
-	/** The first saver in precedence order that {@code p} actually has available, or null if none. */
+	/**
+	 * The first saver in precedence order that {@code p} actually has available, or null if none.
+	 * <p>
+	 * <b>Only availability is decided here; the ORDER is still declaration order</b>, so a mask still wins over
+	 * the pet whatever the mode.
+	 */
 	private static Saver pick(Player p, int now) {
 		ItemStack helmet = p.getInventory().getHelmet();
 		for(Saver s : Saver.values()) {
 			if(onCooldown(p, s, now)) continue;
-			// A worn saver has to actually be on the head.  The pet has no item, so it is always "held".
-			if(s.isWorn() && !isSaverItem(s, helmet)) continue;
+			// A worn saver has to actually be on the head; the pet has to actually be out.
+			if(s.isWorn() ? !isSaverItem(s, helmet) : !phoenixOut(p)) continue;
 			return s;
 		}
 		return null;
+	}
+
+	/**
+	 * Is the Phoenix pet really out?
+	 * <p>
+	 * <b>In every mode but realistic, yes by assumption</b> - which is the whole basis of this saver: no pet is an
+	 * item, so {@code damage/Pet.forPlayer}'s table decides what a player has out, and the table never returns the
+	 * Phoenix.  The mask-less player is simply taken to have had it all along, and that is deliberate.
+	 * <p>
+	 * <b>Realistic mode ({@link damage.Difficulty#manualPets()}) is where that stops being fair</b>: the player
+	 * owns their pet there and pays for it, because a summoned Phoenix trades the Golden Dragon's whole stat block
+	 * and its +250% for this cheat death.  Handing it to them anyway would make that trade free, and the menu's
+	 * one real decision meaningless.
+	 */
+	private static boolean phoenixOut(Player p) {
+		if(!damage.Difficulty.manualPets()) return true;
+		return pets.Pets.equippedDamagePet(p) == damage.Pet.PHOENIX;
 	}
 
 	/**
@@ -299,7 +325,7 @@ public final class CheatDeath {
 	 * <p>
 	 * Per player, since cooldowns are per player.  Appended by {@code Utils.sendActionBar}, which is the one place
 	 * that does the appending, so every HUD in the plugin picks it up without knowing about it.  Empty outside
-	 * ultra-realistic, so no other mode has to know about it either.
+	 * classic, the one mode with no deaths to cheat, so nothing else has to know about it either.
 	 */
 	public static String actionBarSuffix(Player p) {
 		return segments(p);

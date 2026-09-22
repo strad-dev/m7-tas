@@ -35,8 +35,9 @@ import java.util.*;
  *       matching altar block (Y 6/7) to place it, and a wool ItemDisplay appears at y=8.  When all five are
  *       placed the Wither King intro fires.</li>
  *   <li><b>Dragon phase</b>: the Wither King (5 HP) spawns and five dragons must be killed, each removing 1 HP.
- *       The first three spawn on timers (Soul/Ice together, then Flame); the last two (Power, then Apex) begin
- *       their spawn animation the tick the last living dragon is killed.  Dragon kills are detected
+ *       The first three spawn on timers (a pair together, then a third); the last two begin
+ *       their spawn animation the tick the last living dragon is killed.  <b>Which colour takes each of the five
+ *       slots is rolled per run</b> ({@link #spawnOrder}); the schedule underneath them never moves.  Dragon kills are detected
  *       automatically via {@link #handleDragonKilled} (called from {@code damage.Damage.deal}'s kill
  *       chokepoint) and fire {@link #instaKillDragon} + {@link #playDragonDeathSound}.</li>
  * </ol>
@@ -57,7 +58,7 @@ public class WitherKing {
 	/** Cumulative ticks before the Wither-King phase, for the TAS overall column
 	 *  (Clear 738 + Maxor 500 + Storm 860 + Goldor 304 + Necron 600). */
 	private static final int PRE_WITHERKING_TICKS = 3002;
-	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − Apex kill 959). */
+	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − final kill 959). */
 	private static final int END_DELAY_TICKS = 70;
 	/** Alpha: the score lands on top of the kill rather than a second and a half later. */
 	private static final int ALPHA_END_DELAY_TICKS = 10;
@@ -126,20 +127,31 @@ public class WitherKing {
 	private static final Map<String, Integer> dragonSpawnTick = new HashMap<>();
 	private static int aliveCount = 0;
 	/**
-	 * The last dragon that spawns on a timer rather than on a kill, i.e. the one {@link #flameSpawned} latches on.
+	 * The five dragons in the order this run will spawn them.  <b>The SLOTS are fixed and the colours are
+	 * rolled</b>: 0 and 1 are the pair on the 260t clock, 2 is the third timer dragon, and 3 and 4 are the
+	 * event-driven pair that fires when the last living dragon dies.
 	 * <p>
-	 * Normally Flame, the third.  <b>Alpha drops Flame's 600t timer</b> and moves it to the head of the event
-	 * queue, so under alpha the last timer dragon is Ice and Flame begins the moment Soul and Ice are both down.
+	 * Shuffled once, in {@link #witherKingInstructions}, alongside the queue and the latch that have to agree with
+	 * it.  Nothing downstream may name a colour for a slot: {@link #shouldSeeDragonPopup} splits the party by
+	 * whether a dragon is slot 0 or slot 1, not by whether it is Soul or Ice.
+	 */
+	private static final List<String> spawnOrder = new ArrayList<>(List.of("orange", "green", "red", "blue", "purple"));
+	/**
+	 * The last dragon that spawns on a timer rather than on a kill, i.e. the one {@link #lastTimerSpawned} latches on.
+	 * <p>
+	 * Normally {@code spawnOrder} slot 2, the third.  <b>Alpha drops that dragon's 600t timer</b> and moves it to
+	 * the head of the event queue, so under alpha the last timer dragon is slot 1 and slot 2 begins the moment the
+	 * first pair is both down.
 	 * <p>
 	 * LATCHED in {@link #witherKingInstructions} next to the queue it has to agree with: read live, a settings flip
-	 * mid-phase would leave a queue holding Flame and a latch still waiting for it, and no dragon would ever spawn.
+	 * mid-phase would leave a queue holding a dragon and a latch still waiting for it, and no dragon would ever spawn.
 	 */
 	private static String lastTimerDragon = "orange";
 
-	/** True once the last TIMER dragon (see {@link #lastTimerDragon}) has spawned.  This gates the event-driven Power/Apex spawns so the
-	*  early death of Soul or Ice, before Flame appears, can't trigger them. */
-	private static boolean flameSpawned = false;
-	/** Event-spawned dragons, in order: Power then Apex. Spawned when the last living dragon is killed. */
+	/** True once the last TIMER dragon (see {@link #lastTimerDragon}) has spawned.  This gates the event-driven
+	*  spawns so an early death in the opening pair, before the third timer dragon appears, can't trigger them. */
+	private static boolean lastTimerSpawned = false;
+	/** Event-spawned dragons, {@link #spawnOrder} slots 3 and 4. Spawned when the last living dragon is killed. */
 	private static final Deque<String> eventQueue = new ArrayDeque<>();
 	/** Ticks the spawn animation runs before the dragon actually appears (matches the {@link BossScheduler} delay). */
 	private static final int DRAGON_SPAWN_ANIM = 100;
@@ -160,14 +172,18 @@ public class WitherKing {
 		WitherActions.recordSplit("Necron", Utils.runTick());
 
 		eventQueue.clear();
-		// Alpha: Flame is event-driven too, so it heads the queue instead of waiting out a 600t timer, and Ice
+		// Roll which colour takes each spawn slot.  Only the colours move: the schedule underneath them (two on
+		// the 260t clock, one at 600, then two on kills) is the same every run, so nothing about the phase's
+		// timing changes and a run is still comparable with any other.
+		Collections.shuffle(spawnOrder, random);
+		// Alpha: slot 2 is event-driven too, so it heads the queue instead of waiting out a 600t timer, and slot 1
 		// becomes the last dragon on a clock.  The queue and the latch are set together for that reason.
-		lastTimerDragon = Alpha.enabled() ? "blue" : "orange";
-		if(Alpha.enabled()) eventQueue.add("orange"); // Flame
-		eventQueue.add("red");   // Power
-		eventQueue.add("green"); // Apex
+		lastTimerDragon = spawnOrder.get(Alpha.enabled() ? 1 : 2);
+		if(Alpha.enabled()) eventQueue.add(spawnOrder.get(2));
+		eventQueue.add(spawnOrder.get(3));
+		eventQueue.add(spawnOrder.get(4));
 		aliveCount = 0;
-		flameSpawned = false;
+		lastTimerSpawned = false;
 
 		spawnRelics();
 	}
@@ -220,7 +236,7 @@ public class WitherKing {
 	 * <p>
 	 * <b>The relic must never just vanish.</b> The summon needs all five, so a relic lost to a mistake would strand
 	 * the phase; returning it to the statue is the only outcome that leaves the run finishable. It is also why this
-	 * has to run <b>before</b> the death that follows it in ultra-realistic: {@code death/Deaths} snapshots the
+	 * has to run <b>before</b> the death that follows it in a live mode: {@code death/Deaths} snapshots the
 	 * inventory for the revival, so a relic still in hand at that moment would be handed straight back on revival
 	 * while the statue held a second copy of it.
 	 * <p>
@@ -382,9 +398,9 @@ public class WitherKing {
 	 * The Wither King's arrival: the golem-repair and thunder beds, three lines, and the first dragons.
 	 *
 	 * <p><b>Alpha halves the whole approach.</b>  The five golem repairs play on a 10t grid rather than a 20t one
-	 * (20-60 instead of 20-100), the thunder bed ends with the last line, and Soul and Ice no longer spawn
-	 * together: Soul goes with "You... again?" at 60 and Ice with the second line at 120.  Flame's 600t timer is
-	 * gone entirely - see {@link #lastTimerDragon()}.
+	 * (20-60 instead of 20-100), the thunder bed ends with the last line, and the opening pair no longer spawns
+	 * together: slot 0 goes with "You... again?" at 60 and slot 1 with the second line at 120.  Slot 2's 600t
+	 * timer is gone entirely - see {@link #lastTimerDragon}.
 	 */
 	private static void startWitherKingIntro() {
 		int golemStep = Alpha.ticks(20, 10);
@@ -426,12 +442,13 @@ public class WitherKing {
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
 		}, secondLine);
 		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), lastLine);
-		// The timer dragons.  Normally Soul + Ice together at 260 and Flame at 600; alpha spawns Soul and Ice with
-		// the first two lines and hands Flame to the event queue.
-		// Power and Apex are NOT timer-spawned: they fire from handleDragonKilled when the last living dragon dies.
-		Utils.scheduleTask(() -> spawnDragon("purple"), Alpha.ticks(260, 60)); // Soul
-		Utils.scheduleTask(() -> spawnDragon("blue"), Alpha.ticks(260, 120));  // Ice
-		if(!Alpha.enabled()) Utils.scheduleTask(() -> spawnDragon("orange"), 600); // Flame (last timer dragon)
+		// The timer dragons, by SLOT rather than by colour: slots 0 and 1 together at 260 and slot 2 at 600, with
+		// alpha spawning the first two with the first two lines and handing slot 2 to the event queue.  Which
+		// colour is in which slot was rolled in witherKingInstructions.
+		// Slots 3 and 4 are NOT timer-spawned: they fire from handleDragonKilled when the last living dragon dies.
+		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(0)), Alpha.ticks(260, 60));
+		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(1)), Alpha.ticks(260, 120));
+		if(!Alpha.enabled()) Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(2)), 600); // the last timer dragon
 	}
 
 	/** Colored bold display name for a dragon color key (e.g. "orange" → gold-bold "Flame Dragon"). */
@@ -494,7 +511,7 @@ public class WitherKing {
 			dragon.setHealth(damage.MobStats.WITHERED_DRAGON.internalHealth());
 			dragon.addScoreboardTag("WitherKingDragon");
 			aliveCount++;
-			if(color.equals(lastTimerDragon)) flameSpawned = true; // last timer dragon is now alive
+			if(color.equals(lastTimerDragon)) lastTimerSpawned = true; // last timer dragon is now alive
 			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
@@ -509,8 +526,8 @@ public class WitherKing {
 	private static void announceDragonSpawn(String color, String dragonName, Location spawnLocation) {
 		Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
 
-		// Soul (purple) and Ice (blue) spawn on the same tick, so their titles are split by class: Archer and Tank
-		// get Soul, Berserk, Mage and Healer get Ice.  Every later solo dragon titles everyone.
+		// The opening pair spawns on the same tick, so their titles are split by class: Archer and Tank get the
+		// first, Berserk, Mage and Healer get the second.  Every later solo dragon titles everyone.
 		Title.Times times = Title.Times.times(Duration.ZERO, Duration.ofMillis(40 * 50L), Duration.ofMillis(10 * 50L));
 		Title title = Title.title(Utils.msg(dragonName + " <yellow>spawning!"), Utils.msg(""), times);
 		for(Player p : Bukkit.getOnlinePlayers()) {
@@ -521,19 +538,19 @@ public class WitherKing {
 		startDragonCountdown(spawnLocation);
 	}
 
-	/** Which players get a given dragon's spawn title. Ice → Berserk/Mage/Healer; Soul → Archer/Tank (and anyone
-	 *  without one of those class tags); all other dragons → everyone.
-	 *  <p>The split exists only because Soul and Ice normally spawn on the SAME tick and one title would hide the
-	 *  other.  Alpha spawns them 60t apart, so there is nothing to split and both title the whole party. */
+	/** Which players get a given dragon's spawn title. Spawn slot 1 → Berserk/Mage/Healer; slot 0 → Archer/Tank
+	 *  (and anyone without one of those class tags); every later dragon → everyone.
+	 *  <p>The split exists only because the first two normally spawn on the SAME tick and one title would hide the
+	 *  other.  Alpha spawns them 60t apart, so there is nothing to split and both title the whole party.
+	 *  <p><b>Keyed on the SLOT, not the colour</b>: which dragon is first is rolled per run
+	 *  ({@link #spawnOrder}), so a colour test here would hand the split to whichever two happened to come up. */
 	private static boolean shouldSeeDragonPopup(Player p, String color) {
 		if(Alpha.enabled()) return true;
 		var tags = p.getScoreboardTags();
 		boolean iceClass = tags.contains("Berserk") || tags.contains("Mage") || tags.contains("Healer");
-		return switch(color) {
-			case "blue" -> iceClass;   // Ice
-			case "purple" -> !iceClass; // Soul (Archer/Tank + untagged fallback)
-			default -> true;            // Flame / Power / Apex spawn alone
-		};
+		if(color.equals(spawnOrder.get(1))) return iceClass;
+		if(color.equals(spawnOrder.get(0))) return !iceClass;
+		return true; // every dragon after the opening pair spawns alone
 	}
 
 	/** Spawn a large green TextDisplay at {@code spawnLocation} that counts ticks down to the dragon's arrival
@@ -567,8 +584,8 @@ public class WitherKing {
 	/**
 	 * Called the tick a Wither-King dragon's HP reaches 0 (from {@code damage.Damage.deal}'s kill chokepoint).
 	 * Forces the death animation in place and decrements the Wither King's HP.  Once all timer dragons have
-	 * spawned and the arena is clear, it begins the next event dragon's spawn animation (Power, then Apex).  When
-	 * the final dragon (Apex) dies, it kicks off the death sequence.
+	 * spawned and the arena is clear, it begins the next event dragon's spawn animation.  When the fifth and last
+	 * dragon dies, it kicks off the death sequence.
 	 */
 	public static void handleDragonKilled(EnderDragon dragon) {
 		if(dragon == null || dyingDragons.contains(dragon.getUniqueId())) return;
@@ -586,8 +603,8 @@ public class WitherKing {
 		} else {
 			playDragonDeathSound(true);
 			// Begin the next event dragon the tick the last living dragon is killed (guarded on all timer
-			// dragons having spawned, so an early Soul/Ice death before Flame appears can't trigger it).
-			if(flameSpawned && aliveCount <= 0 && !eventQueue.isEmpty()) {
+			// dragons having spawned, so an early death in the opening pair can't trigger it).
+			if(lastTimerSpawned && aliveCount <= 0 && !eventQueue.isEmpty()) {
 				spawnDragon(eventQueue.poll());
 			}
 		}
@@ -887,7 +904,7 @@ public class WitherKing {
 		}
 
 		aliveCount = 0;
-		flameSpawned = false;
+		lastTimerSpawned = false;
 		eventQueue.clear();
 	}
 
