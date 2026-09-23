@@ -37,7 +37,8 @@ import java.util.*;
  *   <li><b>Dragon phase</b>: the Wither King (5 HP) spawns and five dragons must be killed, each removing 1 HP.
  *       The first three spawn on timers (a pair together, then a third); the last two begin
  *       their spawn animation the tick the last living dragon is killed.  <b>Which colour takes each of the five
- *       slots is rolled per run</b> ({@link #spawnOrder}); the schedule underneath them never moves.  Dragon kills are detected
+ *       slots is the set order, and rolled per run in realistic only</b> ({@link #spawnOrder}); the schedule
+ *       underneath them never moves.  Dragon kills are detected
  *       automatically via {@link #handleDragonKilled} (called from {@code damage.Damage.deal}'s kill
  *       chokepoint) and fire {@link #instaKillDragon} + {@link #playDragonDeathSound}.</li>
  * </ol>
@@ -127,15 +128,28 @@ public class WitherKing {
 	private static final Map<String, Integer> dragonSpawnTick = new HashMap<>();
 	private static int aliveCount = 0;
 	/**
-	 * The five dragons in the order this run will spawn them.  <b>The SLOTS are fixed and the colours are
-	 * rolled</b>: 0 and 1 are the pair on the 260t clock, 2 is the third timer dragon, and 3 and 4 are the
-	 * event-driven pair that fires when the last living dragon dies.
+	 * The order the colours take the five spawn slots when the dungeon is NOT rolling against you, which is classic
+	 * and Perfect RNG.  Realistic rolls instead - see {@link #spawnOrder}.
 	 * <p>
-	 * Shuffled once, in {@link #witherKingInstructions}, alongside the queue and the latch that have to agree with
-	 * it.  Nothing downstream may name a colour for a slot: {@link #shouldSeeDragonPopup} splits the party by
-	 * whether a dragon is slot 0 or slot 1, not by whether it is Soul or Ice.
+	 * <b>This is the order the phase was hardcoded to before it was ever rolled</b> (v2.8.0 and earlier): Soul and
+	 * Ice together on the 260t clock, Flame at 600, then Power and Apex on kills.  It is not an arbitrary listing
+	 * - a practised route names these dragons - so do not reorder it to match some other list.
 	 */
-	private static final List<String> spawnOrder = new ArrayList<>(List.of("orange", "green", "red", "blue", "purple"));
+	private static final List<String> SET_SPAWN_ORDER = List.of("purple", "blue", "orange", "red", "green");
+	/**
+	 * The five dragons in the order this run will spawn them.  <b>The SLOTS are fixed</b>: 0 and 1 are the pair on
+	 * the 260t clock, 2 is the third timer dragon, and 3 and 4 are the event-driven pair that fires when the last
+	 * living dragon dies.
+	 * <p>
+	 * <b>The colours are rolled in realistic only.</b>  Classic and Perfect RNG get {@link #SET_SPAWN_ORDER} every
+	 * run, because a known wall of dragons is what "the dungeon rolls in your favour" means here and a practised
+	 * route can name which one is coming; realistic takes that away.  Settled once, in
+	 * {@link #witherKingInstructions}, alongside the queue and the latch that have to agree with it.
+	 * <p>
+	 * Nothing downstream may name a colour for a slot: {@link #shouldSeeDragonPopup} splits the party by whether a
+	 * dragon is slot 0 or slot 1, not by whether it is Soul or Ice.
+	 */
+	private static final List<String> spawnOrder = new ArrayList<>(SET_SPAWN_ORDER);
 	/**
 	 * The last dragon that spawns on a timer rather than on a kill, i.e. the one {@link #lastTimerSpawned} latches on.
 	 * <p>
@@ -172,10 +186,14 @@ public class WitherKing {
 		WitherActions.recordSplit("Necron", Utils.runTick());
 
 		eventQueue.clear();
-		// Roll which colour takes each spawn slot.  Only the colours move: the schedule underneath them (two on
-		// the 260t clock, one at 600, then two on kills) is the same every run, so nothing about the phase's
-		// timing changes and a run is still comparable with any other.
-		Collections.shuffle(spawnOrder, random);
+		// Which colour takes each spawn slot.  Realistic rolls it; the other two modes get the set order, so the
+		// list is rebuilt from SET_SPAWN_ORDER first - a shuffle is in place, and without this a realistic run
+		// would leave its permutation behind for the next classic one.  Only the colours move either way: the
+		// schedule underneath them (two on the 260t clock, one at 600, then two on kills) is the same every run,
+		// so nothing about the phase's timing changes and a run is still comparable with any other.
+		spawnOrder.clear();
+		spawnOrder.addAll(SET_SPAWN_ORDER);
+		if(damage.Difficulty.realPuzzles()) Collections.shuffle(spawnOrder, random);
 		// Alpha: slot 2 is event-driven too, so it heads the queue instead of waiting out a 600t timer, and slot 1
 		// becomes the last dragon on a clock.  The queue and the latch are set together for that reason.
 		lastTimerDragon = spawnOrder.get(Alpha.enabled() ? 1 : 2);
@@ -547,7 +565,7 @@ public class WitherKing {
 	 *  (and anyone without one of those class tags); every later dragon → everyone.
 	 *  <p>The split exists only because the first two normally spawn on the SAME tick and one title would hide the
 	 *  other.  Alpha spawns them 60t apart, so there is nothing to split and both title the whole party.
-	 *  <p><b>Keyed on the SLOT, not the colour</b>: which dragon is first is rolled per run
+	 *  <p><b>Keyed on the SLOT, not the colour</b>: which dragon is first is rolled per run in realistic
 	 *  ({@link #spawnOrder}), so a colour test here would hand the split to whichever two happened to come up. */
 	private static boolean shouldSeeDragonPopup(Player p, String color) {
 		if(Alpha.enabled()) return true;

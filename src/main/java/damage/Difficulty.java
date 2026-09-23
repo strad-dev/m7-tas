@@ -26,10 +26,12 @@ import plugin.Utils;
  * debuffs and a blessing count.  It is the mode the TAS was reasoned about in, and it is the default.
  * <p>
  * <b>Perfect RNG and realistic differ only in what a player has to do BY HAND</b>, never in damage.  Perfect RNG
- * is the run where the dungeon always rolls in your favour: terminals are one click, the devices are the short
- * stand-ins, and the pet you need is always the pet you have.  Realistic takes that away - {@link #realPuzzles()}
- * turns on the generated terminal puzzles and the real Simon Says / Arrow Align / Sharp Shooter, and
- * {@link #manualPets()} makes the player carry their own pet menu.  Neither touches a formula.
+ * is the run where the dungeon always rolls in your favour: a terminal opens on a board that has already fallen
+ * out the easy way, Sharp Shooter walks its targets in the one order a player can learn, the dragons take their
+ * set colours, and the pet you need is always the pet you have.  Realistic takes that away - {@link #realPuzzles()}
+ * turns on the generated terminal puzzles, the real Simon Says / Arrow Align, Sharp Shooter's rolled order and
+ * the rolled dragon order, and {@link #manualPets()} makes the player carry their own pet menu.  Neither touches
+ * a formula.
  * <p>
  * Ask "are the inputs live?" with {@link #liveInputs()}, never with {@code == PERFECT_RNG}: that comparison
  * silently drops realistic back to the classic tables.
@@ -44,9 +46,10 @@ public enum Difficulty {
 	/** The TAS calculation style: all four debuffs applied, blessings maxed, nobody can die.  The default. */
 	CLASSIC("classic", "Classic"),
 	/**
-	 * Live damage inputs and death, but the dungeon itself never fights back: one-click terminals, the short
-	 * devices, and the assumed pet table.  <b>This is what used to be called "Realistic"</b>, and the old
-	 * "Ultra Realistic" folded into it - see the network plugin's {@code Leaderboards} migration.
+	 * Live damage inputs and death, but every roll the dungeon makes goes your way: stand-in terminal boards, the
+	 * Sharp Shooter and dragon orders fixed, and the assumed pet table.  <b>This is what used to be called
+	 * "Realistic"</b>, and the old "Ultra Realistic" folded into it - see the network plugin's {@code Leaderboards}
+	 * migration, and it is where the stand-in terminal boards come from.
 	 */
 	PERFECT_RNG("perfect_rng", "Perfect RNG"),
 	/**
@@ -184,12 +187,13 @@ public enum Difficulty {
 	}
 
 	/**
-	 * True while the dungeon's puzzles are the real, generated ones rather than the short stand-ins: the terminal
-	 * GUIs of {@code goldor/GoldorTerminalGui} and the working Simon Says, Arrow Align and Sharp Shooter.
+	 * True while the dungeon's content is the real, generated version rather than the short stand-in: the generated
+	 * terminal boards of {@code goldor/GoldorTerminalGui}, the working Simon Says and Arrow Align, and every order
+	 * the dungeon rolls - Sharp Shooter's nine targets and the Wither King's five dragon colours.
 	 * <p>
-	 * <b>Realistic only.</b>  Perfect RNG is the mode where the dungeon rolls in your favour, so a terminal is one
-	 * click and a device is the short stand-in.  This changes no damage and no timing anywhere - it only decides
-	 * how much work a section costs - so nothing in {@code damage/} may ever read it.
+	 * <b>Realistic only.</b>  Perfect RNG is the mode where the dungeon rolls in your favour, so its boards open
+	 * nearly solved and its orders are the fixed ones a player can learn.  This changes no damage and no timing
+	 * anywhere - it only decides how much work a section costs - so nothing in {@code damage/} may ever read it.
 	 */
 	public static boolean realPuzzles() {
 		return current == REALISTIC;

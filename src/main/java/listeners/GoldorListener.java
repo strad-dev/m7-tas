@@ -72,26 +72,29 @@ public class GoldorListener implements Listener {
 	private final boolean[][] sharpHits = new boolean[3][3]; // [xIdx 0..2 → 68/66/64][yIdx 0..2 → 130/128/126]
 	private int sharpHitCount = 0;
 	/**
-	 * REALISTIC ONLY: how far along {@link #sharpOrder} the emerald block is, 0..8, or -1 before the plate has
+	 * LIVE MODES ONLY: how far along {@link #sharpOrder} the emerald block is, 0..8, or -1 before the plate has
 	 * started the device and 9 once it has run off the end.
 	 * <p>
 	 * <b>An index into the permutation, not a target.</b>  The target it is currently on is
 	 * {@code sharpOrder[sharpCursor]}, itself encoded {@code seq = yIdx * 3 + xIdx} over {@code TARGET_XS} /
-	 * {@code TARGET_YS}.  It used to BE that encoding, which made the walk the fixed -X-then-Y order; the order is
-	 * now rolled per arming, so nothing may go back to treating the cursor as a position on the wall.  Each of the
-	 * nine is the active block at most once either way; it never loops.
+	 * {@code TARGET_YS}.  It used to BE that encoding, which made the walk the fixed -X-then-Y order; realistic
+	 * rolls the order per arming now, so nothing may go back to treating the cursor as a position on the wall -
+	 * not even for Perfect RNG, whose order is that fixed walk again but still reached through the permutation.
+	 * Each of the nine is the active block at most once either way; it never loops.
 	 */
 	private int sharpCursor = -1;
 	/**
-	 * REALISTIC ONLY: the order the emerald walks the nine targets, as a permutation of the nine
+	 * LIVE MODES ONLY: the order the emerald walks the nine targets, as a permutation of the nine
 	 * {@code seq = yIdx * 3 + xIdx} encodings, or null while the device is not armed.
 	 * <p>
-	 * Rolled fresh every time the plate arms the device ({@link #onPlateStep}) and dropped by
-	 * {@link #resetSharpHits}, so stepping off and back on is a new wall, not the same one again.
+	 * <b>Realistic rolls it fresh every time the plate arms the device</b> ({@link #onPlateStep}), so stepping off
+	 * and back on is a new wall rather than the same one again; <b>Perfect RNG always gets
+	 * {@link #SEQUENTIAL_SHARP_ORDER}</b>, the fixed walk, because that mode is the one where the dungeon rolls in
+	 * your favour and a known wall is what that means here.  Dropped by {@link #resetSharpHits} either way.
 	 */
 	private int[] sharpOrder;
 	/**
-	 * REALISTIC ONLY: the server tick an arrow last struck each target, or {@code Integer.MIN_VALUE} for never.
+	 * LIVE MODES ONLY: the server tick an arrow last struck each target, or {@code Integer.MIN_VALUE} for never.
 	 * <p>
 	 * <b>Scratch for one tick, not a bank.</b>  A hit on anything that is not the active target does not count - it
 	 * only leaves this stamp, and the stamp is worth something solely while the tick it names is still the current
@@ -178,10 +181,11 @@ public class GoldorListener implements Listener {
 
 			term.setPending();
 			Actions.clearMovementInput(p);
-			// Realistic: the click opens the terminal's puzzle and solving it is what activates.  The pending
+			// Both live modes: the click opens the terminal's puzzle and solving it is what activates.  The pending
 			// flag now spans the whole time the GUI is open, which is what makes a terminal one player's at a time.
-			// realPuzzles(), never deathsEnabled(): Perfect RNG has death but keeps the one-click terminal.
-			if(damage.Difficulty.realPuzzles()) {
+			// deathsEnabled(), not realPuzzles(): Perfect RNG opens a terminal too, on the short stand-in board -
+			// GoldorTerminalGui picks which board - and only classic keeps the one-click terminal.
+			if(damage.Difficulty.deathsEnabled()) {
 				GoldorTerminalGui.open(p, term);
 				return true;
 			}
@@ -195,7 +199,7 @@ public class GoldorListener implements Listener {
 		return false;
 	}
 
-	// =================== Terminal puzzle GUI (realistic only) ===================
+	// =================== Terminal puzzle GUI (live modes only) ===================
 
 	/**
 	 * Every click inside a terminal puzzle, in either inventory, is cancelled first and only then read as a possible
@@ -481,20 +485,22 @@ public class GoldorListener implements Listener {
 		Utils.scheduleTask(() -> { if(!Goldor.INSTANCE.isPhaseInactive()) action.accept(true); }, 1L);
 	}
 
-	// =================== Item frame rotation: ONLY the nine Arrow Align frames may be touched ===================
+	// =================== Item frame rotation: ONLY the device's frames may be touched ===================
 	// PHASE-INDEPENDENT, matching the punch and break guards below.  This used to gate the whole thing on an active
 	// phase and simply return otherwise, so before Goldor spun up - in prep, and between phases - every frame in
-	// the wall could be freely rotated, which is not recoverable: nothing re-randomises the grid mid-run.
+	// the wall could be freely rotated, which is not recoverable: nothing re-deals the grid mid-run.
 	//
-	// Which frames are the device is Goldor.isArrowAlignFrame - STATIC, and answered off the frame's own position
-	// and item - precisely so this can answer while the phase is still inactive, before any frame has been scanned
-	// for.  Every other frame in the wall stays untouchable in every phase.
+	// Which frames those are is Goldor.isTurnableArrowFrame - STATIC, and answered off the frame's own position and
+	// item - precisely so this can answer while the phase is still inactive, before any frame has been scanned for.
+	// It is MODE-DEPENDENT: all nine in realistic, and outside it only the stand-in's one unfinished frame, since
+	// the other eight already read the answer there.  Every other frame in the wall stays untouchable in every
+	// phase and every mode.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInteractEntity(PlayerInteractEntityEvent e) {
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
 		Player p = e.getPlayer();
 		if(!Goldor.INSTANCE.isInS3FrameRegion(frame)) return; // frames outside S3 behave normally
-		if(Goldor.isArrowAlignFrame(frame)) {
+		if(Goldor.isTurnableArrowFrame(frame)) {
 			if(Goldor.INSTANCE.isPhaseInactive()) {
 				// Defer a solve that lands before the phase spins up (full-run chain timing) and cancel the vanilla
 				// rotation now - processArrowFrame turns the frame itself when it fires, so letting vanilla turn it
@@ -520,14 +526,15 @@ public class GoldorListener implements Listener {
 	 * rotation, so the one-step turn is done here - and the caller must then cancel the event so a click vanilla
 	 * DID reach isn't worth two steps.
 	 * <p>
-	 * In realistic all nine frames have to read ordinal 1 at once; in classic and Perfect RNG the first click on
-	 * any of them activates, which is the one-frame stand-in the device has always had in those modes.  Safe to
-	 * call from the deferred path, since it re-checks all state.
+	 * In realistic all nine frames have to read ordinal 1 at once; in classic and Perfect RNG only the bottom-left
+	 * frame can get here at all ({@code Goldor.isTurnableArrowFrame}) and turning it activates, which is the
+	 * one-frame stand-in the device has always had in those modes.  Safe to call from the deferred path, since it
+	 * re-checks all state, the mode included.
 	 */
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return false; // guarded here, not in onInteractEntity, since frame PROTECTION still applies to spectators
 		if(Goldor.INSTANCE.isPhaseInactive()) return false;
-		if(!Goldor.isArrowAlignFrame(frame)) return false;
+		if(!Goldor.isTurnableArrowFrame(frame)) return false;
 		GoldorSection s3 = Goldor.INSTANCE.getSection(2);
 		if(s3 == null || s3.device.isActivated()) return false;
 		frame.setRotation(frame.getRotation().rotateClockwise());
@@ -546,7 +553,7 @@ public class GoldorListener implements Listener {
 	public void onInteractAtFrame(PlayerInteractAtEntityEvent e) {
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
 		if(!Goldor.INSTANCE.isInS3FrameRegion(frame)) return;
-		if(Goldor.isArrowAlignFrame(frame)) return;
+		if(Goldor.isTurnableArrowFrame(frame)) return;
 		if(e.getPlayer().getGameMode() == GameMode.CREATIVE) return; // creative bypass
 		e.setCancelled(true);
 	}
@@ -571,12 +578,16 @@ public class GoldorListener implements Listener {
 		}
 	}
 
-	// =================== Sharp Shooter: the plate starts it (realistic only) ===================
+	// =================== Sharp Shooter: the plate starts it (live modes only) ===================
 
 	/**
-	 * Stepping on the gold pressure plate BEGINS the S4 device: the emerald block appears on the first target of a
-	 * freshly rolled order and the player shoots their way along it.  Realistic only - the other two modes keep the
-	 * original device, where the nine targets are hit in any order and the plate has to be held for each hit.
+	 * Stepping on the gold pressure plate BEGINS the S4 device: the emerald block appears on the first target of
+	 * the order and the player shoots their way along it.  <b>Both live modes</b> - classic keeps the original
+	 * device, where the nine targets are hit in any order and the plate has to be held for each hit.
+	 * <p>
+	 * <b>Which order is the mode's whole difference here.</b>  Realistic rolls a fresh permutation per arming;
+	 * Perfect RNG gets {@link #SEQUENTIAL_SHARP_ORDER}, the fixed -X-then-Y walk this device had when it was
+	 * ultra-realistic mode's, so a player can learn the wall and shoot it blind.
 	 * <p>
 	 * {@code Action.PHYSICAL} is the pressure-plate event, which is why this is its own handler rather than a branch
 	 * in {@link #onInteract} - that one returns early for anything that is not a left or right click, and its
@@ -592,20 +603,32 @@ public class GoldorListener implements Listener {
 		Block b = e.getClickedBlock();
 		if(b == null || b.getX() != PLATE_X || b.getY() != PLATE_Y || b.getZ() != PLATE_Z) return;
 		if(cannotSolve(e.getPlayer())) return;
-		if(!damage.Difficulty.realPuzzles()) return;
+		if(!damage.Difficulty.deathsEnabled()) return;
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		if(sharpCursor >= 0) return; // already running; a second step is not a restart
 
 		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
 		if(s4 == null || s4.device.isActivated()) return;
 
-		// The order is rolled HERE, per arming, so stepping off and back on deals a new wall rather than the same
-		// one again.  resetSharpHits drops it, and until then sharpOrder is what the cursor indexes.
-		sharpOrder = randomSharpOrder();
+		// The order is decided HERE, per arming, so stepping off and back on deals a new wall rather than the same
+		// one again.  resetSharpHits drops it, and until then sharpOrder is what the cursor indexes.  Perfect RNG's
+		// copy is defensive: nothing mutates it today, and one shared array would be a trap for whatever does.
+		sharpOrder = damage.Difficulty.realPuzzles()
+				? randomSharpOrder()
+				: SEQUENTIAL_SHARP_ORDER.clone();
 		sharpCursor = 0;
 		sharpWorld = b.getWorld();
 		renderSharpTargets(sharpWorld);
 	}
+
+	/**
+	 * Perfect RNG's fixed walk: the nine {@code seq = yIdx * 3 + xIdx} encodings in their own order, which reads
+	 * -X across a row and then -Y down to the next one, from (68, 130) to (64, 126).
+	 * <p>
+	 * It is written out rather than generated because it is a piece of the mode's content - the wall a player
+	 * learns - and not an identity permutation that happens to be lying around.
+	 */
+	private static final int[] SEQUENTIAL_SHARP_ORDER = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 	/** A fresh permutation of the nine {@code seq = yIdx * 3 + xIdx} target encodings (Fisher-Yates). */
 	private static int[] randomSharpOrder() {
@@ -717,10 +740,9 @@ public class GoldorListener implements Listener {
 	 * Register a single Sharp Shooter target hit (idempotent per target).  Completes the S4 device on the ninth
 	 * distinct hit either way.  Re-checks all gates itself so it is safe to call from a deferred (next-tick) task.
 	 * <p>
-	 * <b>Two devices behind one hit.</b>  Classic and Perfect RNG keep the original: any order, checked against the
-	 * plate per hit.  Realistic is sequential - {@link #onPlateStep} begins it, rolls the order and an emerald block
-	 * marks the target to shoot - and the plate is watched per tick instead, so stepping off resets the whole
-	 * device.
+	 * <b>Two devices behind one hit.</b>  Classic keeps the original: any order, checked against the plate per hit.
+	 * Both live modes are sequential - {@link #onPlateStep} begins it, settles the order and an emerald block marks
+	 * the target to shoot - and the plate is watched per tick instead, so stepping off resets the whole device.
 	 * <p>
 	 * <b>Only the ACTIVE target counts</b> in the sequential device.  An arrow anywhere else on the wall does
 	 * nothing at all - it is not banked for later, and the nine cannot be picked off out of order.
@@ -735,7 +757,7 @@ public class GoldorListener implements Listener {
 		if(Goldor.INSTANCE.isPhaseInactive()) return;
 		GoldorSection s4 = Goldor.INSTANCE.getSection(3);
 		if(s4 == null || s4.device.isActivated()) return;
-		boolean sequential = damage.Difficulty.realPuzzles();
+		boolean sequential = damage.Difficulty.deathsEnabled();
 		// The plate is a per-hit requirement in the old device and a one-off start in the sequential one.
 		if(sequential ? sharpCursor < 0 : !isPlayerOnPlate()) return;
 		if(sharpHits[xIdx][yIdx]) return;
@@ -807,7 +829,8 @@ public class GoldorListener implements Listener {
 	 * <p>
 	 * Drawn from state rather than patched per event, so a skipped target can never be left showing the wrong
 	 * colour - which is exactly what a per-hit {@code setTargetBlock} would do to a target the emerald jumped over.
-	 * Under a random order the emerald's jumps are bigger, not different in kind, so this is still the answer.
+	 * Under realistic's random order the emerald's jumps are bigger, not different in kind, so this is still the
+	 * answer.
 	 */
 	private void renderSharpTargets(World world) {
 		for(int xIdx = 0; xIdx < 3; xIdx++) {
@@ -852,7 +875,7 @@ public class GoldorListener implements Listener {
 		GoldorSimonSays.INSTANCE.cleanup();
 	}
 
-	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit, and in realistic an
+	// Sharp Shooter target block materials: blue = resting/solved, red = arrow-hit, and in the live modes an
 	// emerald block marks the ONE target currently being asked for.
 	private static final Material TARGET_RESTING = Material.BLUE_TERRACOTTA;
 	private static final Material TARGET_HIT = Material.RED_TERRACOTTA;
@@ -883,7 +906,7 @@ public class GoldorListener implements Listener {
 	 * {@code if (getSignalForState(state) == 0) checkPressed(...)} - so a plate that is ALREADY powered never calls
 	 * {@code checkPressed}, never fires {@code PlayerInteractEvent} with {@code Action.PHYSICAL}, and
 	 * {@link #onPlateStep} is never reached.  Standing on it does nothing at all, with no error and nothing in the
-	 * log, and in realistic that means S4 can never be started and the phase can never be completed.
+	 * log, and in either live mode that means S4 can never be started and the phase can never be completed.
 	 * <p>
 	 * It gets stuck because the release is a SCHEDULED BLOCK TICK: a plate presses on contact and un-presses from a
 	 * tick it queues for itself. Anything that writes the block without that tick pending - a teardown mid-press, a

@@ -11,10 +11,11 @@ import plugin.Utils;
 /**
  * One Goldor terminal: the Interaction hitbox players click and the two floating labels above it.
  * <p>
- * <b>Two behaviours, one terminal.</b>  In classic and Perfect RNG mode a click activates it outright.  In
- * realistic mode the click opens {@link GoldorTerminalGui} and only solving the puzzle activates it - hence
- * {@link #type}, set once as the section is built so a terminal keeps the same puzzle for the whole phase however
- * many times it is opened and abandoned.  Either way {@link #markActivated} is the single finish line.
+ * <b>Two behaviours, one terminal.</b>  In classic a click activates it outright.  In both live modes it opens
+ * {@link GoldorTerminalGui} - realistic's generated puzzle or Perfect RNG's short stand-in board - and only
+ * solving it activates the terminal, hence {@link #type}, set once as the section is built so a terminal keeps
+ * the same puzzle for the whole phase however many times it is opened and abandoned.  Either way
+ * {@link #markActivated} is the single finish line.
  */
 public final class GoldorTerminal {
 	public static final String TAG_PREFIX = "goldor_terminal_";
@@ -34,7 +35,7 @@ public final class GoldorTerminal {
 	private boolean activated = false;
 	private boolean pending = false;
 	/**
-	 * Which puzzle this terminal poses in realistic mode.
+	 * Which puzzle this terminal poses in the live modes.
 	 * <p>
 	 * <b>Assigned by the SECTION, not here</b> ({@link GoldorTerminalGui#assignTypes}, from
 	 * {@link GoldorSection}'s constructor).  A terminal cannot roll its own: the rule is "at most one of each type
@@ -44,9 +45,10 @@ public final class GoldorTerminal {
 	private GoldorTerminalGui.Type type;
 
 	/**
-	 * Block the Interaction hitbox was spawned on.  This used to be read by {@link GoldorTerminalGui} to find the
-	 * one terminal Melody was pinned to; there is no pin any more, so nothing reads it and it is kept only because
-	 * "where is this terminal" is the first thing anybody debugging one wants.
+	 * Block the Interaction hitbox was spawned on.  Read by {@link GoldorTerminalGui#assignTypes} for the STAND-IN
+	 * set's Melody pin (S2's fifth terminal, {@code 40 124 123}); the generated set has no pin and deals Melody
+	 * like any other card.  Worth keeping either way - "where is this terminal" is the first thing anybody
+	 * debugging one wants.
 	 */
 	public final int x, y, z;
 
@@ -102,7 +104,7 @@ public final class GoldorTerminal {
 		pending = false;
 	}
 
-	/** The puzzle this terminal poses in realistic mode. */
+	/** The puzzle this terminal poses in the live modes. */
 	public GoldorTerminalGui.Type type() {
 		return type;
 	}

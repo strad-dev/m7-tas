@@ -80,13 +80,16 @@ Lightning will not actually kill you, *unless* the run is in **Perfect RNG** or 
 **Perfect RNG mode**
 
 Everything real about the damage, plus death: live debuffs, the blessings you actually collected, and the
-instakills below.  What it does *not* do is make the dungeon fight back - the RNG always rolls your way, so
-terminals are one click, the devices are the short stand-ins, and the pet you need is the pet you have.
+instakills below.  What it does *not* do is make the dungeon fight back - the RNG always rolls your way, so a
+terminal opens one click from solved, Sharp Shooter always walks its targets in the same order, the Wither King's
+dragons take their set colours, Simon Says and Arrow Align are the short stand-ins, and the pet you need is the
+pet you have.
 
 **Realistic mode**
 
 Everything Perfect RNG does, plus all the work a real run makes you do by hand: generated terminal puzzles, the
-real Simon Says / Arrow Align / Sharp Shooter, and your own pet menu (`/pets` and `/petloadout`, below).
+real Simon Says and Arrow Align, a Sharp Shooter order and a dragon order rolled per run, and your own pet menu
+(`/pets` and `/petloadout`, below).
 
 **Death (both of the above)**
 

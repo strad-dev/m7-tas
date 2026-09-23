@@ -26,10 +26,16 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 /**
- * The terminal puzzle a player actually solves in realistic mode.
+ * The terminal puzzle a player actually solves in the two live modes.
  * <p>
- * Every other mode keeps the original one-click terminal ({@code GoldorListener.tryActivateTerminal}); here the
- * click opens one of these instead, and the terminal only activates when the puzzle is solved.  <b>Nothing else
+ * Classic keeps the original one-click terminal ({@code GoldorListener.tryActivateTerminal}); in Perfect RNG and
+ * realistic the click opens one of these instead, and the terminal only activates when the puzzle is solved.
+ * <p>
+ * <b>Two boards behind one class</b>, chosen by {@code Difficulty.realPuzzles()} at every open.  Realistic gets
+ * the generated puzzle; Perfect RNG gets the SHORT STAND-IN board - one obvious answer to click - which is the
+ * terminal ultra-realistic mode shipped before the generated ones existed, and is what "the dungeon rolls in your
+ * favour" means for a terminal.  The two share this class rather than living apart because everything around the
+ * board is common: the type, the title, the pending flag, the listener wiring and the teardown.  <b>Nothing else
  * about the Goldor phase changes</b>: the activation still goes through {@code Goldor.onActivation}, so the
  * section counter, the broadcast, the timing lines and the gate all behave identically whichever mode is on.
  * <p>
@@ -104,8 +110,23 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	}
 
 	/**
+	 * The one terminal the STAND-IN set's Melody may sit on: S2's fifth, at {@code 40 124 123}.  Ultra-realistic
+	 * pinned Melody there and the stand-in set keeps the pin, so the board a player meets on a given terminal is
+	 * the one they met last run.
+	 */
+	private static final int STANDIN_MELODY_X = 40, STANDIN_MELODY_Y = 124, STANDIN_MELODY_Z = 123;
+
+	/** What the stand-in set deals off that pin.  <b>Click In Order is not in it</b> - see {@link #assignTypes}. */
+	private static final List<Type> STANDIN_POOL =
+			List.of(Type.ON_OFF, Type.SAME_COLOR, Type.SELECT_ALL, Type.STARTS_WITH);
+
+	/**
 	 * Give every terminal in one section its puzzle.  Called from {@link GoldorSection}'s constructor, which is the
 	 * one place that sees a whole section's terminals at once.
+	 * <p>
+	 * <b>The stand-in set deals differently</b> ({@link #assignStandInTypes}), because it is ultra-realistic's set
+	 * rather than a cheaper rendering of this one: Melody only on the pinned terminal, and no Click In Order at
+	 * all - that type was added long after, so the stand-in set has no board of its own for it.
 	 * <p>
 	 * <b>At most one terminal of each type per section</b>, so the types are dealt out WITHOUT replacement from a
 	 * shuffled pool - the composition of a section is therefore fixed and only the order is random.  That rule is
@@ -121,7 +142,32 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * rather than something to paper over, so it is logged and the pool reused.
 	 */
 	static void assignTypes(List<GoldorTerminal> terminals) {
-		List<Type> pool = new ArrayList<>(List.of(Type.values()));
+		if(!damage.Difficulty.realPuzzles()) {
+			assignStandInTypes(terminals);
+			return;
+		}
+		deal(terminals, new ArrayList<>(List.of(Type.values())));
+	}
+
+	/**
+	 * Ultra-realistic's deal, which is what Perfect RNG gets: <b>Melody on the pinned terminal and nowhere else</b>
+	 * ({@link #STANDIN_MELODY_X}), the other four dealt without replacement from {@link #STANDIN_POOL}.
+	 * <p>
+	 * The arithmetic works out exactly: every section has four terminals that are not the pin, and the pool is
+	 * four, so each section shows all four and at most one of each - the same rule the generated deal follows,
+	 * reached from the other direction.
+	 */
+	private static void assignStandInTypes(List<GoldorTerminal> terminals) {
+		List<GoldorTerminal> rest = new ArrayList<>(terminals.size());
+		for(GoldorTerminal t : terminals) {
+			if(t.x == STANDIN_MELODY_X && t.y == STANDIN_MELODY_Y && t.z == STANDIN_MELODY_Z) t.setType(Type.MELODY);
+			else rest.add(t);
+		}
+		deal(rest, new ArrayList<>(STANDIN_POOL));
+	}
+
+	/** Shuffle {@code pool} and hand it out one per terminal, warning and reusing it if a section outruns it. */
+	private static void deal(List<GoldorTerminal> terminals, List<Type> pool) {
 		Collections.shuffle(pool, RANDOM);
 		int dealt = 0;
 		for(GoldorTerminal t : terminals) {
@@ -308,6 +354,15 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	private final Inventory inv;
 	private final GoldorTerminal terminal;
 	public final Type type;
+	/**
+	 * True when this view is the short STAND-IN board (Perfect RNG) rather than the generated puzzle (realistic).
+	 * <p>
+	 * Read at build and at every click, never anywhere else: the type, the title and the terminal are the same
+	 * either way, so a stand-in view is the real thing with an easier board in it.
+	 */
+	private final boolean standIn;
+	/** Stand-in only: the one slot that solves this board, or -1 for a type that is not solved by a single click. */
+	private int standInAnswer = -1;
 	/** Latched the moment the puzzle is solved, so a second click in the same tick can't activate twice. */
 	private boolean solved;
 
@@ -354,10 +409,12 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	private int melodyFreeze;
 	private BukkitTask melodyTicker;
 
-	private GoldorTerminalGui(GoldorTerminal terminal, Type type) {
+	private GoldorTerminalGui(GoldorTerminal terminal, Type type, boolean standIn) {
 		this.terminal = terminal;
 		this.type = type;
+		this.standIn = standIn;
 		// The two template titles need their subject before the inventory exists, so that roll happens first.
+		// The stand-in rolls them too: its answer item is built off the same colour or letter the title names.
 		rollTitleSubject();
 		this.inv = Bukkit.createInventory(this, type.size, Utils.msg("<dark_gray>" + title()));
 		build();
@@ -365,11 +422,12 @@ public final class GoldorTerminalGui implements InventoryHolder {
 
 	/** Open {@code terminal}'s puzzle for {@code p}.  The caller owns the pending flag and every gate. */
 	public static void open(Player p, GoldorTerminal terminal) {
-		GoldorTerminalGui gui = new GoldorTerminalGui(terminal, terminal.type());
+		GoldorTerminalGui gui = new GoldorTerminalGui(terminal, terminal.type(), !damage.Difficulty.realPuzzles());
 		p.openInventory(gui.inv);
 		// Started here rather than in the constructor: the ticker cancels itself the moment the chest has no
-		// viewers, and in the constructor the chest has none yet.
-		if(gui.type == Type.MELODY) gui.startMelodyTicker();
+		// viewers, and in the constructor the chest has none yet.  The stand-in Melody has no mover to run: its
+		// board is built with the mover parked on target, so every button click is on the beat.
+		if(gui.type == Type.MELODY && !gui.standIn) gui.startMelodyTicker();
 	}
 
 	@Override
@@ -421,6 +479,10 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	// ==================== rendering ====================
 
 	private void build() {
+		if(standIn) {
+			buildStandIn();
+			return;
+		}
 		switch(type) {
 			case ON_OFF -> buildOnOff();
 			case SAME_COLOR -> buildSameColor();
@@ -749,6 +811,10 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/**
 	 * Two rows of numbered panes, 1..14 (1..10 in alpha), shuffled.  <b>The number is the stack size</b>, which is
 	 * also where the solver reads it back from on a click - the chest is the only copy of the permutation.
+	 * <p>
+	 * <b>The stand-in deals them in order instead of shuffling.</b>  That board is a fallback rather than content:
+	 * the stand-in set never deals this type ({@link #assignTypes}), so it is only built if the mode changed under
+	 * an already-built section.
 	 */
 	private void buildClickInOrder() {
 		fill(FILLER);
@@ -756,10 +822,105 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		lastNumber = slots.length;
 		List<Integer> numbers = new ArrayList<>();
 		for(int n = 1; n <= lastNumber; n++) numbers.add(n);
-		Collections.shuffle(numbers, RANDOM);
+		if(!standIn) Collections.shuffle(numbers, RANDOM);
 		for(int i = 0; i < slots.length; i++) {
 			inv.setItem(slots[i], item(Material.RED_STAINED_GLASS_PANE, numbers.get(i)));
 		}
+	}
+
+	// ==================== the Perfect RNG stand-in boards ====================
+
+	/**
+	 * Build the short stand-in board for this view's type.
+	 * <p>
+	 * <b>One obvious answer, and clicking it is the whole terminal.</b>  These are ultra-realistic mode's original
+	 * terminals, kept as what Perfect RNG opens: the mode is the run where the dungeon rolls in your favour, so a
+	 * terminal is a board that has already fallen out the easy way rather than a generated puzzle.
+	 * <p>
+	 * <b>Melody has no single answer and reuses the real board instead</b>, with its mover parked on its target so
+	 * every button is on the beat, and runs through the real solver unchanged.
+	 * <p>
+	 * <b>Click In Order is not dealt in this set at all</b> ({@link #assignTypes}), so its branch here is only
+	 * reached if the mode was flipped between a section being built and a terminal being opened; it deals the real
+	 * board in ascending order, which is the same favourable-roll idea, rather than opening an empty chest.
+	 */
+	private void buildStandIn() {
+		standInAnswer = standInAnswerSlot();
+		switch(type) {
+			case ON_OFF -> {
+				// The same two-column-thick frame the real board has, so the playable block is five wide.
+				frameAndFill(Material.LIME_STAINED_GLASS_PANE);
+				for(int row = 1; row <= 3; row++) {
+					inv.setItem(slot(row, 1), item(FILLER));
+					inv.setItem(slot(row, 7), item(FILLER));
+				}
+				inv.setItem(standInAnswer, item(Material.RED_STAINED_GLASS_PANE));
+			}
+			case SAME_COLOR -> {
+				fill(FILLER);
+				for(int s : SAME_COLOR_SLOTS) inv.setItem(s, item(Material.BLUE_STAINED_GLASS_PANE));
+				inv.setItem(standInAnswer, item(Material.GREEN_STAINED_GLASS_PANE));
+			}
+			case SELECT_ALL -> {
+				frameAndFill(Material.BARRIER);
+				inv.setItem(standInAnswer, item(Material.valueOf(pickColour.name() + "_CONCRETE")));
+			}
+			case STARTS_WITH -> {
+				frameAndFill(Material.BARRIER);
+				inv.setItem(standInAnswer, item(standInLetterItem()));
+			}
+			case MELODY -> buildStandInMelody();
+			case CLICK_IN_ORDER -> buildClickInOrder();
+		}
+	}
+
+	/**
+	 * Where the single answer sits: the middle column of the second-to-last row, which is inside the playable block
+	 * of every board that has one.  The two chest sizes land on slot 31 and slot 40, the slots ultra-realistic used.
+	 */
+	private int standInAnswerSlot() {
+		return switch(type) {
+			case MELODY, CLICK_IN_ORDER -> -1; // solved by the real solver, not by one slot
+			default -> slot(inv.getSize() / 9 - 2, 4);
+		};
+	}
+
+	/** An item whose name really does start with the letter the title asks for, so the board is not a lie. */
+	private Material standInLetterItem() {
+		List<Material> matches = new ArrayList<>();
+		for(Material m : itemPool()) if(matchesLetter(m)) matches.add(m);
+		return matches.isEmpty() ? Material.DIAMOND : matches.get(RANDOM.nextInt(matches.size()));
+	}
+
+	/**
+	 * The real Melody board with <b>every row's target on the mover's starting cell</b>, the first, and no ticker
+	 * behind it ({@link #open}).  That is exactly where ultra-realistic's Melody sat: it never moved.  The mover
+	 * therefore never leaves the target and {@link #melodyClick} takes all four button clicks without a miss -
+	 * written as state rather than as a second copy of the drawing code.
+	 */
+	private void buildStandInMelody() {
+		fill(FILLER);
+		melodyBottomRow = melodyLastRow() + 1;
+		melodyTarget = new int[MELODY_LAST_ROW + 1];
+		for(int row = 0; row < melodyTarget.length; row++) melodyTarget[row] = MELODY_FIRST_COL;
+		drawMelodyMarkers();
+		for(int row = MELODY_FIRST_ROW; row <= melodyLastRow(); row++) drawMelodyRow(row);
+	}
+
+	/**
+	 * One already-cancelled click on a stand-in board.  Same contract as {@link #onClick}: true only when the
+	 * terminal is finished.
+	 * <p>
+	 * <b>Same Color takes a LEFT click only</b>, because left is the button that recolours a pane on the real
+	 * board and the stand-in must not teach the wrong one.  Every other single-answer board takes either.
+	 */
+	private boolean standInClick(Player clicker, int slot, ClickType click) {
+		if(type == Type.MELODY) return melodyClick(clicker, slot);
+		if(type == Type.CLICK_IN_ORDER) return clickInOrderClick(clicker, slot);
+		if(type == Type.SAME_COLOR && !click.isLeftClick()) return false;
+		if(slot != standInAnswer) return false;
+		solved = true;
+		return true;
 	}
 
 	// ==================== solving ====================
@@ -782,6 +943,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 */
 	public boolean onClick(Player clicker, int slot, ClickType click) {
 		if(solved) return false;
+		if(standIn) return standInClick(clicker, slot, click);
 		return switch(type) {
 			case ON_OFF -> onOffClick(clicker, slot);
 			case SAME_COLOR -> sameColorClick(clicker, slot, click);

@@ -108,10 +108,25 @@ public final class Goldor extends WitherLord {
 	 */
 	private static final Rotation ARROW_SOLVED_ROTATION = Rotation.CLOCKWISE_45;
 
+	/** Ordinal 0, one clockwise click short of {@link #ARROW_SOLVED_ROTATION}: what the stand-in's odd frame reads. */
+	private static final Rotation ARROW_STANDIN_ROTATION = Rotation.NONE;
+
+	/**
+	 * The column of the stand-in's one unfinished frame, the <b>bottom-left</b> of the nine, which sits at
+	 * {@code -1.5 120 78.5}.
+	 * <p>
+	 * Only the z is written down, because {@link #standInArrowFrame} takes the bottom ROW first and then the
+	 * frame nearest this column: the x is the same for all nine (they share the wall) and the y that was read off
+	 * that frame lands <b>between</b> two rows, which is exactly the tie that made the old nearest-frame search
+	 * pick a different frame from run to run.  Asking for the lowest row instead cannot tie.
+	 */
+	private static final double ARROW_STANDIN_Z = 78.5;
+
 	/**
 	 * True if this is one of the nine S3 Arrow Align frames: <b>in the frame wall and holding an arrow</b>.  Those
-	 * nine are the device, the only frames in the wall a player may touch, and all nine have to be turned to
-	 * ordinal 1 to solve it.
+	 * nine are the device in realistic, where all nine have to be turned to ordinal 1 to solve it.  <b>Membership
+	 * only</b> - whether a player may TURN one is {@link #isTurnableArrowFrame}, which is the mode-dependent
+	 * question, and every frame in the wall that is not an arrow frame is untouchable in every mode.
 	 * <p>
 	 * <b>Static, and answered off the frame itself</b>, so it holds before the phase has spun up - which is what
 	 * lets the interaction guard protect the wall in prep and between phases, not just mid-phase.  Nothing here
@@ -143,24 +158,91 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * Roll every arrow frame a random rotation, and <b>re-roll while the roll is already the answer</b>.
+	 * The one frame the stand-in leaves unfinished: the <b>bottom-left</b> of the nine, i.e. the lowest row and
+	 * then the frame nearest {@link #ARROW_STANDIN_Z}.  Null only when the wall is missing.
 	 * <p>
-	 * "Already the answer" is all nine on {@link #ARROW_SOLVED_ROTATION}, so the guarantee is only that at least
-	 * one frame is off it - a device handed out pre-solved is not a puzzle.  One frame in eight is the answer, so a
-	 * second pass is a 1-in-8^9 event with a full wall; the loop is there for correctness, not for the common case.
+	 * <b>Fixed, not rolled.</b>  It used to be a random frame, which made the wall read differently every run for
+	 * no gain: outside realistic it is the only frame a player may touch, so it is the device, and a device that
+	 * moves cannot be learned.
+	 */
+	private static ItemFrame standInArrowFrame(World world) {
+		return standInArrowFrame(arrowFrames(world));
+	}
+
+	/** The same pick off a list already scanned, so a caller holding the nine compares the SAME objects. */
+	private static ItemFrame standInArrowFrame(List<ItemFrame> frames) {
+		ItemFrame best = null;
+		for(ItemFrame f : frames) {
+			if(best == null) {
+				best = f;
+				continue;
+			}
+			double y = f.getLocation().getY(), bestY = best.getLocation().getY();
+			if(y > bestY + 1e-6) continue;          // higher row: never the bottom-left
+			if(y < bestY - 1e-6) {
+				best = f;                           // lower row wins outright
+				continue;
+			}
+			double dz = Math.abs(f.getLocation().getZ() - ARROW_STANDIN_Z);
+			if(dz < Math.abs(best.getLocation().getZ() - ARROW_STANDIN_Z)) best = f;
+		}
+		return best;
+	}
+
+	/**
+	 * True if a player may turn {@code frame} in the CURRENT mode: <b>all nine in realistic</b>, and
+	 * <b>only {@link #standInArrowFrame} otherwise</b>.  Every other frame in the wall is protected, the same way
+	 * the frames that are not the device have always been.
+	 * <p>
+	 * Outside realistic the other eight are already sitting on the answer, so letting a player turn one could only
+	 * take the wall AWAY from solved - and the stand-in activates on the first click anyway, so a click on one
+	 * would have finished the device off a frame that is not it.
+	 * <p>
+	 * Asked live, like {@link #isArrowAlignFrame}, rather than off a cached frame: a click is rare and the scan is
+	 * nine entities, where a cache would have to be invalidated by every teardown and every mode change.
+	 */
+	public static boolean isTurnableArrowFrame(ItemFrame frame) {
+		if(!isArrowAlignFrame(frame)) return false;
+		if(damage.Difficulty.realPuzzles()) return true;
+		ItemFrame standIn = standInArrowFrame(frame.getWorld());
+		return standIn != null && standIn.getUniqueId().equals(frame.getUniqueId());
+	}
+
+	/**
+	 * Reset the device, differently per mode.
+	 * <p>
+	 * <b>Realistic</b> rolls every frame a random rotation, and <b>re-rolls while the roll is already the
+	 * answer</b>.  "Already the answer" is all nine on {@link #ARROW_SOLVED_ROTATION}, so the guarantee is only
+	 * that at least one frame is off it - a device handed out pre-solved is not a puzzle.  One frame in eight is
+	 * the answer, so a second pass is a 1-in-8^9 event with a full wall; the loop is there for correctness, not
+	 * for the common case.
+	 * <p>
+	 * <b>Classic and Perfect RNG</b> get the wall already aligned bar {@link #standInArrowFrame}, the bottom-left
+	 * one, left on {@link #ARROW_STANDIN_ROTATION} - one clockwise click short.  That frame is also the only one
+	 * those modes let a player turn ({@link #isTurnableArrowFrame}), so the wall reads as the single turn the real
+	 * device would be down to and the click that finishes it is the click the wall asks for.
 	 * <p>
 	 * Run at every device reset ({@link #resetS3Device} before a run, {@link #protectAllItemFrames} as the phase
-	 * builds), never mid-phase: nothing may re-randomise the wall under a party that is halfway through it.
+	 * builds), never mid-phase: nothing may re-roll the wall under a party that is halfway through it.
+	 * <p>
+	 * <b>All nine are written every time, in every mode.</b>  Back when the device was one frame, the other eight
+	 * were never scrambled and so never needed putting back; realistic scrambles all nine now, so the stand-in has
+	 * to state the whole wall or it would inherit whatever the last realistic run left behind.
 	 */
-	public static void randomiseArrowFrames(World world) {
+	public static void resetArrowFrames(World world) {
 		List<ItemFrame> frames = arrowFrames(world);
 		if(frames.isEmpty()) return;
 		if(frames.size() != ARROW_FRAME_COUNT) {
 			Utils.debug(Utils.DebugType.ERROR, "Arrow Align: found " + frames.size()
 					+ " arrow frames in the S3 wall, expected " + ARROW_FRAME_COUNT);
 		}
-		Rotation[] all = Rotation.values(); // 8 states, ordinal 0..7
+		if(!damage.Difficulty.realPuzzles()) {
+			ItemFrame odd = standInArrowFrame(frames);
+			for(ItemFrame f : frames) f.setRotation(f == odd ? ARROW_STANDIN_ROTATION : ARROW_SOLVED_ROTATION);
+			return;
+		}
 		java.util.concurrent.ThreadLocalRandom rng = java.util.concurrent.ThreadLocalRandom.current();
+		Rotation[] all = Rotation.values(); // 8 states, ordinal 0..7
 		boolean alreadySolved;
 		do {
 			alreadySolved = true;
@@ -346,13 +428,13 @@ public final class Goldor extends WitherLord {
 		}
 		// Deal the device a fresh board as the phase builds, so a chained full run doesn't inherit the last one's
 		// rotations.  All nine at once, which is why it is not a branch inside the loop above.
-		randomiseArrowFrames(world);
+		resetArrowFrames(world);
 	}
 
-	/** Reset the S3 Arrow Align device (used by /setup): re-randomise all nine arrow frames so the next run starts
-	 *  unsolved.  Every other frame in the wall is left alone - nothing may turn them in the first place. */
+	/** Reset the S3 Arrow Align device (used by /setup): deal all nine arrow frames a fresh board so the next run
+	 *  starts unsolved.  Every other frame in the wall is left alone - nothing may turn them in the first place. */
 	public static void resetS3Device(World world) {
-		randomiseArrowFrames(world);
+		resetArrowFrames(world);
 	}
 
 	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to
