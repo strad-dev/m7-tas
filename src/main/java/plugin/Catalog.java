@@ -35,7 +35,11 @@ import java.util.stream.Collectors;
  * <br>
  * Format (matches the network plugin's reader):
  *   { "palette": [ "&lt;base64 item&gt;", ... ],
- *     "defaults": { "Archer": [ &lt;41 base64-or-null&gt; ], "Mage": [...], ... } }
+ *     "defaults": { "Archer": [ &lt;41 base64-or-null&gt; ], "Mage": [...], ... },
+ *     "pets": { "GOLDEN_DRAGON": "&lt;base64 head&gt;", ... },
+ *     "petSlots": [ 10, 11, ... ], "defaultPet": "GOLDEN_DRAGON",
+ *     "autopet": [ { "name": "RUN_START", "displayName": "On Run Start", "icon": "OAK_DOOR",
+ *                    "cycle": false }, ... ] }
  *
  * The 41-slot array layout is: [0..35] main inventory slots, [36] helmet, [37] chestplate,
  * [38] leggings, [39] boots, [40] off-hand (see FakePlayerInventory#classLoadoutContents).
@@ -101,6 +105,10 @@ public final class Catalog {
 				String b64 = ItemSerial.toB64(it);
 				if (b64 != null) f.palette.add(b64);
 			}
+			f.pets = petIcons();
+			f.petSlots = new ArrayList<>(pets.PetMenu.petSlots());
+			f.defaultPet = pets.Pets.DEFAULT_PET.name();
+			f.autopet = autopetTriggers();
 
 			Path file = dataDir().resolve("m7-item-catalog.json");
 			save(file, f);
@@ -109,6 +117,48 @@ public final class Catalog {
 		} catch (Exception e) {
 			M7tas.getInstance().getLogger().warning("Failed to export M7 item catalog: " + e);
 		}
+	}
+
+	/**
+	 * Every pet's ARRANGING icon, keyed on the {@code PetType} name the pets file stores.
+	 * <p>
+	 * The network plugin's {@code /petloadout} draws this same window in the lobby, and it has no {@code PetType}
+	 * of its own: exporting the finished heads is what keeps a pet's tooltip written down once, here, rather than
+	 * copied into a second enum that would drift the first time a stat moved.  The names are the file's keys, so
+	 * the lobby can match a saved layout to an icon without parsing anything out of the head.
+	 * <p>
+	 * <b>Not equipped, and editing.</b>  Editing is the only mode the lobby has, and the only thing {@code equipped}
+	 * changes on an editing icon is the glint - so the lobby sets that itself off the file's {@code equipped} field
+	 * rather than being sent two heads per pet.
+	 */
+	private static Map<String, String> petIcons() {
+		Map<String, String> out = new LinkedHashMap<>();
+		for (pets.PetType pet : pets.PetType.values()) {
+			String b64 = ItemSerial.toB64(pet.icon(false, true));
+			if (b64 != null) out.put(pet.name(), b64);
+		}
+		return out;
+	}
+
+	/**
+	 * The autopet triggers, in menu order, so the network plugin's copy of the Autopet window can draw them.
+	 * <p>
+	 * Only what a BUTTON needs: the enum name (which is what the pets file keys a rule on), the label, the icon
+	 * material and whether the trigger holds a cycle instead of one pet. The rules themselves are per player and
+	 * live in {@code pets/<uuid>.json}; nothing about what a trigger DOES crosses, because nothing off m7 could
+	 * act on it anyway.
+	 */
+	private static List<CatalogFile.PetTrigger> autopetTriggers() {
+		List<CatalogFile.PetTrigger> out = new ArrayList<>();
+		for (pets.Autopet.Trigger t : pets.Autopet.Trigger.values()) {
+			CatalogFile.PetTrigger e = new CatalogFile.PetTrigger();
+			e.name = t.name();
+			e.displayName = t.displayName();
+			e.icon = t.icon().name();
+			e.cycle = t.isCycle();
+			out.add(e);
+		}
+		return out;
 	}
 
 	/** A 41-slot array as the on-disk list: one entry per slot, null for an empty one. */
@@ -341,5 +391,23 @@ public final class Catalog {
 	public static class CatalogFile {
 		public List<String> palette = new ArrayList<>();
 		public Map<String, List<String>> defaults = new LinkedHashMap<>();
+		/** Pet name -> its arranging icon, for the network plugin's lobby copy of the pet menu. */
+		public Map<String, String> pets = new LinkedHashMap<>();
+		/** The pet menu's 28 slots, so the lobby draws the same grid without writing the shape down twice. */
+		public List<Integer> petSlots = new ArrayList<>();
+		/** {@code Pets.DEFAULT_PET}, so the lobby's header has the same fallback rather than its own guess. */
+		public String defaultPet;
+		/** The autopet triggers, in menu order, for the lobby's copy of the Autopet window. */
+		public List<PetTrigger> autopet = new ArrayList<>();
+
+		/** One autopet trigger, as much of it as a button needs. */
+		public static class PetTrigger {
+			public String name;
+			public String displayName;
+			/** A {@code Material} name; the reader falls back if it ever stops resolving. */
+			public String icon;
+			/** True for the trigger that holds an ordered cycle rather than one pet (Rod Swap). */
+			public boolean cycle;
+		}
 	}
 }

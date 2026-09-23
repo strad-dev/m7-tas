@@ -72,6 +72,14 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	private static final int HELMET_SLOT = 45, CHEST_SLOT = 46, LEGS_SLOT = 47, BOOTS_SLOT = 48;
 	private static final int TRASH_SLOT = 52, RESET_SLOT = 53;
 	/**
+	 * The pet you START the run with, in the dead space before the buttons.
+	 * <p>
+	 * It belongs here rather than only in {@code /pets} because it is part of what you take in, like the kit
+	 * itself - and unlike the rest of this window it is NOT saved into the loadout: it writes straight through
+	 * to {@code pets/<uuid>.json}, the same field {@code /pets} sets, so the two can never disagree.
+	 */
+	private static final int PET_SLOT = 51;
+	/**
 	 * The last gear slot in the bottom row; everything between it and the trash is dead space.
 	 * <b>There is no off-hand slot: M7 does not allow an off-hand item</b>, so array slot 40 is never editable and
 	 * is written back EMPTY on every save rather than merely left alone - see {@code finish}.
@@ -142,7 +150,9 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		writeMain(p, arr);
 		pinMenu(p, role, arr);
 		for(int g = HELMET_SLOT; g <= GEAR_END; g++) gui.setItem(g, orPlaceholder(arr[arrIndex(g)], g));
-		for(int g = GEAR_END + 1; g < TRASH_SLOT; g++) gui.setItem(g, filler()); // dead space before the buttons
+		for(int g = GEAR_END + 1; g < TRASH_SLOT; g++) {
+			gui.setItem(g, g == PET_SLOT ? petButton(p) : filler()); // dead space before the buttons
+		}
 		drawDivider(gui);
 		gui.setItem(TRASH_SLOT, button(Material.LAVA_BUCKET, "<red>Trash (click with an item to delete it)"));
 		refreshPalette(gui, holder);
@@ -221,6 +231,15 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 			writeMain(p, def);
 			pinMenu(p, holder.role, def);
 			for(int g = HELMET_SLOT; g <= GEAR_END; g++) holder.inv.setItem(g, orPlaceholder(def[arrIndex(g)], g));
+			return;
+		}
+		if(raw == PET_SLOT) {
+			// Left steps forward, right steps back - the cycling-button convention the rest of the network's
+			// menus use.  A roster of five is short enough to step; the moment it is not, this wants the
+			// pets/PetPicker treatment instead, which cannot live here because opening another window would
+			// end the editing session and hand the inventory back.
+			cyclePet(p, e.isRightClick());
+			holder.inv.setItem(PET_SLOT, petButton(p));
 			return;
 		}
 		if(raw == TRASH_SLOT) {
@@ -445,6 +464,47 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 
 	private static ItemStack divider() {
 		return button(Material.GRAY_STAINED_GLASS_PANE, "<gray>▲ Item Palette", List.of("<gray>--------------------------", "<gray>▼ Your Armor & Inventory"));
+	}
+
+	/**
+	 * The starting-pet button: the pet itself, with its whole tooltip, and the action line rewritten.
+	 * <p>
+	 * <b>{@code PetType.icon} builds it</b>, as everywhere else that draws a pet - a second copy of the head
+	 * assembly is what makes saved stacks stop matching.  Only the trailing action line, the one the summoning
+	 * menu wants, is swapped for what a click HERE does.
+	 * <p>
+	 * <b>There is always a pet to show.</b>  {@code Pets.equipped} never returns null: no file, an unreadable
+	 * file and a file naming a deleted pet all come back as {@code Pets.DEFAULT_PET}, the Golden Dragon.
+	 */
+	private static ItemStack petButton(Player p) {
+		pets.PetType pet = pets.Pets.equipped(p);
+		ItemStack it = pet.icon(true, false);
+		ItemMeta m = it.getItemMeta();
+		if(m == null) return it;
+		List<Component> lore = m.lore();
+		List<Component> out = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
+		if(!out.isEmpty()) out.removeLast(); // the "CURRENTLY SUMMONED" line icon() wrote, which is /pets'
+		out.add(Utils.msg("<gray>The pet you start the run with.").decoration(TextDecoration.ITALIC, false));
+		out.add(Utils.msg("<dark_gray>Applies in Realistic mode.").decoration(TextDecoration.ITALIC, false));
+		out.add(Component.empty());
+		out.add(Utils.msg("<yellow>Click to change <dark_gray>(right-click to go back)")
+				.decoration(TextDecoration.ITALIC, false));
+		m.lore(out);
+		it.setItemMeta(m);
+		return it;
+	}
+
+	/** Step the starting pet one place through {@code PetType}, wrapping.  Writes through {@code Pets.equip}. */
+	private static void cyclePet(Player p, boolean back) {
+		pets.PetType[] all = pets.PetType.values();
+		if(all.length == 0) return;
+		int at = 0;
+		pets.PetType now = pets.Pets.equipped(p);
+		for(int i = 0; i < all.length; i++) if(all[i] == now) at = i;
+		pets.PetType next = all[Math.floorMod(at + (back ? -1 : 1), all.length)];
+		// Null announcement: a settings button that printed a chat line on every step would be five lines to get
+		// back where you started.  The button itself is the feedback.
+		pets.Pets.equip(p, next, null);
 	}
 
 	private static ItemStack filler() {

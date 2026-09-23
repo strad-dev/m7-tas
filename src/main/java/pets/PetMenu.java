@@ -239,11 +239,25 @@ public final class PetMenu implements CommandExecutor, Listener {
 		}
 	}
 
-	/** {@code /pets}: a click on a head summons it. */
+	/**
+	 * {@code /pets}: a click on a head summons it, and <b>the window closes</b>.
+	 * <p>
+	 * Summoning is the whole job of this mode, so there is nothing left to do once it has happened - leaving the
+	 * window open only made a second click the way out.  The redraw still runs: it costs nothing, and it means
+	 * the glint is on the right head for the tick the window has left.  <b>Deferred a tick</b>, like every other
+	 * close here, because closing a view from inside its own click event is the one thing Bukkit asks you not to
+	 * do.
+	 * <p>
+	 * A click that changes nothing - an empty slot, or the pet already out - leaves the window alone.  It is not
+	 * an action, so it should not read as one.
+	 */
 	private void summonClick(Player p, Holder holder, int slot) {
 		PetType pet = Pets.layout(p).get(slot);
 		if(pet == null) return;
-		if(Pets.equip(p, pet, "<green>You summoned your ")) draw(p, holder); // the pet name closes the line
+		if(Pets.equip(p, pet, "<green>You summoned your ")) { // the pet name closes the line
+			draw(p, holder);
+			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> p.closeInventory());
+		}
 	}
 
 	/**

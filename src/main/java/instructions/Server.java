@@ -188,7 +188,6 @@ public class Server {
 		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
 		// so this is the one place that means "the run is now live".  See runStarted.
 		runStarted = true;
-		pets.Autopet.onRunStart(); // the "start door opens" autopet trigger; a no-op outside realistic mode
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.markPhaseStart();
@@ -196,6 +195,11 @@ public class Server {
 				// Arm the one-shot Blood-Room detection at clear-tick 0; the Watcher spawns the first tick a
 				// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
 				Watcher.INSTANCE.beginDetection(world);
+				// The autopet "On Run Start" trigger, and it sits INSIDE this branch on purpose: it means the
+				// first door opening in clear, the true beginning of a run, and nothing else.  It used to sit
+				// above the switch, where EVERY section's start fired it - so practising Wither King alone raised
+				// a "run start" at the Wither King, which is the one moment that rule is not about.
+				pets.Autopet.onRunStart(); // a no-op outside realistic mode
 				openFirstDoor();
 				// Spawn the minibosses now that the run has actually started (not during the pre-run setup window).
 				spawnMinibosses(world);
