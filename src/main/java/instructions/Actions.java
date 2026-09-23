@@ -306,11 +306,9 @@ public class Actions {
 		ServerPlayer npc = cp.getHandle();
 		Inventory inv = npc.getInventory();
 
-		// Which speed-granting helmet was worn before this swap? (captured pre-swap so we can detect a transition)
-		boolean racingHelmetBefore = (slotA == 39 || slotB == 39)
-				&& plugin.FakePlayerInventory.isRacingHelmet(p.getInventory().getHelmet());
-		boolean cowHatBefore = (slotA == 39 || slotB == 39)
-				&& plugin.FakePlayerInventory.isCowHat(p.getInventory().getHelmet());
+		// Max Speed before this swap, so the write below is a transition and not an unconditional re-apply (a
+		// manual setSpeed() between two non-speed helmets has to survive).  Captured pre-swap, obviously.
+		int speedBefore = (slotA == 39 || slotB == 39) ? plugin.MaxSpeedSync.maxSpeed(p) : 0;
 
 		// Swap internally
 		net.minecraft.world.item.ItemStack a = inv.getItem(slotA);
@@ -336,21 +334,14 @@ public class Actions {
 			Utils.broadcastPacket(equipmentPkt);
 		}
 
-		// Auto-manage speed on speed-helmet transitions: Racing Helmet → 650, Cow Hat → 550, neither → 400.
-		// Swaps between two non-speed helmets (Bonzo/Spirit masks, armor sets) leave speed untouched. Same-tick
-		// as the swap, so it's frame-accurate; a manual setSpeed() placed AFTER the swap call still wins
-		// (e.g. Tank's 550 preleap with the Bonzo Mask on).
+		// Re-apply Max Speed on a helmet transition through the ONE formula (plugin/MaxSpeedSync.maxSpeed) rather
+		// than the hardcoded 650/550/400 this used to carry: those were three different facts added together and
+		// went out of step with the real players' half the moment any of them moved.  Same-tick as the swap, so
+		// it is frame-accurate; a manual setSpeed() placed AFTER the swap call still wins (e.g. Tank's 550
+		// preleap with the Bonzo Mask on).  Only fake players reach here; real ones are the poll's.
 		if(slotA == 39 || slotB == 39) {
-			boolean racingHelmetAfter = plugin.FakePlayerInventory.isRacingHelmet(p.getInventory().getHelmet());
-			boolean cowHatAfter = plugin.FakePlayerInventory.isCowHat(p.getInventory().getHelmet());
-			if(racingHelmetAfter && !racingHelmetBefore) {
-				Utils.setSpeed(p, 650);
-			} else if(cowHatAfter && !cowHatBefore) {
-				Utils.setSpeed(p, 550);
-			} else if((racingHelmetBefore && !racingHelmetAfter) || (cowHatBefore && !cowHatAfter)) {
-				// A speed helmet came off and neither is now on, so drop back to base speed.
-				Utils.setSpeed(p, 400);
-			}
+			int speedAfter = plugin.MaxSpeedSync.maxSpeed(p);
+			if(speedAfter != speedBefore) Utils.setSpeed(p, speedAfter);
 		}
 	}
 

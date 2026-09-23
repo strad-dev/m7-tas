@@ -774,18 +774,14 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 * <b>Every click that moves a puzzle forward plays {@link #cue}</b>, in all six types, and the solving one does
 	 * not.  See that method for both halves of the rule.
 	 * <p>
-	 * <b>{@link ClickType#DOUBLE_CLICK} is dropped, in every type.</b>  It is not a second click a player made: the
-	 * client sends it as an EXTRA event behind the second half of a fast double-click, on top of the ordinary
-	 * {@code LEFT} that already went through, so one physical double-click reached the puzzle twice.  Same Color
-	 * was where it showed - a pane stepping two colours off one action - because it is the only type where a
-	 * repeat of the same click on the same slot does anything; everywhere else the second one lands on a pane that
-	 * has already moved on and is eaten.  It is also why {@code isLeftClick()} cannot be the test: Bukkit counts
-	 * {@code DOUBLE_CLICK} as a left click.
+	 * Double-clicks never reach here: {@code GoldorListener} drops them through {@code plugin/Menus}, the
+	 * workspace-wide rule for every custom menu.  Same Color is where that was found - a pane stepping two
+	 * colours off one gesture - but it is not a rule about this file.
 	 *
 	 * @param slot raw slot of the click, already known to be in the TOP inventory
 	 */
 	public boolean onClick(Player clicker, int slot, ClickType click) {
-		if(solved || click == ClickType.DOUBLE_CLICK) return false;
+		if(solved) return false;
 		return switch(type) {
 			case ON_OFF -> onOffClick(clicker, slot);
 			case SAME_COLOR -> sameColorClick(clicker, slot, click);

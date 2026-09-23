@@ -208,6 +208,7 @@ public class GoldorListener implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void onTerminalGuiClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof GoldorTerminalGui gui)) return;
+		if(plugin.Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true);
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(cannotSolve(p)) return;

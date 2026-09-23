@@ -25,6 +25,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import plugin.Catalog;
+import plugin.Menus;
 import plugin.Utils;
 
 import java.util.*;
@@ -75,8 +76,13 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	 * The pet you START the run with, in the dead space before the buttons.
 	 * <p>
 	 * It belongs here rather than only in {@code /pets} because it is part of what you take in, like the kit
-	 * itself - and unlike the rest of this window it is NOT saved into the loadout: it writes straight through
-	 * to {@code pets/<uuid>.json}, the same field {@code /pets} sets, so the two can never disagree.
+	 * itself - and unlike the rest of this window it is NOT saved into the loadout: it writes straight through to
+	 * {@code pets/<uuid>.json}.
+	 * <p>
+	 * <b>Its own member there, NOT the pet that is currently out.</b>  Pointing this at {@code equipped} looked
+	 * tidier - one value, not two - and was wrong: {@code /pets} and every autopet rule move that field during a
+	 * run, so the button showed whatever the last run left out and appeared to change on its own.
+	 * {@code Pets.applyStartingPets} is what turns the preference into the pet you actually begin with.
 	 */
 	private static final int PET_SLOT = 51;
 	/**
@@ -185,6 +191,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	@EventHandler
 	public void onClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof EditorHolder holder)) return;
+		if(Menus.ignoreDoubleClick(e)) return;
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		int raw = e.getRawSlot();
 
@@ -473,18 +480,18 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	 * assembly is what makes saved stacks stop matching.  Only the trailing action line, the one the summoning
 	 * menu wants, is swapped for what a click HERE does.
 	 * <p>
-	 * <b>There is always a pet to show.</b>  {@code Pets.equipped} never returns null: no file, an unreadable
+	 * <b>There is always a pet to show.</b>  {@code Pets.startingPet} never returns null: no file, an unreadable
 	 * file and a file naming a deleted pet all come back as {@code Pets.DEFAULT_PET}, the Golden Dragon.
 	 */
 	private static ItemStack petButton(Player p) {
-		pets.PetType pet = pets.Pets.equipped(p);
+		pets.PetType pet = pets.Pets.startingPet(p);
 		ItemStack it = pet.icon(true, false);
 		ItemMeta m = it.getItemMeta();
 		if(m == null) return it;
 		List<Component> lore = m.lore();
 		List<Component> out = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
 		if(!out.isEmpty()) out.removeLast(); // the "CURRENTLY SUMMONED" line icon() wrote, which is /pets'
-		out.add(Utils.msg("<gray>The pet you start the run with.").decoration(TextDecoration.ITALIC, false));
+		out.add(Utils.msg("<gray>The pet every run of yours begins with.").decoration(TextDecoration.ITALIC, false));
 		out.add(Utils.msg("<dark_gray>Applies in Realistic mode.").decoration(TextDecoration.ITALIC, false));
 		out.add(Component.empty());
 		out.add(Utils.msg("<yellow>Click to change <dark_gray>(right-click to go back)")
@@ -494,17 +501,14 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		return it;
 	}
 
-	/** Step the starting pet one place through {@code PetType}, wrapping.  Writes through {@code Pets.equip}. */
+	/** Step the starting pet one place through {@code PetType}, wrapping.  Writes the PREFERENCE, not the pet out. */
 	private static void cyclePet(Player p, boolean back) {
 		pets.PetType[] all = pets.PetType.values();
 		if(all.length == 0) return;
 		int at = 0;
-		pets.PetType now = pets.Pets.equipped(p);
+		pets.PetType now = pets.Pets.startingPet(p);
 		for(int i = 0; i < all.length; i++) if(all[i] == now) at = i;
-		pets.PetType next = all[Math.floorMod(at + (back ? -1 : 1), all.length)];
-		// Null announcement: a settings button that printed a chat line on every step would be five lines to get
-		// back where you started.  The button itself is the feedback.
-		pets.Pets.equip(p, next, null);
+		pets.Pets.setStartingPet(p, all[Math.floorMod(at + (back ? -1 : 1), all.length)]);
 	}
 
 	private static ItemStack filler() {

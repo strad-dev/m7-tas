@@ -15,6 +15,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import plugin.M7tas;
+import plugin.Menus;
 import plugin.Utils;
 
 import java.util.ArrayList;
@@ -264,6 +265,7 @@ public final class PetPicker {
 
 	/** Called by {@link AutopetMenu}'s registered handler once it has recognised this window's holder. */
 	void onClick(InventoryClickEvent e, Holder h) {
+		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // every slot, both inventories, before anything is read
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;

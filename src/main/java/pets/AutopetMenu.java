@@ -13,6 +13,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 import plugin.M7tas;
+import plugin.Menus;
 import plugin.Utils;
 
 import java.util.ArrayList;
@@ -118,6 +119,7 @@ public final class AutopetMenu implements Listener {
 			return;
 		}
 		if(!(top instanceof Holder)) return;
+		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // a click target, not an inventory - see PetMenu
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;

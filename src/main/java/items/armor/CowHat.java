@@ -4,15 +4,15 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.ItemFactory;
 import items.Wearable;
-import plugin.Alpha;
 import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Renowned Cow Hat.  Uncommon once recombobulated, so it is the one green item in the game.  Worth 550
- * movement speed (600 under the alpha timings, {@link Alpha}), and wearing it cancels the Wither-King relic
- * carry debuff.
+ * The Renowned Cow Hat.  Uncommon once recombobulated, so it is the one green item in the game.  It adds <b>no
+ * Max Speed of its own</b>: what it does is force the Black Cat in the assumed modes
+ * ({@code damage/Pet.forPlayer}), and the cat's +150 is the whole of the 550 this used to be credited with.
+ * Wearing it also cancels the Wither-King relic carry debuff.
  */
 public final class CowHat implements Wearable {
 	public static final CowHat INSTANCE = new CowHat();
@@ -51,12 +51,17 @@ public final class CowHat implements Wearable {
 		return EquipmentSlot.HEAD;
 	}
 
-	/** Movement speed while worn.  The bare-headed default it is measured against is in {@code HelmetSpeedSync}. */
-	private static final int SPEED = 550, ALPHA_SPEED = 600;
+	/**
+	 * <b>The Cow Hat adds no Max Speed of its own.</b>  Stated rather than left to the default, because the 550 it
+	 * used to report says otherwise at a glance: that was the base 400 plus the Black Cat's 150, and the hat's
+	 * whole contribution is FORCING that cat in the assumed modes ({@code damage/Pet.forPlayer}).  In realistic,
+	 * where the player picks their own pet, wearing this changes speed by nothing at all - which is correct.
+	 */
+	private static final int MAX_SPEED_BONUS = 0;
 
 	@Override
-	public int impliedSpeed() {
-		return Alpha.enabled() ? ALPHA_SPEED : SPEED;
+	public int maxSpeedBonus() {
+		return MAX_SPEED_BONUS;
 	}
 
 	@Override

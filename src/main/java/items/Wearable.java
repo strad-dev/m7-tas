@@ -8,7 +8,7 @@ import org.bukkit.inventory.EquipmentSlot;
  * <p>
  * This is what let the plugin stop identifying its wearables by comparing display-name constants in four
  * separate places ({@code FakePlayerInventory.isCowHat} / {@code isSpiritMask} / {@code isBonzoMask} /
- * {@code isRacingHelmet}, {@code HelmetSpeedSync.impliedSpeed}, {@code ItemUtils.isThermoSet} and
+ * {@code isRacingHelmet}, {@code MaxSpeedSync}, {@code ItemUtils.isThermoSet} and
  * {@code CheatDeath.pick}).  Each of those now asks the registry for the item and reads the property off it.
  * <p>
  * Note a wearable affects DAMAGE only through the stats it contributes (§1.10, §8).  The old x0.70 / x0.80
@@ -21,14 +21,16 @@ public interface Wearable extends Item {
 	EquipmentSlot slot();
 
 	/**
-	 * The movement speed wearing this implies, or -1 for a piece that does not set one.  Racing Helmet 650, Cow
-	 * Hat 550; a helmet that grants neither leaves the player at the default 400.  Each is +50 under the alpha
-	 * timings ({@code plugin/Alpha}), and each item owns its own pair.  Read by
-	 * {@code plugin/HelmetSpeedSync}, which applies it only on a TRANSITION so a manual {@code /setspeed} is left
-	 * alone.
+	 * What this piece adds to the wearer's <b>Max Speed</b>, or 0 for a piece that adds nothing.
+	 * <p>
+	 * <b>A BONUS, not a total.</b>  It used to be the finished number a helmet implied (400 / 550 / 650) and that
+	 * was three different facts added together, which is why the Cow Hat and the Racing Helmet disagreed about a
+	 * stat neither of them owns: both force the Black Cat in the assumed modes, and it was the CAT's +150 in
+	 * those numbers.  {@code plugin/MaxSpeedSync} sums the parts now - base, alpha shard, pet, helmet - so each
+	 * one is stated once, where it belongs.
 	 */
-	default int impliedSpeed() {
-		return -1;
+	default int maxSpeedBonus() {
+		return 0;
 	}
 
 	/**

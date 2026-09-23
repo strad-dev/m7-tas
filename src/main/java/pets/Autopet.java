@@ -252,7 +252,11 @@ public final class Autopet implements Listener {
 
 	/** Run one trigger for every real player online.  The two whole-run triggers are not about one player. */
 	private static void fireForEveryone(Trigger t) {
-		if(!Difficulty.manualPets()) return;
+		if(!Difficulty.manualPets()) {
+			Utils.debug(Utils.DebugType.BOSS, "Autopet " + t.name() + ": skipped, mode is "
+					+ Difficulty.current().displayName() + " and autopet is Realistic-only");
+			return;
+		}
 		for(Player p : Bukkit.getOnlinePlayers()) fire(p, t);
 	}
 
@@ -263,15 +267,32 @@ public final class Autopet implements Listener {
 	 * pet would only spam them a line per boss.
 	 */
 	private static void fire(Player p, Trigger t) {
-		if(!Difficulty.manualPets() || p == null || Utils.isSpectator(p)) return;
+		if(!Difficulty.manualPets() || p == null) return;
+		// EVERY skip below says why, at BOSS verbosity.  A rule that does not fire and a rule that fires onto the
+		// pet you already had out look identical from the chat - both are silent - so "autopet did nothing" is a
+		// report with five possible causes and no way to tell them apart. These lines are how you tell.
+		if(Utils.isSpectator(p)) {
+			Utils.debug(Utils.DebugType.BOSS, "Autopet " + t.name() + ": " + Utils.getRealName(p) + " is a spectator");
+			return;
+		}
 		if(t.isCycle()) {
 			advanceRodCycle(p);
 			return;
 		}
 		Rule rule = Pets.rule(p, t);
-		if(rule == null || rule.pet() == null) return;
-		if(rule.excepts(Pets.equipped(p))) return;
-		Pets.equip(p, rule.pet(), ANNOUNCEMENT);
+		if(rule == null || rule.pet() == null) {
+			Utils.debug(Utils.DebugType.BOSS, "Autopet " + t.name() + ": " + Utils.getRealName(p) + " has no rule for it");
+			return;
+		}
+		if(rule.excepts(Pets.equipped(p))) {
+			Utils.debug(Utils.DebugType.BOSS, "Autopet " + t.name() + ": vetoed for " + Utils.getRealName(p)
+					+ " - " + Pets.equipped(p).name() + " is an exception");
+			return;
+		}
+		if(!Pets.equip(p, rule.pet(), ANNOUNCEMENT)) {
+			Utils.debug(Utils.DebugType.BOSS, "Autopet " + t.name() + ": nothing to do for " + Utils.getRealName(p)
+					+ " - " + rule.pet().name() + " was already out");
+		}
 	}
 
 	/** Forget who was in combat and where they were in the rod cycle.  Both are per-session, neither is saved. */

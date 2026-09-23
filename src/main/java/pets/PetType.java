@@ -202,9 +202,15 @@ public enum PetType {
 		return rarity;
 	}
 
-	/** The name as it appears everywhere a pet is mentioned: {@code [Lvl N] Name} in the pet's rarity colour. */
+	/**
+	 * The name as it appears everywhere a pet is mentioned: {@code [Lvl N] Name}.
+	 * <p>
+	 * <b>Two colours, not one.</b>  The level bracket is always grey and the rarity colour belongs to the NAME -
+	 * {@code <gray>[Lvl 200] <gold>Golden Dragon}.  This used to paint the whole string in the rarity colour,
+	 * which made the level read as part of it.
+	 */
 	public String colouredName() {
-		return "<" + rarity.colour() + ">[Lvl " + level + "] " + displayName;
+		return "<gray>[Lvl " + level + "] <" + rarity.colour() + ">" + displayName;
 	}
 
 	/** The menu head this pet is drawn as.  {@code equipped} decides the glint and the last lore line. */

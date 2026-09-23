@@ -29,6 +29,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
+import plugin.Menus;
 import plugin.Utils;
 
 import java.util.ArrayList;
@@ -194,6 +195,7 @@ public final class PetMenu implements CommandExecutor, Listener {
 	@EventHandler
 	public void onClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof Holder holder)) return;
+		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // every slot, both inventories, before anything is read
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 

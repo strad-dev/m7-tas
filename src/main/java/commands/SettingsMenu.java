@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jspecify.annotations.NonNull;
+import plugin.Menus;
 import plugin.Utils;
 
 import java.util.ArrayList;
@@ -88,6 +89,7 @@ public final class SettingsMenu implements Listener {
 	@EventHandler
 	public void onClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof Holder)) return;
+		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // read-only row: nothing here is ever picked up
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;

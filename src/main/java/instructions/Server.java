@@ -188,6 +188,10 @@ public class Server {
 		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
 		// so this is the one place that means "the run is now live".  See runStarted.
 		runStarted = true;
+		// The pet you START with (the loadout editor's slot 51), for every section - a run begins whatever you
+		// are practising.  Quiet, because this is run setup like the kit rather than autopet reacting to
+		// something, and an autopet RUN_START rule still wins since that fires later, in the clear branch below.
+		pets.Pets.applyStartingPets();
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.markPhaseStart();

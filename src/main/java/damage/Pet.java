@@ -40,12 +40,33 @@ public enum Pet {
 	 * Strength for a Mage's mana pool.  It holds Unalloyed Speed rather than the relic the other four hold, which
 	 * raises a speed CAP and multiplies no stat - so unlike theirs, this figure is the raw level-100 one.
 	 */
-	BLACK_CAT(StatBlock.of(Stat.INTELLIGENCE, 100));
+	BLACK_CAT(StatBlock.of(Stat.INTELLIGENCE, 100), 150);
 
 	private final StatBlock ownStats;
+	private final int maxSpeedBonus;
 
 	Pet(StatBlock ownStats) {
+		this(ownStats, 0);
+	}
+
+	Pet(StatBlock ownStats, int maxSpeedBonus) {
 		this.ownStats = ownStats;
+		this.maxSpeedBonus = maxSpeedBonus;
+	}
+
+	/**
+	 * What this pet adds to the wearer's <b>Max Speed</b>.
+	 * <p>
+	 * <b>Only the Black Cat has one: +150</b>, which is +100 from the pet and +50 from the Unalloyed Speed it
+	 * holds ("Grants +50 Max Speed Cap").  It is the one pet stat outside {@link #ownStats} because Max Speed is
+	 * not a damage stat and a {@code StatBlock} would put it in the damage aggregate, where it multiplies
+	 * nothing; {@code plugin/MaxSpeedSync} is its only reader.
+	 * <p>
+	 * This is what makes the two hats' old numbers decompose: both force the Black Cat in the assumed modes, so
+	 * the Cow Hat's 550 was 400 + this, and the Racing Helmet's 650 was 400 + this + the helmet's own 100.
+	 */
+	public int maxSpeedBonus() {
+		return maxSpeedBonus;
 	}
 
 	/** The pet's own base stats, at profile level, so NOT cata-scaled. */

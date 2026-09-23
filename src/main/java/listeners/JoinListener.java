@@ -186,7 +186,7 @@ public class JoinListener implements Listener {
 		// Default real players to 400 speed, bumped if their helmet entitles them (Cow Hat 550 / Racing 650).
 		// Fakes are script-managed, so leave their speed alone.
 		if(!FakePlayerManager.getFakePlayers().containsValue(p)) {
-			plugin.HelmetSpeedSync.initSpeed(p);
+			plugin.MaxSpeedSync.initSpeed(p);
 		}
 	}
 
@@ -236,7 +236,7 @@ public class JoinListener implements Listener {
 		// A ghost who logs out can't be revived, so drop the pending revival; the line above already banked them.
 		death.Deaths.onQuit(p);
 		// Drop cached helmet-speed / relic-debuff transition state so a relog re-evaluates cleanly.
-		plugin.HelmetSpeedSync.forget(p.getUniqueId());
+		plugin.MaxSpeedSync.forget(p.getUniqueId());
 		try {
 			Channel ch = getChannel(p);
 			if (ch.pipeline().get("tas_interceptor") != null)

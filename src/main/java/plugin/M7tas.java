@@ -148,7 +148,7 @@ public final class M7tas extends JavaPlugin {
 		damage.Procs.start();
 
 		PlayerInventoryBackup.startInventorySync();
-		HelmetSpeedSync.start();
+		MaxSpeedSync.start();
 		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic), which runs every tick.
 		getServer().getScheduler().runTaskTimer(this, items.bows.Terminator::pollAll, 1L, 1L);
 		// Practice-only boss-movement driver: in practice the fake ticker gates its own runMovementTickers call off

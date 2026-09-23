@@ -72,6 +72,15 @@ public final class Pets {
 		final Map<Integer, PetType> layout = new LinkedHashMap<>();
 		/** The pet that is out.  Never null once the profile exists. */
 		PetType equipped = DEFAULT_PET;
+		/**
+		 * The pet a run BEGINS with - the loadout editor's slot 51.  Never null.
+		 * <p>
+		 * <b>Deliberately not {@link #equipped}.</b>  That field is live state: {@code /pets} moves it, and so
+		 * does every autopet rule that fires during a run, so a "starting pet" stored there was whatever the
+		 * last run happened to leave out and changed under the player every time they looked at it.  This one
+		 * is a preference and only slot 51 writes it.
+		 */
+		PetType startingPet = DEFAULT_PET;
 		/** Per-trigger autopet rules.  An absent trigger is off, the same as a rule with a null pet. */
 		final EnumMap<Autopet.Trigger, Autopet.Rule> rules = new EnumMap<>(Autopet.Trigger.class);
 		/**
@@ -97,6 +106,11 @@ public final class Pets {
 	/** Which pet this player has out.  Never null. */
 	public static PetType equipped(Player p) {
 		return p == null ? DEFAULT_PET : profile(p.getUniqueId()).equipped;
+	}
+
+	/** The pet this player's runs begin with.  Never null - a missing or unreadable file is {@link #DEFAULT_PET}. */
+	public static PetType startingPet(Player p) {
+		return p == null ? DEFAULT_PET : profile(p.getUniqueId()).startingPet;
 	}
 
 	/** This player's menu layout: slot -> pet.  A live view of the profile, so callers must not mutate it. */
@@ -141,6 +155,33 @@ public final class Pets {
 		// No punctuation is bolted on here: the old trailing "!" landed inside a sentence autopet does not end with.
 		if(announcement != null) p.sendMessage(Utils.msg(announcement + pet.colouredName()));
 		return true;
+	}
+
+	/** Set the pet this player's runs begin with.  Nothing else writes it; nothing during a run touches it. */
+	public static void setStartingPet(Player p, PetType pet) {
+		if(p == null || pet == null) return;
+		Profile prof = profile(p.getUniqueId());
+		if(prof.startingPet == pet) return;
+		prof.startingPet = pet;
+		save(p.getUniqueId(), prof);
+	}
+
+	/**
+	 * Put every player on their starting pet, quietly.  Called once from {@code Server.startSection}, for EVERY
+	 * section: "the pet you start with" is about a run beginning, and a run begins whatever you are practising.
+	 * <p>
+	 * <b>Silent.</b>  It is not autopet reacting to something - it is the run being set up, like the kit - and a
+	 * line per player per run start would be noise.  <b>An autopet {@code RUN_START} rule still wins</b>, because
+	 * that fires later (inside the clear branch, once the door opens) and equipping is last-write-wins.
+	 * <p>
+	 * Spectators are skipped for the same reason autopet skips them: an idle m7 player is not in the run.
+	 */
+	public static void applyStartingPets() {
+		if(!Difficulty.manualPets()) return;
+		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
+			if(Utils.isSpectator(p)) continue;
+			equip(p, startingPet(p), null);
+		}
 	}
 
 	/** Move the layout wholesale (the arranging menu's save).  Slots are not validated here; the menu owns that. */
@@ -263,6 +304,8 @@ public final class Pets {
 
 		PetType equipped = PetType.parse(f.equipped);
 		prof.equipped = equipped == null ? DEFAULT_PET : equipped;
+		PetType starting = PetType.parse(f.startingPet);
+		prof.startingPet = starting == null ? DEFAULT_PET : starting;
 
 		if(f.autopet != null) {
 			for(Map.Entry<String, RuleEntry> e : f.autopet.entrySet()) {
@@ -332,6 +375,7 @@ public final class Pets {
 		f.layout = new LinkedHashMap<>();
 		for(Map.Entry<Integer, PetType> e : prof.layout.entrySet()) f.layout.put(String.valueOf(e.getKey()), e.getValue().name());
 		f.equipped = prof.equipped.name();
+		f.startingPet = prof.startingPet.name();
 		f.autopet = new LinkedHashMap<>();
 		for(Map.Entry<Autopet.Trigger, Autopet.Rule> e : prof.rules.entrySet()) {
 			RuleEntry entry = new RuleEntry();
@@ -370,6 +414,8 @@ public final class Pets {
 	private static final class PetsFile {
 		Map<String, String> layout;
 		String equipped;
+		/** The pet a run begins with. Absent on a file written before slot 51 existed, which reads as the default. */
+		String startingPet;
 		Map<String, RuleEntry> autopet;
 		List<String> rodCycle;
 	}

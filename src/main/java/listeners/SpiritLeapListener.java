@@ -10,6 +10,7 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import plugin.FakePlayerManager;
+import plugin.Menus;
 import plugin.Utils;
 
 /**
@@ -43,6 +44,7 @@ public class SpiritLeapListener implements Listener {
 	@EventHandler
 	public void onMenuClick(InventoryClickEvent e) {
 		if(!(e.getInventory().getHolder() instanceof SpiritLeapMenu menu)) return;
+		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // lock the menu; never move items
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		Player target = menu.targetForSlot(e.getRawSlot());

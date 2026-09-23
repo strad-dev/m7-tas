@@ -21,7 +21,6 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
@@ -31,6 +30,7 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jspecify.annotations.NonNull;
 import plugin.M7tas;
+import plugin.Menus;
 import plugin.Utils;
 
 import java.util.*;
@@ -74,13 +74,14 @@ public class Eq implements CommandExecutor, Listener {
 		applySpeedCane(p); // must run after the menu exists, since it writes the cane via NMS (see below)
 	}
 
-	/** Mirror the player's worn armor into slots 0-3, and the aggregate stats into 6-7.  Slot 8's speed cane is
-	 *  set separately via NMS. */
+	/** Mirror the player's worn armor into slots 0-3, the pet into 4 and the aggregate stats into 6-7.  Slot 8's
+	 *  speed cane is set separately via NMS. */
 	private static void refresh(Player p, Inventory gui) {
 		for(int i = 0; i < 4; i++) {
 			ItemStack worn = getArmor(p, i);
 			gui.setItem(i, worn == null ? null : worn.clone());
 		}
+		gui.setItem(PET_SLOT, petItem(p));
 		gui.setItem(MELEE_STATS_SLOT, meleeStatsItem(p));
 		gui.setItem(MAGIC_STATS_SLOT, magicStatsItem(p));
 	}
@@ -90,8 +91,46 @@ public class Eq implements CommandExecutor, Listener {
 	// cannot: the player's whole aggregate, equipment, Accessory Power, tunings, profile sources and class bonus
 	// included.  Generated from the stat layer, never authored, for the same reason lore is.
 
+	private static final int PET_SLOT = 4;
 	private static final int MELEE_STATS_SLOT = 6;
 	private static final int MAGIC_STATS_SLOT = 7;
+
+	/**
+	 * Slot 4: the pet the damage model is actually using, and what it is worth in Max Speed.
+	 * <p>
+	 * <b>{@code Pet.forPlayer}, not {@code Pets.equipped}</b>, because those are the same answer in realistic and
+	 * different answers everywhere else: in classic and Perfect RNG the pet is ASSUMED from what the player is
+	 * doing and wearing, and this menu's whole job is to show the numbers the model is really running on.  It
+	 * says which of the two it is, so an assumed pet is never mistaken for a choice.
+	 * <p>
+	 * It carries the <b>Max Speed</b> line as well.  That number is a sum of four terms
+	 * ({@code plugin/MaxSpeedSync}) and the pet is one of them - the Black Cat's +150 - so "my cat is out but I
+	 * am on 450" was a question with no way to answer it from inside the game.
+	 * <p>
+	 * The head is {@code PetType.icon}, as everywhere a pet is drawn; only its trailing action line, the
+	 * summoning menu's, is swapped for the two lines below.
+	 */
+	private static ItemStack petItem(Player p) {
+		damage.DungeonClass clazz = damage.DungeonClass.of(p);
+		damage.DamagePath path = clazz.primaryPath();
+		pets.PetType type = pets.PetType.of(damage.Pet.forPlayer(p, path));
+		if(type == null) return null; // a damage-side pet with no menu twin; nothing sensible to draw
+		ItemStack item = type.icon(true, false);
+		ItemMeta meta = item.getItemMeta();
+		if(meta == null) return item;
+		java.util.List<net.kyori.adventure.text.Component> lore = meta.lore();
+		java.util.List<net.kyori.adventure.text.Component> out =
+				lore == null ? new java.util.ArrayList<>() : new java.util.ArrayList<>(lore);
+		if(!out.isEmpty()) out.removeLast(); // "CURRENTLY SUMMONED", which belongs to /pets
+		out.add(Utils.mm("<gray>Max Speed: <white>" + plugin.MaxSpeedSync.maxSpeed(p)));
+		out.add(net.kyori.adventure.text.Component.empty());
+		out.add(Utils.mm(damage.Difficulty.manualPets()
+				? "<dark_gray>Yours, picked in /pets"
+				: "<dark_gray>Assumed from your class, gear and phase"));
+		meta.lore(out);
+		item.setItemMeta(meta);
+		return item;
+	}
 
 	/** Slot 6: Damage, Strength and Crit Damage - the melee/beam half of the aggregate. */
 	private static ItemStack meleeStatsItem(Player p) {
@@ -214,8 +253,8 @@ public class Eq implements CommandExecutor, Listener {
 	@EventHandler
 	public void onInventoryClick(InventoryClickEvent e) {
 		if(!(e.getView().getTopInventory().getHolder() instanceof EqHolder)) return;
+		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // the GUI is fully controlled; only the armor swap below mutates anything
-		if(e.getClick() == ClickType.DOUBLE_CLICK) return; // collect-to-cursor, not a swap
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		Inventory clicked = e.getClickedInventory();
 		if(clicked == null || !clicked.equals(p.getInventory())) return; // only bottom-inventory clicks act
@@ -236,10 +275,11 @@ public class Eq implements CommandExecutor, Listener {
 		e.setCurrentItem(worn); // null clears the slot if nothing was worn
 		Inventory gui = e.getView().getTopInventory();
 		gui.setItem(idx, item.clone());
-		// A helmet swap changes speed next tick (HelmetSpeedSync poll), so refresh the cane afterwards - and it
+		// A helmet swap changes Max Speed next tick (MaxSpeedSync poll), so refresh the cane afterwards - and it
 		// changes the aggregate too, by thousands of Intelligence in the Storm's-helmet case, so redraw both.
 		Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			if(p.getOpenInventory().getTopInventory().getHolder() instanceof EqHolder) {
+				gui.setItem(PET_SLOT, petItem(p));
 				gui.setItem(MELEE_STATS_SLOT, meleeStatsItem(p));
 				gui.setItem(MAGIC_STATS_SLOT, magicStatsItem(p));
 				applySpeedCane(p);
