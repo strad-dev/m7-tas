@@ -10,15 +10,12 @@ import org.bukkit.inventory.ItemStack;
 import plugin.Utils;
 
 /**
- * The Infinityboom TNT.  Both click sides detonate it against the block the CLIENT reported, and it is
- * <b>never consumed and never actually placed</b>.
+ * Both click sides detonate against the block the CLIENT reported; <b>never consumed, never placed</b>.
  * <p>
- * It carries a can-place-and-break-anything stamp purely so an adventure-mode client reports the clicked block
- * at all, which is also why {@link #neverBreaks()} and {@link #onPlace} both exist: every path where the click
- * is NOT consumed by the ability still lets vanilla place the TNT as a real block, so the placement is vetoed
- * and detonated instead.  Chasing each of those paths individually was the alternative, and
- * {@code BlockPlaceEvent} fires exactly when vanilla decided to place, i.e. exactly when no ability took the
- * click, so this behaves identically however the item was used.
+ * The can-place-and-break stamp only exists so an adventure client reports the block at all, hence
+ * {@link #neverBreaks()} and {@link #onPlace}: any click the ability didn't consume would let vanilla place real TNT,
+ * so the placement is vetoed and detonated. {@code BlockPlaceEvent} fires exactly when no ability took the click,
+ * so this covers every path without chasing each one.
  */
 public final class InfinityboomTNT implements Tool, AbilityItem {
 	public static final InfinityboomTNT INSTANCE = new InfinityboomTNT();
@@ -93,7 +90,7 @@ public final class InfinityboomTNT implements Tool, AbilityItem {
 		return true;
 	}
 
-	/** Vanilla placed it instead, so detonate against the block it was placed against. */
+	/** Vanilla placed it: detonate against the block it was placed on. */
 	@Override
 	public boolean onPlace(Player p, Block against) {
 		ItemUtils.superboomAt(p, against.getLocation());
@@ -101,17 +98,14 @@ public final class InfinityboomTNT implements Tool, AbilityItem {
 	}
 
 	/**
-	 * Detonate a Superboom TNT against the block the click landed on. There is deliberately **NO server-side ray
-	 * trace** here: {@code clicked} is always the block the CLIENT reported, so reach and target are vanilla's, not an
-	 * approximation of them. An own ray trace was both too generous (a fixed 5 blocks, past what the client considers
-	 * interactable) and subtly wrong (it skipped passable blocks, so aiming at a lever centred on the wall behind it).
+	 * Deliberately NO server-side ray trace: {@code clicked} is what the CLIENT reported, so reach and target are
+	 * vanilla's. The old trace was too generous (fixed 5 blocks) and wrong (skipped passable blocks, so aiming at a
+	 * lever hit the wall behind it).
 	 * <p>
-	 * Every click path now carries a block: RIGHT_CLICK_BLOCK from {@code PlayerInteractEvent.getClickedBlock()} /
-	 * {@code ServerboundUseItemOnPacket}'s hit result, LEFT_CLICK_BLOCK from {@code ServerboundPlayerActionPacket}'s
-	 * pos.  That is why the TNT carries a can_break stamp (see {@code Utils.placeAndBreakAnythingInAdventure}): without
-	 * it the adventure-mode client sends no block-attack packet at all.  A real placement comes from
-	 * {@code BlockPlaceEvent.getBlockAgainst()}.  A null {@code clicked} therefore means the client itself saw nothing
-	 * interactable (air click) or the click was consumed by an entity.  Vanilla would place no TNT, so nothing booms.
+	 * RIGHT_CLICK_BLOCK comes from {@code getClickedBlock()} / {@code ServerboundUseItemOnPacket}, LEFT_CLICK_BLOCK
+	 * from {@code ServerboundPlayerActionPacket}'s pos (needs the can_break stamp, see
+	 * {@code Utils.placeAndBreakAnythingInAdventure}, or adventure sends no attack packet), a placement from
+	 * {@code getBlockAgainst()}. Null means air click or entity click: vanilla would place nothing, so no boom.
 	 */
 	public static void superboom(Player p, Block clicked) {
 		if(clicked == null) return;

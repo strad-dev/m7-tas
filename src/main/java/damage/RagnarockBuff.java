@@ -3,25 +3,19 @@ package damage;
 import org.bukkit.entity.Player;
 
 /**
- * The Ragnarock Axe's buff window (MAP.md §1.7).
+ * Ragnarock Axe buff window (MAP.md §1.7). {@code listeners/CustomItems} owns the window (3s wind-up, arm, expire)
+ * and marks it with the {@code RagBuff} tag; this is just the reader, so the stat side never sees a tag.
  * <p>
- * The window itself is owned by {@code listeners/CustomItems} - it runs the 3s wind-up, arms the buff and expires
- * it, and marks the state with the {@code RagBuff} scoreboard tag.  This class is only the reader the stat layer
- * goes through, so the stat side never has to know about a scoreboard tag.
+ * The buff is +150% of the axe's own Strength, computed in {@link Stats#ragnarockStrength}. A bonus STAT, not a
+ * vanilla potion, and it keeps applying after the axe leaves the hand; casting then swapping is the point.
  * <p>
- * What the buff GRANTS is not here either: it is +150% of the axe's own Strength stat, computed in
- * {@link Stats#ragnarockStrength} from the axe's authored terms.  It is a bonus STAT, so it goes through the stat
- * layer rather than a vanilla Strength potion effect, and it keeps applying after the axe leaves the hand -
- * casting Ragnarock and then switching to a hitting weapon is the entire point of the item.
- * <p>
- * The real Hypixel gate is "take no damage for 3 seconds", which cannot exist here because players are
- * invulnerable (§4).  The stand-in is "keep the axe in the main hand for those 3 seconds", enforced by
- * {@code items.combat.RagnarockAxe.ragWindup} - a deliberate substitution, not a reading of the item.
+ * Hypixel's gate is "take no damage for 3 seconds", impossible with invulnerable players (§4). Stand-in: keep the axe
+ * in the main hand for 3s ({@code items.combat.RagnarockAxe.ragWindup}), a deliberate substitution.
  */
 public final class RagnarockBuff {
 	private RagnarockBuff() {}
 
-	/** The scoreboard tag {@code CustomItems} marks a live buff with. */
+	/** Tag {@code CustomItems} marks a live buff with. */
 	public static final String TAG = "RagBuff";
 
 	public static boolean isActive(Player p) {

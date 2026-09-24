@@ -14,9 +14,8 @@ import plugin.Utils;
 import java.util.List;
 
 /**
- * The Ice Spray Wand.  Its cast lands its x1.1 damage debuff on EVERY enemy within 8 blocks BEFORE it deals any
- * damage, so the cast benefits from its own debuff (§7) - and the debuff still applies to a target the damage
- * cannot reach, e.g. an armoured wither.
+ * The x1.1 debuff lands on EVERY enemy within 8 blocks BEFORE the damage, so the cast benefits from it (§7), and it
+ * still lands on targets the damage can't reach (armoured wither).
  */
 public final class IceSprayWand implements Weapon, AbilityItem {
 	public static final IceSprayWand INSTANCE = new IceSprayWand();
@@ -84,18 +83,14 @@ public final class IceSprayWand implements Weapon, AbilityItem {
 		int alreadyDebuffed = 0;
 		for(Entity entity : entities) {
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0) {
-				// Counted BEFORE the apply, which refreshes the window and would otherwise make every target read
-				// as already debuffed.  A refresh still counts as "already debuffed", the same split SkyBlock in
-				// Vanilla's wand reports - unlike that one, though, a refreshed target here still takes the damage.
+				// Counted BEFORE the apply, which refreshes the window. A refresh counts as "already debuffed" like
+				// SkyBlock in Vanilla's wand, but here it still takes the damage.
 				if(damage.TargetDebuffs.iceSprayed(entity1)) alreadyDebuffed++;
 				else debuffed++;
-				// The cast applies its x1.1 damage debuff to EVERY enemy within 8 blocks of the caster's eyes for
-				// 5s, and it lands FIRST so the cast benefits from its own debuff (MAP.md §7).  The debuff
-				// applies even to a target the damage cannot reach, e.g. an armoured wither.
+				// 5s, lands FIRST (MAP.md §7), even on an armoured wither.
 				damage.TargetDebuffs.applyIceSpray(entity1);
 				if(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0) continue;
-				// Ice Spray: 19,000 base at 0.1 Intelligence scaling.  The bigger base does not make up for the
-				// scaling against Wither Impact's 0.3 (§7).
+				// 19,000 base, 0.1 Int scaling; the bigger base doesn't make up for Wither Impact's 0.3 (§7).
 				double sbDamage = damage.Damage.ability(p, entity1, wand);
 				damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
 			}

@@ -18,23 +18,20 @@ import java.util.Map;
 
 /*
  * Practice
- * 1. Every non-spectator must have a class selected (/class), or the run is refused: no class means no kit and no
- *    class tag, which is a silently broken run rather than an obviously refused one.
- * 2. Equips each of them with their saved /m7loadout kit, refreshed to the current item definitions, and
- *    teleports them to the chosen phase's default location, then starts it.
- * 3. "--no-teleport" skips the teleport so players can start the phase wherever they currently are.  A bare
- *    "classic"/"perfect_rng"/"rta" arg sets the damage mode for the run (MAP.md §0), a bare
- *    "paul"/"derpy"/"other" sets the mayor, and a bare "on"/"off" sets the alpha timings; omitted, the current
- *    settings stand, so a standalone player keeps whatever /dungeonsettings last set.  The network always sends
- *    all three.
- * 4. Runs the same boss and server instructions as /tas, but WITHOUT the fake-player routines, handoffs, or
- *    spectator sync, so real players can practice the boss fights and mechanics.  The phase begins after a
- *    pre-run delay of 60 ticks (3s) by default.  Pass a bare integer arg to override it: the network plugin
- *    sends "m7tas:m7practice <section> 400" for a 20s get-into-position window.  See Server.serverInstructions.
+ * 1. Every non-spectator must have a class (/class) or the run is refused: no class means no kit and no class
+ *    tag, a silently broken run.
+ * 2. Equips each with their saved /m7loadout kit, refreshed to current item definitions, teleports them to the
+ *    phase's default location, then starts it.
+ * 3. "--no-teleport" skips the teleport. Bare "classic"/"perfect_rng"/"rta" sets the damage mode (MAP.md §0),
+ *    "paul"/"derpy"/"other" the mayor, "on"/"off" the alpha timings; omitted, current settings stand, so
+ *    standalone keeps whatever /dungeonsettings set. The network always sends all three.
+ * 4. Runs the same boss and server instructions as /tas, WITHOUT fake-player routines, handoffs or spectator
+ *    sync. Pre-run delay is 60 ticks (3s); a bare integer overrides it: the network sends
+ *    "m7tas:m7practice <section> 400" for a 20s window. See Server.serverInstructions.
  *
- * The label: /m7practice.  On the network the BARE label is StradDevHub's queue command (an alias of /m7,
- * force-claimed at boot), so this one is only reachable there as /m7tas:m7practice - which is exactly what
- * M7Bridge dispatches, and what it blocks players from typing.  Standalone, the bare label is ours.
+ * On the network the bare /m7practice label is StradDevHub's queue command (alias of /m7, force-claimed at boot),
+ * so this is only reachable as /m7tas:m7practice, which M7Bridge dispatches and blocks players from typing.
+ * Standalone, the bare label is ours.
  */
 public class Practice implements CommandExecutor {
 
@@ -55,7 +52,6 @@ public class Practice implements CommandExecutor {
 			return true;
 		}
 
-		// /m7practice end cancels the current session.
 		if(args.length >= 1 && args[0].equalsIgnoreCase("end")) {
 			TAS.endPractice(p.getWorld());
 			p.sendMessage(Utils.msg("<yellow>Practice session ended"));
@@ -64,25 +60,22 @@ public class Practice implements CommandExecutor {
 
 		String section = "all";
 		boolean noTeleport = false;
-		// Optional pre-run "get into position" delay in ticks (a bare integer arg). Defaults to 60 (3s); the
-		// network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in together.
+		// Optional pre-run delay in ticks (bare integer). Default 60 (3s); network passes 400 (20s) when it warps
+		// a party in.
 		int delayTicks = 60;
-		// Optional damage difficulty ("classic" / "perfect_rng" / "rta"). Null means "leave the mode alone", which
-		// is what a player running this standalone wants: their /dungeonsettings choice stands.
-		// The network ALWAYS passes one, since damage.Difficulty is a server-wide global and a run must not inherit
-		// the last party's mode - which decides whether anyone can die, since both live modes kill.
+		// Optional difficulty ("classic" / "perfect_rng" / "rta"). Null leaves it alone, so standalone keeps its
+		// /dungeonsettings choice. The network always passes one: damage.Difficulty is server-wide and a run must
+		// not inherit the last party's mode, which decides whether anyone can die (both live modes kill).
 		damage.Difficulty difficulty = null;
-		// Optional mayor ("paul" / "derpy" / "other").  Null means "leave it alone", for the same reason as the
-		// difficulty: damage.Mayor is a server-wide global, and the network always passes one so a run can't
-		// inherit the last party's mayor - which decides whether every mob on the floor has double health.
+		// Optional mayor ("paul" / "derpy" / "other"). Null leaves it alone, same reason: damage.Mayor is
+		// server-wide, and it decides whether every mob has double health.
 		damage.Mayor mayorArg = null;
-		// Optional alpha timings ("on" / "off").  Null means "leave it alone", same as the two above: plugin.Alpha
-		// is a server-wide global, and a run that inherited the last party's alpha flag would be timed under
-		// timings nobody chose - and would be refused by the leaderboards for it.
+		// Optional alpha timings ("on" / "off"). Null leaves it alone, same reason: plugin.Alpha is server-wide,
+		// and an inherited flag times the run under timings nobody chose, so leaderboards refuse it.
 		plugin.Alpha alphaArg = null;
 		for(String arg : args) {
-			// Both parsed up front so the branches below are one test each: they have to come BEFORE the section
-			// fallback, which swallows any unrecognised word and would otherwise read "classic" as a section name.
+			// Parsed up front, before the section fallback, which swallows any unknown word and would read
+			// "classic" as a section name.
 			damage.Difficulty mode = damage.Difficulty.parse(arg);
 			damage.Mayor mayor = damage.Mayor.parse(arg);
 			plugin.Alpha alpha = plugin.Alpha.parse(arg);
@@ -100,18 +93,16 @@ public class Practice implements CommandExecutor {
 
 		World world = p.getWorld();
 
-		// Everyone the run applies to: online and not spectating, by either route, i.e. vanilla spectator mode,
-		// which is the idle state on the networked m7 server, or the plugin's own /spectate.  Used for the class
-		// check, the kit hand-out and the teleport, so all three always agree on who is taking part.
+		// Participants: online and not spectating by either route (vanilla spectator, the idle state on networked
+		// m7, or our /spectate). Shared by class check, kit hand-out and teleport so all three agree.
 		List<Player> participants = new ArrayList<>();
 		for(Player online : org.bukkit.Bukkit.getOnlinePlayers()) {
 			if(online.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(online)) continue;
 			participants.add(online);
 		}
 
-		// Every participant must have picked a class.  Without one they would get no kit and no class tag, i.e. no
-		// abilities and no class-gated damage, which is a silently broken run rather than an obviously refused one.
-		// The network plugin blocks the same case up front in /m7practice, so this never fires for a bridged run.
+		// Every participant needs a class: without one, no kit and no class tag, so no abilities or class-gated
+		// damage. The network blocks this up front in /m7practice, so this never fires for a bridged run.
 		List<String> noClass = new ArrayList<>();
 		for(Player participant : participants) {
 			if(loadout.Loadouts.getSelectedClass(participant.getUniqueId()) == null) noClass.add(participant.getName());
@@ -127,17 +118,14 @@ public class Practice implements CommandExecutor {
 			return true;
 		}
 
-		// Hand every participant the kit they saved for their selected class. This is THE way to get items now
-		// (/getcustomitems is gone): pick a class with /class, tune it with /m7loadout, then /m7practice. applyFor
-		// refreshes the saved copies to the current item definitions first, and sets the class scoreboard tag that
-		// gates the mage beam and the per-class damage paths.
-		// Idempotent on the network: M7Bridge already applied the same loadout from the same file on join.
+		// Saved kit for the selected class. The only way to get items now (/getcustomitems is gone): /class,
+		// /m7loadout, then /m7practice. applyFor refreshes to current item definitions and sets the class tag
+		// (gates mage beam and per-class damage). Idempotent on the network: M7Bridge applied the same file on join.
 		for(Player participant : participants) {
 			loadout.Loadouts.applyFor(participant);
 		}
 
-		// Teleport participants to the phase's default location.  This is skipped entirely with --no-teleport so
-		// players start wherever they currently are.
+		// Skipped with --no-teleport so players start where they are.
 
 		if(!noTeleport) {
 			double[] loc = DEFAULT_LOCATIONS.get(section);
@@ -147,16 +135,13 @@ public class Practice implements CommandExecutor {
 			}
 		}
 
-		// Set the mode BEFORE the run arms: every debuff, defense reducer and blessing lookup reads
-		// damage.Difficulty live, and RunResult.capture stamps the run with whatever it says at completion, so the
-		// leaderboard board a time lands on is decided here.  It also decides whether death is on, which
-		// TAS.runPractice reads when it clears the death state.
+		// Set BEFORE the run arms: debuff, defense reducer and blessing lookups read damage.Difficulty live, and
+		// RunResult.capture stamps it at completion, so this picks the leaderboard. Also decides whether death is
+		// on, which TAS.runPractice reads when clearing death state.
 		if(difficulty != null) damage.Difficulty.set(difficulty);
-		// Same window for the mayor, and it matters more: mob HP is written once at spawn, so the flag has to be
-		// right BEFORE anything spawns.
+		// Mayor too, and it matters more: mob HP is written once at spawn, so it must be right before anything spawns.
 		if(mayorArg != null) damage.Mayor.set(mayorArg);
-		// Same window again: a phase arms its whole schedule the tick it starts, so the flag has to be right
-		// before the first one does.
+		// Alpha too: a phase arms its whole schedule the tick it starts.
 		if(alphaArg != null) plugin.Alpha.set(alphaArg);
 		if(plugin.Alpha.enabled()) {
 			org.bukkit.Bukkit.broadcast(Utils.msg("<gold><bold>ALPHA TIMINGS<reset><gray> are on.  "

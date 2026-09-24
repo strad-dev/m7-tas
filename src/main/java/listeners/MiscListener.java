@@ -42,8 +42,7 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Anvils must never open their repair/rename menu. Deny the block interaction on any anvil variant so the
-	// UI never opens; item-use in hand is left untouched (only the container open is blocked).
+	// Anvils never open their menu. Only the block use is denied; item use in hand still works.
 	@EventHandler
 	public void onAnvilInteract(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
@@ -55,27 +54,25 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// The Watcher is a pre-boss you never damage; you kill its 19 blood mobs instead.  It relies on RESISTANCE 255,
-	// but the plugin's own damage path bypasses potion effects entirely, so cancel ALL vanilla damage to it too.
-	// (damage/Damage.deal refuses a TASWatcher outright; this covers anything that never reaches it.)
+	// The Watcher is never damaged; you kill its 19 blood mobs. RESISTANCE 255 doesn't stop our damage path, so
+	// Damage.deal refuses a TASWatcher and this cancels all vanilla damage.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onWatcherDamage(EntityDamageEvent e) {
-		// The Watcher is never damageable; a freshly-spawned blood mob is shielded for ~2 ticks (practice) so a
-		// spawn-tick arrow can't prematurely kill it before it registers toward progress.
+		// A fresh blood mob is shielded ~2 ticks so a spawn-tick arrow can't kill it before it counts toward progress.
 		if(e.getEntity().getScoreboardTags().contains("TASWatcher")
 				|| e.getEntity().getScoreboardTags().contains("WatcherMobSpawning")) {
 			e.setCancelled(true);
 		}
 	}
 
-	// Killing the key archaeologists grants the global Wither / Blood keys (which gate the doors).
+	// Key archaeologist deaths grant the global Wither / Blood keys (door gates).
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onKeyMobDeath(EntityDeathEvent e) {
 		if(Server.isCleanupInProgress()) return; // a cleanup purge must not grant keys
 		boolean witherMob = e.getEntity().getScoreboardTags().contains("WitherKeyMob");
 		boolean bloodMob = e.getEntity().getScoreboardTags().contains("BloodKeyMob");
 		if(!witherMob && !bloodMob) return;
-		// The key goes to (and the message names) the player closest to the mob when it died, excluding spectators.
+		// Key goes to (and message names) the nearest non-spectator.
 		Player picker = null;
 		double best = Double.MAX_VALUE;
 		Location deathLoc = e.getEntity().getLocation();
@@ -88,12 +85,9 @@ public class MiscListener implements Listener {
 		else Server.grantBloodKey(picker);
 	}
 
-	// Left/right-clicking a Wither/Blood door block opens it, if the matching key has been obtained.  The click is
-	// always cancelled within the door bounds so the block can't be broken; opening is a no-op without the key.
-	// EXCEPTION: BEFORE the run starts, during the prep and countdown window, a player holding the stonk may break
-	// through the door.  I let that click pass through untouched instead of cancelling it, and the break reaches the
-	// stonk handler in CustomItems.onBlockBreak, which only protects the door once the run has started.  Once the
-	// run is live the stonk gets no special treatment: clicking the door just opens it, if the key's been obtained.
+	// Clicking a Wither/Blood door opens it if the key is obtained. The click is always cancelled so the block
+	// can't be broken. Exception: before the run starts, a stonk click passes through so the break reaches
+	// CustomItems.onBlockBreak, which only protects doors once the run is live.
 	@EventHandler
 	public void onDoorClick(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK && e.getAction() != Action.LEFT_CLICK_BLOCK) return;
@@ -101,9 +95,8 @@ public class MiscListener implements Listener {
 		if(b == null) return;
 		if(!Server.inWitherDoor(b) && !Server.inBloodDoor(b)) return;
 		if(!Server.isRunStarted() && items.ItemUtils.getID(e.getPlayer().getInventory().getItemInMainHand()).equals("skyblock/combat/stonk")) return;
-		// A spectator's click is consumed but never opens anything.  The key check is TEAM-wide (Server.hasWitherKey /
-		// hasBloodKey), so nothing about the CLICKER is tested: an idle watcher could otherwise open the wither or
-		// blood door on the running party's behalf, and the blood door starts the Watcher.
+		// Spectator clicks are consumed, never open anything. The key check is team-wide, so otherwise an idle
+		// watcher could open a door for the party (and the blood door starts the Watcher).
 		if(Utils.isSpectator(e.getPlayer())) {
 			e.setCancelled(true);
 			return;
@@ -117,9 +110,8 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Vanilla ender pearls can't be thrown inside the boss arena (prevents pearl-skipping mechanics). The Infinileap
-	// class ability (a named ender pearl) is exempt; fake players use simulated pearls + scripted teleports, so they
-	// are excluded to avoid breaking choreography.
+	// No vanilla pearls in the boss arena (no pearl skips). Infinileap is exempt; fake players too, since they use
+	// simulated pearls + scripted teleports.
 	@EventHandler
 	public void onPearlInBossArena(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
@@ -130,8 +122,7 @@ public class MiscListener implements Listener {
 		if(LavaJump.isInBossArena(e.getPlayer().getLocation())) e.setCancelled(true);
 	}
 
-	// Chat is now owned by an external network chat plugin (when one is present), so the old per-server
-	// chat handler was removed here to avoid double-broadcasting the same message.
+	// Chat handler removed: the network chat plugin owns chat, and both would double-broadcast.
 
 	@EventHandler
 	public void onEntityExplode(EntityExplodeEvent e) {
@@ -141,16 +132,10 @@ public class MiscListener implements Listener {
 	}
 
 	/**
-	 * A Bonzo charge is not a thing you can hit.  Punching a projectile in the
-	 * {@code minecraft:redirectable_projectile} tag redirects it along the puncher's aim, and the server side of
-	 * that is already shut off at the source ({@code BonzoStaff.makeUndeflectable}) - but the client runs
-	 * {@code Player.attack} too, and the flag that stops the server is not synched, so the puncher's own client
-	 * predicts a deflection the server never performs and the charge visibly flies off for them.
-	 * <p>
-	 * So the attack is refused here, and the charge's real position and motion are sent straight back to the one
-	 * player who mispredicted, on the same tick.  <b>Only to them</b>: nobody else's client ran the prediction, so
-	 * nobody else has anything to correct.  The immediate send is the same trick the bonzo launch itself uses -
-	 * waiting for the tracker costs a tick, and a tick is long enough to see.
+	 * Bonzo charges can't be punched. {@code BonzoStaff.makeUndeflectable} stops the server redirecting a
+	 * {@code minecraft:redirectable_projectile}, but that flag isn't synched, so the puncher's client still
+	 * predicts the deflection. Refuse the attack and send the charge's real position + motion to that player only,
+	 * immediately: waiting for the tracker costs a visible tick.
 	 */
 	@EventHandler
 	public void onPunchBonzoCharge(PrePlayerAttackEntityEvent e) {
@@ -165,31 +150,27 @@ public class MiscListener implements Listener {
 
 	@EventHandler
 	public void onEntitySpawn(EntitySpawnEvent e) {
-		// Every spawned entity joins the shared no-collision team so nothing push-collides with the players
-		// or with each other.  This is NOT setCollidable(false): CraftBukkit makes canBeCollidedWith() return
-		// false when collides=false, so vanilla's projectile sweep skips the entity and arrows phase through
-		// it.  The scoreboard team gives no-push collision while keeping the entity arrow-hittable.
+		// Every entity joins the no-collision team so nothing pushes. NOT setCollidable(false): that makes
+		// canBeCollidedWith() false, so arrows phase through. The team keeps it arrow-hittable.
 		plugin.PlayerCollision.addEntityToNoCollisionTeam(e.getEntity());
 	}
 
-	// Prune the no-collision team when an entity leaves the world, whether by death, despawn or chunk removal.
-	// This is the counterpart to onEntitySpawn's add, so the team's UUID entries don't grow unbounded over a run.
+	// Counterpart to onEntitySpawn's add, so the team doesn't grow unbounded.
 	@EventHandler
 	public void onEntityRemove(EntityRemoveEvent e) {
 		plugin.PlayerCollision.removeEntityFromNoCollisionTeam(e.getEntity());
 	}
 
-	// 26.2: migrated to Paper's unified io.papermc.paper.event.entity.EntityKnockbackEvent. The by-entity case
-	// arrives as EntityPushedByEntityAttackEvent (a subclass sharing the same HandlerList), whose getPushedBy()
-	// replaces the old EntityKnockbackByEntityEvent#getSourceEntity().
+	// 26.2: Paper's EntityKnockbackEvent. The by-entity case is the subclass EntityPushedByEntityAttackEvent
+	// (same HandlerList); getPushedBy() replaces EntityKnockbackByEntityEvent#getSourceEntity().
 	@EventHandler
 	public void onKnockback(EntityKnockbackEvent e) {
-		// Cancel knockback on fake players.  There are none in the practice fork; this is kept as a guard.
+		// No knockback on fake players (none exist in practice; kept as a guard).
 		if(e.getEntity() instanceof Player p && FakePlayerManager.getFakePlayers().containsValue(p)) {
 			e.setCancelled(true);
 			return;
 		}
-		// Bonzo's Staff wind charge must not knock back the player it hits.
+		// Bonzo's charge doesn't knock back who it hits.
 		if(e instanceof EntityPushedByEntityAttackEvent pushed
 				&& pushed.getPushedBy() instanceof WindCharge windCharge
 				&& windCharge.getScoreboardTags().contains("Bonzo")) {
@@ -201,12 +182,9 @@ public class MiscListener implements Listener {
 	public void onProjectileHit(ProjectileHitEvent e) {
 		// Handle arrows hitting blocks, and remove Terminator arrows
 		if(e.getEntity() instanceof Arrow arrow) {
-			// SUPER-verbose diagnostic: report when a Last Breath arrow hits a boss, either a WITHER or the Wither
-			// King's ENDER DRAGON, where hits register on an EnderDragonPart and are resolved to its parent.  This
-			// lets its hit timing be correlated against the boss vulnerability window, separate from ordinary
-			// Terminator arrows.  Read-only;
-			// uses the event's own hit reference so it's accurate even if the LOWEST-priority handler
-			// (WithersNotImmuneToArrows) already processed/removed the arrow for the boss hit.
+			// Super-verbose: log Last Breath hits on a boss (wither, or WK dragon via its EnderDragonPart parent)
+			// to correlate with the vulnerability window. Uses the event's hit ref, so it's right even if
+			// WithersNotImmuneToArrows (LOWEST) already removed the arrow.
 			if(Utils.isSuperVerbose() && arrow.getScoreboardTags().contains("LastBreathArrow")) {
 				Entity rawHit = e.getHitEntity();
 				Entity boss = rawHit instanceof Wither || rawHit instanceof EnderDragon ? rawHit
@@ -224,11 +202,8 @@ public class MiscListener implements Listener {
 				// Resolve EnderDragonPart to its parent EnderDragon (EnderDragonPart is not a LivingEntity)
 				Entity rawHit = e.getHitEntity();
 
-				// Phase through falling blocks.  Vanilla projectile targeting is not restricted to LivingEntity, so a
-				// FallingBlock is a legal arrow target, which makes a Gyrokinetic Wand's 64-block swarm an arrow-proof
-				// wall that costs a pierce level per block: with pierce 4 the arrow dies after 5.  The blocks are
-				// invulnerable decoration, so nothing is lost by ignoring them, and cancelling before vanilla's
-				// onHitEntity runs is what preserves the pierce level, the same reason the Terminator branch cancels.
+				// Phase through falling blocks. They're legal arrow targets, so a Gyrokinetic Wand's 64-block swarm
+				// eats a pierce level per block (pierce 4 dies after 5). Cancelling before onHitEntity keeps the pierce.
 				if(rawHit instanceof FallingBlock && arrow.getScoreboardTags().contains("TerminatorArrow")) {
 					e.setCancelled(true);
 					return;
@@ -238,27 +213,22 @@ public class MiscListener implements Listener {
 						: rawHit instanceof EnderDragonPart part ? part.getParent() : null;
 				if(hitEntity == null) return;
 
-				// Phase through all real and fake players.  Fake-player arrows must never damage a
-				// real player, which would bypass Creative invulnerability via genericKill below.
+				// Phase through all players; a fake-player arrow must never hit a real one (bypasses Creative
+				// invulnerability via genericKill).
 				if(hitEntity instanceof Player) {
 					e.setCancelled(true);
 				}
-				// Handle OUR arrows' entity hits: cancel to preserve pierce, then apply damage manually.
-				// Wither hits are handled by WithersNotImmuneToArrows (which bypasses vanilla shield logic).
-				// The gate is "we stamped this arrow" rather than a tag, so it covers the Terminator, Last Breath,
-				// the Explosive Bow and Rapid Fire uniformly, and never a genuinely vanilla arrow.
+				// Our arrows: cancel to keep pierce, apply damage ourselves. Withers are WithersNotImmuneToArrows'.
+				// Gated on "we stamped it", not a tag, so it covers Terminator, Last Breath, Explosive Bow and Rapid
+				// Fire and never a vanilla arrow.
 				else if(damage.Arrows.isStamped(arrow) && arrow.getShooter() instanceof Player p && !(hitEntity instanceof Wither)) {
 					e.setCancelled(true);
-					// Capture dead/dying state BEFORE applying damage: a killing-blow arrow SHOULD still ding (the
-					// target was alive when hit), but an arrow striking an ALREADY dead/dying target should not. A
-					// Wither-King dragon in its death animation keeps HP pinned to 1 (isDead()/getHealth() won't catch
-					// it), so consult WitherKing's dying set too.
+					// Read dead/dying BEFORE damage: a killing blow dings, a hit on an already-dead target doesn't. A
+					// dying WK dragon keeps HP at 1, so check WitherKing's dying set too.
 					boolean targetDead = hitEntity.isDead() || hitEntity.getHealth() <= 0
 							|| hitEntity.getScoreboardTags().contains("TASDying") || WitherKing.isDyingDragon(hitEntity);
-					// Arrows.hit resolves the arrow's debuffs, the target half of the formula and Piercing's 25% for
-					// every mob after the first, then deals it - through the DERIVED entry for a Rapid Fire arrow, so
-					// the ability can't read its own output back.  Aggro is noted only if the arrow does real damage;
-					// on a plain mob (this branch excludes withers) nothing has an aggro target anyway.
+					// Arrows.hit resolves debuffs, the target half and Piercing's 25% past the first mob, then deals
+					// it (DERIVED entry for Rapid Fire, so it can't read its own output back).
 					damage.Arrows.hit(arrow, p, hitEntity);
 					if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 					int newPierce = arrow.getPierceLevel() - 1;
@@ -294,18 +264,15 @@ public class MiscListener implements Listener {
 						direction.setZ(0);
 					}
 
-					// Fake players: queue the impulse so it's applied at the top of the next aiStep (see
-					// FakePlayerManager.launch).  Setting it here, inside the windcharge's entity tick, lands after
-					// the fake ticker's aiStep already ran, and the impulse gets clobbered before the next one, which
-					// costs the full first-tick rise.  Real players run authoritative client physics, so set directly.
+					// Fake players: queue the impulse for the next aiStep (FakePlayerManager.launch); setting it here
+					// lands after aiStep and gets clobbered, losing the first-tick rise. Real players: set directly.
 					if(FakePlayerManager.getFakePlayers().containsValue(p)) {
 						FakePlayerManager.launch(p, direction);
 					} else {
 						serverPlayer.setOnGround(false);
 						p.setVelocity(direction);
-						// Send the motion packet immediately rather than waiting for hurtMarked to be serviced
-						// on the next aiStep.  The deferral ships it a tick late and the client loses the full
-						// first-tick rise, an off-by-one.  An immediate send matches Hypixel: full 0.5 on tick 1.
+						// Send motion now, not via hurtMarked next aiStep: that's a tick late and loses the first-tick
+						// rise. Immediate matches Hypixel, full 0.5 on tick 1.
 						serverPlayer.connection.send(new ClientboundSetEntityMotionPacket(serverPlayer));
 						serverPlayer.hurtMarked = false;
 					}
@@ -319,12 +286,8 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Track game-mode changes during a run so the practice scoreboard shows golden names only for players who
-	// stayed in Adventure Mode the whole time.  It's a minor anti-cheat: any change disqualifies the gold name.
-	//
-	// Except the plugin's own flips.  A death drops a player into spectator and revival puts them
-	// back, and dying is not cheating: death.Deaths announces each of those two changes ahead of time and this
-	// consumes the announcement.  Nothing else is exempt - an /gamemode still costs the gold name.
+	// Any game-mode change in a run costs the gold scoreboard name (minor anticheat). Except death/revival flips,
+	// which death.Deaths announces ahead and this consumes; a /gamemode still costs it.
 	@EventHandler
 	public void onGameModeChange(PlayerGameModeChangeEvent e) {
 		if(death.Deaths.ownsGameModeChange(e.getPlayer().getUniqueId())) return;
@@ -332,27 +295,21 @@ public class MiscListener implements Listener {
 	}
 
 	/**
-	 * Soul sand is the deleted lava-jump block, and any still in circulation must not become a real block.
-	 *
-	 * <p><b>Cancel, never place-then-revert.</b> This used to let vanilla place it and rewrite the block back a
-	 * tick later.  That acks the placement to the client as a SUCCESS and only corrects it a tick plus a round trip
-	 * afterwards, and for that whole window the client is stood on a block the server has already deleted.  On a
-	 * lava MLG that is a ground claim over lava with nothing underfoot, which is exactly what StradDevHub's Jesus
-	 * check counts, and at 84 ms the window is the three ticks it needs: two flags, two kills, on a player doing
-	 * nothing wrong.  Cancelling makes vanilla ack the placement as a failure instead, so the client rolls its own
-	 * prediction back with no ghost, and the item is never consumed so it needs no refund either.  Same pattern and
-	 * same reason as {@code CustomItems.onCustomBlockPlace}.
+	 * Soul sand is the deleted lava-jump block; any left must not be placed.
+	 * <p><b>Cancel, never place-then-revert.</b> Reverting acks a SUCCESS and corrects a tick + round trip later, so
+	 * on a lava MLG the client stands on a deleted block over lava: StradDevHub's Jesus check. At 84 ms that's the
+	 * three ticks it needs (two flags, two kills, innocent player). Cancelling acks a failure, so no ghost and no
+	 * refund. Same as {@code CustomItems.onCustomBlockPlace}.
 	 */
 	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent e) {
 		if(e.getBlockPlaced().getType() != Material.SOUL_SAND) return;
-		// Survival AND adventure, the dungeon play modes.  Only creative may place freely, for setup and building.
+		// Only creative places freely (building).
 		GameMode gm = e.getPlayer().getGameMode();
 		if(gm != GameMode.SURVIVAL && gm != GameMode.ADVENTURE) return;
-		// LavaJump.isInBossArena is the one region test; this used to carry a hand-rolled copy of its bounds.
 		if(!LavaJump.isInBossArena(e.getBlockPlaced().getLocation())) return;
 		e.setCancelled(true);
-		e.getPlayer().updateInventory(); // the client predicted the placement, so resend the stack and it won't ghost
+		e.getPlayer().updateInventory(); // client predicted the placement; resend the stack so it won't ghost
 	}
 
 	@EventHandler
@@ -363,13 +320,9 @@ public class MiscListener implements Listener {
 	}
 
 	/**
-	 * Every hit on a boss wither now goes through {@code damage.Damage.deal}, which writes health directly and
-	 * calls the boss's own {@code clampDamage} explicitly, so any {@code EntityDamageEvent} reaching a TASWither
-	 * is by definition NOT ours - a stray explosion, fire, a fall.  None of that is part of the SkyBlock damage
-	 * model, so cancel it outright rather than let it slip past the clamps.
-	 * <p>
-	 * This replaces the four {@code handleDamage(EntityDamageEvent)} interceptors that used to be dispatched from
-	 * here (MAP.md §7's damage-path unification).
+	 * Our boss hits go through {@code damage.Damage.deal} (writes health, calls {@code clampDamage}), so any
+	 * {@code EntityDamageEvent} on a TASWither isn't ours (explosion, fire, fall): cancel it so it can't skip the
+	 * clamps. Replaced four {@code handleDamage} interceptors (MAP.md §7).
 	 */
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onWitherLordDamage(EntityDamageEvent e) {
@@ -378,18 +331,9 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// onBossDamager lived here: a MONITOR EntityDamageByEntityEvent handler, deliberately WITHOUT ignoreCancelled,
-	// that made any Player damager (or player-shot projectile) a TASWither's aggro target.  It is DELETED, not moved.
-	//
-	// Aggro now requires the hit to have actually taken health off the boss (damage/Damage.deal), plus the three
-	// abilities allowed to aggro through a full shield, which note it themselves (mage beam, thrown-axe projectiles,
-	// Flaming Flay arc).  This listener could satisfy neither condition: it cannot see a damage KIND, and "without
-	// ignoreCancelled" means it fired precisely for the hits that dealt nothing.  Since vanilla melee damage is now
-	// cancelled outright for every Player damager (CustomItems.onEntityDamageByEntity), it would have fired on every
-	// single swing and re-noted aggro no matter what our own path decided - silently undoing the rule.
-	//
-	// Nothing is lost: every hit that should aggro reaches Damage.deal, and the vanilla-only damage that reaches a
-	// TASWither (a stray explosion, fire, a fall) is cancelled by onWitherLordDamage and was never meant to aggro.
+	// onBossDamager (MONITOR, no ignoreCancelled, made any player damager a TASWither's aggro target) is DELETED.
+	// Aggro now needs the hit to take health (Damage.deal), or one of three abilities that note it through a full
+	// shield (mage beam, thrown axe, Flaming Flay). It fired on every cancelled vanilla swing and undid that rule.
 
 	// Blood-Mob deaths drive the Watcher's kill lines + portal progression.
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -397,8 +341,7 @@ public class MiscListener implements Listener {
 		Watcher.INSTANCE.handleMobDeath(e);
 	}
 
-	// The Watcher's nether_portal is a teleport trigger, not real nether travel, so never let vanilla relocate
-	// the player to the Nether on this single-world TAS server.  My own portal detection handles the teleport.
+	// The Watcher's portal is a teleport trigger handled by our own detection; vanilla must not send anyone to the Nether.
 	@EventHandler(ignoreCancelled = true)
 	public void onWatcherPortal(PlayerPortalEvent e) {
 		if(e.getCause() == PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) {
@@ -406,9 +349,7 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Runners practising the same floor stand on top of each other constantly, so a stray Terminator shot or a
-	// Scylla swing at a boss must never hit another player.  Unwrap projectiles the same way onBossDamager does,
-	// otherwise Archer arrows still land.
+	// Runners stack on each other, so no player-vs-player hits. Projectiles are unwrapped too, or Archer arrows land.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerVsPlayer(EntityDamageByEntityEvent e) {
 		if(!(e.getEntity() instanceof Player)) return;
@@ -418,14 +359,10 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Fire resistance stops fire and lava DAMAGE but the entity still visually catches fire and
-	// accrues fire ticks, so cancel combustion outright for ALL players: walking through fire,
-	// landing in lava on the Goldor lava-jump, and so on.
-	//
-	// This is the server-side half only.  The client predicts its own ignition in lava, which no event can reach,
-	// so the fire ticks are really killed by the BURNING_TIME = 0 attribute in JoinListener.applyPlayerSetup.  This
-	// stays because it stops the burn before NMS even asks the attribute, and because the paths that BYPASS the
-	// event (lavaIgnite when remainingFireTicks > 0) are only reachable once something has already lit the player.
+	// Fire resistance stops damage but players still visibly burn, so cancel combustion for all players.
+	// Server half only: the client predicts lava ignition, so BURNING_TIME = 0 in JoinListener.applyPlayerSetup
+	// does the real work. This stays since it stops the burn before NMS asks the attribute, and the bypass paths
+	// (lavaIgnite when remainingFireTicks > 0) need the player already lit.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onPlayerCombust(EntityCombustEvent e) {
 		if(e.getEntity() instanceof Player) {
@@ -433,9 +370,8 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// The wither bosses (and their skulls / any wither skeletons) apply the vanilla WITHER effect on hit -
-	// a black damage-over-time that also clutters the screen. Players are never meant to be withered in
-	// practice, so cancel it as it's applied. Only ADDED/CHANGED are blocked so removals aren't disturbed.
+	// Players never get the vanilla WITHER effect (from bosses, skulls, skeletons). Only ADDED/CHANGED are
+	// blocked so removals still work.
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onWitherEffect(EntityPotionEffectEvent e) {
 		if(e.getEntity() instanceof Player
@@ -453,8 +389,7 @@ public class MiscListener implements Listener {
 		}
 	}
 
-	// Refresh nametag (which embeds current HP) after any damage event resolves -
-	// MONITOR + 1-tick delay so we read the post-HP value, not the pre-event value.
+	// Refresh the HP nametag; MONITOR + 1 tick so it reads post-damage HP.
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onWitherDamageNameRefresh(EntityDamageEvent e) {
 		if(!(e.getEntity() instanceof Wither wither)) return;
@@ -462,11 +397,8 @@ public class MiscListener implements Listener {
 		Utils.scheduleTask(() -> { if(wither.isValid()) Utils.changeName(wither); }, 1);
 	}
 
-	// The wither hurt sound moved to damage/Damage.witherHurtSound.  It used to hang off EntityDamageEvent here,
-	// which the unified damage path (MAP.md §7) stopped firing: every hit now writes health directly, so
-	// the sound belongs at the one place every hit passes through.  Its three rules went with it - judged on the
-	// PRE-clamp damage, silent while the boss is dying, and silent for a mage beam (which routes its own
-	// constant-volume sound to the beamer).
+	// Wither hurt sound moved to damage/Damage.witherHurtSound, since the unified damage path (MAP.md §7) no
+	// longer fires EntityDamageEvent.
 
 	@EventHandler
 	public void onEnergyCrystalRightClick(PlayerInteractAtEntityEvent e) {
@@ -476,8 +408,7 @@ public class MiscListener implements Listener {
 		Maxor.INSTANCE.pickUp(e.getPlayer(), crystal);
 	}
 
-	// Left-clicking (attacking) a pickupable top crystal collects it too, same as a right-click. The crystal
-	// takes no damage (onEnderCrystalDamage cancels it); this just routes the attack into a pickup.
+	// Attacking a pickupable crystal collects it too (it takes no damage, see onEnderCrystalDamage).
 	@EventHandler
 	public void onEnergyCrystalLeftClick(EntityDamageByEntityEvent e) {
 		if(!(e.getEntity() instanceof EnderCrystal crystal)) return;
@@ -498,15 +429,8 @@ public class MiscListener implements Listener {
 		if(e.getRightClicked() instanceof Villager) e.setCancelled(true);
 	}
 
-	// Mort and the Wizard, the villager NPCs, are invulnerable to everything: stray terminator arrows,
-	// Salvation and mage beams, melee, explosions, fire, fall.  They're set decoration, never targets.
-	// /kill is the one exception: it must still remove them.
-	//
-	// Vanilla's /kill (LivingEntity#kill) arrives as DamageCause.KILL, because DamageTypes.GENERIC_KILL maps
-	// to it. The old hurtEntity used that SAME source for ability damage, so letting KILL through would once
-	// have let mage beams in too, which is why damage/Damage.deal refuses villagers outright.  With ability
-	// damage stopped at the source, a KILL-cause hit on a villager can only be a real /kill.
-	// LOWEST so the hit is dead before any other handler acts on it.
+	// Mort and the Wizard are invulnerable to everything except /kill (DamageCause.KILL). Damage.deal refuses
+	// villagers outright, so a KILL hit can only be a real /kill. LOWEST so nothing else acts on the hit.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVillagerDamage(EntityDamageEvent e) {
 		if(!(e.getEntity() instanceof Villager)) return;

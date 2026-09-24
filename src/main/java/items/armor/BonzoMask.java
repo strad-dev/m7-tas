@@ -10,9 +10,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Bonzo's Mask.  A worn cheat-death: 180s cooldown, 3s immune.  Epic where the Spirit Mask is Mythic, which is
- * exactly why the Ancient reforge gives it 18/50/16 against the Spirit Mask's 35/50/25 - the table is
- * rarity-keyed (§1.10).
+ * Worn cheat-death: 180s cooldown, 3s immune. Epic vs the Spirit Mask's Mythic, so Ancient gives it 18/50/16 vs
+ * 35/50/25; the table is rarity-keyed (§1.10).
  */
 public final class BonzoMask implements Wearable {
 	public static final BonzoMask INSTANCE = new BonzoMask();

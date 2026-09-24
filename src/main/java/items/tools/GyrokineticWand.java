@@ -21,10 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * The Gyrokinetic Wand.  A LEFT-click ability, and the only one whose right-click is not an ability at all -
- * hence the interact cancel and the entity-interact block both being off for it.
- */
+/** LEFT-click ability; right-click isn't one, so interact cancel and entity-interact block are both off. */
 public final class GyrokineticWand implements AbilityItem {
 	public static final GyrokineticWand INSTANCE = new GyrokineticWand();
 
@@ -258,8 +255,7 @@ public final class GyrokineticWand implements AbilityItem {
 		}.runTaskTimer(M7tas.getInstance(), 0L, 1L);
 
 		for(Entity e : Objects.requireNonNull(l.getWorld()).getNearbyEntities(l, 10, 10, 10)) {
-			// The Watcher and the villager NPCs (Mort/Wizard) are immune to the Gyrokinetic Wand, so never
-			// let the rift pull or hold them.  Boss entities (withers, ender dragons) are also immune.
+			// Immune: the Watcher, villager NPCs (Mort/Wizard) and bosses (withers, ender dragons).
 			if(e instanceof LivingEntity entity && !(entity instanceof Player) && !(entity instanceof Wither)
 					&& !(entity instanceof EnderDragon)
 					&& !(entity instanceof Villager)

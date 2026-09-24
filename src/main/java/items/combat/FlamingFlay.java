@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-/** The Flaming Flay.  Lobs a flame arc, angled up from the caster's look direction. */
+/** Lobs a flame arc, angled up from the look direction. */
 public final class FlamingFlay implements Weapon, AbilityItem {
 	public static final FlamingFlay INSTANCE = new FlamingFlay();
 
@@ -122,16 +122,13 @@ public final class FlamingFlay implements Weapon, AbilityItem {
 				for(Entity entity : Objects.requireNonNull(currentLoc.getWorld()).getNearbyEntities(currentLoc, 0.5, 0.5, 0.5)) {
 					if(hitEntities.contains(entity) || doNotKill.contains(entity.getType())) continue;
 					if(!(entity instanceof LivingEntity entity1) || entity instanceof Player || entity1.getHealth() <= 0) continue;
-					// The arc is one of the three things that may pull a boss's aggro through a FULL shield - the
-					// mage beam and the thrown-axe projectiles are the others, and both note it at this same point,
-					// their own armour check.  Everywhere else aggro needs the hit to have actually dealt damage, so
-					// it has to be noted here rather than left to damage/Damage, which by then only sees a zero.
+					// One of three things that aggro a boss through a FULL shield (with the mage beam and thrown axe).
+					// Noted here because damage/Damage only sees a zero hit.
 					if(entity instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
 						instructions.bosses.WitherActions.noteDamager(p);
 					}
 					if(entity instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) continue;
-					// The Flaming Flay's ability deals the SAME as its melee hit (MAP.md §1.8), so it
-					// goes through the melee formula rather than the ability one.
+					// Deals the SAME as its melee hit (MAP.md §1.8), so melee formula, not ability.
 					double sbDamage = damage.Damage.melee(p, entity1, p.getInventory().getItemInMainHand());
 					damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
 					hitEntities.add(entity);

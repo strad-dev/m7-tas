@@ -1,37 +1,28 @@
 package damage;
 
 /**
- * Equipment (necklace / cloak / belt / gloves) - <b>assumed, never an item</b> (MAP.md §1.11).  There are
- * no ItemStacks, no inventory slots and no palette entries for these; each class is simply taken to be wearing the
- * right ones and their stats are added to the aggregate as a flat per-class source.
+ * Equipment (necklace / cloak / belt / gloves): <b>assumed, never an item</b> (MAP.md §1.11). No ItemStacks, slots
+ * or palette entries; each class is taken to wear the right ones as a flat per-class source.
  * <p>
- * The Mage's set is <b>path-dependent</b>, which is one of the two reasons the stat cache is keyed
- * {@code (player, path)} rather than {@code player}: the Soulweaver Gloves (beam) and the Manticore Claw (ability)
- * are the same slot and can never both apply, and the Balloon Snake changes reforge with them.
+ * Mage's set is path-dependent, one reason the stat cache is keyed {@code (player, path)}: Soulweaver Gloves (beam)
+ * and Manticore Claw (ability) share a slot, and the Balloon Snake changes reforge with them.
  * <p>
- * Values here are the plain SkyBlock numbers; the x6.65 is applied as a stage, exactly as for items.  The one
- * exception is the Manticore Claw, which is not a dungeon item, so its 20 / 37.5 / 3 stay flat - and its Ability
- * Damage is not starred either, so it does not take the x1.80 either.
+ * Plain SkyBlock numbers; x6.65 is applied as a stage like items. Exception: Manticore Claw isn't a dungeon item, so
+ * its 20 / 37.5 / 3 stay flat, and its Ability Damage isn't starred so no x1.80 either.
  * <p>
- * Per-piece reforge terms are authored inline rather than looked up.  §2.1 rules the equipment reforge table
- * "only needed if equipment reforges ever change", because §1.11 already publishes the resolved per-piece values -
- * they differ per piece (a Strengthened Bone Necklace grants +6 Strength where a Strengthened cloak grants +7)
- * since the pieces differ in rarity, and those rarities are not published.  Each number still appears exactly once.
+ * Reforge terms are inline, not looked up: §2.1 says the equipment reforge table is "only needed if equipment
+ * reforges ever change", since §1.11 publishes resolved per-piece values. They differ by unpublished rarity
+ * (Strengthened necklace +6 Strength, cloak +7). Each number still appears once.
  */
 public final class Equipment {
 	private Equipment() {}
 
-	/**
-	 * The equipment stat block for a class on a given damage path, already scaled.
-	 * <p>
-	 * The Adaptive Belt is worn by EVERY class including the Mage, and its ability grants a different stat per
-	 * class, which is why the belt is built per class rather than shared.
-	 */
+	/** Already scaled. Every class wears the Adaptive Belt and its ability differs per class, so it's built per class. */
 	public static StatBlock forClass(DungeonClass clazz, DamagePath path) {
 		return clazz == DungeonClass.MAGE ? mage(path) : martial(clazz);
 	}
 
-	/** Archer / Berserk / Healer / Tank: one shared set, differing only in what the Adaptive Belt grants. */
+	/** Archer / Berserk / Healer / Tank: one set, differing only in the belt ability. */
 	private static StatBlock martial(DungeonClass clazz) {
 		StatBlock scaled = StatBlock.EMPTY
 				// Bone Necklace (Strengthened): 18 The One + 6 reforge
@@ -51,10 +42,7 @@ public final class Equipment {
 		return scaled.scaled(Scale.SB_CATA_MULT, Scale.SB_STAR_MULT);
 	}
 
-	/**
-	 * The Mage's two sets.  The beam set trades the ability set's Intelligence for Crit Damage, which is exactly
-	 * what the beam formula wants and the ability formula cannot use at all (§7).
-	 */
+	/** Beam set trades the ability set's Int for Crit Damage, which the ability formula can't use (§7). */
 	private static StatBlock mage(DamagePath path) {
 		boolean ability = path == DamagePath.ABILITY;
 		StatBlock scaled = StatBlock.EMPTY
@@ -77,8 +65,8 @@ public final class Equipment {
 		}
 		StatBlock out = scaled.scaled(Scale.SB_CATA_MULT, Scale.SB_STAR_MULT);
 		if(ability) {
-			// Manticore Claw (Brilliant), the ABILITY half of the gloves slot.  NOT a dungeon item, so these
-			// three numbers are flat: 20 Strength, 22.5 ability + 15 reforge Intelligence, 3 Ability Damage.
+			// Manticore Claw (Brilliant), ABILITY half of the gloves slot. Not a dungeon item, so flat: 20 Strength,
+			// 22.5 ability + 15 reforge Intelligence, 3 Ability Damage.
 			out = out.plus(Stat.STRENGTH, 20)
 					.plus(Stat.INTELLIGENCE, 22.5 + 15)
 					.plus(Stat.ABILITY_DAMAGE, 3);

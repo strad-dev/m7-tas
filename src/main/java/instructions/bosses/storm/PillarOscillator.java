@@ -4,19 +4,11 @@ import org.bukkit.Sound;
 import plugin.Utils;
 
 /**
- * One pillar's oscillation state machine. Polled every 20 ticks by Storm;
- * each call to {@link #runCycle(int)} represents one 20-tick cycle in which
- * the pillar advances if the pad-gate caller has determined a player is
- * standing on the corresponding pad.
+ * One pillar's oscillation. Storm polls every 20 ticks and calls {@link #runCycle(int)} when the pad is occupied.
+ * Material spans {@link #bottomY} to the y196 anchor, which never moves. DOWN clones row bottomY to bottomY-1;
+ * UP air-fills row bottomY.
  * <br>
- * Motion model: pillar material always extends from {@link #bottomY} up to
- * {@link PadAndPillar#PILLAR_ANCHOR_Y} (y196). Moving DOWN by one block:
- * clone the row at y={@code bottomY} to y={@code bottomY - 1}, then decrement
- * bottomY. Moving UP by one block: air-fill the row at y={@code bottomY},
- * then increment bottomY. The anchor at y196 is the persistent seed and
- * never moves.
- * <br>
- * Cycle motion table (measured in-game):
+ * Cycle motion (measured in-game):
  * <pre>
  *   bottomY at  | direction | this cycle's behavior
  *   cycle start | at start  |
@@ -45,7 +37,7 @@ public final class PillarOscillator {
 		reset();
 	}
 
-	/** Resets to initial state: bottom at y175, direction DOWN, no movement recorded, not used. */
+	/** Bottom y175, DOWN, no movement, not used. */
 	public void reset() {
 		bottomY = PadAndPillar.PILLAR_BOTTOM_INITIAL;
 		direction = Direction.DOWN;
@@ -57,36 +49,27 @@ public final class PillarOscillator {
 	public PadAndPillar getPillar() { return pillar; }
 	public int getBottomY() { return bottomY; }
 
-	/** @return true once this pillar has crushed Storm and been consumed, after which the pad no longer activates it. */
+	/** Pillar has crushed Storm; its pad no longer activates it. */
 	public boolean isUsed() { return used; }
 
 	/**
-	 * Consume this pillar: its pad goes dead AND its already-queued clone ops are neutered.
-	 * <br>
-	 * The freeze matters because {@link #runCycle} fires up to five {@code moveOne} ops through
-	 * {@code Utils.scheduleTask} (which hands back no cancellable handle) spread over 16 ticks. Marking the
-	 * pillar used only stops the NEXT cycle from being started.  The current cycle's remaining DOWN clones
-	 * would otherwise keep descending into Storm during the 20 ticks before the crush explosion fires,
-	 * re-burying him in the very pillar that already crushed him.  Once a pillar has crushed Storm it is
-	 * finished moving; it exists only to be blown up.
+	 * Pad goes dead and queued clone ops are neutered. The freeze matters: {@link #runCycle} queues up to five
+	 * {@code moveOne}s over 16 ticks via {@code Utils.scheduleTask} (no cancel handle), and without it the rest of
+	 * the cycle keeps descending into Storm in the 20 ticks before the crush explosion, re-burying him.
 	 */
 	public void markUsed() {
 		used = true;
 		freeze();
 	}
 
-	/** Neuter this pillar's still-queued clone ops without consuming it. Used when Storm dies mid-cycle. */
+	/** Neuters queued clone ops without consuming the pillar. Used when Storm dies mid-cycle. */
 	public void freeze() {
 		frozen = true;
 	}
 
 	/**
-	 * Execute one 20-tick cycle's motion, scheduling per-block clone ops at 4-tick
-	 * intervals.  The caller is responsible for the pad-presence gating, so only
-	 * call this when the pad is occupied at the cycle boundary.
-	 *
-	 * @param currentTick the boss-fight tick when the cycle starts; recorded as
-	 *                    the most-recent-movement marker for crush-detector arming.
+	 * One 20-tick cycle, a clone op every 4 ticks. Caller gates on pad presence. {@code currentTick} is recorded as
+	 * the last movement for crush-detector arming.
 	 */
 	public void runCycle(int currentTick) {
 		boolean atLimit = (direction == Direction.DOWN && bottomY == PadAndPillar.PILLAR_BOTTOM_MIN)
@@ -108,19 +91,16 @@ public final class PillarOscillator {
 			Utils.scheduleTask(this::moveOne, delay + i * 4L);
 		}
 
-		// Only downward motion arms the crush detector; upward cycles don't count.
+		// Only downward motion arms the crush detector.
 		if(direction == Direction.DOWN) {
 			lastMovementTick = currentTick;
 		}
 	}
 
 	private void moveOne() {
-		// This pillar has crushed Storm and is awaiting its explosion, so drop the leftover queued ops.
 		if(frozen) return;
 		if(direction == Direction.DOWN) {
-			// Push Storm out from under the descending pillar before placing the
-			// new bottom row. If Storm is already at the floor the push no-ops
-			// and the next 20-tick poll's crush detector handles him.
+			// Push Storm out from under before placing the row. At the floor this no-ops and the next poll's crush detector handles him.
 			Storm.INSTANCE.tryPushBelowDescendingPillar(pillar, bottomY - 1);
 			Utils.runCommand(
 					String.format("clone %d %d %d %d %d %d %d %d %d",
@@ -138,22 +118,15 @@ public final class PillarOscillator {
 		Utils.playGlobalSound(Sound.BLOCK_PISTON_CONTRACT, 0.5f, 1.0f);
 	}
 
-	/**
-	 * @return true if the pillar is currently descending AND a DOWN clone op was scheduled
-	 * within the last {@code windowTicks} ticks. An UP-moving pillar never arms crush, even
-	 * if its prior DOWN cycle was within the window.
-	 */
+	/** Descending AND a DOWN cycle started within {@code windowTicks}. An UP pillar never arms crush, even inside the window. */
 	public boolean movedRecently(int currentTick, int windowTicks) {
 		if(direction != Direction.DOWN) return false;
 		return lastMovementTick != Integer.MIN_VALUE && (currentTick - lastMovementTick) <= windowTicks;
 	}
 
 	/**
-	 * Display counterpart of {@link #movedRecently} for Storm's action-bar HUD.
-	 *
-	 * @return how many more ticks this pillar stays armed, counting {@code currentTick} itself, so it reads
-	 * {@code windowTicks + 1} on the tick the DOWN cycle starts and {@code 1} on the last armed tick.  Returns 0
-	 * if the pillar isn't armed at all, i.e. it is moving UP or the window has run out.
+	 * HUD counterpart of {@link #movedRecently}: armed ticks left counting {@code currentTick}, so
+	 * {@code windowTicks + 1} on the DOWN cycle's first tick, 1 on the last, 0 if not armed.
 	 */
 	public int armedTicksLeft(int currentTick, int windowTicks) {
 		if(!movedRecently(currentTick, windowTicks)) return 0;

@@ -3,19 +3,15 @@ package damage;
 import java.util.*;
 
 /**
- * One item's stat definition, built from independent terms rather than totals (MAP.md §2.4).
- * <p>
- * The four axes §2.4 requires to stay separate are separate fields here, so any one of them can gain a variant
- * without touching the others:
+ * One item's stat definition from independent terms, not totals (MAP.md §2.4). The four axes are separate fields
+ * so each can gain a variant alone:
  * <ol>
- *   <li><b>Base item stats</b> - {@link #terms}, authored once per item.</li>
- *   <li><b>Reforge</b> - an id only; the values come from {@link Reforges} at {@code (reforge, category, rarity)}.</li>
- *   <li><b>Gemstones</b> - a slot LIST (never a scalar: the same piece can run 1 Sapphire + 1 Onyx or 2 Sapphire),
- *       resolved through {@link Gemstones} at the item's rarity.</li>
- *   <li><b>Global upgrades</b> - {@link Upgrade} ids; the item records WHICH it has, not their values.</li>
+ *   <li><b>Base stats</b> - {@link #terms}, authored once per item.</li>
+ *   <li><b>Reforge</b> - id only; values from {@link Reforges} at {@code (reforge, category, rarity)}.</li>
+ *   <li><b>Gemstones</b> - a slot LIST, never a scalar (1 Sapphire + 1 Onyx vs 2 Sapphire), via {@link Gemstones}.</li>
+ *   <li><b>Upgrades</b> - {@link Upgrade} ids, WHICH not their values.</li>
  * </ol>
- * One base entry serves every reforge variant: the Heroic and Withered (Fabled) Hyperions are not two items, they
- * are one base resolved with two reforge ids and two gem sets.
+ * One base serves every reforge variant: Heroic and Withered Hyperion are one base with two reforges and gem sets.
  */
 public final class ItemDef {
 	private final String displayName;
@@ -50,7 +46,7 @@ public final class ItemDef {
 		this.ability = b.ability;
 	}
 
-	/** A right-click ability's own numbers (§7): its base damage and its per-ability Intelligence scalar. */
+	/** Right-click ability's base damage and per-ability Int scalar (§7). */
 	public record Ability(double baseDamage, double intelligenceScaling) {}
 
 	public String displayName() {
@@ -65,10 +61,7 @@ public final class ItemDef {
 		return category;
 	}
 
-	/**
-	 * The EFFECTIVE rarity, i.e. the one the reforge and gemstone tables must be read at (§1.0.9).  Never store this
-	 * - it is derived, so flipping {@code recombobulated} is a one-word edit rather than a sweep through every item.
-	 */
+	/** EFFECTIVE rarity, what reforge and gem tables are read at (§1.0.9). Derived, never stored. */
 	public Rarity rarity() {
 		return recombobulated ? baseRarity.recombobulated() : baseRarity;
 	}
@@ -81,20 +74,20 @@ public final class ItemDef {
 		return reforge;
 	}
 
-	/** True for a bow that is never drawn (§1.2): every shot is full damage and crits, ignoring draw scaling. */
+	/** Never drawn (§1.2): every shot full damage and crits. */
 	public boolean shortbow() {
 		return shortbow;
 	}
 
-	/** This item's right-click ability, or null if it has none the damage system computes. */
+	/** Null if none the damage system computes. */
 	public Ability ability() {
 		return ability;
 	}
 
 	/**
-	 * This item's finished stat contribution, dungeon-scaled.
+	 * Finished stat contribution, dungeon-scaled.
 	 *
-	 * @param pet the pet Chimera copies.  Ignored unless the item carries Chimera.
+	 * @param pet the pet Chimera copies; ignored without Chimera
 	 */
 	public StatBlock stats(Pet pet) {
 		StatBlock sum = StatBlock.EMPTY;
@@ -103,10 +96,8 @@ public final class ItemDef {
 	}
 
 	/**
-	 * The same computation, itemised by source, for {@code /verbose super} and for checking a table against §1.
-	 * <p>
-	 * The values here are UNSCALED (they are the plan's "terms" column); {@link #finish} is what applies the
-	 * item-wide multiplier and the dungeon stage, and it must be applied to the SUM, never to a single term.
+	 * Same, itemised by source, for {@code /verbose super} and checking against §1. UNSCALED; {@link #finish} applies
+	 * to the SUM, never a single term.
 	 */
 	public Map<String, StatBlock> breakdown(Pet pet) {
 		Map<String, StatBlock> out = new LinkedHashMap<>();
@@ -127,17 +118,14 @@ public final class ItemDef {
 	}
 
 	/**
-	 * Whether this item copies the pet's base stats (Chimera V).
-	 * <p>
-	 * <b>This is the one thing that makes an item's stats depend on the PET</b>, via the term above, which is why
-	 * {@code StatLore.refreshChimeraLore} asks it rather than keeping a list of weapon names: add a Chimera
-	 * weapon and the lore refresh picks it up with no second edit.
+	 * Copies the pet's base stats (Chimera V), the one thing making item stats depend on the PET.
+	 * {@code StatLore.refreshChimeraLore} asks this instead of listing weapon names.
 	 */
 	public boolean chimera() {
 		return chimera;
 	}
 
-	/** The item-wide multiplier and the dungeon stage, applied once to the summed terms. */
+	/** Item-wide multiplier and dungeon stage, applied once to the summed terms. */
 	private StatBlock finish(StatBlock sum) {
 		StatBlock scaled = sum.times(selfMultiplier);
 		return dungeonItem ? scaled.scaled(Scale.SB_CATA_MULT, Scale.SB_STAR_MULT) : scaled;
@@ -173,7 +161,7 @@ public final class ItemDef {
 			return this;
 		}
 
-		/** The item's BASE rarity.  Recombobulating is on by default, so the effective rarity is one tier up. */
+		/** BASE rarity. Recombobulated by default, so effective is one tier up. */
 		public Builder rarity(Rarity base) {
 			this.baseRarity = base;
 			return this;
@@ -184,7 +172,7 @@ public final class ItemDef {
 			return this;
 		}
 
-		/** Mark this item as non-dungeon, so neither the x6.65 nor the x1.80 applies to it (§1.0.3). */
+		/** Non-dungeon: neither x6.65 nor x1.80 applies (§1.0.3). */
 		public Builder notDungeon() {
 			this.dungeonItem = false;
 			return this;
@@ -215,28 +203,25 @@ public final class ItemDef {
 			return this;
 		}
 
-		/** A Combat slot (accepts any of the three combat gems) holding a Perfect gem of the given type. */
+		/** Combat slot holding a Perfect gem. */
 		public Builder combatGem(Gemstones.Type gem) {
 			gemSlots.add(Gemstones.Slot.combat(gem, Gemstones.Quality.PERFECT));
 			return this;
 		}
 
-		/** A slot typed to one gem, e.g. the Hyperion's and Ice Spray Wand's dedicated Sapphire slot (§2.3). */
+		/** Slot typed to one gem, e.g. Hyperion's Sapphire slot (§2.3). Perfect. */
 		public Builder typedGem(Gemstones.Type gem) {
 			gemSlots.add(Gemstones.Slot.typed(gem, Gemstones.Quality.PERFECT));
 			return this;
 		}
 
-		/** This weapon carries Chimera V, so it copies the equipped pet's base stats onto ITSELF (§2). */
+		/** Chimera V: copies the pet's base stats onto ITSELF (§2). */
 		public Builder chimera() {
 			this.chimera = true;
 			return this;
 		}
 
-		/**
-		 * A multiplier on this item's OWN stats and nothing else.  Exists for the Necron Head Bonus (§1.10), which
-		 * doubles the helmet's stats in M7 and nothing else the player is wearing.
-		 */
+		/** Multiplier on this item's OWN stats only. For the Necron Head Bonus (§1.10): x2 helmet stats in M7. */
 		public Builder selfMultiplier(double m) {
 			this.selfMultiplier = m;
 			return this;

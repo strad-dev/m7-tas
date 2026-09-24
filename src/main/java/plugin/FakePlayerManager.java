@@ -7,20 +7,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * TAS-only fake-player system, stubbed to no-ops for the practice-only fork.
- *
- * <p>The practice server has NO fake players: bosses aggro real players. The heavy NMS
- * implementation (spawning real {@code ServerPlayer}s with dummy connections, the per-tick fake
- * ticker, skin fetching, launch impulses, custom connections) lived here and is preserved in git
- * history on {@code main}.
- *
- * <p>The methods below are kept as no-ops because they're referenced pervasively across practice
- * code, almost always as "is this player a fake?" guards, which are simply always false now
- * ({@link #getFakePlayers()} is empty), preserving correct behaviour without editing ~15 call sites.
+ * TAS-only fake-player system, stubbed to no-ops for practice: no fakes, bosses aggro real players. The NMS
+ * implementation is in git history on {@code main}.
+ * <p>
+ * Kept because ~15 call sites use it as an "is this a fake?" guard, always false now ({@link #getFakePlayers()} is
+ * empty).
  */
 @SuppressWarnings("EmptyMethod")
 public class FakePlayerManager {
-	// Always empty in the practice fork, since there are no fake players.
+	// Always empty in practice.
 	private static final Map<String, Player> fakePlayers = new HashMap<>();
 
 	public static Map<String, Player> getFakePlayers() {
@@ -36,7 +31,7 @@ public class FakePlayerManager {
 	public static void stopCustomConnection() {
 	}
 
-	/** No-op: launch impulses only applied to fake players, of which there are none. */
+	/** No-op: launch impulses were fake-only. */
 	public static void launch(Player fake, Vector velocity) {
 	}
 }

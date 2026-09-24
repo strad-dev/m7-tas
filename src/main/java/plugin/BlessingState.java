@@ -13,84 +13,72 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The run's blessings as they stand RIGHT NOW: what the party has collected, and what the damage pipeline is
- * actually using.  Attached to {@link BlessingChangeEvent}, and readable at any moment through
- * {@link #currentJson()}.
+ * The run's blessings RIGHT NOW: collected, and what the damage pipeline uses. On {@link BlessingChangeEvent} and
+ * via {@link #currentJson()}. Same facts-only contract as {@link RunResult}; {@link #toJson()} is one reflective call.
  * <br>
- * Same contract as {@link RunResult}: this is M7 TAS reporting facts and nothing else.  It fires into the void
- * when nothing listens, and a consumer that doesn't want to compile against this class can read
- * {@link #toJson()} through one reflective call.
- * <br>
- * <b>Two different numbers, both real, and they routinely disagree.</b>  {@link Entry#level} is what the party
- * has actually picked up; {@link Entry#effectiveLevel} is what {@code damage/Difficulty} feeds the formulas.
- * In classic mode - the default - the second is the maxed table whatever the first says, and even in a live
- * mode a run with no clear phase has no chest history to read and so falls back to the same table
- * ({@link #assumedMax} says which of the two you are looking at, so a display can't accidentally claim a
- * boss-only run collected nothing).
+ * Two real numbers that often disagree: {@link Entry#level} is what the party picked up, {@link Entry#effectiveLevel}
+ * what {@code damage/Difficulty} feeds the formulas. Classic (default) uses the maxed table regardless, and a live
+ * run with no clear phase falls back to it too. {@link #assumedMax} says which, so a boss-only run doesn't read as
+ * having collected nothing.
  */
 public final class BlessingState {
 	private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
-	/** The run these blessings belong to, matching every other report it makes ({@link WitherActions#runId()}). */
+	/** {@link WitherActions#runId()}, matching the run's other reports. */
 	public String runId;
 
-	/** The damage difficulty in force ({@code Difficulty.id()}): {@code classic}, {@code perfect_rng} or {@code rta}. */
+	/** {@code Difficulty.id()}: {@code classic}, {@code perfect_rng} or {@code rta}. */
 	public String difficulty;
 
 	/**
-	 * The mayor in office ({@code damage/Mayor}): {@code paul}, {@code derpy} or {@code other}.  On a blessing
-	 * report because Paul's Benediction perk is one term of {@link Blessings#effectIncrease()}, which scales every
-	 * blessing figure: without him it falls from 1.815 to 1.452, so {@link Entry#multiplier} AND
-	 * {@link Entry#flatDamage} below are different numbers at the same {@link Entry#effectiveLevel}.
+	 * {@code damage/Mayor}: {@code paul}, {@code derpy} or {@code other}. Here because Paul's Benediction is a term of
+	 * {@link Blessings#effectIncrease()} (1.815, 1.452 without), so {@link Entry#multiplier} and
+	 * {@link Entry#flatDamage} differ at the same {@link Entry#effectiveLevel}.
 	 */
 	public String mayor;
 
 	/**
-	 * True while a practice run is live at all ({@code WitherActions.isPracticeMode}).
-	 * <p>
-	 * This is what tells a stale snapshot from a live one, and a display wants it: the last thing a finished run
-	 * publishes is its own teardown ({@code /m7practice end} flips this off, then the section setup clears the
-	 * tally), so without it a HUD keeps the numbers up forever on an idle server.
+	 * True while a practice run is live ({@code WitherActions.isPracticeMode}). Tells stale from live: a finished
+	 * run's last publish is its teardown, so without this a HUD keeps the numbers up on an idle server.
 	 */
 	public boolean runActive;
 
 	/** True while the clear phase is live. */
 	public boolean clearActive;
 
-	/** True when {@link Entry#level} describes THIS session, i.e. the clear is live or it collected something. */
+	/** True when {@link Entry#level} describes THIS session: the clear is live or collected something. */
 	public boolean hasClearData;
 
-	/** True when the damage pipeline is using the maxed table instead of {@link Entry#level} (see the class doc). */
+	/** True when damage uses the maxed table instead of {@link Entry#level}. */
 	public boolean assumedMax;
 
-	/** One entry per blessing type, in damage-relevance order: Power, Wisdom, Time, Stone, Life. */
+	/** One per type, damage-relevance order: Power, Wisdom, Time, Stone, Life. */
 	public List<Entry> blessings = new ArrayList<>();
 
 	/**
-	 * How much stronger every blessing figure is right now ({@link Blessings#effectIncrease()}): <b>1.815</b> with
-	 * Mayor Paul, <b>1.452</b> without.  On the payload because it is the one number that explains why the same
-	 * {@link Entry#effectiveLevel} reports a different {@link Entry#multiplier} on two runs.
+	 * {@link Blessings#effectIncrease()}: 1.815 with Paul, 1.452 without. Explains why one {@link Entry#effectiveLevel}
+	 * reports different {@link Entry#multiplier}s on two runs.
 	 */
 	public double effectIncrease;
 
-	/** The order the entries are emitted in, so a display can render the list as it arrives. */
+	/** Emit order, so a display can render the list as it arrives. */
 	private static final Utils.BlessingType[] ORDER = {
 			Utils.BlessingType.POWER, Utils.BlessingType.WISDOM, Utils.BlessingType.TIME,
 			Utils.BlessingType.STONE, Utils.BlessingType.LIFE
 	};
 
 	public static final class Entry {
-		/** The {@code Utils.BlessingType} name: POWER, WISDOM, TIME, STONE, LIFE. */
+		/** {@code Utils.BlessingType} name. */
 		public String type;
-		/** Total level COLLECTED this run, summed over every blessing of this type (a Power V is 5 of it). */
+		/** Total level COLLECTED this run, over every blessing of this type (a Power V is 5). */
 		public int level;
-		/** How many separate blessings of this type were found. */
+		/** Blessings of this type found. */
 		public int count;
-		/** The total level the damage formulas are using - {@link #level}, or the maxed table (see {@link BlessingState#assumedMax}). */
+		/** Level the formulas use: {@link #level} or the maxed table ({@link BlessingState#assumedMax}). */
 		public int effectiveLevel;
-		/** The multiplicative bonus at {@link #effectiveLevel}; null for a type that grants no percent at all. */
+		/** Multiplier at {@link #effectiveLevel}; null if the type grants no percent. */
 		public Double multiplier;
-		/** Blessing of Stone's flat base-Damage contribution; null for every other type (only Stone grants Damage). */
+		/** Stone's flat base Damage; null for every other type. */
 		public Double flatDamage;
 
 		Entry(Utils.BlessingType type) {
@@ -98,9 +86,8 @@ public final class BlessingState {
 			this.level = ClearManager.collectedLevel(type);
 			this.count = ClearManager.collectedCount(type);
 			this.effectiveLevel = Difficulty.blessingLevel(type);
-			// Both read off damage/Blessings, and both are omitted when the table says there is nothing to say:
-			// every type has a multiplier now (Stone's is its Defense half, Life's its Health half), but only
-			// Stone grants flat DAMAGE.  Reporting a 0 or a 1.0 would read as a real figure.
+			// Both from damage/Blessings, omitted when there's nothing to say, since a 0 or 1.0 reads as a real
+			// figure. Every type has a multiplier now (Stone's is Defense, Life's Health); only Stone grants flat DAMAGE.
 			double m = Blessings.multiplier(type);
 			if(m != 1.0) this.multiplier = m;
 			double d = Blessings.flat(type, Stat.DAMAGE);
@@ -110,7 +97,6 @@ public final class BlessingState {
 
 	private BlessingState() {}
 
-	/** Snapshot the blessings as they stand right now. */
 	public static BlessingState capture() {
 		BlessingState s = new BlessingState();
 		s.runId = WitherActions.runId();
@@ -125,7 +111,7 @@ public final class BlessingState {
 		return s;
 	}
 
-	/** The current blessings as compact JSON - the whole API for a consumer that never compiles against us. */
+	/** Current blessings as compact JSON: the whole API for a consumer that doesn't compile against this. */
 	public static String currentJson() {
 		return capture().toJson();
 	}

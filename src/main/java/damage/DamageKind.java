@@ -1,24 +1,18 @@
 package damage;
 
 /**
- * What kind of damage instance this is (MAP.md §7a).  It has to be plumbed through the damage call rather
- * than inferred, because §7 deliberately makes every proc its own instance - without the kind, the renderer cannot
- * tell a Thunderlord proc from the hit that triggered it.
- * <p>
- * The kind also overrides the floating number's random digit palette entirely.
+ * Kind of damage instance (MAP.md §7a). Plumbed through, not inferred: §7 makes every proc its own instance, so
+ * without it the renderer can't tell a Thunderlord proc from the hit behind it. Also overrides the digit cadence.
  */
 public enum DamageKind {
-	/** A normal hit.  Every melee, beam and bow hit crits (§7), so this is effectively the crit form. */
+	/** Every melee, beam and bow hit crits (§7), so this is effectively the crit form. */
 	NORMAL(null, true, true, true),
 	FIRE("<gold>", false, false, false),
 	VENOMOUS("<dark_green>", false, false, false),
 	THUNDERLORD("<blue>", false, false, false),
-	/** Magic and any non-critical damage: abilities, and a partially drawn bow.  Grey, and no crit decoration. */
+	/** Magic and any non-crit: abilities, partially drawn bow. Grey, no crit decoration. */
 	MAGIC("<gray>", false, true, true),
-	/**
-	 * A Cleave hit.  It is a separate instance going through the same boundary as the main hit, and it renders
-	 * like one - only the source differs.
-	 */
+	/** Separate instance through the same boundary as the main hit, rendered like one. */
 	CLEAVE(null, true, true, false);
 
 	private final String colour;
@@ -33,53 +27,36 @@ public enum DamageKind {
 		this.aggro = aggro;
 	}
 
-	/**
-	 * The MiniMessage colour this kind forces on every digit, or null to use the random crit palette (white /
-	 * orange / light green / red).
-	 */
+	/** MiniMessage colour forced on every digit, or null for the crit cadence. */
 	public String colour() {
 		return colour;
 	}
 
-	/**
-	 * True if the number is drawn in the crit form, {@code ✧123✧❤}.  Grey magic numbers drop the decoration and
-	 * are rendered as bare digits, as they are on Hypixel.
-	 */
+	/** Crit form {@code ✧123✧❤}. Grey magic numbers are bare digits, as on Hypixel. */
 	public boolean crit() {
 		return crit;
 	}
 
 	/**
-	 * Whether a hit of this kind rings the target's hurt noise.
-	 * <p>
-	 * Only <b>direct</b> hits do: a melee swing, a beam, an arrow, a Cleave sweep, an ability.  The three proc kinds
-	 * do not, and that is the point - Fire Aspect and Venomous each fire FIVE instances off one swing and
-	 * Thunderlord lands on the same tick as the hit that spawned it, so a single melee hit was ringing the hurt
-	 * sound six times over.  The numbers still show; only the noise is direct-hits-only.
+	 * Only DIRECT hits ring the hurt noise (swing, beam, arrow, Cleave, ability). Fire Aspect and Venomous each fire
+	 * FIVE instances per swing and Thunderlord lands the same tick, so one melee hit was playing it six times. The
+	 * numbers still show.
 	 */
 	public boolean playsHurtSound() {
 		return hurtSound;
 	}
 
 	/**
-	 * Whether a hit of this kind can pull a boss's aggro.
+	 * Only a DIRECT hit may pull boss aggro. Procs are consequences of a swing and Cleave hits a mob you never aimed
+	 * at; otherwise five Venomous ticks would keep winning the tie against someone actually attacking, and a Cleave
+	 * clip on a boss at the sweep's edge would steal it.
 	 * <p>
-	 * <b>Only a DIRECT hit counts.</b>  Fire Aspect, Venomous and Thunderlord are the swing's consequences rather
-	 * than a swing, and a Cleave sweep is a hit on a mob the player never aimed at - so none of them may decide who
-	 * a Wither Lord chases.  Otherwise standing still while five Venomous ticks land would keep re-winning the
-	 * aggro tie against someone actually attacking, and one Cleave clip of a boss on the edge of the sweep would
-	 * steal it outright.
+	 * Differs from {@link #playsHurtSound} on one kind: Cleave sounds but doesn't aggro. Deliberately two flags.
 	 * <p>
-	 * Note this differs from {@link #playsHurtSound} on exactly one kind: a Cleave hit <b>does</b> sound (it really
-	 * did hit that mob) but does <b>not</b> aggro.  The two questions are close enough to look like one flag, so
-	 * they are deliberately two.
+	 * Lives on the KIND, not just the call site, because {@code Damage.dealSecondary}'s flag is per-overload and
+	 * nothing stopped the next caller picking wrong. Both gates must agree.
 	 * <p>
-	 * This lives on the KIND rather than only on the call site because the flag {@code Damage.dealSecondary} passes is
-	 * per-overload: every current caller happens to pick the right one, and nothing stopped the next one from picking
-	 * wrong.  Both gates have to agree.
-	 * <p>
-	 * Separate question from <b>when</b> a hit aggros. Even a `true` here only counts if the hit actually took health
-	 * off the target - see {@code Damage.deal}.
+	 * Even when true, a hit only aggros if it took health off - see {@code Damage.deal}.
 	 */
 	public boolean pullsAggro() {
 		return aggro;

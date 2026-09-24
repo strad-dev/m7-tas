@@ -33,7 +33,7 @@ public class SpectatorListener implements Listener {
 				// Allow viewing but prevent actual changes
 				event.setCancelled(true);
 
-				// Re-sync inventory to make sure it stays correct
+				// Re-sync inventory
 				Player fakePlayer = Spectate.getSpectatorMap().get(player);
 				if (fakePlayer != null) {
 					Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> PlayerInventoryBackup.syncInventory(fakePlayer), 1L);
@@ -42,7 +42,7 @@ public class SpectatorListener implements Listener {
 		}
 	}
 
-	// NEW: Prevent item drops for spectators
+	// No item drops for spectators
 	@EventHandler(priority = EventPriority.HIGHEST)
 	public void onPlayerDropItem(PlayerDropItemEvent event) {
 		if (Spectate.getSpectatorMap().containsKey(event.getPlayer())) {

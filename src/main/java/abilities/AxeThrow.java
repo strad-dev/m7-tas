@@ -5,12 +5,11 @@ import items.ItemUtils;
 import org.bukkit.entity.Player;
 
 /**
- * The Berserk's regular drop ability: throws an axe for the player's highest hit in the last 60 seconds.
+ * Berserk regular drop ability: throws an axe for the player's highest hit in the last 60s.
  * <p>
- * It copies the Axe of the Shredded's projectile but does NOT pierce, so one target only.  The figure it throws
- * for is an already-FINISHED hit, which is why it is passed as DERIVED: running the target half on it again
- * would charge for the Rulers, the repeated-hit stack and the class multiplier a second time, and recording the
- * result would let each throw read the last one's inflated output.
+ * Axe of the Shredded projectile but no pierce, one target. The figure is an already-finished hit, so it's passed
+ * as DERIVED: rerunning the target half would apply Rulers, repeated-hit stack and class multiplier twice, and
+ * recording it would let each throw read the last one's inflated output.
  */
 public final class AxeThrow implements ClassAbility {
 	public static final AxeThrow INSTANCE = new AxeThrow();

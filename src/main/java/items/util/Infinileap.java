@@ -10,10 +10,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Infinileap.  It IS an ender pearl, and it must never be thrown: leaping goes through
- * {@code Actions.leap}, so the interact cancel is the first line of defence and
- * {@code listeners/PearlHelper} is the hard backstop.  A right-click opens the Spirit Leap menu, which
- * {@code listeners/SpiritLeapListener} gates on practice mode and on there being someone to leap to.
+ * An ender pearl that must never be thrown (leaps go through {@code Actions.leap}): interact cancel first,
+ * {@code listeners/PearlHelper} as backstop. Right-click opens Spirit Leap, gated by
+ * {@code listeners/SpiritLeapListener} on practice mode and someone to leap to.
  */
 public final class Infinileap implements MenuItem {
 	public static final Infinileap INSTANCE = new Infinileap();

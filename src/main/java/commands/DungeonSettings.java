@@ -14,46 +14,42 @@ import plugin.Utils;
 
 /**
  * {@code /dungeonsettings [difficulty [<mode>] | mayor [<paul|derpy|other>] | alpha [<on|off>]]} - this server's
- * dungeon settings (MAP.md §0).  With no arguments it prints them; with a setting and no value it steps that one
- * to its next value.
+ * dungeon settings (MAP.md §0). No args prints them; a setting with no value steps it to the next value.
  * <p>
- * Three settings, and they are independent - any difficulty can be run under any mayor, with or without alpha:
+ * Three independent settings, any combination is valid:
  * <ul>
- *   <li><b>difficulty</b> ({@link Difficulty}) - <i>classic</i> assumes all four debuffs are applied and blessings
- *       are maxed, so a practising player can concentrate on movement and routing.  <i>perfect_rng</i> makes each
- *       of those a live input - the debuffs have to be built, the blessings are whatever the party actually
- *       collected - and turns on the instakills in {@code death/Deaths}, but the dungeon still rolls your way:
- *       one-click terminals, short devices, the assumed pet.  <i>rta</i> (shown as "Realistic") is that plus the
- *       work a real run makes you do by hand: generated terminal puzzles, working devices and your own pet menu.</li>
- *   <li><b>mayor</b> ({@link Mayor}) - <i>paul</i> (the default) gives the EZPZ +10 bonus score and boosted
- *       blessings, <i>derpy</i> gives neither and doubles every mob's health, and <i>other</i> gives neither and
- *       leaves health alone.</li>
+ *   <li><b>difficulty</b> ({@link Difficulty}) - <i>classic</i> assumes all four debuffs applied and blessings
+ *       maxed, so you can focus on movement and routing. <i>perfect_rng</i> makes those live inputs (debuffs have
+ *       to be built, blessings are what the party collected) and turns on the instakills in {@code death/Deaths},
+ *       but the dungeon still rolls your way: one-click terminals, short devices, assumed pet. <i>rta</i> (shown
+ *       as "Realistic") adds the manual work: generated terminal puzzles, working devices, your own pet menu.</li>
+ *   <li><b>mayor</b> ({@link Mayor}) - <i>paul</i> (default) gives EZPZ +10 bonus score and boosted blessings,
+ *       <i>derpy</i> gives neither and doubles every mob's health, <i>other</i> gives neither and leaves health
+ *       alone.</li>
  * </ul>
  * Both are flags on inputs, never second damage paths - see the two classes.
  * <p>
- * A bare {@code /dungeonsettings} typed by a player opens {@link SettingsMenu} instead of printing, but only
- * STANDALONE: on the network these are party settings and the lobby's own menu owns them, so the menu is
- * suppressed and the text output stands.
+ * Bare {@code /dungeonsettings} from a player opens {@link SettingsMenu}, standalone only: on the network these
+ * are party settings owned by the lobby menu, so text output stands.
  * <p>
- * This replaced {@code /toggledungeondifficulty}, which was the difficulty half of it.
+ * Replaced {@code /toggledungeondifficulty}, which was the difficulty half.
  * <p>
- * On the network the party leader sets these instead, with {@code /p settings difficulty <mode>} and
- * {@code /p settings mayor <paul|derpy|other>}, and both ride along with the practice request so everyone in the
- * party inherits them: a mixed-mode party would make the same boss take different damage per player, and would let
- * half of it die.  This command is the standalone equivalent, so M7 keeps working on its own.
+ * On the network the party leader sets these ({@code /p settings difficulty <mode>},
+ * {@code /p settings mayor <paul|derpy|other>}) and they ride the practice request so the whole party inherits
+ * them: a mixed-mode party would make one boss take different damage per player and let half of it die. This is
+ * the standalone equivalent.
  * <p>
- * <b>Times from different settings are not comparable.</b>  That is why the difficulty travels on the run payload
- * ({@code plugin/RunResult}) and the network's leaderboards key on it as a third axis; the mayor travels there too,
- * though the boards do not currently split on it.
+ * <b>Times from different settings aren't comparable.</b> So difficulty travels on the run payload
+ * ({@code plugin/RunResult}) and network leaderboards key on it as a third axis; mayor travels too, but boards
+ * don't split on it yet.
  */
 public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
 			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [paul|derpy|other] | alpha [on|off]]";
 
 	/**
-	 * The mode names a player types, joined from {@link Difficulty} itself so the usage line can never drift
-	 * from the enum.  {@code commandName()}, not {@code id()}: Realistic is typed {@code realistic} and only
-	 * STORED as {@code rta}.
+	 * Typed mode names, joined from {@link Difficulty} so the usage line can't drift from the enum.
+	 * {@code commandName()}, not {@code id()}: Realistic is typed {@code realistic}, only stored as {@code rta}.
 	 */
 	private static String modeIds() {
 		return java.util.Arrays.stream(Difficulty.values())
@@ -61,7 +57,7 @@ public class DungeonSettings implements CommandExecutor {
 				.collect(java.util.stream.Collectors.joining("|"));
 	}
 
-	/** The menu a bare {@code /dungeonsettings} opens standalone.  See {@link SettingsMenu#suppressed()}. */
+	/** Menu a bare {@code /dungeonsettings} opens standalone. See {@link SettingsMenu#suppressed()}. */
 	private final SettingsMenu menu;
 
 	public DungeonSettings(SettingsMenu menu) {
@@ -72,7 +68,7 @@ public class DungeonSettings implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command command, @NonNull String label,
 			String @NonNull [] args) {
 		if(args.length == 0) {
-			// A player standalone gets the menu; the console, and everyone on the network, gets the text.
+			// Standalone player gets the menu; console and everyone on the network get text.
 			if(sender instanceof Player p && !SettingsMenu.suppressed()) menu.open(p);
 			else show(sender);
 			return true;
@@ -86,11 +82,10 @@ public class DungeonSettings implements CommandExecutor {
 		return true;
 	}
 
-	/** The current settings, one line each.  What a bare {@code /dungeonsettings} prints. */
+	/** Current settings, one line each. What bare {@code /dungeonsettings} prints. */
 	private static void show(CommandSender sender) {
 		sender.sendMessage(Utils.msg("<gold><bold>DUNGEON SETTINGS"));
-		// The NAME, not the id: "rta" is a storage key, not something to read off a settings line.  Every name is
-		// also a parse alias, so what a player sees here is still something they can type back.
+		// Name, not id: "rta" is a storage key. Every name is also a parse alias, so what's shown can be typed back.
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>difficulty: <yellow><value>  <dark_gray><desc>",
 				Placeholder.unparsed("value", Difficulty.current().displayName()),
 				Placeholder.unparsed("desc", describe(Difficulty.current()))));
@@ -113,16 +108,15 @@ public class DungeonSettings implements CommandExecutor {
 			}
 			Difficulty.set(next);
 		} else {
-			// No value given: step to the next mode, which is what the old /toggledungeondifficulty did bare.
+			// No value: step to next mode, like the old bare /toggledungeondifficulty.
 			next = Difficulty.toggle();
 		}
 		applyDifficulty(next);
 	}
 
 	/**
-	 * Announce a difficulty that has just been put in force.  Split out because {@link SettingsMenu} sets the same
-	 * global from a click and must say so the same way - a server-wide setting that changed silently is how one
-	 * player ends up scoring somebody else's run under a mode they never chose.
+	 * Announce a new difficulty. Split out because {@link SettingsMenu} sets the same global from a click and must
+	 * announce it the same way: a silent server-wide change scores someone else's run under a mode they never chose.
 	 */
 	static void applyDifficulty(Difficulty next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><value>",
@@ -145,12 +139,12 @@ public class DungeonSettings implements CommandExecutor {
 		applyMayor(next);
 	}
 
-	/** Announce a mayor that has just taken office.  Same split, and same reason, as {@link #applyDifficulty}. */
+	/** Announce a new mayor. Same split and reason as {@link #applyDifficulty}. */
 	static void applyMayor(Mayor next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>MAYOR<reset><gray> is now <yellow><value>",
 				Placeholder.unparsed("value", next.id())));
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
-		// Only the HP is latched at spawn, so a mid-session change leaves whatever is already on the floor alone.
+		// HP is latched at spawn, so a mid-session change leaves mobs already on the floor alone.
 		if(instructions.bosses.WitherActions.isPracticeMode()) {
 			Bukkit.broadcast(Utils.msg("<dark_gray>Mob health is set when a mob spawns, so this only affects what spawns from now on."));
 		}
@@ -171,21 +165,20 @@ public class DungeonSettings implements CommandExecutor {
 		applyAlpha(next);
 	}
 
-	/** Announce the alpha timings going on or off.  Same split, and same reason, as {@link #applyDifficulty}. */
+	/** Announce alpha timings on/off. Same split and reason as {@link #applyDifficulty}. */
 	static void applyAlpha(Alpha next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>ALPHA TIMINGS<reset><gray> are now <yellow><value>",
 				Placeholder.unparsed("value", next.id())));
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
-		// Timings are latched by the schedules a phase arms at its start, so a mid-run flip only reaches the
-		// phases that have not begun yet.
+		// Timings latch when a phase arms its schedule, so a mid-run flip only reaches phases not yet started.
 		if(instructions.bosses.WitherActions.isPracticeMode()) {
 			Bukkit.broadcast(Utils.msg("<dark_gray>A phase arms its timings when it starts, so this only affects phases that have not begun."));
 		}
 	}
 
 	/**
-	 * One line on what a setting's value means.  PLAIN text: it is interpolated as an unparsed placeholder in
-	 * {@link #show}, so a MiniMessage tag in here would print as literal angle brackets.
+	 * One line on what a value means. Plain text: {@link #show} inserts it as an unparsed placeholder, so a
+	 * MiniMessage tag here would print as literal angle brackets.
 	 */
 	private static String describe(Difficulty d) {
 		return switch(d) {

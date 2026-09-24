@@ -35,77 +35,66 @@ public final class Maxor extends WitherLord {
 	private static final double LASER_CENTER_Z = 73.5;
 	private static final double LASER_RADIUS_SQ = 2.5 * 2.5;
 	private static final int CHARGE_DELAY_TICKS = 30;
-	// Laser scan cadence: the scan only tests Maxor's position on phase ticks divisible by this (the real-Hypixel
-	// 20-tick grid, same as Storm's pad poll).  Also the action bar's countdown period.
+	// Laser only tests Maxor's position on phase ticks divisible by this (Hypixel's 20-tick grid, like Storm's pad
+	// poll). Also the action bar's countdown period.
 	private static final int LASER_CYCLE_TICKS = 20;
-	// Phase tick Maxor gets his aggro and starts moving (see onStart).  Nothing can be in the middle of the arena
-	// before it, so it's also where the action bar's laser countdown starts.
+	// Maxor starts moving here, so it's also where the laser countdown starts.
 	private static final int AGGRO_TICK = 160;
-	/** Alpha: the dialogue is 40t per line instead of 60t, so Maxor starts moving at 80 rather than 160. */
+	/** Alpha: dialogue is 40t per line instead of 60t. */
 	private static final int ALPHA_AGGRO_TICK = 80;
 	private static final int STUN_COOLDOWN_TICKS = 200;
-	// Ticks from the stun to the automatic enrage.  The action bar counts this down, so it has to be the same
-	// number the enrage is scheduled on - hence a constant rather than a literal at the schedule site.
+	// Stun to auto-enrage. A constant because the action bar counts down the same number the enrage is scheduled on.
 	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
-	/** Crystal plates arm when the fight does, so this tracks the aggro tick rather than repeating its value. */
+	/** Plates arm when the fight does; tracks the aggro tick. */
 	private static final int PLATE_GATE_TICKS = 160;
 	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
 
-	// The two Energy Crystal pressure plates (see placeAtPlate / pickUp).  Stonk and break immune; see isProtected.
+	// Energy Crystal pressure plates. Stonk and break immune (isProtected).
 	private static final int PLATE_Y = 224, PLATE_Z = 41;
 	private static final int PLATE_LEFT_X = 94, PLATE_RIGHT_X = 52;
 
 	private final Random random = new Random();
 
-	// Top spawn crystals, which are pickupable.  Nulled on pickUp.
+	// Top spawn crystals, pickupable. Nulled on pickUp.
 	private EnderCrystal topLeftCrystal;
 	private EnderCrystal topRightCrystal;
-	// Plate-placed crystals, which are NOT pickupable.  Committed once placed.
+	// Plate-placed, NOT pickupable.
 	private EnderCrystal plateLeftCrystal;
 	private EnderCrystal plateRightCrystal;
 	private final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
-	/** Every Wither Miner of the opening wave, ACROSS ALL GROUPS, so a re-spawn can clear the previous set. */
+	/** Every opening-wave miner across all groups, so a re-spawn can clear the previous set. */
 	private final List<WitherSkeleton> miners = new ArrayList<>();
 
-	// Laser/stun cycle state.
-	// The laser scan runs as a boss ticker (BossScheduler.addTicker) so the stun is detected and applied every
-	// tick BEFORE the players' beam choreography, which lets a beam hit on the stun tick read the post-stun state.
+	// Boss ticker so the stun applies BEFORE players' beams each tick; a beam on the stun tick reads post-stun state.
 	private Runnable laserTicker;
-	// Auto-enrage one-shot, run as a boss-lane task (BossScheduler.schedule) so it fires at the start of its tick.
+	// Boss-lane, so it fires at the start of its tick.
 	private Runnable stunEnrageTask;
 	private boolean platesActive;
 	private boolean stunCooldownActive;
 	private boolean inStun;
 	private double stunDamageDealt;
-	// Latched true the moment the stun's 75% damage cap is reached.  Once set, handleDamage rejects ALL further
-	// damage until the next stun.  That is what stops same-tick arrows landing AFTER the cap-enrage from
-	// over-DPSing: enrage flips inStun=false mid-tick, which would re-open the uncapped path for the rest of the tick.
+	// Latched at the 75% stun cap; clampDamage rejects everything until the next stun. Without it, same-tick arrows
+	// after the cap-enrage over-DPS, since enrage flips inStun=false mid-tick and re-opens the uncapped path.
 	private boolean stunCapReached;
-	// Polls the two plates' powered state (see plateTick).  A ticker, not an event, because the block's own
-	// powered flag is the whole trigger and it is a level, not an edge.
+	// A ticker, not an event: the plate's powered flag is a level, not an edge.
 	private Runnable plateTicker;
 
-	// Action-bar HUD (see updateActionBar).  Its own boss ticker rather than a job on the laser scan's, because two
-	// of the three segments outlive that scan: it's removed the moment the stun triggers.
+	// Own ticker, not the laser scan's: that is removed on the stun, and two of three segments outlive it.
 	private Runnable barTicker;
-	// Phase ticks the two stun countdowns run out on, so the bar counts down the same clocks the mechanic uses
-	// instead of a counter of its own.
+	// So the bar counts down the mechanic's own clocks.
 	private int stunEndTick;
 	private int laserImmuneUntilTick;
-	// Whether the bar currently shows one of our segments, so an idle phase clears it once instead of broadcasting
-	// an empty bar to everyone every tick.
+	// Lets an idle phase clear the bar once instead of broadcasting an empty one every tick.
 	private boolean barShown;
 
 	private Maxor() {
 		register(this);
 	}
 
-	/**
-	 * Static facade for /tas, Watcher, and the boss-chain.
-	 */
+	/** For /tas, Watcher and the boss chain. */
 	public static void maxorInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
-		// The "boss fight starts" autopet trigger, after start() so the entity exists.  A no-op outside realistic.
+		// Autopet "boss fight starts" trigger, after start() so the entity exists. No-op outside realistic.
 		pets.Autopet.onMaxorSpawn();
 	}
 
@@ -148,11 +137,10 @@ public final class Maxor extends WitherLord {
 		stunEndTick = 0;
 		laserImmuneUntilTick = 0;
 		platesActive = false;
-		// The laser indicator is set red by beginLaserCharge and only ever set back inside triggerStun, so a run that
-		// ended between the two left it red.  resetState runs on teardown and at fight start, and black is the
-		// idle colour in both cases (serverSetup:289 sets the same block).
+		// Indicator goes red in beginLaserCharge and back only in triggerStun, so a run ending between them left it
+		// red. Black is idle (serverSetup:289 sets the same block).
 		Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
-		// EnderCrystal handles cleared by resetCrystals() inside onStart.
+		// Crystals are cleared by resetCrystals() in onStart.
 	}
 
 	@Override
@@ -160,10 +148,9 @@ public final class Maxor extends WitherLord {
 		startBarTicker();
 		startPlateTicker();
 
-		// The plates arm the tick the fight does.  Alpha starts the fight at 80, and a plate that stayed shut for
-		// another 80t of live fight would be a mechanic nobody asked to change.
+		// Plates arm the tick the fight does, alpha included (80).
 		int aggroTick = Alpha.ticks(AGGRO_TICK, ALPHA_AGGRO_TICK);
-		// No queued rechecks to drain: the poll picks up an already-pressed plate on the very next tick.
+		// The poll picks up an already-pressed plate next tick, so no rechecks to queue.
 		Utils.scheduleTask(() -> platesActive = true, Alpha.ticks(PLATE_GATE_TICKS, ALPHA_AGGRO_TICK));
 
 		resetCrystals();
@@ -184,9 +171,9 @@ public final class Maxor extends WitherLord {
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
 			Storm.stormInstructions(world, true);
-			runPlayerHandoff(); // start each player's storm() routine the same tick Storm spawns
+			runPlayerHandoff(); // players' storm() routine, same tick Storm spawns
 		} else {
-			instructions.bosses.WitherActions.signalRunComplete(); // Maxor was the last boss of this practice
+			instructions.bosses.WitherActions.signalRunComplete(); // last boss of this practice
 		}
 	}
 
@@ -195,15 +182,12 @@ public final class Maxor extends WitherLord {
 	}
 
 	public boolean notEnergyCrystal(Entity e) {
-		// Only the top spawn crystals can be picked up; plate-placed ones are committed.
+		// Only the top spawn crystals can be picked up.
 		return !(e instanceof EnderCrystal) || (!e.equals(topLeftCrystal) && !e.equals(topRightCrystal));
 	}
 
-	/** True if this block is one of the two Energy Crystal pressure plates OR the support block directly beneath
-	*  it.  Both are stonk and break immune so the plate can't be knocked out from under a crystal placement;
-	*  breaking the support pops the plate off too.  This is a pure positional test, phase-independent and immune
-	*  in EVERY phase including the pre-run prep window, mirroring
-	*  {@link instructions.bosses.goldor.Goldor#isProtected}. */
+	/** A crystal plate or the block under it (breaking that pops the plate). Stonk/break immune in EVERY phase,
+	*  pre-run prep included, like {@link instructions.bosses.goldor.Goldor#isProtected}. */
 	public boolean isProtected(Block b) {
 		return (b.getY() == PLATE_Y || b.getY() == PLATE_Y - 1) && b.getZ() == PLATE_Z
 				&& (b.getX() == PLATE_LEFT_X || b.getX() == PLATE_RIGHT_X);
@@ -228,19 +212,15 @@ public final class Maxor extends WitherLord {
 	}
 
 	/**
-	 * Collect a top Energy Crystal (right-click or left-click, both routed here by {@code MiscListener}).
-	 * <br>
-	 * <b>Spectators are refused here, at the chokepoint</b>, not in the two listeners, so every route in gets the
-	 * check.  A pickup DELETES the crystal from the arena and hands the item to that player, and only the holder
-	 * can walk it onto a plate, so an idle m7 spectator taking one used to leave the running party unable to
-	 * finish the mechanic at all, with the crystal sitting in an inventory they can never reach.  Vanilla is no
-	 * help: the interact event fires for a spectator's click on an entity hitbox exactly as it does for a runner's.
+	 * Either click, both routed here by {@code MiscListener}. Spectators are refused HERE so every route gets the
+	 * check: a spectator's pickup used to strand the crystal in their inventory and brick the mechanic. Vanilla fires
+	 * the interact event for spectators too.
 	 */
 	public void pickUp(Player p, EnderCrystal crystal) {
 		if(Utils.isSpectator(p)) return;
 		if(notEnergyCrystal(crystal)) return;
 
-		// Already holding an Energy Crystal anywhere in inventory? Reject.
+		// Already holding one anywhere? Reject.
 		for(ItemStack item : p.getInventory().getContents()) {
 			if(item != null && ENERGY_CRYSTAL_ID.equals(items.ItemUtils.getID(item))) return;
 		}
@@ -258,17 +238,10 @@ public final class Maxor extends WitherLord {
 	}
 
 	/**
-	 * The whole plate mechanic, polled once a tick.
-	 * <br>
-	 * The trigger is the plate block's own {@code powered} flag - the real
-	 * {@code minecraft:stone_pressure_plate} at {@code (x, 224, 41)} deciding it is being stood on - and nothing
-	 * else.  Vanilla owns the hitbox rule, the sensitivity rule and the 20-tick release delay, so we never
-	 * reimplement any of them and never care how the plate came to be pressed.
-	 * <br>
-	 * Polling the flag rather than listening for the press is what makes that possible: {@code Action.PHYSICAL}
-	 * fires only on the unpowered -> powered EDGE, so a player standing on a plate before they hold a crystal, or
-	 * before {@link #PLATE_GATE_TICKS} opens the gate, never produced a second one.  A level has no such holes and
-	 * needs no deferred rechecks.
+	 * The whole plate mechanic, polled per tick. The only trigger is the real stone plate's {@code powered} flag at
+	 * {@code (x, 224, 41)}; vanilla owns hitbox, sensitivity and the 20-tick release. Polled because
+	 * {@code Action.PHYSICAL} fires only on the EDGE, so someone already on the plate before holding a crystal, or
+	 * before {@link #PLATE_GATE_TICKS}, never got a second one.
 	 */
 	private void plateTick() {
 		if(!platesActive) return;
@@ -276,22 +249,21 @@ public final class Maxor extends WitherLord {
 		if(plateRightCrystal == null) tryPlate(PLATE_RIGHT_X);
 	}
 
-	/** Place a crystal on the plate at {@code plateX} if that plate is currently pressed down. */
+	/** Places a crystal if that plate is pressed. */
 	private void tryPlate(int plateX) {
 		if(world == null) world = Bukkit.getWorlds().getFirst();
 		if(!(world.getBlockAt(plateX, PLATE_Y, PLATE_Z).getBlockData() instanceof Powerable plate)) return;
 		if(!plate.isPowered()) return;
 
-		// The flag says the plate is down, not who put it there, and the crystal has to leave somebody's inventory -
-		// so ask the world who is inside the plate's block.  A lookup, not a second gate: a pressed plate with no
-		// crystal holder standing in it just places nothing this tick, and the next tick asks again.
+		// The flag doesn't say who pressed it, so look up who is in the plate's block. Not a gate: no holder there
+		// just places nothing this tick.
 		BoundingBox column = new BoundingBox(plateX, PLATE_Y, PLATE_Z, plateX + 1, PLATE_Y + 1, PLATE_Z + 1);
 		for(Entity e : world.getNearbyEntities(column)) {
 			if(e instanceof Player p && placeAtPlate(p, plateX)) return;
 		}
 	}
 
-	/** @return true if {@code p}'s crystal was consumed and placed. */
+	/** True if {@code p}'s crystal was placed. */
 	private boolean placeAtPlate(Player p, int plateX) {
 		if(Utils.isSpectator(p)) return false;
 		ItemStack slot8 = p.getInventory().getItem(8);
@@ -349,11 +321,9 @@ public final class Maxor extends WitherLord {
 					laserTicker = null;
 					return;
 				}
-				// On real Hypixel the laser check is a 20-tick cycle (like Storm's crush detection), not every tick.
-				// Anchor to phase ticks divisible by 20 so the stun can only trigger on the 20-tick grid.
+				// Hypixel checks on a 20-tick cycle, like Storm's crush detection.
 				if(displayTick() % LASER_CYCLE_TICKS != 0) return;
-				// Alpha removes the cooldown outright: the laser may stun again the moment it next comes round,
-				// even with the previous stun still running.
+				// Alpha has no cooldown: it may stun again next cycle, even mid-stun.
 				if(stunCooldownActive && !Alpha.enabled()) return;
 
 				double dx = boss.getLocation().getX() - LASER_CENTER_X;
@@ -376,25 +346,17 @@ public final class Maxor extends WitherLord {
 	}
 
 	/**
-	 * Per-tick action-bar QoL for the Maxor phase, in the same slot as Storm's pad/crush bar.  One segment at a
-	 * time, checked in that order because the later states overlap the earlier ones:
+	 * Per-tick HUD, same slot as Storm's. One segment, checked in this order since later states overlap earlier:
 	 * <ul>
-	 *   <li><b>Laser</b>: ticks until the next laser check, i.e. how long Maxor can sit in the middle of the arena
-	 *       before it stuns him.  Counts {@link #LASER_CYCLE_TICKS} → 1t on the same grid {@link #startLaserScan}
-	 *       polls and resets on the poll tick itself.  Shown from {@link #AGGRO_TICK}, when Maxor starts moving,
-	 *       NOT from the moment the scan arms: the grid is absolute (it's phase tick mod 20, the same clock the
-	 *       scan gates on), so the countdown is already the right answer to "when does the next check land" while
-	 *       the crystals are still being walked over.  Before he moves he can't be in the middle at all.</li>
-	 *   <li><b>Stunned</b>: ticks until the stun's auto-enrage.  Replaced early if the 75% damage cap ends the stun
-	 *       first, since {@link #enrageMaxor} re-renders the bar itself.</li>
-	 *   <li><b>Immune</b>: ticks left on {@link #STUN_COOLDOWN_TICKS}, the window the laser cannot stun him in.  That
-	 *       window runs from the STUN, not from the enrage, so this is normally the 40t remainder - but after a
-	 *       cap-enrage it shows however much is really left, which is the point of counting the real clock.</li>
+	 *   <li><b>Laser</b>: ticks to the next laser check, {@link #LASER_CYCLE_TICKS} → 1t on the scan's grid. Shown
+	 *       from {@link #AGGRO_TICK}, not when the scan arms: the grid is absolute (phase tick mod 20), so it's right
+	 *       while crystals are still being carried.</li>
+	 *   <li><b>Stunned</b>: ticks to auto-enrage. Replaced early by a 75% cap-enrage ({@link #enrageMaxor} re-renders).</li>
+	 *   <li><b>Immune</b>: what's left of {@link #STUN_COOLDOWN_TICKS}, counted from the STUN, so normally the 40t
+	 *       remainder, more after a cap-enrage.</li>
 	 * </ul>
-	 * Both stun counters run off phase ticks stamped at {@link #triggerStun} rather than counters of their own, so
-	 * the bar can't drift from the mechanic.  Sent to every real player, spectators included, and the fakes are
-	 * skipped.  It doesn't collide with {@code ClearManager}'s bar: that one bails out for anyone outside the
-	 * dungeon room grid, which the arena is.
+	 * Both stun counters use ticks stamped at {@link #triggerStun}, so they can't drift. No clash with
+	 * {@code ClearManager}'s bar, which skips anyone outside the room grid.
 	 */
 	private void updateActionBar() {
 		int t = displayTick();
@@ -406,8 +368,7 @@ public final class Maxor extends WitherLord {
 		} else if(t >= AGGRO_TICK) {
 			bar = "<red>Laser <white>" + (LASER_CYCLE_TICKS - Math.floorMod(t, LASER_CYCLE_TICKS)) + "t";
 		} else {
-			// Nothing to count (the opening dialogue, before Maxor moves): clear once on the way in rather than
-			// broadcasting an empty bar to everyone every tick.
+			// Opening dialogue: clear once rather than every tick.
 			if(barShown) {
 				barShown = false;
 				Utils.broadcastActionBar(Component.empty());
@@ -418,9 +379,7 @@ public final class Maxor extends WitherLord {
 		Utils.broadcastActionBar(Utils.msg(bar));
 	}
 
-	/** The HUD's own boss ticker.  Registered for the whole phase (from {@link #onStart}), because the laser scan
-	 *  it started life on is removed the moment the stun triggers - which is exactly when two of the three
-	 *  segments apply. */
+	/** Whole phase, from {@link #onStart}: the laser scan is removed on the stun, exactly when two segments apply. */
 	private void startBarTicker() {
 		cancelBarTicker();
 		barTicker = new Runnable() {
@@ -439,8 +398,7 @@ public final class Maxor extends WitherLord {
 		BossScheduler.addTicker(barTicker);
 	}
 
-	/** Runs {@link #plateTick} for the whole phase.  Its own boss ticker, like the HUD's - the plates outlive the
-	 *  laser scan, and the crystals respawn mid-fight, so there is no point at which it should stop early. */
+	/** {@link #plateTick} for the whole phase: plates outlive the laser scan and crystals respawn mid-fight. */
 	private void startPlateTicker() {
 		cancelPlateTicker();
 		plateTicker = new Runnable() {
@@ -469,7 +427,7 @@ public final class Maxor extends WitherLord {
 			BossScheduler.removeTicker(barTicker);
 			barTicker = null;
 		}
-		// Wipe the HUD instead of letting the last "Immune 1t" sit on screen for its fade-out.
+		// Wipe instead of letting the last "Immune 1t" sit through its fade-out.
 		barShown = false;
 		Utils.broadcastActionBar(Component.empty());
 	}
@@ -479,8 +437,7 @@ public final class Maxor extends WitherLord {
 		double laserDmg = maxHp * 0.05;
 		double currentHp = boss.getHealth();
 
-		// Killing-blow path: the laser would drop Maxor to 0 HP or below, so leave DYING_SLIVER and run the death
-		// sequence.  This used to leave 1% of max, which is a visible chunk of the health bar at these HP values.
+		// Laser would kill: leave DYING_SLIVER and run the death sequence.
 		if(laserDmg >= currentHp) {
 			clearAggro();
 			setArmor(false);
@@ -491,23 +448,20 @@ public final class Maxor extends WitherLord {
 			return;
 		}
 
-		// Alpha has no immune window at all, so nothing is armed and the bar never shows "Immune".
+		// Alpha has no immune window, so the bar never shows "Immune".
 		stunCooldownActive = !Alpha.enabled();
 		if(stunCooldownActive) {
-			// Boss-lane: the cooldown must lift at the START of its tick so the laser ticker (also start-of-tick)
-			// sees it cleared the same tick, not a tick late.
+			// Boss-lane: lifts at the START of its tick so the laser ticker sees it the same tick.
 			BossScheduler.schedule(() -> {
 				stunCooldownActive = false;
-				// Swap "Immune" back to "Laser" on the tick the window really closes: the HUD ticker registers
-				// first, so it already drew this tick's bar from the pre-clear state.
+				// Re-render: the HUD ticker already drew this tick's bar from the pre-clear state.
 				updateActionBar();
 			}, STUN_COOLDOWN_TICKS);
 		}
 		inStun = true;
 		stunDamageDealt = 0;
 		stunCapReached = false;
-		// Action-bar anchors for the "Stunned"/"Immune" counters.  Both windows open HERE, so the immune one is the
-		// stun's 160t plus a 40t tail, not a fresh 200t after the enrage.
+		// Both windows open HERE: immune is the stun's 160t plus a 40t tail, not 200t after the enrage.
 		stunEndTick = displayTick() + STUN_AUTO_ENRAGE_TICKS;
 		laserImmuneUntilTick = displayTick() + STUN_COOLDOWN_TICKS;
 
@@ -516,8 +470,7 @@ public final class Maxor extends WitherLord {
 		sendChatMessage(LASER_MESSAGE[random.nextInt(LASER_MESSAGE.length)]);
 		Utils.timer("<green>Maxor stunned in " + formatTick(displayTick()));
 
-		// Laser hit: 5% max HP damage + wither hurt sound. Bypasses the damage event
-		// (no event recursion) and counts toward the stun's 75% damage cap.
+		// Laser: 5% max HP, straight to health, and counts toward the 75% stun cap.
 		boss.setHealth(Math.max(0.0, currentHp - laserDmg));
 		stunDamageDealt += laserDmg;
 		Utils.changeName(boss);
@@ -525,21 +478,18 @@ public final class Maxor extends WitherLord {
 
 		CustomBossBar.spawnAnimatedStunnedIndicator(boss, Integer.MAX_VALUE);
 
-		// Boss-lane: respawn the crystals at the START of their tick (before player choreography) so a right-click
-		// on that same tick sees the crystal entity. A raw scheduleTask here gets a higher task-id than the run-start
-		// right-click and would run AFTER it that tick, leaving nothing to pick up.
+		// Boss-lane: crystals respawn at the START of the tick so a same-tick right-click sees them. A raw
+		// scheduleTask would run after the run-start right-click, leaving nothing to pick up.
 		BossScheduler.schedule(() -> {
 			resetCrystals();
 			Utils.runCommand("setblock 73 224 73 minecraft:black_stained_glass");
 		}, CRYSTAL_RESPAWN_DELAY_TICKS);
 
-		// Auto-enrage exactly 160 ticks after the stun (start of tick), regardless of damage taken: stun at the start
-		// of tick T → enrage at the start of tick T+160, so a beam on the enrage tick sees the re-armored boss.
+		// Enrage at the start of T+160 regardless of damage, so a beam on that tick sees the re-armoured boss.
 		cancelStunEnrageTask();
 		stunEnrageTask = BossScheduler.schedule(this::enrageMaxor, STUN_AUTO_ENRAGE_TICKS);
 
-		// Re-render now: the HUD ticker registers before the laser scan does, so it already drew this tick's bar
-		// from the pre-stun state.
+		// Re-render: the HUD ticker already drew this tick's bar from the pre-stun state.
 		updateActionBar();
 	}
 
@@ -551,8 +501,7 @@ public final class Maxor extends WitherLord {
 		cancelBarTicker();
 		inStun = false;
 		CustomBossBar.removeStunIndicator();
-		// Pin internal HP to DYING_SLIVER.  The display already shows "1" via the TASDying tag in formatHealthM.
-		// Deferred 1 tick so vanilla's post-event setHealth doesn't overwrite us.
+		// Display shows "1" via TASDying. Deferred 1 tick so vanilla's post-event setHealth doesn't overwrite it.
 		Utils.scheduleTask(() -> {
 			if(boss != null && boss.isValid()) boss.setHealth(DYING_SLIVER);
 		}, 1);
@@ -583,25 +532,18 @@ public final class Maxor extends WitherLord {
 		CustomBossBar.removeStunIndicator();
 		setAggro(3.0, 1.0, 0.5);
 
-		// Flip "Stunned" to "Immune" on the tick the stun really ends, which a cap-enrage (called from the damage
-		// path, mid-tick) reaches long after the HUD ticker ran.
+		// A cap-enrage runs mid-tick from the damage path, after the HUD ticker; flip "Stunned" to "Immune" now.
 		updateActionBar();
 	}
 
-	/**
-	 * Damage clamp for Maxor, called from {@code damage.Damage.deal}.
-	 * If a hit would kill him, clamp it to leave him on 1% HP and play the death dialogue.
-	 * Otherwise during a stun, clamp cumulative damage to 75% of max HP and trigger enrage.
-	 */
+	/** A killing hit leaves DYING_SLIVER and starts the death dialogue. During a stun, cumulative damage caps at 75% of max, then enrage. */
 	@Override
 	public double clampDamage(double incoming) {
 		if(boss == null) return incoming;
 
-		// Dying = completely immune.  Blocked before any damage logic.
 		if(dying) return 0;
 
-		// Stun cap already hit this stun → Maxor has enraged (or is enraging this very tick). Reject everything,
-		// including same-tick arrows that resolved after the cap-hitting hit, so the 75% cap can't be exceeded.
+		// Cap already hit: reject everything, same-tick arrows included, so 75% can't be exceeded.
 		if(stunCapReached) return 0;
 
 		if(incoming <= 0) return 0;
@@ -609,8 +551,7 @@ public final class Maxor extends WitherLord {
 		double currentHp = boss.getHealth();
 		double maxHp = boss.getAttribute(Attribute.MAX_HEALTH).getValue();
 
-		// Apply stun cap FIRST so that subsequent killing-blow check sees the already-capped value.
-		// Otherwise a single huge hit during stun bypasses the cap by clamping straight to the sliver via the kill clamp.
+		// Stun cap FIRST, or one huge hit during a stun skips the cap by clamping straight to the sliver.
 		double cappedDmg = incoming;
 		boolean willEnrage = false;
 		if(inStun) {
@@ -622,12 +563,11 @@ public final class Maxor extends WitherLord {
 			}
 		}
 
-		// Killing-blow check on the (possibly cap-clamped) damage.
 		boolean willDie = false;
 		if(cappedDmg >= currentHp) {
 			cappedDmg = Math.max(0, currentHp - DYING_SLIVER);
 			willDie = true;
-			willEnrage = false; // dying overrides, so no enrage
+			willEnrage = false; // dying overrides
 		}
 
 		if(willDie) {
@@ -635,7 +575,7 @@ public final class Maxor extends WitherLord {
 		} else {
 			if(inStun) stunDamageDealt = Math.min(maxHp * 0.75, stunDamageDealt + cappedDmg);
 			if(willEnrage) {
-				// Latch BEFORE enraging so any further same-tick hit is rejected at the top of clampDamage.
+				// Latch BEFORE enraging so further same-tick hits are rejected.
 				stunCapReached = true;
 				enrageMaxor();
 			}
@@ -644,18 +584,17 @@ public final class Maxor extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
-		// The wall to Storm's arena and the handoff itself are the same tick, so they read the same number.
+		// Storm wall and handoff share this tick.
 		int handoffTick = Alpha.ticks(100, 60);
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
 		Utils.timer("<green>Maxor killed in " + formatTick(displayTick()));
 		Server.playWitherDeathSound(boss);
-		// Open the wall to Storm's arena as Storm starts (restored on the next /reset).
+		// Restored on the next /reset.
 		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, handoffTick);
 		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), Alpha.ticks(60, 40));
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Maxor finished in " + formatTick(displayTick()));
-			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
-			// come before chainNext, which spawns Storm and re-anchors the phase clock.
+			// Leaderboard duration at the phase's real end, not the killing blow. Before chainNext, which re-anchors the phase clock.
 			instructions.bosses.WitherActions.recordPhaseDuration("Maxor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
@@ -673,13 +612,7 @@ public final class Maxor extends WitherLord {
 		return c;
 	}
 
-	/**
-	 * The opening wave: <b>two groups</b>, spawned together on the aggro tick.
-	 * <ul>
-	 *   <li><b>10</b> around {@code 73.5 225 73.5}, radius <b>3</b> - the group that has always been here.</li>
-	 *   <li><b>20</b> around {@code 73.5 221 40.5}, radius <b>10</b>.</li>
-	 * </ul>
-	 */
+	/** Opening wave on the aggro tick: 10 around {@code 73.5 225 73.5} r=3, and 20 around {@code 73.5 221 40.5} r=10. */
 	private void spawnMiners() {
 		// Remove any old Wither Skeletons
 		for(WitherSkeleton witherSkeleton : miners) {
@@ -693,31 +626,25 @@ public final class Maxor extends WitherLord {
 		spawnMinerGroup(20, 73.5, 221, 40.5, 10);
 	}
 
-	/**
-	 * One group of Wither Miners, scattered uniformly inside a HORIZONTAL disc of {@code radius} around
-	 * {@code (x, y, z)}.  Y is fixed rather than spread: these have no AI and never fall, so their height is the
-	 * group's, not a per-miner roll.
-	 */
+	/** Uniform over a HORIZONTAL disc. Y is fixed: no AI, they never fall. */
 	private void spawnMinerGroup(int count, double x, double y, double z, double radius) {
 		for(int i = 0; i < count; i++) {
-			// sqrt on the radius, or the group bunches up in the middle - a ring's area grows with r, so a flat
-			// roll puts far too many miners near the centre.
+			// sqrt, or they bunch in the middle: a ring's area grows with r.
 			double r = radius * Math.sqrt(random.nextDouble());
 			double angle = random.nextDouble() * Math.PI * 2;
 			Location spawnLoc = new Location(world, x + r * Math.cos(angle), y, z + r * Math.sin(angle));
 
 			WitherSkeleton miner = (WitherSkeleton) world.spawnEntity(spawnLoc, EntityType.WITHER_SKELETON);
 
-			// Real stats (MAP.md §5): 300M, Wither + Undead, so a Hyperion hits it for x1.5 on top of
-			// Smite and Undead Ruler.  It gets no Skeletal Ruler - Skeletal is Normal-mode only, and this is
-			// Master Mode.  This replaces the old 4 HP flat-kill value and the negative armour attributes.
+			// Real stats (MAP.md §5): 300M, Wither + Undead, so Hyperion's x1.5 on top of Smite and Undead Ruler.
+			// No Skeletal Ruler: Skeletal is Normal-mode only.
 			damage.MobStats.apply(miner, damage.MobStats.WITHER_MINER);
 			miner.setAI(false);
 
 			// Give stone pickaxe
 			miner.getEquipment().setItemInMainHand(new ItemStack(Material.STONE_PICKAXE));
 
-			// The name is also how damage/MobStats identifies it, so the leading text has to stay.
+			// MobStats identifies it by name; keep the leading text.
 			miner.customName(Utils.msg("Wither Miner <yellow>" + Utils.formatHealthM(miner) + "<red>❤"));
 			miner.setCustomNameVisible(true);
 

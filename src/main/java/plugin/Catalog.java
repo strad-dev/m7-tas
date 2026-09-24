@@ -28,10 +28,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Exports the M7 item catalog to the shared data folder ({@code ../data/m7-item-catalog.json}) on
- * plugin enable, so the network plugin's lobby loadout editor can load the real M7 items (palette)
- * and each class's default kit.  M7 is the SOLE writer of this file and the single source of
- * truth for item definitions; the network plugin only reads it.
+ * Exports the item catalog to {@code ../data/m7-item-catalog.json} on enable, for the lobby loadout editor's
+ * palette and default kits. M7 is the SOLE writer and source of truth; the network only reads it.
  * <br>
  * Format (matches the network plugin's reader):
  *   { "palette": [ "&lt;base64 item&gt;", ... ],
@@ -41,8 +39,8 @@ import java.util.stream.Collectors;
  *     "autopet": [ { "name": "RUN_START", "displayName": "On Run Start", "icon": "OAK_DOOR",
  *                    "cycle": false }, ... ] }
  *
- * The 41-slot array layout is: [0..35] main inventory slots, [36] helmet, [37] chestplate,
- * [38] leggings, [39] boots, [40] off-hand (see FakePlayerInventory#classLoadoutContents).
+ * 41-slot layout: [0..35] main inventory, [36] helmet, [37] chestplate, [38] leggings, [39] boots, [40] off-hand
+ * (FakePlayerInventory#classLoadoutContents).
  */
 public final class Catalog {
 	private static final String[] ROLES = {"Archer", "Berserk", "Healer", "Mage", "Tank"};
@@ -52,13 +50,10 @@ public final class Catalog {
 	private Catalog() {}
 
 	/**
-	 * One class's default 41-slot kit, freshly BUILT from the item factories, so it always carries whatever lore,
-	 * attributes or NBT those factories currently produce.  The per-class Terminator Power is baked in, matching
-	 * the TAS.
+	 * A class's default 41-slot kit, freshly built from the item factories, with the per-class Terminator Power.
 	 * <br>
-	 * This and {@link #palette()} are the in-memory catalog.  {@link #export()} is only a serializer of them, and
-	 * M7's own loadout editor reads them directly, so the editor and the exported JSON cannot disagree, and the
-	 * editor works before the first export, or if the shared folder is unwritable.
+	 * This and {@link #palette()} are the in-memory catalog; {@link #export()} only serializes them and M7's editor
+	 * reads them directly, so the two can't disagree and the editor works with an unwritable shared folder.
 	 */
 	public static ItemStack[] defaultFor(String role) {
 		ItemStack[] arr = FakePlayerInventory.classLoadoutContents(role);
@@ -70,14 +65,11 @@ public final class Catalog {
 	}
 
 	/**
-	 * Every item the loadout editor offers, in {@link #PALETTE_ORDER}. Fresh copies from the item factories, same as
-	 * {@link #defaultFor}.
+	 * Every editor item, fresh, in {@link #PALETTE_ORDER}.
 	 * <br>
-	 * Logical key -> the first copy seen for it, so the palette lists each ITEM once. Deduping on the raw serialized
-	 * bytes was not enough: two copies of the same item can differ byte-for-byte (the per-class Terminator Power,
-	 * and previously every custom head's random profile id), which listed them twice in the editor. Sorting is
-	 * stable, so an item missing from PALETTE_ORDER keeps its discovery order in the tail (ROLES x slot index, then
-	 * extraPaletteItems).
+	 * Deduped on {@link #paletteKey}, not raw bytes: copies of one item differ byte-for-byte (per-class Terminator
+	 * Power, formerly random head profile ids) and listed twice. Stable sort, so an unlisted item keeps discovery
+	 * order in the tail (ROLES x slot, then extraPaletteItems).
 	 */
 	public static List<ItemStack> palette() {
 		LinkedHashMap<String, ItemStack> byKey = new LinkedHashMap<>();
@@ -86,7 +78,7 @@ public final class Catalog {
 				if (it != null && !it.getType().isAir() && !hiddenFromPalette(it)) byKey.putIfAbsent(paletteKey(it), it);
 			}
 		}
-		// Items nobody's default kit carries still belong in the palette.
+		// Items in no default kit.
 		for (ItemStack it : extraPaletteItems()) {
 			if (it != null && !it.getType().isAir()) byKey.putIfAbsent(paletteKey(it), it);
 		}
@@ -122,14 +114,11 @@ public final class Catalog {
 	/**
 	 * Every pet's ARRANGING icon, keyed on the {@code PetType} name the pets file stores.
 	 * <p>
-	 * The network plugin's {@code /petloadout} draws this same window in the lobby, and it has no {@code PetType}
-	 * of its own: exporting the finished heads is what keeps a pet's tooltip written down once, here, rather than
-	 * copied into a second enum that would drift the first time a stat moved.  The names are the file's keys, so
-	 * the lobby can match a saved layout to an icon without parsing anything out of the head.
+	 * The lobby's {@code /petloadout} has no {@code PetType}; exporting finished heads keeps each tooltip written once
+	 * instead of in a second enum that would drift.
 	 * <p>
-	 * <b>Not equipped, and editing.</b>  Editing is the only mode the lobby has, and the only thing {@code equipped}
-	 * changes on an editing icon is the glint - so the lobby sets that itself off the file's {@code equipped} field
-	 * rather than being sent two heads per pet.
+	 * Not equipped, editing: the lobby only edits, and {@code equipped} only changes the glint, which the lobby sets
+	 * itself from the file's {@code equipped} field.
 	 */
 	private static Map<String, String> petIcons() {
 		Map<String, String> out = new LinkedHashMap<>();
@@ -141,12 +130,8 @@ public final class Catalog {
 	}
 
 	/**
-	 * The autopet triggers, in menu order, so the network plugin's copy of the Autopet window can draw them.
-	 * <p>
-	 * Only what a BUTTON needs: the enum name (which is what the pets file keys a rule on), the label, the icon
-	 * material and whether the trigger holds a cycle instead of one pet. The rules themselves are per player and
-	 * live in {@code pets/<uuid>.json}; nothing about what a trigger DOES crosses, because nothing off m7 could
-	 * act on it anyway.
+	 * Autopet triggers in menu order, for the network's Autopet window. Only what a button needs: enum name (the
+	 * pets file's rule key), label, icon, and whether it holds a cycle. Rules live in {@code pets/<uuid>.json}.
 	 */
 	private static List<CatalogFile.PetTrigger> autopetTriggers() {
 		List<CatalogFile.PetTrigger> out = new ArrayList<>();
@@ -161,7 +146,7 @@ public final class Catalog {
 		return out;
 	}
 
-	/** A 41-slot array as the on-disk list: one entry per slot, null for an empty one. */
+	/** One entry per slot, null for empty. */
 	private static List<String> toSer(ItemStack[] arr) {
 		List<String> ser = new ArrayList<>(41);
 		for (int i = 0; i < 41; i++) ser.add(ItemSerial.toB64(arr != null && i < arr.length ? arr[i] : null));
@@ -169,21 +154,16 @@ public final class Catalog {
 	}
 
 	/**
-	 * Items that stay in the default kits but must NOT be offered in the editor palette. Just the SkyBlock Menu: it
-	 * has no ability, and the network plugin's editor pins it to the last hotbar slot itself, so there is nothing
-	 * to pick it for.  The Rapid Bonemerang was removed from the Archer kit outright rather than hidden here, so it
-	 * no longer reaches the palette at all; it had no ability behind it.
+	 * In default kits but not the palette. Just the SkyBlock Menu: no ability, and the network editor pins it to the
+	 * last hotbar slot itself. (The abilityless Rapid Bonemerang was removed from the Archer kit instead.)
 	 */
 	private static boolean hiddenFromPalette(ItemStack it) {
 		return items.util.SkyblockMenu.INSTANCE.matches(it);
 	}
 
 	/**
-	 * Custom items that are in no class's default kit but should still be offered by the loadout editor.
-	 * <p>
-	 * The three Storm pieces are ALTERNATE REFORGES of pieces the Mage already wears, which is why they are the
-	 * same item class built at a different {@code ReforgeId} rather than three more classes: the dye and the
-	 * colour are identical, because the reforge is the only difference.
+	 * Palette items in no default kit. The Storm pieces are alternate reforges of the Mage's, so the same class at a
+	 * different {@code ReforgeId}.
 	 */
 	static List<ItemStack> extraPaletteItems() {
 		return List.of(
@@ -197,25 +177,15 @@ public final class Catalog {
 	}
 
 	/**
-	 * The exported palette's order, hand-picked rather than derived from a category. The network plugin's loadout
-	 * editor renders the palette in list order, 9 per page (its {@code LoadoutEditor.PALETTE_COUNT} = the whole top
-	 * row), so <b>each block of 9 below is literally one page</b>.  Keep the blocks nine long or the pages shift.
+	 * Hand-picked palette order. Each block of nine is one editor ROW, four rows a page
+	 * ({@code LoadoutEditor.PALETTE_COUNT}), so the fifth block is page 2; keep blocks nine long or later rows shift.
 	 * <br>
-	 * Entries are {@link #orderName}: the PLAIN display name, or the material name for the one nameless stack (the
-	 * ender pearls). A name here is now COMPOSED by its item class, as {@code reforge + base name}, so renaming an
-	 * item means renaming its entry here too - and {@link #verify()} warns at boot if the two disagree rather than
-	 * letting the item drop silently to the tail. That includes a LOOKALIKE character: the Ragnarock Axe's base name
-	 * carries a Greek omicron (U+03BF) rather than an ASCII o, and the two spellings read identically but do not
-	 * match.
+	 * Entries are {@link #orderName}: PLAIN display name ({@code reforge + base name}), or the material for the
+	 * nameless ender pearls. Renaming an item means renaming it here; {@link #verify()} warns at boot. Lookalikes
+	 * count: the Ragnarock Axe's name has a Greek omicron (U+03BF), not an ASCII o.
 	 * <br>
-	 * Anything not listed sorts to the end in discovery order, so a newly added item shows up at the back of the
-	 * palette instead of vanishing. The list currently covers every palette item exactly, so that tail is empty.
-	 * <br>
-	 * Each block of nine below is one ROW of the editor's palette, and the editor shows five rows a page - so all
-	 * 44 fit on one page today and its page buttons never appear.  A sixth block would create a second page.
-	 * <br>
-	 * Names here are DISPLAY names, and the Fabled reforge is displayed as {@code Withered} on purpose (see
-	 * MAP.md §1.0.6), so Hyperion, Dark Claymore, Flaming Flay and Ragnarock Axe all read "Withered".
+	 * Unlisted items sort to the end in discovery order (empty today). Fabled displays as {@code Withered} on purpose
+	 * (MAP.md §1.0.6).
 	 */
 	private static final List<String> PALETTE_ORDER = List.of(
 			// Row 1: the core damage kit.
@@ -258,9 +228,8 @@ public final class Catalog {
 			"Necrotic Storm's Leggings",
 			"Necrotic Storm's Boots",
 			"Renowned Cow Hat",
-			// Row 5: the rest of the Renowned wearables, then the two weapons no default kit carries.  They sit
-			// here rather than beside the other weapons on purpose: this row is the only one short of nine, so
-			// appending costs nothing, where inserting on row 2 would push two items onto every later row.
+			// Row 5: the rest of the Renowned wearables, then the two weapons no default kit carries. Here, not by the
+			// other weapons, because this is the only short row; inserting on row 2 would shift every later row.
 			"Renowned Spring Boots",
 			"Renowned Racing Helmet",
 			"Renowned Thermodynamic Helmet",
@@ -271,24 +240,18 @@ public final class Catalog {
 			"Precise Death Bow");
 
 	/**
-	 * <b>Boot self-check.</b>  Cross-checks the three places an item's identity is written down and logs a
-	 * warning for each disagreement.  Called from {@code M7tas.onEnable}, before the export.
-	 * <p>
-	 * It exists because two of those disagreements are silent and expensive:
+	 * Boot self-check of the three places an item's identity is written, called from {@code M7tas.onEnable} before
+	 * the export. Catches two silent failures:
 	 * <ul>
-	 *   <li><b>A variant missing from {@link #PALETTE_ORDER}</b> sorts to the tail of the palette instead of
-	 *       vanishing, so it stays usable and nothing looks broken - it just quietly stops being on the row it
-	 *       is meant to be on, and every later row shifts if a block of nine is left short.</li>
-	 *   <li><b>A rarity that disagrees with {@code damage/Items}</b> now changes the item's COLOUR, since the
-	 *       colour is derived.  Four of these were already in the tree when the derivation went in (the Cow Hat,
-	 *       the Spring Boots, the Racing Helmet and the Thermodynamic set were all registered as Epic), and
-	 *       nothing would have caught them.</li>
+	 *   <li>a variant missing from {@link #PALETTE_ORDER} quietly sorts to the tail, and a short block shifts every
+	 *       later row;</li>
+	 *   <li>a rarity disagreeing with {@code damage/Items} changes the derived COLOUR. Four were already wrong when
+	 *       derivation went in (Cow Hat, Spring Boots, Racing Helmet, Thermodynamic set, all Epic).</li>
 	 * </ul>
-	 * It deliberately only WARNS.  A mislabelled palette row is not worth refusing to boot a practice server
-	 * over, and the log line names the item, which is enough to fix it.
+	 * Only WARNS: not worth refusing to boot over, and the line names the item.
 	 */
 	public static void verify() {
-		// The one palette-order exemption: the SkyBlock Menu is deliberately withheld from the editor.
+		// The one exemption: the SkyBlock Menu is withheld from the editor.
 		final String HIDDEN = items.util.SkyblockMenu.INSTANCE.displayName();
 		java.util.logging.Logger log = M7tas.getInstance().getLogger();
 		int problems = 0;
@@ -310,7 +273,7 @@ public final class Catalog {
 		}
 		List<String> variants = ItemRegistry.variantNames();
 		for (String listed : PALETTE_ORDER) {
-			// ENDER_PEARL is the one palette entry that is not an Item: a bare vanilla stack with no name.
+			// ENDER_PEARL is the one entry that isn't an Item: a bare nameless stack.
 			if (!variants.contains(listed) && !listed.equals(Material.ENDER_PEARL.name())) {
 				log.warning("Catalog.PALETTE_ORDER lists " + listed + ", which no item builds any more.  Remove it,"
 						+ " or fix the name (a lookalike character counts as a rename).");
@@ -322,13 +285,13 @@ public final class Catalog {
 		}
 	}
 
-	/** Sort key for one palette item: its index in {@link #PALETTE_ORDER}, or the end of the list if unlisted. */
+	/** Index in {@link #PALETTE_ORDER}, or the end if unlisted. */
 	private static int paletteRank(ItemStack it) {
 		int i = PALETTE_ORDER.indexOf(orderName(it));
 		return i < 0 ? PALETTE_ORDER.size() : i;
 	}
 
-	/** An item's {@link #PALETTE_ORDER} entry: plain display name, falling back to the material for a nameless stack. */
+	/** Plain display name, or the material for a nameless stack. */
 	private static String orderName(ItemStack it) {
 		ItemMeta meta = it.hasItemMeta() ? it.getItemMeta() : null;
 		String name = meta == null ? "" : Utils.plain(meta.displayName());
@@ -336,20 +299,15 @@ public final class Catalog {
 	}
 
 	/**
-	 * An item's LOGICAL identity for palette dedupe: material + display name + custom-item lore ID, all as PLAIN
-	 * text so a colour/format change can't split one item into two entries. Two stacks that agree on all three are
-	 * the same item to a player picking one out of the editor, however their NBT differs (enchant levels, profile
-	 * ids, amounts), and only the first is kept.  Items that share an ID but not a name (Heroic vs Withered
-	 * Hyperion) stay separate entries, which is what you want in a picker.
+	 * LOGICAL identity: material + display name + lore ID, all PLAIN so a colour change can't split an item. Other
+	 * NBT (enchant levels, profile ids, amounts) is ignored. Same ID, different name (Heroic vs Withered Hyperion)
+	 * stay separate.
 	 * <br>
-	 * Both loadout/ItemRefresh copies (M7's own and the network plugin's) match saved loadout items against the
-	 * catalog with this exact rule, so keep all three in sync.
+	 * Both loadout/ItemRefresh copies (M7's and the network's) match saved loadouts with this exact rule; keep all
+	 * three in sync.
 	 * <br>
-	 * <b>Only the FIRST lore line is read.</b> That is what lets an item grow lore freely, with stat lines, ability
-	 * text, rarity and everything MAP.md will hang on these items, without breaking the match: a saved copy
-	 * still keys to the same string and gets silently replaced by the new definition on the next refresh.  Keep the
-	 * item ID on lore line 0 (which {@code items.ItemUtils.getID()} already requires) and item changes need no
-	 * migration; move it, or prepend a line above it, and every saved loadout in the network quietly stops updating.
+	 * Only lore line 0 is read, so lore can grow freely and saved copies still refresh. Move the ID off line 0
+	 * ({@code items.ItemUtils.getID()} requires it there) and every saved loadout silently stops updating.
 	 */
 	public static String paletteKey(ItemStack it) {
 		ItemMeta meta = it.hasItemMeta() ? it.getItemMeta() : null;
@@ -357,7 +315,7 @@ public final class Catalog {
 		return it.getType().name() + "|" + Utils.plain(meta.displayName()) + "|" + Utils.firstLorePlain(meta);
 	}
 
-	/** Terminator Power per class, matching the TAS (Archer 70, Berserk/Healer/Tank 17, Mage none). */
+	/** Matches the TAS: Archer 70, Berserk/Healer/Tank 17, Mage none. */
 	private static int terminatorPower(String role) {
 		return switch (role) {
 			case "Archer" -> 70;
@@ -366,7 +324,7 @@ public final class Catalog {
 		};
 	}
 
-	/** Shared data folder, resolved as {@code <server>/../data} (mirrors the network plugin's Config default). */
+	/** {@code <server>/../data}, the network Config default. */
 	public static Path dataDir() throws Exception {
 		Path dir = M7tas.getInstance().getServer().getWorldContainer().toPath().resolve("../data").normalize();
 		Files.createDirectories(dir);
@@ -387,26 +345,26 @@ public final class Catalog {
 		}
 	}
 
-	/** On-disk shape (field names must match the network plugin's reader). */
+	/** Field names must match the network plugin's reader. */
 	public static class CatalogFile {
 		public List<String> palette = new ArrayList<>();
 		public Map<String, List<String>> defaults = new LinkedHashMap<>();
-		/** Pet name -> its arranging icon, for the network plugin's lobby copy of the pet menu. */
+		/** Pet name -> arranging icon, for the lobby pet menu. */
 		public Map<String, String> pets = new LinkedHashMap<>();
-		/** The pet menu's 28 slots, so the lobby draws the same grid without writing the shape down twice. */
+		/** Pet menu's 28 slots, so the shape is written once. */
 		public List<Integer> petSlots = new ArrayList<>();
-		/** {@code Pets.DEFAULT_PET}, so the lobby's header has the same fallback rather than its own guess. */
+		/** {@code Pets.DEFAULT_PET}, the lobby header's fallback. */
 		public String defaultPet;
-		/** The autopet triggers, in menu order, for the lobby's copy of the Autopet window. */
+		/** Autopet triggers in menu order. */
 		public List<PetTrigger> autopet = new ArrayList<>();
 
-		/** One autopet trigger, as much of it as a button needs. */
+		/** As much of a trigger as a button needs. */
 		public static class PetTrigger {
 			public String name;
 			public String displayName;
 			/** A {@code Material} name; the reader falls back if it ever stops resolving. */
 			public String icon;
-			/** True for the trigger that holds an ordered cycle rather than one pet (Rod Swap). */
+			/** Holds an ordered cycle instead of one pet (Rod Swap). */
 			public boolean cycle;
 		}
 	}

@@ -38,31 +38,23 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The item behaviour that is genuinely SHARED, and the per-run block state that goes with it.
- * <p>
- * Everything here was a private static on {@code listeners/CustomItems} and has more than one owner, so it could
- * not move onto an item class without one item reaching into another.  Three groups:
+ * Item behaviour shared by more than one item, plus the per-run block state that goes with it. Formerly private
+ * statics on {@code listeners/CustomItems}.
  * <ol>
- *   <li><b>Shared combat</b> - the mage beam and its hand-rolled ray-AABB test (every mage weapon fires it), the
- *       thrown axe (the Axe of the Shredded and a Berserk's {@code drop stack}), the guided-carrier flight (the
- *       Spirit Sceptre's bat and the Mage's sheep), the Superboom radius (the TNT, Explosive Shot and both
- *       carriers) and the entity-type blacklist every AoE reads.</li>
- *   <li><b>World state with teardown obligations</b> - the stonk, crypt and Superboom-wall restorations.  These
- *       keep their RAW {@code Bukkit.getScheduler().runTaskLater}, deliberately NOT {@code Utils.scheduleTask}:
- *       a tracked task dies with {@code cancelAllScheduled()}, which would leave permanent AIR holes and
- *       orphaned crypt mobs, so the flushes below are the force-restore instead.</li>
- *   <li><b>Class and set predicates</b> - {@link #isMageClass}, {@link #effectiveCooldown}, {@link #isThermoSet}.</li>
+ *   <li><b>Shared combat</b>: mage beam + its ray-AABB test, thrown axe (Axe of the Shredded, Berserk
+ *       {@code drop stack}), guided carriers (Spirit Sceptre bat, Mage sheep), Superboom radius, AoE blacklist.</li>
+ *   <li><b>World state with teardown obligations</b>: stonk, crypt and Superboom-wall restores. These use RAW
+ *       {@code runTaskLater}, not {@code Utils.scheduleTask}: {@code cancelAllScheduled()} would kill a tracked
+ *       task and leave permanent AIR holes and orphaned crypt mobs. The flushes below are the force-restore.</li>
+ *   <li><b>Class and set predicates</b>: {@link #isMageClass}, {@link #effectiveCooldown}, {@link #isThermoSet}.</li>
  * </ol>
- * The dispatcher keeps only what is a property of the CLICK rather than of an item: the rate gates, the melee
- * path and the mage-beam/left-click-is-an-ability tests, which depend on the holder's class.
+ * The dispatcher keeps only what belongs to the CLICK: rate gates, melee path, mage-beam/left-click-ability tests.
  */
 public final class ItemUtils {
 	private ItemUtils() {}
 
-	// True while mageBeam's damage call is on the stack.  Damage is applied synchronously, so
-	// damage/Damage.witherHurtSound reads this to skip its at-location broadcast for beam hits: the beam routes
-	// its own constant-volume hurt sound to the beamer, so an at-location one would double up and be
-	// distance-attenuated.
+	// True while mageBeam's damage call is on the stack. damage/Damage.witherHurtSound reads it to skip its
+	// at-location sound: the beam sends its own constant-volume one to the beamer, so it would double up.
 	public static boolean beamDamageInProgress = false;
 
 	private static final Map<UUID, Integer> lastWitherShieldSoundTick = new ConcurrentHashMap<>();
@@ -70,36 +62,29 @@ public final class ItemUtils {
 	public static final Map<Location, BlockData> pendingStonkRestorations = new HashMap<>();
 	public static final Map<Location, BukkitTask> pendingStonkTasks = new HashMap<>();
 
-	// Crypt + Superboom-wall restorations. Mirrors the stonk maps above: a crypt/wall is temporarily set to AIR and
-	// restored after SUPERBOOM_REGEN_TICKS via a raw scheduler task (NOT Utils.scheduleTask), so /reset and /setup can
-	// flush them immediately via flushBlockRestorations(). Using Utils.scheduleTask here would let Reset's
-	// cancelAllScheduled() kill the pending restoration, leaving permanent AIR holes and orphaned crypt mobs.
+	// Crypt + Superboom-wall restores, like the stonk maps: set to AIR, restored after SUPERBOOM_REGEN_TICKS by a raw
+	// task (not Utils.scheduleTask, which cancelAllScheduled() would kill), flushed by flushBlockRestorations().
 	private static final Map<Location, BlockData> pendingBlockRestorations = new HashMap<>();
 	private static final List<BukkitTask> pendingBlockTasks = new ArrayList<>();
 	private static final List<Zombie> pendingCryptMobs = new ArrayList<>();
 
-	// Ticks a crypt or a Superboom'd cracked-brick wall stays open before it grows back. Shared by both so the two
-	// halves of one explosion can't regenerate at different times.
+	// Ticks a crypt or cracked-brick wall stays open. Shared so both halves of one blast regrow together.
 	private static final int SUPERBOOM_REGEN_TICKS = 100;
 
-	// DETECTION radius of every explosion that routes through triggerSuperboomRadius: Superboom TNT, Explosive Shot
-	// and Guided Sheep.  This is the FIRST of the two searches, a cube half-extent around the impact block scanned
-	// for a *valid* crypt/wall block.  It uses Chebyshev distance with no line-of-sight test, so air neither triggers
-	// nor blocks it.  2 → a 5x5x5 box.  The SECOND search runs per hit block in triggerSuperboomAt: the crypt
-	// rectangle validation in checkAndActivateCrypt and the cracked-brick 6-face flood-fill, which decide how much is
-	// actually removed.  That one is deliberately NOT scaled by this constant.  Reach is separate again, and comes
-	// from vanilla's interaction range (see superboom).
+	// DETECTION radius for everything through triggerSuperboomRadius (TNT, Explosive Shot, Guided Sheep): cube
+	// half-extent scanned for a valid crypt/wall block, Chebyshev, no line of sight. 2 = 5x5x5. How much is removed
+	// is the second search in triggerSuperboomAt (crypt rectangle, cracked-brick flood-fill), deliberately NOT scaled
+	// by this. Reach is vanilla's interaction range (see superboom).
 	private static final int SUPERBOOM_RADIUS = 2;
 
-	// Tick of the last Superboom-TNT detonation per player.  The TNT detonates either from the ability dispatch (any
-	// click path) or from a raw vanilla placement caught in onInfinityboomPlace, so this caps it to one blast per
-	// player per tick.  A click that somehow reaches both paths won't double-boom.
+	// Last Superboom tick per player. TNT fires from the ability dispatch or a raw vanilla placement
+	// (onInfinityboomPlace); this caps it to one blast per player per tick so a click reaching both won't double-boom.
 	private static final Map<UUID, Integer> lastSuperboomTick = new ConcurrentHashMap<>();
 
-	/** Crypts already blown up this run, keyed by min-corner.  A crypt can't be farmed for repeated kills. */
+	/** Crypts blown up this run, keyed by min-corner, so one can't be farmed for repeated kills. */
 	private static final Set<String> activatedCrypts = new HashSet<>();
 
-	/** How far the beam may travel from a mob's true hitbox and still count as a hit (each face inflated by this). */
+	/** Each hitbox face is inflated by this for the beam. */
 	private static final double MAGE_BEAM_LENIENCY = 0.5;
 
 	public static String getID(ItemStack item) {
@@ -189,19 +174,15 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * Teleport a player without touching where they are looking. Yaw/pitch go out as RELATIVE in the position packet,
-	 * so the client applies a delta to whatever it is currently looking at instead of being snapped to an absolute
-	 * rotation.  A high-ping player who turned their head between clicking and the teleport landing keeps the head
-	 * they turned to, rather than being yanked back to the rotation the server last knew about.
+	 * Teleport without touching rotation. Yaw/pitch go out RELATIVE, so a high-ping player who turned between click
+	 * and teleport keeps their new view instead of snapping back to what the server last knew.
 	 * <br>
-	 * The rotation delta must be ZERO (hence the 0/0 below): relative components are OFFSETS from the current
-	 * rotation, not absolutes (vanilla {@code PositionMoveRotation.calculateAbsolute}), so passing the player's own
-	 * yaw in would add it on top and spin them.
+	 * The delta must be 0/0: relative components are OFFSETS ({@code PositionMoveRotation.calculateAbsolute}), so
+	 * passing the player's yaw would add it on top and spin them.
 	 * <br>
-	 * Goes through the connection rather than {@code Player#teleport(Location, cause, TeleportFlag...)}: Paper
-	 * deprecated {@code TeleportFlag.Relative.X/Y/Z/YAW/PITCH} for removal in 1.21.3, leaving no Bukkit-API way to
-	 * ask for a relative rotation.  This overload is CraftBukkit's own, so it still fires {@code PlayerTeleportEvent}
-	 * (cause PLUGIN) and honours a cancel.  Same-world only, which every caller here is.
+	 * Uses the connection because Paper deprecated {@code TeleportFlag.Relative} rotation in 1.21.3 with no Bukkit
+	 * replacement. This CraftBukkit overload still fires {@code PlayerTeleportEvent} (PLUGIN) and honours a cancel.
+	 * Same-world only.
 	 */
 	public static void noRotateTeleport(Player p, Location l) {
 		ServerPlayer sp = ((CraftPlayer) p).getHandle();
@@ -217,12 +198,9 @@ public final class ItemUtils {
 	}
 
 	public static boolean checkAndActivateCrypt(Block clicked, Player p) {
-		// There are no crypts in the boss arena - it's a clear-phase secret - but the arena's decorative
-		// smooth-stone-slab / stone-brick-stair terrain passes the rectangle test anyway (a lone bottom slab with
-		// air under it is a valid 1x1 crypt, and any gold block in that layer makes it a Prince).  So every
-		// Superboom thrown in there opened a hole in the floor and handed out a free Crypt Lurker or Prince,
-		// which then counted toward the clear phase's bonus score.  Refuse before validating anything; returning
-		// false lets triggerSuperboomAt fall through to the cracked-brick flood-fill, which IS wanted in there.
+		// No crypts in the boss arena, but its slab/stair terrain passes the rectangle test (a lone bottom slab over
+		// air is a 1x1 crypt, gold makes it a Prince), so every Superboom there spawned a free lurker that counted
+		// toward bonus score. Returning false still lets triggerSuperboomAt do the cracked-brick flood-fill.
 		if(LavaJump.isInBossArena(clicked.getLocation())) return false;
 		Material type = clicked.getType();
 		int slabY;
@@ -307,7 +285,7 @@ public final class ItemUtils {
 
 		boolean isPrince = slabBlocks.stream().anyMatch(b -> b.getType() == Material.GOLD_BLOCK);
 
-		// A crypt can only be farmed once: it still opens + restores visually, but no new lurker spawns on repeat.
+		// Farmable once: a repeat still opens and restores, but spawns no lurker.
 		String cryptKey = minX + "," + slabY + "," + minZ;
 		boolean alreadyBlownUp = !activatedCrypts.add(cryptKey);
 		if(alreadyBlownUp) {
@@ -342,9 +320,8 @@ public final class ItemUtils {
 			}
 			if(mob != null) {
 				if(mob.isValid()) {
-					// The lurker/prince was never killed before the crypt regenerated, so this crypt doesn't
-					// count as "used".  Un-mark it so it can be blown up again for another attempt at the kill.
-					// A killed lurker leaves the mob invalid here, so the key stays and the crypt is spent.
+					// Lurker survived the regen, so the crypt isn't spent: un-mark it for another try.
+					// A killed lurker is invalid here, so its key stays.
 					mob.remove();
 					activatedCrypts.remove(cryptKey);
 				}
@@ -358,9 +335,8 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * Detonate a Superboom TNT centred on {@code center}, at most once per player per tick.  Shared by the ability
-	 * dispatch (every click path) and by {@code CustomItems.onCustomBlockPlace}, which covers the paths where
-	 * vanilla physically places the TNT block instead of a click firing the ability.
+	 * Superboom at {@code center}, at most once per player per tick. Called by the ability dispatch and by
+	 * {@code CustomItems.onCustomBlockPlace}, for when vanilla places the TNT instead of the click firing it.
 	 */
 	public static void superboomAt(Player p, Location center) {
 		int currentTick = MinecraftServer.currentTick;
@@ -374,7 +350,7 @@ public final class ItemUtils {
 	}
 
 	public static void triggerSuperboomRadius(Location center, Player p, Set<Block> visited) {
-		// Notify Goldor of any explosion-style impact (Superboom, Explosive Shot, Guided Sheep all route through here).
+		// Tell Goldor about every explosion (Superboom, Explosive Shot, Guided Sheep).
 		instructions.bosses.goldor.Goldor.INSTANCE.notifyExplosionAt(center);
 		World world = center.getWorld();
 		int cx = center.getBlockX(), cy = center.getBlockY(), cz = center.getBlockZ();
@@ -433,52 +409,39 @@ public final class ItemUtils {
 	}
 
 	// ===================== guided carriers =====================
-	// The Spirit Sceptre's Guided Bat and the Mage's Guided Sheep are the same projectile with a different animal
-	// and a different damage rule, so the FLIGHT lives here once.  They used to disagree: the sheep only noticed
-	// solid blocks and flew straight through every mob on the way.
+	// Spirit Sceptre bat and Mage sheep are one projectile with a different animal and damage rule, so the flight
+	// lives here once. They used to disagree: the sheep flew straight through mobs.
 
-	/** How far a guided carrier moves each tick, in blocks. */
+	/** Blocks per tick. */
 	private static final double GUIDED_SPEED = 1;
 
-	/** How long a carrier may fly before it gives up and detonates where it is: <b>10 seconds</b>. */
+	/** Max flight before it detonates where it is: 10 seconds. */
 	private static final int GUIDED_MAX_TICKS = 200;
 
-	/** How close a mob has to be to the carrier's next position to stop it. */
+	/** How close a mob must be to the carrier's next position to stop it. */
 	private static final double GUIDED_HIT_RANGE = 1;
 
 	/**
-	 * Marks a carrier in flight.  Two abilities can be airborne at once, and both spawn a living animal that is not
-	 * on the {@link #doNotKill()} list, so without this a bat would stop dead on a sheep - and on itself, since its
-	 * own hitbox is inside the sphere it scans a block ahead.  <b>Not</b> a test on {@code isInvulnerable()}, which
-	 * would look equivalent and is not: Goldor is set invulnerable for his whole phase and still takes ability
-	 * damage through his clamp, so that test would quietly make him immune to both abilities.
+	 * Marks a carrier in flight, so a bat doesn't stop on a sheep or on itself (its own hitbox is in the sphere it
+	 * scans). Not {@code isInvulnerable()}: Goldor is invulnerable all phase but takes ability damage through his
+	 * clamp, so that test would make him immune.
 	 */
 	private static final String GUIDED_TAG = "TASGuidedCarrier";
 
 	/**
-	 * Fly an already-spawned animal at {@link #GUIDED_SPEED} a tick in the direction its caster is <b>currently</b>
-	 * looking, then detonate it on the first mob or solid block it reaches.
+	 * Fly a spawned animal at {@link #GUIDED_SPEED} toward where its caster is looking NOW, re-read every tick (the
+	 * Sceptre "follows your aim", so it can be steered back at you), and detonate on the first mob or solid block.
+	 * The caller spawns it and sets species details (sheep colour, bat awake flag); this makes it inert.
 	 * <p>
-	 * <b>The direction is re-read EVERY tick, which is what "guided" means</b> - the Spirit Sceptre's tooltip says
-	 * the bat "follows your aim", so turning your head steers it in flight, and it will happily come back at you.
-	 * Only the DAMAGE is settled at launch (see below); the heading is live.  The caller spawns the carrier so it
-	 * can set whatever is specific to its species (the sheep's colour, the bat's awake flag); everything that makes
-	 * it an inert projectile is applied here.
+	 * The blast goes through {@link #triggerSuperboomRadius}, so both open crypts and walls like the TNT.
 	 * <p>
-	 * The blast routes through {@link #triggerSuperboomRadius}, so both abilities open crypts and cracked-brick
-	 * walls exactly as the TNT does - which is what the Guided Sheep already did and is the whole reason it is
-	 * useful in a clear.
+	 * Raw {@code runTaskTimer}, not {@code Utils.scheduleTask}: the carrier is invulnerable and self-removing, so a
+	 * teardown mid-flight leaves at most one animal that detonates harmlessly.
 	 * <p>
-	 * <b>A raw {@code runTaskTimer}, not {@code Utils.scheduleTask}</b>, matching the flight the sheep always had:
-	 * the carrier is invulnerable and self-removing, so the worst a teardown mid-flight can leave is one animal that
-	 * detonates harmlessly a moment later.
-	 * <p>
-	 * <b>This knows nothing about damage.</b>  The caster settles the figure and writes it onto the carrier through
-	 * {@code damage/GuidedCarriers} before launching, and the blast reads it back off the entity - the same "carry
-	 * your damage with you" rule arrows follow (§1.0.5).  An unstamped carrier flies and explodes for nothing, which
-	 * is a legitimate thing to want.
+	 * Knows nothing about damage: the caster stamps it on via {@code damage/GuidedCarriers} before launch and the
+	 * blast reads it back, like arrows (§1.0.5). An unstamped carrier explodes for nothing, which is legitimate.
 	 *
-	 * @param blastRadius how far from the impact point mobs are hit, in blocks
+	 * @param blastRadius blocks from impact
 	 */
 	public static void launchGuided(Player p, LivingEntity carrier, double blastRadius) {
 		carrier.setAI(false);
@@ -492,8 +455,7 @@ public final class ItemUtils {
 		carrier.addScoreboardTag(GUIDED_TAG);
 		PlayerCollision.addEntityToNoCollisionTeam(carrier);
 
-		// Built ONCE per launch, not per tick: doNotKill() allocates its list on every call and this scans for a
-		// target every tick for up to GUIDED_MAX_TICKS.
+		// Built once per launch: doNotKill() allocates every call and this scans every tick.
 		List<EntityType> doNotKill = doNotKill();
 
 		new BukkitRunnable() {
@@ -501,9 +463,7 @@ public final class ItemUtils {
 
 			@Override
 			public void run() {
-				// Out of time, gone, or the caster left - there is nothing left to steer it, so it goes off where
-				// it is.  The damage was stamped at launch, so a carrier whose caster has quit still hits for the
-				// figure they cast it with.
+				// Out of time, gone, or caster left: detonate here. Damage was stamped at launch, so it still hits.
 				if(ticks++ >= GUIDED_MAX_TICKS || !carrier.isValid() || !p.isOnline()) {
 					detonateGuided(p, carrier, carrier.getLocation(), blastRadius, doNotKill);
 					cancel();
@@ -516,8 +476,7 @@ public final class ItemUtils {
 					cancel();
 					return;
 				}
-				// Point it where it is going, or a steered carrier keeps the heading it spawned facing and reads as
-				// a sheep sliding sideways through the air.
+				// Face where it's going, or a steered sheep slides sideways.
 				next.setDirection(velocity);
 				carrier.teleport(next);
 			}
@@ -525,11 +484,9 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * Blow a carrier up at {@code center}: the effect, the Superboom pass, then the stamped damage against every mob
-	 * in range, then the "hit N enemies" line.  The carrier is removed LAST, because the stamp is read off it.
-	 * <p>
-	 * Only a hit that {@code deal} <b>reported</b> above zero is counted or summed, so a blast that catches an
-	 * armoured wither or a villager NPC does not claim it.
+	 * Effect, Superboom pass, stamped damage on every mob in range, then the "hit N enemies" line. Carrier is removed
+	 * LAST because the stamp is read off it. Only hits {@code deal} reported above zero count, so an armoured wither
+	 * or NPC isn't claimed.
 	 */
 	private static void detonateGuided(Player p, LivingEntity carrier, Location center, double blastRadius,
 			List<EntityType> doNotKill) {
@@ -551,15 +508,11 @@ public final class ItemUtils {
 		carrier.remove();
 	}
 
-	/** The first mob close enough to {@code point} to stop a carrier, or null. */
 	private static LivingEntity firstMobNear(Location point, List<EntityType> doNotKill) {
 		return firstMobNear(point, GUIDED_HIT_RANGE, doNotKill);
 	}
 
-	/**
-	 * The first mob within {@code range} of {@code point}, or null.  Shared with Explosive Shot, whose arrows stop
-	 * and detonate on contact rather than piercing, and which wants the same "what counts as a mob" rule.
-	 */
+	/** First mob within {@code range}, or null. Also used by Explosive Shot, whose arrows detonate on contact. */
 	public static LivingEntity firstMobNear(Location point, double range) {
 		return firstMobNear(point, range, doNotKill());
 	}
@@ -571,10 +524,7 @@ public final class ItemUtils {
 		return null;
 	}
 
-	/**
-	 * Whether a guided carrier may stop on, and damage, this entity.  The same rule the other AoE abilities use -
-	 * never a player, real, fake or spectating - plus one of its own: never another carrier, or itself.
-	 */
+	/** Same rule as other AoEs (never a player), plus never a carrier, including itself. */
 	private static boolean isGuidedTarget(Entity e, List<EntityType> doNotKill) {
 		if(!(e instanceof LivingEntity mob) || e instanceof Player) return false;
 		if(e.getScoreboardTags().contains(GUIDED_TAG) || doNotKill.contains(e.getType())) return false;
@@ -592,10 +542,8 @@ public final class ItemUtils {
 			b.setType(Material.AIR, false); // no-physics: attached neighbours (carpets, portals, …) don't pop off
 			pendingStonkRestorations.put(loc, data);
 			BukkitTask task = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
-				// applyPhysics=false, same as the break above and every other restore path.  With physics the block
-				// runs its own canSurvive check on placement, so a carpet whose support was stonked too pops straight
-				// back off and never comes back.  It also re-shapes the six neighbours, tearing off whatever is
-				// attached to them.  setBlockData carries the material, so no separate setType is needed.
+				// No physics, like every restore: with it a carpet whose support was also stonked pops off for good,
+				// and the six neighbours get re-shaped. setBlockData carries the material.
 				b.setBlockData(data, false);
 				pendingStonkRestorations.remove(loc);
 				pendingStonkTasks.remove(loc);
@@ -614,9 +562,8 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * Immediately restore every superboomed wall / crypt currently set to AIR and despawn any active crypt mobs,
-	 * cancelling their pending 40-tick restorations. Mirrors {@link #flushStonkRestorations()}; called from
-	 * Server.serverSetup so /reset and /setup replace all crypts and walls at once.
+	 * Restore every open wall/crypt now, despawn crypt mobs and cancel the pending restores. Called from
+	 * Server.serverSetup so /reset and /setup put everything back at once.
 	 */
 	public static void flushBlockRestorations() {
 		pendingBlockTasks.forEach(BukkitTask::cancel);
@@ -632,41 +579,34 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * The shared thrown-axe projectile: an ItemDisplay flying 100 blocks, spinning, damaging what it passes
-	 * through.  Used by the Axe of the Shredded ({@code pierce} true) and by a Berserk's {@code drop stack}
-	 * ability, which copies it but does NOT pierce (§1.14).
+	 * Thrown axe: a spinning ItemDisplay flying 100 blocks, damaging what it passes. Axe of the Shredded pierces;
+	 * Berserk {@code drop stack} copies it but does NOT pierce (§1.14).
 	 *
-	 * @param ability the ability's display name, for the "hit N enemies" line it prints when the axe is spent
-	 * @param derived what {@code core} IS.  False for the Axe of the Shredded, whose core is a stat core and still
-	 *                needs the target half at {@code meleeFinish}.  True for the Berserk throw, whose core was read
-	 *                out of the damage history and is therefore a FINISHED hit: running the target half on it would
-	 *                charge for the Rulers, the repeated-hit stack and the class multiplier a second time, and
-	 *                recording the result would let each throw read the last one's inflated output (see
-	 *                {@link damage.Damage#dealDerived}).
+	 * @param ability display name for the "hit N enemies" line
+	 * @param derived false for the Axe of the Shredded (stat core, still needs {@code meleeFinish}). True for the
+	 *                Berserk throw, whose core comes from damage history and is FINISHED: finishing it again would
+	 *                double the Rulers, repeated-hit stack and class multiplier, and recording it would let each
+	 *                throw read the last one's inflated output (see {@link damage.Damage#dealDerived}).
 	 */
 	public static void throwAxe(Player p, String ability, double core, boolean pierce, boolean derived) {
 		Utils.playLocalSound(p, Sound.BLOCK_LAVA_POP, 1.0F, 1.0F);
 		ItemStack weapon = p.getInventory().getItemInMainHand();
 
-		// Create the axe item display
 		Location startLoc = p.getEyeLocation();
 		Vector direction = startLoc.getDirection().normalize();
 
-		// Calculate the horizontal perpendicular to the direction of travel
-		// Project direction onto the XZ plane and get perpendicular
+		// Spin axis: horizontal perpendicular to travel (90 degrees clockwise from above)
 		double dx = direction.getX();
 		double dz = direction.getZ();
 
-		// The perpendicular in the XZ plane (rotate 90 degrees clockwise when viewed from above)
 		Vector spinAxis = new Vector(-dz, 0, dx).normalize();
 
-		// If looking straight up/down (no horizontal component), use player yaw
+		// Looking straight up/down: use yaw instead
 		if(Math.abs(dx) < 0.001 && Math.abs(dz) < 0.001) {
 			float yaw = startLoc.getYaw();
 			spinAxis = new Vector(-Math.cos(Math.toRadians(yaw)), 0, -Math.sin(Math.toRadians(yaw)));
 		}
 
-		// Spawn an ItemDisplay entity
 		ItemDisplay axe = p.getWorld().spawn(startLoc, ItemDisplay.class);
 		axe.setItemStack(new ItemStack(Material.DIAMOND_AXE));
 		axe.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.THIRDPERSON_RIGHTHAND);
@@ -678,8 +618,7 @@ public final class ItemUtils {
 			float spinRotation = 0;
 			boolean notedAggro = false;
 			final Set<UUID> hit = new HashSet<>();
-			// The tally for the "hit N enemies" line, printed ONCE when the axe is spent rather than per mob: a
-			// piercing throw can pass through several, and one line per victim would be noise.
+			// For the "hit N enemies" line, printed once when the axe is spent, not per mob.
 			int damaged = 0;
 			double dealt = 0;
 
@@ -696,20 +635,18 @@ public final class ItemUtils {
 					return;
 				}
 
-				// Check if we hit a wall (solid block)
 				Location nextLoc = currentLoc.clone().add(direction);
 				if(nextLoc.getBlock().getType().isSolid()) {
 					finish();
 					return;
 				}
 
-				// Move 1 block per tick
+				// 1 block per tick
 				currentLoc = nextLoc;
 
-				// Taking aggro when it hits a wither is a REQUIREMENT of this ability, not incidental, so it is
-				// noted the first tick the axe overlaps a boss whether or not the damage lands.  These projectiles
-				// are one of only three things allowed to aggro a fully shielded wither - the mage beam and the
-				// Flaming Flay arc are the others; everything else needs the hit to have dealt real damage.
+				// Taking aggro is a requirement of this ability, so it's noted the first tick the axe overlaps a boss
+				// whether or not damage lands. Only this, the mage beam and the Flaming Flay arc may aggro a fully
+				// shielded wither; everything else needs real damage.
 				boolean stop = false;
 				for(Entity e : currentLoc.getWorld().getNearbyEntities(currentLoc, 1.0, 2.0, 1.0)) {
 					if(!notedAggro && e instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
@@ -721,8 +658,7 @@ public final class ItemUtils {
 					if(e instanceof Wither w2 && w2.getInvulnerableTicks() != 0) continue;
 					double reported;
 					if(derived) {
-						// The debuffs this hit carries still land (Lethality is a property of the hit, not of the
-						// formula); only the damage half is skipped, because it is already in the figure.
+						// Debuffs (Lethality) still land; only the damage half is skipped, it's already in the figure.
 						damage.Damage.applyOnHitDebuffs(p, mob, damage.DamagePath.MELEE, weapon);
 						reported = damage.Damage.dealDerived(mob, core, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);
 					} else {
@@ -740,18 +676,15 @@ public final class ItemUtils {
 					return;
 				}
 
-				// Update spin rotation
-				spinRotation += 36; // Positive for forward spin
+				spinRotation += 36; // positive = forward spin
 
-				// Create rotation using axis-angle rotation around the spin axis
 				Quaternionf rotation = new Quaternionf().rotateAxis((float) Math.toRadians(spinRotation), (float) finalSpinAxis.getX(), (float) finalSpinAxis.getY(), (float) finalSpinAxis.getZ());
 
-				axe.setTransformation(new Transformation(new Vector3f(0, 0, 0), // No translation offset
-						rotation, new Vector3f(1, 1, 1), // Normal scale
-						new Quaternionf() // No right rotation
+				axe.setTransformation(new Transformation(new Vector3f(0, 0, 0),
+						rotation, new Vector3f(1, 1, 1),
+						new Quaternionf()
 				));
 
-				// Teleport to new position
 				axe.teleport(currentLoc);
 
 				distance++;
@@ -759,10 +692,9 @@ public final class ItemUtils {
 		}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
 	}
 
-	/** True if {@code p} is the Mage CLASS, which drives the ability-cooldown reduction.  Real players carry an
-	*  exclusive class scoreboard tag (set by /class); fake players carry none and are identified by name.  All four
-	*  fake "MageN" players run the Mage inventory and cast Mage abilities, so every "Mage*"-named fake counts as a
-	*  Mage.  Mage2/3/4 cosplay Tank/Berserk/Healer's ROLE but are mechanically mages. */
+	/** True if {@code p} is the Mage CLASS (drives cooldown reduction). Real players carry a class tag from /class;
+	*  fakes have none and go by name. All four "MageN" fakes are mechanically mages, even the ones playing
+	*  Tank/Berserk/Healer's role. */
 	public static boolean isMageClass(Player p) {
 		if(p.getScoreboardTags().contains("Mage")) return true;
 		for(String other : new String[]{"Archer", "Berserk", "Healer", "Tank"}) {
@@ -771,26 +703,21 @@ public final class ItemUtils {
 		return p.getName().startsWith("Mage");
 	}
 
-	/** A base ability cooldown after the Mage class's cooldown reduction: a SOLO mage gets −75% (quarter cooldown),
-	*  but with two or more Mage-class players it's the standard −50% (half).  Non-mages are unchanged.  NOT used for
-	*  the Terminator or Salvation, which are weapons, not abilities. */
+	/** Mage cooldown reduction: a SOLO mage gets -75%, two or more mages -50%. Non-mages unchanged. Not used for
+	*  Terminator or Salvation, which are weapons, not abilities. */
 	public static int effectiveCooldown(Player p, int baseTicks) {
 		if(!isMageClass(p)) return baseTicks;
 		return mageCount() <= 1 ? baseTicks / 4 : baseTicks / 2;
 	}
 
-	/** Number of Mage-class players currently online (see {@link #isMageClass}). */
 	private static long mageCount() {
 		return Bukkit.getOnlinePlayers().stream().filter(ItemUtils::isMageClass).count();
 	}
 
-	/** Tell {@code p} their ability is on cooldown, showing the remaining time in seconds (e.g. "...for 3.45
-	*  seconds!").  {@code ticksRemaining} is the ticks left until the ability is usable again. */
 	public static void sendCooldownMessage(Player p, int ticksRemaining) {
 		String format = String.format("%.2f", Math.max(0, ticksRemaining) / 20.0);
 		p.sendMessage(Utils.msg("<red>This ability is on cooldown for " + format + " seconds!"));
-		// During a TAS run (not practice) an ability fired on cooldown means the choreography mistimed it, so flag
-		// it with the offending tick and player.  Gated behind regular verbose (ON+) so it doesn't spam the console.
+		// In a TAS run (not practice) this means the choreography mistimed it, so log it. Verbose only.
 		if(!instructions.bosses.WitherActions.isPracticeMode() && Utils.isVerbose()) {
 			ItemStack held = p.getInventory().getItemInMainHand();
 			String ability = held.hasItemMeta() && held.getItemMeta().hasDisplayName()
@@ -801,12 +728,9 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * True if the player is wearing the full (4/4) Thermodynamic armor set, which is the one set bonus in the
-	 * plugin: it raises the attack-speed cap, i.e. the Terminator's 5-tick cooldown becomes 4.
-	 * <p>
-	 * Asks each piece which SET it belongs to ({@code Wearable.setId}) instead of substring-matching
-	 * "Thermodynamic" in its display name, so an unrelated item that happens to contain the word cannot count
-	 * towards it and a second set needs no new predicate.
+	 * Full 4/4 Thermodynamic, the plugin's one set bonus: raises the attack-speed cap, so the Terminator's 5-tick
+	 * cooldown becomes 4. Checks {@code Wearable.setId}, not the display name, so an unrelated item with the word in
+	 * it can't count.
 	 */
 	public static boolean isThermoSet(Player p) {
 		org.bukkit.inventory.PlayerInventory inv = p.getInventory();
@@ -824,46 +748,37 @@ public final class ItemUtils {
 	public static void mageBeam(Player p) {
 		Location l = p.getLocation();
 
-		// Three range tiers, each doubling the previous total (MAP.md §7): 10+15 = 25 by default,
-		// 35+15 = 50 in the boss arena, 70+30 = 100 in the Wither King fight.  The Wither King tier needs a PHASE
-		// check rather than a coordinate one, because the WK arena already sits inside the boss-arena box.
+		// Three range tiers, each doubling (MAP.md §7): 10+15 = 25 default, 35+15 = 50 boss arena, 70+30 = 100 Wither
+		// King. WK needs a PHASE check, since its arena sits inside the boss-arena box.
 		double range = damage.Damage.beamRange(p).maxRange();
 
-		// Get player's yaw in radians
 		double yaw = Math.toRadians(l.getYaw());
 
-		// Calculate perpendicular vector (90 degrees to the right)
+		// 90 degrees right
 		double rightYaw = yaw + Math.toRadians(90);
 
-		// Calculate offsets (16 pixels = 1 block)
+		// 16 pixels = 1 block
 		double offsetX = -Math.sin(rightYaw) * (5.0 / 16.0);
 		double offsetZ = Math.cos(rightYaw) * (5.0 / 16.0);
 		double offsetY = 1.62 - (13.0 / 16.0);
 
-		// Apply offsets
 		l.add(offsetX, offsetY, offsetZ);
 
-		// GEOMETRY: the beam is DRAWN from the right hand (`l`) but AIMED from the eye, so it converges on the
-		// crosshair.  The trail is a straight line from the hand to wherever the crosshair ray terminates, so the two
-		// coincide at the target end (a mob under the crosshair is where the beam visibly lands) while still leaving
-		// the hand, which is what it looks like on Hypixel.
+		// DRAWN from the right hand (`l`), AIMED from the eye: the trail runs hand to wherever the crosshair ray ends,
+		// so it lands on the crosshair and still leaves the hand, like Hypixel.
 		//
-		// This supersedes the earlier fix that cast the damage ray FROM the hand along the look direction.  That made
-		// the ray match the trail exactly, but the trail was then *parallel* to the crosshair and permanently offset
-		// ~0.31 blocks right and ~0.81 down from it, so the beam visibly never went where you were aiming.  Converging
-		// the trail instead fixes the same visual/hit mismatch from the other side, and it re-aligns the real beam
-		// with Actions.mageBeamWouldHit, the fake-player fire gate, which has always aimed from the eye.
+		// Replaces casting the ray from the hand along the look direction, which left the trail parallel to the
+		// crosshair, ~0.31 right and ~0.81 down, so it never went where you aimed. This also matches
+		// Actions.mageBeamWouldHit (fake-player fire gate), which aims from the eye.
 		//
-		// Consequence to keep in mind: only the ENDPOINT is shared.  A mob straddling the hand→target segment but not
-		// the crosshair ray is crossed by the trail without being hit.  That's what MAGE_BEAM_LENIENCY (0.5 per face)
-		// absorbs, and it's inherent to any hand-origin trail that aims by crosshair.
+		// Only the ENDPOINT is shared: a mob on the hand-to-target segment but off the crosshair ray is crossed
+		// without being hit. MAGE_BEAM_LENIENCY (0.5 per face) absorbs that.
 		Location eye = p.getEyeLocation();
 		Vector direction = eye.getDirection();
 		Vector eyeVec = eye.toVector();
 
-		// Raytrace both entities and blocks from the eye.  Whichever is closer along the ray is what it actually
-		// hits, so if a wall is between the player and an entity, the wall stops the beam and the entity takes no
-		// damage.  Entity hits get a MAGE_BEAM_LENIENCY-block margin (see findTargetEntity); blocks stay precise.
+		// Trace entities and blocks from the eye; the closer one wins, so a wall blocks the beam. Entities get the
+		// leniency margin, blocks stay precise.
 		RayTraceResult entityResult = findTargetEntity(p, eye, direction, range);
 		RayTraceResult blockResult = p.getWorld().rayTraceBlocks(eye, direction, range, FluidCollisionMode.NEVER, true);
 
@@ -879,17 +794,16 @@ public final class ItemUtils {
 			targetEntity = null;
 			targetPoint = blockResult.getHitPosition();
 		} else {
-			// Nothing in range: aim at the far end of the crosshair ray so the trail still converges toward it.
+			// Nothing in range: aim at the far end of the crosshair ray.
 			targetEntity = null;
 			targetPoint = eyeVec.clone().add(direction.clone().multiply(range));
 		}
 
-		// The trail runs hand → target point: that convergence is what makes the beam land on the crosshair.
 		Vector handToTarget = targetPoint.clone().subtract(l.toVector());
 		double distance = handToTarget.length();
 		handToTarget.normalize();
 
-		// Iterations based on distance to target, not max range
+		// Distance to target, not max range
 		int iterations = (int) (distance / 0.33333);
 		Vector v = handToTarget.multiply(0.33333);
 
@@ -898,36 +812,28 @@ public final class ItemUtils {
 			l.add(v);
 		}
 
-		// A dead mob takes no real damage, so the beam passing through it shouldn't emit a hurt sound.  This also
-		// covers a boss wither pinned in its dying state (TASDying, HP frozen at 1, so isDead/health won't flag it).
+		// No hurt sound off a dead mob, including a boss pinned dying (TASDying, HP frozen at 1).
 		boolean targetDead = targetEntity instanceof LivingEntity dead
 				&& (dead.isDead() || dead.getHealth() <= 0 || dead.getScoreboardTags().contains("TASDying"));
 
-		// Beam hit sounds are routed ONLY to the beamer (and their spectators) at constant volume.
-		// There is no at-location sound, so volume doesn't depend on how far the target is.
+		// Hit sounds go ONLY to the beamer (and spectators) at constant volume, never at the target.
 		ItemStack held = p.getInventory().getItemInMainHand();
 		if(targetEntity instanceof Wither wither && wither.getInvulnerableTicks() != 0) {
-			// Armored, e.g. mid-intro before the fight is live: no damage lands, but still record the damager so
-			// the boss aggros whoever was hitting it the moment its intro completes and aggro turns on.  The mage
-			// beam is one of only three things allowed to do that - the thrown-axe projectiles and the Flaming Flay
-			// arc are the others; every other path needs the hit to have dealt real damage (see damage/Damage.deal).
+			// Armoured (e.g. mid-intro): no damage, but note the damager so the boss aggros them once aggro turns on.
+			// Only the beam, thrown axe and Flaming Flay arc may do this (see damage/Damage.deal).
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
-			// Debuff stacks land even when the damage does not (MAP.md §7): a beam on an armoured boss
-			// still builds Lethality, so the moment it opens up the stacks are already there.  Maxor and Storm
-			// cannot be arrow-debuffed before they become vulnerable, which is exactly the case this covers.
+			// Debuffs land even without damage (MAP.md §7), so Lethality is stacked by the time it opens up. Covers
+			// Maxor and Storm, which can't be arrow-debuffed before they're vulnerable.
 			damage.Damage.applyOnHitDebuffs(p, wither, damage.DamagePath.BEAM, held);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
-			// The beam is the MELEE hit rescaled by the Mage Staff passive, then faded by distance across the
-			// three range tiers (§7).  Everything the old hardcoded table did is now a formula output: the
-			// Hyperion's "-33% against a non-wither" was this same mechanic written inside out (1/1.5 = 0.667)
-			// and is now the Hyperion's x1.5 vs Wither; the Rag buff is +150% of the axe's Strength through the
-			// stat layer; and the Spring Boots / Racing Helmet penalties are deleted outright, those wearables
-			// now costing only the stats their slot would otherwise carry.
+			// MELEE hit rescaled by the Mage Staff passive, faded by distance across the range tiers (§7). The old
+			// table is gone: Hyperion's "-33% vs non-wither" is now its x1.5 vs Wither (1/1.5 = 0.667), the Rag buff
+			// is +150% of the axe's Strength via stats, and the Spring Boots / Racing Helmet penalties are deleted,
+			// those now cost only the stats their slot would carry.
 			double sbDamage = damage.Damage.beam(p, temp, held, distance);
-			// Silence the target during the hit so vanilla doesn't broadcast its hurt sound at the
-			// target's location; beamDamageInProgress tells onWitherHurtSound to skip its manual
-			// broadcast the same way (withers are permanently silent, so silence can't signal that).
+			// Silence the target so vanilla doesn't play its hurt sound at it; beamDamageInProgress does the same
+			// for onWitherHurtSound (withers are always silent, so silence can't signal it).
 			boolean wasSilent = temp.isSilent();
 			temp.setSilent(true);
 			beamDamageInProgress = true;
@@ -945,10 +851,8 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * The NEAREST mob the beam's ray enters, by {@link #rayBoxDistance} against each hitbox expanded by
-	 * {@link #MAGE_BEAM_LENIENCY} - not Bukkit's own ray trace, which stops at the first entity it happens to
-	 * find rather than the closest.  Skips players (real, fake and spectating) and anything under Resistance 255,
-	 * which is how a mob that must not be hit at all is marked.
+	 * NEAREST mob the ray enters, hitboxes expanded by {@link #MAGE_BEAM_LENIENCY}. Not Bukkit's ray trace, which
+	 * returns the first entity found, not the closest. Skips players and Resistance 255 (marks an unhittable mob).
 	 */
 	private static RayTraceResult findTargetEntity(Player p, Location origin, Vector direction, double range) {
 		Vector start = origin.toVector();
@@ -970,9 +874,8 @@ public final class ItemUtils {
 	}
 
 	/**
-	 * Distance {@code t} along {@code start + t*direction} (direction assumed unit-length) at which the ray first
-	 * enters {@code box}, or {@code -1} if it never does within {@code maxDist}. Returns {@code 0} when the origin
-	 * is already inside the box (slab method, clamped at 0).
+	 * Slab method: {@code t} where the ray (unit direction) first enters {@code box}, -1 if not within
+	 * {@code maxDist}, 0 if it starts inside.
 	 */
 	private static double rayBoxDistance(Vector start, Vector direction, BoundingBox box, double maxDist) {
 		double[] o = {start.getX(), start.getY(), start.getZ()};

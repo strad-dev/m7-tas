@@ -13,9 +13,8 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The Axe of the Shredded.  Throws a piercing axe for 10% of the wielder's melee damage, and CONSECUTIVE throws
- * double that up to a x16 cap (§1.9).  The projectile itself is {@code ItemUtils.throwAxe}, shared with a
- * Berserk's {@code drop stack} - which copies it but does not pierce, and passes an already-FINISHED figure.
+ * Piercing throw for 10% of melee; CONSECUTIVE throws double it to a x16 cap (§1.9). Projectile is
+ * {@code ItemUtils.throwAxe}, shared with Berserk {@code drop stack} (no pierce, passes a FINISHED figure).
  */
 public final class AxeOfTheShredded implements Weapon, AbilityItem {
 	public static final AxeOfTheShredded INSTANCE = new AxeOfTheShredded();
@@ -63,8 +62,7 @@ public final class AxeOfTheShredded implements Weapon, AbilityItem {
 		return true;
 	}
 
-	// Axe of the Shredded: the throw deals 10% of melee, and CONSECUTIVE throws double it to a x16 cap (§1.9).
-	// A throw counts as consecutive if it lands inside this window of the previous one.
+	// A throw within AOTS_STREAK_TICKS of the last one is consecutive.
 	private static final double AOTS_THROW_SHARE = 0.10;
 	private static final double AOTS_THROW_CAP = 16.0;
 	private static final int AOTS_STREAK_TICKS = 100;
@@ -72,15 +70,13 @@ public final class AxeOfTheShredded implements Weapon, AbilityItem {
 	private static final Map<UUID, Integer> aotsStreakExpiry = new ConcurrentHashMap<>();
 
 	/**
-	 * The Axe of the Shredded's throw: <b>10% of the wielder's melee damage</b>, with consecutive throws doubling
-	 * it (and their mana cost) up to a x16 cap (MAP.md §1.9).  It also has to <b>take aggro when it hits a
-	 * wither</b>, which is a deliberate requirement rather than incidental, and is what the axe's flight already
-	 * did before it dealt any damage at all.
+	 * Consecutive throws double damage (and mana cost) to x16 (MAP.md §1.9). Must <b>take aggro on a wither hit</b>,
+	 * a deliberate requirement.
 	 */
 	public static void aots(Player p) {
 		UUID id = p.getUniqueId();
 		int now = MinecraftServer.currentTick;
-		// A "consecutive" throw is one inside the streak window; letting it lapse resets the doubling to x1.
+		// Lapsing the window resets to x1.
 		int streak = now <= aotsStreakExpiry.getOrDefault(id, 0) ? aotsStreak.getOrDefault(id, 0) + 1 : 0;
 		aotsStreak.put(id, streak);
 		aotsStreakExpiry.put(id, now + AOTS_STREAK_TICKS);
@@ -89,7 +85,7 @@ public final class AxeOfTheShredded implements Weapon, AbilityItem {
 		ItemUtils.throwAxe(p, "Throwing Axe", core, true, false);
 	}
 
-	/** Forget every throw streak.  Part of the run reset, so a new run never inherits a x16 multiplier. */
+	/** Run reset, so a new run never inherits x16. */
 	public static void reset() {
 		aotsStreak.clear();
 		aotsStreakExpiry.clear();

@@ -1,24 +1,18 @@
 package damage;
 
 /**
- * Which of the four damage formulas a hit is going through (MAP.md §7).
- * <p>
- * The path is also half the stat cache key, not just a formula selector: a Mage's equipment and Accessory Power
- * are path-dependent (§1.11, §1.12), so the same Mage has different Strength, Crit Damage, Intelligence AND
- * Ability Damage depending on whether they are computing a beam or a cast.
+ * Which of the four damage formulas a hit uses (MAP.md §7). Also half the stat cache key: a Mage's equipment and
+ * Accessory Power are path-dependent (§1.11, §1.12), so Strength, Crit Damage, Int AND Ability Damage differ between
+ * beam and cast.
  */
 public enum DamagePath {
 	MELEE,
-	/**
-	 * The Mage class's "Mage Staff" passive: every melee attack becomes ranged and deals a rescaled share of the
-	 * melee number.  It is <b>not</b> a separate damage path in the enchantment sense - the beam counts as a melee
-	 * attack and takes the whole sword list (§7).
-	 */
+	/** Mage Staff passive: melee becomes ranged at a rescaled share. Still melee for enchants, full sword list (§7). */
 	BEAM,
 	BOW,
 	ABILITY;
 
-	/** True for the two paths the sword enchantment list applies to.  The beam is melee (§7). */
+	/** The two paths the sword enchant list applies to. */
 	public boolean isMelee() {
 		return this == MELEE || this == BEAM;
 	}

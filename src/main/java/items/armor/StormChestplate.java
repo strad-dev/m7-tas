@@ -12,12 +12,9 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 /**
- * Storm's Chestplate.  Ships in TWO reforges: the Ancient piece the Mage class wears, and the
- * alternate-reforge ("RCM") Loving one, which trades Ancient's Strength and Crit Damage
- * for a much larger Intelligence block and runs Sapphire in both slots.
- * <p>
- * They are one item here rather than two, which is the whole point of reforge being a parameter: the colours
- * and the dye are identical, because the reforge is the ONLY difference between them.
+ * Storm's Chestplate, in TWO reforges: Ancient (Mage kit) and the alternate ("RCM") Loving, which trades Ancient's Strength
+ * and Crit Damage for much more Intelligence and runs Sapphire in both slots. One item, since the reforge is the
+ * ONLY difference.
  */
 public final class StormChestplate implements Wearable {
 	public static final StormChestplate INSTANCE = new StormChestplate();

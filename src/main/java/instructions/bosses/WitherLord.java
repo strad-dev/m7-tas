@@ -14,13 +14,9 @@ import plugin.Utils;
 import java.util.List;
 
 /**
- * Shared base class for the four "real" wither bosses (Maxor, Storm, Goldor, Necron).
- * WitherKing is intentionally excluded, because its 5-HP scale, MAGIC name formatting,
- * dragon-driven HP decrement, and single-arg constructor don't fit the abstraction.
- * <br>
- * Each subclass exposes a {@code public static final <Subclass> INSTANCE = new <Subclass>();}
- * singleton. The instance is reused across fights; {@link #start(World, boolean)} resets
- * all per-fight state via {@link #resetState()} so each fight begins clean.
+ * Base for Maxor, Storm, Goldor, Necron. Not WitherKing: its 5-HP scale, MAGIC name, dragon-driven HP and
+ * single-arg constructor don't fit. Each subclass is an {@code INSTANCE} singleton reused across fights;
+ * {@link #start(World, boolean)} clears per-fight state via {@link #resetState()}.
  */
 @SuppressWarnings("DataFlowIssue")
 public abstract class WitherLord {
@@ -28,35 +24,26 @@ public abstract class WitherLord {
 	protected World world;
 	protected int tick;
 	/**
-	 * What a killing blow leaves a boss on, in Minecraft health: <b>0.001</b>, a single {@code HP_STEP}.
-	 * <p>
-	 * A dying boss must stay above zero, or vanilla runs its death and despawns the entity before the death dialogue
-	 * has finished playing - which is the whole reason a killing blow is clamped at all.  <b>The sliver only has to be
-	 * non-zero.</b>  Maxor, Storm and Necron each used 1% of max health instead, which at these HP values is 8-14
-	 * million: a real slice of the health bar, so the killing blow visibly under-dealt and the bar sat at "14M" while
-	 * the boss was already dead.  Goldor and the Wither King already used 0.001; this is now the one figure for all of
-	 * them, and it is also what the dying state pins HP to.
+	 * Health a killing blow leaves, one {@code HP_STEP}; the dying state pins HP here too. Must stay above zero or
+	 * vanilla despawns the boss before the death dialogue ends. Only has to be non-zero: Maxor/Storm/Necron used 1% of
+	 * max (8-14M), so the bar sat at "14M" on a dead boss.
 	 */
 	public static final double DYING_SLIVER = 0.001;
 
 	protected BukkitTask tickerTask;
 	protected boolean dying;
 	protected boolean doContinue;
-	/** Player-side transition to the next phase, run from {@link #chainNext} the tick this boss chains. Armed by TAS.runTAS. */
+	/** Player-side transition, run from {@link #chainNext} the tick this boss chains. Armed by TAS.runTAS. */
 	protected Runnable playerHandoff;
 
-	/**
-	 * Entry point for a fresh fight. Cleans previous state, spawns the boss with the
-	 * shared boilerplate, then hands off to {@link #onStart()} for boss-specific setup.
-	 */
+	/** Fresh fight: clears the previous one, spawns the boss, then {@link #onStart()}. */
 	public final void start(World w, boolean doContinue) {
 		this.world = w;
 		this.doContinue = doContinue;
 
-		// Class-ability cooldowns reset upon entering a boss fight.
+		// Class-ability cooldowns reset on entering a boss fight.
 		listeners.CustomItems.resetAbilityCooldowns();
 
-		// Clean previous fight's entity + ticker
 		if(boss != null) {
 			boss.remove();
 			boss = null;
@@ -67,7 +54,6 @@ public abstract class WitherLord {
 		}
 		resetState();
 
-		// Reset base-class flags
 		this.tick = 0;
 		Utils.markPhaseStart();
 		this.dying = false;
@@ -80,14 +66,10 @@ public abstract class WitherLord {
 	}
 
 	/**
-	 * Force-end this boss's phase immediately: drop the entity and ticker, then {@link #resetState()}.
-	 * <br>
-	 * Exactly the cleanup {@link #start} does up front, but run now instead of waiting for the next
-	 * {@code start()}, so the gap between two runs is a clean, inactive phase.  Two callers need that:
-	 * {@code Server.serverInstructions} (a previous run's still-active phase would reject the new run's
-	 * pre-fired sharpshooter arrows as "device already activated") and {@code TAS.endPractice} (nothing else
-	 * calls {@code resetState}, so an early end used to leave Goldor's gates in the world and every boss's
-	 * flags set).
+	 * The cleanup {@link #start} does up front, run now so the gap between runs is inactive. Callers:
+	 * {@code Server.serverInstructions} (a still-active phase rejected the new run's pre-fired sharpshooter arrows as
+	 * "device already activated") and {@code TAS.endPractice} (nothing else calls {@code resetState}, so an early end
+	 * left Goldor's gates up and every boss's flags set).
 	 */
 	public final void forceEndPhase() {
 		if(boss != null) {
@@ -107,16 +89,13 @@ public abstract class WitherLord {
 		boss.setSilent(true);
 		boss.setPersistent(true);
 		boss.setRemoveWhenFarAway(false);
-		// The health suffix is FORMATTED from maxHealth(), never hardcoded: MobStats scales boss HP by the mayor
-		// (damage/Mayor: Derpy doubles it), so a literal "800M" would spawn Maxor showing half his real health.
+		// Formatted from maxHealth(), never hardcoded: Derpy doubles boss HP, so "800M" would show Maxor at half.
 		boss.customName(Utils.msg("<gold><bold>﴾ <red>" + displayName() + "<gold> ﴿ </bold><yellow>"
 				+ Utils.formatHealthM(maxHealth()) + "<red>❤"));
 		boss.setCustomNameVisible(true);
 		boss.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth());
-		// minecraft:armor stays at 0 on every mob (MAP.md §5): SkyBlock defense is applied by
-		// damage.Damage at the boundary with def/(def+100), a different function from vanilla's 4%-per-point
-		// curve, and the unified damage path writes health directly, so vanilla never gets a cut either way.
-		// It used to sit at -30/-20 to claw damage back out of vanilla's reduction, which no longer runs.
+		// minecraft:armor stays 0 on every mob (MAP.md §5): damage.Damage applies SkyBlock defense and writes health
+		// directly, so vanilla reduction never runs. It used to be -30/-20 to claw back vanilla's cut.
 		boss.getAttribute(Attribute.ARMOR).setBaseValue(0);
 		boss.getAttribute(Attribute.ARMOR_TOUGHNESS).setBaseValue(0);
 		boss.setHealth(maxHealth());
@@ -131,17 +110,10 @@ public abstract class WitherLord {
 	}
 
 	/**
-	 * Accurate, ordering-independent phase tick for DISPLAY ONLY.
-	 * <br>
-	 * The {@link #tick} field is an increment counter advanced by a repeating task in the scheduler heartbeat.
-	 * A scheduled action (terminal click, crystal pickup, death dialogue) runs in that same heartbeat AFTER the
-	 * increment, so it reads {@code tick} already +1 for that tick; an entity-physics event (a sharpshooter
-	 * arrow hit) runs before the heartbeat and reads it un-incremented. That split is the off-by-one.
-	 * <br>
-	 * This instead subtracts the phase-start server tick from the server's own tick counter, which is constant
-	 * across the whole server tick, so a scheduled action at phase-delay D and an entity event D ticks in BOTH
-	 * read exactly D, with no +1, in every boss fight. {@link #tick} is deliberately left untouched for
-	 * behavior/relative checks (Goldor patrol slow window, Storm crush poll) so this is purely a display fix.
+	 * Ordering-independent phase tick, DISPLAY ONLY. {@link #tick} is bumped in the scheduler heartbeat, so scheduled
+	 * actions read it +1 while entity events (sharpshooter arrow hit) read it un-incremented. This uses the server
+	 * tick minus phase start, constant across the tick, so both read D. {@link #tick} stays as is for behaviour
+	 * checks (Goldor patrol slow window, Storm crush poll).
 	 */
 	protected final int displayTick() {
 		return Utils.phaseTick();
@@ -149,48 +121,40 @@ public abstract class WitherLord {
 
 	// --- Subclass hooks ---
 
-	/** Raw identifier, with no formatting, used in scoreboard tags as "TAS" + name(). */
+	/** Unformatted; scoreboard tag is "TAS" + name(). */
 	protected abstract String name();
 
-	/** Display string used in custom-name, boss-bar, and chat. Same as name() for the four real subclasses. */
+	/** Custom name, boss bar, chat. Same as name() for all four subclasses. */
 	protected abstract String displayName();
 
 	protected abstract Location spawnLocation();
 
-	/** Internal HP for this boss, i.e. its {@code MobStats} block's {@code internalHealth()}. Not the display HP,
-	 *  which {@link #spawn()} formats from this. */
+	/** Internal HP, the {@code MobStats} {@code internalHealth()}. {@link #spawn()} formats the display HP from it. */
 	protected abstract double maxHealth();
 
-	/** PRE_<NAME>_TICKS offset used by {@link #formatTick(int)} to render the run-overall column. */
+	/** PRE_<NAME>_TICKS offset for {@link #formatTick(int)}'s overall column. */
 	protected abstract int previousTicks();
 
 	/**
-	 * Clamp one incoming plugin hit, in Minecraft health, and run whatever the clamp implies.  Returns the damage
-	 * actually allowed; 0 means fully blocked.
-	 * <p>
-	 * This used to be four {@code handleDamage(EntityDamageEvent)} interceptors hooked from {@code MiscListener}.
-	 * With the unified damage path writing health directly (MAP.md §7) no {@code EntityDamageEvent} fires
-	 * for our damage at all, so {@code damage.Damage.deal} calls this explicitly instead - which is also the only
-	 * way the clamps reach every damage source rather than only arrows-on-withers, as before.
-	 * <p>
-	 * Implementations own their side effects: entering the dying state, enraging out of a stun, consuming a
-	 * threshold.  A subclass with nothing to clamp inherits "let it through".
+	 * Clamps one hit in Minecraft health; returns what's allowed, 0 = blocked. {@code damage.Damage.deal} calls it
+	 * explicitly since no {@code EntityDamageEvent} fires for our damage (MAP.md §7); that also makes clamps cover
+	 * every source, not just arrows-on-withers like the old MiscListener hooks. Implementations own side effects
+	 * (dying state, enrage out of stun, consuming a threshold).
 	 */
 	public double clampDamage(double incoming) {
 		return incoming;
 	}
 
-	// showsUnclampedDamage() lived here: a per-boss opt-in that let Goldor mid-terminals and Necron mid-interlude show
-	// the hit they had swallowed.  It is gone because the display now ALWAYS reports the unclamped figure - see
-	// damage/Damage.deal.  What a clamp decides is how much health moves, not what the player hit for.
+	// showsUnclampedDamage() is gone: the display always reports the unclamped figure (damage/Damage.deal). A clamp
+	// decides how much health moves, not what the player hit for.
 
-	/** Subclass-specific fight setup: dialogue, movement, mob spawns, etc. */
+	/** Dialogue, movement, mob spawns. */
 	protected abstract void onStart();
 
-	/** Chain to the next boss in the run. Each subclass decides its own doContinue semantics. */
+	/** Each subclass decides its own doContinue semantics. */
 	protected abstract void chainNext(boolean doContinue);
 
-	/** Zero out per-fight flags, counters, scheduled tasks, and collections. Called at the start of every {@link #start}. */
+	/** Clears per-fight flags, counters, tasks, collections. Called at the start of every {@link #start}. */
 	protected abstract void resetState();
 
 	// --- Shared helpers ---
@@ -206,8 +170,7 @@ public abstract class WitherLord {
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
 	}
 
-	/** Overall run tick for display: the live overall-run timer in practice mode (no prior phases actually ran),
-	 *  otherwise the hardcoded per-phase cumulative offset {@code phaseT + previousTicks()}. */
+	/** Practice: the live run timer (no prior phases ran). Otherwise {@code phaseT + previousTicks()}. */
 	protected final int overallTick(int phaseT) {
 		return WitherActions.isPracticeMode() ? Utils.runTick() : phaseT + previousTicks();
 	}
@@ -234,26 +197,26 @@ public abstract class WitherLord {
 		WitherActions.clearWitherAggro(boss);
 	}
 
-	/** Arm the player-side transition fired when this boss chains to the next (see {@link #runPlayerHandoff}). Armed by TAS.runTAS. */
+	/** See {@link #runPlayerHandoff}. Armed by TAS.runTAS. */
 	public final void armPlayerHandoff(Runnable handoff) {
 		this.playerHandoff = handoff;
 	}
 
-	/** Run the armed player-side transition, if any. Called from subclass {@link #chainNext} the tick the next boss spawns. */
+	/** Called from {@link #chainNext} the tick the next boss spawns. */
 	protected final void runPlayerHandoff() {
 		if(playerHandoff != null) playerHandoff.run();
 	}
 
-	// --- Generic-listener helper: find the WitherLord that owns this wither entity ---
+	// --- Find the WitherLord that owns a wither entity ---
 
 	private static final List<WitherLord> SUBCLASS_INSTANCES = new java.util.ArrayList<>();
 
-	/** Registers a subclass singleton so {@link #activeFor(Wither)} can find it. Called from each subclass's static initializer. */
+	/** For {@link #activeFor(Wither)}. Called from each subclass's static initializer. */
 	protected static void register(WitherLord instance) {
 		SUBCLASS_INSTANCES.add(instance);
 	}
 
-	/** Returns the WitherLord whose currently-spawned boss matches {@code w}, or null if none match. */
+	/** Lord whose spawned boss is {@code w}, or null. */
 	public static WitherLord activeFor(Wither w) {
 		for(WitherLord lord : SUBCLASS_INSTANCES) {
 			if(lord.boss != null && lord.boss.equals(w)) return lord;
@@ -261,7 +224,7 @@ public abstract class WitherLord {
 		return null;
 	}
 
-	/** Returns the currently-spawned boss entity (or null between fights). */
+	/** Null between fights. */
 	public final Wither getBoss() {
 		return boss;
 	}

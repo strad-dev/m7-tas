@@ -9,13 +9,12 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /class <archer|mage|tank|berserk|healer>} - pick your M7 class. Selecting a class for the first time seeds
- * its loadout from the current default kit so it's never empty; edit it with {@code /m7loadout}. The selection and
- * loadouts live in the shared data folder, so they are the same ones the network plugin's lobby copy edits.
+ * {@code /class <archer|mage|tank|berserk|healer>} - pick M7 class. First pick seeds its loadout from the default
+ * kit so it's never empty; edit with {@code /m7loadout}. Stored in the shared data folder, same files the network
+ * plugin's lobby copy edits.
  * <p>
- * Unlike the network plugin's copy this also applies the class scoreboard TAG immediately: the tag is what gates
- * the mage beam and the per-class damage paths, and standalone (no network plugin, so no {@code M7Bridge}) this is
- * the only place it can come from.
+ * Unlike the network copy this also applies the class scoreboard tag right away: it gates the mage beam and
+ * per-class damage, and standalone (no {@code M7Bridge}) this is the only place it comes from.
  * <p>
  * NOTE: twin of the network plugin's {@code loadout/ClassCommand.java} - keep in sync.
  */

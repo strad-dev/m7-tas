@@ -18,20 +18,19 @@ import java.util.Map;
 import java.util.UUID;
 
 public class LavaJump {
-	/** Hypixel gates the bounce on where you're looking: pitch <= -40 (looking up steeply) gives the
-	 *  super bounce, anything else the normal one. */
+	/** Hypixel: pitch <= -40 (looking steeply up) gives the super bounce, anything else the normal one. */
 	private static final float SUPER_BOUNCE_PITCH = -40.0F;
 	private static final double SUPER_LAUNCH_VELOCITY = 3.0375D;
 	private static final double NORMAL_LAUNCH_VELOCITY = 2.25D;
 	private static final int RELAUNCH_COOLDOWN_TICKS = 10;
-	/** How far above the launch position counts as the client having applied the bounce. The smallest launch is
-	 *  2.25 and a player left sitting in lava only ever sinks, so half a block cannot be anything else. */
+	/** Rise above the launch position that proves the client applied the bounce. Smallest launch is 2.25 and a
+	 *  player sitting in lava only sinks, so half a block can't be anything else. */
 	private static final double RESPONSE_RISE = 0.5D;
-	/** Ticks to wait for that rise before bouncing again anyway. Long enough for a bad round trip, short enough
-	 *  that a bounce the client genuinely never applied cannot strand someone in the lava for good. */
+	/** Ticks to wait for that rise before bouncing anyway: covers a bad round trip, but a bounce the client never
+	 *  applied can't strand someone in lava. */
 	private static final int RESPONSE_TIMEOUT_TICKS = 60;
-	/** Player fluid-jump threshold: LivingEntity#getFluidJumpThreshold returns 0.4 for eye height ≥ 0.4.
-	 *  Lava height ≤ this is "shallow" (travelInLava keeps vertical ×0.8 → big); above is "deep" (×0.5 → small). */
+	/** LivingEntity#getFluidJumpThreshold: 0.4 for eye height >= 0.4. Lava height <= this is shallow
+	 *  (travelInLava vertical x0.8, big); above is deep (x0.5, small). */
 	private static final double PLAYER_FLUID_JUMP_THRESHOLD = 0.4D;
 
 	// Goldor boss arena bounds: -8 254 -8 to 134 0 147
@@ -45,8 +44,7 @@ public class LavaJump {
 				&& loc.getZ() >= MIN_Z && loc.getZ() <= MAX_Z;
 	}
 
-	/** The last bounce we served this player: the tick, the height they have to clear for us to believe the
-	 *  client applied it, and the block the contact was in. */
+	/** Last bounce served: tick, height they must clear to prove the client applied it, and the contact block. */
 	private record Launch(int tick, double y, int blockX, int blockY, int blockZ) {}
 
 	private static final Map<UUID, Launch> lastLaunch = new HashMap<>();
@@ -77,21 +75,15 @@ public class LavaJump {
 	}
 
 	/**
-	 * Whether a player still standing in lava may be bounced again.
-	 *
-	 * <p><b>The cooldown alone was not enough, and the reason is that we bounce REAL players.</b> Their movement
-	 * is client-authoritative, so {@code p.getLocation()} does not move until a position packet arrives. A client
-	 * that stalls leaves the server reading the lava block it launched them out of for the whole round trip, and
-	 * {@link #RELAUNCH_COOLDOWN_TICKS} expires inside that window. That is a live report: 8 ticks of silence at
-	 * 371 ms, a second 3.038 sent exactly 10 ticks after the first, and the two arcs landing on top of each other
-	 * as a 5.390 rise in one tick. StradDevHub's envelope check flagged it and killed the player, correctly by its
-	 * own lights - we really did launch someone twice for one lava contact.
-	 *
-	 * <p>So the wait is on EVIDENCE rather than on a timer: the launch is answered when we see them above where we
-	 * launched them from, and nothing but a bounce puts them there. Moving to a different block is the other way
-	 * out, because that is a new lava contact rather than the same one being served twice, and
-	 * {@link #RESPONSE_TIMEOUT_TICKS} is the third, so a bounce the client never applied cannot leave someone
-	 * stuck in the lava.
+	 * Whether a player still in lava may be bounced again.
+	 * <p>
+	 * The cooldown alone wasn't enough: real players' movement is client-authoritative, so {@code p.getLocation()}
+	 * sits in the launch block for the whole round trip of a stalled client, and {@link #RELAUNCH_COOLDOWN_TICKS}
+	 * expires inside it. Live report: 8 ticks of silence at 371 ms, a second 3.038 sent 10 ticks after the first,
+	 * the arcs stacking as a 5.390 rise in one tick, and StradDevHub's envelope check killed the player (rightly).
+	 * <p>
+	 * So the wait is on evidence: answered once they're above the launch height, which only a bounce does. A new
+	 * block is a new contact, and {@link #RESPONSE_TIMEOUT_TICKS} stops an unapplied bounce stranding them.
 	 */
 	private static boolean mayRelaunch(Location loc, Launch last, int now) {
 		int age = now - last.tick();
@@ -138,11 +130,9 @@ public class LavaJump {
 			Utils.debug(Utils.DebugType.SERVER, p.getName() + (superBounce ? " SUPER" : " normal") + " bounce (pitch "
 					+ Utils.round(pitch, 2) + ") launched at " + launch);
 
-			// Classify big and small deterministically from lava DEPTH, since vanilla's own shallow/deep test
-			// (LivingEntity.travelInLava: getFluidHeight(LAVA) <= getFluidJumpThreshold()). Shallow lava keeps
-			// vertical ×0.8 → "big"; deep lava ×0.5 → "small". The lava drag formula is unchanged in 26.2; what
-			// changed is that the server no longer reflects the client's dragged velocity for real players, so the
-			// old post-launch getDeltaMovement().y read always looked "big". Depth is server-authoritative here.
+			// Classify big/small from lava DEPTH, vanilla's own test (LivingEntity.travelInLava: getFluidHeight(LAVA)
+			// <= getFluidJumpThreshold()). The 26.2 server no longer reflects a real player's dragged velocity, so the
+			// old post-launch getDeltaMovement().y always looked "big". Depth is server-authoritative.
 			double lavaHeight = npc.getFluidHeight(net.minecraft.tags.FluidTags.LAVA);
 			String kind = lavaHeight <= PLAYER_FLUID_JUMP_THRESHOLD ? "big" : "small";
 			Utils.debug(Utils.DebugType.SERVER, p.getName() + " lava launched (lava height " + Utils.round(lavaHeight, 4) + ") classified " + kind);

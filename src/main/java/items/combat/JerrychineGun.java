@@ -29,10 +29,8 @@ import plugin.Utils;
 import java.util.UUID;
 
 /**
- * The Jerry-chine Gun.  A gravity-less snowball with a Jerry head riding along as an {@code ItemDisplay}; on
- * impact it knocks its own shooter back, scaled by {@code cos(firing pitch)}, which is the movement tech it
- * exists for.  The "gun" takes the SWORD reforge table: {@code ItemCategory} is the table axis, not the
- * Bukkit material.
+ * Gravity-less snowball with a Jerry head {@code ItemDisplay} riding along; on impact it knocks the shooter back,
+ * scaled by {@code cos(firing pitch)}. That's the movement tech. Takes the SWORD reforge table.
  */
 public final class JerrychineGun implements Weapon, AbilityItem, ProjectileItem {
 	public static final JerrychineGun INSTANCE = new JerrychineGun();
@@ -175,8 +173,7 @@ public final class JerrychineGun implements Weapon, AbilityItem, ProjectileItem 
 		direction.setY(0);
 		direction.normalize();
 
-		// Horizontal push magnitude scales by cos(firing pitch). Snowball has no gravity, so its velocity
-		// direction equals the shooter's fire-time look direction; cos(pitch) = horizontal-speed / total-speed.
+		// No gravity, so velocity is the fire-time look direction: cos(pitch) = horizontal speed / total speed.
 		Vector vel = s.getVelocity();
 		double speed = vel.length();
 		double cosPitch = speed > 1e-6 ? Math.hypot(vel.getX(), vel.getZ()) / speed : 0;

@@ -14,39 +14,26 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * The three things that stop an instakill: Bonzo's Mask, the Spirit Mask and the Phoenix pet.
+ * What stops an instakill: Bonzo's Mask, Spirit Mask, Phoenix pet.
  * <p>
- * <b>One entry point.</b> {@link #tryProc(Player)} is called by {@link Deaths#kill} and by nothing else, so every
- * kill site in the plugin inherits the same order of precedence and the same immunity window without knowing any of
- * this exists.  It answers "this death was cheated", not "an item was consumed": an already-immune player answers
- * true without spending anything, which is what makes a burst of hits in one window cost a single proc.
+ * {@link #tryProc(Player)} is called only by {@link Deaths#kill}, so every kill site gets the same precedence and
+ * immunity window. It answers "death cheated", not "item consumed": an already-immune player returns true without
+ * spending, so a burst of hits in one window costs one proc.
  * <p>
- * <b>Precedence.</b> A worn mask wins over the pet, and the two masks can never compete because both are helmets
- * and a player wears one hat.  The pet is the fallback: the player is ASSUMED to have a Phoenix out whenever no
- * mask is available, so there is no item to look for and nothing to show a durability bar on.
+ * Worn mask beats pet; the masks never compete (both helmets). Phoenix is the fallback, assumed out when no mask
+ * is available, so no item and no durability bar. In realistic mode it only procs if actually summoned in
+ * {@code /pets} ({@link #phoenixOut}); that changes availability, not order.
  * <p>
- * <b>The assumption ends in realistic mode</b>, where the player picks their own pet in {@code /pets}: the
- * Phoenix only procs while it is actually summoned - see {@link #phoenixOut}.  Precedence is untouched by that;
- * it decides availability, not order.
- * <p>
- * <b>A proc starts two clocks.</b> The immunity window, which is how long the next hit is free, and the item's
- * cooldown.  The action bar shows them on ONE segment in that order - the immunity counting down first, then the
- * cooldown - see {@link #segmentTicks}.
- * <p>
- * <b>Both run on the absolute server tick</b> ({@code Utils.serverTick()}),
- * not on the run-relative {@code Utils.runTick()}, because a cooldown has to survive a phase change and must not
- * jump when the run clock is re-anchored.  {@link Deaths#reset()} is what clears them between runs.
+ * A proc starts two clocks: immunity (next hit free) and cooldown. One bar segment shows immunity first, then
+ * cooldown ({@link #segmentTicks}). Both on absolute {@code Utils.serverTick()}, not {@code Utils.runTick()}, so a
+ * cooldown survives a phase change and doesn't jump when the run clock re-anchors. {@link Deaths#reset()} clears them.
  */
 public final class CheatDeath {
 	private CheatDeath() {}
 
 	/**
-	 * One life-saver: how long it goes on cooldown for, how long it makes its owner immune, and how its action-bar
-	 * segment is coloured.
-	 * <p>
-	 * Declaration order IS the precedence order in {@link #pick} and the segment order in
-	 * {@link #actionBarSuffix}, so the bar's segments never swap places under a player as their timers run out -
-	 * the same reasoning as Storm's armed-pillar segments.
+	 * Declaration order is the precedence in {@link #pick} and the segment order in {@link #actionBarSuffix}, so
+	 * segments never swap places as timers run out (same as Storm's armed-pillar segments).
 	 */
 	public enum Saver {
 		/** Bonzo's Mask, worn: 180s cooldown, 3s immune. */
@@ -55,22 +42,17 @@ public final class CheatDeath {
 		/** Spirit Mask, worn: 30s cooldown, 3s immune. */
 		SPIRIT("Spirit", 600, 60, "<dark_purple>",
 				"<gold>Second Wind Activated<green>!  Your Spirit Mask saved your life!"),
-		/** The Phoenix pet, assumed out: 60s cooldown, 4s immune, and NO item, so no durability bar. */
+		/** Phoenix pet, assumed out: 60s cooldown, 4s immune, no item so no durability bar. */
 		PHOENIX("Phoenix", 1200, 80, "<gold>",
 				"<yellow>Your <red>Phoenix Pet</red> saved you from certain death!");
 
-		/** Action-bar label, kept short so it sits next to a boss HUD's own segments. */
+		/** Short, to sit next to a boss HUD's segments. */
 		public final String label;
 		public final int cooldownTicks;
 		public final int immuneTicks;
-		/** MiniMessage colour of the action-bar label; the countdown itself is always white. */
+		/** Label colour; the countdown is always white. */
 		public final String colour;
-		/**
-		 * The whole chat line the saved player reads, verbatim from Hypixel's own wording.
-		 * <p>
-		 * A full line per saver rather than a template with the item's name slotted in, because the three do not
-		 * share a shape - Spirit Mask leads with "Second Wind Activated!" and Phoenix says "certain death".
-		 */
+		/** Hypixel's wording verbatim. Full line per saver, not a template: the three don't share a shape. */
 		public final String chatLine;
 
 		Saver(String label, int cooldownTicks, int immuneTicks, String colour, String chatLine) {
@@ -81,37 +63,28 @@ public final class CheatDeath {
 			this.chatLine = chatLine;
 		}
 
-		/** True if this saver is a worn item, i.e. one that carries the cooldown on its own durability bar. */
+		/** Worn item, so the cooldown shows on its durability bar. */
 		boolean isWorn() {
 			return this != PHOENIX;
 		}
 	}
 
-	/** Absolute server tick each player's saver comes off cooldown.  Absent = ready. */
+	/** Absolute server tick each saver is ready. Absent = ready. */
 	private static final Map<UUID, EnumMap<Saver, Integer>> readyAt = new HashMap<>();
 
 	/**
-	 * A live immunity window: which saver opened it, and the absolute server tick it shuts on.
-	 * <p>
-	 * <b>The saver is carried, not just the tick</b>, because the action bar counts the immunity down on that
-	 * saver's own segment before switching to its cooldown - see {@link #segmentTicks}.  Only one window can be open
-	 * at a time (a proc inside one is refused outright), so one entry per player is the whole story.
+	 * Saver is kept because the bar counts immunity down on that saver's segment ({@link #segmentTicks}). Only one
+	 * window at a time (no proc inside one), so one entry per player.
 	 */
 	private record Immunity(Saver from, int untilTick) {}
 
-	/** The open immunity window per player.  Absent = not immune. */
+	/** Absent = not immune. */
 	private static final Map<UUID, Immunity> immunity = new HashMap<>();
 
-	/**
-	 * Spend whatever would keep {@code p} alive right now.
-	 *
-	 * @return true if this death was cheated - either because a proc landed or because {@code p} is still inside an
-	 *         earlier proc's immunity window.  False means nothing was available and the player dies.
-	 */
+	/** @return true if the death was cheated: a proc landed, or {@code p} is still immune from an earlier one. */
 	public static boolean tryProc(Player p) {
 		int now = Utils.serverTick();
-		// Inside a live immunity window: the death is refused and NOTHING is spent.  This is what makes a second
-		// storm bolt or a same-tick pair of triggers cost one proc rather than one each.
+		// Immune: refused, nothing spent, so a second bolt or same-tick pair costs one proc.
 		if(liveImmunity(p, now) != null) return true;
 
 		Saver used = pick(p, now);
@@ -122,25 +95,18 @@ public final class CheatDeath {
 		immunity.put(p.getUniqueId(), new Immunity(used, now + used.immuneTicks));
 		if(used.isWorn()) writeDurability(p, used, used.cooldownTicks);
 
-		// To the saved player, not the party: this is their item and their cooldown, and Hypixel words it in the
-		// second person.  playLocalSound plays it at them (and, for a fake player, at whoever is spectating them).
+		// Saved player only, Hypixel words it in second person. playLocalSound also reaches a fake's spectators.
 		p.sendMessage(Utils.msg(used.chatLine));
 		Utils.playLocalSound(p, Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0f, 2.0f);
 		Utils.debug(Utils.DebugType.BOSS, Utils.getRealName(p) + " cheated death with " + used.label);
 		return true;
 	}
 
-	/**
-	 * The first saver in precedence order that {@code p} actually has available, or null if none.
-	 * <p>
-	 * <b>Only availability is decided here; the ORDER is still declaration order</b>, so a mask still wins over
-	 * the pet whatever the mode.
-	 */
+	/** First available saver in declaration order, or null. */
 	private static Saver pick(Player p, int now) {
 		ItemStack helmet = p.getInventory().getHelmet();
 		for(Saver s : Saver.values()) {
 			if(onCooldown(p, s, now)) continue;
-			// A worn saver has to actually be on the head; the pet has to actually be out.
 			if(s.isWorn() ? !isSaverItem(s, helmet) : !phoenixOut(p)) continue;
 			return s;
 		}
@@ -148,66 +114,41 @@ public final class CheatDeath {
 	}
 
 	/**
-	 * Is the Phoenix pet really out?
+	 * Outside realistic, yes by assumption: {@code damage/Pet.forPlayer}'s table never returns the Phoenix, so a
+	 * mask-less player is taken to have it.
 	 * <p>
-	 * <b>In every mode but realistic, yes by assumption</b> - which is the whole basis of this saver: no pet is an
-	 * item, so {@code damage/Pet.forPlayer}'s table decides what a player has out, and the table never returns the
-	 * Phoenix.  The mask-less player is simply taken to have had it all along, and that is deliberate.
-	 * <p>
-	 * <b>Realistic mode ({@link damage.Difficulty#manualPets()}) is where that stops being fair</b>: the player
-	 * owns their pet there and pays for it, because a summoned Phoenix trades the Golden Dragon's whole stat block
-	 * and its +250% for this cheat death.  Handing it to them anyway would make that trade free, and the menu's
-	 * one real decision meaningless.
+	 * Realistic ({@link damage.Difficulty#manualPets()}) requires it summoned: a Phoenix trades the Golden Dragon's
+	 * stats and +250% for this, and giving it free would make that choice meaningless.
 	 */
 	private static boolean phoenixOut(Player p) {
 		if(!damage.Difficulty.manualPets()) return true;
 		return pets.Pets.equippedDamagePet(p) == damage.Pet.PHOENIX;
 	}
 
-	/**
-	 * Whether {@code s} is still cooling down for {@code p}.
-	 * <p>
-	 * Reads {@link #remaining} rather than looking the tick up itself, so <b>one</b> place in this class knows how an
-	 * absent entry is answered.  This was a second lookup with a {@code MIN_VALUE} sentinel - harmless as a bare
-	 * comparison, but it is the idiom that overflowed in {@link #remaining}, and two of them invites the bug back.
-	 */
+	/** Via {@link #remaining} so one place handles absent entries; a second {@code MIN_VALUE} lookup invites the overflow back. */
 	private static boolean onCooldown(Player p, Saver s, int now) {
 		return remaining(p, s, now) > 0;
 	}
 
 	/**
-	 * True if {@code stack} IS the item behind {@code s}, wherever it happens to be.
-	 * <p>
-	 * Asked of the helmet when deciding whether a saver is available (it has to be on the head to proc) and of every
-	 * slot when taking a cooldown bar back off (the item can have been moved by then).
-	 * <p>
-	 * The mapping lives on the ITEMS now ({@code Wearable.saver}), not in a switch here: this used to be two
-	 * display-name comparisons, which meant a third worn life-saver would have needed an edit in this file as
-	 * well as its own.  The Phoenix pet still answers false, since it has no item at all.
+	 * Asked of the helmet for availability and of every slot when stripping a bar (the item may have moved). Mapping
+	 * lives on the items ({@code Wearable.saver}), not here. Phoenix is always false, it has no item.
 	 */
 	private static boolean isSaverItem(Saver s, ItemStack stack) {
 		items.Wearable worn = items.ItemRegistry.wearable(stack);
 		return worn != null && worn.saver() == s;
 	}
 
-	/** The player's open immunity window, or null if it has shut (or never opened). */
+	/** Null if shut or never opened. */
 	private static Immunity liveImmunity(Player p, int now) {
 		Immunity live = immunity.get(p.getUniqueId());
 		return live != null && now < live.untilTick() ? live : null;
 	}
 
 	/**
-	 * What one saver's action-bar segment counts down right now: <b>its immunity window first, then its cooldown</b>.
-	 * <p>
-	 * A proc opens both clocks at once, and the immunity is the one that matters in the moment - it is how long the
-	 * next hit is still free.  So the segment shows that until it runs out and then falls back to the cooldown,
-	 * which is why the number JUMPS UP at the changeover (Bonzo's 60t immunity gives way to ~3540t of cooldown).
-	 * Only the saver that opened the window is affected; the other two show their cooldowns throughout.
-	 * <p>
-	 * Every immunity is far shorter than its own cooldown, so a segment can never show an immunity for a saver that
-	 * is already ready - but the fallback here is the cooldown, so it would read correctly even if that changed.
-	 *
-	 * @return 0 when there is nothing to show for this saver.
+	 * Immunity first, then cooldown, so the number jumps up at the changeover (Bonzo's 60t immunity → ~3540t
+	 * cooldown). Only the saver that opened the window; others show cooldowns throughout.
+	 * @return 0 when nothing to show
 	 */
 	private static int segmentTicks(Player p, Saver s, int now) {
 		Immunity live = liveImmunity(p, now);
@@ -216,12 +157,8 @@ public final class CheatDeath {
 	}
 
 	/**
-	 * Ticks left on a saver's cooldown, 0 when it is ready.
-	 * <p>
-	 * <b>No sentinel.</b>  An absent entry means "never used", and it has to be answered by the null check, not by
-	 * subtracting {@code now} from some floor value: {@code Integer.MIN_VALUE - now} OVERFLOWS to a large positive,
-	 * so a sentinel here made every saver a player had not used report a huge remaining - all three showing in the
-	 * action bar the moment one of them procced, and an empty durability bar drawn on a mask that was ready.
+	 * 0 when ready. No sentinel: {@code Integer.MIN_VALUE - now} overflows positive, which made every unused saver
+	 * show a huge remaining (all three on the bar, empty durability on a ready mask).
 	 */
 	private static int remaining(Player p, Saver s, int now) {
 		EnumMap<Saver, Integer> mine = readyAt.get(p.getUniqueId());
@@ -233,18 +170,13 @@ public final class CheatDeath {
 	// ==================== the durability bar ====================
 
 	/**
-	 * Keep each worn saver's durability bar honest.  Called EVERY tick by {@link Deaths}; the drawing is throttled to
-	 * a 20-tick grid inside, which is all the resolution a bar needs.
+	 * Called every tick by {@link Deaths}; drawing is throttled to 20 ticks, the clear isn't: it fires on the exact
+	 * expiry tick, else a mask ready at 613 shows part-empty until 620. The entry is then dropped so the
+	 * whole-inventory clear runs once.
 	 * <p>
-	 * <b>The CLEAR is not throttled</b>, and that is the point: it fires on the exact tick the cooldown runs out.
-	 * On the grid, a cooldown expiring at tick 613 would keep a part-empty bar until 620 - the mask reads as still
-	 * cooling down while it is in fact ready, which is the one thing the bar exists to tell you.  The entry is then
-	 * dropped, so the (whole-inventory) clear runs once per cooldown rather than every tick afterwards.
-	 * <p>
-	 * <b>{@code max_damage} only renders on an unstackable item</b>, and these are player heads, which stack. So the
-	 * write sets {@code max_stack_size} to 1 as well and {@link #clearDurability} removes both again - leave the
-	 * stack size behind and the mask stays a one-per-slot item for the rest of the session.  The damage is clamped
-	 * one below the maximum so a fresh cooldown never reads as a broken item.
+	 * {@code max_damage} only renders on unstackable items and heads stack, so the write also sets
+	 * {@code max_stack_size} 1 and {@link #clearDurability} removes both (or the mask stays one-per-slot). Damage
+	 * clamped one below max so a fresh cooldown never reads as broken.
 	 */
 	static void refreshDurability(Player p) {
 		EnumMap<Saver, Integer> mine = readyAt.get(p.getUniqueId());
@@ -253,25 +185,24 @@ public final class CheatDeath {
 		for(Saver s : Saver.values()) {
 			if(!s.isWorn()) continue;
 			Integer readyTick = mine.get(s);
-			if(readyTick == null) continue; // never used, or already cleared
+			if(readyTick == null) continue; // never used or already cleared
 			int left = readyTick - now;
 			if(left > 0) {
 				if(now % DRAW_INTERVAL_TICKS == 0) writeDurability(p, s, left);
 			} else {
 				clearDurability(p, s);
-				mine.remove(s); // done with: stop scanning for it every tick
+				mine.remove(s);
 			}
 		}
 	}
 
-	/** How often a running cooldown's bar is redrawn.  The CLEAR ignores this - see {@link #refreshDurability}. */
+	/** Redraw interval; the clear ignores it ({@link #refreshDurability}). */
 	private static final int DRAW_INTERVAL_TICKS = 20;
 
 	private static void writeDurability(Player p, Saver s, int remainingTicks) {
 		ItemStack helmet = p.getInventory().getHelmet();
 		if(!isSaverItem(s, helmet)) return;
-		// The damage component lives on Damageable, not ItemMeta.  Every CraftMetaItem is one, so this is a cast in
-		// practice, but the pattern keeps a future meta type that isn't from silently NPEing the bar.
+		// Every CraftMetaItem is Damageable; the pattern guards a future meta type that isn't.
 		if(!(helmet.getItemMeta() instanceof Damageable m)) return;
 		m.setMaxStackSize(1);
 		m.setMaxDamage(s.cooldownTicks);
@@ -280,16 +211,10 @@ public final class CheatDeath {
 	}
 
 	/**
-	 * Take the bar back off, so a ready mask looks exactly like a mask that never procced.
+	 * Whole inventory, not just the helmet: a mask taken off mid-cooldown would keep a half-empty bar, for the whole
+	 * session if {@link #reset} wipes the cooldown first.
 	 * <p>
-	 * <b>Searches the WHOLE inventory, not the helmet.</b>  The bar lives on an item and the item moves: take the
-	 * mask off mid-cooldown and a helmet-only clear never runs, so the cooldown expires with nothing watching and
-	 * the mask keeps a half-empty bar - for the rest of the session if the run ends before it goes back on, since
-	 * {@link #reset} wipes the cooldown that would have triggered the clear.
-	 * <p>
-	 * Slots are read through {@code getStorageContents} / {@code getArmorContents} / the offhand and written back
-	 * explicitly, rather than indexed 0..40 or mutated through a mirror: which slots a player inventory's
-	 * {@code getContents} spans has moved between versions, and these three accessors have not.
+	 * Storage/armour/offhand accessors, not indices 0..40: {@code getContents}' span has changed between versions.
 	 */
 	private static void clearDurability(Player p, Saver s) {
 		PlayerInventory inv = p.getInventory();
@@ -301,13 +226,13 @@ public final class CheatDeath {
 		if(stripBar(s, offhand)) inv.setItemInOffHand(offhand[0]);
 	}
 
-	/** Strip {@code s}'s cooldown bar off every copy of its item in {@code items}.  @return whether anything changed. */
+	/** @return whether anything changed */
 	private static boolean stripBar(Saver s, ItemStack[] items) {
 		boolean changed = false;
 		for(ItemStack it : items) {
 			if(!isSaverItem(s, it)) continue;
 			if(!(it.getItemMeta() instanceof Damageable m)) continue;
-			if(!m.hasMaxDamage() && !m.hasDamage()) continue; // nothing to undo on this copy
+			if(!m.hasMaxDamage() && !m.hasDamage()) continue;
 			m.resetDamage();
 			m.setMaxDamage(null);
 			m.setMaxStackSize(null);
@@ -320,23 +245,14 @@ public final class CheatDeath {
 	// ==================== the action bar ====================
 
 	/**
-	 * The cooldown segments to hang off the END of somebody else's action bar, each
-	 * {@code " | <colour>Label <white>Nt"}, in declaration order.  Empty when everything is ready.
-	 * <p>
-	 * Per player, since cooldowns are per player.  Appended by {@code Utils.sendActionBar}, which is the one place
-	 * that does the appending, so every HUD in the plugin picks it up without knowing about it.  Empty outside
-	 * classic, the one mode with no deaths to cheat, so nothing else has to know about it either.
+	 * Segments {@code " | <colour>Label <white>Nt"} in declaration order, empty when all ready. Appended by
+	 * {@code Utils.sendActionBar}, so every HUD gets them. Empty in classic (no deaths).
 	 */
 	public static String actionBarSuffix(Player p) {
 		return segments(p);
 	}
 
-	/**
-	 * True if {@code p} has any saver on cooldown, i.e. whether {@link #actionBarSuffix} would produce anything.
-	 * <p>
-	 * A predicate rather than "is the string empty", so {@code Deaths}' per-tick fallback can decide whether to write
-	 * the bar at all without building a string it would then throw away.
-	 */
+	/** Whether {@link #actionBarSuffix} is non-empty, without building the string ({@code Deaths}' per-tick fallback). */
 	public static boolean hasCooldowns(Player p) {
 		if(!damage.Difficulty.deathsEnabled()) return false;
 		int now = Utils.serverTick();
@@ -359,7 +275,7 @@ public final class CheatDeath {
 
 	// ==================== lifecycle ====================
 
-	/** Forget every cooldown and immunity window, and take the durability bars back off.  Run start and run end. */
+	/** Clears cooldowns, immunity and durability bars. Run start and end. */
 	static void reset() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			for(Saver s : Saver.values()) if(s.isWorn()) clearDurability(p, s);

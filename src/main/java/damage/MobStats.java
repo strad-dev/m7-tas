@@ -13,58 +13,45 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * HP, defense, mob types and the inherent boss resistance for every target the damage system computes against
- * (MAP.md §5).
+ * HP, defense, mob types and inherent boss resistance for every target (MAP.md §5).
  * <p>
- * <b>The difficulty curve lives in the defense, not the HP.</b> The Withered Dragon has less HP than Necron but
- * 2500 defense makes it 84% as tough per point of damage.  On top of defense, every boss and mini-boss also takes
- * a flat x0.1, which is what keeps the whole chain in a sane range - without it every hit is an order of magnitude
- * too strong.
+ * Difficulty lives in defense, not HP: Withered Dragon has less HP than Necron but 2500 defense makes it 84% as
+ * tough per point. Every boss and mini-boss also takes a flat x0.1; without it every hit is 10x too strong.
  * <p>
- * The plugin covers the whole floor rather than only the five bosses: the Watcher's adds, Crypt Undeads, Princes,
- * Wither Miners, Angry Archaeologists and Shadow Assassins all get real stats too.  What stays out is only the
- * non-combat entities - the Mort and Wizard villager NPCs, and the clear-phase props.
+ * Covers the whole floor, not just bosses: Watcher adds, Crypt Undeads, Princes, Wither Miners, Angry
+ * Archaeologists, Shadow Assassins. Only non-combat entities stay out (Mort/Wizard NPCs, clear-phase props).
  */
 public final class MobStats {
 	private MobStats() {}
 
 	/**
-	 * One mob's stat block.
-	 *
-	 * @param id           a readable name, for debug output
-	 * @param displayHealth the SkyBlock HP as the game displays it under Mayor Paul (800M, 1.4B, ...).  Internal
-	 *                      health is this divided by {@link Scale#SB_PER_MC_HP} and then scaled by the mayor
-	 *                      ({@link MobStat#internalHealth}), so the displayed number is no longer a hand-picked
-	 *                      constant that has to be kept in step with it.
-	 * @param defense      the real SkyBlock defense, BEFORE Lethality and Last Breath reduce it
-	 * @param bossResistance whether this target carries the inherent x0.1 every boss and mini-boss has
-	 * @param elite        whether the Elite attribute's +30% applies (Bosses and Mini-Bosses)
-	 * @param types        every SkyBlock type it carries; all matching buffs stack
+	 * @param id             readable name, for debug
+	 * @param displayHealth  SkyBlock HP as shown under Paul (800M, 1.4B). Internal health derives from it
+	 *                       ({@link MobStat#internalHealth}), so it's not a hand-kept constant.
+	 * @param defense        real SkyBlock defense, BEFORE Lethality and Last Breath
+	 * @param bossResistance carries the inherent boss / mini-boss x0.1
+	 * @param elite          Elite's +30% applies (Bosses and Mini-Bosses)
+	 * @param types          all matching buffs stack
 	 */
 	public record MobStat(String id, double displayHealth, double defense, boolean bossResistance, boolean elite,
 			Set<MobType> types) {
 
 		/**
-		 * Minecraft health for this mob: the SkyBlock figure at the {@code /1e6} scale, <b>doubled under Mayor
-		 * Derpy</b> ({@link Mayor}).
-		 * <p>
-		 * This is the ONE place the mayor's HP multiplier is applied, and every mob and boss on the floor takes its
-		 * health from here (bosses through {@code WitherLord.maxHealth}, everything else through {@link #apply}),
-		 * so nothing else has to know the mayor can change.  The displayed figure follows for free: the name
-		 * suffix is rewritten from LIVE health by {@code Utils.changeName}, and a boss's spawn name is formatted
-		 * off this.
+		 * SkyBlock HP at {@code /1e6}, doubled under Derpy. The ONE place the mayor HP multiplier applies: bosses via
+		 * {@code WitherLord.maxHealth}, everything else via {@link #apply}. Display follows: {@code Utils.changeName}
+		 * rewrites from LIVE health and boss spawn names format off this.
 		 */
 		public double internalHealth() {
 			return displayHealth * Mayor.healthMultiplier() / Scale.SB_PER_MC_HP;
 		}
 
-		/** The same block with its HP scaled by room depth (§5's +10% per tier). */
+		/** HP scaled by room depth (§5, +10% per tier). */
 		MobStat atDepth(int depth) {
 			double m = depthMultiplier(depth);
 			return m == 1.0 ? this : new MobStat(id, displayHealth * m, defense, bossResistance, elite, types);
 		}
 
-		/** The same block scaled by the depth of the room at a location, for a mob being spawned there. */
+		/** Scaled by the depth of the room at a spawn location. */
 		public MobStat atDepthOf(org.bukkit.Location location) {
 			Room room = Rooms.roomAt(location);
 			return atDepth(room == null ? 1 : Math.max(1, room.level));
@@ -76,10 +63,9 @@ public final class MobStats {
 	}
 
 	// ===================== the four Wither Lords and the Withered Dragons =====================
-	// §7 calls the Wither Lords "Arcane, Wither" and then lists Undead Ruler +39% among the buffs that match them,
-	// which only works if they count as Undead too - there is no Wither Ruler, so a Wither-type mob pays out
-	// through Smite and the Hyperion instead.  UNDEAD is in the set for exactly that reason; between them the
-	// three types reproduce §7's list: Smite +50%, Arcane Ruler +39%, Undead Ruler +39%, Elite +30%, Hyperion x1.5.
+	// §7 calls Wither Lords "Arcane, Wither" but lists Undead Ruler +39% for them, so they must be Undead too (no
+	// Wither Ruler exists). The three types reproduce §7: Smite +50%, Arcane Ruler +39%, Undead Ruler +39%,
+	// Elite +30%, Hyperion x1.5.
 	public static final MobStat MAXOR = new MobStat("Maxor", 800_000_000d, 1000, true, true,
 			types(MobType.ARCANE, MobType.WITHER, MobType.UNDEAD));
 	public static final MobStat STORM = new MobStat("Storm", 1_000_000_000d, 1200, true, true,
@@ -89,92 +75,66 @@ public final class MobStats {
 	public static final MobStat NECRON = new MobStat("Necron", 1_400_000_000d, 2100, true, true,
 			types(MobType.ARCANE, MobType.WITHER, MobType.UNDEAD));
 	/**
-	 * Arcane + Ender + Airborne, and NOT Wither - which is why the Hyperion's x1.5 does not apply to them and the
-	 * Dark Claymore wins on this target.  Three Rulers, Ender Slayer, Gravity, the Draconic Artifact and an Ender
-	 * Dragon pet all stack here, roughly +490% of additive the Withers never see.
+	 * Arcane + Ender + Airborne, NOT Wither: no Hyperion x1.5, so Dark Claymore wins here. Three Rulers, Ender
+	 * Slayer, Gravity, Draconic Artifact and Ender Dragon pet stack to ~+490% additive the Withers never see.
 	 */
 	public static final MobStat WITHERED_DRAGON = new MobStat("Withered Dragon", 1_000_000_000d, 2500, true, true,
 			types(MobType.ARCANE, MobType.ENDER, MobType.AIRBORNE));
 
 	// ===================== the rest of the floor =====================
-	// The wiki publishes no mob type for Sadan's Giants or for Bonzo, so they take no Ruler and no type enchant.
+	// Wiki has no type for Sadan's Giants or Bonzo, so no Ruler or type enchant.
 	public static final MobStat DIAMANTE_GIANT = new MobStat("Diamante Giant", 400_000_000d, 0, true, true, types());
 	public static final MobStat BONZO = new MobStat("Bonzo", 300_000_000d, 0, true, true, types());
-	/** The Watcher's other adds.  No types are published for any of them; Undead is the plan's own presumption. */
+	/** Watcher's other adds. No published types; Undead is presumed. */
 	public static final MobStat WATCHER_UNDEAD = new MobStat("Watcher Undead", 6_000_000d, 2000, true, false,
 			types(MobType.UNDEAD));
-	/** Undead + Subterranean, so Smite +50, Undead Ruler +39 AND Subterranean Ruler +39 all land. */
+	/** Undead + Subterranean: Smite +50, Undead Ruler +39 AND Subterranean Ruler +39. */
 	public static final MobStat CRYPT_UNDEAD = new MobStat("Crypt Undead", 9_000_000d, 0, false, false,
 			types(MobType.UNDEAD, MobType.SUBTERRANEAN));
 	public static final MobStat PRINCE = new MobStat("Prince", 1_000_000d, 0, false, false,
 			types(MobType.UNDEAD, MobType.SUBTERRANEAN));
 	/**
-	 * 300M, confirmed.  Wither + Undead, so a Hyperion hits it for x1.5 on top of Smite and Undead Ruler.  It does
-	 * NOT get Skeletal Ruler: Skeletal is Normal-mode only and this is Master Mode.
+	 * 300M, confirmed. Wither + Undead: Hyperion x1.5 on top of Smite and Undead Ruler. No Skeletal Ruler, that's
+	 * Normal-mode only. Zero defense, no x0.1 (regular mob). Also covers Wither Guard, Husk and Apostle (see {@code of}).
 	 * <p>
-	 * <b>Zero defense, and no x0.1</b> - it is a regular mob rather than a boss or mini-boss.  This block covers the
-	 * Wither Guard, Wither Husk and Apostle too (see {@code of}), and none of them have defense either.
-	 * <p>
-	 * It used to carry <b>1200</b> defense, guessed off "the wiki's F7 Master Mode row" while §5 left the real figure
-	 * [TBD].  That guess was wrong and it was expensive: 1200 defense is a /13 divisor, so it was quietly throwing
-	 * away 92% of every hit on the most-hit trash mob on the floor, and made RCM read as roughly a tenth of its real
-	 * SkyBlock damage.  <b>Do not reintroduce a defense figure here without measuring it.</b>
+	 * Used to carry 1200 defense guessed off "the wiki's F7 Master Mode row" while §5 said [TBD]. That's a /13
+	 * divisor: it threw away 92% of every hit on the most-hit trash mob and made RCM read ~1/10 of real damage.
+	 * <b>Don't reintroduce a defense figure without measuring it.</b>
 	 */
 	public static final MobStat WITHER_MINER = new MobStat("Wither Miner", 300_000_000d, 0, false, false,
 			types(MobType.WITHER, MobType.UNDEAD));
 	/**
-	 * Humanoid + Subterranean, and a Mini-Boss, so Elite applies.  Its HP scales with room depth.
-	 * <p>
-	 * <b>1200 defense, confirmed</b> - it really is the one non-boss on the floor that has any.  It shares a figure
-	 * with nothing else now: the Wither trash and both Shadow Assassins were guessed off this same row and are 0.
+	 * Humanoid + Subterranean Mini-Boss, so Elite. HP scales with depth. 1200 defense, confirmed: the one non-boss
+	 * with any. Wither trash and both Shadow Assassins were guessed off this row and are really 0.
 	 */
 	public static final MobStat ANGRY_ARCHAEOLOGIST = new MobStat("Angry Archaeologist", 12_000_000d, 1200, true, true,
 			types(MobType.HUMANOID, MobType.SUBTERRANEAN));
 	/**
-	 * The Shadow Assassins in the BOSS FIGHT (Storm's four pad corners): a flat <b>145M</b>, with no room depth to
-	 * scale by - the boss arena is not on the room grid.
-	 * <p>
-	 * Humanoid + Arcane, so it takes those two Rulers and <b>no Smite at all</b> - the softest-looking mob on the
-	 * floor is the one that resists the whole undead package.
-	 * <p>
-	 * <b>Zero defense</b>, measured.  The only thing softening it is the x0.1 mini-boss resistance, which it does
-	 * keep.  It used to carry 1200, guessed off the Archaeologist's row purely because both are mini-bosses - and
-	 * that guess was a /13 divisor on a mob four players burn down under a timer.
+	 * BOSS-FIGHT Shadow Assassins (Storm's four pad corners): flat 145M, no depth since the arena isn't on the grid.
+	 * Humanoid + Arcane: those two Rulers, no Smite. Zero defense, measured; keeps the x0.1. Used to carry 1200
+	 * guessed off the Archaeologist just for being a mini-boss, a /13 divisor on a mob burned down under a timer.
 	 */
 	public static final MobStat SHADOW_ASSASSIN = new MobStat("Shadow Assassin", 145_000_000d, 0, true, true,
 			types(MobType.HUMANOID, MobType.ARCANE));
-	/**
-	 * The Shadow Assassin in the CLEAR phase's Yellow room, which is a different mob from the boss-fight ones:
-	 * <b>140M base</b>, and Yellow is depth II, so <b>154M</b> in play.  Zero defense and the x0.1, as above.
-	 */
+	/** CLEAR-phase Yellow room Shadow Assassin, a different mob: 140M base, depth II so 154M. Zero defense, x0.1. */
 	public static final MobStat YELLOW_SHADOW_ASSASSIN = new MobStat("Shadow Assassin", 140_000_000d, 0, true, true,
 			types(MobType.HUMANOID, MobType.ARCANE));
 
 	/**
-	 * Room depth multiplier: {@code base x (1 + 0.10 x (depth - 1))}, counted from the FIRST room rather than from
-	 * zero, so depth I is x1.00 and depth V is x1.40 (§5).
-	 * <p>
-	 * {@code Room.level} IS the depth - the numerals in {@code Rooms} line up exactly with the observed values
-	 * (Deathmite at level 2 gives the observed 13.2M), so no graph work is needed.  A room with no depth at all
-	 * would read as depth 0 and give a NEGATIVE buff, so an unset level is treated as depth I.
+	 * {@code 1 + 0.10 x (depth - 1)}: depth I x1.00, depth V x1.40 (§5). {@code Room.level} IS the depth (Deathmite
+	 * at level 2 gives the observed 13.2M). Unset level counts as I, since 0 would give a NEGATIVE buff.
 	 */
 	public static double depthMultiplier(int depth) {
 		return 1.0 + 0.10 * (Math.max(1, depth) - 1);
 	}
 
 	/**
-	 * The stat block for a target, already depth-scaled where that applies, or null if it is not modelled.
-	 * <p>
-	 * Bosses are matched on their scoreboard tag; the rest of the floor on its display name, which is the only
-	 * identity those mobs have ever carried (they are plain Zombies and Wither Skeletons distinguished by their
-	 * custom name).  The name is matched with {@code contains} because {@code Utils.changeName} rewrites the
-	 * health suffix on every hit, so only the leading part is stable.
+	 * Depth-scaled where it applies, or null if unmodelled. Bosses match on scoreboard tag, the rest on custom name
+	 * (their only identity). {@code contains} because {@code Utils.changeName} rewrites the health suffix every hit.
 	 */
 	public static MobStat of(LivingEntity entity) {
 		if(entity == null) return null;
-		// Memoised for the current tick.  Every hit asks four times (defense, resistance, types, elite) and Cleave
-		// plus a Terminator volley makes that dozens of lookups a tick, each of which would otherwise re-resolve a
-		// name and a room-grid cell.
+		// Memoised per tick: each hit asks four times, and Cleave + a Terminator volley is dozens of lookups a tick.
 		int now = MinecraftServer.currentTick;
 		if(now != lookupTick) {
 			lookupTick = now;
@@ -208,15 +168,13 @@ public final class MobStats {
 		if(tags.contains(instructions.clear.ClearManager.TAG_CRYPT)) return CRYPT_UNDEAD.atDepth(depthAt(entity));
 		if(name.contains("Angry Archaeologist")) return ANGRY_ARCHAEOLOGIST.atDepth(depthAt(entity));
 		if(name.contains("Shadow Assassin")) {
-			// Two different mobs share the name.  The clear phase's Yellow-room one is a room miniboss (tagged
-			// as such, and depth-scaled at 140M base); Storm's four pad-corner ones are flat 145M and stand in
-			// the boss arena, which is not on the room grid at all.
+			// Two mobs share the name: Yellow-room ClearMiniboss (140M, depth-scaled) and Storm's pad-corner ones
+			// (flat 145M, arena isn't on the grid).
 			return tags.contains("ClearMiniboss")
 					? YELLOW_SHADOW_ASSASSIN.atDepth(depthAt(entity))
 					: SHADOW_ASSASSIN;
 		}
-		// The wither-class trash that spawns in the Maxor and Storm phases.  §5 leaves the Guard's, Husk's and
-		// Apostle's own HP [TBD], so they share the Wither Miner's block - they are the same kind of mob.
+		// Maxor/Storm wither trash. §5 leaves Guard, Husk and Apostle HP [TBD], so they share the Miner's block.
 		if(name.contains("Wither Miner") || name.contains("Wither Guard") || name.contains("Wither Husk")
 				|| name.contains("Apostle")) {
 			return WITHER_MINER;
@@ -224,18 +182,14 @@ public final class MobStats {
 		return null;
 	}
 
-	/** An entity's plain custom name, falling back to its type name. */
+	/** Plain custom name, else type name. */
 	private static String displayName(LivingEntity entity) {
 		return entity.customName() == null ? entity.getName() : plugin.Utils.plain(entity.customName());
 	}
 
 	/**
-	 * Give a freshly-spawned mob its real HP, and clear the vanilla armour attributes.
-	 * <p>
-	 * These mobs used to be flat-kill targets carrying a hand-picked handful of health and a negative
-	 * {@code minecraft:armor} to claw damage back out of vanilla's reduction.  Neither is wanted now:
-	 * internal HP is {@code SB/1e6}, and SkyBlock defense is applied by {@link Damage} at the boundary, so
-	 * {@code minecraft:armor} stays 0 on every mob (§5).
+	 * Real HP on spawn, vanilla armour cleared. Mobs used to carry hand-picked HP and negative {@code minecraft:armor}
+	 * to undo vanilla's reduction. Now HP is {@code SB/1e6} and {@link Damage} applies defense, so armor stays 0 (§5).
 	 */
 	public static void apply(LivingEntity mob, MobStat stat) {
 		if(mob == null || stat == null) return;
@@ -248,52 +202,50 @@ public final class MobStats {
 		if(armor != null) armor.setBaseValue(0);
 		var toughness = mob.getAttribute(org.bukkit.attribute.Attribute.ARMOR_TOUGHNESS);
 		if(toughness != null) toughness.setBaseValue(0);
-		// Mobs get zero i-frames (§7), so every computed hit lands in full.
+		// Zero i-frames (§7), so every hit lands in full.
 		mob.setMaximumNoDamageTicks(0);
 		mob.setNoDamageTicks(0);
 	}
 
-	/** The room depth where an entity stands, or 1 if it is not inside a mapped room. */
+	/** 1 outside a mapped room. */
 	private static int depthAt(Entity entity) {
 		Room room = Rooms.roomAt(entity.getLocation());
 		return room == null ? 1 : Math.max(1, room.level);
 	}
 
-	/** The defense to apply to a target, before Lethality and Last Breath.  Unmodelled targets have none. */
+	/** Before Lethality and Last Breath. Unmodelled targets have none. */
 	public static double defenseOf(LivingEntity entity) {
 		MobStat stat = of(entity);
 		return stat == null ? 0 : stat.defense();
 	}
 
-	/** The inherent x0.1 every boss and mini-boss carries, or 1.0 for anything else. */
+	/** x0.1 for bosses and mini-bosses, else 1.0. */
 	public static double resistanceOf(LivingEntity entity) {
 		MobStat stat = of(entity);
 		return stat != null && stat.bossResistance() ? Scale.BOSS_RESISTANCE : 1.0;
 	}
 
-	/** Every SkyBlock type a target carries.  Empty for an unmodelled target, so no type buff matches it. */
+	/** Empty if unmodelled, so no type buff matches. */
 	public static Set<MobType> typesOf(LivingEntity entity) {
 		MobStat stat = of(entity);
 		return stat == null ? java.util.Set.of() : stat.types();
 	}
 
-	/** True if the Elite attribute's +30% applies to this target (Bosses and Mini-Bosses). */
+	/** Elite's +30% (Bosses and Mini-Bosses). */
 	public static boolean isElite(LivingEntity entity) {
 		MobStat stat = of(entity);
 		return stat != null && stat.elite();
 	}
 
 	// ===================== Wither King phase detection =====================
-	// Cached per tick: the mage beam's range tier asks for this on every shot, and it is a world entity scan.
+	// Cached per tick: the beam's range tier asks every shot and it's a world entity scan.
 
 	private static int wkCheckedTick = -1;
 	private static boolean wkActive = false;
 
 	/**
-	 * True while the Wither King fight is up.  This is a PHASE check, not a location check, and it has to be:
-	 * {@code LavaJump.isInBossArena} is one box that already contains the Wither King arena, so no third
-	 * positional tier is possible.  The {@code TASWitherKing} tag is the more precise of the two available
-	 * signals, since it only exists while the boss is actually alive (§7).
+	 * PHASE check, not location: {@code LavaJump.isInBossArena} is one box that already contains the WK arena. The
+	 * {@code TASWitherKing} tag only exists while the boss is alive, the more precise signal (§7).
 	 */
 	public static boolean witherKingPhaseActive() {
 		int now = MinecraftServer.currentTick;

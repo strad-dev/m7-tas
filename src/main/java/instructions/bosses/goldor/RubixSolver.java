@@ -1,20 +1,13 @@
 package instructions.bosses.goldor;
 
 /**
- * Where Same Color's nine panes should end up, and how far each of them is from it.
- * <p>
- * <b>This is Odin's {@code RubixHandler}, reimplemented against its source.</b>  The point of matching it is the
- * hints: a player who has used the mod reads the stack sizes expecting the mod's answer, and a solver that picks
- * a different target on the same board is not "also correct", it is a chest full of numbers that disagree with
- * what they have practised.  {@link GoldorTerminalGui}'s {@code CYCLE} is the numbering - index 0 is the first
- * colour in click order - and a LEFT click steps forward through it.
- * <p>
- * Two things a reimplementation gets wrong, so both are spelled out below: the tie rule in {@link #bestTarget},
- * and why {@link #signed} needs no tie rule of its own.
+ * Same Color's target and each pane's distance to it. Odin's {@code RubixHandler} reimplemented against its source:
+ * players read the stack-size hints expecting the mod's answer, so a different target on the same board is wrong.
+ * {@link GoldorTerminalGui}'s {@code CYCLE} is the numbering (index 0 = first colour in click order); LEFT steps forward.
  */
 final class RubixSolver {
 
-	/** Length of the colour cycle.  <b>Odd</b>, and {@link #signed} leans on that. */
+	/** Odd, and {@link #signed} relies on that. */
 	static final int CYCLE = 5;
 
 	private RubixSolver() {}
@@ -25,12 +18,8 @@ final class RubixSolver {
 	}
 
 	/**
-	 * Clicks from {@code from} to {@code to}, signed: <b>positive is left clicks, negative is right clicks</b>.
-	 * A forward distance of 3 comes back as -2 and 4 as -1, because going back round is shorter.  The cost of a
-	 * pane is therefore {@code min(forward, 5 - forward)}, never more than 2.
-	 * <p>
-	 * <b>The cycle length is odd, so the two directions can never be equal</b> on a single pane - which is why
-	 * this is a plain comparison with no rule for a tie.  An even cycle would need one.
+	 * Signed clicks: positive = left, negative = right. Forward 3 becomes -2, 4 becomes -1, so a pane costs at most 2.
+	 * The cycle is odd, so both directions are never equal and no tie rule is needed; an even cycle would need one.
 	 */
 	static int signed(int from, int to) {
 		int f = forward(from, to);
@@ -38,12 +27,8 @@ final class RubixSolver {
 	}
 
 	/**
-	 * The colour the board should be driven to: the one with the lowest total click count over all nine panes.
-	 * <p>
-	 * <b>A tie goes to the first colour in cycle order.</b>  Odin's Kotlin is a {@code minBy} over the cycle in
-	 * order, and {@code minBy} keeps the first minimum because it only replaces on a strict {@code <}.  Written
-	 * with {@code <=} instead, this returns the LAST tied colour - a legal answer to a different question, and
-	 * every hint on the chest is then wrong by a step or two on any board that ties.
+	 * Colour with the lowest total clicks over all nine panes. A tie goes to the FIRST colour in cycle order, like
+	 * Odin's {@code minBy}: keep the strict {@code <}. With {@code <=} every hint on a tied board is off by a step or two.
 	 */
 	static int bestTarget(int[] board) {
 		int best = 0;

@@ -9,10 +9,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Renowned Cow Hat.  Uncommon once recombobulated, so it is the one green item in the game.  It adds <b>no
- * Max Speed of its own</b>: what it does is force the Black Cat in the assumed modes
- * ({@code damage/Pet.forPlayer}), and the cat's +150 is the whole of the 550 this used to be credited with.
- * Wearing it also cancels the Wither-King relic carry debuff.
+ * Renowned Cow Hat. Uncommon recombobulated, the one green item. Also cancels the Wither King relic carry debuff.
  */
 public final class CowHat implements Wearable {
 	public static final CowHat INSTANCE = new CowHat();
@@ -52,10 +49,8 @@ public final class CowHat implements Wearable {
 	}
 
 	/**
-	 * <b>The Cow Hat adds no Max Speed of its own.</b>  Stated rather than left to the default, because the 550 it
-	 * used to report says otherwise at a glance: that was the base 400 plus the Black Cat's 150, and the hat's
-	 * whole contribution is FORCING that cat in the assumed modes ({@code damage/Pet.forPlayer}).  In realistic,
-	 * where the player picks their own pet, wearing this changes speed by nothing at all - which is correct.
+	 * No Max Speed of its own; stated explicitly because it used to report 550. That was base 400 + the Black Cat's
+	 * 150, which the hat only FORCES in assumed modes ({@code damage/Pet.forPlayer}). In realistic it changes nothing.
 	 */
 	private static final int MAX_SPEED_BONUS = 0;
 

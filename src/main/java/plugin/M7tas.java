@@ -42,38 +42,27 @@ import java.util.Map;
 public final class M7tas extends JavaPlugin {
 	private static Plugin plugin;
 
-	/**
-	 * The loadout editor, held only so {@link #onDisable} can shut it down: while one is open the player's real
-	 * inventory is parked in a field of it, and the shutdown has to hand that back.
-	 */
+	/** Held so {@link #onDisable} can hand back the real inventory an open editor parks in a field. */
 	private LoadoutEditor loadoutEditor;
 
-	/**
-	 * The pet menu, held for the same reason as the loadout editor: an arranging session parks a pet on the
-	 * player's cursor, and the shutdown has to put it back.
-	 */
+	/** Held likewise: an arranging session parks a pet on the cursor. */
 	private pets.PetMenu petMenu;
 
 	/**
-	 * Ceiling we raise {@code minecraft:max_health} to.  Real SkyBlock HP is divided by
-	 * {@code damage.Scale.SB_PER_MC_HP} before it reaches an entity, so the largest value the plugin ever sets is
-	 * Necron's 1400 - this is a guardrail with four orders of magnitude of headroom, not a target.
+	 * {@code minecraft:max_health} ceiling. HP is divided by {@code damage.Scale.SB_PER_MC_HP}, so the largest set is
+	 * Necron's 1400; this is headroom, not a target.
 	 */
 	private static final double MAX_HEALTH_CEILING = 1_000_000.0;
 
 	/**
-	 * Raise the {@code minecraft:max_health} attribute's own ceiling before any world or entity loads.
+	 * Raise {@code minecraft:max_health}'s ceiling before any world or entity loads.
 	 * <p>
-	 * Paper's shipped default is 1024, and {@code spigot.yml}'s {@code max-health} key is the only supported way to
-	 * change it - which means the boss HP in {@code damage/MobStats} would silently clamp on any server whose config
-	 * has not been hand-edited (a fresh install, a wiped config, a new box).  {@code RangedAttribute.maxValue} is
-	 * public and non-final on Paper (that is exactly how Spigot applies the config key), so the plugin sets it
-	 * itself and stops depending on per-server config at all.
+	 * Paper defaults to 1024 and only {@code spigot.yml}'s {@code max-health} changes it, so boss HP
+	 * ({@code damage/MobStats}) would silently clamp on any un-edited config. {@code RangedAttribute.maxValue} is public
+	 * and non-final (Spigot sets the key the same way), so the plugin sets it itself.
 	 * <p>
-	 * This has to be {@code onLoad}: {@code AttributeInstance} caches its computed value and clamps a base value at
-	 * set time, so anything that loads with a lower ceiling stays clamped.  Entities already persisted in a world
-	 * under the old cap reload clamped too - the bosses set their HP in {@code onSpawn}, so only a boss currently
-	 * standing in the world is affected, and it needs one re-spawn.
+	 * Must be {@code onLoad}: {@code AttributeInstance} clamps a base value at set time. Entities persisted under the
+	 * old cap reload clamped; bosses set HP in {@code onSpawn}, so only a boss standing in the world needs a re-spawn.
 	 */
 	@Override
 	public void onLoad() {
@@ -90,8 +79,7 @@ public final class M7tas extends JavaPlugin {
 	public void onEnable() {
 		plugin = this;
 
-		// Start the boss-priority heartbeat FIRST so its scheduler task id is the lowest of anything created at
-		// runtime, so every registered boss ticker runs each tick before any per-run choreography (see BossScheduler).
+		// FIRST, so its task id is lowest and boss tickers run before per-run choreography (BossScheduler).
 		BossScheduler.start();
 
 		PlayerCollision.setupNoCollisionTeam();
@@ -113,7 +101,7 @@ public final class M7tas extends JavaPlugin {
 				case "class" -> command.setExecutor(new ClassCommand());
 				case "m7loadout" -> command.setExecutor(loadoutEditor);
 				case "dungeonsettings" -> command.setExecutor(new DungeonSettings(settingsMenu));
-				// Both labels are the same menu in two modes, so they share the one instance the shutdown holds.
+				// One menu in two modes; shares the instance the shutdown holds.
 				case "pets", "petloadout" -> command.setExecutor(petMenu);
 			}
 			command.setTabCompleter(new TabCompletor());
@@ -135,53 +123,43 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new listeners.OutOfBounds(), this);
 		getServer().getPluginManager().registerEvents(loadoutEditor, this);
 		getServer().getPluginManager().registerEvents(settingsMenu, this);
-		// The pet windows and the autopet rules.  The first two MUST be petMenu's own instance, not new ones: the
-		// carried-pet state a /petloadout session parks on the cursor lives in it, and onDisable hands it back.
+		// First two MUST be petMenu's own instance: it holds the carried pet onDisable hands back.
 		getServer().getPluginManager().registerEvents(petMenu, this);
 		getServer().getPluginManager().registerEvents(petMenu.autopetMenu(), this);
 		getServer().getPluginManager().registerEvents(new pets.Autopet(), this);
-		// Keeps the (player, path) stat cache honest across equipment and inventory changes (MAP.md §7).
+		// Invalidates the (player, path) stat cache on equipment changes (MAP.md §7).
 		getServer().getPluginManager().registerEvents(new damage.StatListener(), this);
 
-		// One repeating driver for every running damage-over-time chain (Fire Aspect, Venomous), rather than one
-		// scheduler task per proc.
+		// One driver for every DoT chain (Fire Aspect, Venomous), not a task per proc.
 		damage.Procs.start();
 
 		PlayerInventoryBackup.startInventorySync();
 		MaxSpeedSync.start();
-		// Terminator firing cooldown poller (5-tick, or 4 with Thermodynamic), which runs every tick.
+		// Terminator fire poller (5-tick cooldown, 4 with Thermodynamic).
 		getServer().getScheduler().runTaskTimer(this, items.bows.Terminator::pollAll, 1L, 1L);
-		// Practice-only boss-movement driver: in practice the fake ticker gates its own runMovementTickers call off
-		// (and may not be running at all, since fakes are kicked), so drive the lane here. In a TAS this is a no-op
-		// (practiceMode is false → the fake ticker drives it), so the TAS tick ordering is untouched.
+		// Practice boss-movement driver: the fake ticker skips runMovementTickers in practice (and may not run). No-op
+		// in a TAS, where the fake ticker drives it.
 		getServer().getScheduler().runTaskTimer(this,
 				() -> { if(instructions.bosses.WitherActions.isPracticeMode()) BossScheduler.runMovementTickers(); }, 1L, 1L);
 		Spectate.startSpectatorSync();
 		SpringBoots.start();
 		LavaJump.start();
 		listeners.OutOfBounds.start();
-		// Watches the S4 Sharp Shooter plate: there is no "stepped off a pressure plate" event, so the sequential
-		// device's reset has to be polled.
+		// S4 Sharp Shooter plate: no "stepped off" event, so the reset is polled.
 		listeners.GoldorListener.startSharpPlatePoll();
-		// Ultra-realistic death/revival driver: revival countdowns, the saver durability bars, and the action-bar
-		// cooldown fallback.  Raw and untracked on purpose, so a boss teardown flushing the scheduler can never
-		// strand a ghost in spectator (see death.Deaths.start).
+		// Death/revival driver (countdowns, saver durability bars, action-bar fallback). Raw and untracked, so a
+		// scheduler flush can't strand a ghost in spectator (death.Deaths.start).
 		death.Deaths.start();
 
-		// Cross-check the item registry against the palette order and against damage/Items' rarities.  Warns
-		// only, and runs BEFORE the export so a complaint is in the log above the file it describes.
+		// Registry vs palette order and damage/Items' rarities. Warns only; before the export so it logs first.
 		Catalog.verify();
 
-		// Export the item catalog (palette + per-class default kits) to the shared data folder so the network
-		// plugin's lobby loadout editor can load the real M7 items. M7 is the sole writer of this file.
+		// Palette + default kits to the shared folder for the lobby loadout editor. M7 is the sole writer.
 		Catalog.export();
 
-		// /class and /m7loadout exist in BOTH plugins: this one owns them here, the network plugin provides its own
-		// copy on every server M7 isn't installed on. A bare label goes to whichever plugin registers it FIRST, and
-		// the network plugin softdepends on us so we normally already have it, and this claim is the backstop for when we
-		// don't (load order changed, its jar deployed alone first, a reload). It no longer claims these labels on
-		// m7, so this is not a tug-of-war; and being enabled earlier, our task id is lower, so we would lose a
-		// tug-of-war anyway if one were reintroduced there.
+		// /class and /m7loadout exist in BOTH plugins; M7 owns them here. A bare label goes to whoever registers
+		// first; the network softdepends on us, so this is a backstop (load order changed, reload). The network no
+		// longer claims them on m7, and with our lower task id we'd lose a tug-of-war anyway.
 		getServer().getScheduler().runTask(this, () -> {
 			forceOwnLabel("class");
 			forceOwnLabel("m7loadout");
@@ -189,17 +167,16 @@ public final class M7tas extends JavaPlugin {
 	}
 
 	/**
-	 * Take a bare command label back from another plugin that registered the same name. Bukkit maps a bare label to
-	 * exactly one command; the loser keeps only its prefixed form ({@code /stradnetworkplugin:class}). Mirrors the
-	 * network plugin's {@code Main.forceOwnLabel}.
+	 * Take a bare label back from another plugin; the loser keeps its prefixed form
+	 * ({@code /stradnetworkplugin:class}). Mirrors the network's {@code Main.forceOwnLabel}.
 	 */
 	private void forceOwnLabel(String name) {
 		PluginCommand ours = getCommand(name);
 		if(ours == null) return;
 		if(!(getServer().getCommandMap() instanceof SimpleCommandMap map)) return;
 		Map<String, Command> known = map.getKnownCommands();
-		if(known.get(name) == ours) return; // already ours, nothing to do
-		known.remove(name); // drop the other plugin's bare-label mapping (it keeps its prefixed form)
+		if(known.get(name) == ours) return;
+		known.remove(name);
 		known.put(name, ours);
 		ours.register(map);
 		getLogger().info("Claimed /" + name + " for M7 (was another plugin's).");
@@ -207,11 +184,10 @@ public final class M7tas extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
-		// Hand back the real inventory of anyone still inside the loadout editor: it lives in a field while the
-		// editor is open (the editor IS the player's inventory now), so a shutdown that skipped this would leave
-		// them holding palette copies.  Before anything else, since the rest of this tears the run down.
+		// Hand back the real inventory of anyone in the editor, or they keep palette copies. First, before the run
+		// teardown.
 		if(loadoutEditor != null) loadoutEditor.restoreAll();
-		// Same rule for the pet menu: a /petloadout session can be holding a pet on the cursor right now.
+		// Same for a /petloadout pet on the cursor.
 		if(petMenu != null) petMenu.restoreAll();
 		PlayerInventoryBackup.stopInventorySync();
 		FakePlayerManager.stopCustomConnection();
@@ -223,23 +199,21 @@ public final class M7tas extends JavaPlugin {
 		death.Deaths.stop();
 		BossScheduler.stop();
 
-		// Both flushes, not just the stonk one: the superboom/crypt regen is a raw runTaskLater that the shutdown
-		// outruns, so a disable inside its 100-tick window used to save the world with the hole still in it.
+		// Both flushes: the superboom/crypt regen is a raw runTaskLater, so a disable in its 100-tick window saved
+		// the hole into the world.
 		items.ItemUtils.flushStonkRestorations();
 		items.ItemUtils.flushBlockRestorations();
 
-		// Stop the clear HUD/map loop (hardMobCleanup below removes the secret entities).
+		// Clear HUD/map loop (hardMobCleanup removes the secret entities).
 		if(!org.bukkit.Bukkit.getWorlds().isEmpty()) instructions.clear.ClearManager.stop(org.bukkit.Bukkit.getWorlds().getFirst());
 
 		Goldor.INSTANCE.shutdownRegenerateGates();
-		// Same rule as the gates, on the S1 device's own blocks: a disable mid-sequence would otherwise SAVE a sea
-		// lantern (or the 16 input buttons, and the "i1" sign gone from under one of them) into the world, and
-		// nothing on the next boot puts them back.  Its playback timer is a tracked task and cannot cover this.
+		// Same for the S1 device: a mid-sequence disable would SAVE a sea lantern or the 16 buttons (and the missing
+		// "i1" sign) into the world, and no boot restores them. Its tracked timer can't cover this.
 		instructions.bosses.goldor.GoldorSimonSays.INSTANCE.cleanup();
 
-		// Neither of these has a restore of its own, so a server stopped mid-boss-chain used to save the world with
-		// the transition walls open and a Storm pillar frozen wherever it happened to be.  serverSetup already does
-		// both on the next run; disable is the other end that was missing them.
+		// No restore of their own: a stop mid-boss-chain saved open transition walls and a frozen Storm pillar.
+		// serverSetup does both too.
 		instructions.bosses.BossTransition.resetAll();
 		if(!org.bukkit.Bukkit.getWorlds().isEmpty()) {
 			instructions.bosses.WitherSpawn.restoreStormPillars(org.bukkit.Bukkit.getWorlds().getFirst());

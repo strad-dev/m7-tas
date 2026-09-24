@@ -9,10 +9,9 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Diamond Necron Head.  <b>SPECIAL rarity</b>, which is why it is red - and since a special tier neither
- * recombobulates nor sits "above Mythic" on the reforge tables, {@code damage/Reforges} carries an explicit
- * {@code ANCIENT / ARMOR / SPECIAL} row for it.  The Necron Head Bonus doubles this piece's own stats and
- * nothing else the player is wearing, which is why that x2 lives on the item's own pipeline (§1.10).
+ * Diamond Necron Head. SPECIAL rarity, so red; special tiers don't recombobulate or sit above Mythic, so
+ * {@code damage/Reforges} has an explicit {@code ANCIENT / ARMOR / SPECIAL} row. The Necron Head Bonus doubles only
+ * this piece's stats, so the x2 lives on its own pipeline (§1.10).
  */
 public final class NecronHead implements Wearable {
 	public static final NecronHead INSTANCE = new NecronHead();

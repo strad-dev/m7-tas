@@ -43,88 +43,79 @@ import java.util.*;
 
 public class Utils {
 	/**
-	 * Every one-shot task handed to {@link #scheduleTask} that has NOT run yet, so {@link #cancelAllScheduled()}
-	 * can clear a previous run's lingering choreography.  Repeating tasks (boss tickers, aggro, spectator sync) use
-	 * runTaskTimer and are intentionally NOT tracked here.
-	 *
-	 * <p>Self-pruning: each task removes its own entry as it fires.  This is load-bearing, not tidiness:
-	 * {@code CraftScheduler.cancelTask} walks the whole pending queue AND enqueues a cancellation task per call, so
-	 * cancelling N tasks is O(N * queue). This map used to be an append-only list holding every task ever scheduled
-	 * in the session (CustomItems schedules one per damage event, so hundreds/second), and cancelling ~100k dead
-	 * entries froze the main thread past the 60s watchdog on the next {@code /m7practice}.
-	 *
-	 * <p>Main-thread only, so no synchronisation.
+	 * Pending one-shot tasks from {@link #scheduleTask}, for {@link #cancelAllScheduled()}. Repeating tasks
+	 * (boss tickers, aggro, spectator sync) use runTaskTimer and aren't tracked.
+	 * <p>
+	 * MUST self-prune: {@code CraftScheduler.cancelTask} walks the whole queue and enqueues a cancel task per call,
+	 * so N cancels is O(N * queue). This used to be append-only (CustomItems schedules one per damage event,
+	 * hundreds/second) and cancelling ~100k dead entries froze the main thread past the 60s watchdog on the next
+	 * {@code /m7practice}. Main-thread only.
 	 */
 	private static final Map<Integer, org.bukkit.scheduler.BukkitTask> scheduledTasks = new LinkedHashMap<>();
 
-	/**
-	 * Bumped by {@link #cancelAllScheduled()}. A task captures the generation it was scheduled under and no-ops if
-	 * it no longer matches, so choreography can never bleed into the next run even if its cancel didn't land.
-	 */
+	/** Bumped by {@link #cancelAllScheduled()}. A task no-ops if its captured generation is stale, so choreography
+	 *  can't bleed into the next run even if its cancel didn't land. */
 	private static int scheduleGeneration = 0;
 
-	// ===== Adventure item name/lore helpers (26.2: ItemMeta's String name/lore methods are @Deprecated) =====
+	// Adventure name/lore helpers (26.2: ItemMeta's String name/lore methods are deprecated)
 	private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacySection();
 	private static final MiniMessage MM = MiniMessage.miniMessage();
 
-	/** Item display-name / lore line from a MiniMessage string, with the default item italic suppressed (vanilla look). */
+	/** Item name/lore line from MiniMessage, default item italic suppressed. */
 	public static Component mm(String s) {
 		return MM.deserialize("<!italic>" + s);
 	}
 
-	/** Chat message / entity custom-name component from a MiniMessage string (no forced italic). */
+	/** Chat / entity custom name from MiniMessage, no forced italic. */
 	public static Component msg(String s) {
 		return MM.deserialize(s);
 	}
 
-	/** Chat component from a MiniMessage template with tag resolvers. Use Placeholder.unparsed(...) for untrusted or
-	 *  arbitrary input (player names, chat text, debug payloads) so it is inserted literally and cannot inject tags. */
+	/** Use Placeholder.unparsed(...) for untrusted input (player names, chat) so it can't inject tags. */
 	public static Component msg(String template, TagResolver... resolvers) {
 		return MM.deserialize(template, resolvers);
 	}
 
-	/** Plain (un-styled) text of a component, e.g. reading a custom name for a comparison. */
+	/** Unstyled text of a component. */
 
 	public static String plain(Component c) {
 		return c == null ? "" : PlainTextComponentSerializer.plainText().serialize(c);
 	}
 
-	/** Legacy §-coded string of a component, for Bukkit APIs that only accept a String (e.g. boss bar titles). */
+	/** Legacy §-string of a component, for String-only Bukkit APIs (boss bar titles). */
 	public static String legacyString(Component c) {
 		return c == null ? "" : LEGACY.serialize(c);
 	}
 
-	/** MiniMessage string of a component, to round-trip a Component back through the MiniMessage helpers. */
 	public static String mmString(Component c) {
 		return c == null ? "" : MM.serialize(c);
 	}
 
-	/** Legacy §-string rendered from a MiniMessage string, for String-only Bukkit APIs (e.g. boss bar titles)
-	*  while keeping the source free of deprecated ChatColor. */
+	/** MiniMessage to legacy §-string, for String-only Bukkit APIs without deprecated ChatColor. */
 	public static String mmLegacy(String miniMessage) {
 		return LEGACY.serialize(MM.deserialize(miniMessage));
 	}
 
-	/** Component from a legacy §-string.  Replaces {@code meta.setDisplayName(s)} → {@code meta.displayName(Utils.nameComponent(s))}. */
+	/** Replaces {@code meta.setDisplayName(s)}: use {@code meta.displayName(Utils.nameComponent(s))}. */
 	public static Component nameComponent(String legacy) {
-		// Vanilla italicises custom item names; legacy setDisplayName did not.  Default to non-italic, keeping an explicit §o.
+		// Vanilla italicises custom names; legacy setDisplayName didn't. Non-italic unless there's an explicit §o.
 		return LEGACY.deserialize(legacy).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
 	}
 
-	/** Components from legacy §-strings.  Replaces {@code meta.setLore(list)} → {@code meta.lore(Utils.loreComponents(list))}. */
+	/** Replaces {@code meta.setLore(list)}: use {@code meta.lore(Utils.loreComponents(list))}. */
 	public static List<Component> loreComponents(List<String> legacy) {
 		List<Component> out = new ArrayList<>(legacy.size());
 		for(String s : legacy) out.add(LEGACY.deserialize(s).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
 		return out;
 	}
 
-	/** Legacy §-string of an item's display name, or "" if none.  Replaces {@code meta.getDisplayName()}. */
+	/** Replaces {@code meta.getDisplayName()}; "" if none. */
 	public static String displayName(ItemMeta meta) {
 		Component c = meta.displayName();
 		return c == null ? "" : LEGACY.serialize(c);
 	}
 
-	/** Legacy §-strings of an item's lore, or an empty list if none.  Replaces {@code meta.getLore()}. */
+	/** Replaces {@code meta.getLore()}; empty list if none. */
 	public static List<String> lore(ItemMeta meta) {
 		List<Component> l = meta.lore();
 		if(l == null) return new ArrayList<>();
@@ -133,27 +124,22 @@ public class Utils {
 		return out;
 	}
 
-	/** Plain (un-styled) first lore line, which is the custom-item ID.  It is styling-independent, so the ID lookup
-	*  can't be broken by lore formatting such as the non-italic default.  Replaces the old getLore().getFirst(). */
+	/** Unstyled first lore line (the custom-item ID), so lore formatting can't break the ID lookup.
+	 *  Replaces getLore().getFirst(). */
 	public static String firstLorePlain(ItemMeta meta) {
 		List<Component> l = meta.lore();
 		return l == null || l.isEmpty() ? "" : PlainTextComponentSerializer.plainText().serialize(l.getFirst());
 	}
 
 
-	/**
-	 * Wrapper for Bukkit.getScheduler().runTaskLater(Plugin, Runnable, long)
-	 *
-	 * @param task  The task to run later.
-	 * @param delay In how many ticks this task should be run.
-	 */
+	/** Tracked runTaskLater; delay in ticks. */
 	public static void scheduleTask(Runnable task, long delay) {
 		if(!M7tas.getInstance().isEnabled()) return;
 		final int generation = scheduleGeneration;
-		final int[] id = new int[1]; // filled in below; runTaskLater always defers at least a tick, so it's set by then
+		final int[] id = new int[1]; // set below; runTaskLater defers at least a tick, so it's set by then
 		org.bukkit.scheduler.BukkitTask handle = Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			scheduledTasks.remove(id[0]);
-			if(generation != scheduleGeneration) return; // a run started or ended after this was queued, so drop it
+			if(generation != scheduleGeneration) return; // a run started or ended since this was queued
 
 			task.run();
 		}, delay);
@@ -162,15 +148,13 @@ public class Utils {
 	}
 
 	/**
-	 * Cancel every *pending* one-shot task scheduled via {@link #scheduleTask}. Called at the start of a run so a
-	 * previous run's still-queued dialogue/choreography (e.g. a player routine's broadcasts) can't fire into it.
-	 * Bumping the generation is what actually guarantees that; the cancels are just to keep the scheduler queue
-	 * from carrying dead weight.
+	 * Cancel every pending {@link #scheduleTask} task. Called at run start so the last run's queued choreography
+	 * can't fire into it. The generation bump is what guarantees that; the cancels just keep the queue small.
 	 */
 	public static void cancelAllScheduled() {
 		scheduleGeneration++;
 		List<org.bukkit.scheduler.BukkitTask> live = new ArrayList<>(scheduledTasks.values());
-		scheduledTasks.clear(); // before cancelling, so a task firing mid-loop can't mutate the map we copied from
+		scheduledTasks.clear(); // before cancelling, so a task firing mid-loop can't mutate the map
 		for(org.bukkit.scheduler.BukkitTask t : live) {
 			if(t != null && !t.isCancelled()) t.cancel();
 		}
@@ -184,8 +168,8 @@ public class Utils {
 		instance.addModifier(new AttributeModifier(key, modifier, AttributeModifier.Operation.MULTIPLY_SCALAR_1, EquipmentSlotGroup.ANY));
 	}
 
-	/** Toggle a 50% movement-speed debuff (a separate modifier that composes with {@link #setSpeed}). Used while a
-	 *  player carries a Wither-King relic without a Cow Hat equipped. */
+	/** 50% speed debuff, separate modifier that composes with {@link #setSpeed}. For carrying a Wither King relic
+	 *  without a Cow Hat. */
 	public static void setRelicDebuff(Player p, boolean active) {
 		var instance = p.getAttribute(Attribute.MOVEMENT_SPEED);
 		if(instance == null) return;
@@ -202,14 +186,12 @@ public class Utils {
 		}
 		ServerPlayer npc = cp.getHandle();
 
-		// Update NMS position
 		npc.setPos(to.getX(), to.getY(), to.getZ());
 		npc.setYRot(to.getYaw());
 		npc.setXRot(to.getPitch());
 		npc.yHeadRot = to.getYaw();
 		npc.yBodyRot = to.getYaw();
 
-		// Send packets
 		PositionMoveRotation pmr = PositionMoveRotation.of(npc);
 		ClientboundTeleportEntityPacket tp = ClientboundTeleportEntityPacket.teleport(npc.getId(), pmr, EnumSet.noneOf(Relative.class), npc.onGround());
 
@@ -217,28 +199,17 @@ public class Utils {
 		Spectate.snapSpectatorsToFake(p);
 	}
 
-	/**
-	 * Simulates a packet sent from a Player to the server.
-	 *
-	 * @param player The player who sent the packet
-	 * @param packet The packet to simulate
-	 */
+	/** Simulates a packet sent from a Player to the server. */
 	@SuppressWarnings({"unchecked", "rawtypes"})
 	public static void simulatePacket(Player player, Packet<?> packet) {
 		if(!(player instanceof CraftPlayer craftPlayer)) return;
 
 		Utils.debug(Utils.DebugType.CLIENT, player.getName() + " Sending Packet " + packet.getClass().getSimpleName() + (Utils.isSuperVerbose() ? (" at " + round(player.getLocation().getX(), 3) + " " + round(player.getLocation().getY(), 5) + " " + round(player.getLocation().getZ(), 3) + " " + player.getLocation().getYaw() + " " + player.getLocation().getPitch()) : ""));
 		ServerPlayer serverPlayer = craftPlayer.getHandle();
-		// TAS fake-player custom-connection branch removed (no fake players in the practice fork);
-		// real players always use the normal connection.
+		// TAS fake-player connection branch removed; no fake players in the practice fork.
 		((Packet) packet).handle(serverPlayer.connection);
 	}
 
-	/**
-	 * Sends a packet to every player on the server.
-	 *
-	 * @param pkt Packet to send
-	 */
 	public static void broadcastPacket(Packet<?> pkt) {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			((CraftPlayer) p).getHandle().connection.send(pkt);
@@ -246,14 +217,9 @@ public class Utils {
 	}
 
 	/**
-	 * Sends an action bar to every real player, spectators included; the fakes are skipped (they have no client).
-	 * <p>
-	 * The home of the boss-phase tick-timer HUDs (Storm's pad/crush counters, Maxor's laser/stun, Necron's
-	 * interludes), which is why it lives here rather than as a private copy per boss: there is exactly one
-	 * action-bar slot, so anything writing it every tick has to agree about who it writes to.
-	 * Pass {@link Component#empty()} to clear it.
-	 *
-	 * @param bar The action bar to send
+	 * Action bar to every real player, spectators included; fakes skipped (no client). Shared home of the boss
+	 * tick-timer HUDs (Storm pad/crush, Maxor laser/stun, Necron interludes): there's one action-bar slot, so
+	 * every per-tick writer has to agree who it writes to. {@link Component#empty()} clears it.
 	 */
 	public static void broadcastActionBar(Component bar) {
 		for(Player p : Bukkit.getOnlinePlayers()) {
@@ -262,37 +228,28 @@ public class Utils {
 		}
 	}
 
-	/** Absolute server tick each player's action bar was last written, so a low-priority writer can tell whether
-	 *  someone else already owns the slot this tick.  See {@link #actionBarOwnedThisTick}. */
+	/** Server tick each player's bar was last written, so a low-priority writer can see the slot is taken this
+	 *  tick. See {@link #actionBarOwnedThisTick}. */
 	private static final Map<UUID, Integer> actionBarTick = new HashMap<>();
 
-	/**
-	 * <b>The one action-bar send.</b>  Every HUD in the plugin goes through here - {@link #broadcastActionBar} for
-	 * the three boss bars, and directly for the two that render per player (Storm's pad colour, the clear HUD).
-	 * <p>
-	 * It does two things no caller should repeat.  It appends the per-player segments - the active pet in
-	 * Realistic ({@code pets/Pets}), the Rag Axe, the cheat-death cooldowns ({@code death/CheatDeath}) - which
-	 * have to survive whatever else is on the bar: there is one action-bar slot, so the only way two writers coexist is for one of them to own the append.  And it stamps
-	 * the tick, which is how {@code Deaths}' fallback knows not to overwrite a live HUD: the boss bars all draw at
-	 * the start of the tick, ahead of that fallback.
-	 * <p>
-	 * A cleared bar ({@link Component#empty()}) still shows the cooldowns, without the leading separator, so
-	 * clearing a boss HUD does not blank a timer the player is reading.
-	 */
-	/**
-	 * What separates one action-bar segment from the next, boss HUDs included.  <b>Every per-player segment
-	 * leads with it</b> and {@link #sendActionBar} drops the first one when the segments are the whole bar, so
-	 * a provider never has to know whether anything is in front of it.
-	 */
+	/** Every per-player segment leads with this; {@link #sendActionBar} drops the first when the segments are the
+	 *  whole bar, so a provider never needs to know what's in front of it. */
 	public static final String ACTION_BAR_SEPARATOR = " <dark_gray>| ";
 
+	/**
+	 * <b>The one action-bar send.</b> Every HUD goes through here: {@link #broadcastActionBar} for the boss bars,
+	 * directly for the per-player ones (Storm pad colour, clear HUD).
+	 * <p>
+	 * Appends the per-player segments (pet in Realistic, Rag Axe, cheat-death cooldowns): one slot, so the only way
+	 * two writers coexist is for one to own the append. Stamps the tick so {@code Deaths}' fallback won't overwrite
+	 * a live HUD; boss bars draw at tick start, ahead of it. A cleared bar still shows the cooldowns, so clearing a
+	 * boss HUD doesn't blank a timer the player is reading.
+	 */
 	public static void sendActionBar(Player p, Component bar) {
-		// Every per-player segment, in a fixed order so they never swap places under a player as their timers
-		// run out. The pet leads because it never runs out; the two timers answer "" on the common path.
+		// Fixed order so segments don't swap places as timers run out. Pet leads since it never runs out.
 		String extra = pets.Pets.actionBarSegment(p) + items.combat.RagnarockAxe.actionBarSegment(p)
 				+ death.CheatDeath.actionBarSuffix(p);
-		// The segments ARE the bar when nothing else owns it - the Goldor phase has no HUD of its own - and a
-		// bar opening with "| " reads like something in front of it got cut off.
+		// Segments are the whole bar when nothing else owns it (Goldor has no HUD); a leading "| " looks cut off.
 		if(!extra.isEmpty() && plain(bar).isEmpty()) extra = extra.substring(ACTION_BAR_SEPARATOR.length());
 		p.sendActionBar(extra.isEmpty() ? bar : bar.append(msg(extra)));
 		actionBarTick.put(p.getUniqueId(), nmsServer().getTickCount());
@@ -304,32 +261,23 @@ public class Utils {
 	}
 
 	/**
-	 * The absolute server tick: the same clock {@link #runTick()} and {@link #phaseTick()} are measured against,
-	 * but un-anchored, so it does not jump when a run or a phase is re-anchored.
-	 * <p>
-	 * Use this for anything that has to outlive a phase - the cheat-death cooldowns and the revival countdown in
-	 * {@code death/} - rather than {@code MinecraftServer.currentTick}, so there is one answer to "what tick is it"
-	 * and no chance of two of them disagreeing.
+	 * Absolute server tick: the clock {@link #runTick()} and {@link #phaseTick()} use, un-anchored. Use it for
+	 * anything that outlives a phase (cheat-death cooldowns, revival in {@code death/}) instead of
+	 * {@code MinecraftServer.currentTick}, so there's one answer to "what tick is it".
 	 */
 	public static int serverTick() {
 		return nmsServer().getTickCount();
 	}
 
-	/** The NMS server via the non-deprecated CraftServer bridge ({@code MinecraftServer.getServer()} is deprecated).
-	 *  Returns the same instance, so callers (tick counters, command source) are behaviour-identical. */
+	/** Same instance as the deprecated {@code MinecraftServer.getServer()}. */
 	private static MinecraftServer nmsServer() {
 		return ((org.bukkit.craftbukkit.CraftServer) Bukkit.getServer()).getServer();
 	}
 
 	/**
-	 * Runs a server command without any output. Vanilla normally broadcasts a command's success
-	 * to every op as "[Server: ...]" chat spam; {@code withSuppressedOutput()} sets the source
-	 * silent so {@code sendSuccess}/{@code sendFailure} short-circuit before that broadcast (this
-	 * works regardless of the logAdminCommands gamerule, which doesn't reliably suppress it).
-	 * Use this in place of {@code Bukkit.dispatchCommand(Bukkit.getConsoleSender(), ...)} for the
-	 * plugin's own world edits (setblock/fill/clone) and entity commands (tag/kill).
-	 *
-	 * @param command Command to run, without a leading slash
+	 * Runs a command (no leading slash) with no output. Vanilla spams ops with "[Server: ...]";
+	 * {@code withSuppressedOutput()} short-circuits that, which the logAdminCommands gamerule doesn't reliably do.
+	 * Use instead of {@code Bukkit.dispatchCommand(console, ...)} for our own setblock/fill/clone/tag/kill.
 	 */
 	public static void runCommand(String command) {
 		MinecraftServer server = nmsServer();
@@ -337,14 +285,6 @@ public class Utils {
 		server.getCommands().performPrefixedCommand(source, command);
 	}
 
-	/**
-	 * Creates a leather armor item with the specified material, color, and name.
-	 *
-	 * @param material The material type of the leather armor.
-	 * @param color    The color to apply to the leather armor.
-	 * @param name     The display name to set for the leather armor.
-	 * @return A new ItemStack representing the customized leather armor.
-	 */
 	public static ItemStack createLeatherArmor(Material material, Color color, String name) {
 		ItemStack item = new ItemStack(material);
 		LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
@@ -355,35 +295,29 @@ public class Utils {
 		meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
 		item.setItemMeta(meta);
 		item.addUnsafeEnchantment(Enchantment.PROTECTION, 5);
-		// Armour has no lore ID, so StatLore keeps a blank lore line 0 and appends its stat rows below it - which
-		// is what leaves Catalog.paletteKey's third component the empty string it has always been (§7b).
+		// No lore ID, so StatLore keeps lore line 0 blank and appends below it; that keeps Catalog.paletteKey's
+		// third component "" (§7b).
 		return damage.StatLore.apply(item);
 	}
 
 	/**
-	 * Return a copy of {@code item} that can break ANY block while its holder is in adventure mode.  Stamps the
-	 * vanilla {@code minecraft:can_break} component with a single empty block-predicate: no block, state or nbt
-	 * filter, so it matches every block.  This mirrors how SkyBlock's Dungeonbreaker bypasses adventure-mode block
-	 * protection.  Apply LAST, after any setItemMeta, since this mutates the NMS copy directly.
+	 * Copy that can break ANY block in adventure: {@code can_break} with one empty predicate, which matches
+	 * everything (how SkyBlock's Dungeonbreaker does it). Apply LAST, after any setItemMeta; it mutates the NMS copy.
 	 */
 	public static ItemStack breakAnyBlockInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
 		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
-		// The empty predicate has no concrete block to name, so the client renders a "Can Break: Unknown"
-		// tooltip line. Hide the CAN_BREAK component from the tooltip to suppress it.
+		// Empty predicate names no block, so the client shows "Can Break: Unknown". Hide it.
 		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT.withHidden(DataComponents.CAN_BREAK, true));
 		return CraftItemStack.asBukkitCopy(nms);
 	}
 
-	/**
-	 * Return a copy of {@code item} that can be placed on Stone Bricks while its holder is in adventure mode,
-	 * the practice default.  Stamps the vanilla {@code minecraft:can_place_on} component, which renders a
-	 * "Can be placed on: Stone Bricks" tooltip.  Apply LAST, after any setItemMeta, since it mutates the NMS copy.
-	 */
+	/** Copy placeable on Stone Bricks in adventure (practice default) via {@code can_place_on}. Apply LAST, after
+	 *  any setItemMeta; it mutates the NMS copy. */
 	public static ItemStack placeOnStoneBricksInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
-		// Use the static built-in block registry as the HolderGetter.  That avoids RegistryAccess.lookupOrThrow,
-		// whose signature differs between the Spigot-mojang compile target and the Paper runtime (NoSuchMethodError).
+		// Built-in registry as HolderGetter: RegistryAccess.lookupOrThrow's signature differs between the
+		// Spigot-mojang compile target and Paper runtime (NoSuchMethodError).
 		BlockPredicate stoneBricks = BlockPredicate.Builder.block()
 				.of(net.minecraft.core.registries.BuiltInRegistries.BLOCK, net.minecraft.world.level.block.Blocks.STONE_BRICKS)
 				.build();
@@ -391,44 +325,32 @@ public class Utils {
 		return CraftItemStack.asBukkitCopy(nms);
 	}
 
-	/**
-	 * Return a copy of {@code item} that can be placed on ANY block while its holder is in adventure mode. Stamps the
-	 * vanilla {@code minecraft:can_place_on} component with a single empty block-predicate (no filter → matches every
-	 * block), the same trick as {@link #breakAnyBlockInAdventure}. Apply LAST (after any setItemMeta), since it mutates
-	 * the NMS copy directly.
-	 */
+	/** Copy placeable on ANY block in adventure, same empty-predicate trick as {@link #breakAnyBlockInAdventure}.
+	 *  Apply LAST, after any setItemMeta. */
 	public static ItemStack placeOnAnythingInAdventure(ItemStack item) {
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
 		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
-		// The empty predicate has no concrete block to name, so the client renders a "Can be placed on: Unknown"
-		// tooltip line. Hide the CAN_PLACE_ON component from the tooltip to suppress it.
+		// Empty predicate names no block, so the client shows "Can be placed on: Unknown". Hide it.
 		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT.withHidden(DataComponents.CAN_PLACE_ON, true));
 		return CraftItemStack.asBukkitCopy(nms);
 	}
 
 	/**
-	 * Return a copy of {@code item} that can be BOTH placed on and "broken" against any block while its holder is in
-	 * adventure mode, i.e. {@link #placeOnAnythingInAdventure} and {@link #breakAnyBlockInAdventure} in a single
-	 * stamp.  It has to be one call: each of those writes its own {@code TOOLTIP_DISPLAY}, so chaining them would
-	 * clobber the first one's entry and un-hide its "Unknown" tooltip line.
+	 * {@link #placeOnAnythingInAdventure} + {@link #breakAnyBlockInAdventure} in one stamp. Must be one call: each
+	 * writes its own {@code TOOLTIP_DISPLAY}, so chaining clobbers the first and un-hides its "Unknown" line.
 	 * <p>
-	 * The can_break half is NOT about breaking blocks.  Superboom TNT's left-click never breaks anything, since the
-	 * interact event is always cancelled.  It exists so the CLIENT will tell us WHICH block was left-clicked: verified in the
-	 * 26.2 client, {@code MultiPlayerGameMode.startDestroyBlock} returns early without sending
-	 * {@code ServerboundPlayerActionPacket} when {@code Player.blockActionRestricted} is true, and in adventure mode
-	 * that's true unless the held stack's can_break predicate matches the block. Without the stamp a left-click sends
-	 * only a swing packet (no block position) and the server would have to ray-trace the target itself.
-	 * <p>
-	 * Apply LAST (after any setItemMeta), since it mutates the NMS copy directly.
+	 * can_break is NOT for breaking (Superboom's interact is always cancelled). It makes the CLIENT report which
+	 * block was left-clicked: in the 26.2 client {@code MultiPlayerGameMode.startDestroyBlock} skips
+	 * {@code ServerboundPlayerActionPacket} when {@code Player.blockActionRestricted}, which in adventure is true
+	 * unless can_break matches. Without it a left-click is only a swing and we'd have to ray-trace.
+	 * Apply LAST, after any setItemMeta.
 	 */
 	public static ItemStack placeAndBreakAnythingInAdventure(ItemStack item) {
 		ItemStack copy = withoutBlockBreakSpeed(item);
 		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(copy);
 		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
 		nms.set(DataComponents.CAN_BREAK, new AdventureModePredicate(List.of(BlockPredicate.Builder.block().build())));
-		// Empty predicates name no concrete block, so the client would render "Can be placed on: Unknown" and
-		// "Can Break: Unknown".  Hide both components from the tooltip.  The break-speed modifier below would render
-		// its own "-1024 Block Break Speed" line, so hide the attribute block too.
+		// Hide both "Unknown" lines, and the attributes too or the break-speed modifier shows "-1024 Block Break Speed".
 		nms.set(DataComponents.TOOLTIP_DISPLAY, TooltipDisplay.DEFAULT
 				.withHidden(DataComponents.CAN_PLACE_ON, true)
 				.withHidden(DataComponents.CAN_BREAK, true)
@@ -437,19 +359,14 @@ public class Utils {
 	}
 
 	/**
-	 * Return a copy of {@code item} that cannot break blocks at all, by cancelling out the base BLOCK_BREAK_SPEED
-	 * every player joins with. {@code JoinListener} sets that base to 1024 (destroy speed is MULTIPLIED by it, so
-	 * everything breaks in one tick with anything); this hangs a matching −1024 on the item for the MAINHAND, so
-	 * while it is held the attribute is 1024 − 1024 = 0 and the multiplier zeroes the destroy speed outright.
+	 * Copy that can't break blocks: -1024 MAINHAND BLOCK_BREAK_SPEED cancels {@code JoinListener}'s 1024 base
+	 * (destroy speed is multiplied by it), so held it's 0. Used by {@link #placeAndBreakAnythingInAdventure} for
+	 * every can_break item except Dungeonbreaker, which adds +1024 instead. The left-click packet is gated on the
+	 * predicate, not speed, so Superboom keeps its targeting and the break is impossible client-side too, rather
+	 * than refused after the fact by {@code CustomItems.onBlockBreak}.
 	 * <p>
-	 * Applied by {@link #placeAndBreakAnythingInAdventure} to every can_break item EXCEPT Dungeonbreaker (which
-	 * uses {@link #breakAnyBlockInAdventure} and adds its own +1024 on top instead).  Those items only carry
-	 * can_break so the CLIENT reports which block was left-clicked, and that packet is gated on the predicate, not
-	 * on destroy speed.  Zeroing the speed keeps Superboom's targeting while making the break itself impossible
-	 * client-side too, instead of relying on {@code CustomItems.onBlockBreak} to refuse it after the fact.
-	 * <p>
-	 * NOTE: setting any explicit attribute modifier drops the item's DEFAULT modifiers (vanilla replaces the whole
-	 * component), so don't route a weapon through this without re-adding its damage.
+	 * NOTE: any explicit attribute modifier drops the item's DEFAULT ones (vanilla replaces the component), so a
+	 * weapon routed through this loses its damage.
 	 */
 	public static ItemStack withoutBlockBreakSpeed(ItemStack item) {
 		ItemStack copy = item.clone();
@@ -462,33 +379,16 @@ public class Utils {
 		return copy;
 	}
 
-	/**
-	 * Plays a sound for every player on the server
-	 *
-	 * @param s The sound to play
-	 */
 	@SuppressWarnings("unused")
 	public static void playGlobalSound(Sound s) {
 		Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player, s, 1.0F, 1.0F));
 	}
 
-	/**
-	 * Plays a sound for every player on the server
-	 *
-	 * @param s      The sound to play
-	 * @param volume The volume of the sound
-	 * @param pitch  The pitch of the sound
-	 */
 	public static void playGlobalSound(Sound s, float volume, float pitch) {
 		Bukkit.getOnlinePlayers().forEach(player -> player.playSound(player, s, volume, pitch));
 	}
 
-	/**
-	 * Plays a sound for all players spectating this player if applicable
-	 *
-	 * @param p The player causing the sound
-	 * @param s The sound to play
-	 */
+	/** Plays to p, or to its spectators if p is a spectated fake. */
 	public static void playLocalSound(Player p, Sound s) {
 		if(FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
@@ -499,14 +399,6 @@ public class Utils {
 		}
 	}
 
-	/**
-	 * Plays a sound for all players spectating this player if applicable
-	 *
-	 * @param p      The player causing the sound
-	 * @param s      The sound to play
-	 * @param volume Volume
-	 * @param pitch  Pitch
-	 */
 	public static void playLocalSound(Player p, Sound s, float volume, float pitch) {
 		if(FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
@@ -517,14 +409,7 @@ public class Utils {
 		}
 	}
 
-	/**
-	 * Plays a sound by namespaced key for all players spectating this player if applicable
-	 *
-	 * @param p      The player causing the sound
-	 * @param s      The namespaced sound key (e.g. "minecraft:entity.wither.hurt")
-	 * @param volume Volume
-	 * @param pitch  Pitch
-	 */
+	/** Same, by namespaced key ("minecraft:entity.wither.hurt"). */
 	public static void playLocalSound(Player p, String s, float volume, float pitch) {
 		if(FakePlayerManager.getFakePlayers().containsValue(p) && Spectate.getReverseSpectatorMap().containsKey(p)) {
 			for(Player spectator : Spectate.getReverseSpectatorMap().get(p)) {
@@ -535,14 +420,11 @@ public class Utils {
 		}
 	}
 
-	// LivingEntity#getHurtSound is protected, so it is resolved lazily.  Method.invoke dispatches
-	// virtually, so subclass overrides (wither, dragon, zombie...) return their own sounds.
+	// LivingEntity#getHurtSound is protected, so reflected lazily. invoke dispatches virtually, so subclass
+	// overrides return their own sounds.
 	private static java.lang.reflect.Method getHurtSoundMethod;
 
-	/**
-	 * Resolves the namespaced key of the sound an entity makes when hurt
-	 * (e.g. "minecraft:entity.wither.hurt"), or null if it cannot be resolved.
-	 */
+	/** Namespaced key of an entity's hurt sound, or null if unresolvable. */
 	@Nullable
 	public static String getHurtSoundKey(LivingEntity entity) {
 		try {
@@ -596,12 +478,7 @@ public class Utils {
 		scheduleTask(() -> playLocalSound(p, Sound.BLOCK_NOTE_BLOCK_HARP, 1.0f, 1.18945f), 20);
 	}
 
-	/**
-	 * Gets the nearest real player at the given location
-	 *
-	 * @param l The location
-	 * @return The nearest real player
-	 */
+	/** Nearest real player to l. */
 	public static @Nullable Player getNearestPlayer(Location l) {
 		ArrayList<Player> playersInWorld = new ArrayList<>(l.getWorld().getEntitiesByClass(Player.class));
 		if(playersInWorld.isEmpty()) {
@@ -623,17 +500,14 @@ public class Utils {
 	}
 
 	/**
-	 * True if {@code p} is WATCHING rather than running: vanilla spectator mode, which is the idle state on m7
-	 * (the network plugin parks everyone who isn't in the current party there), or a real player spectating a fake.
-	 * <br>
-	 * <b>Every player-driven dungeon mechanic must check this, and vanilla will not do it for you.</b>  Bukkit
-	 * still fires the interact events for a spectator's clicks, and a click on a block with a {@code MenuProvider}
-	 * (a chest) or on an ENTITY hitbox is not even pre-cancelled, so a spectator could otherwise take a secret,
-	 * solve a Goldor device, pocket a Wither-King relic or walk off with a Maxor Energy Crystal - the last two
-	 * being permanent griefs, since the entity is removed from the arena and the item lands in a spectator's
-	 * inventory where the running party can never reach it.  M7's own packet interceptor bypasses vanilla
-	 * entirely, so the check cannot live in vanilla either.  Put it at the mechanic's chokepoint where there is
-	 * one ({@code Maxor.pickUp}, {@code WitherKing.pickUpRelic}), so a future caller inherits it.
+	 * True if p is WATCHING, not running: vanilla spectator (m7's idle state; the network parks non-party players
+	 * there) or spectating a fake.
+	 * <p>
+	 * <b>Every player-driven dungeon mechanic must check this; vanilla won't.</b> Bukkit still fires interact events
+	 * for spectators, and clicks on a {@code MenuProvider} block or an entity hitbox aren't pre-cancelled, so a
+	 * spectator could take a secret, solve a device, or pocket a relic or Energy Crystal. The last two are permanent:
+	 * the item ends up where the party can't reach it. Our packet interceptor bypasses vanilla anyway. Check at the
+	 * chokepoint ({@code Maxor.pickUp}, {@code WitherKing.pickUpRelic}) so future callers inherit it.
 	 */
 	public static boolean isSpectator(Player p) {
 		return p == null || p.getGameMode() == GameMode.SPECTATOR || commands.Spectate.isSpectating(p);
@@ -644,9 +518,8 @@ public class Utils {
 	}
 
 	/**
-	 * Verbosity ladder, ascending.  Each level is a superset of the one below.
-	 * OFF: silent.  TIMER: only tick-timer announcements.  ON: timers plus full [Client]/[Server]/[Game]
-	 * debug and the movement audit.  SUPER: adds packet coordinates and movement residual tracking.
+	 * Ascending, each a superset of the last. OFF: silent. TIMER: tick-timer lines. ON: plus [Client]/[Server]/[Game]
+	 * debug and movement audit. SUPER: plus packet coordinates and movement residuals.
 	 */
 	public enum VerboseLevel {OFF, TIMER, ON, SUPER}
 
@@ -660,44 +533,28 @@ public class Utils {
 		verboseLevel = level;
 	}
 
-	/**
-	 * Full debug stream ([Client]/[Server]/[Game] packet logging, movement audit): ON and SUPER.
-	 */
+	/** ON and SUPER. */
 	public static boolean isVerbose() {
 		return verboseLevel.ordinal() >= VerboseLevel.ON.ordinal();
 	}
 
-	/**
-	 * Tick-timer announcements (section/boss timing lines): TIMER, ON, and SUPER.
-	 */
+	/** TIMER and above. */
 	public static boolean showTimers() {
 		return verboseLevel.ordinal() >= VerboseLevel.TIMER.ordinal();
 	}
 
-	/**
-	 * Packet coordinates + movement residual tracking: SUPER only.
-	 */
 	public static boolean isSuperVerbose() {
 		return verboseLevel == VerboseLevel.SUPER;
 	}
 
-	/**
-	 * Server tick captured when the current phase began; basis for the {@code [tick: N]} prefix on verbose lines.
-	 */
+	/** Server tick the current phase began; basis for the {@code [tick: N]} prefix. */
 	private static int phaseStartTick = 0;
-	/**
-	 * Server tick the live overall-run timer was anchored at (see {@link #markRunStart()}).
-	 */
+	/** Server tick the live overall-run timer was anchored at. */
 	private static int runStartTick = 0;
-	/**
-	 * False once {@link #markRunStart()} arms the run timer, until the next {@link #markPhaseStart()} anchors it.
-	 */
+	/** False from {@link #markRunStart()} until the next {@link #markPhaseStart()} anchors the run timer. */
 	private static boolean runStarted = false;
 
-	/**
-	 * Mark the start of a new phase.  This resets the {@code [tick: N]} counter shown on every verbose line.  The
-	 * first phase start after {@link #markRunStart()} also anchors the live overall-run timer.
-	 */
+	/** Resets the {@code [tick: N]} counter. The first call after {@link #markRunStart()} also anchors the run timer. */
 	public static void markPhaseStart() {
 		int now = nmsServer().getTickCount();
 		phaseStartTick = now;
@@ -707,43 +564,30 @@ public class Utils {
 		}
 	}
 
-	/**
-	 * Arm a fresh live overall-run timer: the next {@link #markPhaseStart()} (the run's first phase) anchors it.
-	 * Used by /m7practice, whose "Overall" timer is live rather than the hardcoded per-phase cumulative offset.
-	 */
+	/** Arms a fresh run timer; the next {@link #markPhaseStart()} anchors it. /m7practice's "Overall" timer is live,
+	 *  not the hardcoded per-phase offset. */
 	public static void markRunStart() {
 		runStarted = false;
 	}
 
-	/**
-	 * Ticks elapsed since the live overall-run timer was anchored (see {@link #markRunStart()}).
-	 */
 	public static int runTick() {
 		return nmsServer().getTickCount() - runStartTick;
 	}
 
-	/**
-	 * Ticks elapsed since the last {@link #markPhaseStart()}, the value rendered in the verbose-line prefix.
-	 */
 	public static int phaseTick() {
 		return nmsServer().getTickCount() - phaseStartTick;
 	}
 
-	/**
-	 * Broadcast a tick-timer line.  Shown only at TIMER level and above (see {@link #showTimers()}).
-	 */
+	/** Tick-timer line (MiniMessage), TIMER level and above. */
 	public static void timer(String message) {
-		// `message` is a MiniMessage string built by callers (timer lines carry their own colors).
 		if(showTimers()) Bukkit.broadcast(msg(message));
 	}
 
 	public static void debug(DebugType type, String message) {
-		// The debug payload is inserted as an UNPARSED placeholder so arbitrary content (entity names, coords, a
-		// stray '<') is shown literally and can never break MiniMessage parsing or inject tags.
+		// Unparsed so a stray '<' in the payload can't break parsing or inject tags.
 		TagResolver m = Placeholder.unparsed("m", message);
-		// ERROR always fires.  It flags a misuse or a bug, not routine debug output, so it ignores the verbosity gate.
+		// ERROR is a bug, not routine output: always fires, always tick-stamped.
 		if(type == DebugType.ERROR) {
-			// Errors always carry a [tick: #] stamp regardless of verbosity, so the misuse can be pinpointed.
 			Bukkit.broadcast(msg("<gray>[tick: " + phaseTick() + "] <red>[Error] <m>", m));
 			return;
 		}
@@ -758,20 +602,16 @@ public class Utils {
 	}
 
 	/**
-	 * Displayed HP for a mob's nameplate / boss bar, e.g. {@code "800M"} or {@code "1.4B"}.
-	 * <p>
-	 * Internal HP IS the SkyBlock value divided by {@link damage.Scale#SB_PER_MC_HP}, so display is just
-	 * {@code internal x 1M} and there is nothing to decouple.  This used to carry a per-boss display-max table plus
-	 * a x2 fudge, because internal HP was hand-tuned (Maxor sat at 300 while displaying 800M) and the two numbers
-	 * had no relationship; MAP.md §8 retires all of that.
+	 * Nameplate / boss bar HP, e.g. {@code "1.4B"}. Internal HP is SkyBlock / {@link damage.Scale#SB_PER_MC_HP}, so
+	 * display is internal x 1M. The old per-boss display table and x2 fudge (Maxor at 300 showing 800M) are gone, MAP.md §8.
 	 */
 	public static String formatHealthM(LivingEntity entity) {
-		// Withers flagged as dying always display "1" regardless of internal HP.
+		// Dying withers always show "1".
 		if(entity.getScoreboardTags().contains("TASDying")) return "1";
 		return formatHealthM(entity.getHealth() + entity.getAbsorptionAmount());
 	}
 
-	/** Displayed HP for a raw internal health value.  Internal is SB/1e6, so one point of health is one million. */
+	/** One internal health point is 1M SkyBlock HP. */
 	public static String formatHealthM(double rawHealth) {
 		return formatDisplayM(rawHealth);
 	}
@@ -785,26 +625,24 @@ public class Utils {
 		return (int) Math.round(displayM) + "M"; // round to nearest 1M
 	}
 
-	// hurtEntity lived here.  It is now damage/Damage.deal - one path for every damage instance, applying damage
-	// by reading health, subtracting and setting it (MAP.md §7).  Three paths used to exist
-	// (hurtServer(genericKill), setHealth for dragons, wither.damage() for arrows-on-withers) with different
-	// i-frame, armor, event and aggro behaviour, and the split was already visible as workarounds here.
-	// The worn-head damage multiplier that used to sit alongside it (Cow Hat x0.70, masks x0.85) is deleted, not
-	// re-bucketed: helmet-slot exclusivity in the stat layer models the same thing properly (§1.10, §8).
+	// hurtEntity moved to damage/Damage.deal, the one damage path (MAP.md §7). It replaced three paths
+	// (hurtServer(genericKill), setHealth for dragons, wither.damage() for arrows) with different i-frame, armor,
+	// event and aggro behaviour. The worn-head multiplier (Cow Hat x0.70, masks x0.85) is deleted: helmet-slot
+	// exclusivity in the stat layer models it (§1.10, §8).
 
 	public static void changeName(LivingEntity entity) {
 		if(!(entity instanceof Player)) {
 			double health = entity.getHealth() + entity.getAbsorptionAmount();
 			boolean exempt = entity.getScoreboardTags().stream().anyMatch(t -> t.equals("TASWitherKing") || t.equals("TASWatcher"));
 			String healthStr = exempt ? String.valueOf(health) : formatHealthM(entity);
-			// <!bold> so the health suffix isn't bold (legacy §e/§c reset bold; MiniMessage color tags do not).
+			// <!bold>: legacy §e/§c reset bold, MiniMessage colour tags don't.
 			String healthTag = "<!bold><yellow>" + healthStr + "<red>❤";
 			Component current = entity.customName();
 			if(current == null) {
 				entity.customName(msg(entity.getName() + " " + healthTag));
 				return;
 			}
-			// Replace the last space-delimited token (the health suffix) in place, preserving the colored base name.
+			// Replace the last token (health suffix), keeping the coloured base name.
 			String[] parts = MM.serialize(current).split(" ");
 			parts[parts.length - 1] = healthTag;
 			entity.customName(msg(String.join(" ", parts)));
@@ -844,14 +682,8 @@ public class Utils {
 		return bd.toPlainString();
 	}
 
-	/**
-	 * {@link #round(double, int)} with thousands separators on the integer part - {@code "3,729.6"} rather than
-	 * {@code "3729.6"}.  Used by the stat readouts (item lore, {@code /eq}), where a dungeon-scaled stat is routinely
-	 * five or six digits.
-	 * <p>
-	 * Grouped by hand rather than with a {@code DecimalFormat}, so it inherits {@code round}'s exact
-	 * {@code BigDecimal} half-up behaviour instead of introducing a second rounding rule.
-	 */
+	/** {@link #round(double, int)} with thousands separators ({@code "3,729.6"}), for lore and {@code /eq}. Grouped by
+	 *  hand, not DecimalFormat, so it keeps round's BigDecimal half-up rule. */
 	public static String roundCommas(double value, int places) {
 		String s = round(value, places);
 		boolean negative = s.startsWith("-");
@@ -868,12 +700,9 @@ public class Utils {
 	}
 
 	/**
-	 * The "DUNGEON BUFF!" announcement, in Hypixel's own two-line shape: who found what, then what it granted.
-	 * <p>
-	 * <b>The stat line is generated from {@code damage/Blessings}</b>, not written out here.  It used to hard-code
-	 * 7.26 / 3.63% / 10.89 / 5.445%, which are the table's figures at the MAXED effect increase - so the message
-	 * silently lied the moment the mayor became a setting, promising Paul's numbers under Derpy.  Generating it
-	 * also means the message can never disagree with what the damage pipeline actually applied.
+	 * "DUNGEON BUFF!" in Hypixel's two-line shape: who found what, then what it granted. The stat line comes from
+	 * {@code damage/Blessings}: it used to hard-code 7.26 / 3.63% / 10.89 / 5.445% (the maxed figures), which lied
+	 * under Derpy once the mayor became a setting.
 	 */
 	public static void broadcastBlessing(Player p, BlessingType type, int level) {
 		String romanLevel;
@@ -886,7 +715,7 @@ public class Utils {
 				return;
 			}
 		}
-		// Blessing of Time is the Trivia puzzle's reward and only ever drops at V.
+		// Blessing of Time is Trivia's reward and only drops at V.
 		if(type == BlessingType.TIME && level != 5) {
 			Bukkit.broadcast(msg("<red>Error: Blessing of Time can only be level 5"));
 			return;

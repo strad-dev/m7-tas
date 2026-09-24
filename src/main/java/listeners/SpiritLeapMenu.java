@@ -16,23 +16,18 @@ import plugin.Utils;
 import java.util.*;
 
 /**
- * Practice-mode Spirit Leap GUI: a 5-row chest that lets a player teleport to up to four teammates. Teammates are
- * placed in the four corners (top-left, top-right, bottom-left, bottom-right). Each teammate "owns" a quadrant
- * filled with their class-colored stained glass (Archer green, Berserk red, Healer yellow, Mage light blue, Tank
- * gray) with their head in the corner; clicking anywhere in a quadrant leaps to that teammate. The middle row +
- * middle column are white stained glass dividers that do nothing.
- *
- * <p><b>A class always lands in the same quadrant.</b>  {@link #CLASS_ORDER} minus the VIEWER'S OWN class is
- * exactly four classes for four quadrants, so from a given seat a given party is always laid out the same way and
- * the leap becomes muscle memory - see {@link #arrange}.
- *
- * <p>The instance is the inventory's {@link InventoryHolder}, carrying the slot→teammate map so the click handler
- * ({@link SpiritLeapListener}) can resolve the target.
+ * Practice Spirit Leap GUI: 5-row chest, up to four teammates. Each owns a quadrant of class-coloured glass (Archer
+ * green, Berserk red, Healer yellow, Mage light blue, Tank gray) with their head in the corner; any click in it leaps
+ * to them. Middle row and column are white dividers.
+ * <p>
+ * A class always lands in the same quadrant ({@link #arrange}), so the leap becomes muscle memory.
+ * <p>
+ * The instance is the {@link InventoryHolder} and carries the slot-to-teammate map for {@link SpiritLeapListener}.
  */
 public class SpiritLeapMenu implements InventoryHolder {
-	private static final int SIZE = 45; // 5 rows × 9
+	private static final int SIZE = 45; // 5 rows x 9
 
-	// Quadrant slot groups (cols 0–3 / 5–8, rows 0–1 / 3–4) and each quadrant's outer corner.
+	// Quadrant slot groups (cols 0-3 / 5-8, rows 0-1 / 3-4) and each quadrant's outer corner.
 	private static final int[][] QUADRANTS = {
 			{0, 1, 2, 3, 9, 10, 11, 12},        // top-left
 			{5, 6, 7, 8, 14, 15, 16, 17},       // top-right
@@ -40,12 +35,9 @@ public class SpiritLeapMenu implements InventoryHolder {
 			{32, 33, 34, 35, 41, 42, 43, 44}    // bottom-right
 	};
 	private static final int[] CORNERS = {0, 8, 36, 44};
-	/**
-	 * The five classes in the order they claim quadrants.  ALSO the sort order of {@link #candidates}, so which of
-	 * two players of one class gets the home quadrant is decided the same way every time.
-	 */
+	/** Order classes claim quadrants. Also {@link #candidates}' sort order, so two of one class split the same way. */
 	private static final List<String> CLASS_ORDER = List.of("Archer", "Berserk", "Healer", "Mage", "Tank");
-	// Middle row (18–26) and middle column (4,13,22,31,40) are plain glass dividers, with no action.
+	// Middle row (18-26) and middle column (4,13,22,31,40) are dividers.
 	private static final int[] CROSS = {4, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 40};
 
 	private final Inventory inv;
@@ -70,7 +62,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 		return inv;
 	}
 
-	/** Teammate a given menu slot leaps to, or null for dividers / empty quadrants / the player's own inventory. */
+	/** Teammate a slot leaps to, or null for dividers / empty quadrants / the player's own inventory. */
 	public Player targetForSlot(int slot) {
 		return slotTargets.get(slot);
 	}
@@ -89,17 +81,14 @@ public class SpiritLeapMenu implements InventoryHolder {
 				inv.setItem(s, glass);
 				slotTargets.put(s, t);
 			}
-			inv.setItem(CORNERS[q], head(t, cls)); // corner shows the teammate's head (still leaps on click)
+			inv.setItem(CORNERS[q], head(t, cls)); // head also leaps on click
 		}
 	}
 
 	/**
-	 * Which quadrant each teammate gets.  Every class has a HOME quadrant: {@link #CLASS_ORDER} with the viewer's
-	 * own class struck out, so Archer sits top-left for a Mage but top-left belongs to Berserk for an Archer.
-	 * <p>
-	 * A teammate whose home quadrant is already taken - a second player of the same class, or anyone at all when
-	 * the viewer's class matches nobody's - falls through to the lowest free quadrant, so a party never loses a
-	 * seat to a collision.  {@link #candidates} caps the list at four, so there is always room.
+	 * Quadrant per teammate. A class's HOME quadrant is its place in {@link #CLASS_ORDER} minus the viewer's own class:
+	 * Archer is top-left for a Mage, Berserk is for an Archer. A taken home (second player of a class) falls to the
+	 * lowest free quadrant; {@link #candidates} caps at four, so there is always room.
 	 */
 	private static Player[] arrange(Player viewer, List<Player> targets) {
 		List<String> home = new ArrayList<>(CLASS_ORDER);
@@ -122,7 +111,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 		return spots;
 	}
 
-	/** Online, non-spectating, non-fake players (excluding the viewer), ordered by class then name, capped at 4. */
+	/** Online, non-spectating, non-fake players other than the viewer, by class then name, capped at 4. */
 	private static List<Player> candidates(Player viewer) {
 		List<Player> list = new ArrayList<>();
 		for(Player p : Bukkit.getOnlinePlayers()) {

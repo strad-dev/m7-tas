@@ -12,11 +12,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
 /**
- * The Golem Sword.  Our ability is the Y-velocity zero, a movement tech, not the real item's Iron Punch - but
- * its stat block still comes from the real item (§1.9).
- * <p>
- * It beams for a Mage, which is not a new decision: the old gate tested the MATERIAL, and this is an
- * {@code IRON_SWORD} like the Hyperion, so a Mage holding it has always beamed rather than swung.
+ * Ability is a Y-velocity zero (movement tech), not the real Iron Punch; stats are the real item's (§1.9).
+ * Beams for a Mage, as it always did: it's an {@code IRON_SWORD} and the old gate tested material.
  */
 public final class GolemSword implements Weapon, AbilityItem {
 	public static final GolemSword INSTANCE = new GolemSword();
@@ -75,10 +72,8 @@ public final class GolemSword implements Weapon, AbilityItem {
 	}
 
 	/**
-	 * Golem Sword: kills the holder's vertical momentum.  Y velocity is zeroed, X/Z are left alone.  For a real
-	 * player this rides out as a velocity packet, and the client's {@code lerpMotion} SETS its delta movement, so
-	 * a fall or leap stalls on the spot instead of the value being added to whatever it was already doing.
-	 * 3s cooldown, halved or quartered for a Mage like every other ability (see {@link #effectiveCooldown}).
+	 * Zeroes Y velocity, leaves X/Z. The client's {@code lerpMotion} SETS delta movement, so a fall or leap stalls
+	 * on the spot. 3s cooldown, Mage-reduced ({@link #effectiveCooldown}).
 	 */
 	public static void golemSword(Player p) {
 		Vector v = p.getVelocity();

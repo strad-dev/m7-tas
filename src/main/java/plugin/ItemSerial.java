@@ -5,13 +5,10 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Base64;
 
 /**
- * Cross-plugin item (de)serialization. Items are stored as base64 of Paper's
- * {@link ItemStack#serializeAsBytes()} so the network plugin's loadout editor and this plugin's
- * catalog export speak the exact same format (both run on the same Paper build, so the bytes and the
- * custom-item lore IDs round-trip cleanly). A null/air slot serializes to {@code null}.
+ * Cross-plugin item format: base64 of Paper's {@link ItemStack#serializeAsBytes()}, shared by the network plugin's
+ * loadout editor and this plugin's catalog export (same Paper build, so it round-trips). Null/air is {@code null}.
  * <br>
- * NOTE: an identical copy lives in the network plugin ({@code loadout/ItemSerial.java}) - keep the
- * two in sync.
+ * NOTE: identical copy in the network plugin ({@code loadout/ItemSerial.java}); keep them in sync.
  */
 public final class ItemSerial {
 	private ItemSerial() {}

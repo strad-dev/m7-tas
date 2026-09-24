@@ -7,39 +7,33 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 /**
- * Everything outside the item / equipment / power layers (MAP.md §1.13): skills, slayers, potions,
- * essence-shop perks, individual accessories' own stats, blessings and pets.
+ * Everything outside item / equipment / power layers (MAP.md §1.13): skills, slayers, potions, essence perks,
+ * accessories' own stats, blessings, pets.
  * <p>
- * <b>The stat pipeline.</b> Each stat has its own additive and multiplicative sources.  All additive sources sum,
- * then the multiplicative ones apply one after another:
+ * <b>Stat pipeline.</b> Additive sources sum, then multiplicative ones apply in turn:
  * <pre>
  * statTotal = ( sum of ALL base sources )        // items + armour + equipment + power + tunings + profile
  *           x ( 1 + sum of additive % )
  *           x product of multiplicative factors
  * </pre>
- * <b>This is a different system from the damage-level buckets in §7.</b>  These multiply a STAT; those multiply a
- * HIT.  A Power 29 blessing raises your Strength number; Fabled's x1.15 raises the damage a hit deals with that
- * Strength.  Applying either at the other's point is the easiest way to be wrong by a factor of two.
+ * <b>Not the §7 damage buckets.</b> These multiply a STAT, those a HIT: Power 29 raises Strength, Fabled's x1.15
+ * raises the hit. Swapping them is the easiest way to be off by 2x.
  * <p>
- * <b>Scope, ruled: a stat's multipliers affect that ONE stat, and all of it.</b>  The Strength sources scale the
- * whole summed Strength - weapon, armour, equipment, power AND profile - and touch nothing else.  Applying a
- * multiplier to only part of a stat is worth 17x on time-to-kill, so this is not a detail.
+ * <b>Ruled: a stat's multipliers affect that ONE stat, all of it</b> (weapon, armour, equipment, power AND profile).
+ * Applying one to part of a stat is worth 17x on time-to-kill.
  */
 public final class Profile {
 	private Profile() {}
 
 	/**
-	 * Unconditional base sources.  Conditional ones (marked {@code !} in §1.13) are added by the caller:
-	 * the pet's own stats through {@link Pet#ownStats()}, and the Ragnarock buff through
-	 * {@link Stats#ragnarockStrength} - which is COMPUTED from the axe's own Strength (§1.7), not authored, so the
-	 * plan's "+939" never appears as a constant.
+	 * Unconditional base sources. Conditional ones ({@code !} in §1.13) come from the caller: pet via
+	 * {@link Pet#ownStats()}, Ragnarock via {@link Stats#ragnarockStrength}, COMPUTED from the axe (§1.7), so "+939"
+	 * is never a constant.
 	 * <p>
-	 * The player's inherent +5 Damage is deliberately NOT here: it is the {@code 5 +} term of the formula
-	 * (§1.0.4), so it belongs to {@link Scale#PLAYER_BASE_DAMAGE} and must not be double-counted as a stat.
+	 * Inherent +5 Damage is NOT here: it's the formula's {@code 5 +} (§1.0.4), {@link Scale#PLAYER_BASE_DAMAGE}.
 	 * <p>
-	 * <b>No blessing appears here.</b>  They are the last stage of the pipeline and have their own shape
-	 * ({@code (stat + flat) x percent}, see {@link Blessings}), so {@code Stats.compute} applies them after
-	 * everything in this class - including Blessing of Stone's flat Damage, which used to sum in here.
+	 * No blessings, including Stone's flat Damage which used to sum here: they're the last stage with their own
+	 * shape ({@code (stat + flat) x percent}, {@link Blessings}), applied by {@code Stats.compute}.
 	 */
 	public static StatBlock base() {
 		return StatBlock.EMPTY
@@ -105,11 +99,9 @@ public final class Profile {
 	}
 
 	/**
-	 * The sum of every additive % on one stat, as a percentage (so 22.35 means +22.35%).
-	 * <p>
-	 * Legion counts OTHER players within 30 blocks, not yourself, so a full party is 4 stacks.  Renowned counts
-	 * the Renowned armour pieces actually worn - which is the only thing a Cow Hat or Spring Boots now contributes
-	 * to damage at all, the old x0.70/x0.80 penalties having been deleted outright (§1.10, §8).
+	 * Sum of additive % on one stat (22.35 = +22.35%). Legion counts OTHER players within 30 blocks, so a full party
+	 * is 4. Renowned counts pieces worn, the only damage a Cow Hat or Spring Boots now gives; the old x0.70/x0.80
+	 * penalties are deleted (§1.10, §8).
 	 */
 	public static double additivePercent(Player p, Stat stat, Pet pet) {
 		double sum = 0;
@@ -130,12 +122,9 @@ public final class Profile {
 	}
 
 	/**
-	 * The product of every multiplicative factor on one stat <b>except the blessings</b>.
-	 * <p>
-	 * The blessings used to be in here alongside the Master Skull, and they do not belong: Hypixel applies them
-	 * LAST, and their flat half lands inside their own percent ({@link Blessings}).  Folding them in here put the
-	 * flat outside the percent and left it exposed to {@link #additivePercent} as well.  {@code Stats.compute}
-	 * now runs this stage first and the blessing stage after it.
+	 * Product of multiplicative factors on one stat EXCEPT blessings. They used to be here; Hypixel applies them LAST
+	 * with the flat inside their percent ({@link Blessings}), and folding them in here put the flat outside it and
+	 * exposed it to {@link #additivePercent}. {@code Stats.compute} runs this stage, then blessings.
 	 */
 	public static double multiplicative(Stat stat) {
 		return switch(stat) {
@@ -144,7 +133,7 @@ public final class Profile {
 		};
 	}
 
-	/** Legion stacks: other non-spectating players within 30 blocks.  Never yourself, so a full party is 4. */
+	/** Other non-spectators within 30 blocks. Never yourself, so a full party is 4. */
 	public static int legionStacks(Player p) {
 		if(p == null) return 0;
 		int n = 0;
@@ -156,7 +145,7 @@ public final class Profile {
 		return n;
 	}
 
-	/** Renowned armour pieces currently worn, each worth +1% additive on every stat it applies to. */
+	/** Each worth +1% additive on the stats it applies to. */
 	public static int renownedPiecesWorn(Player p) {
 		if(p == null) return 0;
 		PlayerInventory inv = p.getInventory();

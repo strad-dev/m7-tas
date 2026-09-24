@@ -26,31 +26,29 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The one-row <b>M7 Settings</b> menu behind a bare {@code /dungeonsettings}: the difficulty, the mayor and the
- * alpha timings, each as one button whose lore lists every value with the one in force in bold, and each click
- * stepping to the next.
+ * One-row <b>M7 Settings</b> menu behind bare {@code /dungeonsettings}: difficulty, mayor and alpha timings, one
+ * button each; lore lists every value with the active one bold, each click steps to the next.
  *
- * <p><b>Standalone only.</b>  On the network those three are PARTY settings - they ride the practice request so a
- * party can't be mixed-mode - and the lobby has its own copy of this menu that writes them there.  This one flips
- * the server-wide globals, which on a shared instance would silently change what somebody else's run is scored
- * under, so {@link #suppressed()} refuses to open it whenever the network plugin is installed and
- * {@code /dungeonsettings} falls back to its text output. The command's text form still works either way, which
- * is what the network gates to admins (see {@code M7Bridge}).
+ * <p><b>Standalone only.</b> On the network those three are party settings (they ride the practice request so a
+ * party can't be mixed-mode) and the lobby has its own copy of this menu. This one flips server-wide globals,
+ * which on a shared instance would change what someone else's run is scored under, so {@link #suppressed()}
+ * refuses to open it when the network plugin is installed and {@code /dungeonsettings} falls back to text. The
+ * text form works either way; the network gates it to admins (see {@code M7Bridge}).
  */
 public final class SettingsMenu implements Listener {
 	private static final int DIFFICULTY_SLOT = 2, MAYOR_SLOT = 4, ALPHA_SLOT = 6;
 
-	/** One line, on both buttons, so the right-click half is never a secret. */
+	/** On every button so right-click isn't a secret. */
 	private static final String CYCLE_HINT = "<yellow>Click to change <dark_gray>(right-click to go back)";
 
-	/** The Megakloon head Hypixel's mayor menu uses, as profile id + texture value + signature. */
+	/** Megakloon head from Hypixel's mayor menu: profile id + texture value + signature. */
 	private static final UUID MAYOR_HEAD_ID = UUID.fromString("ff8b48bd-20ef-33c2-9a57-0df4860ebdc6");
 	private static final String MAYOR_HEAD_VALUE = "ewogICJ0aW1lc3RhbXAiIDogMTU5Nzc4MDk0OTYzOCwKICAicHJvZmlsZUlkIiA6ICI0MWQzYWJjMmQ3NDk0MDBjOTA5MGQ1NDM0ZDAzODMxYiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNZWdha2xvb24iLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWI1OWM0M2Q4ZGJjY2ZkN2VjNmU2Mzk0YjYzMDRiNzBkNGVkMzE1YWRkMDQ5NGVlNzdjNzMzZjQxODE4YzczYSIKICAgIH0KICB9Cn0=";
 	private static final String MAYOR_HEAD_SIGNATURE = "UeEf0Ir81BLTBE0PfVeEtU/6mHUw3xSP7XGcQYN18qlYS6J7qd+bQskaSJQbEHXr+axq2+5aPm/AfGrjNnl9zQn1EucBIwhdRBHnjuJeRY6x9VKEHAtX2gnpnNelU/oP6MKPZ1dUad4iAHQg8BmJR/oQpedvOJDuqdUZowe8WTVFC5qctJQWRIZCX0BWYK1O1xxJx4FZ9LzF++7qWZsVqO+qmOR8R7Xr4jFkF8cdNIRyezgcfhmw3BCqiDDheOzuJzo0l7y9kHR82reHus/JBLGyTy/iqMqlZFgNePEoaOGRgIvROw9oIS4R/19+UABIe0MDD6CSGgsE7VfgWeyCVw3qxmCSAZDHnYuYyH0zpnGQRsmQrx9aTjFXHf6g551MEpx7KGGTMaOm9b7ygOGuVGB/52UXR2W9UU+YtBZoUzDPMeVcM1NQno/fY3rLoSf5PfuaaEpZMlczYpH0DBvApEQ6FBm/XTOPeS5w3a+7UXh/wrjXu5b62rXG4SNZaBZRT76eseX3wZoCGiLYEh+IXfAJxXSKOqmlHmRmv6FGRzMcZpHzr63GqD0jJwpLuUZ54uuMgUtjx/liEZG1pesdUuf0ObRVf+xDxk/iLAiNKRvd6BoP7wVm0CkebDlyPObdKW0Ss+tAhB0y1o4das+n+UjpHUuPM2D/eLZFA01umyw=";
 
 	/**
-	 * True while this menu must not open: the network plugin is installed, so the settings belong to the party and
-	 * the lobby's own menu owns them.  Presence only - M7 TAS keeps no compile-time dependency on it.
+	 * True when the network plugin is installed: settings belong to the party and the lobby menu owns them.
+	 * Presence check only, M7 TAS has no compile-time dependency on it.
 	 */
 	public static boolean suppressed() {
 		return Bukkit.getPluginManager().getPlugin("StradNetworkPlugin") != null;
@@ -62,8 +60,7 @@ public final class SettingsMenu implements Listener {
 		h.inv = inv;
 
 		List<String> diffLore = new ArrayList<>();
-		// The mode's name is Difficulty.displayName(), not a label() switch here: one fewer place to fall out of
-		// sync when a mode is renamed.
+		// Difficulty.displayName(), not a label() switch here: one fewer place to go stale on a rename.
 		for(Difficulty d : Difficulty.values()) diffLore.add(option(d == Difficulty.current(), colour(d), d.displayName()));
 		diffLore.add("");
 		diffLore.add(CYCLE_HINT);
@@ -94,8 +91,8 @@ public final class SettingsMenu implements Listener {
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;
 
-		// Both settings broadcast, exactly as the text command does: they are server-wide, so everybody online
-		// needs to know they moved.  A right-click steps BACK, so three values are reachable in one click either way.
+		// Broadcasts like the text command: server-wide, so everyone online needs to know. Right-click steps back,
+		// so any of three values is one click away.
 		boolean back = e.isRightClick();
 		if(e.getRawSlot() == DIFFICULTY_SLOT) {
 			DungeonSettings.applyDifficulty(back ? Difficulty.toggleBack() : Difficulty.toggle());
@@ -115,12 +112,12 @@ public final class SettingsMenu implements Listener {
 	}
 
 	// ===== helpers =====
-	/** One line of a settings item's option list: the value in force is bold and keeps its colour. */
+	/** One option line: active value is bold and keeps its colour. */
 	private static String option(boolean selected, String colour, String displayName) {
 		return selected ? colour + "<bold>" + displayName : "<dark_gray>" + displayName;
 	}
 
-	/** Presentation only, so it stays a switch here rather than becoming a field on {@link Difficulty}. */
+	/** Presentation only, so a switch here rather than a field on {@link Difficulty}. */
 	private static String colour(Difficulty d) {
 		return switch(d) {
 			case CLASSIC -> "<aqua>";
@@ -184,7 +181,7 @@ public final class SettingsMenu implements Listener {
 		return it;
 	}
 
-	/** Marker holder; the menu has no state of its own, since both values are server-wide globals. */
+	/** Marker holder; no state, both values are server-wide globals. */
 	private static final class Holder implements InventoryHolder {
 		Inventory inv;
 

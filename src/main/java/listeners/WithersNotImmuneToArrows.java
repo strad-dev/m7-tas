@@ -14,10 +14,8 @@ import plugin.Utils;
 
 public class WithersNotImmuneToArrows implements Listener {
 	/**
-	 * Vanilla blocks projectile damage on a "powered" wither (HP <= 50%) and while its
-	 * invulnerability shield is up.  Arrows, including Terminator arrows, should
-	 * damage a vulnerable wither at any HP. Cancel the event preemptively (LOWEST) so
-	 * vanilla never gets to bounce/skip, then apply the damage manually.
+	 * Vanilla blocks projectiles on a powered wither (HP <= 50%) and while its shield is up. Arrows should hit a
+	 * vulnerable wither at any HP, so cancel at LOWEST and apply the damage manually.
 	 */
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onArrowHitWither(ProjectileHitEvent event) {
@@ -25,20 +23,18 @@ public class WithersNotImmuneToArrows implements Listener {
 		if(!(event.getHitEntity() instanceof Wither wither)) return;
 		if(!(arrow.getShooter() instanceof Player p)) return;
 
-		// An arrow that actually takes health off the boss DOES set the aggro target, same as a swing; one that lands
-		// for zero does not.  Damage.deal owns that call - see its javadoc, and note that the shield-up return below
-		// means an arrow on an armoured boss never gets there.
+		// An arrow that takes health off the boss sets the aggro target like a swing; one for zero doesn't. Damage.deal
+		// owns that; an arrow on an armoured boss returns below before reaching it.
 
-		// Shield up (invulnerability ticks active) → bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow
-		// landing on a tick the boss was made vulnerable then re-armored within that same tick, since the live counter
-		// already reads "shielded" because the arrow hit resolves after the start-of-tick boss scans, but the boss
-		// WAS intended vulnerable this tick (a same-tick mage beam would connect). Honor that heartbeat-time intent.
+		// Shield up: bounce, no damage. EXCEPTION: a Terminator/Last Breath arrow on a tick the boss was made
+		// vulnerable then re-armored. The hit resolves after the start-of-tick boss scans so the counter reads
+		// shielded, but a same-tick mage beam would connect, so honour the heartbeat-time intent.
 		if(wither.getInvulnerableTicks() != 0
 				&& !(arrow.getScoreboardTags().contains("TerminatorArrow") && WitherActions.wasMadeVulnerableThisTick(wither))) {
 			return;
 		}
 
-		// Dying wither (any WitherLord): phase the arrow through silently, with no ding, no damage, no pierce loss.
+		// Dying wither (any WitherLord): arrow phases through, no ding, damage or pierce loss.
 		WitherLord activeLord = WitherLord.activeFor(wither);
 		if(activeLord != null && activeLord.isDying()) {
 			event.setCancelled(true);
@@ -46,14 +42,12 @@ public class WithersNotImmuneToArrows implements Listener {
 		}
 
 		event.setCancelled(true);
-		// Clear the spawn-shield counter before damaging: vanilla WitherBoss.hurt() rejects all damage while
-		// invulnerabilityTicks > 0, so on the same-tick-re-armored exception above the hit would otherwise no-op.
-		// A re-armored boss's armorTask re-asserts the shield next tick, so this only lets THIS hit land.
+		// Clear the shield counter first: WitherBoss.hurt() rejects all damage while invulnerabilityTicks > 0, so the
+		// same-tick exception above would no-op. armorTask re-asserts the shield next tick; only THIS hit lands.
 		wither.setInvulnerableTicks(0);
-		// One damage path (MAP.md §7): this used to be Bukkit's no-source wither.damage(), the only route
-		// that reached the boss's clamps, which is exactly the split the unification removed.  The arrow carries
-		// its own stat damage from fire time; the target half resolves here, and the deal Arrows.hit picks calls the
-		// boss's clampDamage explicitly, and notes the aggro target if (and only if) health actually moves.
+		// One damage path (MAP.md §7); this was Bukkit's no-source wither.damage(), once the only route to the
+		// clamps. The arrow carries its stat damage from fire time; the target half resolves here, and Arrows.hit's
+		// deal calls clampDamage and notes aggro only if health moves.
 		damage.Arrows.hit(arrow, p, wither);
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_HIT_PLAYER, 0.75f, 0.79368752611448590621283707774885f);
 

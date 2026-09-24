@@ -4,23 +4,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Minecraft default-font pixel metrics for measuring and centering chat lines. Widths match the vanilla
- * GUI font: each glyph's width plus 1px of inter-character spacing, with bold adding 1px per glyph (except
- * the space). A standard chat box renders {@value #MAX_WIDTH}px wide.
+ * Default-font pixel metrics for measuring and centering chat lines: glyph width plus 1px spacing, bold +1px per
+ * glyph except space. Chat box is {@value #MAX_WIDTH}px wide.
  */
 public final class ChatFont {
 	private ChatFont() {}
 
-	/** Rendered width of a standard (unscaled) chat line. */
+	/** Width of an unscaled chat line. */
 	public static final int MAX_WIDTH = 320;
 
-	/** Wrap threshold for packing lines: a 10px buffer under {@link #MAX_WIDTH} so the client never wraps a line itself. */
+	/** Wrap threshold, 10px under {@link #MAX_WIDTH} so the client never wraps a line itself. */
 	public static final int WRAP_WIDTH = 310;
 
-	/** The legacy section sign (§) that prefixes colour/format codes. */
 	private static final char SECTION_CHAR = '§';
 
-	/** Rendered pixel width of {@code text}.  Skips §-colour and format codes, and accounts for bold (§l, reset by §r or colours). */
+	/** Pixel width of {@code text}. Skips § codes; bold is §l, reset by §r or a colour. */
 	public static int width(String text) {
 		int px = 0;
 		boolean afterCode = false;
@@ -46,11 +44,9 @@ public final class ChatFont {
 	}
 
 	/**
-	 * {@code text} word-wrapped at {@link #WRAP_WIDTH} and each resulting line {@link #centerPad}ed, so a line
-	 * whose rendered width isn't known up front (a player name, a live number) still sits centered instead of
-	 * carrying hardcoded padding. Text short enough for one line comes back as a single entry.
-	 * <p>Measured with {@link #width}, so pass plain text or a legacy §-string; MiniMessage tags would be counted
-	 * as literal characters. A single word wider than {@link #WRAP_WIDTH} gets its own line and overflows it.
+	 * {@code text} wrapped at {@link #WRAP_WIDTH}, each line {@link #centerPad}ed, so text of unknown width (a name, a
+	 * live number) still centres. Pass plain text or a legacy §-string; MiniMessage tags count as characters. A word
+	 * wider than {@link #WRAP_WIDTH} gets its own line and overflows.
 	 */
 	public static List<String> centerLines(String text) {
 		List<String> lines = new ArrayList<>();
@@ -71,7 +67,7 @@ public final class ChatFont {
 		return lines;
 	}
 
-	/** Leading spaces that center {@code text} within {@link #MAX_WIDTH}, then the text. */
+	/** {@code text} with leading spaces that centre it in {@link #MAX_WIDTH}. */
 	public static String centerPad(String text) {
 		int toCompensate = (MAX_WIDTH / 2) - (width(text) / 2);
 		int spaceAdvance = glyphWidth(' ') + 1; // 4px
@@ -82,7 +78,7 @@ public final class ChatFont {
 		return pad + text;
 	}
 
-	/** Base glyph width (without the trailing spacing pixel) of a character in the vanilla font. */
+	/** Glyph width without the spacing pixel. */
 	private static int glyphWidth(char c) {
 		return switch(c) {
 			case 'i', '!', '.', ',', ':', ';', '|', '\'' -> 1;

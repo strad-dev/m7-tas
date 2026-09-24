@@ -3,24 +3,22 @@ package pets;
 import damage.Rarity;
 
 /**
- * The item a pet is holding.  Cosmetic here: it is drawn as the {@code Held Item:} block at the bottom of a pet's
- * lore and nothing reads it back, because {@code damage/Pet}'s figures already have it applied (MAP.md §1.13).
- * It exists so the menu shows the same pets the owner actually runs.
+ * Pet's held item. Cosmetic: drawn as the {@code Held Item:} block at the bottom of the lore, nothing reads it
+ * back, since {@code damage/Pet}'s figures already include it (MAP.md §1.13). Exists so the menu shows the pets
+ * the owner actually runs.
  * <p>
- * <b>A held item's rarity is its own, and says nothing about the pet's.</b>  They are two separate tiers printed
- * in two separate places: {@link #colouredName()} colours the {@code Held Item:} line, and the pet's own
- * {@link PetType#rarity()} colours its name and its footer.  A MYTHIC Black Cat holding an EPIC Unalloyed Speed
- * is the normal case, not a mismatch to reconcile.
+ * Held item rarity is its own, separate from the pet's: {@link #colouredName()} colours the {@code Held Item:}
+ * line, {@link PetType#rarity()} colours the pet name and footer. MYTHIC Black Cat with EPIC Unalloyed Speed is
+ * normal.
  * <p>
- * The relic is on four of the five pets, and its +50% is <b>already baked into</b> the numbers in
- * {@code damage/Pet}: the Crow's +225 Intelligence is 150 x 1.5, the Ender Dragon's +90 Crit Damage is 60 x 1.5.
- * Unalloyed Speed is the exception and multiplies nothing - it raises a speed CAP, which this plugin does not
- * model at all - so the Black Cat's +100 Intelligence is its raw level-100 figure.
+ * Relic is on four of five pets and its +50% is already baked into {@code damage/Pet}: Crow's +225 Intelligence
+ * is 150 x 1.5, Ender Dragon's +90 Crit Damage is 60 x 1.5. Unalloyed Speed multiplies nothing (raises a speed
+ * cap, not modelled), so Black Cat's +100 Intelligence is its raw level-100 figure.
  */
 public enum HeldPetItem {
-	/** What the four stat pets hold.  The +50% is already inside every figure in {@code damage/Pet}. */
+	/** Held by the four stat pets. +50% is already in every {@code damage/Pet} figure. */
 	HEPHAESTUS_RELIC("Hephaestus Relic", Rarity.LEGENDARY, "Increases all pet stats by 50%."),
-	/** The Black Cat's.  Raises the speed CAP by 50 on top of the pet's own +100, and boosts no stat. */
+	/** Black Cat's. Raises speed cap by 50 on top of the pet's +100, boosts no stat. */
 	UNALLOYED_SPEED("Unalloyed Speed", Rarity.EPIC, "Grants +50 Max Speed Cap.");
 
 	private final String displayName;
@@ -33,12 +31,12 @@ public enum HeldPetItem {
 		this.effect = effect;
 	}
 
-	/** The item's name line, in ITS OWN rarity's colour - the same rule {@code items.Item.colouredName} follows. */
+	/** Name line in the item's own rarity colour, same rule as {@code items.Item.colouredName}. */
 	public String colouredName() {
 		return "<" + rarity.colour() + ">" + displayName;
 	}
 
-	/** The one line under the name: what the item does. */
+	/** Line under the name: what the item does. */
 	public String effect() {
 		return effect;
 	}

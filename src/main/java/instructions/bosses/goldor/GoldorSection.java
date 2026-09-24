@@ -7,7 +7,7 @@ public final class GoldorSection {
 	public final List<GoldorTerminal> terminals;
 	public final GoldorDevice device;
 	public final List<GoldorLever> levers;
-	/** S1..S3 have a gate; S4 has none (core gate is handled separately by Goldor). */
+	/** S1..S3 only; Goldor handles S4's core gate separately. */
 	public final GoldorGate gate;
 	public final int totalItems;
 
@@ -21,9 +21,8 @@ public final class GoldorSection {
 		this.levers = levers;
 		this.gate = gate;
 		this.totalItems = terminals.size() + 1 + levers.size();
-		// Here, not in GoldorTerminal: "at most one terminal of each puzzle type per section" is a property of the
-		// whole set, and this constructor is the one place that sees all of a section's terminals at once.  Every
-		// buildS1..buildS4 funnels through it, so no builder can forget.
+		// Here, not in GoldorTerminal: "at most one of each type per section" needs the whole set, and every
+		// buildS1..buildS4 funnels through this constructor, so no builder can forget.
 		GoldorTerminalGui.assignTypes(terminals);
 	}
 

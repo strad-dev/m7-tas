@@ -10,8 +10,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Spirit Mask.  A worn cheat-death: 30s cooldown, 3s immune.  It cannot compete with Bonzo's Mask, since
- * both are helmets and a player wears one hat; precedence between the savers is
+ * Worn cheat-death: 30s cooldown, 3s immune. Never competes with Bonzo's Mask (one helmet); saver precedence is
  * {@code CheatDeath.Saver}'s declaration order.
  */
 public final class SpiritMask implements Wearable {

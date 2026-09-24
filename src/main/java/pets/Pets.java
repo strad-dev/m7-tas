@@ -25,26 +25,22 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Who has which pet out, where their pets sit in the menu, and their autopet rules - the whole of realistic mode's
- * pet state, in memory and on disk.
+ * Who has which pet out, menu layout, autopet rules: all of realistic mode's pet state, in memory and on disk.
  *
  * <h2>The damage pipeline's entry point</h2>
- * {@link #equippedDamagePet(Player)} is what {@code damage/Pet.forPlayer} calls the moment
- * {@link Difficulty#manualPets()} is on, and it runs <b>per stat aggregate</b> - several times a swing.  So it is
- * a map read: the file is loaded once per player (on join, or on the first miss) and everything after that is
- * {@link #CACHE}.  Nothing in this class may ever touch the disk on a read path.
+ * {@code damage/Pet.forPlayer} calls {@link #equippedDamagePet(Player)} whenever {@link Difficulty#manualPets()}
+ * is on, <b>per stat aggregate</b> (several times a swing). So it's a map read: the file loads once per player
+ * (join or first miss), then {@link #CACHE}. Nothing here may touch disk on a read path.
  *
  * <h2>Its own file, on purpose</h2>
- * This writes {@code <data>/pets/&lt;uuid&gt;.json}, resolved through {@link Catalog#dataDir()} exactly as
- * {@code loadout/Loadouts} resolves {@code loadouts/<uuid>.json}.  <b>It must not be a few extra fields on the
- * loadout file.</b>  That file is one of only two in the shared data folder with two writers - this plugin and
- * StradDevHub - and the workspace CLAUDE.md is explicit about what that costs: StradDevHub deserialises the
- * loadout file into its own twin of {@code LoadoutFile}, which has no pet fields, so the next write it makes in
- * the lobby drops them silently.  A separate file only M7 knows about has one writer and cannot lose anything.
+ * Writes {@code <data>/pets/&lt;uuid&gt;.json} via {@link Catalog#dataDir()}, like {@code loadout/Loadouts}.
+ * <b>Must not be extra fields on the loadout file</b>: StradDevHub reads that into its own twin
+ * {@code LoadoutFile} with no pet fields, so its next lobby write would silently drop them. StradDevHub's
+ * {@code pets/PetLayouts} does write this file too, but edits the raw JSON tree and keeps members it didn't touch.
  *
  * <h2>Every mutator saves</h2>
- * A pet choice is worth exactly one small file write, and the alternative (save on quit) loses the lot to a crash
- * or a {@code /stop} that outruns the handler.  Writes are temp+rename, like {@code Loadouts.save}.
+ * One small write per choice; save-on-quit loses everything to a crash or a {@code /stop} that outruns the
+ * handler. Writes are temp+rename, like {@code Loadouts.save}.
  */
 public final class Pets {
 	private Pets() {}
@@ -52,42 +48,36 @@ public final class Pets {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
 	/**
-	 * What a player has out before they have ever opened the menu.
-	 * <p>
-	 * The Golden Dragon, which is also what the ASSUMED table in {@code damage/Pet.forPlayer} falls through to.
-	 * So turning realistic mode on changes nobody's damage until they actually pick something, which is the only
-	 * default that cannot surprise a player mid-run.
+	 * Pet out before the menu is ever opened. Golden Dragon, same as the assumed fallthrough in
+	 * {@code damage/Pet.forPlayer}, so switching to realistic changes nobody's damage until they pick.
 	 */
 	public static final PetType DEFAULT_PET = PetType.GOLDEN_DRAGON;
 
-	/** Loaded profiles, keyed on player uuid.  The only thing any read path is allowed to consult. */
+	/** Loaded profiles by uuid. The only thing a read path may consult. */
 	private static final Map<UUID, Profile> CACHE = new HashMap<>();
 
 	/**
-	 * One player's pet state.  Mutable and owned by {@link Pets}: everything that changes it goes through a
-	 * setter here, so there is exactly one place that also writes the file and drops the stat cache.
+	 * One player's pet state. Mutable, owned by {@link Pets}: every change goes through a setter here, the one
+	 * place that also writes the file and drops the stat cache.
 	 */
 	public static final class Profile {
-		/** Menu slot -> the pet sitting in it.  Every {@link PetType} appears at most once. */
+		/** Menu slot -> pet. Each {@link PetType} at most once. */
 		final Map<Integer, PetType> layout = new LinkedHashMap<>();
-		/** The pet that is out.  Never null once the profile exists. */
+		/** Pet that is out. Never null. */
 		PetType equipped = DEFAULT_PET;
 		/**
-		 * The pet a run BEGINS with - the loadout editor's slot 51.  Never null.
+		 * Pet a run BEGINS with, the loadout editor's slot 51. Never null.
 		 * <p>
-		 * <b>Deliberately not {@link #equipped}.</b>  That field is live state: {@code /pets} moves it, and so
-		 * does every autopet rule that fires during a run, so a "starting pet" stored there was whatever the
-		 * last run happened to leave out and changed under the player every time they looked at it.  This one
-		 * is a preference and only slot 51 writes it.
+		 * <b>Not {@link #equipped} on purpose.</b> That's live state moved by {@code /pets} and every autopet rule,
+		 * so a starting pet stored there was whatever the last run left out. This is a preference; only slot 51
+		 * writes it.
 		 */
 		PetType startingPet = DEFAULT_PET;
-		/** Per-trigger autopet rules.  An absent trigger is off, the same as a rule with a null pet. */
+		/** Per-trigger rules. Absent is off, same as a null-pet rule. */
 		final EnumMap<Autopet.Trigger, Autopet.Rule> rules = new EnumMap<>(Autopet.Trigger.class);
 		/**
-		 * The Rod Swap cycle, in order.  Empty is off.
-		 * <p>
-		 * <b>Repeats are legal.</b>  [Golden Dragon, Crow, Golden Dragon, Phoenix] is a four-throw rotation, not
-		 * a three-pet one with a mistake in it, so this is a List and nothing anywhere dedupes it.
+		 * Rod Swap cycle in order. Empty is off. <b>Repeats are legal</b>: [Golden Dragon, Crow, Golden Dragon,
+		 * Phoenix] is a four-throw rotation, so a List and nothing dedupes it.
 		 */
 		final List<PetType> rodCycle = new ArrayList<>();
 	}
@@ -95,45 +85,44 @@ public final class Pets {
 	// ==================== reads ====================
 
 	/**
-	 * Which {@link Pet} this player has out, for the damage pipeline.  <b>Never null</b>: a null here would NPE
-	 * every stat aggregate, so a player with no file, an unreadable file or a file naming a deleted pet all get
-	 * {@link #DEFAULT_PET}.
+	 * {@link Pet} out, for the damage pipeline. <b>Never null</b> (would NPE every stat aggregate): no file, bad
+	 * file or a deleted pet all give {@link #DEFAULT_PET}.
 	 */
 	public static Pet equippedDamagePet(Player p) {
 		return equipped(p).pet();
 	}
 
-	/** Which pet this player has out.  Never null. */
+	/** Pet out. Never null. */
 	public static PetType equipped(Player p) {
 		return p == null ? DEFAULT_PET : profile(p.getUniqueId()).equipped;
 	}
 
-	/** The pet this player's runs begin with.  Never null - a missing or unreadable file is {@link #DEFAULT_PET}. */
+	/** Pet runs begin with. Never null; missing or bad file is {@link #DEFAULT_PET}. */
 	public static PetType startingPet(Player p) {
 		return p == null ? DEFAULT_PET : profile(p.getUniqueId()).startingPet;
 	}
 
 	/**
-	 * The active pet's action-bar segment, {@code " | [Lvl N] Name"}, appended by {@code Utils.sendActionBar} and
-	 * drawn by {@code death/Deaths}' fallback when no HUD owns the bar.  <b>Realistic only</b>: every other mode
-	 * assumes the pet, so there is no "active pet" to show.  Spectators get nothing, since they are not in the run.
+	 * Action-bar segment {@code " | [Lvl N] Name"}, appended by {@code Utils.sendActionBar} and drawn by
+	 * {@code death/Deaths}' fallback when no HUD owns the bar. <b>Realistic only</b>, other modes assume the pet.
+	 * Nothing for spectators.
 	 */
 	public static String actionBarSegment(Player p) {
 		if(!Difficulty.manualPets() || Utils.isSpectator(p)) return "";
 		return Utils.ACTION_BAR_SEPARATOR + equipped(p).colouredName();
 	}
 
-	/** This player's menu layout: slot -> pet.  A live view of the profile, so callers must not mutate it. */
+	/** Menu layout, slot -> pet. Live view, don't mutate. */
 	public static Map<Integer, PetType> layout(Player p) {
 		return profile(p.getUniqueId()).layout;
 	}
 
-	/** This player's rule for one trigger, or null when the trigger is off. */
+	/** Rule for a trigger, or null if off. */
 	public static Autopet.Rule rule(Player p, Autopet.Trigger t) {
 		return profile(p.getUniqueId()).rules.get(t);
 	}
 
-	/** The Rod Swap cycle, in order, repeats and all.  A live view of the profile, so callers must not mutate it. */
+	/** Rod Swap cycle in order, repeats included. Live view, don't mutate. */
 	public static List<PetType> rodCycle(Player p) {
 		return profile(p.getUniqueId()).rodCycle;
 	}
@@ -143,13 +132,12 @@ public final class Pets {
 	/**
 	 * Summon a pet, replacing whatever was out.
 	 * <p>
-	 * <b>This is the one place a pet changes</b>, so it is also the one place that drops the stat cache.  That
-	 * matters because most equips are NOT inventory events: {@code damage/StatListener} invalidates on a click,
-	 * a close, a held-slot change and so on, which covers a click in {@code /pets} but covers none of the four
-	 * autopet triggers.  Without the call below, a rod-swap equip would keep serving the old pet's Strength for
-	 * up to {@code Stats.CACHE_TICKS}, i.e. through the first swing after the swap.
+	 * <b>The one place a pet changes</b>, so the one place that drops the stat cache. Most equips aren't inventory
+	 * events: {@code damage/StatListener} invalidates on click, close, held-slot change etc., covering a
+	 * {@code /pets} click but none of the four autopet triggers. Without it a rod-swap equip serves the old pet's
+	 * Strength for up to {@code Stats.CACHE_TICKS}, through the first swing after.
 	 *
-	 * @return true if the pet actually changed, so a caller can stay quiet when it did not.
+	 * @return true if the pet changed, so the caller can stay quiet otherwise.
 	 */
 	public static boolean equip(Player p, PetType pet, String announcement) {
 		if(p == null || pet == null) return false;
@@ -158,16 +146,15 @@ public final class Pets {
 		prof.equipped = pet;
 		save(p.getUniqueId(), prof);
 		damage.Stats.invalidate(p);
-		// The two travel together: the cache drop fixes what the next HIT is worth, this fixes what the player's
-		// Chimera weapons SAY they are worth.  Both are stale for the same reason and at the same moment.
+		// Goes with the cache drop: that fixes what the next hit is worth, this fixes what Chimera weapons say.
 		damage.StatLore.refreshChimeraLore(p);
-		// The caller owns the whole line except the pet's name, which always renders in the pet's rarity colour.
-		// No punctuation is bolted on here: the old trailing "!" landed inside a sentence autopet does not end with.
+		// Caller owns the line except the pet name (rarity colour). No punctuation added: the old trailing "!"
+		// landed mid-sentence for autopet.
 		if(announcement != null) p.sendMessage(Utils.msg(announcement + pet.colouredName()));
 		return true;
 	}
 
-	/** Set the pet this player's runs begin with.  Nothing else writes it; nothing during a run touches it. */
+	/** Set the starting pet. Nothing else writes it; nothing during a run touches it. */
 	public static void setStartingPet(Player p, PetType pet) {
 		if(p == null || pet == null) return;
 		Profile prof = profile(p.getUniqueId());
@@ -177,27 +164,25 @@ public final class Pets {
 	}
 
 	/**
-	 * Put every player on their starting pet, quietly.  Called from {@code Server.serverInstructions}, i.e. run
-	 * SETUP, for every section.  Not the countdown's end: that left the warp-in on the last run's pet.
-	 * <p>
-	 * <b>Silent.</b>  It is not autopet reacting to something - it is the run being set up, like the kit - and a
-	 * line per player per run start would be noise.  <b>An autopet {@code RUN_START} rule still wins</b>, because
-	 * that fires later (inside the clear branch, once the door opens) and equipping is last-write-wins.
+	 * Put everyone on their starting pet, silently (it's run setup like the kit, not autopet). Called from
+	 * {@code Server.serverInstructions} at SETUP for every section; the countdown's end left the warp-in on the
+	 * last run's pet. <b>An autopet {@code RUN_START} rule still wins</b>: it fires later (door opens) and equip is
+	 * last-write-wins.
 	 */
 	public static void applyStartingPets() {
 		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) applyStartingPet(p);
 	}
 
 	/**
-	 * One player's half of {@link #applyStartingPets}; also {@code PetMenu.onJoin}'s, for someone arriving after
-	 * setup.  Spectators are skipped for the same reason autopet skips them: they are not in the run.
+	 * One player's part of {@link #applyStartingPets}; also used by {@code PetMenu.onJoin} for late arrivals.
+	 * Spectators skipped: not in the run.
 	 */
 	public static void applyStartingPet(Player p) {
 		if(!Difficulty.manualPets() || Utils.isSpectator(p)) return;
 		equip(p, startingPet(p), null);
 	}
 
-	/** Move the layout wholesale (the arranging menu's save).  Slots are not validated here; the menu owns that. */
+	/** Replace the layout (arranging menu's save). Slots not validated here; the menu owns that. */
 	public static void setLayout(Player p, Map<Integer, PetType> layout) {
 		Profile prof = profile(p.getUniqueId());
 		prof.layout.clear();
@@ -230,10 +215,8 @@ public final class Pets {
 	// ==================== the default layout ====================
 
 	/**
-	 * The five pets on the first five valid slots, ascending: 10, 11, 12, 13, 14.
-	 * <p>
-	 * Derived from {@link PetMenu#petSlots()} rather than written out, so moving a filler pane moves the defaults
-	 * with it instead of leaving a pet on a slot the menu no longer treats as one.
+	 * Five pets on the first five valid slots: 10-14. Derived from {@link PetMenu#petSlots()} so moving a pane moves
+	 * the defaults too.
 	 */
 	static Map<Integer, PetType> defaultLayout() {
 		Map<Integer, PetType> out = new LinkedHashMap<>();
@@ -246,22 +229,20 @@ public final class Pets {
 	// ==================== lifecycle ====================
 
 	/**
-	 * Load a player's file into the cache.  Called on join so the damage path never has to.
-	 * <p>
-	 * {@link #profile} loads on a miss anyway, so this is an optimisation and not a correctness requirement - but
-	 * the miss path is reachable from inside a damage calculation, and a disk read there is exactly what the
-	 * "map read, not a file read" contract in {@code Pet.forPlayer} promises will not happen.
+	 * Load a player's file into the cache on join so the damage path never has to. {@link #profile} loads on a
+	 * miss anyway, but that miss is reachable mid damage calc, breaking {@code Pet.forPlayer}'s "map read, not
+	 * file read" contract.
 	 */
 	public static void preload(UUID uuid) {
 		profile(uuid);
 	}
 
-	/** Drop a player's profile on quit.  Already saved: every mutator writes, so there is nothing to flush. */
+	/** Drop profile on quit. Every mutator already saved, nothing to flush. */
 	public static void unload(UUID uuid) {
 		CACHE.remove(uuid);
 	}
 
-	/** Forget every loaded profile.  Plugin disable only; the files are already current. */
+	/** Forget all profiles. Plugin disable only; files are current. */
 	public static void clearCache() {
 		CACHE.clear();
 	}
@@ -297,10 +278,9 @@ public final class Pets {
 			prof.layout.putAll(defaultLayout());
 			return prof;
 		}
-		// Every field is parsed defensively and a value that no longer resolves is DROPPED, not defaulted: a file
-		// written before a pet was renamed must come back as "that slot is empty", never as a different pet.  The
-		// slot is checked against the menu's own list too, since a file written before a pane moved could name a
-		// square the menu no longer draws, which would hide that pet with no way to get it back.
+		// Values that no longer resolve are DROPPED, not defaulted: a pre-rename file must read as an empty slot,
+		// never a different pet. Slots are checked against the menu's list too: a pre-pane-move file could name a
+		// square the menu no longer draws, hiding that pet for good.
 		if(f.layout != null) {
 			for(Map.Entry<String, String> e : f.layout.entrySet()) {
 				PetType pet = PetType.parse(e.getValue());
@@ -309,10 +289,9 @@ public final class Pets {
 				if(!prof.layout.containsValue(pet)) prof.layout.put(slot, pet);
 			}
 		}
-		// A file that resolved to nothing (empty, or every pet in it deleted) is indistinguishable from a first
-		// open, and the menu has to show every pet either way.
+		// Resolved to nothing (empty, or all pets deleted): same as a first open.
 		if(prof.layout.isEmpty()) prof.layout.putAll(defaultLayout());
-		// A pet missing from the layout still needs a home, or it would be unreachable until a reset.
+		// A pet missing from the layout needs a home or it's unreachable until a reset.
 		for(PetType pet : PetType.values()) if(!prof.layout.containsValue(pet)) placeInFirstFree(prof.layout, pet);
 
 		PetType equipped = PetType.parse(f.equipped);
@@ -328,9 +307,8 @@ public final class Pets {
 				if(!rule.isOff()) prof.rules.put(t, rule);
 			}
 		}
-		// REPEATS ARE KEPT.  This used to drop a pet already in the cycle, back when the menu could only append
-		// each pet once; the cycle editor now allows any pet at any position, so a filter here would silently
-		// shorten a saved rotation the first time it was loaded.
+		// REPEATS ARE KEPT. This used to drop duplicates when the menu appended each pet once; the editor now
+		// allows repeats, so a filter would silently shorten a saved rotation on load.
 		if(f.rodCycle != null) {
 			for(String name : f.rodCycle) {
 				PetType pet = PetType.parse(name);
@@ -341,16 +319,14 @@ public final class Pets {
 	}
 
 	/**
-	 * One saved rule's exceptions, folding the pre-list scalar field in.
+	 * A saved rule's exceptions, folding in the pre-list scalar field.
 	 * <p>
-	 * <b>The old {@code exception} field is read forever.</b>  Rules were a single optional exception before the
-	 * list, and a file written by that jar is still a valid file - the player never did anything wrong, and a
-	 * backup or a rolled-back server can hand one over at any time, which is the same reason StradDevHub's
-	 * {@code m7/lb/Leaderboards} keeps its own migrations permanently.  It costs one null check per rule.
+	 * <b>Old {@code exception} field is read forever.</b> Rules had one optional exception before the list, and
+	 * a backup or rolled-back server can hand over such a file any time (same reason StradDevHub's
+	 * {@code m7/lb/Leaderboards} keeps its migrations). Costs one null check per rule.
 	 * <p>
-	 * Nothing writes it again: {@link #save} leaves it null, Gson omits a null field, so the first save after a
-	 * load moves the value into {@code exceptions} and the old key disappears on its own.  {@code Autopet.Rule}'s
-	 * constructor dedupes, so folding a value that is already in the list is harmless.
+	 * Never written again: {@link #save} leaves it null and Gson omits nulls, so the first save moves it into
+	 * {@code exceptions}. {@code Autopet.Rule} dedupes, so folding a value already in the list is harmless.
 	 */
 	private static List<PetType> readExceptions(RuleEntry entry) {
 		List<PetType> out = new ArrayList<>();
@@ -365,7 +341,7 @@ public final class Pets {
 		return out;
 	}
 
-	/** Put a pet on the lowest valid slot nothing else occupies.  There are 28 slots and five pets, so one exists. */
+	/** Put a pet on the lowest free valid slot. 28 slots, five pets, so one exists. */
 	static void placeInFirstFree(Map<Integer, PetType> layout, PetType pet) {
 		for(int slot : PetMenu.petSlots()) {
 			if(!layout.containsKey(slot)) {
@@ -393,8 +369,7 @@ public final class Pets {
 		for(Map.Entry<Autopet.Trigger, Autopet.Rule> e : prof.rules.entrySet()) {
 			RuleEntry entry = new RuleEntry();
 			entry.pet = e.getValue().pet() == null ? null : e.getValue().pet().name();
-			// entry.exception is left null on purpose - see readExceptions.  Gson omits a null field, so the
-			// pre-list key vanishes from the file the first time the rule is saved, and never comes back.
+			// entry.exception left null on purpose, see readExceptions.
 			entry.exceptions = new ArrayList<>();
 			for(PetType except : e.getValue().exceptions()) entry.exceptions.add(except.name());
 			f.autopet.put(e.getKey().name(), entry);
@@ -421,22 +396,21 @@ public final class Pets {
 	}
 
 	/**
-	 * On-disk shape.  Enum NAMES, not ordinals: reordering {@link PetType} or {@link Autopet.Trigger} must not
-	 * silently repoint everybody's saved rules at a different pet.
+	 * On-disk shape. Enum NAMES, not ordinals, so reordering {@link PetType} or {@link Autopet.Trigger} doesn't
+	 * repoint saved rules.
 	 */
 	private static final class PetsFile {
 		Map<String, String> layout;
 		String equipped;
-		/** The pet a run begins with. Absent on a file written before slot 51 existed, which reads as the default. */
+		/** Starting pet. Absent in files from before slot 51, reads as the default. */
 		String startingPet;
 		Map<String, RuleEntry> autopet;
 		List<String> rodCycle;
 	}
 
 	/**
-	 * One rule on disk.  {@code exception} is the PRE-LIST field and is read-only: {@link #readExceptions} folds
-	 * it into {@code exceptions} and {@link #save} never writes it again.  Deleting it would turn every rule in
-	 * a file older than the list into "no exception" without a word.
+	 * One rule on disk. {@code exception} is the PRE-LIST field, read-only: {@link #readExceptions} folds it into
+	 * {@code exceptions}, {@link #save} never writes it. Deleting it silently turns every old rule into "no exception".
 	 */
 	private static final class RuleEntry {
 		String pet;

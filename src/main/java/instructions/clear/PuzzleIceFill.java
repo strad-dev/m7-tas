@@ -10,12 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Interactive Ice Fill puzzle (grid 1,4). Three ice levels at y=69/70/71. For the active level the player must
- * turn every ice block to packed ice by walking a single continuous stroke, with no diagonal moves and no doubling
- * back onto a frozen block, and no jumping to a non-adjacent block. Any violation breaks that level's layer and
- * resets it after 60 ticks. Completing all three levels → {@link ClearManager#puzzleSolved} (green check) and
- * reveals the two reward chests via {@link Server#openIceFillRewards()} (the Power-V blessings are claimed by
- * opening those chests, not automatically).
+ * Ice Fill puzzle (grid 1,4). Three levels at y=69/70/71; the player freezes every ice block of the active level
+ * in one continuous stroke: no diagonals, no doubling back, no skipping. A violation breaks the layer and resets
+ * it after 60 ticks. All three done → {@link ClearManager#puzzleSolved} (green check) and
+ * {@link Server#openIceFillRewards()} reveals the two reward chests; their Power-V blessings are claimed by
+ * opening them.
  */
 public final class PuzzleIceFill {
 	private PuzzleIceFill() {
@@ -24,7 +23,7 @@ public final class PuzzleIceFill {
 	private static final int[] LEVEL_Y = {69, 70, 71};
 	private static final int RESET_TICKS = 60;
 
-	// Strict per-layer bounding boxes {minX, minZ, maxX, maxZ, y}.  Only ice within these is part of each layer.
+	// Per-layer boxes {minX, minZ, maxX, maxZ, y}. Only ice inside counts.
 	private static final int[][] LAYER_BOX = {
 			{-52, -154, -49, -152, 69}, // layer 1
 			{-59, -155, -54, -151, 70}, // layer 2
@@ -115,12 +114,12 @@ public final class PuzzleIceFill {
 		below.setType(Material.PACKED_ICE, false);
 		previous = here;
 		frozenCount++;
-		Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f); // the existing ice-fill freeze sound
+		Utils.playGlobalSound(Sound.BLOCK_SNOW_BREAK, 2.0f, 1.0f);
 		if(frozenCount >= levels[currentLevel].size()) levelComplete(p);
 	}
 
 	private static void levelComplete(Player p) {
-		Server.IceFill.playIceFillSounds(currentLevel + 1, p); // the tritone from the old section (level 1/2/3)
+		Server.IceFill.playIceFillSounds(currentLevel + 1, p); // per-level tritone
 		currentLevel++;
 		previous = null;
 		frozenCount = 0;
@@ -130,7 +129,7 @@ public final class PuzzleIceFill {
 			solved = true;
 			Server.openIceFillRewards();
 			ClearManager.puzzleSolved(Rooms.ICE_FILL, p); // green check (reward chests are opened by hand)
-			// Gate-opening sound: pressure-plate click, 9 times over 40 ticks (every 5t) to the completer.
+			// Gate-opening sound: pressure-plate click every 5t for 40t, to the completer.
 			for(int t = 0; t <= 40; t += 5) {
 				Utils.scheduleTask(() -> Utils.playLocalSound(p, Sound.BLOCK_WOODEN_PRESSURE_PLATE_CLICK_ON, 2.0f, 0.5f), t);
 			}

@@ -6,21 +6,15 @@ import org.bukkit.event.block.Action;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * One click, as the dispatcher resolved it, handed to an {@link AbilityItem}'s hook.
- * <p>
- * Everything an ability used to re-read for itself is captured here, which matters because the same physical
- * click reaches the dispatcher twice (see {@code CustomItems.RIGHT_CLICK_GATE_TICKS}) and because an ability that
- * teleports its caster must not then look up "the block I am aiming at" a second time.
+ * One resolved click, handed to an {@link AbilityItem} hook. Captured once because one physical click reaches the
+ * dispatcher twice ({@code CustomItems.RIGHT_CLICK_GATE_TICKS}) and a teleporting ability must not re-look-up its
+ * target block afterwards.
  *
- * @param player       who clicked
- * @param stack        the main-hand stack this ability was resolved from
- * @param clickedBlock the block VANILLA reported the click landed on ({@code PlayerInteractEvent.getClickedBlock}
- *                     or {@code ServerboundPlayerActionPacket.getPos}), or null for an air click, an entity
- *                     interaction, or a fake-player dispatch.  An ability that acts on a block uses this instead
- *                     of ray-tracing a reach of its own, so its range is exactly vanilla's interaction range and
- *                     its target is exactly the block the client aimed at.
- * @param action       the Bukkit action, for the handful of abilities that behave differently per click side
- * @param tick         {@code MinecraftServer.currentTick} at dispatch, so every hook in one click agrees on it
+ * @param stack        main-hand stack the ability was resolved from
+ * @param clickedBlock block VANILLA reported ({@code getClickedBlock} or {@code ServerboundPlayerActionPacket.getPos}),
+ *                     null for air, entity or fake-player clicks. Block abilities use this instead of their own ray
+ *                     trace, so range is exactly vanilla's and the target is what the client aimed at.
+ * @param tick         {@code MinecraftServer.currentTick} at dispatch, so every hook in one click agrees
  */
 public record Cast(Player player, ItemStack stack, Block clickedBlock, Action action, int tick) {
 

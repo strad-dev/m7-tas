@@ -28,14 +28,13 @@ public class TabCompletor implements TabCompleter {
 					String input = args[0].toLowerCase();
 
 					for(String section : sections) {
-						// Check if the section starts with the input
 						if(section.toLowerCase().startsWith(input)) {
 							completions.add(section);
 						}
 					}
 				} else if(args.length >= 2) {
-					// /m7practice <section> [--no-teleport] [<delayTicks>] [<mode>]: every arg is
-					// order-independent (see Practice), so suggest whichever hasn't been typed yet.
+					// /m7practice <section> [--no-teleport] [<delayTicks>] [<mode>]: args are order-independent
+					// (see Practice), so suggest whichever isn't typed yet.
 					String input = args[args.length - 1].toLowerCase();
 					boolean hasNoTeleport = false, hasDelay = false, hasMode = false;
 					for(int i = 1; i < args.length - 1; i++) {
@@ -47,13 +46,13 @@ public class TabCompletor implements TabCompleter {
 						completions.add("--no-teleport");
 					}
 					if(!hasDelay) {
-						// Pre-run "get into position" delay in ticks: default 60 (3s); network warp-in uses 400 (20s).
+						// Pre-run delay in ticks: default 60 (3s); network warp-in uses 400 (20s).
 						for(String preset : new String[]{"60", "100", "200", "400"}) {
 							if(preset.startsWith(input)) completions.add(preset);
 						}
 					}
 					if(!hasMode) {
-						// commandName, not id: we teach the spelling the FAQ and the settings lines use.
+						// commandName, not id: it's the spelling the FAQ and settings lines use.
 						for(damage.Difficulty d : damage.Difficulty.values()) {
 							if(d.commandName().startsWith(input)) completions.add(d.commandName());
 						}
@@ -95,7 +94,7 @@ public class TabCompletor implements TabCompleter {
 						if(setting.startsWith(args[0].toLowerCase())) completions.add(setting);
 					}
 				} else if(args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
-					// Read off the enum, never a literal list, so a new mode can't become executable-but-unlistable.
+					// Off the enum, not a literal list, so a new mode can't be executable but unlistable.
 					for(damage.Difficulty d : damage.Difficulty.values()) {
 						if(d.commandName().startsWith(args[1].toLowerCase())) completions.add(d.commandName());
 					}

@@ -2,16 +2,15 @@ package items;
 
 import org.bukkit.entity.Player;
 
-/** An item whose right-click opens a GUI: the Infinileap's Spirit Leap menu, and the SkyBlock Menu. */
+/** Right-click opens a GUI: Infinileap (Spirit Leap) and SkyBlock Menu. */
 public interface MenuItem extends Item {
 
-	/** Open this item's menu.  Called only once the caller has decided the menu is available. */
+	/** Only called once the caller has decided the menu is available. */
 	void open(Player p);
 
 	/**
-	 * Whether vanilla's own use of this stack must be suppressed outright.  True for the Infinileap: it IS an
-	 * ender pearl, and leaping goes through {@code Actions.leap}, so the pearl must never be thrown - which
-	 * {@code listeners/PearlHelper} enforces as a hard backstop on top of the interact cancel.
+	 * Suppress vanilla use outright. The Infinileap IS an ender pearl and leaps via {@code Actions.leap}, so it must
+	 * never be thrown; {@code listeners/PearlHelper} backstops the interact cancel.
 	 */
 	default boolean blocksVanillaUse() {
 		return true;

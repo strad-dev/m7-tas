@@ -18,10 +18,9 @@ public class PearlHelper implements Listener {
 		if (!(e.getEntity() instanceof EnderPearl pearl)) return;
 		if (!(e.getEntity().getShooter() instanceof Player p)) return;
 
-		// The Infinileap IS an ender pearl item and must never be thrown, since leaping is done by Actions.leap
-		// directly.  Normally handleCustomItems cancels the interact event first; this is the hard backstop for
-		// any use path that slips through, and it asks the ITEM (items.MenuItem.blocksVanillaUse) rather than
-		// naming it, so a second pearl-shaped menu item is covered without touching this file.
+		// The Infinileap IS an ender pearl and must never be thrown; Actions.leap does the leap. handleCustomItems
+		// normally cancels first; this is the backstop, and it asks the item (items.MenuItem.blocksVanillaUse) so
+		// any other pearl-shaped menu item is covered too.
 		items.Item held = items.ItemRegistry.of(p.getInventory().getItemInMainHand());
 		if(held instanceof items.MenuItem menu && menu.blocksVanillaUse()) {
 			e.setCancelled(true);
@@ -42,7 +41,7 @@ public class PearlHelper implements Listener {
 			Location l;
 			if(e.getHitBlock() != null && e.getHitBlockFace() != null) {
 				BlockFace face = e.getHitBlockFace();
-				// When a pearl is thrown from inside a block, Bukkit inverts the face, so use velocity instead
+				// Thrown from inside a block, Bukkit inverts the face, so use velocity instead
 				if(!p.getEyeLocation().getBlock().isPassable()) {
 					Vector vel = pearl.getVelocity();
 					double absX = Math.abs(vel.getX()), absY = Math.abs(vel.getY()), absZ = Math.abs(vel.getZ());
@@ -55,17 +54,17 @@ public class PearlHelper implements Listener {
 					}
 				}
 				if(face == BlockFace.UP) {
-					// Top face: teleport above the hit block
+					// Top face: above the hit block
 					l = e.getHitBlock().getRelative(BlockFace.UP).getLocation().add(0.5, 0, 0.5);
 				} else if(face == BlockFace.DOWN) {
-					// Bottom face: teleport to the hit block's Y position
+					// Bottom face: the hit block's Y
 					l = e.getHitBlock().getLocation().add(0.5, 0, 0.5);
 				} else {
-					// Side face: teleport to the adjacent air block
+					// Side face: the adjacent air block
 					l = e.getHitBlock().getRelative(face).getLocation().add(0.5, 0, 0.5);
 				}
 			} else {
-				// Entity hit or unknown, so use the pearl location floored
+				// Entity hit or unknown: pearl location, floored
 				l = pearl.getLocation();
 				l.setX(Math.floor(l.getX()) + 0.5);
 				l.setY(Math.ceil(l.getY()));

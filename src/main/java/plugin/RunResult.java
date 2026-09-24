@@ -11,98 +11,84 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A snapshot of everything measurable about a finished /m7practice run, attached to {@link RunCompleteEvent}.
+ * Facts about a finished /m7practice run (ticks, score, who was there), attached to {@link RunCompleteEvent}. Knows
+ * nothing about leaderboards or categories; that's the listener's business, so M7 stays standalone. A listener
+ * that won't compile against this can read {@link #toJson()} with one reflective call.
  * <br>
- * This is M7 TAS reporting FACTS about the run: ticks, score, who was there.  It deliberately knows nothing
- * about leaderboards, categories or group sizes: deciding which boards a run qualifies for is the listening
- * plugin's business. M7 TAS stays standalone (nothing here reaches outside the plugin), and a listener that
- * doesn't want to compile against this class can read {@link #toJson()} through one reflective call.
- * <br>
- * All ticks are server ticks (20/s). "Overall" ticks are relative to the run's t=0
- * ({@link Utils#runTick()}); phase durations are relative to their own boss's start ({@link Utils#phaseTick()}).
- * A {@code null} Integer means "not reached this run", e.g. every clear milestone is null for a boss-only
- * practice, and {@code witherKing} is null for a run that stopped at Necron.
+ * Server ticks (20/s). "Overall" ticks are from the run's t=0 ({@link Utils#runTick()}); phase durations from their
+ * boss's start ({@link Utils#phaseTick()}). A {@code null} Integer means not reached, e.g. clear milestones on a
+ * boss-only practice.
  */
 public final class RunResult {
 	private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
 
-	/** The section /m7practice was invoked with: all, clear, boss, maxor, storm, goldor, necron, witherking. */
+	/** /m7practice section: all, clear, boss, maxor, storm, goldor, necron, witherking. */
 	public String section;
 
-	/** Unique id for this run, identical across every report it makes (see {@link WitherActions#runId()}). */
+	/** Same across every report this run makes ({@link WitherActions#runId()}). */
 	public String runId;
 
-	/** False only for a run that ended in failure (enraged Storm with no pillars left). */
+	/** False only for a failed run (enraged Storm with no pillars left). */
 	public boolean success;
 
 	/**
-	 * The damage difficulty this run was set under, as {@code Difficulty.id()}: {@code classic},
-	 * {@code perfect_rng} or {@code rta} (MAP.md §0).
+	 * {@code Difficulty.id()}: {@code classic}, {@code perfect_rng} or {@code rta} (MAP.md §0).
 	 * <p>
-	 * <b>Times from the three modes are not comparable</b> - a live mode pays for maintaining four debuffs and for
-	 * however many blessings the party actually collected, and Realistic pays again for the puzzles and the pet -
-	 * so anything recording this run has to key on it.  On the network that means the leaderboard key gains a
-	 * third component, {@code category|groupSize|difficulty}, with legacy 2-part keys migrated to {@code classic}:
-	 * every run recorded before the split was set under the hand-tuned damage that classic mode reproduces.
+	 * Times across modes aren't comparable (live modes maintain four debuffs and depend on blessings collected;
+	 * Realistic adds puzzles and the pet), so records key on it. The network's board key is
+	 * {@code category|groupSize|difficulty}; legacy 2-part keys migrate to {@code classic}, which reproduces the old
+	 * hand-tuned damage.
 	 * <p>
-	 * <b>Realistic writes {@code rta}, not {@code realistic}.</b>  {@code realistic} is already on disk as the id
-	 * of every run recorded under what is now Perfect RNG, so reusing it would make two different modes share one
-	 * board key; the network's {@code Leaderboards} rewrites those old keys once, by raw string.
+	 * Realistic writes {@code rta}: {@code realistic} is already on disk for runs under what is now Perfect RNG. The
+	 * network's {@code Leaderboards} rewrites those old keys once, by raw string.
 	 */
 	public String difficulty;
 
 	/**
-	 * The mayor the run was set under: {@code paul}, {@code derpy} or {@code other} ({@code damage/Mayor}).  Paul
-	 * gives the EZPZ +10 bonus score and boosted blessings; Derpy gives neither and puts every mob on double
-	 * health; other gives neither and leaves health alone.
+	 * {@code paul}, {@code derpy} or {@code other} ({@code damage/Mayor}). Paul: EZPZ +10 score and boosted
+	 * blessings. Derpy: neither, and double mob HP. Other: neither.
 	 * <p>
-	 * Reported for the same reason as {@link #difficulty} - <b>times under different mayors are not
-	 * comparable</b>, and a Derpy full clear tops out at 309 rather than 319.  Whether to split boards on it is
-	 * the listener's call; the network's leaderboards currently do not.
+	 * Times across mayors aren't comparable (a Derpy full clear tops out at 309, not 319). The network's boards
+	 * don't split on it yet.
 	 */
 	public String mayor;
 
 	/**
-	 * True if the run was set under the <b>alpha timings</b> ({@code plugin/Alpha}).
-	 * <p>
-	 * <b>An alpha run is not a record.</b>  Unlike {@link #difficulty} and {@link #mayor}, which are axes a board
-	 * can honestly split on, the alpha timings are an experiment that moves whenever it is retuned, so a time set
-	 * under them is comparable with nothing - not even another alpha run from a different build.  This plugin only
-	 * reports the fact; the network's {@code Leaderboards.submit} is what drops the run.
+	 * Run was under the alpha timings ({@code plugin/Alpha}). Not a record: the experiment moves whenever retuned, so
+	 * it compares with nothing, not even another build's alpha run. The network's {@code Leaderboards.submit} drops it.
 	 */
 	public boolean alpha;
 
-	/** Total run length: {@link Utils#runTick()} at the moment the run completed. */
+	/** {@link Utils#runTick()} at completion. */
 	public int runTicks;
 
-	/** Overall tick the clear phase ended (boss portal entered, or blood done on a clear-only run); null if no clear. */
+	/** Clear ended (boss portal entered, or blood done on a clear-only run); null if no clear. */
 	public Integer clearEndTick;
 
-	/** Overall tick blood finished; null if blood was never finished. */
+	/** Blood finished; null if never. */
 	public Integer bloodDoneTick;
 
-	/** Overall tick the team first reached 300 score; null if it never did. */
+	/** First reached 300 score; null if never. */
 	public Integer score300Tick;
 
-	/** Overall tick the run became a full clear (max score AND blood done); null otherwise. */
+	/** Became a full clear (max score AND blood done); null otherwise. */
 	public Integer fullClearTick;
 
-	/** Final team score, or null if this run had no clear phase to score. */
+	/** Final team score; null with no clear phase. */
 	public Integer teamScore;
 
-	/** Letter grade for {@link #teamScore} (S+, S, A, …), or null if there was no clear phase. */
+	/** Grade for {@link #teamScore} (S+, S, A...); null with no clear phase. */
 	public String grade;
 
-	/** Phase-relative duration of each completed boss phase: Maxor, Storm, Goldor, Necron, WitherKing. */
+	/** Phase-relative duration per completed boss: Maxor, Storm, Goldor, Necron, WitherKing. */
 	public Map<String, Integer> phaseDurations;
 
-	/** Overall tick at which each section finished: Clear, Maxor, Storm, Terminals, Goldor, Necron, WitherKing. */
+	/** Overall tick each section finished: Clear, Maxor, Storm, Terminals, Goldor, Necron, WitherKing. */
 	public Map<String, Integer> splitEnds;
 
 	/**
-	 * Everyone who took part in the run, <b>including anyone who disconnected before it ended</b> - the run's
-	 * roster, not a roll call of who happened to be online at the finish (see {@link WitherActions#noteInRun}).
-	 * A consumer derives the group size from this, and a duo whose second player lags out is still a duo.
+	 * The run's roster, including anyone who disconnected ({@link WitherActions#noteInRun}). Group size comes from
+	 * this, so a duo whose second player lags out is still a duo.
 	 */
 	public List<Participant> participants = new ArrayList<>();
 
@@ -110,8 +96,8 @@ public final class RunResult {
 		public String uuid;
 		public String name;
 		/**
-		 * True only if they never left Adventure mode all run (the practice scoreboard's golden-name check).
-		 * For a member who disconnected mid-run this is the state they left with; quitting is not a mode change.
+		 * Never left Adventure all run (the scoreboard's golden-name check). For a disconnect, the state they left
+		 * with; quitting isn't a mode change.
 		 */
 		public boolean stayedAdventure;
 
@@ -125,9 +111,8 @@ public final class RunResult {
 	private RunResult() {}
 
 	/**
-	 * Snapshot the current run.  Call it at completion time: the roster keeps anyone who has already left, but the
-	 * ticks and the score are read live, and only a player still in Adventure can be ADDED to the roster here -
-	 * {@code /m7practice end} moves everyone to spectator, so a capture after that adds nobody.
+	 * Call at completion: ticks and score are read live, and only a player still in Adventure can be ADDED to the
+	 * roster ({@code /m7practice end} makes everyone a spectator).
 	 */
 	public static RunResult capture(String section, boolean success) {
 		RunResult r = new RunResult();
@@ -142,9 +127,8 @@ public final class RunResult {
 		r.splitEnds = WitherActions.splitEnds();
 		r.clearEndTick = WitherActions.getSplitEnd("Clear");
 
-		// Score and the clear milestones only mean anything if a clear phase actually ran. On a boss-only
-		// practice ClearManager was never started, and teamScore() would report a meaningless ~120 from an
-		// unexplored map, so report null rather than a number that would poison a leaderboard.
+		// Only if a clear ran: on a boss-only practice teamScore() reports a meaningless ~120 from an unexplored map,
+		// which would poison a leaderboard.
 		if (ClearManager.isActive()) {
 			r.teamScore = ClearManager.teamScore();
 			r.grade = ClearManager.grade();
@@ -153,8 +137,7 @@ public final class RunResult {
 			r.fullClearTick = nullIfUnset(ClearManager.fullClearTick());
 		}
 
-		// Refresh the roster with whoever is in the run right now, then report the WHOLE roster - anyone who
-		// disconnected earlier included.  Reporting only the survivors is what used to turn a duo into a solo.
+		// Refresh with who's here, then report the WHOLE roster; reporting only survivors turned a duo into a solo.
 		for (Player p : ClearManager.realPlayers()) WitherActions.noteInRun(p);
 		for (WitherActions.RosterMember m : WitherActions.runRoster()) r.participants.add(new Participant(m));
 		return r;
@@ -164,7 +147,7 @@ public final class RunResult {
 		return tick < 0 ? null : tick;
 	}
 
-	/** Compact JSON, so a listener can read the whole result without compiling against this class. */
+	/** For listeners that don't compile against this class. */
 	public String toJson() {
 		return GSON.toJson(this);
 	}

@@ -25,8 +25,7 @@ public class AllMobsHaveNames implements Listener {
 		}
 	}
 
-	/** Strips legacy §-color codes so a foreign mob's §-coded name (e.g. a /summon'd "§fMort") doesn't
-	 *  break MiniMessage, which rejects § codes. */
+	/** Strips legacy § codes, which MiniMessage rejects, from a foreign mob's name (a /summon'd "§fMort"). */
 	private static String sanitize(String name) {
 		return name == null ? "" : name.replaceAll("(?i)§[0-9A-FK-OR]", "");
 	}
@@ -34,12 +33,9 @@ public class AllMobsHaveNames implements Listener {
 	@EventHandler
 	public void onEntitySpawn(EntitySpawnEvent e) {
 		if(e.getEntity() instanceof LivingEntity entity) {
-			// Mobs get ZERO invulnerability frames (MAP.md §7).  With the duration at 0 a hit sets
-			// invulnerableTime = 0, vanilla's "> 10" branch is never reached and lastHurt is never consulted, so
-			// every computed hit lands in full.  Left alone, vanilla's rule would swallow a Cleave hit on the
-			// directly-hit target whole (it is smaller than the main hit) and make every other hit at a 4-5 tick
-			// cadence deal nothing.  Declarative and permanent, and it also covers damage arriving by any path
-			// other than damage/Damage.
+			// Mobs get ZERO i-frames (MAP.md §7): invulnerableTime stays 0, vanilla's "> 10" branch and lastHurt are
+			// never reached, so every hit lands in full. Otherwise vanilla swallows a Cleave hit on the main target
+			// (it's smaller than the main hit) and every other hit at a 4-5 tick cadence. Covers any damage path.
 			entity.setMaximumNoDamageTicks(0);
 			entity.setNoDamageTicks(0);
 			double health = entity.getHealth() + entity.getAbsorptionAmount();

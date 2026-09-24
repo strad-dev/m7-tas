@@ -3,9 +3,8 @@ package instructions.clear;
 import java.awt.*;
 
 /**
- * The seven dungeon room categories, each with its authoritative Magical-Map colour (RGB pulled from the
- * NotEnoughUpdates / Hypixel map renderer). Used both for map rendering and for the clear logic that decides
- * how a room earns its checkmark.
+ * Room categories with their Magical-Map colour (RGB from the NotEnoughUpdates / Hypixel map renderer). Drives
+ * map rendering and how a room earns its checkmark.
  */
 public enum RoomType {
 	START(new Color(0, 124, 0)),
@@ -22,8 +21,8 @@ public enum RoomType {
 		this.color = color;
 	}
 
-	/** White checkmark = room "cleared" (miniboss/objective done). */
+	/** Room cleared (miniboss/objective done). */
 	public static final Color WHITE_CHECK = new Color(255, 255, 255);
-	/** Green checkmark = room "fully complete" (cleared AND all secrets found). Same green as a START room. */
+	/** Cleared and all secrets found. Same green as START. */
 	public static final Color GREEN_CHECK = new Color(0, 124, 0);
 }

@@ -1,12 +1,9 @@
 package damage;
 
 /**
- * The stats this damage system reads.  See MAP.md §1.
- * <p>
- * {@link #core} is what {@link Scale#SB_CATA_MULT} applies to: MAP.md §1.0.1 names Damage, Strength, Crit
- * Damage and Intelligence as "the four core stats" that get the full x6.65 Catacombs scaling, and §1.0.2 puts
- * everything else on the stars-only x1.80.  Crit Chance is not core; nothing reads it either (§7 rules every hit a
- * crit), it is only stored because reforges grant it.
+ * Stats the damage system reads (MAP.md §1). {@link #core} = the four core stats (§1.0.1) that take the full x6.65;
+ * the rest take stars-only x1.80 (§1.0.2). Crit Chance is only stored because reforges grant it; §7 makes every hit
+ * a crit.
  */
 public enum Stat {
 	DAMAGE("Damage", "<red>", true),
@@ -16,9 +13,8 @@ public enum Stat {
 	CRIT_CHANCE("Crit Chance", "<blue>", false),
 	ABILITY_DAMAGE("Ability Damage", "<red>", false);
 
-	// The SkyBlock glyphs (❁ ☠ ✎ ☣ ๑) used to live here, one per stat, and were appended to every lore row and every
-	// /eq row.  They are gone rather than merely unused: Hypixel renders them from a resource-pack font, so on a
-	// vanilla client they came out as tofu boxes, and the stat's name already says which stat it is.
+	// Stat glyphs (❁ ☠ ✎ ☣ ๑) used to live here for lore and /eq rows. Removed: Hypixel draws them from a resource-pack
+	// font, so vanilla clients showed tofu boxes.
 
 	private final String display;
 	private final String colour;
@@ -30,17 +26,17 @@ public enum Stat {
 		this.core = core;
 	}
 
-	/** Human-readable name, as it appears on item lore ("Crit Damage"). */
+	/** As on item lore ("Crit Damage"). */
 	public String display() {
 		return display;
 	}
 
-	/** MiniMessage colour tag this stat is rendered in. */
+	/** MiniMessage colour tag. */
 	public String colour() {
 		return colour;
 	}
 
-	/** True for the four stats that take the full Catacombs multiplier rather than the stars-only one (§1.0.1-2). */
+	/** Takes the full Catacombs multiplier, not stars-only (§1.0.1-2). */
 	public boolean core() {
 		return core;
 	}

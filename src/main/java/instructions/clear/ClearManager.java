@@ -22,18 +22,15 @@ import java.util.*;
 import java.util.List;
 
 /**
- * The central controller for the dungeon clear phase. Holds all per-run state (found secrets, room
- * checkmarks, bonus counters, blessing tally, score), spawns/tears down the secret entities, runs the
- * per-tick HUD + minimap + item-collection loop, and exposes the score to the end-of-run scoreboard.
+ * Clear-phase controller: per-run state (secrets, checkmarks, bonus counters, blessing tally, score), secret
+ * entity spawn/teardown, per-tick HUD + minimap + item pickup, and the score for the end-of-run scoreboard.
  *
- * <p>Every gameplay entry point takes a {@link Player} (real or fake) and all scoring is team-wide, so
- * TAS v3's fake players can drive exactly the same system.
+ * <p>Entry points take any {@link Player} (real or fake) and scoring is team-wide, so TAS v3 fakes can drive it.
  */
 public final class ClearManager {
 	private ClearManager() {
 	}
 
-	// ---- run state ----
 	private static World world;
 	private static boolean active;
 	private static BukkitTask tickTask;
@@ -41,37 +38,34 @@ public final class ClearManager {
 	// bonus counters
 	private static int cryptLurkers;
 	private static boolean firstPrince, firstBat, mimicKilled;
-	private static int deaths; // counted by noteDeath(), from death/Deaths.kill; cleared with everything else
+	private static int deaths; // noteDeath(), from death/Deaths.kill
 
-	// Wizard crystal-ball special (not one of the 47 secrets)
+	// Wizard crystal ball, not one of the 47
 	private static boolean crystalPickedUp, crystalHandedIn;
 
-	// blessing tally: read by damage/Difficulty in either live mode, and published to other plugins as
-	// plugin/BlessingState (see #awardBlessing).
+	// Read by damage/Difficulty in either live mode; published as plugin/BlessingState (#awardBlessing).
 	private static final Map<Blessing, Integer> blessingTally = new LinkedHashMap<>();
 
 	private static boolean milestone300;
 
-	// ---- leaderboard milestones (overall run ticks; -1 = not reached this run) ----
-	// Stamped once each, never recomputed. score300Tick was previously only broadcast and thrown away.
+	// Leaderboard milestones in overall run ticks, -1 = not reached. Stamped once, never recomputed.
 	private static int score300Tick = -1;
 	private static int bloodDoneTick = -1;
 	private static int fullClearTick = -1;
 
-	/** The bonus score a party can actually EARN, i.e. everything in {@link #bonus()} except the mayor's flat
-	 *  term: 5 crypt lurkers + first Prince + first Bat + 2 mimic. */
+	/** Earnable part of {@link #bonus()}, minus the mayor's flat term: 5 crypts + Prince + Bat + 2 mimic. */
 	private static final int MAX_EARNED_BONUS = 9;
 
-	// entity scoreboard tags for spawned secrets (also targeted by Server.blanketKill)
+	// also targeted by Server.blanketKill
 	public static final String TAG_ITEM = "SecretItem";
 	public static final String TAG_BAT = "SecretBat";
 	public static final String TAG_MIMIC = "SecretMimic";
 	public static final String TAG_CRYPT = "SecretCryptLurker";
 
-	/** Wither Essence is a placed wither-skeleton-skull block, right-clicked to collect (not an entity). */
+	/** Placed skull block, right-clicked to collect; not an entity. */
 	private static final Material ESSENCE_BLOCK = Material.WITHER_SKELETON_SKULL;
 
-	/** Explicit chest facings (keyed "x,y,z") from the map builder; chests not listed use the auto-orient fallback. */
+	/** Facings from the map builder, keyed "x,y,z"; unlisted chests auto-orient. */
 	private static final Map<String, BlockFace> CHEST_FACING = new HashMap<>();
 	static {
 		CHEST_FACING.put("-114,69,-35", BlockFace.EAST);
@@ -98,48 +92,42 @@ public final class ClearManager {
 
 	// ==================== lifecycle ====================
 
-	/** Reset all logical state (called from {@link instructions.Server#resetClearState()} during serverSetup).
-	 *  Also deactivates and stops the tick loop; {@link #start} re-arms both right after. */
+	/** From {@link instructions.Server#resetClearState()} in serverSetup. Also stops the loop; {@link #start} re-arms it. */
 	public static void reset() {
 		active = false;
 		if(tickTask != null) {
 			tickTask.cancel();
 			tickTask = null;
 		}
-		// Strip the offhand dungeon map (and restore slot 8's menu) from everyone. reset() runs from serverSetup
-		// before EVERY section, so this is what pulls the clear map out of the offhand when you jump straight to a
-		// boss such as /m7practice witherking, since the clear tick loop that normally removes it is not running.
+		// Runs before every section, so this pulls the map when jumping straight to a boss (/m7practice
+		// witherking), where the clear loop that normally removes it isn't running.
 		restoreMenus();
-		// Same puzzle teardown stop() does.  Ice Fill is the one that MUST be here: fail() airs a whole ice layer and
-		// restores it with Utils.scheduleTask, which /reset and /setup kill on their way through, and begin() only
-		// re-registers blocks that are already ICE or PACKED_ICE - so an AIR hole is dropped from the layer and stays
-		// in the world forever.  stop() restores AIR -> ICE from the retained coords, which is the only way back.
+		// Ice Fill must be here: fail() airs a layer and restores it via Utils.scheduleTask, which /reset and /setup
+		// kill, and begin() only registers ICE/PACKED_ICE, so the hole would stay forever. stop() restores AIR ->
+		// ICE from retained coords, the only way back.
 		PuzzleQuiz.stop();
 		PuzzleIceFill.stop();
-		// Tear down last run's placed chests / essence / secret entities so /reset and /setup start clean.
 		World w = world != null ? world : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().getFirst());
 		if(w != null) {
 			removeSecretEntities(w);
 			teardownSecretBlocks(w);
 		}
 		Rooms.reset();
-		DungeonMap.markDirty(); // clear the fog-of-war reveal state so the next run repaints from scratch
+		DungeonMap.markDirty();
 		cryptLurkers = 0;
 		firstPrince = firstBat = mimicKilled = false;
 		deaths = 0;
 		crystalPickedUp = crystalHandedIn = false;
 		milestone300 = false;
 		score300Tick = bloodDoneTick = fullClearTick = -1;
-		// Report the clear as well as the awards: a consumer fed only by awardBlessing would keep showing the
-		// PREVIOUS run's blessings for the whole of the next one, since a section that collects nothing never
-		// fires again.  Only when there was something to clear, so /setup on an idle server is silent.
+		// Publish the clear too, or a consumer shows last run's blessings through a run that collects none. Only
+		// if non-empty, so /setup on an idle server is silent.
 		if(!blessingTally.isEmpty()) {
 			blessingTally.clear();
 			publishBlessings();
 		}
 	}
 
-	/** Begin the clear phase: spawn secrets, place chest blocks, hand out maps, start the HUD loop. */
 	public static void start(World w) {
 		world = w;
 		reset();
@@ -148,18 +136,16 @@ public final class ClearManager {
 		PuzzleQuiz.reset();
 		PuzzleIceFill.begin(w);
 		active = true;
-		exploreRoom(Rooms.byName("Start"));    // the green Start room is always explored (players spawn in it)
-		exploreRoom(Rooms.byName("Red Blue")); // the entrance room starts already explored on the map
+		exploreRoom(Rooms.byName("Start"));    // players spawn in it
+		exploreRoom(Rooms.byName("Red Blue")); // entrance room starts explored
 		giveMaps();
 		if(tickTask != null) tickTask.cancel();
 		tickTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), ClearManager::tick, 1L, 1L);
-		// Publish the (empty) opening tally, so a listener's display exists from the start of the clear rather than
-		// appearing out of nowhere on the first blessing.  This is also the first report that says "this run HAS a
-		// clear phase", which is the difference between "collected nothing" and "there was nothing to collect".
+		// Empty opening tally: listeners show a display from the start, and it tells "collected nothing" apart from
+		// "no clear phase".
 		publishBlessings();
 	}
 
-	/** End the clear phase: remove secret entities, restore chest blocks + hotbar slot 8, stop the loop. */
 	public static void stop(World w) {
 		active = false;
 		if(tickTask != null) {
@@ -177,13 +163,13 @@ public final class ClearManager {
 
 	// ==================== spawning ====================
 
-	/** Place the secret chests (oriented toward an open side) and re-arm the essence skulls (wither variant). */
+	/** Chests face an open side; essence skulls reset to the wither variant. */
 	private static void placeSecretBlocks() {
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
 				if(s.isChest()) {
 					Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
-					// Mimic chests are TRAPPED chests, the same tell as real Hypixel: that's how you spot one.
+					// Mimic = trapped chest, same tell as Hypixel.
 					b.setType(s.mimic ? Material.TRAPPED_CHEST : Material.CHEST, false);
 					if(b.getBlockData() instanceof Directional dir) {
 						BlockFace face = CHEST_FACING.getOrDefault(s.blockX() + "," + s.blockY() + "," + s.blockZ(), openFace(b));
@@ -193,8 +179,7 @@ public final class ClearManager {
 						}
 					}
 				} else if(s.type == Utils.SecretType.ESSENCE) {
-					// Essence lives in the static map; just make sure it's the wither variant (a prior run may have
-					// converted it to a normal skull on collect). Keep whatever orientation it already has.
+					// Essence is in the static map; a prior run may have made it a normal skull. Keep orientation.
 					Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
 					Material m = b.getType();
 					if(m == Material.SKELETON_SKULL) convertSkull(b, Material.WITHER_SKELETON_SKULL);
@@ -205,7 +190,7 @@ public final class ClearManager {
 		}
 	}
 
-	/** Undo {@link #placeSecretBlocks}: remove the placed chests and revert any collected essence back to a wither skull. */
+	/** Undoes {@link #placeSecretBlocks}. */
 	private static void teardownSecretBlocks(World w) {
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
@@ -221,7 +206,7 @@ public final class ClearManager {
 		}
 	}
 
-	/** Change a skull block to {@code target}, preserving its floor rotation / wall facing. */
+	/** Keeps floor rotation / wall facing. */
 	private static void convertSkull(Block b, Material target) {
 		BlockData old = b.getBlockData();
 		BlockData nd = target.createBlockData();
@@ -230,7 +215,7 @@ public final class ClearManager {
 		b.setBlockData(nd, false);
 	}
 
-	/** The first horizontal face whose neighbour isn't a solid block, i.e. the side a chest should open toward. */
+	/** First horizontal face with a non-occluding neighbour. */
 	private static BlockFace openFace(Block b) {
 		for(BlockFace f : new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST}) {
 			if(!b.getRelative(f).getType().isOccluding()) return f;
@@ -242,7 +227,7 @@ public final class ClearManager {
 		int items = 0, bats = 0;
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
-				// Guard each spawn so one failure can't abort the rest (e.g. leave later items unspawned).
+				// One failure mustn't abort the rest.
 				try {
 					switch(s.type) {
 						case ITEM -> { spawnItem(s); items++; }
@@ -262,9 +247,9 @@ public final class ClearManager {
 		Item item = world.dropItem(s.location(world), new ItemStack(Material.PAPER));
 		s.entityId = item.getUniqueId();
 		item.addScoreboardTag(TAG_ITEM);
-		// "secret" tag so the map's `/kill @e[type=item]` command block can exclude these (tag=!secret).
+		// map's `/kill @e[type=item]` command block excludes tag=!secret
 		item.addScoreboardTag("secret");
-		item.setPickupDelay(32767); // "never" auto-picked; we collect manually (3× range)
+		item.setPickupDelay(32767); // never auto-picked; collected manually at 3× range
 		item.setPersistent(true);
 		item.setGravity(false);
 		try { item.setVelocity(new org.bukkit.util.Vector(0, 0, 0)); } catch(Throwable ignored) {}
@@ -307,11 +292,9 @@ public final class ClearManager {
 		return items.util.SkyblockMenu.INSTANCE.build();
 	}
 
-	/** The Magical Map rides in the OFFHAND while inside the clear grid, and is removed in the boss arena outside
-	*  the grid.  Hotbar slot 8 ("slot 9") always holds the SkyBlock Menu during the clear.  This only ever touches
-	*  OUR own map or the menu star, never a Maxor crystal or any other item. */
+	/** Map in offhand inside the grid, removed outside (boss). Slot 8 always the SkyBlock Menu. Only touches our
+	 *  map or the menu star, never e.g. a Maxor crystal. */
 	private static void manageMapAndMenu(Player p) {
-		// Slot 8 stays the SkyBlock Menu the whole clear (revert it if it's holding a stale dungeon map / is empty).
 		ItemStack slot8 = p.getInventory().getItem(8);
 		if(!FakePlayerInventory.isSkyblockMenu(slot8)) {
 			if(slot8 == null || slot8.getType() == Material.AIR || DungeonMap.isDungeonMap(slot8)) {
@@ -322,7 +305,7 @@ public final class ClearManager {
 		if(Rooms.inGrid(p.getLocation())) {
 			if(!DungeonMap.isDungeonMap(off)) p.getInventory().setItemInOffHand(DungeonMap.mapItem());
 		} else if(DungeonMap.isDungeonMap(off)) {
-			p.getInventory().setItemInOffHand(new ItemStack(Material.AIR)); // in the boss (outside the grid) → remove
+			p.getInventory().setItemInOffHand(new ItemStack(Material.AIR));
 		}
 	}
 
@@ -338,8 +321,7 @@ public final class ClearManager {
 
 	// ==================== per-tick loop ====================
 
-	/** Reveal any room a player is currently standing in. Includes the fake players, so a TAS run reveals the
-	 *  map as the fakes clear (real players spectating them share the reveal); spectator-mode viewers don't. */
+	/** Includes fakes, so a TAS run reveals as they clear; spectator-mode viewers don't reveal. */
 	private static void markExploration() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(p.getGameMode() == GameMode.SPECTATOR) continue;
@@ -351,8 +333,7 @@ public final class ClearManager {
 		}
 	}
 
-	/** Force a room fully explored on the map without anyone entering it.  Used when a locked door opens and
-	*  "explores" the room behind it (wither door → Deathmite, blood door → Blood). */
+	/** Explore without entry: wither door → Deathmite, blood door → Blood. */
 	public static void exploreRoom(Room r) {
 		if(r != null && !r.explored) {
 			r.explored = true;
@@ -369,12 +350,12 @@ public final class ClearManager {
 			collectItems(p);
 			updateActionBar(p);
 		}
-		// Spectators follow the fakes but are excluded from realPlayers(), so give them the run-stats bar too.
+		// Spectators aren't in realPlayers() but still get the bar.
 		for(Player p : Bukkit.getOnlinePlayers()) {
-			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue; // never the fakes themselves
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			if(p.getGameMode() == GameMode.SPECTATOR || Spectate.isSpectating(p)) updateActionBar(p);
 		}
-		// Wizard has no miniboss, so it earns its white check the moment a player first sets foot in it.
+		// Wizard has no miniboss: white check on first entry.
 		if(!Rooms.WIZARD.cleared) {
 			for(Player p : players) {
 				if(Rooms.roomAt(p.getLocation()) == Rooms.WIZARD) {
@@ -394,7 +375,7 @@ public final class ClearManager {
 				if(s.type != Utils.SecretType.ITEM || s.found || s.entityId == null) continue;
 				Entity e = Bukkit.getEntity(s.entityId);
 				if(e == null) continue;
-				// 3× the ~1-block vanilla pickup range.
+				// 3× vanilla's ~1-block pickup range
 				if(e.getLocation().distanceSquared(p.getLocation()) <= 9.0) {
 					secretFound(p, s);
 				}
@@ -403,12 +384,11 @@ public final class ClearManager {
 	}
 
 	private static void updateActionBar(Player p) {
-		if(!Rooms.inGrid(p.getLocation())) return; // fully outside the dungeon grid, e.g. boss arena, so leave the bar alone
-		Room room = Rooms.roomAt(p.getLocation()); // null when standing in a between-room buffer
-		// Between rooms there's no specific room to name, so drop the room-name + per-room "Secrets" segments and
-		// fall back to a neutral colour; the run-wide Total/Crypts/Score segments stay put.
+		if(!Rooms.inGrid(p.getLocation())) return; // e.g. boss arena
+		Room room = Rooms.roomAt(p.getLocation()); // null in a buffer
+		// In a buffer: drop room name + room Secrets, grey colour; run-wide segments stay.
 		String color = room != null ? hex(room.type.color) : "<gray>";
-		// Bonus flags: M (mimic), P (prince), B (bat), e.g. "Crypts 3/5 (M, P, B)".
+		// "Crypts 3/5 (M, P, B)": mimic, prince, bat
 		List<String> flags = new ArrayList<>();
 		if(mimicKilled) flags.add("M");
 		if(firstPrince) flags.add("P");
@@ -433,22 +413,20 @@ public final class ClearManager {
 		s.found = true;
 		Utils.playSecretFoundSound(p, s.type);
 		if(s.blessing != null) awardBlessing(p, s.blessing);
-		// Trap earns its white checkmark the moment its Power-II chest is opened.
 		if(s.room != null && s.room.type == RoomType.TRAP && s.blessing != null
 				&& s.blessing.type() == Utils.BlessingType.POWER && s.blessing.level() == 2) {
 			s.room.cleared = true;
 		}
 		if(s.entityId != null) {
 			Entity e = Bukkit.getEntity(s.entityId);
-			if(e != null && !(e instanceof LivingEntity)) e.remove(); // dropped items; bats/mimics die naturally
+			if(e != null && !(e instanceof LivingEntity)) e.remove(); // items; bats/mimics die naturally
 		}
 		if(world != null) {
 			if(s.isChest() && !s.mimic) {
-				// Found chests stay visibly open.
 				Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
 				if(b.getState() instanceof Lidded lid) lid.open();
 			} else if(s.type == Utils.SecretType.ESSENCE) {
-				// Collected essence turns into a normal skeleton skull, keeping its orientation.
+				// Collected essence becomes a normal skull.
 				Block b = world.getBlockAt(s.blockX(), s.blockY(), s.blockZ());
 				if(b.getType() == Material.WITHER_SKELETON_SKULL) convertSkull(b, Material.SKELETON_SKULL);
 				else if(b.getType() == Material.WITHER_SKELETON_WALL_SKULL) convertSkull(b, Material.SKELETON_WALL_SKULL);
@@ -462,7 +440,7 @@ public final class ClearManager {
 		room.cleared = true;
 		for(Blessing b : room.clearBlessings) {
 			awardBlessing(killer, b);
-			// The blessing pickup plays the item-pickup ding to whoever earned it (like the key grants).
+			// Pickup ding to the earner, like key grants.
 			if(killer != null) Utils.playLocalSound(killer, Sound.ENTITY_ITEM_PICKUP, 2.0f, 1.0f);
 		}
 		afterEvent(room);
@@ -473,9 +451,8 @@ public final class ClearManager {
 	}
 
 	/**
-	 * Mark a puzzle solved, which gives the green check and the score straight away.  With {@code awardBlessings}
-	 * false the room's clear blessings are left for a later {@link #awardRoomBlessings} call: the Quiz scores the
-	 * instant its last question is answered, but Oruo doesn't hand over Time V until his dialogue has played out.
+	 * Green check and score now. {@code awardBlessings} false leaves them for {@link #awardRoomBlessings}: the Quiz
+	 * scores on the last answer but Oruo gives Time V after his dialogue.
 	 */
 	public static void puzzleSolved(Room room, Player p, boolean awardBlessings) {
 		if(room == null || room.solved) return;
@@ -484,7 +461,7 @@ public final class ClearManager {
 		afterEvent(room);
 	}
 
-	/** Award a room's clear blessings on their own, without touching its checkmark (deferred-blessing puzzles). */
+	/** Blessings only, no checkmark change (deferred-blessing puzzles). */
 	public static void awardRoomBlessings(Room room, Player p) {
 		if(room == null) return;
 		for(Blessing b : room.clearBlessings) awardBlessing(p, b);
@@ -498,7 +475,7 @@ public final class ClearManager {
 
 	public static void mimicKilledEvent(Player p, Secret mimicSecret) {
 		if(!mimicKilled) mimicKilled = true;
-		secretFound(p, mimicSecret); // +2 bonus already flagged; this adds the regular secret progress
+		secretFound(p, mimicSecret); // +2 bonus flagged above; this is the regular secret
 		afterEvent(mimicSecret == null ? null : mimicSecret.room);
 	}
 
@@ -509,7 +486,7 @@ public final class ClearManager {
 		}
 	}
 
-	// ---- Wizard crystal ball (special, not a counted secret) ----
+	// ---- Wizard crystal ball (not a counted secret) ----
 	public static boolean hasCrystal() {
 		return crystalPickedUp && !crystalHandedIn;
 	}
@@ -524,7 +501,6 @@ public final class ClearManager {
 	public static void handInCrystal(Player p) {
 		if(!hasCrystal()) return;
 		crystalHandedIn = true;
-		// Reuses the existing Wizard hand-in dialogue (previously the fake-player Berserk routine).
 		Utils.playLocalSound(p, Sound.ENTITY_VILLAGER_YES);
 		Bukkit.broadcast(Utils.msg("<yellow>[NPC] Wizard<white>: Oh my lovely crystal ball, mi so happy"));
 		Utils.scheduleTask(() -> {
@@ -548,13 +524,12 @@ public final class ClearManager {
 		return null;
 	}
 
-	/** True if this block is a clear-phase secret you right-click (chest or essence).  Such a click owns the
-	*  interaction, so the held item's right-click ability must NOT also fire on top of it. */
+	/** Right-click secret (chest or essence). The click owns the interaction, so the held item's ability must not fire. */
 	public static boolean isSecretBlock(Block b) {
 		return active && b != null && findSecretAtBlock(b.getX(), b.getY(), b.getZ()) != null;
 	}
 
-	/** A right-clickable block secret (chest or essence) at these coords, or null. */
+	/** Chest or essence at these coords, or null. */
 	public static Secret findSecretAtBlock(int x, int y, int z) {
 		for(Room r : Rooms.all()) {
 			for(Secret s : r.secrets) {
@@ -575,13 +550,12 @@ public final class ClearManager {
 		return null;
 	}
 
-	/** Open a chest secret (right-clicked). A mimic chest instead spawns its Mimic (secret completes on kill). */
+	/** A mimic chest spawns its Mimic instead; the secret completes on kill. */
 	public static void openChest(Player p, Secret s) {
 		if(s == null || s.found) return;
-		// Ice-Fill reward chests can't be opened until the puzzle is solved.
 		if(s.room == Rooms.ICE_FILL && !Rooms.ICE_FILL.solved) return;
 		if(s.mimic) {
-			if(s.entityId != null && Bukkit.getEntity(s.entityId) != null) return; // mimic already out
+			if(s.entityId != null && Bukkit.getEntity(s.entityId) != null) return; // already out
 			spawnMimic(p.getWorld(), s);
 			return;
 		}
@@ -610,7 +584,7 @@ public final class ClearManager {
 		s.entityId = z.getUniqueId();
 	}
 
-	/** Nearest real (non-spectator, non-fake) player to a location, for attributing a miniboss or secret kill. */
+	/** For attributing a miniboss or secret kill. */
 	public static Player nearestRealPlayer(Location loc) {
 		Player best = null;
 		double bestSq = Double.MAX_VALUE;
@@ -630,15 +604,14 @@ public final class ClearManager {
 		publishBlessings();
 	}
 
-	/** Tell anyone listening that the tally moved (the network plugin puts it in the tab list). */
+	/** Network plugin shows it in the tab list. */
 	private static void publishBlessings() {
 		Bukkit.getPluginManager().callEvent(new plugin.BlessingChangeEvent(plugin.BlessingState.capture()));
 	}
 
-	/** Recompute checkmark transitions + score milestone after any event. */
+	/** Checkmark + score milestone after any event. */
 	private static void afterEvent(Room room) {
-		// Progressing a room's objective (e.g. killing its miniboss with a beam) counts as exploring it, even if
-		// nobody stood inside, so a room cleared from outside still fills in and shows its checkmark on the map.
+		// Progress counts as exploring (e.g. miniboss beamed from outside), so the map shows the checkmark.
 		exploreRoom(room);
 		DungeonMap.markDirty();
 		if(!milestone300 && teamScore() >= 300) {
@@ -647,8 +620,8 @@ public final class ClearManager {
 			score300Tick = t;
 			Bukkit.broadcast(Utils.msg("<green><bold>300 score reached</bold> in " + spaced(t) + " ticks (" + String.format("%.2f", t / 20.0) + " seconds)"));
 			Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
-			// Report it NOW, not at run end: the milestone stands on its own, so it must count even if the team
-			// resets immediately after.  score300Tick is assigned above first, because the payload reads it.
+			// Report now, not at run end, so it counts even if the team resets right after. score300Tick is set
+			// first because the payload reads it.
 			instructions.bosses.WitherActions.signalScoreMilestone(300);
 		}
 		checkFullClear();
@@ -657,9 +630,8 @@ public final class ClearManager {
 	// ==================== leaderboard milestones ====================
 
 	/**
-	 * Stamp the "blood finished" tick.  Called from {@code Watcher.bloodCampFinished()}, i.e. the moment the
-	 * Watcher vanishes, which on a clear-only practice is also the end of the run.  Safe to call when the clear
-	 * phase isn't running, as in a boss-only practice; it simply records nothing.
+	 * From {@code Watcher.bloodCampFinished()} when the Watcher vanishes (run end on clear-only practice). Records
+	 * nothing when the clear isn't running (boss-only practice).
 	 */
 	public static void noteBloodDone() {
 		if(!active || bloodDoneTick >= 0) return;
@@ -667,24 +639,19 @@ public final class ClearManager {
 		checkFullClear();
 	}
 
-	/**
-	 * A "full clear" is the maximum score AND blood finished.  Either can land last: the score can max out after
-	 * blood on a late secret, or blood can finish after the score maxes.  So both paths call this, and whichever
-	 * completes the pair stamps the tick.
-	 */
+	/** Full clear = max score AND blood done. Either can land last, so both paths call this. */
 	private static void checkFullClear() {
 		if(!active || fullClearTick >= 0) return;
 		if(bloodDoneTick < 0 || teamScore() < perfectScore()) return;
 		fullClearTick = Utils.runTick();
 	}
 
-	/** Overall run tick at which the team first hit 300 score, or -1 if it never did. */
+	/** Overall run ticks, -1 if not reached. */
 	public static int score300Tick() { return score300Tick; }
 
-	/** Overall run tick at which blood finished, or -1 if it never did. */
 	public static int bloodDoneTick() { return bloodDoneTick; }
 
-	/** Overall run tick at which the run became a full clear ({@link #perfectScore()} + blood), or -1. */
+	/** {@link #perfectScore()} + blood. */
 	public static int fullClearTick() { return fullClearTick; }
 
 	// ==================== scoring ====================
@@ -707,33 +674,28 @@ public final class ClearManager {
 		return n;
 	}
 
-	/** Cell-weighted count of "completed" room spaces (Museum = 4, etc.) out of 36, the fraction Hypixel's
-	*  room-clear score is built on.  A room contributes its cells the moment it earns any checkmark. */
+	/** Checked cells out of 36 (Museum = 4), Hypixel's room-clear fraction. Any checkmark counts. */
 	private static int checkedCells() {
 		int cells = 0;
-		// Blood always counts as completed for scoring (matches Hypixel's live projection), even if its
-		// checkmark isn't set on the map yet.
+		// Blood always counts, as in Hypixel's live projection.
 		for(Room r : Rooms.all()) if(r.check() != Room.Check.NONE || r.type == RoomType.BLOOD) cells += r.cells.length;
 		return cells;
 	}
 
 	/**
-	 * Count one death against the Skill score.  <b>The one caller is {@code death/Deaths.kill}</b>, once per death
-	 * that actually happened - after the mode gate, after {@code CheatDeath} has had its chance, and for a wipe as
-	 * well as an ordinary ghosting.  So this never runs in classic, the one mode a player cannot die in.
+	 * Only caller is {@code death/Deaths.kill}, once per real death: after the mode gate and {@code CheatDeath},
+	 * wipes included. Never runs in classic, where players can't die.
 	 * <p>
-	 * {@code OutOfBounds} deliberately does NOT call it: walking out of the map is a practice mishap, not a
-	 * dungeon death, and it is a hard kill with its own death screen that never goes through {@code Deaths}.
+	 * {@code OutOfBounds} doesn't call it: leaving the map is a practice mishap, a hard kill that skips {@code Deaths}.
 	 */
 	public static void noteDeath() {
 		deaths++;
 	}
 
-	/** Skill = 20 base + up to 80 from room clears − 10 per incomplete puzzle − death penalty, clamped [20,100].
+	/** 20 + up to 80 from room clears − 10 per unsolved puzzle − deaths, clamped [20,100].
 	 *  <p>
-	 *  <b>The death penalty is {@code 2n - 1}</b>, matching the real Catacombs formula: the first death costs 1 and
-	 *  every death after it costs 2, so 1 death is −1, 2 are −3, 3 are −5.  {@code Math.max(0, ...)} keeps a
-	 *  deathless run at 0 rather than the +1 the expression alone would give.  Fed by {@link #noteDeath()}. */
+	 *  Death penalty {@code 2n - 1} as real Catacombs: first costs 1, each after 2. {@code Math.max(0, ...)} keeps
+	 *  0 deaths at 0, not +1. */
 	public static int skill() {
 		int skillRooms = (int) Math.min(80, Math.floor(80.0 * checkedCells() / 36.0));
 		int puzzlePenalty = 10 * unsolvedPuzzles();
@@ -753,20 +715,13 @@ public final class ClearManager {
 		return 100;
 	}
 
-	/**
-	 * Bonus score: the mayor's flat term plus what the party earned.  The flat +10 is <b>Mayor Paul's EZPZ
-	 * perk</b>, so it is 0 under any other mayor ({@code damage/Mayor}) - read live, never folded in as a literal.
-	 */
+	/** Flat +10 is Mayor Paul's EZPZ perk, 0 under other mayors ({@code damage/Mayor}); read live, not a literal. */
 	public static int bonus() {
 		return damage.Mayor.scoreBonus()
 				+ Math.min(cryptLurkers, 5) + (firstPrince ? 1 : 0) + (firstBat ? 1 : 0) + (mimicKilled ? 2 : 0);
 	}
 
-	/**
-	 * The literal maximum team score under the current dungeon settings: skill 100 + explore 100 + speed 100 +
-	 * the best {@link #bonus()}.  <b>319 under Mayor Paul, 309 under anyone else</b>, the only score effect the
-	 * mayor has being Paul's flat +10.  A "full clear" is this score AND blood finished.
-	 */
+	/** Max score: 300 + best {@link #bonus()}. 319 under Paul, 309 otherwise. */
 	public static int perfectScore() {
 		return 300 + damage.Mayor.scoreBonus() + MAX_EARNED_BONUS;
 	}
@@ -796,10 +751,8 @@ public final class ClearManager {
 	}
 
 	/**
-	 * Total level collected of one blessing type: every blessing of that type this run, summed by LEVEL, so a
-	 * Power V contributes 5.  This is the figure {@code damage/Difficulty} reads in either live mode, and the one
-	 * {@code plugin/BlessingState} publishes - both go through here rather than walking the tally themselves,
-	 * since "level x how many of them" is the sort of sum that is only ever right in one place.
+	 * Summed by level (Power V = 5). {@code damage/Difficulty} and {@code plugin/BlessingState} both read this
+	 * rather than walking the tally, so the sum lives in one place.
 	 */
 	public static int collectedLevel(Utils.BlessingType type) {
 		int level = 0;
@@ -809,7 +762,7 @@ public final class ClearManager {
 		return level;
 	}
 
-	/** How many separate blessings of one type were collected this run, whatever their levels. */
+	/** Count, ignoring level. */
 	public static int collectedCount(Utils.BlessingType type) {
 		int n = 0;
 		for(Map.Entry<Blessing, Integer> e : blessingTally.entrySet()) {
@@ -819,9 +772,8 @@ public final class ClearManager {
 	}
 
 	/**
-	 * Whether the tally describes THIS session, i.e. whether there is a real chest history to read.  The clear
-	 * being live covers a run in progress; a non-empty tally covers the stretch after the clear has handed off to
-	 * the boss chain.  False for a boss-only practice, which is exactly when maxed blessings are assumed.
+	 * Tally is real for this session: clear live, or non-empty after handing off to bosses. False for boss-only
+	 * practice, where maxed blessings are assumed.
 	 */
 	public static boolean hasBlessingData() {
 		return active || !blessingTally.isEmpty();
@@ -829,8 +781,7 @@ public final class ClearManager {
 
 	// ==================== helpers ====================
 
-	/** Real, non-spectator, non-fake online players: the ones who get a HUD and map and can collect secrets. */
-
+	/** Non-spectator, non-fake: get HUD and map, collect secrets. */
 	public static List<Player> realPlayers() {
 		List<Player> out = new ArrayList<>();
 		for(Player p : Bukkit.getOnlinePlayers()) {
@@ -840,9 +791,8 @@ public final class ClearManager {
 	}
 
 	/**
-	 * The {@link #realPlayers()} test for ONE player.  Same rule in one place, so the run roster
-	 * ({@link instructions.bosses.WitherActions#noteInRun}) can never disagree with the HUD about who is in the run
-	 * - it has to judge a player who is quitting, which never appears in a list of online players.
+	 * {@link #realPlayers()} test for one player, so the run roster ({@link instructions.bosses.WitherActions#noteInRun})
+	 * agrees with the HUD; it judges quitting players, who aren't in the online list.
 	 */
 	public static boolean isRealPlayer(Player p) {
 		if(p == null) return false;
@@ -851,35 +801,23 @@ public final class ClearManager {
 		return !FakePlayerManager.getFakePlayers().containsValue(p);
 	}
 
-	/** Wither Essence, in both the floor and the wall skull form. */
 	private static final Set<Material> ESSENCE_SKULLS =
 			EnumSet.of(Material.WITHER_SKELETON_SKULL, Material.WITHER_SKELETON_WALL_SKULL);
 
-	/** What the Ice Fill puzzle is built out of: the three ice layers, and the polished andesite framing them. */
+	/** Ice layers and their polished andesite frame. */
 	private static final Set<Material> ICE_FILL_FIXTURES =
 			EnumSet.of(Material.ICE, Material.PACKED_ICE, Material.POLISHED_ANDESITE);
 
 	/**
-	 * Blocks of the STATIC MAP that must never be broken, <b>at any point</b>: secret chests, the Quiz answer
-	 * buttons, Wither Essence skulls, and the Ice Fill puzzle's ice and polished andesite.
+	 * Static-map blocks never breakable: secret chests, Quiz buttons, essence skulls, Ice Fill ice and andesite.
 	 * <p>
-	 * <b>Nothing here is gated on the clear phase</b>, because what it protects against isn't: the Dungeonbreaker is
-	 * the one item that breaks anything, it works whatever the run is doing, and its break is permanent
-	 * ({@code setType(AIR)} straight into the world).  So one break outside a run edits the map for every run after
-	 * it - a chest coordinate with something else sitting in it, an essence skull simply gone, or a hole in an Ice
-	 * Fill layer, which {@code PuzzleIceFill.begin} absorbs silently because it scans for the ice that is there.
-	 * (The Stonk's break is only a 200-tick removal, but losing any of these for 200 ticks mid-run is no better;
-	 * this check sits above the tool branch in {@code onBlockBreak} and so covers both.  Survival/creative would
-	 * bypass all of it, which is why nobody should be in either.)
+	 * Not gated on the clear phase: the Dungeonbreaker works any time and its break is permanent
+	 * ({@code setType(AIR)}), so one break outside a run edits every later run (an Ice Fill hole is silently
+	 * absorbed by {@code PuzzleIceFill.begin}). Stonk's 200-tick removal is no better mid-run; this sits above the
+	 * tool branch in {@code onBlockBreak} so covers both. Survival/creative bypass it all.
 	 * <p>
-	 * This used to be two methods - a phase-gated {@code isProtectedBlock} for the chests and buttons alongside this
-	 * one - which was a distinction with no reason behind it once both answers were "never breakable".  Every
-	 * predicate here reads STATIC data (secret coordinates, button coordinates, materials, room bounds), so none of
-	 * it needs a run to be in progress to answer.
-	 * <p>
-	 * Wither skulls are matched by MATERIAL anywhere, not against the secret list, because a skull that is not a
-	 * registered secret is still part of the map and there is no reason to be able to break one.  Ice and polished
-	 * andesite are matched only inside the Ice Fill room, since both are ordinary building blocks elsewhere.
+	 * Skulls match by material anywhere, since an unregistered skull is still map. Ice/andesite only in the Ice
+	 * Fill room; elsewhere they're ordinary blocks.
 	 */
 	public static boolean isMapFixture(Block b) {
 		if(b == null) return false;

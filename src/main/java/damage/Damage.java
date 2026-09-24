@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The damage formulas and the single application boundary (MAP.md §7).
+ * Damage formulas and the single application boundary (MAP.md §7).
  *
  * <pre>
  * melee   = (5 + Damage) x (1 + Strength/100) x (1 + CritDamage/100)      // ALWAYS crits
@@ -29,21 +29,18 @@ import java.util.Set;
  * mageBeam = melee x (0.30 + 0.0009 x Intelligence)                       // the Mage Staff passive
  * </pre>
  *
- * <b>There is no {@code Strength/5} term</b> - SkyBlock removed it years ago, and carrying it inflates every melee
- * and beam figure by x2.69 at these stat levels.  Strength enters only through {@code (1 + Strength/100)}.
+ * <b>No {@code Strength/5} term</b>: SkyBlock removed it years ago, and it inflates melee and beam x2.69 at these
+ * stats. Strength enters only via {@code (1 + Strength/100)}.
  * <p>
- * <b>All math is in real SkyBlock units</b> (doubles into the billions).  There is exactly one conversion to
- * Minecraft health, in {@link #deal}:
+ * <b>All math in real SkyBlock units</b> (billions). One conversion to MC health, in {@link #deal}:
  * <pre>
  * mcDamage = ( sbDamage x bossResistance / (1 + defense/100) ) / 1e6
  * </pre>
- * For Necron those two factors together are a /82 before the number touches vanilla health.
+ * For Necron those two factors are /82.
  * <p>
- * <b>One damage path.</b>  Three used to exist - {@code hurtServer(genericKill)}, {@code setHealth} for dragons and
- * {@code wither.damage()} for arrows-on-withers - with different i-frame, armor, event and aggro behaviour, and
- * the split was already visible as workarounds in the code.  Everything now goes through {@link #deal}, which
- * applies damage by reading health, subtracting and setting it: vanilla is not a participant in this model, and
- * every place it tried to be had already been suppressed by hand.
+ * <b>One damage path.</b> There used to be three ({@code hurtServer(genericKill)}, {@code setHealth} for dragons,
+ * {@code wither.damage()} for arrows on withers) with different i-frame, armor, event and aggro behaviour, already
+ * patched with workarounds. {@link #deal} reads health, subtracts and sets it; vanilla isn't a participant.
  */
 public final class Damage {
 	private Damage() {
@@ -81,7 +78,7 @@ public final class Damage {
 
 	// ===================== §7 damage-level multiplicative sources =====================
 	private static final double HYPERION_VS_WITHER = 1.5;
-	/** The Death Bow's "deals +100% damage to Undead mobs", i.e. x2 against anything carrying {@link MobType#UNDEAD}. */
+	/** Death Bow's "+100% damage to Undead mobs": x2 vs {@link MobType#UNDEAD}. */
 	private static final double DEATH_BOW_VS_UNDEAD = 2.0;
 	private static final double OVERLOAD = 1.5;
 	private static final double BOOK_OF_PROGRESSION = 1.05;
@@ -89,35 +86,25 @@ public final class Damage {
 
 	// ===================== ammunition =====================
 	/**
-	 * <b>Armorshred Arrow: a ranged hit is worked out against x0.95 of the target's defense.</b>  Assumed to be what
-	 * everyone is shooting, exactly like the Archery IV potion and Overload - the model has no ammunition types, so
-	 * this is a maxed input, not a per-shot choice.
-	 * <p>
-	 * It is a factor on the defense THIS HIT divides by and nothing else: the target's own defense is not touched,
-	 * so it is not a debuff, nothing is written back, and the next melee hit divides by the full figure again.
+	 * Armorshred Arrow: ranged hits use x0.95 of the target's defense. Assumed like Archery IV and Overload (no ammo
+	 * types). Only affects the defense THIS hit divides by; not a debuff, nothing written back.
 	 */
 	private static final double ARMORSHRED_DEFENSE = 0.95;
 
 	// ===================== §7 mage beam =====================
-	/**
-	 * The Mage Staff passive: 30% base plus 0.09% per Intelligence, ADDED to the 30%, not multiplied by it.
-	 */
+	/** Mage Staff: 30% plus 0.09% per Int, ADDED to the 30%, not multiplied. */
 	private static final double BEAM_BASE = 0.30;
 	private static final double BEAM_PER_INTELLIGENCE = 0.0009;
 
 	/**
-	 * The beam's three range tiers (§7), each doubling the previous total.  Full damage to the cutoff, then a
-	 * linear decrement to zero at max range.  Note what mostly grows is the CUTOFF: in the boss arena the beam
-	 * deals full damage out to 35 blocks and only fades over the last 15.
+	 * Beam range tiers (§7), each doubling the previous total. Full damage to the cutoff, then linear to zero at max
+	 * range. Mostly the CUTOFF grows: in the boss arena it's full out to 35 and fades over the last 15.
 	 */
 	public record BeamRange(double cutoff, double maxRange) {
 		public static final BeamRange DEFAULT = new BeamRange(10, 25);
 		public static final BeamRange BOSS_ARENA = new BeamRange(35, 50);
 		public static final BeamRange WITHER_KING = new BeamRange(70, 100);
 
-		/**
-		 * The share of full damage a beam does at this distance.
-		 */
 		public double falloff(double distance) {
 			if(distance <= cutoff) return 1.0;
 			if(distance >= maxRange) return 0.0;
@@ -125,11 +112,7 @@ public final class Damage {
 		}
 	}
 
-	/**
-	 * Which tier applies where the player is standing.  Detection needs a PHASE check, not a location check:
-	 * {@code LavaJump.isInBossArena} is one box that already contains the Wither King arena, so a third positional
-	 * tier is impossible.
-	 */
+	/** WK tier is a PHASE check: {@code LavaJump.isInBossArena} is one box that already contains the WK arena. */
 	public static BeamRange beamRange(Player p) {
 		if(MobStats.witherKingPhaseActive()) return BeamRange.WITHER_KING;
 		return listeners.LavaJump.isInBossArena(p.getLocation()) ? BeamRange.BOSS_ARENA : BeamRange.DEFAULT;
@@ -137,9 +120,7 @@ public final class Damage {
 
 	// ===================== computing a hit =====================
 
-	/**
-	 * A melee swing.  The weapon is whatever is in the main hand at the time.
-	 */
+	/** Weapon = main hand at the time. */
 	public static double melee(Player p, LivingEntity target, ItemStack weapon) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.MELEE, def);
@@ -147,10 +128,7 @@ public final class Damage {
 		return finish(p, target, DamagePath.MELEE, def, statCore(p, DamagePath.MELEE, true, b), null, b);
 	}
 
-	/**
-	 * A mage beam: the melee hit rescaled by the Mage Staff passive, then faded by distance.  It is not a separate
-	 * damage path in the enchantment sense - it counts as a melee attack and takes the whole sword list.
-	 */
+	/** Melee rescaled by Mage Staff, then faded by distance. Counts as melee for the whole sword enchant list. */
 	public static double beam(Player p, LivingEntity target, ItemStack weapon, double distance) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.BEAM, def);
@@ -161,8 +139,7 @@ public final class Damage {
 		BeamRange range = beamRange(p);
 		double falloff = range.falloff(distance);
 		if(b != null) {
-			// The beam multiplier is labelled "Intelligence" because that is what it reads as: 0.30 + 0.09% per point,
-			// so at these Intelligence levels the 0.30 is a rounding error and the line is effectively the Int term.
+			// Labelled "Intelligence": at these Int levels the 0.30 is a rounding error.
 			b.factor("Intelligence", beamMultiplier);
 			if(falloff < 1.0) b.factor("Distance falloff", falloff);
 		}
@@ -170,19 +147,13 @@ public final class Damage {
 	}
 
 	/**
-	 * <b>A bare punch</b>: the melee formula with NO WEAPON at all - none of the held item's stats, and no
-	 * {@link ItemDef}, so no reforge multiplier and none of the lore-ID multipliers either.
+	 * Bare punch: melee with NO WEAPON, so no held-item stats, no {@link ItemDef}, no reforge or lore-ID
+	 * multipliers. What a non-melee item lands. A bow used to run the full melee path and a Precise Terminator
+	 * punched for most of a sword; in SkyBlock a bow melee is a punch.
 	 * <p>
-	 * This is what a hit with something that is not a melee weapon lands.  A bow used to run the FULL melee path,
-	 * which folded its Damage, Strength and Crit Damage into the swing through {@code Stats.of} and had a Precise
-	 * Terminator punching for most of what a sword does - in SkyBlock a bow melee is a punch, and the bow's stat
-	 * block has nothing to do with it.
-	 * <p>
-	 * <b>ENCHANTMENTS go, ATTRIBUTES stay.</b>  Sharpness, Smite, Giant Killer, Titan Killer, Execute, Prosecute,
-	 * First/Triple Strike and the four mob-type enchants are all on the sword you are <i>not</i> holding, so
-	 * {@link #additivePercent} is asked to skip them.  Everything else survives, because none of it comes from the
-	 * item: the thirteen Rulers, Warrior, Elite, Dominance, the combo, Combat 60, the Ring of Love, the pet, the
-	 * Draconic Artifact and the class bonuses, on top of every stat from armour, equipment and accessories.
+	 * ENCHANTS go, ATTRIBUTES stay: Sharpness, Smite, Giant/Titan Killer, Execute, Prosecute, First/Triple Strike and
+	 * the mob-type enchants are skipped in {@link #additivePercent}. Rulers, Warrior, Elite, Dominance, combo, Combat
+	 * 60, Ring of Love, pet, Draconic Artifact, class bonuses and all non-held stats stay.
 	 */
 	public static double punch(Player p, LivingEntity target) {
 		applyOnHitDebuffs(p, target, DamagePath.MELEE, (ItemDef) null);
@@ -190,61 +161,49 @@ public final class Damage {
 		return finish(p, target, DamagePath.MELEE, null, statCore(Stats.unarmed(p), true, b), null, b, false);
 	}
 
-	/**
-	 * The STAT half of a melee hit, with no target involved.  Exists for the thrown-axe abilities, which decide
-	 * their damage as a share of the wielder's melee at THROW time and only learn their target later.
-	 */
+	/** STAT half of melee, no target. For thrown axes, which fix damage at THROW time. */
 	public static double meleeCore(Player p) {
 		return statCore(p, DamagePath.MELEE, true, null);
 	}
 
-	/**
-	 * The TARGET-dependent half of a melee hit, applied when a thrown axe actually connects.
-	 */
+	/** TARGET half of melee, when a thrown axe connects. */
 	public static double meleeFinish(Player p, LivingEntity target, ItemStack weapon, double core) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.MELEE, def);
 		Breakdown b = Breakdown.begin();
-		// The stat half was settled at throw time, on an earlier tick, so the breakdown can only show it as the one
-		// number it already is - hence "Stat core" rather than a Base/Strength/Crit Damage decomposition.
+		// Settled at throw time, so the breakdown can only show it as one number.
 		if(b != null) b.base("Stat core", core);
 		return finish(p, target, DamagePath.MELEE, def, core, null, b);
 	}
 
 	/**
-	 * The STAT half of a bow shot, which {@link Arrows} stamps on the projectile at fire time so a mid-flight
-	 * weapon swap cannot change what the arrow hits for (§1.0.5).
+	 * STAT half of a bow shot, stamped by {@link Arrows} at fire time (§1.0.5).
 	 *
-	 * @param crit false only for a partially drawn bow, which loses the whole crit term rather than a fraction
+	 * @param crit false only for a partial draw, which loses the whole crit term
 	 */
 	public static double bowCore(Player p, boolean crit) {
 		return statCore(p, DamagePath.BOW, crit, null);
 	}
 
 	/**
-	 * The TARGET-dependent half of a bow shot, applied when the arrow lands.  None of it is knowable at fire time.
+	 * TARGET half of a bow shot, when the arrow lands.
 	 *
-	 * @param blocksTravelled how far the arrow flew, for Snipe IV's +4% per 10 blocks
+	 * @param blocksTravelled for Snipe IV's +4% per 10 blocks
 	 */
 	public static double bowFinish(Player p, LivingEntity target, ItemDef weapon, double core, double blocksTravelled, boolean headshot) {
 		Breakdown b = Breakdown.begin();
-		// Stamped on the arrow at fire time, so - as with a thrown axe - it can only be shown as one figure.
+		// Stamped at fire time, so one figure, like a thrown axe.
 		if(b != null) b.base("Stat core", core);
 		return finish(p, target, DamagePath.BOW, weapon, core, new BowContext(blocksTravelled, headshot), b);
 	}
 
-	/**
-	 * A whole bow shot in one call, for the paths that resolve at hit time anyway (the Terminator's Salvation
-	 * beam, which is not a bow shot and so is never draw-scaled).
-	 */
+	/** Whole bow shot in one call, for paths resolved at hit time (Salvation beam, never draw-scaled). */
 	public static double bow(Player p, LivingEntity target, ItemStack weapon, double chargeFraction, double blocksTravelled, boolean headshot) {
 		ItemDef def = Items.of(weapon);
 		applyOnHitDebuffs(p, target, DamagePath.BOW, def);
 		boolean full = chargeFraction >= 1.0;
 		double charge = Math.max(0, Math.min(chargeFraction, 1.0));
-		// Deliberately NOT bowCore + bowFinish, even though the numbers are identical.  Both halves resolve in this
-		// one call, so this path CAN show a full /verbose super breakdown, where bowFinish can only ever report the
-		// stat core as one pre-decided figure - it is normally reached a tick or more after the arrow was stamped.
+		// Not bowCore + bowFinish (same numbers) so /verbose super gets a full breakdown instead of one stat core.
 		Breakdown b = Breakdown.begin();
 		double core = statCore(p, DamagePath.BOW, full, b) * charge;
 		if(b != null && charge < 1.0) b.factor("Draw", charge);
@@ -252,12 +211,8 @@ public final class Damage {
 	}
 
 	/**
-	 * A right-click ability.  Abilities get neither Strength nor Crit Damage, which is the whole reason they
-	 * behave so differently from the melee/beam path.  That is intended: an option for anyone who wants to try
-	 * them, not a damage strategy.
-	 * <p>
-	 * <b>The base takes the Catacombs Stat Bonus</b> ({@link Scale#SB_CATA_MULT}), exactly like the item's own stats
-	 * do - it is a dungeon-item stat, not a constant.  Skipping it made every ability 6.65x too weak.
+	 * Right-click ability: no Strength, no Crit Damage. Intended as an option, not a damage strategy. Base takes the
+	 * Catacombs bonus ({@link Scale#SB_CATA_MULT}) like item stats; skipping it made every ability 6.65x too weak.
 	 */
 	public static double ability(Player p, LivingEntity target, ItemStack weapon) {
 		ItemDef def = Items.of(weapon);
@@ -270,9 +225,7 @@ public final class Damage {
 		double core = base * intelligence * abilityDamage;
 		Breakdown b = Breakdown.begin();
 		if(b != null) {
-			// No Strength and no Crit Damage rows here, because the ability formula genuinely has neither - printing
-			// them at x1 would suggest they were considered and came out neutral.  The SCALED base is the row, since
-			// that is the figure the item's own tooltip would show.
+			// No Strength/Crit rows: x1 rows would imply they were considered. SCALED base, as the tooltip shows.
 			b.base("Base Damage", base);
 			b.factor("Intelligence", intelligence);
 			b.factor("Ability Damage", abilityDamage);
@@ -281,12 +234,9 @@ public final class Damage {
 	}
 
 	/**
-	 * The STAT half of a cast: everything settled the moment the ability fires, with no target involved.  The
-	 * ability path's counterpart to {@link #bowCore}, and it exists for the same reason - the Spirit Sceptre's
-	 * Guided Bat decides its damage at FIRE time and only learns what it hit when the bat lands, so turning or
-	 * swapping weapons mid-flight cannot change the number.
+	 * STAT half of a cast, the ability counterpart of {@link #bowCore}: the Guided Bat fixes damage at FIRE time.
 	 *
-	 * @return 0 if this weapon has no ability the damage system computes
+	 * @return 0 if the weapon has no computed ability
 	 */
 	public static double abilityCore(Player p, ItemStack weapon) {
 		ItemDef def = Items.of(weapon);
@@ -297,65 +247,46 @@ public final class Damage {
 		return abilityBase(def) * intelligence * abilityDamage;
 	}
 
-	/**
-	 * The TARGET-dependent half of a cast, applied when the ability actually connects.  Applies the debuffs the
-	 * cast carries first, exactly as {@link #meleeFinish} does.
-	 */
+	/** TARGET half of a cast, on impact. Debuffs first, like {@link #meleeFinish}. */
 	public static double abilityFinish(Player p, LivingEntity target, ItemDef weapon, double core) {
 		applyOnHitDebuffs(p, target, DamagePath.ABILITY, weapon);
 		Breakdown b = Breakdown.begin();
-		// The stat half was settled on an earlier tick, so the breakdown can only show it as the one number it
-		// already is - the same limitation bowFinish and meleeFinish have.
+		// Settled earlier, so one number, like bowFinish and meleeFinish.
 		if(b != null) b.base("Stat core", core);
 		return finish(p, target, DamagePath.ABILITY, weapon, core, null, b);
 	}
 
 	/**
-	 * An ability's base damage after the dungeon stage: the authored figure is the plain SkyBlock number the wiki
-	 * prints, and a DUNGEON item's base takes the Catacombs Stat Bonus on top (§7).  Same rule, same constant and
-	 * same reason as {@link ItemDef#stats}, which is why the authored {@code 10_000} stays the overworld tooltip
-	 * value and Wither Impact casts from 66,500 in here.
+	 * Base after the dungeon stage: a DUNGEON item's wiki figure takes the Catacombs bonus (§7), as in
+	 * {@link ItemDef#stats}. Authored {@code 10_000} stays the overworld tooltip; Wither Impact casts from 66,500.
 	 */
 	static double abilityBase(ItemDef def) {
 		double base = def.ability().baseDamage();
 		return def.dungeonItem() ? base * Scale.SB_CATA_MULT : base;
 	}
 
-	/**
-	 * Extra inputs only the bow path has.
-	 */
 	private record BowContext(double blocksTravelled, boolean headshot) {
 	}
 
 	/**
-	 * The granularity health is actually moved by, in Minecraft health: <b>thousandths of a health point</b>.
-	 * <p>
-	 * One health point is a million SkyBlock damage, so a thousandth is a thousand - fine enough that nothing at this
-	 * scale notices the rounding, coarse enough that health stops being a 15-significant-digit double nobody can
-	 * reason about.  Tenths and hundredths were the alternatives; thousandths loses the least.
-	 * <p>
-	 * This affects the STORED HEALTH only.  What the floating number and {@code /verbose} report is the unrounded
-	 * figure, so the two can differ by up to half a step - deliberately, because one is a storage decision and the
-	 * other is the answer to "how hard did I just hit that".
+	 * Health moves in thousandths of an MC health point (1,000 SkyBlock damage): fine enough nobody notices, coarse
+	 * enough that health isn't a 15-digit double. Thousandths lose least of tenths/hundredths/thousandths.
+	 * STORED HEALTH only; the floating number and {@code /verbose} show the unrounded figure, so they can differ by
+	 * half a step on purpose.
 	 */
 	private static final double HP_STEP = 0.001;
 
-	/**
-	 * Quantise one hit to {@link #HP_STEP}.  Cheap on purpose - this runs on every instance at Terminator rates.
-	 */
+	/** Cheap on purpose: runs on every instance at Terminator rates. */
 	private static double roundHp(double mcDamage) {
 		return Math.round(mcDamage / HP_STEP) * HP_STEP;
 	}
 
-	/**
-	 * The stat half of the melee/bow shape.  {@code crit} is true for everything except a partially drawn bow -
-	 * §7 rules every hit a crit, deliberately, because a random roll would make two identical runs incomparable.
-	 */
+	/** Melee/bow stat half. {@code crit} false only for a partial draw; §7 makes every hit crit so runs are comparable. */
 	private static double statCore(Player p, DamagePath path, boolean crit, Breakdown b) {
 		return statCore(Stats.of(p, path), crit, b);
 	}
 
-	/** As above, against an aggregate the caller has already chosen - the unarmed one, for {@link #punch}. */
+	/** Against a caller-chosen aggregate (unarmed, for {@link #punch}). */
 	private static double statCore(StatBlock stats, boolean crit, Breakdown b) {
 		double base = Scale.PLAYER_BASE_DAMAGE + stats.get(Stat.DAMAGE);
 		double strength = 1.0 + stats.get(Stat.STRENGTH) / 100.0;
@@ -363,24 +294,18 @@ public final class Damage {
 		if(b != null) {
 			b.base("Base Damage", base);
 			b.factor("Strength", strength);
-			// A partly drawn bow loses the crit term entirely rather than scaling it, so there is no row at all -
-			// which is the point worth seeing in the breakdown.
+			// Partial draw loses the crit term entirely, so no row.
 			if(crit) b.factor("Crit Damage", critDamage);
 		}
 		return base * strength * critDamage;
 	}
 
-	/**
-	 * The damage-level stage: one additive factor, then the multiplicative product.
-	 */
+	/** Damage-level stage: one additive factor, then the multiplicative product. */
 	private static double finish(Player p, LivingEntity target, DamagePath path, ItemDef weapon, double core, BowContext bow, Breakdown b) {
 		return finish(p, target, path, weapon, core, bow, b, true);
 	}
 
-	/**
-	 * As above, with {@code weaponEnchants} false for a hit landed with <b>no weapon</b> - see {@link #punch}.
-	 * Only the enchantment half of the additive sum is dropped; the attributes stay.
-	 */
+	/** {@code weaponEnchants} false for a {@link #punch}: drops only the enchant half of the additive sum. */
 	private static double finish(Player p, LivingEntity target, DamagePath path, ItemDef weapon, double core, BowContext bow, Breakdown b, boolean weaponEnchants) {
 		if(target == null || core <= 0) return 0;
 		double additive = additivePercent(p, target, path, weapon, bow, weaponEnchants);
@@ -397,11 +322,9 @@ public final class Damage {
 	// ===================== additive =====================
 
 	/**
-	 * The whole {@code sumAdditive} for one hit, as a percentage.
-	 * <p>
-	 * <b>The mage beam counts as a melee attack</b>, so it takes every melee row.  Bows lose most of the damage
-	 * enchantments (Execute, Prosecute, First Strike, Triple Strike, Giant Killer, Titan Killer and Sharpness are
-	 * all sword-only), so an Archer's arrows miss Prosecute's +100% and Titan Killer's +80% entirely.
+	 * {@code sumAdditive} for one hit, as a percentage. Beam counts as melee. Bows lose the sword-only enchants
+	 * (Execute, Prosecute, First/Triple Strike, Giant/Titan Killer, Sharpness), so arrows miss Prosecute's +100% and
+	 * Titan Killer's +80%.
 	 */
 	private static double additivePercent(Player p, LivingEntity target, DamagePath path, ItemDef weapon, BowContext bow, boolean weaponEnchants) {
 		Set<MobType> types = MobStats.typesOf(target);
@@ -419,12 +342,10 @@ public final class Damage {
 		Pet pet = Pet.forPlayer(p, path);
 		sum += pet.damageAdditive(types);
 
-		// --- ENCHANTMENTS, which live on the WEAPON.  A hit landed with none of it gets none of them: a bow melee
-		// is a punch, and Sharpness, Smite, Giant Killer and the rest are on the sword you are not holding.
-		// Everything OUTSIDE this block is an attribute, a potion, a pet or a class bonus - worn or drunk by the
-		// player rather than carried by the item - and a punch keeps every one of them.
+		// --- ENCHANTMENTS, on the WEAPON, so a punch gets none. Everything outside this block (attributes, potions,
+		// pet, class) belongs to the player and a punch keeps it.
 		if(weaponEnchants) {
-			// Cubism, Gravity, Impaling and Smoldering are on swords AND bows; the rest are sword-only.
+			// These four are on swords AND bows; the rest are sword-only.
 			if(types.contains(MobType.CUBIC)) sum += CUBISM_VI;
 			if(types.contains(MobType.AIRBORNE)) sum += GRAVITY_VI;
 			if(types.contains(MobType.AQUATIC)) sum += IMPALING_V;
@@ -437,12 +358,12 @@ public final class Damage {
 				if(types.contains(MobType.ENDER)) sum += ENDER_SLAYER_VII;
 				if(types.contains(MobType.MAGMATIC)) sum += PYROCLASM_VI;
 
-				// --- either/or pairs: evaluate both and take the larger, NEVER sum them ---
+				// --- either/or pairs: take the larger, NEVER sum ---
 				sum += Math.max(giantKiller(), titanKiller(target));
 				sum += Math.max(execute(target), prosecute(target));
 			}
 			if(path.isMelee()) {
-				// First Strike and Triple Strike are melee-only, and are an either/or pair with each other.
+				// First/Triple Strike: melee-only, either/or.
 				double firstStrike = CombatState.isFirstHitOn(p, target.getUniqueId()) ? FIRST_STRIKE_V : 0;
 				double tripleStrike = CombatState.isTripleStrikeHitOn(p, target.getUniqueId()) ? TRIPLE_STRIKE_V : 0;
 				sum += Math.max(firstStrike, tripleStrike);
@@ -452,7 +373,7 @@ public final class Damage {
 				sum += POWER_VII;
 				if(bow != null) {
 					sum += SNIPE_IV_PER_10_BLOCKS * (bow.blocksTravelled() / 10.0);
-					// The Precise headshot is the REFORGE's rather than an enchantment's, but it is still the weapon's.
+					// Precise headshot is the reforge's, still the weapon's.
 					if(bow.headshot() && weapon != null && weapon.reforge() == ReforgeId.PRECISE) sum += PRECISE_HEADSHOT;
 				}
 			}
@@ -465,35 +386,29 @@ public final class Damage {
 			sum += ARCHERY_IV_POTION;
 		}
 
-		// --- class bonuses (§1.14).  Berserk's repeated-hit stack is the largest additive source in the plan. ---
+		// --- class bonuses (§1.14); Berserk's repeated-hit stack is the largest additive source ---
 		DungeonClass clazz = DungeonClass.of(p);
 		sum += ClassBonuses.damageAdditive(p, clazz, path, target.getUniqueId(), DungeonClass.isSoloOnClass(p));
 		return sum;
 	}
 
 	private static double giantKiller() {
-		// Giant Killer VII: +65%, since the target's health is assumed always far larger than the player's.
+		// Giant Killer VII: +65%, target HP assumed always far above the player's.
 		return GIANT_KILLER_VII;
 	}
 
-	/**
-	 * Titan Killer VII: +20% per 100 of the target's defense, capped at +80%.  Zero against a 0-defense mob.
-	 */
+	/** Titan Killer VII: +20% per 100 defense, cap +80%. */
 	private static double titanKiller(LivingEntity target) {
 		double defense = MobStats.defenseOf(target);
 		return Math.min(TITAN_KILLER_CAP, TITAN_KILLER_PER_100_DEFENSE * defense / 100.0);
 	}
 
-	/**
-	 * Execute VI: +1.25% per 1% of the target's MISSING health.  Overtakes Prosecute below ~44% health.
-	 */
+	/** Execute VI: +1.25% per 1% MISSING health. Overtakes Prosecute below ~44%. */
 	private static double execute(LivingEntity target) {
 		return EXECUTE_VI_PER_PERCENT_MISSING * (100.0 - healthPercent(target));
 	}
 
-	/**
-	 * Prosecute VI: +1% per 1% of the target's REMAINING health, so +100% at full health.
-	 */
+	/** Prosecute VI: +1% per 1% REMAINING health, +100% at full. */
 	private static double prosecute(LivingEntity target) {
 		return PROSECUTE_VI_PER_PERCENT_REMAINING * healthPercent(target);
 	}
@@ -507,24 +422,17 @@ public final class Damage {
 
 	// ===================== multiplicative =====================
 
-	/**
-	 * The {@code product(Multiplicative_i)} for one hit.  Ordering does not matter.
-	 */
+	/** {@code product(Multiplicative_i)}. Order doesn't matter. */
 	private static double multiplicative(Player p, LivingEntity target, DamagePath path, ItemDef def) {
 		double product = BOOK_OF_PROGRESSION;
 
-		// The Hyperion's x1.5 against EVERY Wither-type mob: the four Wither Lords, the Wither Miners and the
-		// wither-class trash - but NOT the Withered Dragons, which are Arcane + Ender + Airborne.  This is the same
-		// mechanic the code used to write inside out as "-33% against anything that isn't a wither" (1/1.5 = 0.667);
-		// only one of the two survives, and it is this one.
+		// Hyperion x1.5 vs EVERY Wither-type mob (Lords, Miners, trash), NOT the Withered Dragons. Old code had this
+		// inside out as "-33% vs non-withers" (1/1.5); only this form survives.
 		if(def != null && "skyblock/combat/scylla".equals(def.loreId()) && MobStats.typesOf(target).contains(MobType.WITHER)) {
 			product *= HYPERION_VS_WITHER;
 		}
-		// The Death Bow's x2 against every Undead-type mob.  On this floor that is the four Wither Lords, the Wither
-		// Miners and wither-class trash (Wither + Undead), the Crypt Undead, the Watcher's Undeads and the Prince -
-		// but NOT the Withered Dragons or either Shadow Assassin, which carry no Undead type at all.  Keyed on the
-		// lore ID, like the Hyperion's, so it follows the WEAPON and not the shooter, and so it lands on the bow's
-		// Duplex and Archer-bonus arrows too: they stamp the same weapon.
+		// Death Bow x2 vs Undead: Lords, Miners/trash, Crypt Undead, Watcher's Undeads, Prince; NOT the dragons or
+		// Shadow Assassins. Keyed on lore ID so it follows the WEAPON, and Duplex / Archer-bonus arrows get it too.
 		if(def != null && "skyblock/combat/death_bow".equals(def.loreId()) && MobStats.typesOf(target).contains(MobType.UNDEAD)) {
 			product *= DEATH_BOW_VS_UNDEAD;
 		}
@@ -536,15 +444,12 @@ public final class Damage {
 		DungeonClass clazz = DungeonClass.of(p);
 		product *= ClassBonuses.damageMultiplier(p, clazz, path, DungeonClass.isSoloOnClass(p));
 
-		// The two x1.1 target debuffs.  They help every attacker, since they live on the target.
+		// Two x1.1 target debuffs; on the target, so they help every attacker.
 		product *= TargetDebuffs.damageMultiplier(target);
 		return product;
 	}
 
-	/**
-	 * The Loving reforge's x1.05, which is abilities-only.  <b>Loving is a CHESTPLATE reforge</b>, so the chest slot
-	 * is the only one worth reading - scanning all four pieces would just be four lookups that can never match.
-	 */
+	/** Loving's x1.05, abilities only. A CHESTPLATE reforge, so only that slot is read. */
 	private static double lovingMultiplier(Player p) {
 		ItemDef def = Items.of(p.getInventory().getChestplate());
 		if(def != null && def.reforge() == ReforgeId.LOVING) return def.reforge().abilityMultiplier();
@@ -554,25 +459,18 @@ public final class Damage {
 	// ===================== debuffs the hit itself applies =====================
 
 	/**
-	 * Apply the debuffs this hit carries, BEFORE its own damage is computed, so the hit benefits from its own
-	 * debuff (§7's ordering rule).  That is the opposite of the obvious implementation, which is why it is
-	 * explicit.
-	 * <p>
-	 * This is also called on its own from the paths that skip damage, because <b>stacks land even when the damage
-	 * does not</b>: a mage beam on an invulnerable boss still builds Lethality and ramps Venomous, so the moment
-	 * the boss opens up the debuffs are already there.
+	 * Apply this hit's debuffs BEFORE its damage is computed, so it benefits from them (§7 ordering; the opposite of
+	 * the obvious implementation). Also called alone on paths that skip damage: stacks land even when damage
+	 * doesn't, so a beam on an invulnerable boss still builds Lethality and Venomous.
 	 */
 	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemDef weapon) {
 		applyOnHitDebuffs(p, target, path, weapon, true);
 	}
 
-	/**
-	 * As above, with {@code buildsLastBreath} false for an arrow that came off a Last Breath but must not stack
-	 * it - the Archer's two bonus arrows.  See {@link Arrows#stamp} for the full rule.
-	 */
+	/** {@code buildsLastBreath} false for the Archer's two bonus arrows. Full rule at {@link Arrows#stamp}. */
 	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemDef weapon, boolean buildsLastBreath) {
 		if(target == null) return;
-		// Lethality is a sword enchantment, so a bow never builds its stacks.
+		// Lethality is a sword enchant; bows never build it.
 		if(path.isMelee()) TargetDebuffs.applyLethality(target);
 		if(path == DamagePath.BOW) {
 			TargetDebuffs.applyTwilightPoison(target);
@@ -583,9 +481,7 @@ public final class Damage {
 		}
 	}
 
-	/**
-	 * As above, for a call site that has the held stack rather than its definition.
-	 */
+	/** For call sites holding the stack, not the definition. */
 	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemStack weapon) {
 		applyOnHitDebuffs(p, target, path, Items.of(weapon));
 	}
@@ -593,48 +489,38 @@ public final class Damage {
 	// ===================== the single application boundary =====================
 
 	/**
-	 * Deal a computed SkyBlock-scale hit.  Counts as the primary instance for procs and Cleave.
+	 * Deal a computed SkyBlock-scale hit, the primary instance for procs and Cleave.
 	 * <p>
-	 * Returns the hit as it is REPORTED - SkyBlock scale, after the target's defense and resistance but before any
-	 * boss clamp, i.e. exactly the figure {@link DamageNumbers} puts in the air.  Callers that print their own
-	 * summary (Implosion's "hit N enemies for X") must use this rather than the sbDamage they passed in, or they
-	 * report the pre-defense number and disagree with every other display.
+	 * Returns the REPORTED hit: after defense and resistance, before any boss clamp, what {@link DamageNumbers}
+	 * shows. Callers printing their own summary (Implosion's "hit N enemies for X") must use this, not their
+	 * sbDamage, or they report pre-defense numbers.
 	 * <p>
-	 * <b>Aggro is pulled only if the hit did real damage.</b>  Melee, beam, bow and ability all follow the same rule:
-	 * a hit that took health off a boss makes you its target, and one that took nothing does not - not on an armoured
-	 * Maxor, and not on Goldor mid-terminals or Necron mid-interlude, where the hit is deliberately feedback-only and
-	 * clamped away.  The three abilities that may aggro a <i>fully invulnerable</i> wither anyway (the mage beam, the
-	 * thrown-axe projectiles and the Flaming Flay arc) do it at their own armour checks, before calling in here -
-	 * which is the only place that state is visible as more than "the damage was zero".
+	 * <b>Aggro only if health actually moved</b>, every path: not on an armoured Maxor, Goldor mid-terminals or
+	 * Necron mid-interlude (clamped to feedback-only). The beam, thrown axes and Flaming Flay arc may aggro a fully
+	 * invulnerable wither, and do it at their own armour checks before calling here, the only place that state is
+	 * visible.
 	 * <p>
-	 * There used to be a {@code dealNoAggro} for arrows, on the rule "arrows deliberately do NOT set the aggro target
-	 * - only melee and mage-beam hits do".  That rule is gone; arrows and melee are the same case now, so the two
-	 * methods collapsed back into this one.
+	 * {@code dealNoAggro} for arrows is gone; arrows and melee are the same case now.
 	 */
 	public static double deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path) {
 		return deal(target, sbDamage, kind, attacker, path, true, true, true);
 	}
 
 	/**
-	 * A <b>derived</b> instance: a hit whose figure was copied out of the rolling damage history and so is
-	 * <b>already a finished hit</b> - Rapid Fire's 75%, Explosive Shot's 100%, a Berserk's thrown axe.  Identical to
-	 * {@link #deal} in every way but one: <b>it does not feed the history it read</b>.
+	 * DERIVED instance: figure copied from the rolling history, already finished (Rapid Fire 75%, Explosive Shot
+	 * 100%, Berserk's thrown axe). Same as {@link #deal} except it does NOT feed the history it read.
 	 * <p>
-	 * That is MAP.md §1.14's "only real hits go in the buffer" rule, and it is load-bearing rather than
-	 * tidy, exactly as it is for procs.  A derived hit that records itself makes the ability read its own output the
-	 * next time: Rapid Fire fires 50 arrows over 200 ticks and re-queries the history for every one, so any factor
-	 * above 1 between the figure it reads and the damage it lands compounds fifty times over and runs off the top of
-	 * a double.  Even at exactly 1.0 it is wrong, because "highest in the last minute" would then never decay - each
-	 * derived hit would re-stamp the old maximum with the current tick and hold it alive forever.
+	 * §1.14's "only real hits go in", load-bearing: Rapid Fire's 50 arrows over 200 ticks each re-query, so any
+	 * factor above 1 compounds fifty times and overflows a double. Even at 1.0 it's wrong: each hit would re-stamp
+	 * the old max with the current tick and "highest in the last minute" would never decay.
 	 */
 	public static double dealDerived(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path) {
 		return deal(target, sbDamage, kind, attacker, path, true, true, false);
 	}
 
 	/**
-	 * A secondary instance - a Cleave hit or a proc.  It goes through the same boundary as the main hit, but does
-	 * not itself generate Cleave or procs: one level of propagation, always.  Never pulls aggro, which
-	 * {@link DamageKind#pullsAggro} enforces as well.
+	 * Secondary instance (Cleave or proc): same boundary, but makes no Cleave or procs of its own, one level only.
+	 * Never aggros; {@link DamageKind#pullsAggro} enforces that too.
 	 */
 	public static double dealSecondary(LivingEntity target, double sbDamage, DamageKind kind, Player attacker) {
 		return deal(target, sbDamage, kind, attacker, DamagePath.MELEE, false, false, false);
@@ -646,98 +532,74 @@ public final class Damage {
 	private static double deal(LivingEntity target, double sbDamage, DamageKind kind, Player attacker, DamagePath path, boolean primary, boolean aggro, boolean feedsHistory) {
 		if(target == null || sbDamage <= 0) return 0;
 
-		// Targets that must never be touched at all, checked before anything else.
-		// Villager NPCs (Mort / the Wizard) never take plugin-dealt damage.  Blocking it here rather than only in
-		// MiscListener matters: this used to hit with genericKill, the exact source vanilla's /kill uses, so the
-		// two were indistinguishable once they reached the damage event.  Keeping ability damage away from
-		// villagers at the source is what lets a KILL-cause event on a villager mean a real /kill.
+		// Never-touch targets first.
+		// Villager NPCs (Mort / Wizard). This used to hit with genericKill, the same source as vanilla /kill, so
+		// blocking at the source is what lets a KILL-cause event on a villager mean a real /kill.
 		if(target instanceof Villager) return 0;
-		// The Watcher cannot be damaged at all; the fight is won by killing its Undeads.
+		// The Watcher can't be damaged; you win by killing its Undeads.
 		if(target.getScoreboardTags().contains("TASWatcher")) return 0;
-		// A blood mob is shielded for its first ~2 ticks so a spawn-tick arrow can't kill it before it registers
-		// toward progress.  This used to be enforced only in MiscListener.onWatcherDamage, i.e. on the vanilla
-		// damage event; nothing on this path fires one, so the guard has to live here too.
+		// Blood mobs are shielded ~2 ticks so a spawn-tick arrow can't kill them before they count. Was only in
+		// MiscListener.onWatcherDamage, a vanilla event this path never fires.
 		if(target.getScoreboardTags().contains("WatcherMobSpawning")) return 0;
-		// A Wither-King dragon playing its death animation is a corpse, and hitting a corpse must not touch it.
-		// Vanilla runs the dragon's death off its HEALTH: at 0 it ticks dragonDeathTime toward 200, and the phase's
-		// own doServerTick is what puts it there.  But a Bukkit setHealth(0) also calls die(), and an EnderDragon's
-		// handleKillingBlow answers that by setting health back to 1 - which stops the death tick for as long as the
-		// health stays there.  So every hit landing on the corpse rewound the animation by a tick, and a party
-		// swinging every tick froze it outright: the dragon just hung in the air.  It also drew a full damage number
-		// (healthBefore reads 1, not 0), fired procs and Cleave off a dead target, and re-ran vanilla's whole death
-		// sequence - EntityDeathEvent and loot included - once per hit.  Refusing at the boundary kills all of it.
+		// A dying WK dragon is a corpse. Vanilla ticks dragonDeathTime toward 200 at health 0, but Bukkit
+		// setHealth(0) calls die() and EnderDragon.handleKillingBlow sets health back to 1, pausing it. So each hit
+		// rewound the animation a tick (swinging every tick froze the dragon in the air), drew a full number, fired
+		// procs/Cleave, and re-ran the whole death sequence incl. EntityDeathEvent and loot. Refuse here.
 		if(instructions.bosses.witherking.WitherKing.isDyingDragon(target)) return 0;
-		// Aggro used to be noted HERE, ahead of the immunity returns below, so a boss chased whoever was hitting it
-		// through an armoured window the moment that window ended.  It is now noted further down, inside the branch
-		// where health actually moved: a hit that deals nothing does not pull aggro.  The three abilities that DO
-		// aggro through a full shield note it themselves, at the armour check they already have.
+		// Aggro used to be noted here, before the immunity returns, so a boss chased whoever hit it through an armoured
+		// window. Now it's noted below where health moved; the three shield-aggro abilities note it themselves.
 
-		// An armoured wither takes nothing.  Every call site already checks this, but it belongs at the single
-		// boundary as well so a Cleave hit or a proc can't slip past one.  WithersNotImmuneToArrows' deliberate
-		// "vulnerable then re-armoured on the same tick" exception clears the counter itself before calling in,
-		// so it is unaffected.
+		// Armoured wither takes nothing. Call sites check too, but this stops Cleave/procs slipping past.
+		// WithersNotImmuneToArrows' same-tick "vulnerable then re-armoured" exception clears the counter first.
 		if(target instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) return 0;
 
-		// The Wither King is immune to all direct player damage.  Its HP is driven solely by dragon kills.  Aggro
-		// is still noted above, and the debuffs the hit carried have already landed at the call site.
+		// WK is immune to direct damage; HP moves only via dragon kills. Debuffs already landed at the call site.
 		if(target.getScoreboardTags().contains("TASWitherKing")) return 0;
 
 		double defense = TargetDebuffs.reducedDefense(target, MobStats.defenseOf(target));
-		// Armorshred Arrows (see the constant): a BOW-path hit divides by x0.95 of that defense.  A factor on this
-		// hit's divisor, not a change to the target.  Gated on the path rather than on "is there an arrow entity",
-		// so it covers the Terminator's Salvation beam and Explosive Shot's blast as well - the same treatment those
-		// already get from Power VII, Archery IV, Skeletor and Overload.
+		// Armorshred: BOW-path divisor uses x0.95 defense, target untouched. Gated on path, so Salvation and
+		// Explosive Shot get it too, like Power VII, Archery IV, Skeletor and Overload.
 		if(path == DamagePath.BOW) defense *= ARMORSHRED_DEFENSE;
 		double resistance = MobStats.resistanceOf(target);
 		double mcDamage = sbDamage * resistance / Scale.defenseDivisor(defense) / Scale.SB_PER_MC_HP;
 		double preClamp = mcDamage;
 
-		// The hurt sound is judged on the PRE-clamp damage, i.e. "did this hit do anything?".  Otherwise a hit
-		// clamped to 0 - once Maxor's 75% or Storm's 55% stun cap is reached - would silently go quiet.
+		// Hurt sound on PRE-clamp damage, or hits past Maxor's 75% / Storm's 55% stun cap go silent.
 		witherHurtSound(target, attacker, mcDamage, kind);
 
-		// The bosses' own clamps (Maxor's 75% stun cap, Storm's 55% crush cap, Necron's thresholds, Goldor's
-		// patrol immunity, every dying state).  Called explicitly, since no EntityDamageEvent fires for our damage.
+		// Boss clamps (Maxor 75% stun cap, Storm 55% crush cap, Necron thresholds, Goldor patrol immunity, dying
+		// states), called explicitly since no EntityDamageEvent fires.
 		//
-		// A clamp decides HOW MUCH HEALTH MOVES.  It does not decide what the player hit for, so it never touches
-		// what is reported: `preClamp` is what the number in the air and /verbose's Final Damage both show, and
-		// `mcDamage` is what the health bar loses.  That is why Goldor mid-terminals and Necron mid-interlude display
-		// a full number while taking nothing, with no per-boss opt-in needed (showsUnclampedDamage is gone), and why
-		// a killing blow reads as the full hit rather than as the sliver-sized amount it was allowed to apply.
+		// A clamp decides HOW MUCH HEALTH MOVES, never what's reported: `preClamp` feeds the floating number and
+		// /verbose Final Damage, `mcDamage` the health bar. So Goldor/Necron immune windows show full numbers with no
+		// per-boss opt-in (showsUnclampedDamage is gone), and a killing blow reads as the full hit.
 		if(target instanceof Wither wither) {
 			WitherLord lord = WitherLord.activeFor(wither);
 			if(lord != null) mcDamage = lord.clampDamage(mcDamage);
 		}
 
-		// What HEALTH moves by is quantised to HP_STEP, after the clamps, so a boss's HP stays a number you can
-		// reason about rather than a 15-significant-digit double.  mcDamage itself is left ALONE, because the
-		// floating number and /verbose report the TRUE figure - reading your real damage is the whole point of them,
-		// and rounding it first would be reporting the storage format instead of the hit.
+		// Health moves in HP_STEP, after clamps. mcDamage stays unrounded: the number and /verbose report the TRUE hit.
 		double applied = roundHp(mcDamage);
 
 		double healthBefore = target.getHealth();
-		// What THIS hit wrote.  The kill chokepoint below is judged on it rather than on a fresh getHealth(), because
-		// a Bukkit setHealth(0) runs vanilla's whole death sequence, and an EnderDragon's handleKillingBlow answers
-		// that by putting its health straight back to 1 and flipping the phase to DYING.  Re-reading would therefore
-		// see a live 1-HP dragon on the very hit that killed it and never call handleDragonKilled.
+		// What THIS hit wrote. The kill check uses it, not a re-read: setHealth(0) runs vanilla's death and an
+		// EnderDragon's handleKillingBlow sets health back to 1 (phase DYING), so a re-read sees a live 1-HP dragon
+		// on its killing hit and handleDragonKilled never runs.
 		double healthAfter = healthBefore;
 		if(applied > 0) {
-			// Belt and braces.  With direct health manipulation vanilla's invulnerability window is not consulted
-			// at all, but a mob that took vanilla damage a tick earlier would otherwise still be carrying one.
+			// Belt and braces: a mob that took vanilla damage a tick ago would still carry an i-frame window.
 			target.setNoDamageTicks(0);
 			healthAfter = Math.max(0, healthBefore - applied);
 			target.setHealth(healthAfter);
-			// setHealth bypasses the vanilla damage path, so the red hurt flash never plays.  Send it ourselves.
+			// setHealth skips the red hurt flash, so send it ourselves.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftLivingEntity) target).getHandle()));
 			Utils.changeName(target);
-			// Aggro, from inside the "health actually moved" branch - that IS the rule, for every path.  A hit worth
-			// zero, whether clamped by a stun cap or swallowed by a feedback-only window, does not redirect the fight.
+			// Aggro only here, where health moved. That IS the rule, every path.
 			if(aggro) noteAggro(target, attacker, kind);
 		}
 
-		// Kill chokepoints.  No event fires on this path, so the deaths that other systems watch for are detected
-		// here.  Gated on the target having been ALIVE before this hit, so a Cleave hit or a proc landing on a
-		// corpse cannot re-arm the post-kill buff or inflate the combo; both handlers below are idempotent anyway.
+		// Kill chokepoints: no event fires on this path, so deaths are detected here. Gated on ALIVE before this hit
+		// so Cleave/procs on a corpse can't re-arm the post-kill buff or pad the combo.
 		if(healthBefore > 0 && healthAfter <= 0) {
 			if(target.getScoreboardTags().contains("WatcherMob")) {
 				instructions.bosses.Watcher.INSTANCE.registerMobKill(target);
@@ -750,31 +612,22 @@ public final class Damage {
 		}
 
 		if(attacker != null && primary) {
-			// Only PRIMARY instances go into the rolling history, and only ones that were not THEMSELVES read out of
-			// it.  Its consumers all ask for a best HIT (Berserk's axe throw, Explosive Shot, Rapid Fire, Venomous's
-			// DPS term), so anything that copies the history and then records what it dealt closes a loop: a Venomous
-			// tick would raise the figure the next tick reads, and a Rapid Fire arrow the figure the next arrow reads.
-			// See dealDerived - the two exclusions are the same rule, and neither is optional.
+			// History takes only PRIMARY hits that weren't read out of it. Its consumers want a best HIT, so recording
+			// a Venomous tick or Rapid Fire arrow closes a feedback loop. Same rule as dealDerived; neither optional.
 			if(feedsHistory) CombatState.recordDamage(attacker, sbDamage);
 			CombatState.noteHit(attacker, target.getUniqueId(), path);
 			CombatState.spendPostKillBuff(attacker);
 		}
 
-		// What SkyBlock would show: the hit after resistance and the defense divisor, but BEFORE any boss clamp, and
-		// never quantised.  Three separate figures exist by the end of this method and it is worth naming them:
-		// `preClamp` is what you hit for and is what gets displayed, `mcDamage` is what the clamp allowed, and
-		// `applied` is that rounded to HP_STEP and is the only one health ever sees.
+		// What SkyBlock shows: after resistance and defense, BEFORE clamp, unquantised. Three figures: `preClamp`
+		// (displayed), `mcDamage` (clamp allowed), `applied` (quantised, the only one health sees).
 		double reported = preClamp * Scale.SB_PER_MC_HP;
-		// A number is drawn only for a hit on something that was ALIVE to take it.  Judged on `healthBefore` and the
-		// dying tag rather than on current health, because this runs AFTER setHealth: testing the live value would
-		// suppress the killing blow's own number, which is the one number in the fight you least want to lose.  What
-		// it does suppress is every hit that lands on a corpse - a Cleave sweep or a proc tick arriving after the kill,
-		// a stray arrow, a beam swept through a body - and on a boss pinned in its DYING_SLIVER state, where TASDying
-		// is the only tell (HP is frozen at a non-zero sliver, so isDead and getHealth both read as alive).
+		// Draw only for a target ALIVE to take it. Uses `healthBefore` + dying tag since this runs after setHealth,
+		// and live health would hide the killing blow's number. Suppresses hits on corpses (late Cleave/procs, stray
+		// arrows) and on a boss at DYING_SLIVER, where TASDying is the only tell (HP frozen non-zero).
 		boolean showsNumber = healthBefore > 0 && !target.getScoreboardTags().contains("TASDying");
 		if(showsNumber) DamageNumbers.show(target, reported, kind, attacker);
-		// /verbose follows the SAME gate, so the log and the numbers in the air are the same set of hits.  A corpse
-		// still absorbs procs and Cleave sweeps for a while after it dies, and those were the bulk of the log.
+		// /verbose uses the SAME gate; corpse procs and Cleave were the bulk of the log.
 		verbose(attacker, target, sbDamage, mcDamage, preClamp, defense, resistance, kind, showsNumber);
 		if(primary) {
 			Procs.onHit(attacker, target, sbDamage, path);
@@ -784,12 +637,8 @@ public final class Damage {
 	}
 
 	/**
-	 * Make {@code attacker} the boss's aggro target, if this hit is allowed to.
-	 * <p>
-	 * Called only from inside the "health actually moved" branch, so <b>a hit worth zero never reaches it</b>.  The
-	 * per-KIND gate lives here too: <b>only a direct hit pulls aggro</b>, so Fire Aspect, Venomous, Thunderlord and a
-	 * Cleave sweep never do, whatever the caller passed.  Only the four boss withers have an aggro target at all,
-	 * hence the TASWither check.
+	 * Only reached when health moved. Per-KIND gate here too: only direct hits aggro, never procs or Cleave, whatever
+	 * the caller passed. Only the four boss withers (TASWither) have an aggro target.
 	 */
 	private static void noteAggro(LivingEntity target, Player attacker, DamageKind kind) {
 		if(attacker == null || !kind.pullsAggro()) return;
@@ -798,20 +647,14 @@ public final class Damage {
 	}
 
 	/**
-	 * A boss wither's hurt noise.
-	 * <p>
-	 * This used to hang off {@code EntityDamageEvent} in {@code MiscListener.onWitherHurtSound}, which the
-	 * unified path stopped firing - so it moved here, to the one place every hit passes through.  Three rules
-	 * carried over verbatim:
+	 * Boss wither hurt noise. Moved here from {@code MiscListener.onWitherHurtSound}, whose event this path never
+	 * fires. Rules:
 	 * <ul>
-	 *   <li>judged on the PRE-clamp damage, so a hit clamped to 0 by a stun cap still sounds;</li>
-	 *   <li>silent while the boss is dying, when only the death noise plays;</li>
-	 *   <li>silent for a mage beam, which routes its own constant-volume sound to the beamer, so an at-location
-	 *       copy would double up and be distance-attenuated.</li>
+	 *   <li>PRE-clamp damage, so a stun-capped hit still sounds;</li>
+	 *   <li>silent while dying (only the death noise);</li>
+	 *   <li>silent for a beam, which sends its own constant-volume sound to the beamer;</li>
+	 *   <li>DIRECT hits only ({@link DamageKind#playsHurtSound}): DoTs made one swing six noises.</li>
 	 * </ul>
-	 * And one rule that is new: <b>only a DIRECT hit sounds</b>.  The damage-over-time kinds each fire five
-	 * instances off one swing, so letting them ring turned a single melee hit into six overlapping hurt noises and a
-	 * Terminator volley into a wall of them.  See {@link DamageKind#playsHurtSound}.
 	 */
 	private static void witherHurtSound(LivingEntity target, Player attacker, double preClampDamage, DamageKind kind) {
 		if(!(target instanceof Wither wither) || preClampDamage <= 0) return;
@@ -828,21 +671,14 @@ public final class Damage {
 	// ===================== §7a verbose breakdowns =====================
 
 	/**
-	 * The factored breakdown of one hit: the formula's own terms, in the order they multiply, rather than only its
-	 * answer.
+	 * One hit's formula terms in multiply order. Threaded through the formulas, since {@link #deal} only gets a
+	 * finished double that can't be decomposed.
 	 * <p>
-	 * It is <b>threaded explicitly</b> through the formula methods rather than reconstructed afterwards, because
-	 * {@link #deal} is handed a single finished double and there is no way to decompose that back into base x
-	 * Strength x Crit Damage x additive x multiplicative.
+	 * {@link #begin()} is null unless {@code /verbose super}, and producers null-guard, so the normal path allocates
+	 * nothing (Terminator rates would be thousands of concatenations a second).
 	 * <p>
-	 * {@link #begin()} returns <b>null</b> unless {@code /verbose super} is on, and every producer is null-guarded, so
-	 * the normal path allocates nothing and formats nothing - a per-hit breakdown at Terminator fire rates would be
-	 * thousands of string concatenations a second.
-	 * <p>
-	 * {@link #complete} parks the finished object in {@link #lastBreakdown} for {@link #verbose} to pick up, since the
-	 * formula call and the {@code deal} call are separate.  Main-thread only, and {@code verbose} both CONSUMES it and
-	 * checks the total matches the hit in front of it - which is what stops a Cleave hit or a Venomous tick, neither
-	 * of which runs a formula at all, from printing the previous hit's rows as its own.
+	 * {@link #complete} parks it in {@link #lastBreakdown} for {@link #verbose}. Main-thread only; verbose CONSUMES it
+	 * and checks the total matches, so a Cleave hit or proc (no formula) can't print the previous hit's rows.
 	 */
 	private static final class Breakdown {
 		private String baseLabel = "Base Damage";
@@ -872,40 +708,29 @@ public final class Damage {
 	private static Breakdown lastBreakdown;
 
 	/**
-	 * Print one hit's breakdown, at whichever level {@code /verbose} is on.
-	 * <p>
-	 * {@code showsNumber} is {@link DamageNumbers}' own gate, passed in rather than recomputed: <b>a hit that drew no
-	 * floating number logs nothing either.</b>  Both levels obey it.  Otherwise every proc tick and Cleave sweep that
-	 * lands on a corpse - and there are several per kill, since a dead mob stays a valid target for its remaining Fire
-	 * Aspect and Venomous windows - prints a full breakdown for damage nobody can see being dealt to something already
-	 * dead, which at Terminator/beam rates is most of the log.
+	 * {@code showsNumber} is {@link DamageNumbers}' gate: no floating number, no log, at both levels. Otherwise corpse
+	 * procs and Cleave (several per kill, over the remaining Fire/Venomous windows) are most of the log.
 	 */
 	private static void verbose(Player attacker, LivingEntity target, double sbDamage, double mcDamage, double preClamp, double defense, double resistance, DamageKind kind, boolean showsNumber) {
-		// Consumed unconditionally, whatever the verbose level and even for a hit we are about to print nothing for:
-		// leaving it parked would let the NEXT hit that runs no formula of its own - a proc, a Cleave sweep - inherit
-		// these rows.
+		// Always consumed, or the next formula-less hit (proc, Cleave) inherits these rows.
 		Breakdown b = lastBreakdown;
 		lastBreakdown = null;
 		if(!showsNumber) return;
 		if(Utils.getVerboseLevel().ordinal() < Utils.VerboseLevel.ON.ordinal()) return;
 
-		// Final Damage is the FULL hit after the two target-side reductions, with no boss clamp in it, so
-		// Total x defense x boss really does reach it - the breakdown is a complete factorisation again.  What the
-		// clamp allowed is a separate line, below, and only when it differs.
+		// Final Damage = Total x defense x boss, no clamp, so the breakdown factorises fully. Clamp is its own line.
 		double finalDamage = preClamp * Scale.SB_PER_MC_HP;
 		double dealt = mcDamage * Scale.SB_PER_MC_HP;
 		double defenseFactor = 1.0 / Scale.defenseDivisor(defense);
 		boolean clamped = Math.abs(preClamp - mcDamage) > 1e-9;
 
 		if(!Utils.isSuperVerbose()) {
-			// `on`: the total, the two target-side reductions AS ONE factor, and the result.  Three lines, plus a
-			// fourth only when a clamp actually took a bite - otherwise the boss's own mechanics are invisible here.
+			// `on`: total, target-side reductions as ONE factor, result; a fourth line only if a clamp bit.
 			Utils.debug(Utils.DebugType.BOSS, "Total Damage: " + integer(sbDamage) + "\n  Defense & Boss Multiplier: " + factorText(defenseFactor * resistance) + "\n  Final Damage: " + integer(finalDamage) + (clamped ? "\n  Dealt (boss clamp): " + integer(dealt) : ""));
 			return;
 		}
 
-		// `super`: every term. The player-side rows come from the Breakdown, so a path that genuinely has no Strength
-		// or Crit Damage term (an ability) simply has no such row - rather than a misleading x1.
+		// `super`: every term. Player-side rows come from the Breakdown, so an ability has no Strength row, not a x1.
 		StringBuilder sb = new StringBuilder();
 		sb.append(kind).append(' ').append(attacker == null ? "?" : Utils.getRealName(attacker)).append(" -> ").append(target.getName());
 		if(b != null && Math.abs(b.total - sbDamage) <= 1e-6) {
@@ -916,19 +741,13 @@ public final class Damage {
 		sb.append("\n  Defense (").append(defenseText(target, defense)).append("): ").append(factorText(defenseFactor));
 		sb.append("\n  Boss Multiplier: ").append(factorText(resistance));
 		sb.append("\n  Final Damage: ").append(integer(finalDamage));
-		// What the boss's own mechanics let through, shown ONLY when it differs from the hit.  A stun cap, a Necron
-		// threshold, Goldor on patrol or a killing blow all rewrite the damage AFTER everything above, so this is a
-		// separate line rather than another factor - and it sits below Final Damage because Final Damage is now the
-		// honest end of the factorisation, not the end of the story.
+		// What boss mechanics let through, only when different. Clamps act AFTER everything above, so it's a line,
+		// not a factor.
 		if(clamped) sb.append("\n  Dealt (boss clamp): ").append(integer(dealt));
 		Utils.debug(Utils.DebugType.BOSS, sb.toString());
 	}
 
-	/**
-	 * The defense figure for the {@code Defense (...)} row: the EFFECTIVE value, or {@code raw -> effective} when
-	 * something actually reduced it - Lethality, Last Breath, or Armorshred on a bow hit - since which figure is
-	 * being read is the whole question when a defense number looks wrong.
-	 */
+	/** EFFECTIVE defense, or {@code raw -> effective} when Lethality, Last Breath or Armorshred reduced it. */
 	private static String defenseText(LivingEntity target, double effective) {
 		double raw = MobStats.defenseOf(target);
 		String shown = trimZeros(Utils.roundCommas(effective, 2));
@@ -936,16 +755,12 @@ public final class Damage {
 		return trimZeros(Utils.roundCommas(raw, 2)) + " -> " + shown;
 	}
 
-	/**
-	 * One multiplier as it reads in the breakdown: {@code x100}, {@code x1.05}, {@code x0.0769}.
-	 */
+	/** {@code x100}, {@code x1.05}, {@code x0.0769}. */
 	private static String factorText(double value) {
 		return "x" + trimZeros(Utils.roundCommas(value, 4));
 	}
 
-	/**
-	 * Drop a trailing {@code .0000} / {@code .10} so a round factor reads as {@code x100}, not {@code x100.0000}.
-	 */
+	/** {@code x100}, not {@code x100.0000}. */
 	private static String trimZeros(String s) {
 		if(s.indexOf('.') < 0) return s;
 		int end = s.length();
@@ -955,22 +770,16 @@ public final class Damage {
 	}
 
 	/**
-	 * <b>The one "you hit N enemies" line</b>, printed by every ability that damages a group: the Hyperion's
-	 * Implosion, the Guided Bat, Explosive Shot, the Guided Sheep and the thrown axe.
+	 * The one "hit N enemies" line for every group ability (Implosion, Guided Bat, Explosive Shot, Guided Sheep,
+	 * thrown axe). Silent on no hits; counts only what {@code deal} REPORTED, so zeroed targets (armoured wither,
+	 * NPC, clamped boss) aren't counted, keeping it in line with the floating numbers.
 	 * <p>
-	 * Says nothing when the ability connected with nothing, and counts only what {@code deal} actually
-	 * <b>reported</b> - so a target that soaked the hit to zero (an armoured wither, a villager NPC, a boss clamped
-	 * mid-terminals) is not counted and its zero is not summed.  That is what keeps this line agreeing with the
-	 * numbers in the air, which is the whole reason it goes through one method.
+	 * ONE decimal place like the real message ({@code Your Spirit Sceptre hit 1 enemy for 66,342.2 damage.}), so not
+	 * {@link #integer}; a whole total reads {@code 66,342.0}.
 	 *
-	 * <b>ONE decimal place</b>, matching the real message - {@code Your Spirit Sceptre hit 1 enemy for 66,342.2
-	 * damage.} - which is why this does not use {@link #integer}, the whole-number format the floating damage
-	 * numbers take (§7a). A whole total therefore reads {@code 66,342.0} rather than {@code 66,342}.
-	 *
-	 * @param ability the ability's display name as the message says it, which is <b>not always the ability</b>:
-	 *                the Hyperion's line names "Implosion" but the Spirit Sceptre's names the ITEM
-	 * @param hits    how many targets reported a hit above zero
-	 * @param dealt   the sum of what they reported, in SkyBlock damage
+	 * @param ability name as the message says it, not always the ability: "Implosion", but the Sceptre names the ITEM
+	 * @param hits    targets that reported above zero
+	 * @param dealt   sum of what they reported, SkyBlock damage
 	 */
 	public static void reportAoe(Player p, String ability, int hits, double dealt) {
 		if(p == null || hits <= 0) return;
@@ -978,19 +787,12 @@ public final class Damage {
 				+ (hits == 1 ? "enemy" : "enemies") + " for <red>" + Utils.roundCommas(dealt, 1) + "</red> damage."));
 	}
 
-	/**
-	 * A full integer with every digit, never abbreviated - the same rule the floating numbers follow (§7a) - and
-	 * thousands-separated, because {@code 726525143} is unreadable at a glance and {@code 726,525,143} is not.
-	 * {@code Locale.ROOT} so the separator is a comma on every host, not a dot or a space.
-	 */
+	/** Every digit, never abbreviated (§7a), comma-separated. {@code Locale.ROOT} so it's a comma on every host. */
 	public static String integer(double value) {
 		return String.format(java.util.Locale.ROOT, "%,d", (long) Math.floor(value));
 	}
 
-	/**
-	 * The full itemised stat breakdown for {@code /verbose super} and {@code /eq}.  Separate from the per-hit
-	 * breakdown above because it is per player, not per hit.
-	 */
+	/** Itemised stats for {@code /verbose super} and {@code /eq}; per player, not per hit. */
 	public static Map<String, StatBlock> statBreakdown(Player p, DamagePath path) {
 		return new LinkedHashMap<>(Stats.breakdown(p, path));
 	}

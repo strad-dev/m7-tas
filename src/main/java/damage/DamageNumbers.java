@@ -13,53 +13,41 @@ import java.util.*;
 /**
  * Floating damage numbers (MAP.md §7a).
  * <p>
- * A {@link TextDisplay}, not an armour stand or a hologram plugin: it spawns somewhere around the hit, holds
- * perfectly still for its lifetime, then is removed.  <b>No drift, no interpolation, no transformation</b> - a
- * number that slides upward while a dozen others spawn around it reads as smearing rather than as separate hits, so
- * the spread is spatial instead: a random point anywhere within {@value #SPAWN_RADIUS} blocks of the target's eyes.
+ * A {@link TextDisplay} that spawns near the hit, holds still, then is removed. No drift or interpolation: a
+ * number sliding up among a dozen others reads as smearing, so the spread is spatial, a random point within
+ * {@value #SPAWN_RADIUS} blocks of the target's eyes.
  * <p>
- * <b>The number shown is what you HIT FOR</b>: after the boss resistance and the defense divisor, since those are
- * properties of the hit landing on that target, but <b>before any boss clamp and before quantisation</b>.  A clamp
- * decides how much health moves, which is a different question from how hard you hit - so a killing blow reads as the
- * whole hit rather than as the sliver it was allowed to apply, a stun-capped hit reads full, and Goldor mid-terminals
- * or Necron mid-interlude show a real number while losing nothing.  Health is separately quantised to
- * {@code HP_STEP} so a boss's HP stays a number you can reason about; that rounding never reaches the display.
+ * Shows what you HIT FOR: after boss resistance and defense divisor, but BEFORE any boss clamp and quantisation. A
+ * clamp decides how much health moves, not how hard you hit, so a killing blow reads as the whole hit, a stun-capped
+ * hit reads full, and Goldor mid-terminals or Necron mid-interlude show a real number while losing nothing. Health
+ * quantisation to {@code HP_STEP} never reaches the display. {@code Damage.deal} names all three figures:
+ * {@code preClamp} (shown here), {@code mcDamage} (clamp allowed) and {@code applied} (quantised, what health sees).
  * <p>
- * Three figures exist per hit and {@code Damage.deal} names all three: {@code preClamp} (shown here), {@code mcDamage}
- * (what the clamp allowed) and {@code applied} (that, quantised - the only one health sees).
+ * Never rounded or abbreviated: {@code 726,525,143}, never {@code 726.5M}. Crit format {@code ✧<digits>✧❤}, digit
+ * colours from a FIXED cadence so identical hits render identically; a KIND colour overrides it and grey magic
+ * numbers are bare digits.
  * <p>
- * <b>Never rounded, abbreviated or truncated.</b>  The full integer, every digit, thousands-separated:
- * {@code 726,525,143}, never {@code 726.5M}.
- * <p>
- * Format is {@code ✧<digits>✧❤} for a crit, with the digits taking their colours from a FIXED cadence rather than a
- * random roll, so two identical hits render identically.  A damage KIND overrides the cadence entirely, and grey
- * magic numbers drop the decoration and render as bare digits.
- * <p>
- * <b>See-through</b>, i.e. not depth-tested, so a boss model can never obscure the number reporting on it.  See the
- * comment at the flag: there is no render-priority knob, only this.
+ * See-through (not depth-tested) so a boss model can't hide it; there is no render-priority knob, see the flag.
  */
 public final class DamageNumbers {
 	private DamageNumbers() {}
 
-	/** How long one number lives.  Short and bounded: a Terminator volley plus Cleave is dozens of hits a tick. */
+	/** Short: a Terminator volley plus Cleave is dozens of hits a tick. */
 	private static final int LIFETIME_TICKS = 20;
 	/**
-	 * Hard cap on a player's concurrent displays.  Every damage instance gets its own number - an Archer's Terminator
-	 * volley is three arrows, each resolving separately, and a Berserk's swing is one hit plus a Cleave sweep plus
-	 * ten Fire Aspect and Venomous ticks - so with a 20-tick life the honest steady state is dozens, and the old cap
-	 * of 24 was evicting a volley's own earlier numbers before anyone could read them.  Still a cap, because this is
-	 * an entity count: nothing here may grow without a bound.
+	 * Cap on a player's concurrent displays. Every instance gets a number (a Berserk swing is hit + Cleave + ten Fire
+	 * Aspect/Venomous ticks), so at 20t life the steady state is dozens; the old cap of 24 evicted a volley's own
+	 * numbers before anyone read them. Still capped since it's an entity count.
 	 */
 	private static final int MAX_PER_PLAYER = 100;
-	/** How far from the target's EYES a number may spawn, in any direction. */
+	/** Spawn distance from the target's EYES, any direction. */
 	private static final double SPAWN_RADIUS = 1.0;
-	/** Random points to try before falling back to the eye location itself. */
+	/** Random points to try before falling back to the eyes. */
 	private static final int SPAWN_ATTEMPTS = 12;
 
 	/**
-	 * The crit digit cadence, walked one entry per DIGIT and wrapping once it runs out.  There is no named orange in
-	 * the 16-colour set, so {@code gold} stands in, and {@code green} is the bright "light green" (dark_green is the
-	 * deep one).
+	 * Crit digit cadence, one entry per DIGIT, wrapping. No named orange in the 16 colours so {@code gold} stands in;
+	 * {@code green} is the bright one.
 	 */
 	private static final String[] CRIT_CADENCE = {"<white>", "<green>", "<gold>", "<red>", "<red>", "<gold>",
 			"<green>", "<white>", "<green>", "<gold>", "<red>"};
@@ -67,7 +55,7 @@ public final class DamageNumbers {
 	private static final Random RANDOM = new Random();
 	private static final Map<UUID, Deque<TextDisplay>> LIVE = new HashMap<>();
 
-	/** Remove every live number.  Called at run start so a previous run's stragglers cannot linger. */
+	/** Called at run start so a previous run's stragglers don't linger. */
 	public static void reset() {
 		for(Deque<TextDisplay> q : LIVE.values()) {
 			for(TextDisplay d : q) if(d.isValid()) d.remove();
@@ -75,11 +63,7 @@ public final class DamageNumbers {
 		LIVE.clear();
 	}
 
-	/**
-	 * Show one number.
-	 *
-	 * @param sbDamage the damage the target ACTUALLY lost, in SkyBlock units (post-resistance, post-defense)
-	 */
+	/** @param sbDamage SkyBlock units, post-resistance and post-defense */
 	public static void show(LivingEntity target, double sbDamage, DamageKind kind, Player attacker) {
 		if(target == null || sbDamage <= 0 || attacker == null) return;
 		Location at = spawnPoint(target);
@@ -93,17 +77,11 @@ public final class DamageNumbers {
 		TextDisplay display = target.getWorld().spawn(at, TextDisplay.class, d -> {
 			d.text(Utils.msg(format(sbDamage, kind)));
 			d.setBillboard(Display.Billboard.CENTER);
-			// SEE THROUGH, so the number is never hidden behind the thing it is reporting on.  A wither is a big
-			// model and the numbers spawn within a block of its eyes, so with depth testing on it was eating them.
-			//
-			// This is a DEPTH TEST switch, not a sorting hint - verified in the 26.2 client: with the flag set,
-			// DisplayRenderer$TextDisplayRenderer picks Font.DisplayMode.SEE_THROUGH and
-			// RenderTypes.textBackgroundSeeThrough, and RenderPipelines.TEXT_SEE_THROUGH is built with
-			// withDepthStencilState(Optional.empty()) - no depth state at all.  So there is no "priority" to raise:
-			// the text simply stops being occlusion-tested and draws over whatever came before it.
-			//
-			// The cost is that it also draws through walls and the arena floor.  Bounded rather than fixed: a 20-tick
-			// life and a 0.4 view range (~25 blocks) keep it local to the fight you are already looking at.
+			// SEE THROUGH: a wither is a big model and numbers spawn within a block of its eyes, so depth testing ate them.
+			// It's a DEPTH TEST switch, not a sorting hint (verified in 26.2 client): DisplayRenderer$TextDisplayRenderer
+			// picks Font.DisplayMode.SEE_THROUGH and RenderTypes.textBackgroundSeeThrough, and
+			// RenderPipelines.TEXT_SEE_THROUGH has withDepthStencilState(Optional.empty()). No priority to raise.
+			// Cost: draws through walls and floor too. Bounded by 20t life and 0.4 view range (~25 blocks).
 			d.setSeeThrough(true);
 			d.setShadowed(true);
 			d.setViewRange(0.4f);
@@ -112,8 +90,7 @@ public final class DamageNumbers {
 		});
 		q.addLast(display);
 
-		// A fixed removal task per display.  A raw runTaskLater on purpose: Utils.scheduleTask is nuked by a run
-		// reset, which would leave the display in the world forever.
+		// Raw runTaskLater on purpose: Utils.scheduleTask is nuked by a run reset and would leave the display forever.
 		org.bukkit.Bukkit.getScheduler().runTaskLater(M7tas.getInstance(), () -> {
 			if(display.isValid()) display.remove();
 			Deque<TextDisplay> live = LIVE.get(attacker.getUniqueId());
@@ -121,16 +98,11 @@ public final class DamageNumbers {
 		}, LIFETIME_TICKS);
 	}
 
-	/**
-	 * Where one number goes: any point within {@link #SPAWN_RADIUS} of the target's eyes, in any direction, as long
-	 * as it is not inside a block.  Numbers no longer move, so the whole spread has to come from the spawn point,
-	 * and a point buried in the arena floor or a wall would render a number nobody can read.
-	 */
+	/** Any point within {@link #SPAWN_RADIUS} of the eyes that isn't inside a block, where nobody could read it. */
 	private static Location spawnPoint(LivingEntity target) {
 		Location eyes = target.getEyeLocation();
 		for(int i = 0; i < SPAWN_ATTEMPTS; i++) {
-			// A uniform point in the sphere: a random direction, with the radius taken through a cube root so the
-			// points do not bunch up around the centre.
+			// Uniform in the sphere: cube-root radius so points don't bunch at the centre.
 			double theta = RANDOM.nextDouble() * Math.PI * 2;
 			double y = RANDOM.nextDouble() * 2 - 1;
 			double ring = Math.sqrt(1 - y * y);
@@ -141,7 +113,6 @@ public final class DamageNumbers {
 		return eyes;
 	}
 
-	/** The MiniMessage string for one number. */
 	private static String format(double sbDamage, DamageKind kind) {
 		String digits = Damage.integer(sbDamage);
 		StringBuilder sb = new StringBuilder();
@@ -150,8 +121,7 @@ public final class DamageNumbers {
 		int step = 0;
 		for(int i = 0; i < digits.length(); i++) {
 			char c = digits.charAt(i);
-			// The cadence advances on DIGITS only: a thousands separator carries the colour of the digit before it,
-			// so inserting commas cannot shift the pattern the digits themselves are drawn in.
+			// Cadence advances on DIGITS only, so commas can't shift the pattern.
 			if(c != ',') {
 				sb.append(forced != null ? forced : CRIT_CADENCE[step % CRIT_CADENCE.length]);
 				step++;

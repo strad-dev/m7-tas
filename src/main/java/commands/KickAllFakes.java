@@ -9,7 +9,7 @@ import plugin.Utils;
 
 public class KickAllFakes implements CommandExecutor {
 	public boolean onCommand(@NonNull CommandSender sender, @NonNull Command cmd, @NonNull String label, String @NonNull [] args) {
-		// Tear down in the same order spawnAllFakes does: stop the connection ticker, then kick + clear the map.
+		// Same order as spawnAllFakes: stop connection ticker, then kick + clear map.
 		FakePlayerManager.stopCustomConnection();
 		FakePlayerManager.kickAllFakes();
 		sender.sendMessage(Utils.msg("Kicked all fake players"));

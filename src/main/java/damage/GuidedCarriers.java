@@ -8,38 +8,33 @@ import org.bukkit.persistence.PersistentDataType;
 import plugin.M7tas;
 
 /**
- * Damage carried by a <b>guided carrier</b> - the Spirit Sceptre's bat and the Mage's Guided Sheep.
+ * Damage carried by a guided carrier: Spirit Sceptre's bat and Mage's Guided Sheep.
  * <p>
- * <b>The same rule arrows follow (§1.0.5): the carrier carries its damage with it.</b>  The cast is finished the
- * moment the animal is spawned - the figure is worked out, written into the entity's PDC, and the click is over.
- * The flight ({@code items.ItemUtils.launchGuided}) knows nothing about damage, and the blast a second or two later
- * just reads what is stamped.  So turning, swapping weapons, losing a buff or dying mid-flight cannot change what
- * the carrier hits for, exactly as with a bow shot.
+ * Same rule as arrows (§1.0.5): the figure is written into the entity's PDC at spawn and the click is over. The
+ * flight ({@code items.ItemUtils.launchGuided}) knows nothing about damage and the blast just reads the stamp, so
+ * turning, swapping weapons, losing a buff or dying mid-flight changes nothing.
  * <p>
- * <b>Two stamp forms, and picking the wrong one is a real bug</b>, which is why {@link #hit} is the only way to
- * apply one:
+ * Two stamp forms, and the wrong one is a real bug, so {@link #hit} is the only way to apply one:
  * <ul>
- *   <li>{@link #stamp} - an ITEM ability's stat core, still owed the target half.  Finished at
- *       {@link Damage#abilityFinish} and dealt as a primary hit.</li>
- *   <li>{@link #stampFlat} - an already-FINISHED figure, i.e. the Guided Sheep's flat class-level damage.  It goes
- *       through {@link Damage#dealDerived}: running the target half on it would charge for the Rulers, Smite and
- *       the class multiplier it never had, and letting it feed the rolling damage history would seed what
- *       Explosive Shot and Rapid Fire read.</li>
+ *   <li>{@link #stamp} - ITEM ability stat core, still owed the target half; finished at
+ *       {@link Damage#abilityFinish} and dealt primary.</li>
+ *   <li>{@link #stampFlat} - FINISHED figure (Guided Sheep's flat class-level damage), via
+ *       {@link Damage#dealDerived}: the target half would charge Rulers, Smite and class multiplier it never had, and
+ *       feeding the history would seed what Explosive Shot and Rapid Fire read.</li>
  * </ul>
- * The parallel with {@code damage/Arrows} is deliberate and goes as far as the key names; the two are separate
- * because an arrow is an {@code AbstractArrow} on the bow path and a carrier is a living animal on the ability path,
- * with none of the draw, pierce or Last Breath machinery.
+ * Deliberately parallel to {@code damage/Arrows}, down to key names; separate because a carrier is a living animal
+ * on the ability path with no draw, pierce or Last Breath.
  */
 public final class GuidedCarriers {
 	private GuidedCarriers() {}
 
-	/** The stamped figure: a stat core, or a finished hit if {@link #DERIVED} is set. */
+	/** Stat core, or a finished hit if {@link #DERIVED} is set. */
 	private static final NamespacedKey CORE = key("guided_core");
-	/** The weapon's plain display name, so the target half resolves against the item that actually fired it. */
+	/** Plain display name, so the target half resolves against the item that fired it. */
 	private static final NamespacedKey WEAPON = key("guided_weapon");
-	/** 1 if {@link #CORE} is an ALREADY-FINISHED figure rather than a stat core.  See {@link #stampFlat}. */
+	/** 1 if {@link #CORE} is a FINISHED figure. See {@link #stampFlat}. */
 	private static final NamespacedKey DERIVED = key("guided_derived");
-	/** The ability's display name, for the "hit N enemies" line the blast prints.  Travels with the carrier too. */
+	/** For the blast's "hit N enemies" line. */
 	private static final NamespacedKey ABILITY = key("guided_ability");
 
 	private static NamespacedKey key(String name) {
@@ -47,10 +42,10 @@ public final class GuidedCarriers {
 	}
 
 	/**
-	 * Stamp a carrier with an ITEM ability's stat core, as {@link Damage#abilityCore} computed it at fire time.
+	 * Stamp an ITEM ability's stat core, from {@link Damage#abilityCore} at fire time.
 	 *
-	 * @param ability the ability's display name, for the blast's "hit N enemies" line
-	 * @param weapon  the item that fired it, recorded by display name so the finish reads the right definition
+	 * @param ability display name, for the "hit N enemies" line
+	 * @param weapon  recorded by display name so the finish reads the right definition
 	 */
 	public static void stamp(LivingEntity carrier, String ability, ItemStack weapon, double core) {
 		if(carrier == null) return;
@@ -62,7 +57,7 @@ public final class GuidedCarriers {
 		pdc.set(ABILITY, PersistentDataType.STRING, ability);
 	}
 
-	/** Stamp a carrier with an already-finished figure, which {@link #hit} deals derived.  See the class javadoc. */
+	/** Stamp a finished figure, which {@link #hit} deals derived. */
 	public static void stampFlat(LivingEntity carrier, String ability, double sbDamage) {
 		if(carrier == null) return;
 		var pdc = carrier.getPersistentDataContainer();
@@ -71,16 +66,15 @@ public final class GuidedCarriers {
 		pdc.set(ABILITY, PersistentDataType.STRING, ability);
 	}
 
-	/** The stamped ability name, or {@code ""} for a carrier nobody stamped. */
+	/** Stamped ability name, or {@code ""} if unstamped. */
 	public static String abilityName(LivingEntity carrier) {
 		if(carrier == null) return "";
 		return carrier.getPersistentDataContainer().getOrDefault(ABILITY, PersistentDataType.STRING, "");
 	}
 
 	/**
-	 * Resolve a carrier's blast against one mob <b>and deal it</b>.  Everything goes through here rather than
-	 * reading the stamp and picking a {@code deal} of its own, for the same reason {@code Arrows.hit} is the only
-	 * entry point there: the figure and the way it must be dealt are one decision.
+	 * Resolve the blast against one mob and deal it. Like {@code Arrows.hit}: the figure and how it's dealt are one
+	 * decision.
 	 *
 	 * @return the reported hit, as {@link Damage#deal} defines it, or 0 if nothing landed
 	 */

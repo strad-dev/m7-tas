@@ -20,28 +20,21 @@ import java.util.UUID;
  *                         + ClassBonuses(player, soloOnClass)                     (§1.14)
  * then per stat: x (1 + sum additive%) x product(multiplicative)                   (§1.13)
  * </pre>
- * <b>The cache key is {@code (player, path)}, not {@code player}</b> (§7): a Mage's equipment and Accessory Power
- * are both path-dependent, so the same Mage has different Strength, Crit Damage, Intelligence and Ability Damage
- * on a beam than on a cast.
+ * Cache key includes PATH, not just player (§7): a Mage's equipment and Accessory Power are path-dependent, so beam
+ * and cast stats differ.
  * <p>
- * The cache is invalidated on <b>equipment</b> change as well as inventory change - the masks and hats are hotbar
- * items that get worn mid-fight, and a helmet swap is worth thousands of Intelligence (§1.10).  It also expires on
- * its own after a short window, because several inputs move without any inventory event at all: Legion counts
- * players within 30 blocks, the Berserk stack and combo change per hit, and the Ragnarock buff comes and goes.
+ * Invalidated on EQUIPMENT change too (a helmet swap is thousands of Int, §1.10), and self-expires since Legion, the
+ * Berserk stack/combo and the Ragnarock buff move with no inventory event.
  */
 public final class Stats {
 	private Stats() {}
 
-	/**
-	 * How long a cached aggregate stays valid.  Short enough that a Legion stack walking into range or the
-	 * Ragnarock buff landing shows up promptly, long enough that a Terminator volley does not recompute per arrow.
-	 */
+	/** Short enough for Legion / Ragnarock to show promptly, long enough that a Terminator volley doesn't recompute per arrow. */
 	private static final int CACHE_TICKS = 5;
 
 	/**
-	 * {@code weapon} is false for the UNARMED aggregate, i.e. a punch: the same player minus whatever is in their
-	 * main hand.  It is part of the key rather than a separate uncached call because a punch is landed at the same
-	 * rate as a swing - someone hitting a mob with a bow does it every tick they click.
+	 * {@code weapon} false = UNARMED aggregate (punch), minus the main hand. In the key, not an uncached call, since
+	 * someone hitting with a bow punches every click.
 	 */
 	private record Key(UUID player, DamagePath path, boolean weapon) {}
 
@@ -49,29 +42,22 @@ public final class Stats {
 
 	private static final Map<Key, Cached> CACHE = new HashMap<>();
 
-	/** Drop every cached aggregate.  Cheap, and the safe response to anything that might have changed a stat. */
+	/** Cheap; the safe response to anything that might have changed a stat. */
 	public static void invalidateAll() {
 		CACHE.clear();
 	}
 
-	/** Drop one player's cached aggregates, on every path. */
+	/** Every path. */
 	public static void invalidate(Player p) {
 		if(p == null) return;
 		CACHE.keySet().removeIf(k -> k.player().equals(p.getUniqueId()));
 	}
 
-	/** This player's finished stat aggregate on a damage path. */
 	public static StatBlock of(Player p, DamagePath path) {
 		return of(p, path, true);
 	}
 
-	/**
-	 * This player's aggregate with <b>nothing in their main hand</b>: what a bare punch is worked out from.
-	 * <p>
-	 * Armour, equipment, accessories, the pet, the class bonus and the profile all still count - a punch in
-	 * SkyBlock scales with your Strength and Crit Damage like anything else.  The only thing missing is the held
-	 * item, because you are not hitting with it.
-	 */
+	/** Aggregate with an EMPTY main hand, for a punch. Everything else still counts, as in SkyBlock. */
 	public static StatBlock unarmed(Player p) {
 		return of(p, DamagePath.MELEE, false);
 	}
@@ -87,10 +73,7 @@ public final class Stats {
 		return computed;
 	}
 
-	/**
-	 * The same aggregate, itemised by source, for {@code /verbose super} and {@code /eq}.  Never cached: it is
-	 * only built when someone is actually looking at it.
-	 */
+	/** Itemised by source for {@code /verbose super} and {@code /eq}. Uncached; only built when someone looks. */
 	public static Map<String, StatBlock> breakdown(Player p, DamagePath path) {
 		return breakdown(p, path, true);
 	}
@@ -125,38 +108,31 @@ public final class Stats {
 		StatBlock sum = StatBlock.EMPTY;
 		for(StatBlock part : breakdown(p, path, weapon).values()) sum = sum.plus(part);
 
-		// The stat stage.  Per stat, and WHOLE-stat: the sum above (items + armour + equipment + power + profile)
-		// is what gets multiplied, not just the profile half.
+		// Stat stage, per WHOLE stat: the full sum gets multiplied, not just the profile half.
 		StatBlock staged = StatBlock.EMPTY;
 		Pet pet = Pet.forPlayer(p, path);
 		for(Stat stat : Stat.values()) {
 			double value = sum.get(stat)
 					* (1.0 + Profile.additivePercent(p, stat, pet) / 100.0)
 					* Profile.multiplicative(stat);
-			// Blessings are the LAST stage, and their shape is (stat + flat) x percent - the flat lands INSIDE
-			// their own percent but OUTSIDE every other multiplier, which is exactly Hypixel's order (MAP.md
-			// §1.13).  Applying it any earlier exposes the flat to additivePercent and the Master Skull too.
+			// Blessings LAST as (stat + flat) x percent: flat inside their percent, outside every other multiplier,
+			// Hypixel's order (§1.13). Earlier would expose the flat to additivePercent and the Master Skull.
 			value = (value + Blessings.flat(stat)) * Blessings.multiplier(stat);
 			staged = staged.plus(stat, value);
 		}
 		return staged;
 	}
 
-	/** One worn/held item's contribution, or nothing if it is not a registered stat item. */
+	/** Empty if not a registered stat item. */
 	private static StatBlock itemStats(ItemStack item, Pet pet) {
 		ItemDef def = Items.of(item);
 		return def == null ? StatBlock.EMPTY : def.stats(pet);
 	}
 
 	/**
-	 * The Ragnarock Axe's ability: <b>+150% of that weapon's own Strength stat</b> for 10s (§1.7), not a Strength
-	 * potion effect and not a constant.  The plan's "+939" is what this evaluates to at the authored terms, so it
-	 * never appears in code - retuning the axe moves the buff with it, automatically.
-	 * <p>
-	 * The full 626 counts, Chimera's +300 included: Chimera is an ITEM source, so its copy is part of "this
-	 * weapon's Strength" exactly like the reforge and gemstone terms.  The value is read off the axe's definition
-	 * rather than off whatever is in the hand, because <b>the buff must keep applying after the axe leaves the
-	 * hand</b> - casting Ragnarock and then switching to a hitting weapon is the entire point of the item.
+	 * Ragnarock: +150% of the axe's own Strength for 10s (§1.7). The plan's "+939" is what this evaluates to, never a
+	 * constant. The full 626 counts, Chimera's +300 included (an ITEM source). Read off the axe's definition, not the
+	 * hand, since the buff must keep applying after swapping to a hitting weapon.
 	 */
 	public static double ragnarockStrength(Player p, Pet pet) {
 		if(p == null || !RagnarockBuff.isActive(p)) return 0;

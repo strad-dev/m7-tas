@@ -21,30 +21,20 @@ import plugin.Utils;
 import java.util.*;
 
 /**
- * Every custom item, indexed two ways.
- *
- * <h2>Why two indexes</h2>
- * Neither key alone covers the roster, which is why {@code SkyBlock in Vanilla}'s single lore-ID map could not
- * simply be copied:
+ * Every custom item, indexed two ways, since neither key covers the roster alone:
  * <ul>
- *   <li><b>By lore ID</b> - the ability dispatch's hot path.  Armour and the wearable heads carry no lore ID at
- *       all, so they are absent from this index, and the two Hyperion reforges SHARE one, so it maps to the base
- *       item rather than to a variant.</li>
- *   <li><b>By plain display name</b> - one entry per REFORGE VARIANT, which is the key {@code damage/Items},
- *       {@code Catalog.paletteKey} and both {@code loadout/ItemRefresh} copies already use.  This is what lets a
- *       wearable be looked up at all.</li>
+ *   <li><b>By lore ID</b>: dispatch hot path. Armour and heads have none; the two Hyperions SHARE one, so it maps
+ *       to the base item.</li>
+ *   <li><b>By plain name</b>: one per REFORGE VARIANT, the key {@code damage/Items}, {@code Catalog.paletteKey} and
+ *       both {@code ItemRefresh} copies use. The only way to look up a wearable.</li>
  * </ul>
- * {@link #of(ItemStack)} tries the name first and the lore ID second, so it answers for everything.
- *
- * <h2>Order</h2>
- * {@link #ALL} is grouped by package, NOT by the loadout editor's page layout - that lives in
- * {@code Catalog.PALETTE_ORDER}, which is a hand-picked UI ordering in blocks of nine.  {@code Catalog.verify()}
- * cross-checks the two at boot so an item can never be added here and quietly go missing from the palette.
+ * {@link #ALL} is grouped by package, not palette layout ({@code Catalog.PALETTE_ORDER}); {@code Catalog.verify()}
+ * cross-checks them at boot so nothing goes missing from the palette.
  */
 public final class ItemRegistry {
 	private ItemRegistry() {}
 
-	/** Every item, grouped by package.  Adding an item means adding it here and to {@code PALETTE_ORDER}. */
+	/** Adding an item means adding it here and to {@code PALETTE_ORDER}. */
 	public static final List<Item> ALL = List.of(
 			// weapons
 			Hyperion.INSTANCE, DarkClaymore.INSTANCE, IceSprayWand.INSTANCE, AspectOfTheVoid.INSTANCE,
@@ -80,28 +70,23 @@ public final class ItemRegistry {
 		}
 	}
 
-	/** The item with this lore ID, or null.  Empty and unknown IDs both answer null. */
 	public static Item byLoreId(String loreId) {
 		return loreId == null || loreId.isEmpty() ? null : BY_LORE_ID.get(loreId);
 	}
 
-	/** The item with this plain display name at any of its reforges, or null. */
+	/** Any reforge. */
 	public static Item byName(String displayName) {
 		return displayName == null ? null : BY_NAME.get(displayName);
 	}
 
-	/** The reforge a plain display name resolves to, or null if the name is not a known variant. */
+	/** Null if the name isn't a known variant. */
 	public static ReforgeId reforgeOf(String displayName) {
 		return displayName == null ? null : REFORGE_BY_NAME.get(displayName);
 	}
 
 	/**
-	 * The item this stack is, or null.
-	 * <p>
-	 * <b>Name first, lore ID second.</b>  The name is the finer key - it is what separates the two Hyperions and
-	 * what identifies a wearable - and the ID is the fallback that still answers for a stack whose name has
-	 * drifted from any current variant, which is exactly the stale-saved-loadout case
-	 * {@code loadout/ItemRefresh} exists to repair.
+	 * Name first (the finer key: separates the Hyperions, identifies wearables), lore ID second, which still
+	 * answers for a stale saved stack whose name has drifted, the case {@code loadout/ItemRefresh} repairs.
 	 */
 	public static Item of(ItemStack stack) {
 		if(stack == null || stack.getType().isAir() || !stack.hasItemMeta()) return null;
@@ -112,23 +97,20 @@ public final class ItemRegistry {
 		return byLoreId(Utils.firstLorePlain(meta));
 	}
 
-	/** Every reforge variant's plain display name, in {@link #ALL} order. */
+	/** In {@link #ALL} order. */
 	public static List<String> variantNames() {
 		return new ArrayList<>(BY_NAME.keySet());
 	}
 
-	/** Every item that is worn, for the equipment-driven lookups (speed, cheat death, set bonuses). */
+	/** For equipment lookups (speed, cheat death, set bonuses). */
 	public static Wearable wearable(ItemStack stack) {
 		Item item = of(stack);
 		return item instanceof Wearable worn ? worn : null;
 	}
 
 	/**
-	 * The item that fired this projectile, matched on its scoreboard TAG, or null.
-	 * <p>
-	 * By tag rather than by the shooter's held item on purpose: the shot has already left, and by the time it
-	 * lands the shooter may well have swapped.  A map rather than a scan of {@link #ALL}, because a projectile
-	 * impact is a hot event and only two items are ever a source.
+	 * Matched on scoreboard TAG, not held item: the shooter may have swapped by impact. A map, not a scan of
+	 * {@link #ALL}, since impacts are hot and only two items are sources.
 	 */
 	public static ProjectileItem projectileSource(Set<String> tags) {
 		if(tags == null || tags.isEmpty()) return null;

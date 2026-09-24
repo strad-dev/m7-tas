@@ -7,10 +7,7 @@ import items.ItemFactory;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-/**
- * The Pitchin' Rod of the Sea.  A plain {@link Item}: it carries no lore ID and grants no stats, so it is a
- * movement toy and nothing else.
- */
+/** No lore ID, no stats: a movement toy. */
 public final class PitchinRod implements Item {
 	public static final PitchinRod INSTANCE = new PitchinRod();
 

@@ -16,10 +16,8 @@ import org.bukkit.util.Vector;
 import plugin.Utils;
 
 /**
- * Tactical Insertion.  Marks the caster's position, then returns them to it 3 seconds later.
- * <p>
- * Like the Aspect of the Void it refuses to work in the boss arena in adventure mode, and for the same reason
- * that check stays INSIDE the ability: it reports as fired regardless, so the click is still consumed.
+ * Marks the caster's position and returns them to it 3s later. Like AOTV, the boss-arena adventure refusal stays
+ * INSIDE the ability so the click is still consumed.
  */
 public final class TacticalInsertion implements AbilityItem {
 	public static final TacticalInsertion INSTANCE = new TacticalInsertion();
@@ -73,8 +71,7 @@ public final class TacticalInsertion implements AbilityItem {
 	}
 
 	public static void tac(Player p) {
-		// Tactical Insertion is disabled inside the boss room while in adventure mode, the practice default.  It
-		// can't be used to cheat boss mechanics, but still works freely everywhere else.
+		// Disabled only in the boss arena in adventure (practice default), so it can't cheat boss mechanics.
 		if(p.getGameMode() == org.bukkit.GameMode.ADVENTURE && LavaJump.isInBossArena(p.getLocation())) return;
 		Location l = p.getLocation();
 		Utils.debug(Utils.DebugType.SERVER, "Activating Tactical Insertion at " + Utils.round(l.getX(), 3) + " " + Utils.round(l.getY(), 5) + " " + Utils.round(l.getZ(), 3));

@@ -4,19 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A dungeon room: its static definition (name, type, grid cells, miniboss/blessing, secrets) plus the
- * per-run mutable state that drives its checkmark. Built once in {@link Rooms}; {@link #reset()} clears the
- * run state between runs.
+ * Room definition (name, type, grid cells, miniboss/blessing, secrets) plus per-run state driving its checkmark.
+ * Built once in {@link Rooms}; {@link #reset()} clears run state.
  *
- * <p>Checkmark rules (see {@link #check()}):
+ * <p>Checkmark rules ({@link #check()}):
  * <ul>
- *   <li>START / FAIRY: always GREEN, since they have no mechanics.</li>
- *   <li>PUZZLE (Quiz, Ice Fill): GREEN the instant the puzzle is solved, with no white stage.</li>
- *   <li>YELLOW: GREEN the instant its miniboss dies.</li>
- *   <li>NORMAL: WHITE when the miniboss dies (Wizard, which has no miniboss, is WHITE from the start),
- *       GREEN once WHITE and all counted secrets are found.</li>
- *   <li>TRAP: WHITE when the Power-II chest is opened, GREEN once WHITE and all secrets are found.</li>
- *   <li>BLOOD: WHITE then GREEN when the Watcher camp is cleared.  It has no secrets, so effectively GREEN.</li>
+ *   <li>START / FAIRY: always GREEN, no mechanics.</li>
+ *   <li>PUZZLE (Quiz, Ice Fill): GREEN when solved, no white stage.</li>
+ *   <li>YELLOW: GREEN when its miniboss dies.</li>
+ *   <li>NORMAL: WHITE when the miniboss dies (miniboss-less Wizard: on entry), GREEN once all counted secrets found.</li>
+ *   <li>TRAP: WHITE when the Power-II chest opens, GREEN once all secrets found.</li>
+ *   <li>BLOOD: WHITE when the Watcher camp is cleared; no secrets, so effectively GREEN.</li>
  * </ul>
  */
 public class Room {
@@ -24,38 +22,30 @@ public class Room {
 
 	public final String name;
 	public final RoomType type;
-	/** Grid cells this room occupies, each {@code {gx, gz}}. */
+	/** Each {@code {gx, gz}}. */
 	public final int[][] cells;
 	/**
-	 * Bottommost and topmost block Y a player may legally be in, i.e. the room's vertical extent.  Rooms differ
-	 * wildly (Dino Dig Site drops to 36, Well and Museum reach 119), so there is no floor/ceiling rule to derive:
-	 * these are measured values.  Used by {@code listeners.OutOfBounds} for the kill test and by
-	 * {@link Rooms#isCeiling} to keep the roof unbreakable during a run.
+	 * Lowest and highest legal block Y. Measured, no rule derives them (Dino Dig Site drops to 36, Well and Museum
+	 * reach 119). Used by {@code listeners.OutOfBounds} kill test and {@link Rooms#isCeiling} (unbreakable roof).
 	 */
 	public final int minY, maxY;
 	/**
-	 * <b>Room depth</b> (1..5), the Roman numeral the dungeon shows on the room.  Every mob in the room has its
-	 * stats scaled by {@code 1 + 0.10 x (depth - 1)}, so depth I is x1.00 and depth V is x1.40 - see
-	 * {@code damage.MobStats.depthMultiplier}, and the observed 13.2M Angry Archaeologist in Deathmite (depth II)
-	 * which is 12M x 1.10.
+	 * Room depth (1..5), the Roman numeral shown on the room. Mob stats scale by {@code 1 + 0.10 x (depth - 1)}
+	 * ({@code damage.MobStats.depthMultiplier}); observed 13.2M Angry Archaeologist in Deathmite (depth II) = 12M x 1.10.
 	 * <p>
-	 * This used to be documented as a "difficulty tier", which read as decorative and sent an earlier draft of
-	 * MAP.md off computing depth by BFS instead.  It is the depth; use it directly.  Note grid adjacency
-	 * is NOT the door graph, so a geometric BFS would give wrong answers for exactly the rooms whose depth was
-	 * missing.
+	 * Use it directly, don't BFS for depth: grid adjacency is not the door graph, so BFS gets exactly the missing
+	 * rooms wrong.
 	 */
 	public final int level;
 	public final boolean hasMiniboss;
-	/** Blessing(s) granted when the room is cleared (miniboss kill / puzzle solve); empty for none. */
+	/** Granted on clear (miniboss kill / puzzle solve); empty for none. */
 	public final Blessing[] clearBlessings;
 	public final List<Secret> secrets = new ArrayList<>();
 
-	// --- run-time state ---
-	/** Objective done: miniboss killed (NORMAL/YELLOW) / Power-II chest opened (TRAP) / camp cleared (BLOOD). */
+	/** Miniboss killed (NORMAL/YELLOW), Power-II chest opened (TRAP) or camp cleared (BLOOD). */
 	public boolean cleared;
-	/** Puzzle solved (PUZZLE rooms only). */
 	public boolean solved;
-	/** True once any player has set foot inside this room.  Until then the map draws it grey with a "?". */
+	/** Any player has entered. Until then the map draws it grey with a "?". */
 	public boolean explored;
 
 	Room(String name, RoomType type, int[][] cells, int minY, int maxY, int level, boolean hasMiniboss, Blessing[] clearBlessings) {
@@ -107,8 +97,7 @@ public class Room {
 				return allCountedFound() ? Check.GREEN : Check.WHITE;
 			}
 			case NORMAL -> {
-				// White once the miniboss is killed, or for the miniboss-less Wizard once a player has
-				// entered it, since ClearManager sets `cleared` on entry.  Green once white AND all secrets found.
+				// Miniboss-less Wizard: ClearManager sets `cleared` on entry.
 				if(!cleared) return Check.NONE;
 				return allCountedFound() ? Check.GREEN : Check.WHITE;
 			}

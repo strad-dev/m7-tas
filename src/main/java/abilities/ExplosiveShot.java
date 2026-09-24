@@ -22,16 +22,12 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The Archer's regular drop ability: a spread of three arrows whose impacts route through the shared Superboom
- * radius, so it opens crypts and cracked-brick walls the way the TNT does.
+ * Archer regular drop ability: three-arrow spread; impacts go through the shared Superboom radius, so it opens
+ * crypts and cracked walls like TNT.
  * <p>
- * <b>Each arrow detonates on the first thing it touches</b>, a mob or a block, and does <b>not</b> pierce.  The
- * blast is the damage - an arrow that flew through its target and carried on was dropping its explosion several
- * blocks past whatever it was aimed at.
- * <p>
- * The "hit N enemies" line is printed <b>once, when all three arrows are spent</b>, not once per arrow: the three
- * share one {@code alreadyHurt} list, so they are one ability landing one total, and three lines for one drop press
- * would be noise.
+ * Each arrow detonates on the first mob or block it touches, no pierce: the blast is the damage, and a piercing
+ * arrow dropped its explosion blocks past the target. The "hit N enemies" line prints once when all three are
+ * spent, since they share one {@code alreadyHurt} list.
  */
 public final class ExplosiveShot implements ClassAbility {
 	public static final ExplosiveShot INSTANCE = new ExplosiveShot();
@@ -53,10 +49,10 @@ public final class ExplosiveShot implements ClassAbility {
 		return 400; // 20s
 	}
 
-	/** How close a mob has to be to an arrow to stop it.  Matches the guided carriers' own contact range. */
+	/** Mob contact range that stops an arrow. Same as the guided carriers'. */
 	private static final double HIT_RANGE = 1;
 
-	/** Every mob within this of the impact takes the shot's full damage. */
+	/** Every mob within this of impact takes full damage. */
 	private static final double BLAST_RADIUS = 4;
 
 	@Override
@@ -77,13 +73,11 @@ public final class ExplosiveShot implements ClassAbility {
 		float speed = 1.5f;
 		List<LivingEntity> alreadyHurt = new ArrayList<>();
 		Set<Block> visitedBlocks = new HashSet<>();
-		// Shared across the three arrows, so the summary line is the ability's total rather than one arrow's.
-		// int[] rather than fields because they are written from three separate runnables.
+		// Shared by all three arrows so the summary is the ability total. Arrays because three runnables write them.
 		int[] damaged = {0};
 		double[] dealt = {0};
 		List<Vector> directions = List.of(leftDirection, baseDirection, rightDirection);
-		// DERIVED from the list rather than a constant, so a fourth arrow can never leave the summary line waiting
-		// on one that was never fired.
+		// From the list, not a constant, so adding an arrow can't leave the summary waiting on one never fired.
 		int[] pending = {directions.size()};
 		for(Vector dir : directions) {
 			net.minecraft.world.entity.projectile.arrow.Arrow nmsArrow = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
@@ -94,8 +88,7 @@ public final class ExplosiveShot implements ClassAbility {
 
 			Arrow arrow = (Arrow) nmsArrow.getBukkitEntity();
 			arrow.setDamage(0);
-			// NO PIERCE: the arrow stops at the first mob and detonates there.  The blast IS the damage, so an
-			// arrow that passed through its target put its explosion several blocks past whatever was aimed at.
+			// No pierce, see class doc.
 			arrow.setPierceLevel(0);
 			arrow.setShooter(p);
 			arrow.setWeapon(p.getInventory().getItemInMainHand());
@@ -104,10 +97,9 @@ public final class ExplosiveShot implements ClassAbility {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					// The arrow is spent the moment it touches ANYTHING: a mob (found the same way a guided
-					// carrier finds one, so the two agree on what counts as a target), the ground, or a solid
-					// block.  The mob check is ours rather than vanilla's, because the arrow-hit listeners cancel
-					// ProjectileHitEvent for a wither, which would otherwise leave it flying on.
+					// Spent on touching a mob (same lookup as guided carriers), the ground or a solid block. Mob
+					// check is ours, not vanilla's: arrow-hit listeners cancel ProjectileHitEvent for a wither,
+					// which would leave it flying on.
 					LivingEntity struck = ItemUtils.firstMobNear(arrow.getLocation(), HIT_RANGE);
 					if(struck == null && arrow.isValid() && !arrow.isDead() && !arrow.isOnGround()
 							&& !arrow.getLocation().getBlock().getType().isSolid()) {
@@ -117,10 +109,8 @@ public final class ExplosiveShot implements ClassAbility {
 							? struck.getLocation().add(0, struck.getHeight() / 2.0, 0)
 							: arrow.getLocation();
 
-					// Explosive Shot: each arrow deals 100% of the player's highest arrow damage in the last
-					// minute (MAP.md §1.14), read off the shared rolling damage history.  Dealt as a
-					// DERIVED instance: the figure is already a finished hit, so it gets no second pass through
-					// the formula and never goes back into the history it came out of.
+					// Each arrow: 100% of highest arrow damage in the last minute (MAP.md §1.14). DERIVED: already
+					// a finished hit, so no second pass through the formula and it stays out of the history.
 					double sbDamage = damage.CombatState.maxInLastTicks(p, 1200);
 					for(Entity e : impact.getWorld().getNearbyEntities(impact, BLAST_RADIUS, BLAST_RADIUS, BLAST_RADIUS)) {
 						if(e instanceof LivingEntity target && !alreadyHurt.contains(target) && !(e instanceof Player) && !(target.hasPotionEffect(PotionEffectType.RESISTANCE) && target.getPotionEffect(PotionEffectType.RESISTANCE).getAmplifier() == 255) && !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
@@ -134,7 +124,6 @@ public final class ExplosiveShot implements ClassAbility {
 						}
 					}
 
-					// Visual effects
 					p.getWorld().spawnParticle(Particle.EXPLOSION, impact, 10, 0.5, 0.5, 0.5, 0);
 					p.getWorld().playSound(impact, Sound.ENTITY_GENERIC_EXPLODE, 1, 1f);
 
@@ -142,7 +131,7 @@ public final class ExplosiveShot implements ClassAbility {
 
 					arrow.remove();
 					cancel();
-					// The last arrow to land owns the summary line.
+					// Last arrow to land prints the summary.
 					if(--pending[0] == 0) damage.Damage.reportAoe(p, "Explosive Shot", damaged[0], dealt[0]);
 				}
 			}.runTaskTimer(M7tas.getInstance(), 1L, 1L);

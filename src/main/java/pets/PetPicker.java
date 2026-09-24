@@ -25,65 +25,59 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * The window a rule in {@link AutopetMenu} opens onto: a wall of pet heads you click.
+ * Window a rule in {@link AutopetMenu} opens: a wall of pet heads to click.
  * <p>
- * It replaced a click-to-step button, which with five pets plus "off" took six clicks to get back where you
- * started and gave no way to see what the other values even were.  <b>One class in three {@link Mode}s</b> rather
- * than three near-identical menus, because the furniture, the containment rules, the spectator bypass and the
- * return-to-the-menu ordering are the same in all three and a second copy of them would drift:
+ * Replaced a click-to-step button (six clicks to get back with five pets plus "off", other values hidden).
+ * <b>One class, three {@link Mode}s</b>, since furniture, containment, spectator bypass and return ordering are
+ * shared and a copy would drift:
  * <ul>
- *   <li>{@link Mode#PET} - single select, "which pet does this rule summon".  It carries an explicit <b>Off</b>
- *       button, since a rule with no pet fires nothing and there has to be a way back to that;</li>
- *   <li>{@link Mode#EXCEPTIONS} - multi select, toggling pets in and out of the rule's exception list;</li>
- *   <li>{@link Mode#CYCLE} - Rod Swap's ordered rotation: a click APPENDS, so any pet may appear at any
- *       position and as often as the player likes.</li>
+ *   <li>{@link Mode#PET} - single select, which pet the rule summons. Has an explicit <b>Off</b> button, since a
+ *       rule with no pet fires nothing and there must be a way back to that;</li>
+ *   <li>{@link Mode#EXCEPTIONS} - multi select, toggling pets in the exception list;</li>
+ *   <li>{@link Mode#CYCLE} - Rod Swap's ordered rotation: a click APPENDS, so any pet can appear anywhere, any
+ *       number of times.</li>
  * </ul>
  *
  * <h2>Nothing here is an inventory</h2>
- * <b>Every click in the view is cancelled, in both inventories, before anything else is read</b> - the same rule
- * and the same reason as {@link PetMenu} and {@code goldor/GoldorTerminalGui}.  These are click targets: nothing
- * may be picked up, dragged, shift-clicked in from the player's own inventory or number-keyed out.  Nothing ever
- * reaches the cursor either, so unlike the arranging half of {@link PetMenu} there is no session to unwind.
+ * <b>Every click is cancelled, both inventories, before anything is read</b>, as in {@link PetMenu} and
+ * {@code goldor/GoldorTerminalGui}. Nothing reaches the cursor, so unlike {@link PetMenu}'s arranging mode there's
+ * no session to unwind.
  *
  * <h2>Not a listener of its own</h2>
- * {@link AutopetMenu} owns the one instance and forwards the three inventory events to it, so this class needs no
- * line in {@code M7tas.onEnable} - the menu it hangs off is already registered there
- * ({@code petMenu.autopetMenu()}).  One registration for the whole {@code /pets} tree is also what keeps the
- * open/close ordering below honest: the same handler sees both windows' closes.
+ * {@link AutopetMenu} owns the instance and forwards the three inventory events, so no line in
+ * {@code M7tas.onEnable}. One registration for the whole {@code /pets} tree also keeps the open/close ordering
+ * below honest: the same handler sees both windows' closes.
  *
  * <h2>The close always goes back</h2>
- * Escape out of a picker and you land in the autopet menu, not in nothing: a half-made choice is not a reason to
- * throw the player out of the settings they were editing.  The reopen is deferred a tick, for the ordering reason
- * {@link PetMenu} already documents - the close for the old view fires before the new one can open, so opening
- * from inside a close (or a click) puts the two in the wrong order.  {@link #swapping} is how the deliberate
- * swaps avoid reopening the menu twice.
+ * Escape lands you in the autopet menu, not nothing. Reopen is deferred a tick for the ordering reason in
+ * {@link PetMenu}: the old view's close fires before the new one opens. {@link #swapping} stops deliberate swaps
+ * reopening the menu twice.
  */
 public final class PetPicker {
 
 	/** What a click in this window means. */
 	public enum Mode {
-		/** Pick the one pet a rule summons.  Choosing closes the picker. */
+		/** Pick the pet a rule summons. Choosing closes the picker. */
 		PET,
-		/** Toggle pets in and out of a rule's exception list.  Stays open. */
+		/** Toggle pets in the exception list. Stays open. */
 		EXCEPTIONS,
-		/** Append to Rod Swap's ordered cycle.  Stays open. */
+		/** Append to Rod Swap's cycle. Stays open. */
 		CYCLE
 	}
 
 	private static final int SIZE = 27;
 	private static final int HEADER_SLOT = 4;
-	/** The middle row, which the pet heads are centred along.  Nine squares for five pets today. */
+	/** Middle row, heads centred along it. Nine squares, five pets. */
 	private static final int ROW_START = 9, ROW_WIDTH = 9;
-	/** The bottom row's three buttons.  What the two side ones do is per mode; the middle one always goes back. */
+	/** Bottom row buttons. Sides are per mode; middle always goes back. */
 	private static final int LEFT_SLOT = 20, BACK_SLOT = 22, RIGHT_SLOT = 24;
 
-	/** The window this one hangs off, so every exit is a return to it. */
+	/** Parent window; every exit returns to it. */
 	private final AutopetMenu parent;
 
 	/**
-	 * Players whose picker is being swapped out by the menu itself (a Back, or a pet chosen in {@link Mode#PET}).
-	 * The reopen is already scheduled for them, so {@link #onClose} must not schedule a second one and make the
-	 * autopet menu open, close and open again a tick later.
+	 * Players whose picker the menu itself is swapping out (Back, or a pick in {@link Mode#PET}). Reopen is already
+	 * scheduled, so {@link #onClose} must not schedule a second (open, close, open a tick later).
 	 */
 	private final Set<UUID> swapping = new HashSet<>();
 
@@ -97,8 +91,7 @@ public final class PetPicker {
 		h.inv = gui;
 		draw(p, h);
 		p.openInventory(gui);
-		// Idle players on m7 sit in spectator and vanilla refuses them container clicks; armed after the open and
-		// taken off again in onClose, exactly as PetMenu and AutopetMenu do it.
+		// Idle m7 spectators get container clicks refused; armed after open, removed in onClose, like PetMenu.
 		SpectatorGuiAccess.install(p);
 	}
 
@@ -138,12 +131,12 @@ public final class PetPicker {
 		}
 	}
 
-	/** Where the i-th pet sits: the heads are centred in the middle row, so five of nine start at slot 11. */
+	/** Slot of the i-th pet: centred in the middle row, so five of nine start at slot 11. */
 	private static int slotOf(int i) {
 		return ROW_START + Math.max(0, (ROW_WIDTH - Math.min(PetType.values().length, ROW_WIDTH)) / 2) + i;
 	}
 
-	/** The pet drawn on a slot, or null if that slot is not one of the heads. */
+	/** Pet on a slot, or null if not a head. */
 	private static PetType petAt(int slot) {
 		PetType[] pets = PetType.values();
 		for(int i = 0; i < pets.length && i < ROW_WIDTH; i++) if(slotOf(i) == slot) return pets[i];
@@ -178,18 +171,15 @@ public final class PetPicker {
 	}
 
 	/**
-	 * One pet's head, with the last lore line swapped for what a click here does.
+	 * A pet head with the last lore line swapped for what a click here does.
 	 * <p>
-	 * <b>{@link PetType#icon} builds it.</b>  That is the one place the head texture and a pet's tooltip are
-	 * assembled and it is not this class's to fork - a second copy of the NBT assembly is what CLAUDE.md warns
-	 * makes saved stacks stop matching.  So the stack is built there and only its trailing action line, the
-	 * "Click to summon!" the summoning menu wants, is rewritten.  The glint comes out right for free: {@code icon}
-	 * sets the override from the same flag this passes as "selected".
+	 * Built by {@link PetType#icon}, the one place head texture and tooltip are assembled; a second NBT copy is
+	 * what CLAUDE.md warns makes saved stacks stop matching. Only the trailing "Click to summon!" line is
+	 * rewritten. Glint is free: {@code icon} sets it from the flag passed as "selected".
 	 */
 	private ItemStack entry(Player p, Holder h, PetType pet) {
-		List<Integer> at = positions(Pets.rodCycle(p), pet); // cycle mode only, but cheap and needed twice there
-		// A switch EXPRESSION over the enum, so a fourth mode is a compile error here rather than a head that
-		// silently never glints.
+		List<Integer> at = positions(Pets.rodCycle(p), pet); // cycle mode only, but cheap
+		// Switch EXPRESSION so a fourth mode is a compile error, not a head that never glints.
 		boolean selected = switch(h.mode) {
 			case PET -> pet == rulePet(p, h.trigger);
 			case EXCEPTIONS -> exceptions(p, h.trigger).contains(pet);
@@ -222,22 +212,18 @@ public final class PetPicker {
 		if(m == null) return it;
 		List<Component> lore = m.lore();
 		List<Component> out = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
-		if(!out.isEmpty()) out.removeLast(); // the action line icon() wrote, which is the summoning menu's
+		if(!out.isEmpty()) out.removeLast(); // icon()'s summon-menu action line
 		for(String line : trailing) out.add(Utils.mm(line));
 		m.lore(out);
 		it.setItemMeta(m);
-		// The stack number IS the repeat count in cycle mode: a pet listed three times reads as x3 at a glance,
-		// and which positions it actually occupies is in the lore, where the order can be spelled out.
+		// Cycle mode: stack count is the repeat count (listed three times reads x3); positions are in the lore.
 		if(h.mode == Mode.CYCLE) it.setAmount(Math.max(1, Math.min(64, at.size())));
 		return it;
 	}
 
 	/**
-	 * The cycle written out, one numbered line per throw.
-	 * <p>
-	 * <b>Capped.</b>  The editor appends, so a cycle has no length limit any more and a tooltip taller than the
-	 * screen shows the player less than a short one does.  Shared with {@link AutopetMenu}, which draws the same
-	 * list on the Rod Swap button and would otherwise cap it differently or not at all.
+	 * The cycle, one numbered line per throw. <b>Capped</b>: the editor appends, so there's no length limit, and a
+	 * tooltip taller than the screen shows less. Shared with {@link AutopetMenu}'s Rod Swap button so both cap alike.
 	 */
 	static List<String> cycleLines(List<PetType> cycle) {
 		List<String> out = new ArrayList<>();
@@ -251,10 +237,10 @@ public final class PetPicker {
 		return out;
 	}
 
-	/** How many cycle entries a tooltip lists before it summarises the rest. */
+	/** Cycle entries listed before summarising the rest. */
 	private static final int CYCLE_LINES = 12;
 
-	/** Every 1-based position {@code pet} occupies in the cycle.  More than one is legal - repeats are allowed. */
+	/** Every 1-based position of {@code pet} in the cycle; repeats allowed. */
 	private static List<Integer> positions(List<PetType> cycle, PetType pet) {
 		List<Integer> out = new ArrayList<>();
 		for(int i = 0; i < cycle.size(); i++) if(cycle.get(i) == pet) out.add(i + 1);
@@ -263,14 +249,13 @@ public final class PetPicker {
 
 	// ==================== clicks ====================
 
-	/** Called by {@link AutopetMenu}'s registered handler once it has recognised this window's holder. */
+	/** Called by {@link AutopetMenu}'s handler once it recognises this holder. */
 	void onClick(InventoryClickEvent e, Holder h) {
 		if(Menus.ignoreDoubleClick(e)) return;
 		e.setCancelled(true); // every slot, both inventories, before anything is read
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;
-		// No mode check, for the reason AutopetMenu gives: this edits a preference that is the player's whichever
-		// difficulty is loaded, and a gate here would only make the buttons stop working under them.
+		// No mode check, same reason as AutopetMenu.
 
 		int slot = e.getRawSlot();
 		if(slot == BACK_SLOT) {
@@ -285,7 +270,7 @@ public final class PetPicker {
 					back(p);
 				} else if(pet != null) {
 					setPet(p, h.trigger, pet);
-					back(p); // single select: the choice IS the exit
+					back(p); // single select: choice is the exit
 				}
 			}
 			case EXCEPTIONS -> {
@@ -297,47 +282,44 @@ public final class PetPicker {
 				if(slot == LEFT_SLOT) removeLast(p);
 				else if(slot == RIGHT_SLOT) setCycle(p, List.of());
 				else if(pet != null) append(p, pet);
-				else return; // the header or a pane
+				else return; // header or pane
 				draw(p, h);
 			}
 		}
 	}
 
-	/** Dragging is another way to move an item, so it is refused wholesale - as in every other window here. */
+	/** Dragging moves items too, so refused, as in every window here. */
 	void onDrag(InventoryDragEvent e) {
 		e.setCancelled(true);
 	}
 
 	/**
-	 * Every close, deliberate or not.  The spectator bypass was armed on open and has to come back off, or it
-	 * stays on the connection for the rest of the session.
+	 * Every close. The spectator bypass armed on open has to come off or it stays for the session.
 	 * <p>
-	 * An Escape then puts the player back in the autopet menu rather than nowhere.  Three guards on that: the
-	 * quit path fires a close for a player who is already gone, a shutdown fires one while the scheduler refuses
-	 * new tasks, and something else may have opened a window in the tick we waited - {@code /pets}, a Goldor
-	 * terminal - which a reopen would yank them straight back out of.
+	 * Escape returns to the autopet menu. Three guards: quit fires a close for a player already gone, shutdown
+	 * fires one while the scheduler refuses tasks, and another window ({@code /pets}, a Goldor terminal) may have
+	 * opened in the tick we waited, which a reopen would yank them out of.
 	 */
 	void onClose(InventoryCloseEvent e) {
 		if(!(e.getPlayer() instanceof Player p)) return;
 		SpectatorGuiAccess.uninstall(p);
-		if(swapping.remove(p.getUniqueId())) return; // a reopen is already in flight
+		if(swapping.remove(p.getUniqueId())) return; // reopen already in flight
 		if(!M7tas.getInstance().isEnabled()) return;
 		Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
 			if(!p.isOnline()) return;
-			// CRAFTING (or CREATIVE) is Bukkit's "no container open": anything else means a window arrived while
-			// we were waiting and it is not ours to close.
+			// CRAFTING (or CREATIVE) is Bukkit's "no container open"; anything else arrived while waiting, not ours.
 			InventoryType open = p.getOpenInventory().getType();
 			if(open != InventoryType.CRAFTING && open != InventoryType.CREATIVE) return;
 			parent.open(p);
 		});
 	}
 
-	/** Leave the picker for the menu it came from.  Deferred a tick: this view's close has to land first. */
+	/** Back to the parent menu. Deferred a tick: this view's close has to land first. */
 	private void back(Player p) {
 		swapping.add(p.getUniqueId());
 		Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
 			if(p.isOnline()) parent.open(p);
-			else swapping.remove(p.getUniqueId()); // they left before the reopen; nothing will consume the flag
+			else swapping.remove(p.getUniqueId()); // left before the reopen; nothing will consume the flag
 		});
 	}
 
@@ -353,7 +335,7 @@ public final class PetPicker {
 		return rule == null ? List.of() : rule.exceptions();
 	}
 
-	/** Set the pet half, keeping the exceptions: the two halves are set in either order and neither clears the other. */
+	/** Set the pet half, keeping exceptions: halves are set in either order, neither clears the other. */
 	private static void setPet(Player p, Autopet.Trigger t, PetType pet) {
 		Pets.setRule(p, t, new Autopet.Rule(pet, exceptions(p, t)));
 	}
@@ -366,7 +348,7 @@ public final class PetPicker {
 
 	private static void append(Player p, PetType pet) {
 		List<PetType> cycle = new ArrayList<>(Pets.rodCycle(p));
-		cycle.add(pet); // no contains() check: the same pet twice in a rotation is the point
+		cycle.add(pet); // no contains() check: repeats are the point
 		setCycle(p, cycle);
 	}
 
@@ -378,16 +360,15 @@ public final class PetPicker {
 	}
 
 	/**
-	 * The one write for the cycle, so the cursor can never be left pointing into a list that has moved under it.
-	 * The copy is not optional: {@code Pets.rodCycle} hands back the live list and {@code setRodCycle} clears it
-	 * before refilling.
+	 * Only write for the cycle, so the cursor is never left pointing into a changed list. The copy is required:
+	 * {@code Pets.rodCycle} returns the live list and {@code setRodCycle} clears it before refilling.
 	 */
 	private static void setCycle(Player p, List<PetType> cycle) {
 		Pets.setRodCycle(p, cycle);
 		Autopet.clearRodCursor(p);
 	}
 
-	/** Marker holder carrying which rule is being edited and in which mode.  The values live on the profile. */
+	/** Marker holder: which rule, which mode. Values live on the profile. */
 	public static final class Holder implements InventoryHolder {
 		final Autopet.Trigger trigger;
 		final Mode mode;

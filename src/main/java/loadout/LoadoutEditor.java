@@ -31,14 +31,12 @@ import plugin.Utils;
 import java.util.*;
 
 /**
- * {@code /m7loadout} - the editor for the player's CURRENTLY SELECTED class loadout.
+ * {@code /m7loadout} - editor for the CURRENTLY SELECTED class loadout.
  *
- * <p><b>The player's OWN inventory is the loadout's four inventory rows.</b>  A 41-slot kit is 36 inventory
- * slots plus armour and an off-hand, and the old editor drew those 36 inside the chest, where three rows of a
- * chest and a chest's own hotbar row read as "some GUI" rather than as your inventory - which is what people
- * kept misreading.  So on open we SNAPSHOT the real inventory, write the loadout into it, and let the player
- * arrange it exactly as they would in a run; on close we save what is in those 36 slots and put their own items
- * back.  Everything else lives in the chest:
+ * <p><b>The player's OWN inventory is the loadout's four inventory rows.</b> A 41-slot kit is 36 inventory slots
+ * plus armour and off-hand. The old editor drew the 36 inside the chest, and people kept misreading them as "some
+ * GUI". So on open we SNAPSHOT the real inventory, write the loadout into it and let them arrange it like in a
+ * run; on close we save those 36 slots and give their own items back. The rest is in the chest:
  * <pre>
  *   rows 1-4 (0-35) : item palette, one page (click to copy to the cursor, shift-click to drop it in a free slot)
  *   row 5    (36)   : previous page          (37-43): the labelled seam          (44): next page
@@ -46,68 +44,60 @@ import java.util.*;
  *            (52)   : trash - click with an item on the cursor to delete it
  *            (53)   : load the class's default kit
  * </pre>
- * <b>There is no off-hand slot.</b>  M7 does not allow an off-hand item, so array slot 40 is never editable and
- * is written back EMPTY on save, which also clears one saved before that rule existed.
+ * <b>No off-hand slot.</b> M7 doesn't allow one, so array slot 40 is never editable and is written back EMPTY on
+ * save, which also clears one saved before that rule.
  * <p>
- * An empty armour slot shows a white pane named for what belongs there, so the row is readable when
- * the kit is bare.  Those panes are placeholders, never contents: {@link #isPlaceholder} is what keeps one out of
- * a saved loadout.
+ * An empty armour slot shows a white pane named for what goes there. Placeholders, never contents:
+ * {@link #isPlaceholder} keeps them out of a saved loadout.
  *
- * <p><b>Nothing may escape, and nothing may be lost.</b>  Two hazards, and they pull in opposite directions: the
- * palette hands out COPIES, so any copy that reaches the world is a free item spawn; and the player's real
- * inventory is sitting in a field, so any path that ends the editor without restoring it eats their items.  Hence
- * {@link #finish}, the ONE way an editor ends - save, restore, clear the cursor - reached from the close, the
- * quit, the death and the plugin-disable paths alike, and idempotent because it removes the snapshot first.
- * Clicks are an ALLOWLIST with a default of cancel, so an action Bukkit adds later fails closed.
+ * <p><b>Nothing may escape, nothing may be lost.</b> Palette hands out COPIES, so one reaching the world is a free
+ * item spawn; the real inventory sits in a field, so any exit that doesn't restore it eats their items. Hence
+ * {@link #finish}, the ONE way an editor ends (save, restore, clear cursor), reached from close, quit, death and
+ * plugin disable, idempotent since it removes the snapshot first. Clicks are an ALLOWLIST, default cancel, so an
+ * action Bukkit adds later fails closed.
  *
- * <p>The palette comes straight from {@link Catalog#palette()} in memory, so it is always current and works
- * before the catalog has ever been exported.
+ * <p>Palette comes from {@link Catalog#palette()} in memory, so it's always current and works before any export.
  *
  * <p>NOTE: twin of the network plugin's {@code loadout/LoadoutEditor.java} - keep in sync, especially the
  * containment layers and {@link #finish}.
  */
 public class LoadoutEditor implements CommandExecutor, Listener {
 	private static final int PALETTE_START = 0, PALETTE_COUNT = 36;   // rows 1-4 of the chest
-	/** Row 5 is the seam: the page arrows at each end, a labelled bar between them. */
+	/** Row 5 is the seam: page arrows at each end, labelled bar between. */
 	private static final int PREV_SLOT = 36, DIVIDER_START = 37, DIVIDER_END = 43, NEXT_SLOT = 44;
 	private static final int HELMET_SLOT = 45, CHEST_SLOT = 46, LEGS_SLOT = 47, BOOTS_SLOT = 48;
 	private static final int TRASH_SLOT = 52, RESET_SLOT = 53;
 	/**
-	 * The pet you START the run with, in the dead space before the buttons.
+	 * Pet you START the run with, in the dead space before the buttons. Here because it's part of what you take in,
+	 * like the kit, but NOT saved into the loadout: writes straight to {@code pets/<uuid>.json}.
 	 * <p>
-	 * It belongs here rather than only in {@code /pets} because it is part of what you take in, like the kit
-	 * itself - and unlike the rest of this window it is NOT saved into the loadout: it writes straight through to
-	 * {@code pets/<uuid>.json}.
-	 * <p>
-	 * <b>Its own member there, NOT the pet that is currently out.</b>  Pointing this at {@code equipped} looked
-	 * tidier - one value, not two - and was wrong: {@code /pets} and every autopet rule move that field during a
-	 * run, so the button showed whatever the last run left out and appeared to change on its own.
-	 * {@code Pets.applyStartingPets} is what turns the preference into the pet you actually begin with.
+	 * <b>Its own member there, NOT the pet out.</b> Using {@code equipped} was wrong: {@code /pets} and autopet
+	 * move it during a run, so the button showed whatever the last run left out. {@code Pets.applyStartingPets}
+	 * turns the preference into the actual starting pet.
 	 */
 	private static final int PET_SLOT = 51;
 	/**
-	 * The last gear slot in the bottom row; everything between it and the trash is dead space.
-	 * <b>There is no off-hand slot: M7 does not allow an off-hand item</b>, so array slot 40 is never editable and
-	 * is written back EMPTY on every save rather than merely left alone - see {@code finish}.
+	 * Last gear slot in the bottom row; between it and trash is dead space. No off-hand (M7 doesn't allow one):
+	 * slot 40 is written back EMPTY on every save, see {@code finish}.
 	 */
 	private static final int GEAR_END = BOOTS_SLOT;
-	/** The 36 loadout slots the player's own inventory stands in for: [0..8] hotbar, [9..35] storage. */
+	/** 36 loadout slots the player's inventory stands in for: [0..8] hotbar, [9..35] storage. */
 	private static final int MAIN_SLOTS = 36;
-	// Hotbar slot 9 (loadout index 8) is RESERVED for the SkyBlock Menu: every class kit puts it there, so the
-	// editor pins it, refuses to let it be edited, and writes it back on save regardless of what was saved before.
+	// Hotbar slot 9 (index 8) is RESERVED for the SkyBlock Menu: every kit has it there, so it's pinned, not
+	// editable, and written back on every save.
 	private static final int MENU_ARR_INDEX = 8;
 
-	/** Open editors: player -> the 36 inventory slots we took from them.  Present == an editor is live. */
+	/** Open editors: player -> their 36 real inventory slots. Present == live. */
 	private final Map<UUID, ItemStack[]> snapshots = new HashMap<>();
 
-	/** Chest slot -> loadout array index, for the armour and off-hand row only (the 36 are in the player's own). */
+	/** Chest slot -> loadout index, armour/off-hand row only (the 36 are in the player's inventory). */
 	private static int arrIndex(int gui) {
 		return switch(gui) {
 			case HELMET_SLOT -> 36;
 			case CHEST_SLOT -> 37;
 			case LEGS_SLOT -> 38;
 			case BOOTS_SLOT -> 39;
-			default -> -1; // no off-hand: M7 does not allow one, so array slot 40 is never editable
+			default -> -1; // no off-hand in M7, slot 40 never editable
 		};
 	}
 
@@ -127,8 +117,8 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 			return true;
 		}
 		Loadouts.seedIfAbsent(p.getUniqueId(), role);
-		// Saved loadouts hold frozen item copies; bring them up to the CURRENT item definitions before we show or
-		// reset anything, so the editor never displays (or re-saves) a stale item. See ItemRefresh.
+		// Refresh frozen saved copies to current definitions first, so the editor never shows or re-saves a stale
+		// item. See ItemRefresh.
 		ItemRefresh.refreshSaved(p.getUniqueId());
 
 		if(args.length >= 1 && args[0].equalsIgnoreCase("reset")) {
@@ -143,7 +133,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	private void open(Player p, String role) {
-		if(snapshots.containsKey(p.getUniqueId())) return; // already editing; a second open would snapshot the copies
+		if(snapshots.containsKey(p.getUniqueId())) return; // already editing; a second open would snapshot copies
 
 		EditorHolder holder = new EditorHolder(role, Catalog.palette());
 		Inventory gui = Bukkit.createInventory(holder, 54,
@@ -151,7 +141,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		holder.inv = gui;
 
 		ItemStack[] arr = Loadouts.getContents(p.getUniqueId(), role); // non-null after seedIfAbsent
-		// Take the player's own inventory BEFORE anything is written into it: this array is the only copy.
+		// Take the real inventory BEFORE writing into it: this array is the only copy.
 		snapshots.put(p.getUniqueId(), takeInventory(p));
 		writeMain(p, arr);
 		pinMenu(p, role, arr);
@@ -164,14 +154,13 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		refreshPalette(gui, holder);
 
 		p.openInventory(gui);
-		// Idle players on m7 sit in spectator, and vanilla refuses them container clicks - arm the bypass so they
-		// can edit without leaving spectator mode. No-op for anyone not in spectator.
+		// Idle m7 players are spectators and vanilla refuses their container clicks; arm the bypass. No-op otherwise.
 		SpectatorGuiAccess.install(p);
 		p.sendMessage(Utils.msg("<gray>Editing <white><role>",
 				Placeholder.unparsed("role", role)));
 	}
 
-	/** (Re)draw the palette items + page/reset buttons for the holder's current page. */
+	/** Redraw palette + page/reset buttons for the current page. */
 	private void refreshPalette(Inventory gui, EditorHolder holder) {
 		List<ItemStack> pal = holder.palette;
 		int pages = Math.max(1, (pal.size() + PALETTE_COUNT - 1) / PALETTE_COUNT);
@@ -181,7 +170,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 			int idx = holder.page * PALETTE_COUNT + i;
 			gui.setItem(PALETTE_START + i, idx < pal.size() ? pal.get(idx).clone() : null);
 		}
-		// A missing arrow falls back to the seam pane, not a plain filler, so row 5 reads as one unbroken bar.
+		// Missing arrow shows the seam pane, not filler, so row 5 reads as one bar.
 		gui.setItem(PREV_SLOT, holder.page > 0 ? button(Material.ARROW, "<yellow>Previous page") : divider());
 		gui.setItem(NEXT_SLOT, holder.page < pages - 1 ? button(Material.ARROW, "<yellow>Next page") : divider());
 		gui.setItem(RESET_SLOT, button(Material.BARRIER, "<red>Load default kit"));
@@ -196,12 +185,12 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		int raw = e.getRawSlot();
 
 		if(raw >= e.getView().getTopInventory().getSize()) {
-			// The player's own inventory, which IS rows 1-4 of the loadout right now. Everything that keeps the
-			// items inside these 36 slots is allowed; anything that could move one OUT (shift into the chest, a
-			// drop, a double-click collect that would also vacuum palette copies) is denied, default-cancel.
+			// Player's inventory = loadout rows 1-4. Anything keeping items in these 36 slots is allowed; anything
+			// moving one OUT (shift into chest, drop, double-click collect that also vacuums palette copies) is
+			// denied, default cancel.
 			int slot = e.getSlot();
 			if(slot == MENU_ARR_INDEX || e.getHotbarButton() == MENU_ARR_INDEX) {
-				e.setCancelled(true); // the pinned SkyBlock Menu, whichever end of the swap it is on
+				e.setCancelled(true); // pinned SkyBlock Menu, either end of the swap
 				return;
 			}
 			switch(e.getAction()) {
@@ -215,7 +204,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 			return;
 		}
 
-		e.setCancelled(true); // every chest slot is driven by hand below, so nothing vanilla moves anything here
+		e.setCancelled(true); // every chest slot is handled by hand below
 		if(arrIndex(raw) >= 0) {
 			swapArmour(p, holder.inv, raw);
 			return;
@@ -224,7 +213,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 			ItemStack tmpl = e.getCurrentItem();
 			if(tmpl == null || tmpl.getType().isAir()) return;
 			if(e.isShiftClick()) {
-				giveToLoadout(p, tmpl.clone()); // straight into the first free inventory slot
+				giveToLoadout(p, tmpl.clone()); // first free inventory slot
 				return;
 			}
 			ItemStack cursor = e.getCursor();
@@ -241,10 +230,8 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 			return;
 		}
 		if(raw == PET_SLOT) {
-			// Left steps forward, right steps back - the cycling-button convention the rest of the network's
-			// menus use.  A roster of five is short enough to step; the moment it is not, this wants the
-			// pets/PetPicker treatment instead, which cannot live here because opening another window would
-			// end the editing session and hand the inventory back.
+			// Left forward, right back, like the network's other cycling buttons. Five is short enough to step;
+			// a bigger roster wants pets/PetPicker, which can't live here since another window ends the session.
 			cyclePet(p, e.isRightClick());
 			holder.inv.setItem(PET_SLOT, petButton(p));
 			return;
@@ -256,9 +243,9 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * One armour / off-hand slot, done by hand so the slot is never left blank: taking an item back puts the
-	 * placeholder pane there, and placing one swaps out whatever was underneath (a placeholder swaps out as
-	 * nothing).  Doing this through the vanilla click would leave the pane in the loadout or the slot empty.
+	 * One armour/off-hand slot, by hand so it's never blank: taking an item leaves the placeholder, placing one
+	 * swaps out what was there (placeholder swaps out as nothing). Vanilla would leave the pane in the loadout or
+	 * the slot empty.
 	 */
 	private void swapArmour(Player p, Inventory gui, int slot) {
 		ItemStack current = gui.getItem(slot);
@@ -280,7 +267,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		if(!(e.getView().getTopInventory().getHolder() instanceof EditorHolder)) return;
 		int topSize = e.getView().getTopInventory().getSize();
 		for(int raw : e.getRawSlots()) {
-			// Chest slots are all hand-driven, and the pinned menu slot is off limits: cancel the whole drag.
+			// Chest slots are hand-driven and the pinned menu slot is off limits: cancel the whole drag.
 			if(raw < topSize || e.getView().convertSlot(raw) == MENU_ARR_INDEX) {
 				e.setCancelled(true);
 				return;
@@ -289,9 +276,8 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * Backstop for every drop path, whatever {@link InventoryClickEvent} classified the click as: while an editor
-	 * is open on top, nothing this player does can put an item on the ground. Cheaper to reason about than keeping
-	 * the click allowlist exhaustive forever.
+	 * Backstop for every drop path, whatever {@link InventoryClickEvent} called the click: while the editor is open,
+	 * nothing goes on the ground. Cheaper than keeping the allowlist exhaustive forever.
 	 */
 	@EventHandler(ignoreCancelled = true)
 	public void onDropItem(PlayerDropItemEvent e) {
@@ -306,9 +292,9 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * A quit with the editor still open.  Whichever of this and {@link #onClose} the server fires first ends the
-	 * editor; {@link #finish} is idempotent, so the other one is a no-op.  Without this, a disconnect that skipped
-	 * the close event would leave the player's real inventory in {@link #snapshots} and gone.
+	 * Quit with the editor open. Whichever of this and {@link #onClose} fires first ends it; {@link #finish} is
+	 * idempotent. Without this, a disconnect that skipped the close would lose the real inventory in
+	 * {@link #snapshots}.
 	 */
 	@EventHandler
 	public void onQuit(PlayerQuitEvent e) {
@@ -316,9 +302,8 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * Dying with the editor open.  The drop list the server just built is made of PALETTE COPIES, so it is thrown
-	 * away and refilled from the snapshot: the player drops the items they actually had, exactly as they would
-	 * have without the editor open.  LOWEST so the list is still ours to replace.
+	 * Dying with the editor open. The drop list is PALETTE COPIES, so it's replaced from the snapshot and the
+	 * player drops what they actually had. LOWEST so the list is still ours to replace.
 	 */
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onDeath(PlayerDeathEvent e) {
@@ -330,12 +315,12 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		for(ItemStack it : snap) if(it != null && !it.getType().isAir()) e.getDrops().add(it);
 	}
 
-	/** Shut every open editor down, saving as we go. Called from {@code M7tas.onDisable}, before players are dropped. */
+	/** End and save every open editor. Called from {@code M7tas.onDisable}, before players are dropped. */
 	public void restoreAll() {
 		for(UUID id : new ArrayList<>(snapshots.keySet())) {
 			Player p = Bukkit.getPlayer(id);
 			if(p == null) {
-				snapshots.remove(id); // offline with a snapshot left: nothing to restore it into
+				snapshots.remove(id); // offline, nothing to restore into
 				continue;
 			}
 			finish(p, holderOf(p), true);
@@ -344,31 +329,30 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * The ONE way an editor ends: save the 41 slots, hand the player their own inventory back, drop the cursor.
-	 * Idempotent - the snapshot is removed first, so the second caller does nothing.
+	 * The ONE way an editor ends: save 41 slots, give the real inventory back, clear the cursor. Idempotent,
+	 * snapshot is removed first.
 	 *
-	 * @param holder the open editor, or null when the caller only has the player (quit / death / disable); the
-	 *               armour row is then read off whatever chest is still on top, and skipped if there isn't one.
+	 * @param holder open editor, or null from quit/death/disable; armour row is then read off whatever chest is
+	 *               still on top, skipped if none.
 	 */
 	private void finish(Player p, EditorHolder holder, boolean save) {
 		ItemStack[] snap = snapshots.remove(p.getUniqueId());
 		if(snap == null) return;
-		// The cleanup runs in a finally: the spectator bypass rewrites EVERY container click from this player as
-		// non-spectator, so if the save throws it must still come off - otherwise it stays armed on the connection
-		// for the rest of the session. Same for the inventory, which would otherwise keep the palette copies.
+		// finally: the spectator bypass rewrites EVERY container click from this player, so it must come off even
+		// if the save throws, or it stays armed all session. Same for the inventory, or it keeps palette copies.
 		try {
 			if(save && holder != null) {
 				ItemStack[] arr = new ItemStack[41];
 				for(int i = 0; i < MAIN_SLOTS; i++) {
 					ItemStack it = p.getInventory().getItem(i);
-					arr[i] = it == null ? null : it.clone(); // a live mirror, and we are about to overwrite the slot
+					arr[i] = it == null ? null : it.clone(); // live mirror, and the slot is about to be overwritten
 				}
 				for(int g = HELMET_SLOT; g <= GEAR_END; g++) {
 					ItemStack it = holder.inv.getItem(g);
 					arr[arrIndex(g)] = isPlaceholder(it, g) ? null : it;
 				}
-				arr[40] = null; // no off-hand in M7, and a kit saved before that rule must not keep one
-				// The reserved slot always holds the class default's menu, whatever the player left there.
+				arr[40] = null; // no off-hand in M7, clears one from before that rule
+				// Reserved slot always gets the class default's menu.
 				ItemStack menu = Catalog.defaultFor(holder.role)[MENU_ARR_INDEX];
 				if(menu != null) arr[MENU_ARR_INDEX] = menu;
 				Loadouts.setContents(p.getUniqueId(), holder.role, arr);
@@ -378,7 +362,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		} finally {
 			writeMain(p, snap);
 			SpectatorGuiAccess.uninstall(p);
-			p.setItemOnCursor(null); // don't let a held palette copy leak into the player's inventory
+			p.setItemOnCursor(null); // don't leak a held palette copy
 			p.updateInventory();
 		}
 	}
@@ -389,7 +373,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	// ===== the player's inventory as the loadout's 36 slots =====
-	/** A deep copy of the player's 36 inventory slots. The ONLY copy of their real items while an editor is open. */
+	/** Deep copy of the 36 inventory slots. The ONLY copy of the real items while the editor is open. */
 	private static ItemStack[] takeInventory(Player p) {
 		ItemStack[] out = new ItemStack[MAIN_SLOTS];
 		for(int i = 0; i < MAIN_SLOTS; i++) {
@@ -399,23 +383,20 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		return out;
 	}
 
-	/** Write the first 36 entries of a 41-slot array (or a bare 36-slot snapshot) into the player's inventory. */
+	/** Write the first 36 entries of a 41-slot array (or a 36-slot snapshot) into the inventory. */
 	private static void writeMain(Player p, ItemStack[] arr) {
 		for(int i = 0; i < MAIN_SLOTS; i++) p.getInventory().setItem(i, arr != null && i < arr.length ? arr[i] : null);
 		p.updateInventory();
 	}
 
-	/**
-	 * Put the class default's SkyBlock Menu in the reserved hotbar slot, so a loadout saved before the slot was
-	 * reserved (or one whose menu was trashed) gets it back.
-	 */
+	/** Put the default SkyBlock Menu in the reserved slot, for loadouts saved before it was reserved or trashed. */
 	private static void pinMenu(Player p, String role, ItemStack[] arr) {
 		ItemStack menu = Catalog.defaultFor(role)[MENU_ARR_INDEX];
 		p.getInventory().setItem(MENU_ARR_INDEX, menu != null ? menu : arr[MENU_ARR_INDEX]);
 		p.updateInventory();
 	}
 
-	/** Shift-click from the palette: a copy into the first free inventory slot, never over the pinned menu. */
+	/** Palette shift-click: copy into the first free slot, never over the pinned menu. */
 	private static void giveToLoadout(Player p, ItemStack copy) {
 		for(int i = 0; i < MAIN_SLOTS; i++) {
 			if(i == MENU_ARR_INDEX) continue;
@@ -429,7 +410,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	// ===== helpers =====
-	/** The white pane that stands in for an empty armour / off-hand slot, named for what belongs there. */
+	/** White placeholder pane for an empty armour/off-hand slot, named for what goes there. */
 	private static ItemStack placeholder(int gui) {
 		return button(Material.WHITE_STAINED_GLASS_PANE, "<gray>" + slotName(gui));
 	}
@@ -439,8 +420,8 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * Is this the placeholder pane for that slot rather than a real item?  Built the same way every time, so an
-	 * exact match is the test - and a player cannot forge one, because the palette holds no white pane.
+	 * Is this the slot's placeholder pane? Built identically every time, so exact match; can't be forged since the
+	 * palette has no white pane.
 	 */
 	private static boolean isPlaceholder(ItemStack it, int gui) {
 		return it != null && it.isSimilar(placeholder(gui));
@@ -457,13 +438,11 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * Row 5: the seam between the palette and the loadout.  It exists because the two halves of this window look
-	 * identical and mean opposite things - above is a catalogue you copy FROM, below is the kit you are building -
-	 * and a labelled bar between them is cheaper than explaining it in chat every time.
+	 * Row 5: seam between palette and loadout. The halves look identical but mean opposite things (above you copy
+	 * FROM, below is your kit), so a labelled bar beats explaining it in chat.
 	 * <p>
-	 * <b>Only the first line can be the NAME.</b>  An item display name is a single tooltip line and a newline in
-	 * it does nothing, so the rule and the second label are lore - in the name's own colour, so the three still
-	 * read as one block.
+	 * Only the first line can be the name (a newline in a display name does nothing), so the rule and second label
+	 * are lore in the name's colour, reading as one block.
 	 */
 	private static void drawDivider(Inventory gui) {
 		for(int g = DIVIDER_START; g <= DIVIDER_END; g++) gui.setItem(g, divider());
@@ -474,14 +453,10 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * The starting-pet button: the pet itself, with its whole tooltip, and the action line rewritten.
+	 * Starting-pet button: the pet with its whole tooltip, action line rewritten. Built by {@code PetType.icon}
+	 * like every pet (a second head-assembly copy makes saved stacks stop matching).
 	 * <p>
-	 * <b>{@code PetType.icon} builds it</b>, as everywhere else that draws a pet - a second copy of the head
-	 * assembly is what makes saved stacks stop matching.  Only the trailing action line, the one the summoning
-	 * menu wants, is swapped for what a click HERE does.
-	 * <p>
-	 * <b>There is always a pet to show.</b>  {@code Pets.startingPet} never returns null: no file, an unreadable
-	 * file and a file naming a deleted pet all come back as {@code Pets.DEFAULT_PET}, the Golden Dragon.
+	 * Always a pet to show: {@code Pets.startingPet} never returns null (falls back to Golden Dragon).
 	 */
 	private static ItemStack petButton(Player p) {
 		pets.PetType pet = pets.Pets.startingPet(p);
@@ -490,7 +465,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		if(m == null) return it;
 		List<Component> lore = m.lore();
 		List<Component> out = lore == null ? new ArrayList<>() : new ArrayList<>(lore);
-		if(!out.isEmpty()) out.removeLast(); // the "CURRENTLY SUMMONED" line icon() wrote, which is /pets'
+		if(!out.isEmpty()) out.removeLast(); // icon()'s "CURRENTLY SUMMONED" line, which is /pets'
 		out.add(Utils.msg("<gray>The pet every run of yours begins with.").decoration(TextDecoration.ITALIC, false));
 		out.add(Utils.msg("<dark_gray>Applies in Realistic mode.").decoration(TextDecoration.ITALIC, false));
 		out.add(Component.empty());
@@ -501,7 +476,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		return it;
 	}
 
-	/** Step the starting pet one place through {@code PetType}, wrapping.  Writes the PREFERENCE, not the pet out. */
+	/** Step the starting pet through {@code PetType}, wrapping. Writes the PREFERENCE, not the pet out. */
 	private static void cyclePet(Player p, boolean back) {
 		pets.PetType[] all = pets.PetType.values();
 		if(all.length == 0) return;
@@ -525,10 +500,7 @@ public class LoadoutEditor implements CommandExecutor, Listener {
 		return it;
 	}
 
-	/**
-	 * A button with lore.  Only the seam uses it, but it lives beside {@link #button(Material, String)} so both
-	 * styles of item in this window are built the same way.
-	 */
+	/** Button with lore. Only the seam uses it; next to {@link #button(Material, String)} so both build alike. */
 	private static ItemStack button(Material mat, String name, List<String> lore) {
 		ItemStack it = button(mat, name);
 		ItemMeta m = it.getItemMeta();

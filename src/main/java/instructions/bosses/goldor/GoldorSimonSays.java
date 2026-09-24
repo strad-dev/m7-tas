@@ -22,74 +22,38 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * The real S1 "Simon Says" device: the 4x4 obsidian grid lights a sequence and the party plays it back on the
- * buttons in front of it.
- * <p>
- * <b>Realistic mode only</b> ({@code damage.Difficulty.realPuzzles()}).  Classic and Perfect RNG keep the 15-click
- * stand-in, which stays where it always was in {@code GoldorListener.processSimonClick} - two devices behind one
- * entry point, the same shape the Sharp Shooter has had all along.  Nothing in here runs in the other two modes.
- * <p>
- * <b>The run, in order:</b>
+ * Real S1 Simon Says: the 4x4 obsidian grid lights a sequence, the party plays it back on buttons. Realistic only;
+ * classic and Perfect RNG keep the 15-click stand-in in {@code GoldorListener.processSimonClick}.
  * <ol>
- *   <li>A right-click on the start button begins the device and opens a {@value #SPAM_WINDOW_TICKS}-tick spam
- *       window.  That opening click is click #1.</li>
- *   <li>Every further start-button click inside the window queues another lantern.  Counted <b>per player</b>,
- *       because skips are per player.</li>
- *   <li>The window closes and each player's own count becomes skips off {@link #SKIP_THRESHOLDS}, largest
- *       threshold reached; the skips are then SUMMED across players.  Three people clicking 6, 6 and 3 contribute
- *       2 + 2 + 1 = 5.</li>
- *   <li>Enough skips to start past the last phase completes the device on the spot.</li>
- *   <li>Otherwise {@code N} lanterns play back to back and the answer is the last {@code S + 1} of them, which
- *       then becomes the running sequence.</li>
- *   <li>The lanterns stop, the 16 buttons go UP, and the party plays the sequence back on them.</li>
- *   <li>The answer lands, the buttons come DOWN, and each correct answer appends one new cell and replays the
- *       whole sequence.</li>
- *   <li>Answering a sequence of {@link #targetLength()} completes the device.</li>
+ *   <li>Start click opens a {@value #SPAM_WINDOW_TICKS}-tick spam window; it is click #1.</li>
+ *   <li>Each further start click queues a lantern, counted per player.</li>
+ *   <li>At close each player's count becomes skips ({@link #SKIP_THRESHOLDS}), summed: 6, 6 and 3 clicks = 2+2+1 = 5.</li>
+ *   <li>Enough skips to pass the last phase completes it on the spot.</li>
+ *   <li>Else N lanterns play back to back; the answer is the last S+1, which becomes the running sequence.</li>
+ *   <li>Buttons go UP, the party answers, buttons come DOWN; each correct answer appends a cell and replays.</li>
+ *   <li>Answering {@link #targetLength()} completes it.</li>
  * </ol>
- *
- * <p><b>The buttons are part of the device, not scenery.</b>  The user's rule, verbatim: <i>"The buttons show up
- * when the sea lantern sequence finishes.  They disappear after the player correctly inputs the solution for each
- * step."</i>  <b>"For each step" is read as per PHASE, not per press</b> - the 16 go up together the moment playback
- * ends, stay up for the whole input window, and all come down together the moment that phase's answer is complete.
- * That is the only reading that leaves a sequence longer than one cell playable.  See {@link #placeButtons} /
- * {@link #removeButtons}.
- *
- * <p><b>The device solves itself.</b>  The button it is waiting for is OAK and the other fifteen are stone, so the
- * answer is readable straight off the wall - see {@link #paintButtons}.  Same bargain as Same Color's click-count
- * hints in {@code GoldorTerminalGui}: the plugin ships the solver rather than leaving it to Odin, and the playback
- * becomes a formality.
- *
- * <p><b>A wrong button is a no-op</b> - no reset, no penalty, nothing.  The spec gives re-clicking the start button
- * as the reset, and says nothing about punishing a misclick; every other puzzle in this plugin ignores an incorrect
- * click too.  Hypixel's own device resets the sequence on a wrong press, so this is the one rule here that is a
- * deliberate divergence rather than a transcription - change it here if that turns out to be wanted.
+ * User's rule: <i>"The buttons show up when the sea lantern sequence finishes. They disappear after the player
+ * correctly inputs the solution for each step."</i> "Each step" = per PHASE, not per press; the only reading where a
+ * sequence longer than one cell is playable.
+ * <p>
+ * Solves itself: the owed button is OAK, the rest stone ({@link #paintButtons}), like Same Color's hints.
+ * <p>
+ * A wrong button is a no-op. Hypixel resets on a wrong press, so this is a deliberate divergence; re-clicking start
+ * is the reset.
  */
 public final class GoldorSimonSays {
 
-	/** Single instance, reached statically the same way {@code Goldor.INSTANCE} is. */
 	public static final GoldorSimonSays INSTANCE = new GoldorSimonSays();
 
 	/**
-	 * <b>The one coordinate table.</b>  The 4x4 obsidian grid, {@code [row][column] -> {x, y, z}}: row 0 is the TOP
-	 * row ({@code y = 123}) and column 0 is {@code z = 92}, so the table reads the way the wall looks to a player
-	 * standing west of it.  The grid's exposed face is WEST ({@code x = 110} is air), which is why the buttons come
-	 * out at {@code x - 1}.
-	 * <p>
-	 * <b>Read out of the project's world file</b> (and cross-checked against the live {@code m7-1 test} world, which
-	 * is identical) - <b>pending the user's confirmation</b>.  Everything downstream derives from here:
-	 * {@link #BUTTONS} is computed from it and nothing else re-derives a coordinate, so moving the device is a
-	 * one-edit change.
-	 * <p>
-	 * Two things the world file says that are worth knowing before touching this:
+	 * The one coordinate table, {@code [row][column] -> {x, y, z}}: row 0 is the top ({@code y = 123}), column 0 is
+	 * {@code z = 92}, as seen from the west. The exposed face is WEST, so buttons sit at {@code x - 1}. Read from the
+	 * world file (matches {@code m7-1 test}), pending the user's confirmation; {@link #BUTTONS} derives from it.
 	 * <ul>
-	 *   <li><b>There is no hidden lantern layer.</b>  {@code x = 112} behind the grid is plain stone bricks, which is
-	 *       why the flash is a block swap on the obsidian itself ({@link #flash}) rather than a light behind it.</li>
-	 *   <li><b>The 16 buttons are not in the world at rest.</b>  The only permanent stone button in the device is
-	 *       the START button at {@code 110 121 91}, on the emerald frame pillar outside the grid.  The 16 are put
-	 *       up and taken down by {@link #placeButtons} / {@link #removeButtons} around each input window, so
-	 *       outside one the slots hold whatever the map has there - and one of them, {@code 110 121 93} (row
-	 *       {@code y=121}, column {@code z=93}), holds the {@code i1} sign, which is why the teardown restores
-	 *       {@link org.bukkit.block.BlockState}s rather than block data.</li>
+	 *   <li>No lantern layer behind ({@code x = 112} is stone bricks), so the flash swaps the obsidian itself.</li>
+	 *   <li>The 16 buttons aren't there at rest; only the start button at {@code 110 121 91} is. One slot,
+	 *       {@code 110 121 93}, holds the {@code i1} sign, hence the BlockState restore.</li>
 	 * </ul>
 	 */
 	private static final int[][][] GRID = {
@@ -101,17 +65,13 @@ public final class GoldorSimonSays {
 
 	private static final int ROWS = GRID.length;
 	private static final int COLS = GRID[0].length;
-	/** How many cells the grid has, and therefore the hard ceiling on a sequence length.  See {@link #CELL_COUNT} uses. */
+	/** Also the ceiling on sequence length. */
 	private static final int CELL_COUNT = ROWS * COLS;
 
-	/**
-	 * How far the button for a cell sits from the cell itself, on X.  The grid's exposed face is west, so a button
-	 * hangs one block west of its obsidian at the same {@code y} and {@code z} - {@code face=wall, facing=west}, the
-	 * convention the existing start button already proves.
-	 */
+	/** One block west of its cell, {@code face=wall, facing=west} like the start button. */
 	private static final int BUTTON_DX = -1;
 
-	/** The 16 button positions, DERIVED from {@link #GRID}.  Never author one of these by hand. */
+	/** DERIVED from {@link #GRID}; never author by hand. */
 	private static final int[][] BUTTONS = new int[CELL_COUNT][];
 
 	static {
@@ -121,78 +81,56 @@ public final class GoldorSimonSays {
 		}
 	}
 
-	/** How long one lantern stays lit, and therefore the playback step: they run back to back with no gap. */
+	/** Lit time and playback step; back to back, no gap. */
 	private static final int FLASH_TICKS = 10;
 
-	/** How long the start button accepts spam clicks after the opening one. */
 	private static final int SPAM_WINDOW_TICKS = 10;
 
 	/**
-	 * Clicks needed for 1, 2, 3, 4 and 5 skips - the largest threshold a player reaches is their skip count.
-	 * <p>
-	 * <b>Per player</b>, then summed.  Note the per-tick click dedupe in
-	 * {@code GoldorListener.tryRegisterSimonClick} caps ONE player at one click per tick, so a single person tops
-	 * out at {@value #SPAM_WINDOW_TICKS} clicks (3 skips) inside the window and the last two thresholds are a
-	 * team's to reach.
+	 * Clicks for 1-5 skips, per player, then summed. {@code GoldorListener.tryRegisterSimonClick} caps one player at
+	 * a click per tick, so solo tops out at {@value #SPAM_WINDOW_TICKS} clicks (3 skips); the last two need a team.
 	 */
 	private static final int[] SKIP_THRESHOLDS = {3, 6, 10, 15, 21};
 
 	private enum State {
-		/** Nothing running: the start button opens a window. */
 		IDLE,
-		/** Inside the spam window: start clicks are counted, not a reset. */
+		/** Start clicks are counted, not a reset. */
 		SPAM,
-		/** Lanterns are playing.  Nothing a player presses on the grid counts. */
+		/** Grid presses don't count. */
 		PLAYING,
-		/** Waiting for the sequence to be played back on the buttons. */
 		AWAITING
 	}
 
 	private State state = State.IDLE;
-	/** The running sequence, as cell indices 0..15.  Always distinct, which is what makes a gapless playback readable. */
+	/** Cell indices 0..15, always distinct, so gapless playback reads. */
 	private final List<Integer> sequence = new ArrayList<>();
-	/** How much of {@link #sequence} the party has pressed correctly in this phase. */
+	/** Correct presses this phase. */
 	private int inputIdx = 0;
-	/** Clicks inside the spam window, per player.  Skips are per player, so this is never collapsed to a total. */
+	/** Per player, since skips are; never collapse to a total. */
 	private final Map<UUID, Integer> spamClicks = new HashMap<>();
-	/** Server tick the spam window opened on, or -1.  The window is judged by tick arithmetic, not by task order. */
+	/** Or -1. The window is judged by tick arithmetic, not task order. */
 	private int windowStartTick = -1;
-	/** Who opened the window, so a short-circuited device has somebody to credit. */
+	/** Credited for a short-circuit. */
 	private UUID starterId;
-	/**
-	 * Bumped by every reset and every fresh start.  Each queued playback step captures it and does nothing if it no
-	 * longer matches, so a re-click on the start button orphans the run in flight rather than racing it.
-	 */
+	/** Bumped on every reset and start; queued steps with a stale token do nothing, so a restart orphans the old run. */
 	private int runToken = 0;
-	/** World the device is running in, remembered so the force-restore never has to guess one. */
+	/** So the force-restore never has to guess. */
 	private World deviceWorld;
 	/**
-	 * Cells currently swapped to sea lantern, with the block data they replaced.
-	 * <p>
-	 * This is the whole reason {@link #cleanup()} exists.  Playback runs on tracked {@code Utils.scheduleTask}s, so
-	 * {@code Utils.cancelAllScheduled} kills the timer that would have put the obsidian back - a flash in flight when
-	 * a run ends is only restored because the teardown does it synchronously.
+	 * Lit cells and what they replaced. Why {@link #cleanup()} exists: {@code Utils.cancelAllScheduled} kills the
+	 * timer that would restore a flash in flight.
 	 */
 	private final Map<Integer, BlockData> litCells = new LinkedHashMap<>();
 	/**
-	 * What was in each of the 16 button slots before the buttons went up, keyed by cell index, or empty while they
-	 * are down.
-	 * <p>
-	 * <b>{@link BlockState}, not {@link BlockData}, because one of the slots is the {@code i1} sign</b> - a sign is
-	 * a block entity, and writing over it with block data alone throws its text away for good.  A state carries the
-	 * text and puts it back.  The sign is still correct for the stand-in device classic and Perfect RNG keep, so it
-	 * has to survive a realistic run untouched.
-	 * <p>
-	 * Snapshotted the first time buttons go up in a run rather than once at startup, so a world reload can never
-	 * leave this holding a state from a world that no longer exists.
+	 * Slot contents before the buttons went up; empty while down. {@link BlockState}, not {@link BlockData}, because
+	 * one slot is the {@code i1} sign, whose text block data would lose; the stand-in modes still need it. Taken when
+	 * buttons go up, not at startup, so a world reload can't leave a stale state.
 	 */
 	private final Map<Integer, BlockState> buttonSnapshot = new LinkedHashMap<>();
-	/** True while the 16 buttons are in the world.  {@link #buttonSnapshot} is the restore; this is the flag. */
 	private boolean buttonsUp = false;
-	/** The button block, built once on first use: {@code stone_button[face=wall,facing=west]}, the same convention
-	 *  the permanent start button proves.  Lazy, so nothing calls into Bukkit at class-init time. */
+	/** Lazy, so nothing calls into Bukkit at class init. */
 	private BlockData buttonData;
-	/** The HINT button, same face and facing, oak instead of stone.  See {@link #paintButtons}. */
+	/** Oak hint button ({@link #paintButtons}). */
 	private BlockData hintButtonData;
 
 	private GoldorSimonSays() {
@@ -200,17 +138,14 @@ public final class GoldorSimonSays {
 
 	// ---------- Coordinate table accessors: the ONLY things that read GRID/BUTTONS ----------
 
-	/** The obsidian cell at flat index {@code i} (row-major over {@link #GRID}), as {@code {x, y, z}}. */
+	/** Row-major flat index into {@link #GRID}. */
 	private static int[] cell(int i) {
 		return GRID[i / COLS][i % COLS];
 	}
 
 	/**
-	 * Flat index of the grid cell whose button is at {@code (bx, by, bz)}, or -1 for "not a Simon Says button".
-	 * <p>
-	 * Public because {@code GoldorListener} funnels both click entry points - the vanilla interact event and the raw
-	 * {@code ServerboundUseItemOnPacket} path - through one guard, and that guard has to know whether the coords are
-	 * ours before it spends the per-tick dedupe on them.
+	 * -1 if not a Simon button. Public: {@code GoldorListener}'s shared click guard (interact event and raw packet)
+	 * must know the coords are ours before spending the per-tick dedupe.
 	 */
 	public static int cellAtButton(int bx, int by, int bz) {
 		for(int i = 0; i < CELL_COUNT; i++) {
@@ -223,14 +158,11 @@ public final class GoldorSimonSays {
 	// ---------- Input ----------
 
 	/**
-	 * A right-click on the START button, in realistic mode.  Three meanings, decided by where the device is:
-	 * opening the device, spamming inside the window, or <b>resetting it from scratch</b>.
-	 * <p>
-	 * The window is judged on {@link #windowStartTick} rather than on whether the close task has run, so a click
-	 * landing on the boundary tick always resolves the same way whichever of the two the scheduler drains first.
+	 * Opens, spams, or resets. Judged on {@link #windowStartTick}, not on whether the close task ran, so a boundary
+	 * click resolves the same whatever the scheduler drains first.
 	 */
 	public void onStartClick(Player p, boolean wasDeferred) {
-		if(GoldorListener.cannotSolve(p)) return; // the listener gates this too; a public entry point owns its own gate
+		if(GoldorListener.cannotSolve(p)) return; // public entry point owns its own gate
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
 		if(s1 == null || s1.device.isActivated()) return;
 		if(state == State.SPAM && Utils.serverTick() - windowStartTick < SPAM_WINDOW_TICKS) {
@@ -239,63 +171,45 @@ public final class GoldorSimonSays {
 					+ " (" + spamClicks.get(p.getUniqueId()) + ")");
 			return;
 		}
-		// Anything else restarts the device outright, including mid-playback and mid-answer: re-clicking start IS
-		// the reset, and it is the only way out of a sequence somebody has lost track of.
+		// Anything else restarts, mid-playback or mid-answer included: re-clicking start IS the reset.
 		beginRun(p);
 	}
 
 	/**
-	 * A right-click on one of the 16 grid buttons, in realistic mode.
-	 * <p>
-	 * <b>Nothing counts unless the device is waiting for an answer</b> - a press during playback is dropped, which
-	 * is what stops a player racing ahead of the lanterns - and a press on the wrong cell is a plain no-op.
-	 * <p>
-	 * The state check is now belt and braces: the real gate is that the buttons only EXIST inside the input window,
-	 * so a click outside one has nothing to land on.  It stays because the two must never be able to disagree, and
-	 * because a button somebody placed by hand should still do nothing.
+	 * Only counts while AWAITING; a wrong cell is a no-op. Buttons only exist then anyway; the state check stays so a
+	 * hand-placed button does nothing.
 	 */
 	public void onCellClick(Player p, int cellIdx, boolean wasDeferred) {
-		if(GoldorListener.cannotSolve(p)) return; // the listener gates this too; a public entry point owns its own gate
+		if(GoldorListener.cannotSolve(p)) return; // public entry point owns its own gate
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
 		if(s1 == null || s1.device.isActivated()) return;
 		if(state != State.AWAITING || sequence.isEmpty()) return;
 		if(inputIdx >= sequence.size()) return;
 		if(sequence.get(inputIdx) != cellIdx) return; // wrong button: no reset, no penalty
 		inputIdx++;
-		// The hint has to move with the answer: the button just pressed goes back to stone and the next one owed
-		// becomes the oak one.
+		// Move the oak hint to the next owed button.
 		if(inputIdx < sequence.size()) { paintButtons(); cue(p); return; }
 
-		// The phase's answer is in, so the buttons come down.  complete() takes them down too (through
-		// resetRuntime), and playBack does it on the way into the next sequence; doing it here as well is what
-		// makes "down" the state between windows rather than something each branch has to remember.
+		// Phase answered: buttons down here, so "down" is the state between windows, not something each branch remembers.
 		removeButtons();
 		if(sequence.size() >= targetLength()) {
 			complete(p, wasDeferred);
 			return;
 		}
-		// The press that finished a PHASE still counts as progress, so it gets the cue like any other correct one.
-		// Only the press that finishes the whole DEVICE is silent, because complete() -> Goldor.onActivation plays
-		// its own noise a moment later and two on one tick stack into a single louder note.
+		// Only the press finishing the DEVICE is silent: Goldor.onActivation plays its own and two stack into one louder note.
 		cue(p);
 		appendCell();
 		playBack(sequence);
 	}
 
-	/**
-	 * The progress cue for a correct button: the same note-block pling the terminal puzzles play, and for the same
-	 * reason - a press that lands and a press that is eaten looked identical, and this device eats every wrong one.
-	 * <p>
-	 * To the presser only, not the room.  A party spamming the grid would otherwise hear each other's presses as
-	 * well as their own, and the point of the noise is to tell YOU that yours registered.
-	 */
+	/** Correct-press pling, like the terminals, since a wrong press is silently eaten. Presser only, not the room. */
 	private static void cue(Player p) {
 		p.playSound(p, Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
 
 	// ---------- The run ----------
 
-	/** Open a fresh spam window.  The opening click is that player's click #1. */
+	/** The opening click is that player's #1. */
 	private void beginRun(Player p) {
 		resetRuntime();
 		deviceWorld = p.getWorld();
@@ -308,7 +222,7 @@ public final class GoldorSimonSays {
 		Utils.debug(Utils.DebugType.BOSS, "Simon Says started by " + Utils.getRealName(p));
 	}
 
-	/** Turn the window's clicks into skips, then either short-circuit the device or deal the opening sequence. */
+	/** Clicks into skips, then short-circuit or deal the opening sequence. */
 	private void closeSpamWindow() {
 		if(state != State.SPAM) return;
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
@@ -320,20 +234,14 @@ public final class GoldorSimonSays {
 			skips += skipsFor(c);
 		}
 
-		// S skips means STARTING at phase S + 1, so skipping past the last phase is just finishing.  With the normal
-		// target of 5 that is exactly the spec's "5 or more skips completes it"; written as the comparison rather
-		// than as a literal 5 so the alpha target of 4 stays consistent instead of needing a second rule.
+		// S skips = start at phase S+1, so past the last phase is finishing. The spec's "5+ skips", written so alpha's 4 follows.
 		if(skips + 1 > targetLength()) {
 			Utils.debug(Utils.DebugType.BOSS, "Simon Says short-circuited on " + skips + " skips");
 			complete(resolveSolver(), false);
 			return;
 		}
 
-		// N is the total clicks, and the playback needs N DISTINCT cells, so it cannot exceed the 16 the grid has.
-		// One player cannot reach 16 (the per-tick dedupe caps them at SPAM_WINDOW_TICKS clicks) and 21 clicks
-		// short-circuits above, so the clamp only ever bites on a big team spread thin - five people on two clicks
-		// each is 10 clicks and no skips at all, and the same five could reach 19 clicks on 4 skips.  Clamping is
-		// the honest answer there: the device still plays the longest sequence the wall can hold.
+		// N distinct cells, so at most 16. Only bites on a big team spread thin (five people could reach 19 clicks on 4 skips).
 		int n = Math.max(1, Math.min(clicks, CELL_COUNT));
 		List<Integer> played = randomDistinctCells(n);
 		int answerLen = Math.min(skips + 1, n);
@@ -342,21 +250,18 @@ public final class GoldorSimonSays {
 		inputIdx = 0;
 		Utils.debug(Utils.DebugType.BOSS, "Simon Says: " + clicks + " clicks, " + skips + " skips, "
 				+ n + " lanterns, answer is the last " + answerLen);
-		// The whole of N plays, but only the tail is the answer - and that tail is what the device carries forward.
+		// All N play; only the tail is the answer and carries forward.
 		playBack(played);
 	}
 
 	/**
-	 * Light {@code toPlay} one cell at a time, {@value #FLASH_TICKS} ticks each, back to back, then take answers.
-	 * <p>
-	 * Back to back with no gap only reads correctly because no sequence ever repeats a cell in a row: the opening
-	 * sequence is dealt distinct and {@link #appendCell} only ever adds a cell the running sequence does not already
-	 * hold.  Two identical neighbours would look like one long flash.
+	 * {@value #FLASH_TICKS} ticks each, back to back, then take answers. Gapless only reads because cells never
+	 * repeat ({@link #appendCell}); two identical neighbours would look like one long flash.
 	 */
 	private void playBack(List<Integer> toPlay) {
 		state = State.PLAYING;
 		inputIdx = 0;
-		removeButtons(); // nothing to press while the lanterns are running, and a restart can land mid-input
+		removeButtons(); // a restart can land mid-input
 		final int token = ++runToken;
 		for(int i = 0; i < toPlay.size(); i++) {
 			final int cellIdx = toPlay.get(i);
@@ -375,15 +280,14 @@ public final class GoldorSimonSays {
 		}, (long) toPlay.size() * FLASH_TICKS);
 	}
 
-	/** Append one cell the running sequence does not already hold. */
+	/** A cell not already in the sequence. */
 	private void appendCell() {
 		List<Integer> free = new ArrayList<>(CELL_COUNT);
 		for(int i = 0; i < CELL_COUNT; i++) if(!sequence.contains(i)) free.add(i);
-		if(free.isEmpty()) return; // unreachable at a target of 5, but a sequence must never repeat a cell
+		if(free.isEmpty()) return; // unreachable at target 5; never repeat a cell
 		sequence.add(free.get(ThreadLocalRandom.current().nextInt(free.size())));
 	}
 
-	/** {@code n} distinct cells in a random order. */
 	private static List<Integer> randomDistinctCells(int n) {
 		List<Integer> all = new ArrayList<>(CELL_COUNT);
 		for(int i = 0; i < CELL_COUNT; i++) all.add(i);
@@ -391,14 +295,13 @@ public final class GoldorSimonSays {
 		return new ArrayList<>(all.subList(0, Math.min(n, CELL_COUNT)));
 	}
 
-	/** How many skips {@code clicks} is worth: the largest {@link #SKIP_THRESHOLDS} entry reached. */
 	private static int skipsFor(int clicks) {
 		int skips = 0;
 		for(int t : SKIP_THRESHOLDS) if(clicks >= t) skips++;
 		return skips;
 	}
 
-	/** The sequence length that completes the device.  The one alpha knob on this device. */
+	/** The one alpha knob here. */
 	private static int targetLength() {
 		return Alpha.count(5, 4);
 	}
@@ -411,11 +314,7 @@ public final class GoldorSimonSays {
 		if(p != null) Goldor.INSTANCE.onActivation(p, s1, "device", wasDeferred);
 	}
 
-	/**
-	 * Who to credit when the device finishes with no click of its own - the short-circuit, which lands on the spam
-	 * window's close task.  The player who opened it, or any non-spectator if they have gone; same fallback shape as
-	 * the Sharp Shooter's ninth-hit credit.
-	 */
+	/** Credit for a short-circuit: the opener, else any non-spectator (like the Sharp Shooter's ninth hit). */
 	private Player resolveSolver() {
 		Player starter = starterId == null ? null : Bukkit.getPlayer(starterId);
 		if(starter != null && !GoldorListener.cannotSolve(starter)) return starter;
@@ -425,13 +324,7 @@ public final class GoldorSimonSays {
 
 	// ---------- Blocks ----------
 
-	/**
-	 * Swap one obsidian cell for a sea lantern.  There is nothing behind the grid to light, so the flash IS the
-	 * block - and it is written with physics suppressed like every other block write in this plugin.
-	 * <p>
-	 * The block data it replaced is kept rather than assumed to be obsidian, so a cell that is something else after
-	 * a map edit still goes back to what it was.
-	 */
+	/** Obsidian → sea lantern, no physics. Keeps the replaced data rather than assuming obsidian, for map edits. */
 	private void flash(int cellIdx) {
 		if(deviceWorld == null || litCells.containsKey(cellIdx)) return;
 		int[] c = cell(cellIdx);
@@ -441,25 +334,17 @@ public final class GoldorSimonSays {
 	}
 
 	/**
-	 * Put the 16 input buttons up, snapshotting whatever each slot held first.
-	 * <p>
-	 * Called the moment a playback ends, so the buttons exist for exactly as long as the device is taking an
-	 * answer.  Idempotent: a second call while they are already up would snapshot the buttons over the real
-	 * blocks and lose the {@code i1} sign.
-	 * <p>
-	 * Written with physics suppressed, like every other block write here, and here it is not just house style: a
-	 * button is attachment-sensitive, and a physics update pops it straight back off the wall.
+	 * Snapshots each slot, then places. Idempotent: a second snapshot would photograph the buttons and lose the
+	 * {@code i1} sign. No physics, which here matters: an update pops a button off the wall.
 	 */
 	private void placeButtons() {
 		if(deviceWorld == null || buttonsUp) return;
 		if(buttonData == null) buttonData = Bukkit.createBlockData("minecraft:stone_button[face=wall,facing=west]");
-		// The slots are only emptied and snapshotted here; paintButtons below is what puts the blocks in.
+		// Snapshot only; paintButtons places.
 		for(int i = 0; i < CELL_COUNT; i++) {
 			int[] b = BUTTONS[i];
 			Block block = deviceWorld.getBlockAt(b[0], b[1], b[2]);
-			// NEVER snapshot a button as the thing to restore.  If one of ours somehow outlived a teardown, taking
-			// its picture here would make it the "original" and every later restore would faithfully put it back,
-			// so a single stray button would become permanent.  Air is what is really under them.
+			// NEVER snapshot a button: a stray one of ours would become the "original" and permanent. Air is underneath.
 			if(Tag.BUTTONS.isTagged(block.getType())) {
 				Block air = deviceWorld.getBlockAt(b[0], b[1], b[2]);
 				air.setType(Material.AIR, false);
@@ -473,19 +358,9 @@ public final class GoldorSimonSays {
 	}
 
 	/**
-	 * <b>The built-in solver.</b>  Write all 16 buttons, the one the device is waiting for as OAK and the other
-	 * fifteen as stone, so the answer is readable off the wall the way Same Color's click counts are readable off
-	 * its panes ({@code GoldorTerminalGui.drawSameColor}) - this plugin ships the hint rather than leaving it to
-	 * Odin.  It makes the playback a formality, which is the point: the device is here to be practised as a
-	 * routine, not memorised.
-	 * <p>
-	 * <b>Paints all 16 every time</b>, not just the two that changed, because sixteen block writes are cheaper
-	 * than a rule about which ones to skip - and "exactly one button is oak" is then a property of the painter
-	 * rather than something each caller has to keep true.
-	 * <p>
-	 * <b>Never touches {@link #buttonSnapshot}</b>.  The snapshot is taken once, by {@link #placeButtons}, and
-	 * re-snapshotting here would photograph our own buttons and make them the blocks to restore.  Physics stays
-	 * suppressed for the same reason the place has it suppressed: a button pops off the wall on an update.
+	 * Built-in solver: owed button OAK, the rest stone, like Same Color's hints ({@code GoldorTerminalGui.drawSameColor}).
+	 * Practised as a routine, not memorised. Paints all 16 every time so "exactly one oak" is the painter's property.
+	 * Never re-snapshots (would photograph our own buttons); no physics.
 	 */
 	private void paintButtons() {
 		if(deviceWorld == null || !buttonsUp) return;
@@ -497,20 +372,15 @@ public final class GoldorSimonSays {
 		}
 	}
 
-	/** The cell the device is waiting for, or -1 when it is not waiting for one - then no button is oak. */
+	/** -1 when not waiting; then no button is oak. */
 	private int hintCell() {
 		if(state != State.AWAITING || inputIdx < 0 || inputIdx >= sequence.size()) return -1;
 		return sequence.get(inputIdx);
 	}
 
 	/**
-	 * Take the 16 buttons down and put each slot back to what it was, synchronously.  Idempotent, and a no-op
-	 * while they are down.
-	 * <p>
-	 * Restored from the {@link BlockState}s, and {@code update(true, false)} is the whole of it: force, because
-	 * the block there is a button and not what the state describes, and no physics for the same reason the place
-	 * has none.  A state knows its own world, so this works with no {@link #deviceWorld} - which matters, because
-	 * the teardown paths can reach it after the device has been thrown away.
+	 * Synchronous, idempotent. {@code update(true, false)}: force (a button is there, not what the state describes),
+	 * no physics. A state knows its world, so this works after {@link #deviceWorld} is gone.
 	 */
 	private void removeButtons() {
 		if(!buttonsUp && buttonSnapshot.isEmpty()) return;
@@ -519,7 +389,7 @@ public final class GoldorSimonSays {
 		buttonsUp = false;
 	}
 
-	/** Put every lit cell back, synchronously.  Idempotent, and a no-op when nothing is lit. */
+	/** Synchronous, idempotent. */
 	private void restoreLitCells() {
 		if(litCells.isEmpty()) return;
 		if(deviceWorld != null) {
@@ -534,23 +404,14 @@ public final class GoldorSimonSays {
 	// ---------- Teardown ----------
 
 	/**
-	 * <b>The force-restore, and the only public teardown.</b>  Puts any lantern in flight back to obsidian and
-	 * takes the 16 input buttons down, on the spot, then throws the run away.
-	 * <p>
-	 * <b>One restore entry point</b>, covering both of the device's world-block changes, so the two can never be
-	 * torn down out of step or one of them forgotten at a call site.
-	 * <p>
-	 * Called directly from all three teardown paths - {@code TAS.endPractice}, {@code Server.serverSetup} (also
-	 * via {@code GoldorListener.resetSimon}) and {@code M7tas.onDisable} - per the CLAUDE.md rule that a
-	 * world-block change needs a synchronous restore on every one of them and not just a timer.  The playback
-	 * timer cannot cover any of them: it is a tracked {@code Utils.scheduleTask}, so
-	 * {@code Utils.cancelAllScheduled} kills it mid-flash and the lantern would be saved into the world.
+	 * The one force-restore and public teardown: lanterns back, buttons down, run dropped. Called from all three
+	 * teardown paths ({@code TAS.endPractice}, {@code Server.serverSetup} incl. via {@code GoldorListener.resetSimon},
+	 * {@code M7tas.onDisable}); the playback timer can't cover them since {@code cancelAllScheduled} kills it.
 	 */
 	public void cleanup() {
 		resetRuntime();
 	}
 
-	/** Orphan anything queued, restore the blocks, and go back to IDLE. */
 	private void resetRuntime() {
 		runToken++;
 		restoreLitCells();

@@ -9,12 +9,11 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Renowned Spring Boots.  Epic once recombobulated, hence dark purple - it was registered as an Epic BASE
- * (so Legendary, gold) before the colour started being derived from the rarity, which is how that got noticed.
+ * Renowned Spring Boots. Epic recombobulated, so dark purple (it was wrongly an Epic BASE, gold, until colour was
+ * derived from rarity).
  * <p>
- * The only wearable that carries a lore ID, because the charge-and-launch mechanic in
- * {@code listeners/SpringBoots} identifies the boots by it.  Class name has the {@code Item} suffix purely to
- * avoid colliding with that listener.
+ * The only wearable with a lore ID: {@code listeners/SpringBoots} identifies the boots by it. {@code Item} suffix
+ * avoids colliding with that listener.
  */
 public final class SpringBootsItem implements Wearable {
 	public static final SpringBootsItem INSTANCE = new SpringBootsItem();

@@ -6,10 +6,10 @@ import org.bukkit.entity.Player;
 import plugin.Utils;
 
 /**
- * The Berserk's ULTIMATE: melee hits deal x1.5 for 15 seconds (§1.14).
+ * Berserk ultimate: melee hits x1.5 for 15s (§1.14).
  * <p>
- * The WINDOW itself lives in {@code damage/CombatState}, because that is what the damage math reads; only the
- * cooldown lives here.  Nothing is applied to the player, so there is no buff to strip on teardown.
+ * Window lives in {@code damage/CombatState} since the damage math reads it; only the cooldown is here. Nothing is
+ * applied to the player, so no buff to strip on teardown.
  */
 public final class Ragnarok implements ClassAbility {
 	public static final Ragnarok INSTANCE = new Ragnarok();

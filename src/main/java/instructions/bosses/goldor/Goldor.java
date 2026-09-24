@@ -30,47 +30,39 @@ public final class Goldor extends WitherLord {
 
 	private static final int PRE_GOLDOR_TICKS = 2098;
 
-	// Patrol waypoints (block-center XZ). Y stays at spawn Y = 118 during patrol.
+	// Patrol waypoints, block-center XZ. Y stays 118.
 	private static final double WP_AX = 100.5, WP_AZ = 40.5;
 	private static final double WP_BX = 100.5, WP_BZ = 132.5;
 	private static final double WP_CX = 8.5,   WP_CZ = 132.5;
 	private static final double WP_DX = 8.5,   WP_DZ = 40.5;
 	private static final double PATROL_SPEED = 0.1;
 
-	// Core approach, horizontal targets.  Y target is 116, and the descent is independent of horizontal motion.
+	// Core approach. Y descends to 116 independently of horizontal motion.
 	private static final double CORE_TARGET_X = 54.5, CORE_TARGET_Z = 40.5;
 	private static final double CORE_FINAL_X  = 54.5, CORE_FINAL_Z  = 114.5;
 	private static final double CORE_TARGET_Y = 116.0;
 	private static final double CORE_APPROACH_SPEED = 0.8;
 	private static final double Y_DESCENT_SPEED = 0.1;
 
-	// Item-frame protection AABB, only the S3 frame wall: -2,119,74 to -2,125,80 in block coords.
-	// Expand by 1 in each direction to tolerate the frame entity's offset from its attached block.
+	// S3 frame wall (-2,119,74 to -2,125,80), expanded 1 each way for the frame entity's offset from its block.
 	private static final BoundingBox S3_FRAME_BOUNDS = new BoundingBox(-3, 118, 73, 0, 126, 81);
 
-	// Simon Says button coord (S1 device), kept in sync with GoldorListener.SIMON_B{X,Y,Z}.
+	// S1 Simon Says start button; keep in sync with GoldorListener.SIMON_B{X,Y,Z}.
 	private static final int SIMON_BX = 110, SIMON_BY = 121, SIMON_BZ = 91;
-	// Block directly behind the Simon Says button (also stonk-immune so the button can't be knocked off).
+	// Block behind it, also stonk-immune.
 	private static final int SIMON_BEHIND_BX = 111, SIMON_BEHIND_BY = 121, SIMON_BEHIND_BZ = 91;
-	// S1 Simon Says ("SS") device protection zone: the whole device column (110..111, 119..124, 91..96),
-	// which covers the start button, its backing, and the "i1" label sign at (110,121,93).  Every block in here is
-	// stonk and break immune so nothing in the device can be knocked out.  That is also what keeps the sign's
-	// message intact across runs, since it can never be broken or replaced.  See isProtected.
-	// It ALREADY covers the real device's 16 input buttons - x=110, y 120..123, z 92..95, the grid's own cells
-	// shifted one west - so a stonk cannot knock one off the wall mid-input.  Nothing extra is needed for them.
+	// Whole Simon Says column, stonk/break immune (isProtected): start button, backing, the "i1" sign at
+	// (110,121,93), whose text therefore survives across runs, and the 16 input buttons (x=110, y 120..123, z 92..95).
 	private static final int SS_ZONE_X1 = 110, SS_ZONE_X2 = 111;
 	private static final int SS_ZONE_Y1 = 119, SS_ZONE_Y2 = 124;
 	private static final int SS_ZONE_Z1 = 91,  SS_ZONE_Z2 = 96;
-	// S2 "Lights" device: the blocks the wall levers are mounted on (levers at z=142, mount blocks at z=143).
+	// S2 "Lights" lever mounts (levers at z=142, mounts at z=143).
 	private static final int LIGHTS_MOUNT_Z = 143, LIGHTS_MOUNT_X1 = 58, LIGHTS_MOUNT_X2 = 62, LIGHTS_MOUNT_Y1 = 133, LIGHTS_MOUNT_Y2 = 136;
-	// S4 Sharp Shooter: the gold pressure plate that starts the device, kept in sync with
-	// GoldorListener.PLATE_{X,Y,Z}.  The PLATE ITSELF and the block under it are both immune; see isProtected.
+	// S4 Sharp Shooter start plate; keep in sync with GoldorListener.PLATE_{X,Y,Z}. Plate and support both immune.
 	private static final int PLATE_BX = 63, PLATE_BY = 127, PLATE_BZ = 35;
 
-	// Section lever block coords, indexed [sectionIdx][leverIdx] → {x, y, z}. Single source of truth for both
-	// the GoldorLever placements (buildS1..buildS4) and the run-start reset (resetSectionLevers). These are the
-	// per-section levers a player flips to clear a section, NOT the S2 "Lights" device levers, which live in the
-	// LIGHTS_MOUNT region and are reset separately in Server.serverSetup.
+	// [sectionIdx][leverIdx] → {x, y, z}, shared by buildS1..buildS4 and resetSectionLevers. Section levers only, NOT
+	// the S2 "Lights" levers, which Server.serverSetup resets.
 	private static final int[][][] SECTION_LEVER_COORDS = {
 			{{106, 124, 113}, {94, 124, 113}},  // S1
 			{{27, 124, 127},  {23, 132, 138}},  // S2
@@ -78,67 +70,42 @@ public final class Goldor extends WitherLord {
 			{{84, 121, 34},   {86, 128, 46}},   // S4
 	};
 
-	// Per-fight state
 	private final List<GoldorSection> sections = new ArrayList<>(4);
 	private int currentSectionIdx = 0;
-	/** Goldor-relative tick at which the current section began (0 = Goldor start, i.e. S1's start). */
+	/** Goldor-relative tick the current section began. */
 	private int sectionStartTick = 0;
-	/** Goldor-relative tick at which the core opened (S4 complete). Used to time the final kill. */
+	/** Core opened (S4 complete); times the final kill. */
 	private int coreOpenTick = 0;
 	private boolean phaseActive = false;
-	/** True once the core has opened (S4 complete). Before this, Goldor is on patrol and takes no health damage. */
+	/** Before this he's on patrol and takes no health damage. */
 	private boolean coreOpen = false;
-	/** Goldor-relative tick of the most recent patrol hit; halves patrol movement speed for 10 ticks after. */
+	/** Last patrol hit; halves patrol speed for 10 ticks. */
 	private int lastDamagedTick = -1000;
 	private BukkitTask patrolTask;
 	private BukkitTask coreApproachTask;
 	private final List<ItemFrame> protectedFrames = new ArrayList<>();
 
-	/**
-	 * How many frames the Arrow Align device has.  Only a sanity figure - the device is whatever
-	 * {@link #arrowFrames} finds, so a wall that has lost one is still playable rather than silently unsolvable -
-	 * but a mismatch is worth saying out loud, because the map is wrong if it ever happens.
-	 */
+	/** Sanity figure only: the device is whatever {@link #arrowFrames} finds, but a mismatch means the map is wrong. */
 	private static final int ARROW_FRAME_COUNT = 9;
 
-	/**
-	 * The rotation all nine frames have to read for the device to be solved: <b>ordinal 1</b>, one click clockwise
-	 * off the default.  Bukkit item frames have EIGHT rotation states ({@code Rotation.values()} 0..7), and
-	 * {@code rotateClockwise()} steps exactly one of them.
-	 */
+	/** Solved = all nine on ordinal 1 of the EIGHT rotation states; {@code rotateClockwise()} steps one. */
 	private static final Rotation ARROW_SOLVED_ROTATION = Rotation.CLOCKWISE_45;
 
-	/** Ordinal 0, one clockwise click short of {@link #ARROW_SOLVED_ROTATION}: what the stand-in's odd frame reads. */
+	/** Ordinal 0, one click short: the stand-in's odd frame. */
 	private static final Rotation ARROW_STANDIN_ROTATION = Rotation.NONE;
 
 	/**
-	 * The column of the stand-in's one unfinished frame, the <b>bottom-left</b> of the nine, which sits at
-	 * {@code -1.5 120 78.5}.
-	 * <p>
-	 * Only the z is written down, because {@link #standInArrowFrame} takes the bottom ROW first and then the
-	 * frame nearest this column: the x is the same for all nine (they share the wall) and the y that was read off
-	 * that frame lands <b>between</b> two rows, which is exactly the tie that made the old nearest-frame search
-	 * pick a different frame from run to run.  Asking for the lowest row instead cannot tie.
+	 * Column of the stand-in's bottom-left frame ({@code -1.5 120 78.5}). Only z: {@link #standInArrowFrame} takes the
+	 * lowest ROW first, since y=120 falls between two rows and made the old nearest-frame search tie.
 	 */
 	private static final double ARROW_STANDIN_Z = 78.5;
 
 	/**
-	 * True if this is one of the nine S3 Arrow Align frames: <b>in the frame wall and holding an arrow</b>.  Those
-	 * nine are the device in realistic, where all nine have to be turned to ordinal 1 to solve it.  <b>Membership
-	 * only</b> - whether a player may TURN one is {@link #isTurnableArrowFrame}, which is the mode-dependent
-	 * question, and every frame in the wall that is not an arrow frame is untouchable in every mode.
+	 * One of the nine S3 Arrow Align frames: in the wall AND holding an arrow. Membership only; who may TURN one is
+	 * {@link #isTurnableArrowFrame}. Static and off the frame itself, so it protects the wall in prep and between phases.
 	 * <p>
-	 * <b>Static, and answered off the frame itself</b>, so it holds before the phase has spun up - which is what
-	 * lets the interaction guard protect the wall in prep and between phases, not just mid-phase.  Nothing here
-	 * reads phase state or a cached scan.
-	 * <p>
-	 * <b>Never hunt for the nearest frame.</b>  This used to be one frame found by a NEAREST search against the
-	 * block centre {@code (-1.5, 120, 78.5)}, and that was <b>ambiguous</b>: a frame on this wall sits at
-	 * {@code y = row + 0.5}, so 120 was exactly halfway between the y=119.5 and y=120.5 rows and both came out at
-	 * the same squared distance.  Which one won was whatever {@code getNearbyEntities} returned first, so the
-	 * "correct" frame moved between runs.  It was then a hardcoded position, which is why the nine are found by
-	 * what they HOLD instead of by a coordinate table: the item is the map's own marking of which frames are the
-	 * device, and it survives the wall being rebuilt a block over.
+	 * Never a nearest-frame search: frames sit at {@code y = row + 0.5}, so y=120 tied the 119.5 and 120.5 rows and
+	 * the pick changed between runs. The arrow is the map's own marking, and survives the wall moving.
 	 */
 	public static boolean isArrowAlignFrame(ItemFrame frame) {
 		if(frame == null) return false;
@@ -147,8 +114,7 @@ public final class Goldor extends WitherLord {
 		return held != null && held.getType() == Material.ARROW;
 	}
 
-	/** The nine Arrow Align frames, live out of the world.  Both the randomiser and the solve check scan the same
-	*  way, so they can never disagree about which frames are the device. */
+	/** Live scan, shared by the randomiser and the solve check so they never disagree. */
 	private static List<ItemFrame> arrowFrames(World world) {
 		List<ItemFrame> found = new ArrayList<>(ARROW_FRAME_COUNT);
 		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
@@ -158,18 +124,14 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * The one frame the stand-in leaves unfinished: the <b>bottom-left</b> of the nine, i.e. the lowest row and
-	 * then the frame nearest {@link #ARROW_STANDIN_Z}.  Null only when the wall is missing.
-	 * <p>
-	 * <b>Fixed, not rolled.</b>  It used to be a random frame, which made the wall read differently every run for
-	 * no gain: outside realistic it is the only frame a player may touch, so it is the device, and a device that
-	 * moves cannot be learned.
+	 * The stand-in's unfinished frame: lowest row, then nearest {@link #ARROW_STANDIN_Z}. Null only if the wall is
+	 * missing. Fixed, not rolled: outside realistic it IS the device, and a device that moves can't be learned.
 	 */
 	private static ItemFrame standInArrowFrame(World world) {
 		return standInArrowFrame(arrowFrames(world));
 	}
 
-	/** The same pick off a list already scanned, so a caller holding the nine compares the SAME objects. */
+	/** Off an existing scan, so the caller compares the SAME objects. */
 	private static ItemFrame standInArrowFrame(List<ItemFrame> frames) {
 		ItemFrame best = null;
 		for(ItemFrame f : frames) {
@@ -178,9 +140,9 @@ public final class Goldor extends WitherLord {
 				continue;
 			}
 			double y = f.getLocation().getY(), bestY = best.getLocation().getY();
-			if(y > bestY + 1e-6) continue;          // higher row: never the bottom-left
+			if(y > bestY + 1e-6) continue;          // higher row
 			if(y < bestY - 1e-6) {
-				best = f;                           // lower row wins outright
+				best = f;                           // lower row wins
 				continue;
 			}
 			double dz = Math.abs(f.getLocation().getZ() - ARROW_STANDIN_Z);
@@ -190,16 +152,9 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * True if a player may turn {@code frame} in the CURRENT mode: <b>all nine in realistic</b>, and
-	 * <b>only {@link #standInArrowFrame} otherwise</b>.  Every other frame in the wall is protected, the same way
-	 * the frames that are not the device have always been.
-	 * <p>
-	 * Outside realistic the other eight are already sitting on the answer, so letting a player turn one could only
-	 * take the wall AWAY from solved - and the stand-in activates on the first click anyway, so a click on one
-	 * would have finished the device off a frame that is not it.
-	 * <p>
-	 * Asked live, like {@link #isArrowAlignFrame}, rather than off a cached frame: a click is rare and the scan is
-	 * nine entities, where a cache would have to be invalidated by every teardown and every mode change.
+	 * All nine in realistic, only {@link #standInArrowFrame} otherwise: the other eight already read the answer, and
+	 * the stand-in activates on the first click, so one of them would finish the device off the wrong frame. Asked
+	 * live; a cache would need invalidating on every teardown and mode change.
 	 */
 	public static boolean isTurnableArrowFrame(ItemFrame frame) {
 		if(!isArrowAlignFrame(frame)) return false;
@@ -209,25 +164,11 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * Reset the device, differently per mode.
+	 * Realistic: random rotations, re-rolled while all nine are already solved (1 in 8^9). Classic and Perfect RNG:
+	 * aligned bar {@link #standInArrowFrame} on {@link #ARROW_STANDIN_ROTATION}, one click short.
 	 * <p>
-	 * <b>Realistic</b> rolls every frame a random rotation, and <b>re-rolls while the roll is already the
-	 * answer</b>.  "Already the answer" is all nine on {@link #ARROW_SOLVED_ROTATION}, so the guarantee is only
-	 * that at least one frame is off it - a device handed out pre-solved is not a puzzle.  One frame in eight is
-	 * the answer, so a second pass is a 1-in-8^9 event with a full wall; the loop is there for correctness, not
-	 * for the common case.
-	 * <p>
-	 * <b>Classic and Perfect RNG</b> get the wall already aligned bar {@link #standInArrowFrame}, the bottom-left
-	 * one, left on {@link #ARROW_STANDIN_ROTATION} - one clockwise click short.  That frame is also the only one
-	 * those modes let a player turn ({@link #isTurnableArrowFrame}), so the wall reads as the single turn the real
-	 * device would be down to and the click that finishes it is the click the wall asks for.
-	 * <p>
-	 * Run at every device reset ({@link #resetS3Device} before a run, {@link #protectAllItemFrames} as the phase
-	 * builds), never mid-phase: nothing may re-roll the wall under a party that is halfway through it.
-	 * <p>
-	 * <b>All nine are written every time, in every mode.</b>  Back when the device was one frame, the other eight
-	 * were never scrambled and so never needed putting back; realistic scrambles all nine now, so the stand-in has
-	 * to state the whole wall or it would inherit whatever the last realistic run left behind.
+	 * Only at device resets ({@link #resetS3Device}, {@link #protectAllItemFrames}), never mid-phase. All nine are
+	 * written in every mode, or the stand-in would inherit the last realistic run's wall.
 	 */
 	public static void resetArrowFrames(World world) {
 		List<ItemFrame> frames = arrowFrames(world);
@@ -242,7 +183,7 @@ public final class Goldor extends WitherLord {
 			return;
 		}
 		java.util.concurrent.ThreadLocalRandom rng = java.util.concurrent.ThreadLocalRandom.current();
-		Rotation[] all = Rotation.values(); // 8 states, ordinal 0..7
+		Rotation[] all = Rotation.values(); // ordinal 0..7
 		boolean alreadySolved;
 		do {
 			alreadySolved = true;
@@ -254,8 +195,7 @@ public final class Goldor extends WitherLord {
 		} while(alreadySolved);
 	}
 
-	/** True only when every arrow frame reads {@link #ARROW_SOLVED_ROTATION}.  The solve test for the S3 device,
-	*  asked by {@code GoldorListener.processArrowFrame} after it has turned the clicked frame. */
+	/** S3 solve test, from {@code GoldorListener.processArrowFrame} after it turns the clicked frame. */
 	public static boolean arrowFramesAligned(World world) {
 		List<ItemFrame> frames = arrowFrames(world);
 		if(frames.isEmpty()) return false;
@@ -269,7 +209,6 @@ public final class Goldor extends WitherLord {
 		register(this);
 	}
 
-	/** Static facade for the boss-chain. */
 	public static void goldorInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
 	}
@@ -307,7 +246,7 @@ public final class Goldor extends WitherLord {
 
 	@Override
 	protected void onStart() {
-		// Storm's section ends as the Goldor (terminals) phase begins, so record its end for the practice scoreboard.
+		// Storm's split ends as Goldor begins (practice scoreboard).
 		instructions.bosses.WitherActions.recordSplit("Storm", plugin.Utils.runTick());
 		startPhase();
 		scheduleIntroDialogue();
@@ -317,9 +256,9 @@ public final class Goldor extends WitherLord {
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
 			Necron.necronInstructions(world, true);
-			runPlayerHandoff(); // start each player's necron() routine the same tick Necron spawns
+			runPlayerHandoff(); // players' necron() routine, same tick Necron spawns
 		} else {
-			instructions.bosses.WitherActions.signalRunComplete(); // Goldor/Terminals was the last boss of this practice
+			instructions.bosses.WitherActions.signalRunComplete(); // last boss of this practice
 		}
 	}
 
@@ -335,9 +274,7 @@ public final class Goldor extends WitherLord {
 	private void startPhase() {
 		phaseActive = true;
 
-		// Goldor is hittable while on patrol, so drop the wither invulnerability shield and attacks actually
-		// land: the terminator ding, the hurt sound, and the patrol slow all fire.  His health bar is still
-		// protected by the !coreOpen branch in handleDamage, which cancels the damage itself.
+		// Shield off on patrol so hits land (ding, hurt sound, patrol slow); clampDamage's !coreOpen branch keeps his health.
 		setArmor(false);
 
 		sections.add(buildS1());
@@ -399,8 +336,6 @@ public final class Goldor extends WitherLord {
 		return new GoldorSection(3, terms, dev, lev, null);
 	}
 
-	/** Build the section's levers from {@link #SECTION_LEVER_COORDS} (single source of truth shared with
-	 *  {@link #resetSectionLevers}). */
 	private List<GoldorLever> buildLevers(int sectionIdx) {
 		List<GoldorLever> lev = new ArrayList<>();
 		int[][] coords = SECTION_LEVER_COORDS[sectionIdx];
@@ -419,27 +354,23 @@ public final class Goldor extends WitherLord {
 	}
 
 	private void protectAllItemFrames() {
-		// Per user: only frames in the S3 frame wall (-2,119,74 to -2,125,80) are immune.
+		// Per user: only S3 wall frames are immune.
 		for(Entity e : world.getNearbyEntities(S3_FRAME_BOUNDS)) {
 			if(e instanceof ItemFrame frame) {
 				frame.setInvulnerable(true);
 				protectedFrames.add(frame);
 			}
 		}
-		// Deal the device a fresh board as the phase builds, so a chained full run doesn't inherit the last one's
-		// rotations.  All nine at once, which is why it is not a branch inside the loop above.
+		// Fresh board, so a chained full run doesn't inherit the last one's rotations.
 		resetArrowFrames(world);
 	}
 
-	/** Reset the S3 Arrow Align device (used by /setup): deal all nine arrow frames a fresh board so the next run
-	 *  starts unsolved.  Every other frame in the wall is left alone - nothing may turn them in the first place. */
+	/** For /setup. Non-arrow frames are left alone; nothing may turn them anyway. */
 	public static void resetS3Device(World world) {
 		resetArrowFrames(world);
 	}
 
-	/** Reset every section lever (the per-section levers a player flips, NOT the S2 "Lights" device levers) to
-	*  powered=false so a new run starts with them all off.  Each lever's face and facing are preserved, and only
-	*  the powered state is flipped.  Called from {@link instructions.Server#serverSetup} on each run start. */
+	/** Section levers (not S2 "Lights") to unpowered, face and facing kept. From {@link instructions.Server#serverSetup}. */
 	public static void resetSectionLevers(World world) {
 		for(int[][] section : SECTION_LEVER_COORDS) {
 			for(int[] c : section) {
@@ -452,9 +383,7 @@ public final class Goldor extends WitherLord {
 		}
 	}
 
-	/** Is this frame inside the S3 frame wall, i.e. one this boss owns?  A live coord check rather than the cached
-	 *  {@code protectedFrames} set, so frames loaded after phase-start still match, and <b>phase-independent</b>,
-	 *  so the wall is protected in prep and between phases as well as mid-phase. */
+	/** Live coord check, not {@code protectedFrames}, so late-loaded frames match; phase-independent. */
 	public boolean isInS3FrameRegion(ItemFrame frame) {
 		return S3_FRAME_BOUNDS.contains(frame.getLocation().toVector());
 	}
@@ -472,7 +401,7 @@ public final class Goldor extends WitherLord {
 				}
 				Location loc = boss.getLocation();
 				double x = loc.getX(), z = loc.getZ();
-				// Halve patrol speed if Goldor was damaged within the last 5 ticks.
+				// Half speed within 10 ticks of a hit.
 				double speed = (tick - lastDamagedTick < 10) ? PATROL_SPEED * 0.5 : PATROL_SPEED;
 				double yaw;
 				double dx = 0, dz = 0;
@@ -525,31 +454,21 @@ public final class Goldor extends WitherLord {
 	// ---------- Death ticks: the invalid-location sweep (both live modes) ----------
 
 	/**
-	 * Each section's floor footprint as {@code {xMin, xMax, zMin, zMax}}, inclusive, in progression order S1..S4.
-	 * The four corridors ring the arena: S1 runs north, S2 west, S3 south, S4 east back to S1.
+	 * Floor footprints {@code {xMin, xMax, zMin, zMax}}, inclusive, S1..S4, ringing the arena (S1 north, S2 west, S3
+	 * south, S4 east back to S1). Unbounded in Y on purpose: nothing else is at a corridor's X/Z.
 	 * <p>
-	 * <b>Unbounded in Y on purpose.</b> A corridor is the only thing in the arena at its X/Z, so being anywhere in
-	 * one of these columns is being in that section - there is no height at which it stops counting.
-	 * <p>
-	 * <b>Measured calibration points</b>, each an in-game pair of "this block is outside / the next one is inside".
-	 * They pin four of the eight edges exactly, and every one of them agrees with the table:
+	 * Measured in-game edges, all matching the table:
 	 * <ul>
 	 *   <li>S2 starts at Z 122 (Z 121 is not S2)</li>
 	 *   <li>S2 ends at Z 145 (Z 146 is not S2)</li>
 	 *   <li>S3 ends at X 17 (X 18 is not S3 - it is the S2 side of their shared gate)</li>
 	 *   <li>S4 ends at Z 49 (Z 50 is not S4)</li>
 	 * </ul>
-	 * Two consequences of the geometry, inherited from that data rather than chosen here:
 	 * <ul>
-	 *   <li><b>S4 and S1 share the block line X 89.</b>  {@link #sectionAt} resolves overlaps in progression order,
-	 *       so that line reads as S1 (the section it is the START of), not S4's far end.  Moot in practice, since
-	 *       S4 is exempt either way.</li>
-	 *   <li><b>Z 50 belongs to no section</b>, the one-block gap between S3's near edge (Z 51) and S4's far edge
-	 *       (Z 49).  It sits inside S3's gate box, so it is the doorway between them, and standing in a doorway is
-	 *       deliberately never invalid.</li>
+	 *   <li>S4 and S1 share X 89; {@link #sectionAt} takes progression order, so it reads S1.</li>
+	 *   <li>Z 50 is in no section: the doorway inside S3's gate box, never invalid.</li>
 	 * </ul>
-	 * The corridor widths (23 / 24 / 21 / 21 blocks) and lengths (93 / 94 / 95 / 93) are not uniform.  That is the
-	 * data as given, not an error here.
+	 * Widths (23 / 24 / 21 / 21) and lengths (93 / 94 / 95 / 93) really are uneven.
 	 */
 	private static final int[][] SECTION_BOUNDS = {
 			{89, 111, 29, 121},   // S1
@@ -558,49 +477,28 @@ public final class Goldor extends WitherLord {
 			{-3, 89, 29, 49},     // S4
 	};
 
-	/** How often the sweep runs.  A player has this long to get out of a section they should not be in. */
+	/** Also how long a player has to get out. */
 	private static final int INVALID_LOCATION_POLL_TICKS = 60;
 
 	private Runnable invalidLocationTicker;
 
 	/**
-	 * Kill anyone standing somewhere they have no business being, every {@link #INVALID_LOCATION_POLL_TICKS} ticks
-	 * (Perfect RNG and realistic - {@code deathsEnabled}, since this is death, not a puzzle).  <b>Two independent
-	 * rules, on two different clocks.</b>
+	 * Death ticks, every {@link #INVALID_LOCATION_POLL_TICKS} ({@code deathsEnabled}). Two independent rules:
 	 * <ul>
-	 *   <li><b>Ahead of the party</b> - a section past the current one, i.e. one whose gate has not been opened.
-	 *       Judged against {@link #currentSectionIdx}, the party's progress, and unconditional: this is the rule
-	 *       that stops a gate being skipped.</li>
-	 *   <li><b>Overtaken by Goldor</b> - Goldor is <b>physically standing in a section past yours</b>.  Judged
-	 *       against {@link #bossSectionIdx}, his position, and <b>nothing to do with the party's progress</b>:
-	 *       finishing a section early does not put you in danger, and failing to finish one does not protect you.
-	 *       Two worked cases, both from live play: finish S2 while he is still walking S1 or S2 and you live;
-	 *       linger in S1 while he walks into S2 and you die, S1 complete or not.</li>
+	 *   <li><b>Ahead of the party</b>: a section whose gate hasn't opened ({@link #currentSectionIdx}). Stops gate skips.</li>
+	 *   <li><b>Overtaken</b>: Goldor physically in a section past yours ({@link #bossSectionIdx}), regardless of
+	 *       progress. Finish S2 while he walks S1 or S2 and you live; linger in S1 as he enters S2 and you die.</li>
 	 * </ul>
-	 *
-	 * <p><b>S4 is exempt from the OVERTAKEN rule only, and only once it has opened</b> - it is the single place in
-	 * the phase where death ticks do not happen when they otherwise would.  Standing in S4 <i>before</i> its gate is
-	 * open is as fatal as standing in any other unopened section: that is still the ahead-of-the-party rule, and
-	 * skipping three gates must not be the safe way to play the phase.  It used to be exempt under BOTH rules, which
-	 * made S4 a free parking space from the moment the phase started.
-	 *
-	 * <p>Nothing special enforces the surviving half, because the ring arithmetic already does: {@link #bossSectionIdx}
-	 * only ever holds 0-3, so {@code bossSectionIdx > 3} is unreachable and Goldor can never count as having walked
-	 * past the last corridor.  Once {@code currentSectionIdx} reaches 3 the first rule stops firing too, and S4 goes
-	 * quiet on its own.  Note which end the exemption is on either way: it is the PLAYER's section that has to be S4,
-	 * not Goldor's.
-	 *
-	 * <p>Being outside every corridor - the core approach, a gateway, the arena floor - is never invalid either.
-	 * The sweep only ever judges somebody who is definitely inside S1, S2 or S3.
-	 *
-	 * <p>A poll is 60 ticks and {@code CheatDeath}'s shortest immunity is 60, so a proc on one sweep has expired by
-	 * the next: a player who stays put is saved once and then dies, which is the intent.
+	 * S4 is exempt from OVERTAKEN only, and only once open: before that it's fatal like any unopened section (it used
+	 * to be exempt from both, making S4 free parking all phase). The ring arithmetic gives this for free, since
+	 * {@code bossSectionIdx} never exceeds 3. Outside every corridor is never invalid.
+	 * <p>
+	 * 60t poll vs {@code CheatDeath}'s 60t shortest immunity: staying put is saved once, then dies. Intended.
 	 */
 	private void startInvalidLocationTicker() {
 		invalidLocationTicker = () -> {
 			if(!phaseActive || dying) return;
-			// Both EVERY tick, not on the poll grid: the bar is a countdown, and the tracker is a state machine over
-			// Goldor's position that must not miss a crossing.  Only the sweep itself is throttled.
+			// Every tick: the bar is a countdown and the tracker must not miss a crossing. Only the sweep is throttled.
 			updateActionBar();
 			trackBossSection();
 			if(displayTick() % INVALID_LOCATION_POLL_TICKS != 0) return;
@@ -613,23 +511,15 @@ public final class Goldor extends WitherLord {
 		if(invalidLocationTicker != null) {
 			BossScheduler.removeTicker(invalidLocationTicker);
 			invalidLocationTicker = null;
-			// Wipe the HUD rather than leaving the last "Death Ticks 3t" on screen for its fade-out, the same as
-			// Storm's cancelCycleTask.  A cheat-death cooldown still showing is intended - see Utils.sendActionBar.
+			// Wipe instead of letting the last "Death Ticks 3t" fade out. A cheat-death cooldown still showing is intended.
 			Utils.broadcastActionBar(net.kyori.adventure.text.Component.empty());
 		}
 	}
 
 	/**
-	 * The Goldor phase's action bar: how long until the next death-tick sweep.
-	 * <p>
-	 * "Death ticks" is the Hypixel name for {@link #pollInvalidLocations} - the periodic check that kills anyone
-	 * standing where they should not be. The phase had no HUD of its own before this, which is worth knowing because
-	 * it was the one stretch where {@code death/Deaths}' action-bar fallback was the only thing drawing cooldowns;
-	 * that fallback now defers to this, since {@code Utils.sendActionBar} stamps the tick.
-	 * <p>
-	 * <b>Both live modes, never classic.</b> Nothing happens on the grid where nobody can die, and a countdown to
-	 * nothing is worse than no countdown. Counts {@code POLL} → 1 on the absolute phase-tick grid the sweep itself gates on, so
-	 * the bar can never drift from the mechanic - the same anchor-not-a-counter rule the other three boss HUDs follow.
+	 * Countdown to the next death-tick sweep (Hypixel's name for {@link #pollInvalidLocations}). Live modes only; a
+	 * countdown to nothing is worse than none. On the sweep's own phase-tick grid, so it can't drift.
+	 * {@code death/Deaths}' action-bar fallback defers to it, since {@code Utils.sendActionBar} stamps the tick.
 	 */
 	private void updateActionBar() {
 		if(!damage.Difficulty.deathsEnabled()) return;
@@ -641,46 +531,29 @@ public final class Goldor extends WitherLord {
 		if(!damage.Difficulty.deathsEnabled()) return;
 		for(Player p : world.getPlayers()) {
 			int section = sectionAt(p.getLocation());
-			if(section < 0) continue; // not in a corridor at all, so nothing to judge
+			if(section < 0) continue; // not in a corridor
 			if(!isInvalidSection(section)) continue;
 			death.Deaths.kill(p, "Goldor");
 		}
 	}
 
 	/**
-	 * True if being in section {@code idx} is fatal right now.  See {@link #startInvalidLocationTicker}.
-	 * <p>
-	 * <b>There is no S4 special case, deliberately.</b>  S4 ends up exempt from the second rule for free, because
-	 * {@link #bossSectionIdx} is a ring index that only ever holds 0-3 and so can never be greater than S4's 3; and
-	 * it stops being caught by the first the moment its gate opens.  An explicit exemption here also swallowed the
-	 * first rule, which let anyone stand in S4 from the start of the phase.
+	 * See {@link #startInvalidLocationTicker}. No S4 special case, deliberately: the ring arithmetic already exempts
+	 * it, and an explicit one swallowed the first rule too.
 	 */
 	private boolean isInvalidSection(int idx) {
 		if(idx > currentSectionIdx) return true;   // gate not opened yet
-		return bossSectionIdx > idx;               // Goldor has physically walked past this corridor
+		return bossSectionIdx > idx;               // Goldor walked past this corridor
 	}
 
 	/**
-	 * Which corridor Goldor is considered to be patrolling, as an index into {@link #SECTION_BOUNDS}.
-	 * <p>
-	 * <b>Tracked, not derived.</b> {@link #sectionAt} on his live position is wrong twice over. He <b>spawns at
-	 * (80.5, 40.5), which is inside S4's box</b> - reading that literally would say he is three corridors ahead of a
-	 * party still in S1 and kill all of them on the first sweep. And his patrol is a loop, so raw geometry falls
-	 * back to S1 every lap and would keep un-overtaking stragglers.
-	 * <p>
-	 * So this starts at S1 - Goldor starts with the party - and {@link #trackBossSection} only ever advances it to
-	 * the NEXT corridor in ring order. That ignores the pre-S1 spawn stretch (from S1, the only accepted step is to
-	 * S2) and makes the S4 → S1 wrap a real advance rather than a reset.
+	 * Goldor's corridor. TRACKED, not derived: he spawns at (80.5, 40.5), inside S4's box, which would kill a party in
+	 * S1 on the first sweep, and the loop would un-overtake stragglers every lap. Starts at S1;
+	 * {@link #trackBossSection} only steps to the NEXT corridor in ring order.
 	 */
 	private int bossSectionIdx = 0;
 
-	/**
-	 * Advance {@link #bossSectionIdx} if Goldor has just walked into the next corridor of the ring.
-	 * <p>
-	 * Only single forward steps are accepted, which is what makes it a monotonic lap counter rather than a position
-	 * readout. A sample that lands between corridors reads -1 and is simply ignored; his patrol speed is 0.1/tick
-	 * against ~90-block corridors, so no crossing can be missed at any sane sample rate.
-	 */
+	/** Single forward steps only. Between corridors reads -1 and is ignored; at 0.1/tick he can't skip one. */
 	private void trackBossSection() {
 		if(boss == null || !boss.isValid()) return;
 		int geo = sectionAt(boss.getLocation());
@@ -688,7 +561,7 @@ public final class Goldor extends WitherLord {
 		if(geo == (bossSectionIdx + 1) % SECTION_BOUNDS.length) bossSectionIdx = geo;
 	}
 
-	/** Index of the section containing {@code loc}, or -1 for none.  First match in progression order wins. */
+	/** -1 for none; first match in progression order wins. */
 	private static int sectionAt(Location loc) {
 		int x = loc.getBlockX(), z = loc.getBlockZ();
 		for(int i = 0; i < SECTION_BOUNDS.length; i++) {
@@ -717,15 +590,11 @@ public final class Goldor extends WitherLord {
 		return !phaseActive;
 	}
 
-	/** Called from GoldorListener when a terminal/device/lever is activated. */
 	public void onActivation(Player p, GoldorSection ownSection, String thingLabel) {
 		onActivation(p, ownSection, thingLabel, false);
 	}
 
-	/** {@code wasDeferred} is true only for a device whose interaction landed before the phase spun up and was
-	*  held by GoldorListener's one-tick grace.  That grace runs the activation a tick late, so this single
-	*  activation's displayed times are credited to the tick the click actually happened ({@code tick - 1}).
-	*  Every non-deferred activation reads the live {@code tick}, which is already phase-relative-correct. */
+	/** {@code wasDeferred}: a device click held by GoldorListener's one-tick pre-phase grace, credited to {@code tick - 1}. */
 	public void onActivation(Player p, GoldorSection ownSection, String thingLabel, boolean wasDeferred) {
 		if(!phaseActive) return;
 		int now = wasDeferred ? Math.max(0, displayTick() - 1) : displayTick();
@@ -754,17 +623,14 @@ public final class Goldor extends WitherLord {
 		}
 	}
 
-	/** Verbose per-activation timing: elapsed ticks within the current section and within the whole Goldor fight.
-	*  Used after each terminal, device or lever activation (gated on {@link Utils#isVerbose()} by the caller).
-	*  {@code now} is the activation's effective tick: the live {@code tick}, or {@code tick - 1} if grace-deferred. */
+	/** Section and whole-Goldor elapsed ticks. {@code now} is the effective tick ({@code tick - 1} if grace-deferred). */
 	public String verboseTimingLine(int now) {
 		int secTicks = now - sectionStartTick;
 		return "<green>" + String.format("S%d: %s ticks (%.2f seconds) | Terminals: %s ticks (%.2f seconds)",
 				currentSectionIdx + 1, formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(now), now / 20.0);
 	}
 
-	/** Verbose line for a destroyed gate: same shape as an activation line (section-relative + Goldor-relative),
-	 *  but headed "Gate destroyed in" instead of an "S#:" label. Section time is measured from that gate's section. */
+	/** Like an activation line; section time is from that gate's own section. */
 	public String gateDestroyedLine(int gateSectionStartTick) {
 		int secTicks = displayTick() - gateSectionStartTick;
 		int termTicks = displayTick();
@@ -772,37 +638,28 @@ public final class Goldor extends WitherLord {
 				formatWithSpaces(secTicks), secTicks / 20.0, formatWithSpaces(termTicks), termTicks / 20.0);
 	}
 
-	/** Every terminal, device and lever in this section is now done.  A section is NOT yet "complete":
-	*  for S1–S3 it stays the current section (its terminals already done, the next section's still
-	*  locked) until its gate is actually destroyed.  {@link GoldorGate} calls {@link #onGateDestroyed}
-	*  at that moment to finalize the timing and advance.  S4 has no gate, so it completes immediately. */
+	/** Not yet "complete": S1-S3 stay current until the gate goes ({@link #onGateDestroyed}). S4 has no gate. */
 	private void onAllItemsComplete(GoldorSection s, int now) {
 		if(s.idx < 3) {
-			// Kick off the gate's destruction (immediate if already blown, else the 100t auto-destruct).
+			// Immediate if already blown, else the 100t auto-destruct.
 			s.gate.onSectionComplete();
 		} else {
-			// S4 has no gate, so it completes the instant its items are done.  Credit the activation's tick.
 			reportSectionFinished(s, now);
 			onCoreOpen();
 		}
 	}
 
-	/** Called by {@link GoldorGate} the instant its blocks are removed, which only ever happens after
-	*  the section's items are done.  This is the true "section complete" event for S1–S3: report the
-	*  timing (measured to now, i.e. gate destruction) and advance to the next section. */
+	/** The real "section complete" for S1-S3: report timing to now and advance. */
 	public void onGateDestroyed(int sectionIdx) {
 		GoldorSection s = getSection(sectionIdx);
 		if(s == null || sectionIdx != currentSectionIdx) return;
-		// Gate destruction is its own event at the live tick, not a grace-deferred activation.
 		reportSectionFinished(s, displayTick());
 		currentSectionIdx++;
 		sectionStartTick = displayTick();
-		// The next section is now active, so stamp its gate and a later destruction reports time-into-that-section.
 		GoldorSection next = getCurrentSection();
 		if(next != null && next.gate != null) next.gate.setSectionStartTick(displayTick());
 	}
 
-	/** Broadcast this section's duration (measured to now), the cumulative terminal-phase time, and the run-overall time. */
 	private void reportSectionFinished(GoldorSection s, int now) {
 		int sectionTicks = now - sectionStartTick;
 		Utils.timer("<green>" + String.format("S%d finished in %s ticks (%.2f seconds) | Terminals: ",
@@ -822,40 +679,27 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * The activation cue: the pling every completed terminal, device and lever makes.  <b>One definition</b>, so
-	 * moving the sound moves every activation with it.
-	 * <p>
-	 * Melody's per-row cue deliberately makes the same noise, but it does NOT come through here: it is a local
-	 * {@code clicker.playSound(BLOCK_NOTE_BLOCK_PLING, ...)} in {@link GoldorTerminalGui}, heard only by the player
-	 * solving the terminal.  Clearing a row should sound like progress to them without announcing it to the whole
-	 * arena, so the two are the same noise sent to different audiences - change one and the other does not follow.
+	 * Every terminal/device/lever activation. Melody's per-row cue is the same noise but a local playSound in
+	 * {@link GoldorTerminalGui}, for the solver only; changing one doesn't change the other.
 	 */
 	public static void playActivationSound() {
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0F, 2.0F);
 	}
 
 	/**
-	 * True if this block is a Goldor interactable that must never be destroyed by stonk, dungeonbreaker, or any
-	 * other break.  This is a pure positional test and is ALWAYS immune regardless of phase or block state, because
-	 * losing any of these would soft-lock a section (they're the only way to complete it) or knock an interactable
-	 * off its mount.
-	 * Covers: the Simon Says button (S1) and the block behind it; the S2 "Lights" lamp backing (z=143) and its
-	 * levers (z=142); the S4 Sharp Shooter gold pressure plate and its support; and every section lever plus
-	 * the block directly beneath it (from the static coord table, so it holds even before the phase spins up).
+	 * Immune to stonk/dungeonbreaker/any break in every phase: losing one soft-locks a section or knocks an
+	 * interactable off its mount. Positional, so it holds before the phase spins up.
 	 */
 	public boolean isProtected(Block b) {
 		int bx = b.getX(), by = b.getY(), bz = b.getZ();
-		// S1 Simon Says device zone: the whole column (button, backing, and the "i1" sign) is immune.
+		// S1 Simon Says column.
 		if(bx >= SS_ZONE_X1 && bx <= SS_ZONE_X2 && by >= SS_ZONE_Y1 && by <= SS_ZONE_Y2 && bz >= SS_ZONE_Z1 && bz <= SS_ZONE_Z2) return true;
-		// S2 "Lights" lamp backing (z=143) plus the levers hanging on the z-142 face.
+		// S2 "Lights" backing (z=143) and levers (z=142).
 		if((bz == LIGHTS_MOUNT_Z || bz == LIGHTS_MOUNT_Z - 1) && bx >= LIGHTS_MOUNT_X1 && bx <= LIGHTS_MOUNT_X2 && by >= LIGHTS_MOUNT_Y1 && by <= LIGHTS_MOUNT_Y2) return true;
-		// S4 Sharp Shooter: the gold pressure plate AND the block under it.  The support was already immune,
-		// the plate itself was not - and it is the interactable, the only way to start the device, so stonking
-		// it soft-locked S4 for the 200 ticks until the restoration ran (and for good if the run ended first,
-		// since flushStonkRestorations is what puts it back).  Same shape as Maxor's crystal plates, which
-		// covered both from the start.
+		// S4 plate AND support. Only the support used to be immune: stonking the plate soft-locked S4 for 200t, or
+		// for good if the run ended first. Same as Maxor's crystal plates.
 		if(bx == PLATE_BX && bz == PLATE_BZ && (by == PLATE_BY || by == PLATE_BY - 1)) return true;
-		// Section levers and the support block directly beneath each (static coords → phase-independent).
+		// Section levers and the block under each.
 		for(int[][] section : SECTION_LEVER_COORDS) {
 			for(int[] c : section) {
 				if(bx == c[0] && bz == c[2] && (by == c[1] || by == c[1] - 1)) return true;
@@ -864,16 +708,13 @@ public final class Goldor extends WitherLord {
 		return false;
 	}
 
-	/** True if (x,y,z) is the Simon Says button while the Goldor phase is active. Fake players' rightClick
-	 *  normally suppresses stone-button presses across the boss arena; this lets the Simon button through
-	 *  so a right-click there actually registers (the button press is still cancelled by MiscListener, but
-	 *  GoldorListener counts it first). */
+	/** Lets fake players' right-click through to the Simon button, which rightClick otherwise suppresses. MiscListener
+	 *  still cancels the press, but GoldorListener counts it first. */
 	public boolean isSimonButton(int x, int y, int z) {
 		return phaseActive && x == SIMON_BX && y == SIMON_BY && z == SIMON_BZ;
 	}
 
-	/** Failsafe invoked from M7tas.onDisable().  It immediately restores any gates whose blocks were removed,
-	*  so a mid-fight server stop never leaves the world with broken gate blocks. */
+	/** From M7tas.onDisable(), so a mid-fight stop never leaves gates open. */
 	public void shutdownRegenerateGates() {
 		for(GoldorSection s : sections) {
 			if(s.gate != null) s.gate.cleanup();
@@ -884,7 +725,7 @@ public final class Goldor extends WitherLord {
 		}
 	}
 
-	/** Hook called from the Superboom TNT and other explosion sources. */
+	/** From Superboom TNT and other explosions. */
 	public void notifyExplosionAt(Location loc) {
 		if(!phaseActive) return;
 		for(GoldorSection s : sections) {
@@ -913,7 +754,7 @@ public final class Goldor extends WitherLord {
 	private void onCoreOpen() {
 		coreOpen = true;
 		coreOpenTick = displayTick();
-		// Terminals are done now that the core opened, so record the Terminals section end for the scoreboard.
+		// Terminals split ends as the core opens.
 		instructions.bosses.WitherActions.recordSplit("Terminals", plugin.Utils.runTick());
 		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
 
@@ -967,7 +808,7 @@ public final class Goldor extends WitherLord {
 				Location loc = boss.getLocation();
 				double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 
-				// Vertical motion is independent of horizontal: Y descends toward CORE_TARGET_Y at Y_DESCENT_SPEED each tick.
+				// Y descends independently of horizontal motion.
 				double ny = y;
 				if(y > CORE_TARGET_Y) {
 					ny = Math.max(CORE_TARGET_Y, y - Y_DESCENT_SPEED);
@@ -1006,26 +847,21 @@ public final class Goldor extends WitherLord {
 
 	// ---------- Damage / death ----------
 
-	/** Damage clamp for Goldor, called from {@code damage.Damage.deal}.  He dies silently, since vanilla death is
-	 *  suppressed. */
+	/** He dies silently; vanilla death is suppressed. */
 	@Override
 	public double clampDamage(double incoming) {
 		if(boss == null) return incoming;
 		if(dying) return 0;
 		if(incoming <= 0) return 0;
-		// While on patrol (pre-core), Goldor is "damageable" for feedback only: the hit registers (the terminator
-		// arrow ding still plays) but never reduces his health bar.  A recent hit halves his patrol speed for 10
-		// ticks.  Blocking the damage means no hurt flash, so send the animation ourselves - one packet renders
-		// the red flash for ~10 ticks, re-armed by follow-up hits, which matches the slow window.
+		// Patrol: hits register (ding, 10-tick slow) but take no health. Blocking kills the hurt flash, so send it;
+		// one packet flashes ~10 ticks, matching the slow window.
 		if(!coreOpen) {
 			lastDamagedTick = tick;
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
 			return 0;
 		}
 		if(boss.getHealth() - incoming <= 0) {
-			// Killing blow: deal everything except DYING_SLIVER, rather than the 0 this used to return.  Returning 0
-			// meant the hit that killed Goldor moved his health bar not at all, and enterDyingState's deferred pin did
-			// all the work a tick later.
+			// Deal all but DYING_SLIVER; returning 0 left the killing blow not moving the bar at all.
 			double currentHp = boss.getHealth();
 			enterDyingState();
 			return Math.max(0, currentHp - DYING_SLIVER);
@@ -1048,24 +884,19 @@ public final class Goldor extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
-		// The floor to Necron's arena and the handoff itself are the same tick, so they read the same number.
 		int handoffTick = Alpha.ticks(80, 60);
 		sendChatMessage("...");
-		// Three columns: time-since-core-opened (S4 complete), then the shared Terminals (Goldor) + Overall columns.
+		// Since core opened, then Terminals and Overall.
 		int coreTicks = displayTick() - coreOpenTick;
 		Utils.timer("<green>" + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
 				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
 		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), Alpha.ticks(60, 40));
-		// Open the floor to Necron's arena (restored on the next /reset).  Normal opens it 20t after the handoff;
-		// alpha opens it with the handoff, since there is no longer 20t of dialogue left to cover the gap.
+		// Restored on the next /reset. 20t after the handoff normally; with it under alpha, no dialogue left to cover it.
 		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, Alpha.ticks(100, 60));
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
-			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
-			// come before chainNext, which spawns Necron and re-anchors the phase clock.  The board times the WHOLE
-			// Goldor phase, terminals and core, matching what /m7practice goldor times.  It is not the core-only
-			// column printed at the killing blow.
-
+			// Leaderboard duration at the phase's real end, before chainNext re-anchors the clock. The WHOLE phase,
+			// terminals and core, like /m7practice goldor; not the core-only column.
 			instructions.bosses.WitherActions.recordPhaseDuration("Goldor", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);

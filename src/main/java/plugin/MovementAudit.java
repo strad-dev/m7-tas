@@ -13,13 +13,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Per-tick airborne movement printer: a SUPER-verbose dev tool that traces a player's trajectory tick by tick
- * after a launch (spring boots, lava jump, bonzo-staff / jerry-chine knockback, a scripted jump) for speedrun
- * physics analysis. Inert unless verbose mode is SUPER. Real-player driven off its own 1-tick task (the original
- * was driven by the removed fake-player ticker; that NMS version lives in git history on {@code main}).
+ * SUPER-verbose dev tool: prints a player's trajectory per tick after a launch (spring boots, lava jump, bonzo /
+ * jerry-chine knockback) for physics analysis. Inert otherwise. Own 1-tick task; the fake-ticker version is in git
+ * history on {@code main}.
  */
 public class MovementAudit {
-	// Hard cap so a trace that never cleanly lands (velocity stuck, weird geometry) can't print forever.
+	// Cap so a trace that never lands can't print forever.
 	private static final int MAX_TRACE_TICKS = 200;
 
 	private static final class State {
@@ -44,11 +43,10 @@ public class MovementAudit {
 		return audits.containsKey(id);
 	}
 
-	/** Begin tracing {@code p}'s airborne trajectory.  SUPER verbose only; a no-op otherwise.  Prints a START line
-	 *  and drives a per-tick trace until the player lands or the audit is cancelled. */
+	/** Trace {@code p} until they land or it's cancelled. SUPER verbose only. */
 	public static void startAirborneAudit(Player p, String source) {
 		if(!Utils.isSuperVerbose()) return;
-		if(isFlying(p)) return; // a flying player has no trajectory to trace
+		if(isFlying(p)) return; // no trajectory to trace
 		Location at = p.getLocation();
 		audits.put(p.getUniqueId(), new State(source, at));
 		Utils.debug(Utils.DebugType.SERVER, p.getName() + " [" + source + "] airborne trace START at Y="
@@ -80,16 +78,15 @@ public class MovementAudit {
 
 	private static void tick() {
 		if(audits.isEmpty()) { stopTask(); return; }
-		// Drop the whole trace if the operator left SUPER verbose mid-flight.
+		// Operator left SUPER verbose mid-flight.
 		if(!Utils.isSuperVerbose()) { audits.clear(); stopTask(); return; }
 		for(Iterator<Map.Entry<UUID, State>> it = audits.entrySet().iterator(); it.hasNext(); ) {
 			Map.Entry<UUID, State> entry = it.next();
 			Player p = Bukkit.getPlayer(entry.getKey());
 			if(p == null || !p.isOnline()) { it.remove(); continue; }
 			State st = entry.getValue();
-			// Flight kills the trajectory: creative/spectator flight replaces gravity, and being forced into
-			// spectator (end of a run, a death) also teleports the player around, so every remaining tick would
-			// print noise and the "landed" end condition might never come.
+			// Flight kills the trajectory: it replaces gravity, and a forced spectator flip (run end, death) also
+			// teleports, so the rest would be noise and "landed" might never come.
 			if(isFlying(p)) {
 				Utils.debug(Utils.DebugType.SERVER, p.getName() + " [" + st.source + "] airborne trace CANCELLED after "
 						+ st.ticks + "t (started flying), peak Y=" + Utils.round(st.peakY, 5));
@@ -111,8 +108,7 @@ public class MovementAudit {
 					+ " dXZ=" + Utils.round(Math.hypot(dx, dz), 5)
 					+ " vel=" + fmtVec(p.getVelocity())
 					+ (onGround ? " [GROUND]" : ""));
-			// End once the player has actually left the ground and come back down (so the launch tick, which can
-			// still read grounded, doesn't end it immediately), or if the trace overruns the safety cap.
+			// End once they've left the ground and come back (the launch tick can still read grounded), or at the cap.
 			if((onGround && st.leftGround) || st.ticks >= MAX_TRACE_TICKS) {
 				Utils.debug(Utils.DebugType.SERVER, p.getName() + " [" + st.source + "] airborne trace END after "
 						+ st.ticks + "t, peak Y=" + Utils.round(st.peakY, 5));
@@ -122,8 +118,7 @@ public class MovementAudit {
 		if(audits.isEmpty()) stopTask();
 	}
 
-	/** Spectator is checked as well as the flag itself because a gamemode change and the flying flag it implies
-	 *  don't necessarily land on the same tick. */
+	/** Spectator checked too: a gamemode change and its flying flag may land on different ticks. */
 	private static boolean isFlying(Player p) {
 		return p.isFlying() || p.getGameMode() == GameMode.SPECTATOR;
 	}

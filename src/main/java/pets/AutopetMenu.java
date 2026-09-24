@@ -20,39 +20,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The Autopet Settings window behind slot 46 of {@link PetMenu}: one button per {@link Autopet.Trigger}, whose
- * lore lists what it fires on, what it summons and what it will not interrupt.
+ * Autopet Settings window behind slot 46 of {@link PetMenu}: one button per {@link Autopet.Trigger}; lore lists
+ * what it fires on, what it summons and what it won't interrupt.
  * <p>
- * <b>Both clicks open a picker</b> ({@link PetPicker}): left click the one that chooses the pet the rule
- * summons, right click the one that toggles its exceptions.  This used to step the value on each click, the
- * shape {@code commands/SettingsMenu} uses for the three dungeon settings - which is fine for a setting with
- * three values and became six clicks to get back where you started once there were five pets plus "off", with
- * no way to see what the other values were.  A setting with a handful of values steps; a setting with a roster
- * behind it opens onto the roster.
+ * Both clicks open a {@link PetPicker}: left picks the pet the rule summons, right toggles its exceptions. It
+ * used to step the value per click like {@code commands/SettingsMenu}, which was six clicks to get back once
+ * there were five pets plus "off", and hid the other values. A few values steps; a roster opens the roster.
  * <p>
- * <b>Rod Swap is the odd one out, as everywhere else.</b>  It holds an ordered cycle rather than a single pet,
- * so there is no "the pet this rule equips" to pick and nothing to except: both clicks open the cycle editor,
- * which is the same picker in its third mode.
+ * Rod Swap is the odd one out: it holds an ordered cycle, not one pet, so nothing to pick or except. Both clicks
+ * open the cycle editor (the picker's third mode).
  * <p>
- * Every click is cancelled, like the menu it hangs off: this is a click target, not an inventory.
+ * Every click is cancelled: click target, not an inventory.
  * <p>
- * <b>This class is already registered as a listener</b> ({@code M7tas.onEnable} does it via
- * {@code petMenu.autopetMenu()}) and it forwards the three inventory events on to the picker it owns, so
- * {@link PetPicker} needs no registration line of its own.
+ * Registered as a listener by {@code M7tas.onEnable} via {@code petMenu.autopetMenu()}, and forwards the three
+ * inventory events to its picker, so {@link PetPicker} needs no registration of its own.
  */
 public final class AutopetMenu implements Listener {
 
 	private static final int SIZE = 27;
-	/** One button per trigger, spaced out along the middle row. */
+	/** One button per trigger, along the middle row. */
 	private static final int[] TRIGGER_SLOTS = {10, 12, 14, 16};
 	private static final int HEADER_SLOT = 4, BACK_SLOT = 22;
 
-	/** The window this one hangs off, so Back is a return rather than a close. */
+	/** Parent window, so Back returns rather than closes. */
 	private final PetMenu parent;
 
 	/**
-	 * The picker every rule click opens.  Owned here, like this menu is owned by {@link PetMenu}, so the two can
-	 * point at each other without a static handle - and so it rides this class's listener registration.
+	 * Picker every rule click opens. Owned here (as this is owned by {@link PetMenu}) so the two point at each
+	 * other without a static handle, and it rides this class's listener registration.
 	 */
 	private final PetPicker picker = new PetPicker(this);
 
@@ -94,7 +89,7 @@ public final class AutopetMenu implements Listener {
 		}
 		Autopet.Rule rule = Pets.rule(p, t);
 		PetType pet = rule == null ? null : rule.pet();
-		// Order is settled by Autopet.Rule's constructor, so this prints the same sequence as the picker.
+		// Order set by Autopet.Rule's constructor, so same sequence as the picker.
 		List<PetType> except = rule == null ? List.of() : rule.exceptions();
 		out.add("<gray>Summons: " + (pet == null ? "<dark_gray>Off" : pet.colouredName()));
 		if(except.isEmpty()) {
@@ -112,8 +107,7 @@ public final class AutopetMenu implements Listener {
 	@EventHandler
 	public void onClick(InventoryClickEvent e) {
 		InventoryHolder top = e.getView().getTopInventory().getHolder();
-		// The picker rides this registration rather than having one of its own; it cancels the click itself, on
-		// the same "before anything is read" rule as below.
+		// Picker rides this registration; it cancels the click itself, before anything is read, same as below.
 		if(top instanceof PetPicker.Holder ph) {
 			picker.onClick(e, ph);
 			return;
@@ -123,23 +117,22 @@ public final class AutopetMenu implements Listener {
 		e.setCancelled(true); // a click target, not an inventory - see PetMenu
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;
-		// No mode check here, deliberately.  The window can only be REACHED in realistic mode, and a window left
-		// open across a mode change is still editing a preference that is the player's either way - a gate here
-		// would only make the buttons silently stop working under them.
+		// No mode check on purpose. Window is only reachable in realistic mode, and one left open across a mode
+		// change still edits the player's own preference; a gate would just make the buttons silently stop working.
 
 		int slot = e.getRawSlot();
 		if(slot == BACK_SLOT) {
-			// Deferred a tick, like every other view swap here: the close for this window has to land first.
+			// Deferred a tick like every view swap: this window's close has to land first.
 			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> parent.open(p, false));
 			return;
 		}
 		for(int i = 0; i < TRIGGER_SLOTS.length && i < Autopet.Trigger.values().length; i++) {
 			if(TRIGGER_SLOTS[i] != slot) continue;
 			Autopet.Trigger t = Autopet.Trigger.values()[i];
-			// Rod Swap has no single pet and nothing to except, so BOTH clicks land on its cycle editor.
+			// Rod Swap: no single pet, nothing to except, so both clicks open the cycle editor.
 			PetPicker.Mode mode = t.isCycle() ? PetPicker.Mode.CYCLE
 					: e.isRightClick() ? PetPicker.Mode.EXCEPTIONS : PetPicker.Mode.PET;
-			// Deferred a tick, like every other view swap here: the close for this window has to land first.
+			// Deferred a tick, same reason.
 			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> picker.open(p, t, mode));
 			return;
 		}
@@ -153,21 +146,21 @@ public final class AutopetMenu implements Listener {
 	}
 
 	/**
-	 * Nothing is ever on the cursor in this window, so there is no session to end - but the spectator bypass was
-	 * armed on open and has to come back off, or it stays on the connection for the rest of the session.
+	 * Nothing is ever on the cursor here, but the spectator bypass armed on open has to come off, or it stays on
+	 * the connection for the rest of the session.
 	 */
 	@EventHandler
 	public void onClose(InventoryCloseEvent e) {
 		InventoryHolder top = e.getView().getTopInventory().getHolder();
 		if(top instanceof PetPicker.Holder) {
-			picker.onClose(e); // it uninstalls too, and reopens this window unless it is the one swapping it out
+			picker.onClose(e); // uninstalls too, and reopens this window unless it's the one swapping out
 			return;
 		}
 		if(!(top instanceof Holder)) return;
 		if(e.getPlayer() instanceof Player p) SpectatorGuiAccess.uninstall(p);
 	}
 
-	/** Marker holder; the window has no state of its own, since every value is read off the player's profile. */
+	/** Marker holder; no state, every value is read off the player's profile. */
 	public static final class Holder implements InventoryHolder {
 		Inventory inv;
 

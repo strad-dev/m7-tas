@@ -1,13 +1,11 @@
 package damage;
 
 /**
- * A mob's SkyBlock type.  A mob can carry several, and <b>every matching damage buff applies - they all stack</b>
- * (MAP.md §7).
+ * SkyBlock mob type. A mob can carry several and every matching buff stacks (MAP.md §7).
  * <p>
- * The thirteen types with a Ruler attribute (+39% each) are listed first; WITHER and CUBIC/AQUATIC etc. exist
- * because enchantments key on them even where no Ruler does.  There is deliberately no Wither Ruler: a Wither-type
- * mob pays out through Smite and the Hyperion's x1.5 instead.  Skeletal is Normal-mode only and so never matches
- * anything on this floor, but it stays in the list because the Ruler exists.
+ * The thirteen Ruler types (+39% each) come first; the rest exist because enchants key on them. No Wither Ruler:
+ * Wither pays out through Smite and Hyperion x1.5. Skeletal is Normal-mode only and never matches here, but the
+ * Ruler exists so it stays.
  */
 public enum MobType {
 	SKELETAL(true),
@@ -23,7 +21,7 @@ public enum MobType {
 	CONSTRUCT(true),
 	INFERNAL(true),
 	HUMANOID(true),
-	/** No Ruler attribute exists for Wither; it is matched by Smite and by the Hyperion's x1.5 (§7). */
+	/** No Ruler; matched by Smite and Hyperion x1.5 (§7). */
 	WITHER(false),
 	CUBIC(false),
 	AQUATIC(false);
@@ -34,7 +32,7 @@ public enum MobType {
 		this.hasRuler = hasRuler;
 	}
 
-	/** True if one of the thirteen Ruler attributes matches this type, each worth +39% additive (§7). */
+	/** A Ruler attribute matches this type, +39% additive (§7). */
 	public boolean hasRuler() {
 		return hasRuler;
 	}

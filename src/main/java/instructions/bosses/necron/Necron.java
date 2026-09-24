@@ -26,22 +26,17 @@ import java.util.Collections;
 import java.util.Random;
 
 /**
- * Necron, the fourth Wither Lord. Damage-driven like {@link instructions.bosses.maxor.Maxor},
- * {@link instructions.bosses.storm.Storm}, and {@link instructions.bosses.goldor.Goldor}: player
- * damage is intercepted via {@link #handleDamage} (hooked from {@code MiscListener.onWitherLordDamage})
- * and the phase transitions emerge from HP thresholds rather than fixed ticks.
- *
- * <p>Unlike the other three, Necron is the only Wither Lord <b>always damageable</b> between events,
- * he flies and chases a player (Maxor-style aggro) until his HP crosses a threshold, at which point he
- * enters a short immune interlude:
+ * Necron. Damage-driven like the other three: {@link #clampDamage} turns HP thresholds into phase changes. Unlike
+ * them he is always damageable between events, chasing a player (Maxor-style aggro) until a threshold starts a
+ * short immune interlude:
  * <ul>
  *   <li><b>80% HP</b> → frenzy: teleport to the middle, blind players, hold still for {@value #FRENZY_DURATION_TICKS}t.</li>
  *   <li><b>25% HP</b> → fireball attack ({@link #destroyPlatform}) in place for {@value #FIREBALL_DURATION_TICKS}t.</li>
  *   <li><b>5% HP</b>  → frenzy again ({@value #FRENZY_DURATION_TICKS}t).</li>
  *   <li><b>0% HP</b>  → death, then chain to the Wither King after {@value #DEATH_TO_WK_TICKS}t.</li>
  * </ul>
- * Only the fireball attack is modeled, because TAS DPS is high enough that no other real ability window
- * (wither-skull barrages, rotating beams, diamond swords, lightning) ever triggers.
+ * Only the fireball attack is modelled: at TAS DPS no other ability window (skull barrages, beams, swords,
+ * lightning) ever triggers.
  */
 public final class Necron extends WitherLord {
 	public static final Necron INSTANCE = new Necron();
@@ -51,58 +46,51 @@ public final class Necron extends WitherLord {
 	private static final String[] FRENZY_START_MESSAGES = {"Sometimes when you have a problem, you just need to destroy it all and start again.", "WITNESS MY RAW NUCLEAR POWER!"};
 	private static final String[] FRENZY_END_MESSAGES = {"ARGH!", "Let's make some space!"};
 
-	// Aggro: mirrors Maxor's live-chase controller.
+	// Aggro: same as Maxor's chase.
 	private static final double AGGRO_STOP_DISTANCE = 3.0;
 	private static final double AGGRO_Y_OFFSET = 1.0;
 	private static final double AGGRO_MAX_SPEED = 0.5;
 
-	// Interlude HP thresholds as fractions of max HP, consumed in order.
+	// Fractions of max HP, consumed in order.
 	private static final double[] THRESHOLD_FRACTIONS = {0.80, 0.25, 0.05};
 
-	private static final int INTRO_END_TICK = 160;       // intro dialogue is exactly 160t; aggro + damageability begin here
-	/** Alpha: the intro is 80t, and the fireball salvo starts at 20 rather than 60 so the platform still goes at +40. */
+	private static final int INTRO_END_TICK = 160;       // aggro + damageability begin here
+	/** Alpha: salvo starts at 20 instead of 60, so the platform still goes 40t later. */
 	private static final int ALPHA_INTRO_END_TICK = 80;
 	private static final int FRENZY_DURATION_TICKS = 140;
-	/** Alpha: both frenzies are 3 seconds. */
+	/** Alpha: both frenzies. */
 	private static final int ALPHA_FRENZY_DURATION_TICKS = 60;
 	private static final int FIREBALL_DURATION_TICKS = 60;
 	private static final int DEATH_TO_WK_TICKS = 100;
 	private static final int ALPHA_DEATH_TO_WK_TICKS = 60;
 
-	// Middle of the arena Necron snaps to for a frenzy (his spawn point).
+	// Frenzy snap point (his spawn).
 	private static final double MIDDLE_X = 54.5, MIDDLE_Y = 66, MIDDLE_Z = 76.5;
 	private static final float MIDDLE_YAW = 0f;
 	private static final float MIDDLE_PITCH = 0f;
 
-	// Platform top-center blocks (y=63).  If they are all AIR the platform is already destroyed, which guards the
-	// intro destroy.
+	// Platform top-center blocks. All AIR = already destroyed; guards the intro destroy.
 	private static final int PLATFORM_Y = 63;
 	private static final int PLATFORM_X1 = 53, PLATFORM_X2 = 55;
 	private static final int PLATFORM_Z1 = 113, PLATFORM_Z2 = 115;
 
-	// Per-fight state.
-	private int eventsDone;          // 0 → 80% pending, 1 → 25% pending, 2 → 5% pending, 3 → none left (death only)
-	private boolean inInterlude;     // immune window (frenzy or fireball), so damage is rejected
-	private boolean damageable;      // false during the intro and during any interlude
-	// Immune-interlude end one-shot, run as a boss-lane task (BossScheduler.schedule) so damageability is restored
-	// at the start of its tick.  A beam on that tick sees the boss damageable again, not a tick late.
+	private int eventsDone;          // 0 → 80% pending, 1 → 25%, 2 → 5%, 3 → death only
+	private boolean inInterlude;     // frenzy or fireball; damage rejected
+	private boolean damageable;      // false during intro and interludes
+	// Boss-lane task so damageability returns at the START of its tick; a beam that tick isn't a tick late.
 	private Runnable interludeEndTask;
 
-	// Action-bar HUD (see updateActionBar), on its own boss ticker for the whole phase.
 	private Runnable barTicker;
-	// Phase tick the current interlude ends on, and which of the two it is, so the bar counts down the same clock
-	// interludeEndTask fires on rather than a counter of its own.
+	// So the bar counts down the same clock interludeEndTask fires on, not its own counter.
 	private int interludeEndTick;
 	private boolean interludeIsFireball;
-	// Whether the bar currently shows one of our segments, so the damageable stretch between interludes clears it
-	// once instead of broadcasting an empty bar to everyone every tick.
+	// Lets the damageable stretch clear the bar once instead of broadcasting an empty one every tick.
 	private boolean barShown;
 
 	private Necron() {
 		register(this);
 	}
 
-	/** Static facade for the boss-chain. */
 	public static void necronInstructions(World world, boolean doContinue) {
 		INSTANCE.start(world, doContinue);
 	}
@@ -131,29 +119,25 @@ public final class Necron extends WitherLord {
 		startBarTicker();
 
 
-		// Goldor's section ends as Necron spawns, so record its end tick for the Wither-King practice scoreboard.
+		// Goldor's split ends as Necron spawns (Wither-King practice scoreboard).
 		instructions.bosses.WitherActions.recordSplit("Goldor", Utils.runTick());
-		// --- Intro: dialogue + a guarded platform destroy. Necron is not yet damageable and does not fly. ---
-		// 160t normally (salvo at 60, platform at 100, Goodbye at 120); 80t under alpha (salvo at 20, platform at
-		// 60, Goodbye at 80 with the intro's end).  The salvo always leads the platform by its own 40t, so it is
-		// scheduled off the destroy tick rather than being a second number to keep in step.
+		// Intro: not damageable, doesn't fly. 160t (salvo 60, platform 100, Goodbye 120); alpha 80t (salvo 20,
+		// platform 60, Goodbye 80). The salvo always leads the platform by its own 40t.
 		int introEnd = Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK);
 		int salvoTick = Alpha.ticks(60, 20);
 		sendChatMessage("You went further than any human before, congratulations.");
-		// The line is queued first so that when the two share a tick (normal mode, both 60) it still leads.
+		// Queued first so it leads when both land on 60 (normal mode).
 		Utils.scheduleTask(() -> sendChatMessage("I'm afraid your journey ends now."), Alpha.ticks(60, 40));
-		Utils.scheduleTask(() -> destroyPlatform(true), salvoTick); // may destroy the platform (guarded by platformIntact)
+		Utils.scheduleTask(() -> destroyPlatform(true), salvoTick); // guarded by platformIntact
 		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), Alpha.ticks(120, 80));
 
-		// --- After intro: drop armor, become damageable, and start the Maxor-style aggro chase. ---
+		// After intro: armour off, damageable, chase.
 		Utils.scheduleTask(() -> {
 			setArmor(false);
 			damageable = true;
 			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
-			// The ??? "damageable" indicator is shown ONLY after a frenzy ends, never after the intro and never
-			// after the fireball attack (see endInterlude).
-			// Alpha's intro is the three lines above and nothing else: this one has no slot left in an 80t window
-			// that already ends on "Goodbye.", so it is dropped rather than stacked onto the same tick.
+			// No ??? indicator here: only after a frenzy (endInterlude).
+			// Alpha drops this line: the 80t intro already ends on "Goodbye." and there's no slot left.
 			if(!Alpha.enabled()) sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself.");
 		}, introEnd);
 	}
@@ -164,16 +148,14 @@ public final class Necron extends WitherLord {
 			WitherKing.witherKingInstructions(world, false);
 			runPlayerHandoff();
 		} else {
-			instructions.bosses.WitherActions.signalRunComplete(); // Necron was the last boss of this practice (no Wither-King)
+			instructions.bosses.WitherActions.signalRunComplete(); // no Wither King this practice
 		}
 	}
 
 	// ---------- Damage / interludes ----------
 
-	/** Damage interceptor, hooked from {@code MiscListener.onWitherLordDamage}. Necron is always damageable
-	 *  except during the intro and the immune interludes. Each threshold (80% / 25% / 5%) is consumed in order:
-	 *  a hit that would cross the next threshold is clamped exactly to it and triggers that interlude; a hit at
-	 *  0% kills. Modeled on {@link instructions.bosses.storm.Storm#handleDamage}. */
+	/** Thresholds (80% / 25% / 5%) consumed in order: a hit crossing the next is clamped to it and starts that
+	 *  interlude; at 0% it kills. Modelled on Storm's. */
 	@Override
 	public double clampDamage(double incoming) {
 		if(boss == null) return incoming;
@@ -181,59 +163,53 @@ public final class Necron extends WitherLord {
 		if(incoming <= 0) return 0;
 
 		if(inInterlude) {
-			// Like Goldor on patrol, Necron stays "damageable" during a frenzy or fireball interlude.  Arrows
-			// connect and the hurt flash shows, but the hit never reduces his health.  Blocking the damage
-			// suppresses the flash, so render the hurt animation ourselves.
+			// Like Goldor on patrol: hits connect but take no health. Blocking suppresses the flash, so send it ourselves.
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
 			return 0;
 		}
-		if(!damageable) return 0; // Intro (pre-fight): fully immune, no feedback.
+		if(!damageable) return 0; // intro: immune, no feedback
 
 		double currentHp = boss.getHealth();
 		double threshold = nextThreshold();
 
 		if(currentHp - incoming <= threshold) {
 			if(threshold <= 0.0) {
-				// Killing blow: clamp to leave DYING_SLIVER so vanilla doesn't death-despawn the wither before the
-				// death dialogue.  enterDyingState pins HP there too, shown as "1" via TASDying.  This used to leave
-				// 1% of max - 14M on Necron - which the killing blow then visibly failed to deal.
+				// Leave DYING_SLIVER so vanilla doesn't despawn him before the dialogue; shown as "1" via TASDying.
 				enterDyingState();
 				return Math.max(0, currentHp - DYING_SLIVER);
 			}
-			// Clamp the hit so HP lands exactly on the threshold, then start that interlude.
 			triggerInterlude(eventsDone);
 			return currentHp - threshold;
 		}
-		return incoming; // otherwise the hit passes through unmodified
+		return incoming;
 	}
 
-	/** Next HP value (absolute) at which the upcoming interlude fires, or 0 (death) once all are consumed. */
+	/** Absolute HP of the next interlude, or 0 (death) once all are consumed. */
 	private double nextThreshold() {
 		double maxHp = maxHealth();
 		if(eventsDone < THRESHOLD_FRACTIONS.length) return maxHp * THRESHOLD_FRACTIONS[eventsDone];
 		return 0.0;
 	}
 
-	/** Start the immune interlude for the just-crossed threshold. idx 0 & 2 → frenzy, idx 1 → fireball attack. */
+	/** idx 0 & 2 → frenzy, 1 → fireball attack. */
 	private void triggerInterlude(int idx) {
 		inInterlude = true;
 		damageable = false;
 		eventsDone++;
 
 		clearAggro();
-		// Keep the wither shield DOWN during the interlude, like Goldor on patrol, so arrows still connect for
-		// feedback.  handleDamage cancels the damage so no health is actually lost.
+		// Shield stays DOWN so arrows still connect for feedback; clampDamage takes no health.
 		setArmor(false);
-		CustomBossBar.removeStunIndicator(); // immune now, so drop the "damageable" ??? indicator
+		CustomBossBar.removeStunIndicator(); // immune now
 
 		int duration;
 		if(idx == 1) {
-			// 25%: fireball attack in place, with no teleport and no blindness.
+			// 25%: in place, no teleport, no blindness.
 			duration = FIREBALL_DURATION_TICKS;
 			Utils.timer("<green>Necron fireball attack at " + formatTick(displayTick()));
-			destroyPlatform(false); // 25% replay: fireballs only, never destroy the platform
+			destroyPlatform(false); // fireballs only
 		} else {
-			// 80% and 5% are the frenzy: teleport to the middle, blind players, hold still.
+			// 80% and 5%: frenzy.
 			duration = Alpha.ticks(FRENZY_DURATION_TICKS, ALPHA_FRENZY_DURATION_TICKS);
 			moveBossToCenter();
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
@@ -245,31 +221,26 @@ public final class Necron extends WitherLord {
 		cancelInterludeEndTask();
 		interludeEndTask = BossScheduler.schedule(() -> endInterlude(idx), duration);
 
-		// Action-bar anchors, then a re-render: this runs from the damage path, long after the HUD ticker drew this
-		// tick's bar from the pre-interlude state.
+		// Re-render: this runs from the damage path, after the HUD ticker drew this tick's bar from the old state.
 		interludeEndTick = displayTick() + duration;
 		interludeIsFireball = idx == 1;
 		updateActionBar();
 	}
 
-	/** Interlude over, so resume the chase and become damageable again. */
 	private void endInterlude(int idx) {
 		if(dying || boss == null || !boss.isValid()) return;
 		inInterlude = false;
 		damageable = true;
 		setArmor(false);
 		if(idx != 1) {
-			// The ??? "damageable" indicator and the frenzy-end line are shown ONLY after a frenzy (idx 0 or 2),
-			// never after the fireball attack (idx 1) or the intro.
+			// ??? indicator and frenzy-end line only after a frenzy, never the fireball attack or intro.
 			CustomBossBar.spawnAnimatedStunnedIndicator(boss, Integer.MAX_VALUE);
 			sendChatMessage(FRENZY_END_MESSAGES[random.nextInt(FRENZY_END_MESSAGES.length)]);
 		}
-		// After the FIRST frenzy (idx 0) Necron stays planted at the middle with AI off, so the upcoming 25%
-		// fireball attack finds him already at the correct spot. He resumes the chase after the other interludes.
+		// After the FIRST frenzy he stays planted at the middle, so the 25% fireball attack finds him in place.
 		if(idx != 0) setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 
-		// Clear the counter on the tick the interlude really ends: the HUD ticker is registered first, so it already
-		// drew this tick's bar (at 0t) before this ran.
+		// Clear the counter now: the HUD ticker already drew this tick's bar (0t) before this ran.
 		updateActionBar();
 	}
 
@@ -281,19 +252,14 @@ public final class Necron extends WitherLord {
 	// ---------- Action-bar tick timers ----------
 
 	/**
-	 * Per-tick action-bar QoL for the Necron phase, the same HUD slot as Storm's pad/crush bar and Maxor's
-	 * laser/stun one.  One segment at a time, and every one of them counts down a window Necron is IMMUNE for -
-	 * which is the only thing worth knowing here, since between them he is simply damageable and chasing:
+	 * Per-tick HUD, same slot as Storm's and Maxor's. One segment, each counting down an IMMUNE window:
 	 * <ul>
-	 *   <li><b>Damageable In</b>: the intro, {@link #INTRO_END_TICK}t of dialogue before the armour drops and the
-	 *       chase starts.</li>
-	 *   <li><b>Frenzy</b>: the 80% and 5% interludes ({@link #FRENZY_DURATION_TICKS}t).</li>
-	 *   <li><b>Fireballs</b>: the 25% interlude ({@link #FIREBALL_DURATION_TICKS}t).</li>
+	 *   <li><b>Damageable In</b>: the intro ({@link #INTRO_END_TICK}t).</li>
+	 *   <li><b>Frenzy</b>: 80% and 5% ({@link #FRENZY_DURATION_TICKS}t).</li>
+	 *   <li><b>Fireballs</b>: 25% ({@link #FIREBALL_DURATION_TICKS}t).</li>
 	 * </ul>
-	 * The interlude counter runs off a phase tick stamped in {@link #triggerInterlude}, so it can't drift from the
-	 * boss-lane task that actually ends the window.  Sent to every real player, spectators included, and the fakes
-	 * are skipped.  It doesn't collide with {@code ClearManager}'s bar: that one bails out for anyone outside the
-	 * dungeon room grid, which the arena is.
+	 * Counts off the tick stamped in {@link #triggerInterlude}, so it can't drift from the task that ends the window.
+	 * No clash with {@code ClearManager}'s bar, which skips anyone outside the room grid.
 	 */
 	private void updateActionBar() {
 		int t = displayTick();
@@ -305,8 +271,7 @@ public final class Necron extends WitherLord {
 			bar = "<yellow>Damageable In <white>"
 					+ Math.max(0, Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK) - t) + "t";
 		} else {
-			// Damageable and chasing: nothing to count, so clear once on the way in rather than broadcasting an
-			// empty bar to everyone every tick.
+			// Nothing to count: clear once rather than every tick.
 			if(barShown) {
 				barShown = false;
 				Utils.broadcastActionBar(Component.empty());
@@ -340,7 +305,7 @@ public final class Necron extends WitherLord {
 			BossScheduler.removeTicker(barTicker);
 			barTicker = null;
 		}
-		// Wipe the HUD instead of letting the last "Frenzy 1t" sit on screen for its fade-out.
+		// Wipe instead of letting the last "Frenzy 1t" sit through its fade-out.
 		barShown = false;
 		Utils.broadcastActionBar(Component.empty());
 	}
@@ -350,7 +315,7 @@ public final class Necron extends WitherLord {
 	private void moveBossToCenter() {
 		net.minecraft.world.entity.LivingEntity nms = ((CraftWither) boss).getHandle();
 		nms.absSnapTo(Necron.MIDDLE_X, Necron.MIDDLE_Y, Necron.MIDDLE_Z, Necron.MIDDLE_YAW, Necron.MIDDLE_PITCH);
-		nms.setYHeadRot(Necron.MIDDLE_YAW); // undo the aggro look-control so the frenzy faces cleanly forward
+		nms.setYHeadRot(Necron.MIDDLE_YAW); // undo aggro look-control so he faces forward
 		nms.setDeltaMovement(Vec3.ZERO);
 		nms.hurtMarked = true;
 		PositionMoveRotation pmr = new PositionMoveRotation(new Vec3(Necron.MIDDLE_X, Necron.MIDDLE_Y, Necron.MIDDLE_Z), Vec3.ZERO, Necron.MIDDLE_YAW, Necron.MIDDLE_PITCH);
@@ -360,8 +325,7 @@ public final class Necron extends WitherLord {
 
 	// ---------- Frenzy effects ----------
 
-	/** Blind every real, non-spectating player for 1 second at the start of a frenzy. Fake players are client-less
-	 *  (no-op); spectating viewers are skipped so the spectated view isn't disrupted. */
+	/** Spectating viewers are skipped so the spectated view isn't disrupted. */
 	private void applyBlindness() {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(Spectate.isSpectating(p)) continue;
@@ -369,7 +333,6 @@ public final class Necron extends WitherLord {
 		}
 	}
 
-	/** Explosion + wither-ambient pulses across the frenzy window. */
 	private void frenzySounds(int duration) {
 		for(int t = 0; t < duration; t += 20) {
 			Utils.scheduleTask(() -> {
@@ -381,21 +344,18 @@ public final class Necron extends WitherLord {
 
 	// ---------- Platform destroy / fireball attack ----------
 
-	/** Fireball salvo.  Only the intro salvo ({@code allowDestroy=true}) may swap the platform to its destroyed
-	*  variant, and only if it's still intact at the destroy tick; a platform the players broke open before then is
-	*  left alone.  The 25% replay ({@code allowDestroy=false}) is fireballs only and never touches the platform. */
+	/** Fireball salvo. Only the intro one ({@code allowDestroy}) swaps in the destroyed platform, and only if it's
+	*  still intact on the destroy tick; one the players already broke open is left alone. */
 	private void destroyPlatform(boolean allowDestroy) {
-		// Necron is already stationary at the correct spot for both salvos.  The intro one fires from his spawn,
-		// and the 25% one fires from the middle where the first frenzy planted him, since AI is not re-enabled
-		// after that frenzy, so there's no chase momentum to cancel here.
+		// He's stationary for both: the intro fires from spawn, the 25% one from the middle where the first frenzy
+		// planted him, so no chase momentum to cancel.
 		shootFireball();
 		Utils.scheduleTask(this::shootFireball, 10);
 		Utils.scheduleTask(this::shootFireball, 20);
 		Utils.scheduleTask(this::shootFireball, 30);
 		Utils.scheduleTask(() -> {
 			shootFireball();
-			// Evaluate intactness HERE, on the destroy tick, so blocks broken any time before this are honoured.
-			// Destroyed variant lives at y -10..-6 (correct variant at y -5..-1); clone it up to the live platform.
+			// Checked on the destroy tick so earlier breaks are honoured. Destroyed variant at y -10..-6, intact at -5..-1.
 			if(allowDestroy && platformIntact()) Utils.runCommand("clone 70 -10 120 38 -6 99 38 59 99");
 		}, 40);
 		Utils.scheduleTask(this::shootFireball, 50);
@@ -403,7 +363,7 @@ public final class Necron extends WitherLord {
 		Utils.scheduleTask(this::shootFireball, 70);
 	}
 
-	/** True unless every platform top-center block (53..55, 63, 113..115) is AIR (i.e. already destroyed). */
+	/** False once every top-center block (53..55, 63, 113..115) is AIR. */
 	private boolean platformIntact() {
 		for(int x = PLATFORM_X1; x <= PLATFORM_X2; x++) {
 			for(int z = PLATFORM_Z1; z <= PLATFORM_Z2; z++) {
@@ -443,21 +403,20 @@ public final class Necron extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
-		final int deathTick = displayTick(); // Necron-relative tick of the final blow (t=0 of the death sequence)
-		// The handoff tick every other delay below is measured from.
+		final int deathTick = displayTick(); // t=0 of the death sequence
+		// Handoff tick; the delays below are measured from it.
 		final int toWitherKing = Alpha.ticks(DEATH_TO_WK_TICKS, ALPHA_DEATH_TO_WK_TICKS);
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Necron killed in " + formatTick(displayTick()));
-		// Open the wall to the Wither King's arena 100t after the handoff (restored on the next /reset).
+		// Wall to Wither King's arena opens 100t after the handoff (restored on next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, toWitherKing + 100);
 		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), Alpha.ticks(60, 40));
 		// note: In most mods, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
 		// This TAS fixes that. To compare to those timers, subtract 2 seconds here and add 2 seconds to Wither King time.
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Necron finished in " + formatTick(displayTick()));
-			// Stamp the leaderboard duration at the phase's real end (this tick), not the killing blow.  It must
-			// come before chainNext, which starts the Wither King and re-anchors the phase clock.
+			// Leaderboard duration at the phase's real end, not the killing blow. Before chainNext, which re-anchors the phase clock.
 			instructions.bosses.WitherActions.recordPhaseDuration("Necron", displayTick());
 			if(tickerTask != null && !tickerTask.isCancelled()) tickerTask.cancel();
 			chainNext(doContinue);
@@ -468,10 +427,8 @@ public final class Necron extends WitherLord {
 		 * note: all of the wither partitions are one-ticked in this TAS, matching DPS achieved in normal f7
 		 * thus, there are no timesaves available in normal f7 VS master mode m7
 		 */
-		// A normal F7 completes 140t after the final blow, i.e. 40t after the t=100 phase transition, which matches
-		// the toWitherKing + 40 print delay below, and not on the death tick itself.  Add that offset OUTSIDE
-		// overallTick(): in practice mode overallTick() reports the LIVE run tick and ignores its argument, so a
-		// forward projection has to start from the overall DEATH tick and add the 140t death→finish gap itself.
+		// Normal F7 completes 140t after the final blow (toWitherKing + 40). The offset goes OUTSIDE overallTick():
+		// in practice it returns the live run tick and ignores its argument.
 		final int normalF7Overall = overallTick(deathTick) + toWitherKing + 40;
 		Utils.scheduleTask(() -> {
 			double secs = normalF7Overall / 20.0;

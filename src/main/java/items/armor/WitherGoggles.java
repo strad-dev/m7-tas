@@ -9,8 +9,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Necrotic Wither Goggles: the ability loadout's helmet, carrying Intelligence and the only Ability Damage
- * on any armour piece (§1.10).  In no class's default kit; it exists for the loadout palette.
+ * Necrotic Wither Goggles: Intelligence and the only Ability Damage on any armour (§1.10). In no default kit;
+ * palette only.
  */
 public final class WitherGoggles implements Wearable {
 	public static final WitherGoggles INSTANCE = new WitherGoggles();

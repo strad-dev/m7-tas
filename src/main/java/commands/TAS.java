@@ -144,48 +144,44 @@ public class TAS implements CommandExecutor {
 	*/
 
 	/**
-	 * Like runTAS but runs ONLY the boss and server instructions, with no fake-player routines, no player
-	 * handoffs and no spectator sync, so real players can practice the boss fights and mechanics.  Bosses still
-	 * chain (e.g. {@code /m7practice boss} runs the full Maxor→Storm→Goldor→Necron gauntlet) because each boss's
-	 * chainNext spawns the next; runPlayerHandoff is simply a no-op since no handoff is armed here.
+	 * Like runTAS but ONLY boss and server instructions: no fake-player routines, handoffs or spectator sync.
+	 * Bosses still chain ({@code /m7practice boss} runs Maxor→Storm→Goldor→Necron) via each boss's chainNext;
+	 * runPlayerHandoff is a no-op since nothing is armed.
 	 *
-	 * <p>Note: Maxor/Storm/Necron aggro a fake player (e.g. {@code Tank.get()}), so those expect the fake
-	 * actors to be spawned (idle is fine). Goldor (terminals/patrol) needs no actors.
+	 * <p>Note: Maxor/Storm/Necron aggro a fake player (e.g. {@code Tank.get()}), so they expect fake actors
+	 * spawned (idle is fine). Goldor needs none.
 	 */
 	public static void runPractice(World world, String section) {
 		runPractice(world, section, 60);
 	}
 
 	/**
-	 * @param delayTicks pre-run "get into position" window before the section starts (default 60 = 3s; the
-	 *   network plugin passes 400 = 20s when it warps a party in). Forwarded to {@link Server#serverInstructions}.
+	 * @param delayTicks pre-run window before the section starts (default 60 = 3s; network passes 400 = 20s when
+	 *   it warps a party in). Forwarded to {@link Server#serverInstructions}.
 	 */
 	public static void runPractice(World world, String section, int delayTicks) {
-		// Kick all fake actors, because practice is for real players, who become the boss's aggro target.
+		// Kick all fakes: practice is for real players, who become the aggro target.
 		FakePlayerManager.stopCustomConnection();
 		FakePlayerManager.kickAllFakes();
 		WitherActions.setPracticeMode(true);
-		// Clear any section splits from a previous run; this run records its own for the Wither-King scoreboard.
+		// Clear previous run's splits; this run records its own for the Wither King scoreboard.
 		WitherActions.clearSplits();
-		// Remember which section this run is + mint a fresh run id, so the reports this run makes (the 300-score
-		// milestone and the run-complete payload) can be recognised as coming from the same run.
+		// Section + fresh run id, so this run's reports (300-score milestone, run-complete payload) match up.
 		WitherActions.startRunTracking(section);
-		// Clear game-mode-change tracking (the practice scoreboard's golden-name anti-cheat).
+		// Game-mode-change tracking (practice scoreboard's golden-name anti-cheat).
 		WitherActions.clearGameModeChanges();
-		// Reset Berserk's per-mob damage-ramp counters.
 		listeners.CustomItems.resetBerserkDamage();
-		// Reset terminator firing cooldown state.
 		listeners.CustomItems.resetTerminatorCooldowns();
-		// Reset class-ability (drop) cooldowns.
+		// Class-ability (drop) cooldowns.
 		listeners.CustomItems.resetAbilityCooldowns();
-		// Reset the per-run crypt-farm guard.
+		// Per-run crypt-farm guard.
 		items.ItemUtils.resetCrypts();
-		// Reset death state: no ghosts and no cheat-death cooldowns carried in from a previous run.
+		// No ghosts or cheat-death cooldowns from a previous run.
 		death.Deaths.reset();
 
-		// Practice runs ZERO player routines. Cancel any choreography still queued from a previous /tas, and
-		// disarm every player-side handoff + the Watcher so the boss chain spawns each boss WITHOUT starting a
-		// fake-player routine (the source of stray lines like "… used Spirit Mask!" and broken phase gating).
+		// Practice runs ZERO player routines. Cancel choreography left from a previous /tas and disarm every
+		// player handoff + the Watcher, so bosses spawn WITHOUT starting a fake-player routine (source of stray
+		// "… used Spirit Mask!" lines and broken phase gating).
 		Utils.cancelAllScheduled();
 		Maxor.INSTANCE.armPlayerHandoff(null);
 		Storm.INSTANCE.armPlayerHandoff(null);
@@ -193,46 +189,41 @@ public class TAS implements CommandExecutor {
 		Necron.INSTANCE.armPlayerHandoff(null);
 		Watcher.INSTANCE.arm(world, section.equals("all"), null);
 
-		// Anchor the live overall-run timer at the first boss spawn (the "Overall" column reads it in practice).
+		// Overall-run timer anchors at first boss spawn ("Overall" column reads it).
 		Utils.markRunStart();
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
-		// Purge every stray entity a prior (possibly aborted) run leaked before we spawn this run's own. Must come
-		// BEFORE serverSetup (spawns minibosses) and serverInstructions (spawns bosses) so it never nukes what this
-		// run just staged.  That is the same hardMobCleanup-then-serverSetup order /reset and /setup use.  It catches
-		// untracked withers and crystals the targeted forceCleanups in serverSetup can't, since they only free
-		// tracked refs.
+		// Purge strays a prior (maybe aborted) run leaked. BEFORE serverSetup (minibosses) and serverInstructions
+		// (bosses) so it never nukes this run's spawns, same order as /reset and /setup. Catches untracked withers
+		// and crystals that serverSetup's forceCleanups miss, since those only free tracked refs.
 		Server.hardMobCleanup();
 		Server.serverSetup(world);
 		Server.serverInstructions(world, section, delayTicks);
 	}
 
 	/**
-	 * Cancels the current practice session: stops all scripted choreography + movement, disarms the
-	 * boss chain so nothing re-spawns, turns practice mode off, and clears the boss entities.
+	 * Cancel the practice session: stop choreography + movement, disarm the boss chain, practice mode off, clear
+	 * boss entities.
 	 */
 	public static void endPractice(World world) {
 		endPractice(world, true);
 	}
 
 	/**
-	 * @param toSpectator whether to drop every player into spectator at the end, the idle state on m7.  Only
-	 *   {@code death/Deaths}' party wipe passes false: it has already decided where the wiped party goes and what
-	 *   game mode they are in, and flipping them to spectator here just to be undone a line later is a visible
-	 *   flicker.  <b>The network is unaffected either way</b> - it dispatches this as a command (so it always gets
-	 *   the spectator flip) and {@code M7Bridge.resetToSpectators} re-asserts spectator itself right afterwards.
+	 * @param toSpectator drop everyone into spectator (m7's idle state) at the end. Only {@code death/Deaths}' party
+	 *   wipe passes false: it already placed the party and set their game mode, and flipping here would flicker.
+	 *   Network is unaffected: it dispatches this as a command (always flips) and
+	 *   {@code M7Bridge.resetToSpectators} re-asserts spectator right after.
 	 */
 	public static void endPractice(World world, boolean toSpectator) {
-		// FIRST, before anything is torn down: bank whatever the party actually finished.  A run that is cancelled,
-		// timed out, force-ended or abandoned by its last player has no ending of its own to report, so without
-		// this the phase splits and clear milestones it DID reach are thrown away.  A no-op when the run has
-		// already reported (a win, a wipe, Storm's failure), and it has to precede setPracticeMode(false) -
-		// signalRunComplete refuses to fire outside practice mode - as well as ClearManager.stop and the spectator
-		// flip below, both of which destroy what the result reads.
+		// FIRST: bank what the party finished. A cancelled, timed-out, force-ended or abandoned run has no ending
+		// to report, so otherwise the splits and clear milestones it reached are lost. No-op if already reported
+		// (win, wipe, Storm fail). Must precede setPracticeMode(false) (signalRunComplete won't fire outside
+		// practice mode), ClearManager.stop and the spectator flip, which destroy what the result reads.
 		WitherActions.signalRunAbandoned();
 		WitherActions.setPracticeMode(false);
-		// Before the mass spectator flip below, so a pending revival can't fight it, and so the saver durability
-		// bars come off the masks rather than being saved into someone's loadout.
+		// Before the spectator flip, so a pending revival can't fight it and mask durability bars come off
+		// instead of being saved into a loadout.
 		death.Deaths.reset();
 		instructions.clear.ClearManager.stop(world); // remove secrets/chests, restore hotbar map slot, stop HUD loop
 		Utils.cancelAllScheduled();
@@ -243,30 +234,27 @@ public class TAS implements CommandExecutor {
 		Goldor.INSTANCE.armPlayerHandoff(null);
 		Necron.INSTANCE.armPlayerHandoff(null);
 		Watcher.INSTANCE.arm(world, false, null);
-		// arm() only sets fields, so the Watcher's raw portal detector would keep scanning every player - including
-		// the spectators we make below - and warp them to Maxor after the run ended.  forceCleanup stops it and
-		// closes the portal.
+		// arm() only sets fields, so the Watcher's portal detector would keep scanning (including the spectators
+		// made below) and warp them to Maxor after the run. forceCleanup stops it and closes the portal.
 		Watcher.forceCleanup();
-		// Drop the boss lane before tearing the bosses down: Utils.cancelAllScheduled above cannot reach it, and its
-		// un-held one-shots (Maxor's crystal respawn, the Wither King's) would otherwise fire into a dead session.
+		// Drop the boss lane before teardown: cancelAllScheduled can't reach it, and its un-held one-shots (Maxor's
+		// crystal respawn, the Wither King's) would fire into a dead session.
 		BossScheduler.clearAll();
-		// The S4 plate presses on contact and un-presses from a block tick it queues for itself, so a teardown
-		// mid-press can leave it powered with nothing pending to clear it - and a powered plate never fires
-		// Action.PHYSICAL again, which silently bricks the S4 device for every later run. Forced back on both
-		// edges of a run; Server.serverSetup is the other one.
+		// S4 plate un-presses from a block tick it queues itself, so teardown mid-press can leave it powered, and a
+		// powered plate never fires Action.PHYSICAL again: S4 bricked for every later run. Forced off on both edges
+		// of a run; Server.serverSetup is the other.
 		listeners.GoldorListener.unpowerPlate(world);
-		// The S1 device writes blocks too - a sea lantern over an obsidian cell, and the 16 input buttons - and its
-		// playback runs on tracked Utils.scheduleTasks, which cancelAllScheduled above has just killed.  Nothing is
-		// left to put them back, so the restore is synchronous and right here, next to the plate for the same
-		// reason: this is the "after" edge of a run, and Server.serverSetup is the "before" one.
+		// S1 device writes blocks too (sea lantern over an obsidian cell, 16 input buttons), and its playback runs
+		// on tracked scheduleTasks that cancelAllScheduled just killed. So restore synchronously here, the "after"
+		// edge; Server.serverSetup is the "before".
 		instructions.bosses.goldor.GoldorSimonSays.INSTANCE.cleanup();
-		// The only thing that calls each boss's resetState.  Without it an early end left Goldor's phase active with
-		// its section gates still blown open, the core entrance an invisible barrier, and every boss's flags set.
+		// Only caller of each boss's resetState. Without it an early end left Goldor active with gates blown open,
+		// the core entrance an invisible barrier, and every boss's flags set.
 		Maxor.INSTANCE.forceEndPhase();
 		Storm.INSTANCE.forceEndPhase();
 		Goldor.INSTANCE.forceEndPhase();
 		Necron.INSTANCE.forceEndPhase();
-		// Clear the boss entities + energy crystals + Wither King dragons/relics so the dungeon resets.
+		// Clear bosses, energy crystals, Wither King dragons/relics.
 		for(org.bukkit.entity.Entity e : world.getEntities()) {
 			if(e instanceof org.bukkit.entity.Wither
 					|| e instanceof org.bukkit.entity.EnderCrystal
@@ -278,7 +266,6 @@ public class TAS implements CommandExecutor {
 				e.remove();
 			}
 		}
-		// Put all practicers back into spectator mode.
 		if(toSpectator) {
 			for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
 				if(p.getGameMode() != org.bukkit.GameMode.SPECTATOR) p.setGameMode(org.bukkit.GameMode.SPECTATOR);

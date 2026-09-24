@@ -8,11 +8,8 @@ import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The SkyBlock Menu, pinned to hotbar slot 8 in every kit.  A plain {@link Item}: no ability, no stats, no lore
- * ID, and nothing happens when it is clicked.  It is registered anyway so the four places that used to identify
- * it by comparing a display-name constant can ask the registry instead.
- * <p>
- * Withheld from the loadout palette ({@code Catalog.hiddenFromPalette}), since the editor pins it itself.
+ * Hotbar slot 8 in every kit. No ability, stats or lore ID; registered so four places can ask the registry instead
+ * of comparing display names. Hidden from the palette ({@code Catalog.hiddenFromPalette}); the editor pins it.
  */
 public final class SkyblockMenu implements Item {
 	public static final SkyblockMenu INSTANCE = new SkyblockMenu();

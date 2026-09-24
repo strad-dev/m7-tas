@@ -7,10 +7,7 @@ import items.Weapon;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
-/**
- * The Dark Claymore.  A pure mage weapon: no ability of its own at all, so it implements {@link Weapon} and
- * nothing else - the whole of its behaviour is that a Mage's left click beams with it.
- */
+/** Pure mage weapon, no ability: a Mage's left click beams with it. */
 public final class DarkClaymore implements Weapon {
 	public static final DarkClaymore INSTANCE = new DarkClaymore();
 

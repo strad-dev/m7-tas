@@ -17,11 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * A scheduled group of mobs spawned from a {@link MobSpawnSpec}. Spawning is
- * scheduled at {@link MobSpawnSpec#startTick()} ticks from {@link #spawn(World, Random)}.
- * {@link #cleanup()} removes every entity the group has spawned.
- */
+/** Group of mobs spawned from a {@link MobSpawnSpec}, {@link MobSpawnSpec#startTick()} ticks after {@link #spawn(World, Random)}. */
 public final class MobGroup {
 	private final MobSpawnSpec spec;
 	private final List<LivingEntity> spawned = new ArrayList<>();
@@ -30,7 +26,6 @@ public final class MobGroup {
 		this.spec = spec;
 	}
 
-	/** Schedules the spawn at {@code spec.startTick()} ticks from now. */
 	public void spawn(World world, Random rng) {
 		if(spec.startTick() <= 0) {
 			doSpawn(world, rng);
@@ -52,14 +47,12 @@ public final class MobGroup {
 			mob.setSilent(spec.silent());
 			mob.setPersistent(spec.persistent());
 			mob.setRemoveWhenFarAway(false);
-			// Name FIRST: damage/MobStats identifies these mobs by their display name, so the lookup below needs
-			// it in place.  The name's own health figure is then rewritten from the applied HP.
+			// Name first: MobStats looks these mobs up by display name. Its health figure is rewritten from the applied HP.
 			mob.customName(Utils.nameComponent(spec.customName()));
 			mob.setCustomNameVisible(true);
 
-			// Real HP, defense and mob types where the mob is modelled (MAP.md §5) - the Wither Guards and
-			// the boss-fight Shadow Assassins both are.  The spec's own maxHealth/armor are the fallback for
-			// anything that is not, and they are the old flat-kill values, so they should not be extended.
+			// Real HP/defense/types where the mob is modelled (MAP.md §5), incl. Wither Guards and boss-fight Shadow
+			// Assassins. The spec's maxHealth/armor are the old flat-kill fallback; don't extend them.
 			damage.MobStats.MobStat stat = damage.MobStats.of(mob);
 			if(stat != null) {
 				damage.MobStats.apply(mob, stat);
@@ -97,7 +90,7 @@ public final class MobGroup {
 				}
 			}
 
-			// Face the target if requested, used to point miners and sentries at the room center.
+			// Points miners and sentries at the room center.
 			if(spec.facingTarget() != null) {
 				Location target = spec.facingTarget();
 				Vector direction = target.toVector().subtract(spawnLoc.toVector()).normalize();
@@ -109,7 +102,7 @@ public final class MobGroup {
 				mob.teleport(facingLoc);
 			}
 
-			// Raised-arms pose for Wither Skeletons (only effect of setAggressive on a non-AI mob).
+			// Raised-arms pose; the only effect of setAggressive on a non-AI mob.
 			if(spec.aggressive() && mob instanceof WitherSkeleton ws) {
 				net.minecraft.world.entity.monster.skeleton.WitherSkeleton nmsWs =
 						(net.minecraft.world.entity.monster.skeleton.WitherSkeleton) ((CraftWitherSkeleton) ws).getHandle();
@@ -119,7 +112,7 @@ public final class MobGroup {
 			spawned.add(mob);
 		}
 
-		// One sound per group, at the first mob's spawn location.
+		// One sound per group, at the first mob.
 		if(spec.spawnSound() != null && firstSpawnLoc != null) {
 			world.playSound(firstSpawnLoc, spec.spawnSound(), 1.0f, spec.spawnSoundPitch());
 		}

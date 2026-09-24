@@ -92,17 +92,14 @@ public class FakePlayerInventory {
 	}
 
 	/**
-	 * Build the full 41-slot loadout array for a class/role WITHOUT a live player: indices [0..35] are the main
-	 * inventory slots, [36] helmet, [37] chestplate, [38] leggings, [39] boots, [40] off-hand. Used by the
-	 * cross-server item-catalog export ({@link Catalog}).  IMPORTANT: this mirrors
-	 * {@link #applyClassLoadout(Player, String)} item-for-item, so if you change a class's items in one, change
-	 * the other to match.
+	 * The ONE definition of a class's kit, as a 41-slot array: [0..35] main inventory, [36] helmet, [37] chestplate,
+	 * [38] leggings, [39] boots, [40] off-hand. Read by the catalog export ({@link Catalog}) and
+	 * {@link #applyClassLoadout(Player, String)}.
 	 */
 	public static ItemStack[] classLoadoutContents(String role) {
 		ItemStack[] arr = new ItemStack[41];
 
-		// Sixteen vanilla ender pearls: the one stack in a kit that is not an Item, since it has no name, no
-		// lore ID and nothing custom about it at all.
+		// 16 vanilla ender pearls: the one kit stack that isn't an Item (no name, no lore ID).
 		ItemStack pearls = new ItemStack(Material.ENDER_PEARL);
 		pearls.setAmount(16);
 
@@ -145,7 +142,7 @@ public class FakePlayerInventory {
 				arr[19] = ThermodynamicChestplate.INSTANCE.build();
 				arr[20] = ThermodynamicLeggings.INSTANCE.build();
 				arr[21] = ThermodynamicBoots.INSTANCE.build();
-				// Slot 30 was the Rapid Bonemerang; dropped because it had no ability behind it at all.
+				// Slot 30 was the Rapid Bonemerang; dropped, it had no ability.
 				arr[32] = LastBreath.INSTANCE.build();
 				arr[33] = RagnarockAxe.INSTANCE.build();
 				arr[35] = PitchinRod.INSTANCE.build();
@@ -170,8 +167,8 @@ public class FakePlayerInventory {
 				arr[2] = IceSprayWand.INSTANCE.build();
 				arr[3] = DarkClaymore.INSTANCE.build();
 				arr[4] = Infinileap.INSTANCE.build();
-				// Storage row 2, middle, directly above the Infinityboom in slot 31.  No Power enchant: the class
-				// bake in Catalog.defaultFor only touches slot 4, and the Mage's Terminator Power is 0 anyway.
+				// Storage row 2, above the Infinityboom in slot 31. No Power: Catalog.defaultFor's class bake only
+				// touches slot 4, and the Mage's Terminator Power is 0 anyway.
 				arr[22] = Terminator.INSTANCE.build();
 				arr[30] = Hyperion.INSTANCE.build(ReforgeId.FABLED);
 				arr[31] = InfinityboomTNT.INSTANCE.build();
@@ -193,23 +190,16 @@ public class FakePlayerInventory {
 	}
 
 	/**
-	 * Populate {@code p}'s inventory with the full loadout for a class/role: armor set, shared hotbar/utility items,
-	 * and class-specific weapons in their fixed slots. Clears the inventory first. {@code role} accepts a class name
-	 * ({@code Archer}/{@code Berserk}/{@code Healer}/{@code Mage}/{@code Tank}) or a fake-player name
-	 * ({@code Mage1}-{@code Mage4}, mapped to the Mage loadout).
-	 * <br>
-	 * The kit itself comes from {@link #classLoadoutContents(String)}, the ONE definition of what a class carries.
-	 * This used to be a hand-copied second listing of the same items, which had to be kept in step item-for-item;
-	 * it was only separate because {@code /getcustomitems} applied it to a live player while the catalog export
-	 * needed an array. That command is gone (players get their kit from {@code /class} + {@code /m7loadout} +
-	 * {@code /m7practice}), so this is now just "the array, applied to a player".
+	 * Clears {@code p}'s inventory and applies {@link #classLoadoutContents(String)}. {@code role} is a class name
+	 * ({@code Archer}/{@code Berserk}/{@code Healer}/{@code Mage}/{@code Tank}) or a fake name ({@code Mage1}-
+	 * {@code Mage4}, the Mage kit).
 	 */
 	public static void applyClassLoadout(Player p, String role) {
 		ItemStack[] arr = classLoadoutContents(role);
 		PlayerInventory inventory = p.getInventory();
 		inventory.clear();
 
-		// Applying a kit gives the player the TAS movement speed (400).
+		// A kit sets the TAS speed (400).
 		Utils.setSpeed(p, 400);
 
 		for(int i = 0; i < 36; i++) inventory.setItem(i, arr[i]);
@@ -226,9 +216,8 @@ public class FakePlayerInventory {
 		Multimap<String, Property> props = HashMultimap.create();
 		props.put("textures", new Property("textures", textureValue, textureSignature));
 		PropertyMap propertyMap = new PropertyMap(props);
-		// Profile id derived from the identifier, NOT random: the profile id is part of the item's NBT, so a random
-		// one made every copy of the same head a byte-different ItemStack.  That is why the catalog palette used to
-		// list the shared heads (Spirit Mask, Bonzo Mask, Racing Helmet, Cow Hat, ...) once per class.
+		// Profile id from the identifier, NOT random: it's in the item's NBT, and a random one made every copy of a
+		// head byte-different, so the palette listed shared heads (Spirit Mask, Bonzo Mask, ...) once per class.
 		GameProfile gp = new GameProfile(UUID.nameUUIDFromBytes(identifier.getBytes(StandardCharsets.UTF_8)), identifier, propertyMap);
 
 		CraftPlayerProfile profile = new CraftPlayerProfile(gp);
@@ -243,11 +232,7 @@ public class FakePlayerInventory {
 		return damage.StatLore.apply(helmet);
 	}
 
-	/**
-	 * The wearables the rest of the plugin identifies by SIGHT rather than by a lore ID, since none of them
-	 * carries one.  Each of these used to compare a hardcoded legacy display-name constant; they ask the item
-	 * registry now, so a rename or a recolour cannot leave one of them silently matching nothing.
-	 */
+	/** Wearables identified by sight (no lore ID), via the item registry so a rename can't make one match nothing. */
 	public static boolean isRacingHelmet(ItemStack item) {
 		return RacingHelmet.INSTANCE.matches(item);
 	}
@@ -264,16 +249,14 @@ public class FakePlayerInventory {
 		return BonzoMask.INSTANCE.matches(item);
 	}
 
-	/** True if the given item is the SkyBlock Menu (the nether star kept in hotbar slot 8). */
+	/** The SkyBlock Menu (nether star in hotbar slot 8). */
 	public static boolean isSkyblockMenu(ItemStack item) {
 		return SkyblockMenu.INSTANCE.matches(item);
 	}
 
 	/**
-	 * Build a custom item.  {@code id} becomes lore line 0, which is where {@code items.ItemUtils.getID} and
-	 * {@code Catalog.paletteKey} both read it from - it must stay there.  Stat rows are APPENDED below it by
-	 * {@code damage.StatLore}, generated from the same term lists the damage math reads so the two cannot drift
-	 * (MAP.md §7b).
+	 * {@code id} becomes lore line 0 and must stay there: {@code items.ItemUtils.getID} and {@code Catalog.paletteKey}
+	 * read it. {@code damage.StatLore} appends stat rows below from the damage math's own term lists (MAP.md §7b).
 	 */
 	public static ItemStack getSkyBlockItem(Material material, String name, String id, String sbId) {
         return getSkyBlockItem(material, name, id, nbt -> nbt.putString("id", sbId));

@@ -10,9 +10,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * A Renowned Thermodynamic piece.  The set grants no stats; its 4/4 bonus is a RATE one - it raises the
- * attack-speed cap, which in this plugin is the Terminator's 5-tick cooldown becoming 4.  Deliberately not a
- * per-hit multiplier: the old 97.5% damage penalty that used to accompany it is deleted.
+ * Renowned Thermodynamic piece. No stats; 4/4 is a RATE bonus: the Terminator's 5-tick cooldown becomes 4. The old
+ * 97.5% damage penalty is deleted.
  */
 public final class ThermodynamicBoots implements Wearable {
 	public static final ThermodynamicBoots INSTANCE = new ThermodynamicBoots();

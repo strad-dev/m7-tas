@@ -19,10 +19,8 @@ import plugin.Utils;
 import java.util.List;
 
 /**
- * The Hyperion.  <b>One base item, two reforges</b>: the Heroic and the Withered (Fabled) builds are not two
- * items, they are this class resolved at two {@link ReforgeId}s, with {@code damage/Items} holding a term list
- * per resulting name (MAP.md §2.4).  Its Wither Impact is the plugin's flagship ability, and its
- * Intelligence scaling (0.3, off a 10,000 base) is the highest of any (§7).
+ * One item, two reforges: Heroic and Withered (Fabled) are two {@link ReforgeId}s, with a {@code damage/Items} term
+ * list per name (MAP.md §2.4). Wither Impact's Intelligence scaling (0.3 off 10,000) is the highest of any (§7).
  */
 public final class Hyperion implements Weapon, AbilityItem {
 	public static final Hyperion INSTANCE = new Hyperion();
@@ -89,17 +87,13 @@ public final class Hyperion implements Weapon, AbilityItem {
 		double dealt = 0;
 		ItemStack wand = p.getInventory().getItemInMainHand();
 		for(Entity entity : entities) {
-			// Never damage players, whether real, fake or spectating.  This matches the other AoE abilities
-			// (iceSpray, the AOTS beam, terminator).  The old fake-player-only exclusion let implosion hit
-			// fellow practicers.
+			// Never players, like the other AoEs. The old fake-player-only exclusion let implosion hit practicers.
 			if(!doNotKill.contains(entity.getType()) && entity instanceof LivingEntity entity1 && !(entity instanceof Player) && entity1.getHealth() > 0 && !(entity instanceof Wither wither && wither.getInvulnerableTicks() != 0)) {
-				// Wither Impact: 10,000 base at 0.3 Intelligence scaling (MAP.md §7), through the ability
-				// formula - so no Strength and no Crit Damage, which is why abilities read so differently from
-				// the beam.  That is deliberate: they are an option, not a damage strategy.
+				// 10,000 base, 0.3 Int scaling (MAP.md §7). Ability formula: no Strength, no Crit Damage, on
+				// purpose, abilities are an option, not a damage strategy.
 				double sbDamage = damage.Damage.ability(p, entity1, wand);
-				// Sum what DEAL reports, not what we asked for: the message has to read the same as the numbers in
-				// the air, i.e. after the target's defense and resistance.  A target that took nothing at all (the
-				// Wither King, a villager NPC) isn't counted as hit either.
+				// Sum what deal REPORTS, so the message matches the damage numbers after defense. A target that took
+				// nothing (Wither King, NPC) isn't counted.
 				double hit = damage.Damage.deal(entity1, sbDamage, damage.DamageKind.MAGIC, p, damage.DamagePath.ABILITY);
 				if(hit > 0) {
 					dealt += hit;

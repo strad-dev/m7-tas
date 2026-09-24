@@ -9,14 +9,11 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * The Renowned Racing Helmet.  Grants no stats at all (Renowned is empty at every rarity), and its whole effect
- * is <b>+100 Max Speed</b> - a bonus, summed with everything else by {@code plugin/MaxSpeedSync}, not a finished
- * number.  It also forces the Black Cat in the assumed modes ({@code damage/Pet.forPlayer}), which is where the
- * other +150 in the 650 it used to be credited with came from.
+ * Renowned Racing Helmet. No stats (Renowned is empty at every rarity); only <b>+100 Max Speed</b>, summed by
+ * {@code plugin/MaxSpeedSync}. It also forces the Black Cat in assumed modes ({@code damage/Pet.forPlayer}).
  * <p>
- * The old x0.70 outgoing-damage penalty that used to come with it is DELETED, not moved here: the helmet slot is
- * exclusive, so wearing this already costs the Storm's Helmet's Intelligence and the Golden Dragon pet, and a
- * multiplier on top double-penalised the same swap (§1.10, §8).
+ * The old x0.70 damage penalty is DELETED: wearing it already costs the Storm Helmet's Intelligence and the Golden
+ * Dragon, and a multiplier on top double-penalised the swap (§1.10, §8).
  */
 public final class RacingHelmet implements Wearable {
 	public static final RacingHelmet INSTANCE = new RacingHelmet();
@@ -56,10 +53,8 @@ public final class RacingHelmet implements Wearable {
 	}
 
 	/**
-	 * What the helmet itself adds to Max Speed.  <b>Its own +100 and nothing else</b>: the 650 this used to
-	 * report was the base 400 plus the Black Cat's 150 (which the helmet forces in the assumed modes) plus this,
-	 * and the alpha 700 was the same sum over a base carrying the alpha shard's +50.  {@code MaxSpeedSync} adds
-	 * those up, so the same number is right under alpha and in realistic, where no hat grants a pet.
+	 * Its own +100 only. The old 650 was base 400 + Black Cat 150 + this (alpha 700 adds the shard's 50);
+	 * {@code MaxSpeedSync} sums those, so this stays right under alpha and in realistic.
 	 */
 	private static final int MAX_SPEED_BONUS = 100;
 

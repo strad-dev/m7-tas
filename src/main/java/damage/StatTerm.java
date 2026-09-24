@@ -3,23 +3,21 @@ package damage;
 /**
  * One named contribution to one stat on one item (MAP.md §2.4).
  * <p>
- * <b>Author terms, never totals.</b> The Ragnarock Axe's Strength is seven independent terms - base, stars, potato
- * books, art of war, reforge, gemstone, Chimera - not the number 626.  Editing the base moves nothing else; retuning
- * stars moves nothing else.  §2.4's hard rule is that no pre-summed constant (340, 626, 749.5) and no pre-scaled one
- * (2264.4, 1278.72, 5727.6) may appear anywhere in the code, because they are outputs.
+ * <b>Terms, never totals.</b> Ragnarock Axe Strength is seven terms (base, stars, books, art of war, reforge, gem,
+ * Chimera), not 626. §2.4: no pre-summed (340, 626, 749.5) or pre-scaled (2264.4, 1278.72, 5727.6) constant anywhere;
+ * those are outputs.
  * <p>
- * Only {@link Source#BASE}, {@link Source#CATA_LEVEL} and {@link Source#STARS} are authored as values here.  Every
- * other source stores an ID and looks its value up: {@link Upgrade} for books and enchantments, {@link Reforges} for
- * the reforge, {@link Gemstones} for a slot, {@link Pet} for Chimera.
+ * Only BASE, CATA_LEVEL and STARS are authored values. The rest store an ID: {@link Upgrade}, {@link Reforges},
+ * {@link Gemstones}, {@link Pet} for Chimera.
  */
 public record StatTerm(Source source, Stat stat, double value) {
 
 	public enum Source {
-		/** The item's intrinsic stat, as the wiki prints it. */
+		/** As the wiki prints it. */
 		BASE,
-		/** The item's Catacombs-level bonus, itemised beside the base so the x6.65 stays a pipeline stage. */
+		/** Itemised beside base so x6.65 stays a pipeline stage. */
 		CATA_LEVEL,
-		/** A non-dungeon item's star bonus, which appears as a flat term because nothing scales it (§1.0.3). */
+		/** Non-dungeon star bonus, flat since nothing scales it (§1.0.3). */
 		STARS,
 		BOOKS,
 		ENCHANT,

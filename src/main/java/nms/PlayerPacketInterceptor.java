@@ -43,11 +43,9 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			}
 		}
 		if(msg instanceof ServerboundPlayerActionPacket pkt) {
-			// Drop-key ability triggers (Q / Ctrl+Q) and bow release. For DROP we let vanilla process the packet
-			// (super.channelRead below): CustomItems' PlayerDropItemEvent handler cancels the physical drop for
-			// class players, so the item is kept while handleDrop fires the ability. For a bow RELEASE we consume
-			// the packet (return) and release the draw manually with creative-mode instabuild so it fires without
-			// consuming a real arrow.
+			// Drop key (Q / Ctrl+Q) and bow release. DROP still goes to vanilla: CustomItems' PlayerDropItemEvent
+			// handler cancels the physical drop for class players while handleDrop fires the ability. A bow RELEASE
+			// is consumed and released by hand with instabuild on, so it fires without a real arrow.
 			var action = pkt.getAction();
 			if(action == ServerboundPlayerActionPacket.Action.DROP_ITEM) {
 				Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
@@ -60,10 +58,8 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					player.updateInventory();
 				});
 			} else if(action == ServerboundPlayerActionPacket.Action.RELEASE_USE_ITEM) {
-				// ASK THE ITEM, never a list of lore IDs.  This was hardcoded to the Last Breath's and the Explosive
-				// Bow's ids, so the Death Bow drew and then fired nothing at all on release - a new drawn bow was a
-				// silent no-op with no error anywhere.  Bow.holdToDraw() is exactly this question, so a bow that
-				// declares it works the moment it is registered.
+				// Ask the item, never a lore-ID list. It was hardcoded to Last Breath and Explosive Bow, so the Death
+				// Bow drew and fired nothing, silently.
 				if(items.ItemRegistry.of(player.getInventory().getItemInMainHand()) instanceof items.Bow bow
 						&& bow.holdToDraw()) {
 					Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
@@ -76,20 +72,16 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 					return;
 				}
 			} else if(action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
-				// A left-click ON A BLOCK.  This is the ONLY place the client tells us which block a left-click hit,
-				// since the swing packet carries no position, so block abilities (Superboom TNT) take their target
-				// from here instead of the server ray-tracing its own reach.  Dispatched as LEFT_CLICK_BLOCK carrying
-				// the packet's pos.  The block itself is still never broken: handleCustomItems cancels the follow-up
-				// PlayerInteractEvent for left-click ability items, and onBlockBreak refuses outright as a backstop.
+				// Left-click ON A BLOCK: the ONLY place the client says which block (the swing has no position), so
+				// block abilities (Superboom TNT) target this, not a server ray trace. The block is never broken:
+				// handleCustomItems cancels the follow-up interact and onBlockBreak refuses as a backstop.
 				//
-				// Note that this only arrives for items stamped can_break (Dungeonbreaker, and Superboom TNT via
-				// Utils.placeAndBreakAnythingInAdventure) while the player is in adventure mode.  Verified in the 26.2
-				// client: MultiPlayerGameMode.startDestroyBlock returns early when Player.blockActionRestricted is
-				// true.  In survival every item sends it.  Either way vanilla's own PlayerInteractEvent fires for the
-				// same packet, so both dispatches land on the same tick and collapse via the 1/tick ability guards.
+				// In adventure this only arrives for can_break items (Dungeonbreaker, TNT via
+				// Utils.placeAndBreakAnythingInAdventure). Verified in the 26.2 client: startDestroyBlock returns early
+				// on blockActionRestricted. Vanilla's own PlayerInteractEvent fires for the same packet, same tick, and
+				// the 1/tick guards collapse the two.
 				//
-				// On the server executor (same main-thread FIFO queue as vanilla's handler, drained before
-				// super.channelRead's packet), matching the UseItemOn path below.
+				// Server executor: same main-thread FIFO as vanilla's handler, runs before it. Like UseItemOn below.
 				net.minecraft.core.BlockPos bp = pkt.getPos();
 				int bx = bp.getX(), by = bp.getY(), bz = bp.getZ();
 				MinecraftServer.getServer().execute(() ->
@@ -98,18 +90,14 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			}
 		}
 		if(msg instanceof ServerboundAttackPacket attackPkt) {
-			// 26.2 split melee attacks into their own ServerboundAttackPacket (ServerboundInteractPacket is now
-			// interact / interact-at only). Dispatch the LEFT_CLICK_AIR ability path for every attack:
-			// EntityDamageByEntityEvent only fires when damage actually lands, which excludes shield-invulnerable
-			// withers, dying entities, and other no-damage cases, so abilities like the mage beam need this path.
-			// This is what fires the beam when a mob is in melee range, where no PlayerInteractEvent fires.  The
-			// same-tick cooldown in handleCustomItems (lastLeftClickAbilityTick) dedupes against the EDBEE dispatch
-			// when damage does land.
+			// 26.2 moved melee into ServerboundAttackPacket (ServerboundInteractPacket is interact/interact-at only).
+			// Every attack dispatches LEFT_CLICK_AIR: EntityDamageByEntityEvent only fires when damage lands (not on
+			// shielded withers or dying mobs), and no PlayerInteractEvent fires with a mob in melee range, so this is
+			// what fires the beam there. lastLeftClickAbilityTick dedupes against the EDBEE dispatch.
 			//
-			// The packet's entity id is ALSO the only place an ordinary melee hit can come from, for the same reason:
-			// vanilla's own damage is cancelled outright (CustomItems.onEntityDamageByEntity), so there is no event
-			// left to hang a swing on.  CustomItems.meleeAttack stands down for the items whose left-click is an
-			// ability, so a Mage's beam swing does not also melee.
+			// The entity id is also the only source of an ordinary melee hit, since vanilla damage is cancelled
+			// (CustomItems.onEntityDamageByEntity). meleeAttack stands down for left-click-ability items, so a beam
+			// swing doesn't also melee.
 			int targetId = attackPkt.entityId();
 			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
 				CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player);
@@ -118,61 +106,36 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				if(target != null) CustomItems.meleeAttack(player, target.getBukkitEntity());
 			});
 		}
-		// Reset vanilla's interact dedupe so repeated clicks on the same block keep firing
-		// PlayerInteractEvent.  Without this, vanilla's ServerPlayerGameMode.useItemOn caches
-		// the (block, hand, item) triple of the previous event and reuses its result for
-		// subsequent matching packets, so rapid clicks on the same block only fire one
-		// ability and the rest are silently absorbed.  TASGamePacketListenerImpl resets at
-		// the top of handleUseItemOn for fake players (line 277); real players use vanilla's
-		// listener, which does not, so I reset here.
+		// Right-click abilities are dispatched straight from the packet (UseItemOn -> RIGHT_CLICK_BLOCK, UseItem ->
+		// RIGHT_CLICK_AIR), bypassing vanilla's same-block interact suppression. RIGHT_CLICK_GATE_TICKS dedupes
+		// against vanilla's event; it's 2 ticks, not 1, because the two are separate main-thread tasks and a tick
+		// boundary can fall between them.
 		//
-		// Scheduled onto the server's executor rather than Bukkit.scheduler.runTask so it lands
-		// on the main thread *in the same queue* as the packet handler.  Both are dequeued in
-		// FIFO order, so the reset runs immediately before vanilla processes this packet.
-		// Dispatch the right-click ability directly, bypassing whatever vanilla mechanism
-		// is suppressing PlayerInteractEvent for repeated same-block clicks. This is wired
-		// at the netty layer so every UseItem(On) packet hits CustomItems.handleCustomItems,
-		// which has its own anti-spam cooldown (RIGHT_CLICK_GATE_TICKS) to dedupe against
-		// vanilla's event if it also fires.  That gate is 2 ticks, not 1, because these two
-		// dispatches are separate main-thread tasks and a tick boundary can fall between them.
-		//
-		// ServerboundUseItemOnPacket → RIGHT_CLICK_BLOCK
-		// ServerboundUseItemPacket   → RIGHT_CLICK_AIR
-		// Scheduled on the server executor (same queue as vanilla's packet handler) so it
-		// runs on the main thread immediately before vanilla processes the packet.
+		// Server executor, not Bukkit runTask: same FIFO queue as the packet handler, so it runs just before vanilla
+		// processes the packet.
 		if(msg instanceof ServerboundUseItemOnPacket usePkt && usePkt.getHand() == InteractionHand.MAIN_HAND) {
 			net.minecraft.core.BlockPos bp = usePkt.getHitResult().getBlockPos();
 			int bx = bp.getX(), by = bp.getY(), bz = bp.getZ();
 			MinecraftServer.getServer().execute(() -> {
 				org.bukkit.Material clicked = player.getWorld().getBlockAt(bx, by, bz).getType();
-				// Reset vanilla's interact dedupe so rapid repeat clicks on the same block keep firing
-				// PlayerInteractEvent, e.g. the Simon Says button, instead of reusing the cached
-				// (block,hand,item) result.  Fake players do this in TASGamePacketListenerImpl#handleUseItemOn;
-				// real players use the vanilla listener, which doesn't, so reset it here, before vanilla
-				// processes the packet, in the same main-thread FIFO queue as super.channelRead below.
+				// Reset vanilla's interact dedupe (useItemOn caches the last (block, hand, item) result), so rapid
+				// clicks on one block (Simon Says) each fire PlayerInteractEvent. Fake players do this in
+				// TASGamePacketListenerImpl#handleUseItemOn; vanilla's listener doesn't.
 				//
-				// EXCEPTION: never reset it for a LEVER.  A single physical right-click sends the UseItemOn packet
-				// more than once; vanilla's dedupe collapses the duplicates into one toggle, but resetting it defeats
-				// that and toggles the lever twice (flip → unflip).  That's invisible on the section levers, whose
-				// solve tracks a boolean set on the first interact rather than the block state, but it breaks the S2
-				// "Lights" device, which reads the physical lamp state, so the lever appeared to "undo" itself.
-				// Buttons still get the reset so rapid Simon clicks each register.
+				// Never for a LEVER: one right-click sends UseItemOn more than once and the dedupe is what makes it
+				// one toggle. Without it the lever flips twice, which broke the S2 "Lights" device (reads lamp state).
 				if(clicked != org.bukkit.Material.LEVER) {
 					((CraftPlayer) player).getHandle().gameMode.firedInteract = false;
 				}
-				// Count Simon Says button clicks straight from the packet, bypassing vanilla's interact-event
-				// suppression so rapid real-player clicks all register (deduped to one per tick in GoldorListener).
+				// Simon Says clicks straight from the packet so rapid clicks all register (1/tick in GoldorListener).
 				GoldorListener.tryRegisterSimonClick(player, bx, by, bz);
-				// Right-clicking a lever or button owns the click, so the held item's right-click ability must NOT
-				// fire on top of it.  This mirrors the guard in CustomItems.onPlayerInteract, which only covers the
-				// Bukkit event path; this interceptor path had no such guard, so a combat or utility item's
-				// right-click was firing on an S2 lever and hijacking the vanilla toggle.
+				// A lever or button owns the click, so no item ability on top. Mirrors CustomItems.onPlayerInteract's
+				// guard; without it an item's right-click fired on S2 levers and hijacked the toggle.
 
 				org.bukkit.block.Block clickedBlock = player.getWorld().getBlockAt(bx, by, bz);
 				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)
 						&& !instructions.clear.ClearManager.isSecretBlock(clickedBlock)) {
-					// Pass vanilla's own hit-result block through: block abilities (Superboom TNT) centre on it rather
-					// than ray-tracing a reach of their own, so they match vanilla's interaction range and target.
+					// Vanilla's hit block, so block abilities (Superboom TNT) match vanilla's range and target.
 					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
 							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player, clickedBlock);
 				}

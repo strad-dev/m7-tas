@@ -13,13 +13,11 @@ import org.bukkit.util.Vector;
 import plugin.Utils;
 
 /**
- * The Archer's ULTIMATE: fifty arrows over 200 ticks, one every four.
+ * Archer ultimate: 50 arrows over 200 ticks, one every 4.
  * <p>
- * Each arrow deals 75%% of the player's highest arrow damage in the last minute (§1.14), read off the same
- * rolling history the axe throw and Explosive Shot use.  That is 75%% of a FINISHED hit, so it is stamped
- * DERIVED - it lands for that figure exactly and stays out of the history.  Both halves matter: each of the
- * fifty arrows re-queries the history four ticks after the last one landed, so anything that let an arrow
- * inflate what the next one reads compounds fifty times and overflows.
+ * Each deals 75% of highest arrow damage in the last minute (§1.14), same history as axe throw and Explosive Shot.
+ * Stamped DERIVED so it lands for exactly that and stays out of the history. Both matter: each arrow re-queries
+ * the history 4 ticks after the last landed, so any self-inflation compounds 50 times and overflows.
  */
 public final class RapidFire implements ClassAbility {
 	public static final RapidFire INSTANCE = new RapidFire();
@@ -70,12 +68,7 @@ public final class RapidFire implements ClassAbility {
 				arrow.setWeapon(p.getInventory().getItemInMainHand());
 				arrow.addScoreboardTag("TerminatorArrow");
 				arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-				// Rapid Fire: each arrow deals 75% of the player's highest arrow damage in the last minute
-				// (MAP.md §1.14), off the same rolling history Explosive Shot and the axe throw read.
-				// 75% of a FINISHED hit, so stampFlat marks the arrow derived: it lands for this figure exactly and
-				// stays out of the history.  Both matter - each of the 50 arrows re-queries the history four ticks
-				// after the last one landed, so anything that let an arrow inflate what the next one reads compounds
-				// fifty times and overflows.
+				// stampFlat marks it derived, see class doc.
 				damage.Arrows.stampFlat(arrow, p, p.getInventory().getItemInMainHand(),
 						damage.CombatState.maxInLastTicks(p, 1200) * 0.75);
 			}, i);

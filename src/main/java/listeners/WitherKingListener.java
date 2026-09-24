@@ -18,14 +18,12 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Drives the Wither-King summon phase. Pickup fires when a player right-clicks a relic's Interaction entity;
- * placement fires when a player right-clicks the matching altar block (Y 6/7) while holding that relic. A held
- * relic is locked into the hotbar: it can't be moved, dropped, or placed anywhere except its correct altar.
- * Both paths work for real players in practice and, once the player choreography is wired, fake players.
+ * Wither-King summon phase. Pickup: right-click a relic's Interaction entity. Placement: right-click the matching
+ * altar (Y 6/7) holding it. A held relic is locked in the hotbar until placed on its altar.
  */
 public class WitherKingListener implements Listener {
 
-	/** Right-click a relic's Interaction entity → pick it up (unless already carrying one). */
+	/** Right-click a relic's Interaction entity to pick it up, unless already carrying one. */
 	@EventHandler
 	public void onPickup(PlayerInteractAtEntityEvent e) {
 		if(!(e.getRightClicked() instanceof Interaction interaction)) return;
@@ -37,35 +35,30 @@ public class WitherKingListener implements Listener {
 	}
 
 	/**
-	 * Right-click a block while holding a relic: the wool is never placed as a real block, and only a click on the
-	 * matching altar (Y 6/7) places the relic. Anything else is silently cancelled (prevents misplacement).
+	 * Right-click holding a relic: the wool is never placed, and only the matching altar (Y 6/7) takes the relic.
 	 * <p>
-	 * <b>The WRONG cauldron sends the relic back to its statue</b>, in every mode, and outside classic it kills
-	 * you too ({@code death/Deaths}).  The relic can never be destroyed or kept: the summon needs all five, so
-	 * losing one to a mistake would strand the phase.  <b>The return has to come first</b> - {@code Deaths}
-	 * snapshots the inventory for the revival, so a relic still in hand at that moment would be handed straight
-	 * back on revival while the statue held a second copy.
+	 * The WRONG cauldron sends it back to its statue in every mode, and outside classic kills you too
+	 * ({@code death/Deaths}). The summon needs all five, so a relic can never be lost. The return must come FIRST:
+	 * {@code Deaths} snapshots the inventory for revival, and a relic still in hand would come back as a duplicate.
 	 * <p>
-	 * Clicking anything that is not an altar at all is still just cancelled: the mistake is putting a relic in the
-	 * wrong cauldron, not missing one.  <b>Placing and returning are exclusive branches</b> - a relic that goes onto
-	 * its own altar is never also sent home, and {@code returnRelicToStatue} re-checks that itself.
+	 * A non-altar click is just cancelled. Placing and returning are exclusive; {@code returnRelicToStatue}
+	 * re-checks that too.
 	 */
 	@EventHandler
 	public void onPlace(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-		// Main hand only.  Cancelling the main-hand attempt makes vanilla try the off hand, which fires a SECOND
-		// event for the same physical click; the same reason GoldorListener gates on this.  Both would read the main
-		// hand and re-run whichever branch below already ran.
+		// Main hand only: cancelling it makes vanilla try the off hand, a SECOND event for the same click that would
+		// re-run the branch below (same as GoldorListener).
 		if(e.getHand() != EquipmentSlot.HAND) return;
 		Player p = e.getPlayer();
 		String heldColor = WitherKing.relicColorOfItem(p.getInventory().getItemInMainHand());
-		if(heldColor == null) return; // not holding a relic, so ignore
+		if(heldColor == null) return; // not holding a relic
 		e.setCancelled(true); // never let the wool be placed as a block
 
 		Block b = e.getClickedBlock();
 		if(b == null || (b.getY() != 6 && b.getY() != 7)) return;
 		String altarColor = WitherKing.altarColorAt(b.getX(), b.getZ());
-		if(altarColor == null) return; // not an altar, so do nothing
+		if(altarColor == null) return; // not an altar
 
 		if(altarColor.equals(heldColor)) {
 			WitherKing.placeRelic(p, altarColor);
@@ -75,9 +68,9 @@ public class WitherKingListener implements Listener {
 		}
 	}
 
-	// --- Lock a held relic into the hotbar until it's placed on its altar ---
+	// Held relic stays locked in the hotbar until placed
 
-	/** Block moving a relic within any inventory (click, shift-click, hotbar number-key swap). */
+	/** No moving a relic in any inventory (click, shift-click, number key). */
 	@EventHandler
 	public void onRelicClick(InventoryClickEvent e) {
 		if(WitherKing.relicColorOfItem(e.getCurrentItem()) != null || WitherKing.relicColorOfItem(e.getCursor()) != null) {
@@ -90,7 +83,7 @@ public class WitherKingListener implements Listener {
 		}
 	}
 
-	/** Block dragging a relic across slots. */
+	/** No dragging a relic. */
 	@EventHandler
 	public void onRelicDrag(InventoryDragEvent e) {
 		if(WitherKing.relicColorOfItem(e.getOldCursor()) != null) {
@@ -105,13 +98,13 @@ public class WitherKingListener implements Listener {
 		}
 	}
 
-	/** Block dropping a relic. */
+	/** No dropping a relic. */
 	@EventHandler
 	public void onRelicDrop(PlayerDropItemEvent e) {
 		if(WitherKing.relicColorOfItem(e.getItemDrop().getItemStack()) != null) e.setCancelled(true);
 	}
 
-	/** Belt-and-suspenders: never let a relic wool be placed as a real block. */
+	/** Backstop: a relic wool is never placed as a block. */
 	@EventHandler
 	public void onRelicBlockPlace(BlockPlaceEvent e) {
 		if(WitherKing.relicColorOfItem(e.getItemInHand()) != null) e.setCancelled(true);

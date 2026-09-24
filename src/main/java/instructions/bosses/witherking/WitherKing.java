@@ -25,47 +25,35 @@ import java.time.Duration;
 import java.util.*;
 
 /**
- * The Wither King, the final encounter.  Runs AFTER Necron (chained via {@code Necron#chainNext})
- * or standalone via {@code /tas witherking} / {@code /m7practice witherking}.
- *
- * <p>Two stages:
+ * Wither King. After Necron ({@code Necron#chainNext}) or standalone ({@code /m7practice witherking}).
  * <ol>
- *   <li><b>Summon phase</b>: five relics spawn (ItemDisplay + Interaction) at the dragon statues.  A player
- *       right-clicks a relic's Interaction entity to pick it up (→ hotbar slot 8), then right-clicks the
- *       matching altar block (Y 6/7) to place it, and a wool ItemDisplay appears at y=8.  When all five are
- *       placed the Wither King intro fires.</li>
- *   <li><b>Dragon phase</b>: the Wither King (5 HP) spawns and five dragons must be killed, each removing 1 HP.
- *       The first three spawn on timers (a pair together, then a third); the last two begin
- *       their spawn animation the tick the last living dragon is killed.  <b>Which colour takes each of the five
- *       slots is the set order, and rolled per run in realistic only</b> ({@link #spawnOrder}); the schedule
- *       underneath them never moves.  Dragon kills are detected
- *       automatically via {@link #handleDragonKilled} (called from {@code damage.Damage.deal}'s kill
- *       chokepoint) and fire {@link #instaKillDragon} + {@link #playDragonDeathSound}.</li>
+ *   <li><b>Summon</b>: pick up each of five statue relics (→ slot 8) and right-click its altar (Y 6/7). All five
+ *       placed starts the intro.</li>
+ *   <li><b>Dragons</b>: the King (5 HP) loses 1 per dragon. Three spawn on timers (a pair, then a third), the last
+ *       two the tick the last living dragon dies. Colour per slot is the set order, rolled in realistic only
+ *       ({@link #spawnOrder}); the schedule never moves. Kills come in via {@link #handleDragonKilled} from
+ *       {@code damage.Damage.deal}'s kill chokepoint.</li>
  * </ol>
- *
- * <p>Kept standalone rather than a {@code WitherLord}, because its 5-HP scale, MAGIC name and dragon-driven HP
- * don't fit, but it reuses the same tick machinery: {@link Utils#markPhaseStart()}, {@link Utils#phaseTick()},
- * {@link Utils#runTick()} and {@link WitherActions#isPracticeMode()}.
+ * Not a {@code WitherLord} (5-HP scale, MAGIC name, dragon-driven HP) but uses the same tick machinery.
  */
 @SuppressWarnings({"unused", "DataFlowIssue"})
 public class WitherKing {
 	private static World world;
 	private static Wither witherKing;
-	/** True only when reached via {@code /tas|/m7practice witherking} (Server case); the Necron→WK chain passes false. */
+	/** Only via {@code /tas|/m7practice witherking}; the Necron chain passes false. */
 	private static boolean standalone;
 	private static final Random random = new Random();
 	private static final String[] dragonDieMessage = {"Oh, this one hurts!", "I have more of those.", "My soul is disposable."};
 
-	/** Cumulative ticks before the Wither-King phase, for the TAS overall column
-	 *  (Clear 738 + Maxor 500 + Storm 860 + Goldor 304 + Necron 600). */
+	/** TAS overall column: Clear 738 + Maxor 500 + Storm 860 + Goldor 304 + Necron 600. */
 	private static final int PRE_WITHERKING_TICKS = 3002;
-	/** Ticks after the final dragon dies before the congratulation prints (WK split 1029 − final kill 959). */
+	/** Final kill to congratulation (WK split 1029 − final kill 959). */
 	private static final int END_DELAY_TICKS = 70;
-	/** Alpha: the score lands on top of the kill rather than a second and a half later. */
+	/** Alpha: score lands right on the kill. */
 	private static final int ALPHA_END_DELAY_TICKS = 10;
 
 	// --- Summon-phase relics ---
-	/** Each relic: wool material + chat color + label, its dragon-statue spawn point, and its altar block (X,Z). */
+	/** Wool, chat colour, label, statue spawn point, altar X/Z. */
 	private enum Relic {
 		RED(Material.RED_WOOL, "<red>", "Red", 20.5, 6.8125, 59.5, 51, 42),
 		GREEN(Material.GREEN_WOOL, "<dark_green>", "Green", 20.5, 6.8125, 94.5, 49, 44),
@@ -74,7 +62,7 @@ public class WitherKing {
 		ORANGE(Material.ORANGE_WOOL, "<gold>", "Orange", 92.5, 6.8125, 56.5, 57, 42);
 
 		final Material wool;
-		final String mm;          // MiniMessage color tag, e.g. "<red>"
+		final String mm;          // MiniMessage tag
 		final String label;
 		final double x, y, z;     // statue: center X/Z, bottom Y
 		final int altarX, altarZ; // altar pillar (Y 6 & 7)
@@ -87,10 +75,10 @@ public class WitherKing {
 			this.altarX = altarX; this.altarZ = altarZ;
 		}
 
-		/** Legacy §-string item display name (compared against {@link Utils#displayName} and fed to {@link Utils#nameComponent}). */
+		/** Legacy §-string, compared against {@link Utils#displayName}. */
 		String itemName() { return Utils.mmLegacy(mm + label + " Relic"); }
 
-		/** Center Y of the floating wool ItemDisplay above the statue (Purple's statue sits 2 blocks higher). */
+		/** Floating wool's center Y; Purple's statue is 2 blocks higher. */
 		double displayY() { return this == PURPLE ? 9.5 : 7.5; }
 
 		static Relic fromWool(Material m) {
@@ -110,68 +98,49 @@ public class WitherKing {
 	private static final List<ItemDisplay> altarWoolDisplays = new ArrayList<>();
 	private static final Set<Relic> placedRelics = new HashSet<>();
 
-	// Wither-King scale-up: grows 0.1 scale/tick from 0.1 to its full scale of 4 (rises into existence).
+	// Grows 0.1 scale/tick from 0.1 to 4.
 	private static BukkitTask growthTask;
-	/** Full scale the Wither King grows to. */
 	private static final double WITHER_KING_SCALE = 4.0;
 
-	// Slow Y-axis spin shared by every relic + altar wool display.
+	// Y-axis spin shared by every relic + altar wool display.
 	private static BukkitTask rotationTask;
 	private static float rotationAngle = 0f;
-	private static final float ROTATION_STEP = (float) (Math.PI / 40); // full turn every 80 ticks (4s)
-	private static final Vector3f DISPLAY_SCALE = new Vector3f(0.66666f, 0.66666f, 0.66666f); // 0.66666³ wool cube
+	private static final float ROTATION_STEP = (float) (Math.PI / 40); // full turn every 80 ticks
+	private static final Vector3f DISPLAY_SCALE = new Vector3f(0.66666f, 0.66666f, 0.66666f);
 
 	// --- Dragon phase ---
 	private static final Map<String, EnderDragon> dragons = new HashMap<>();
 	private static final Set<UUID> dyingDragons = new HashSet<>();
-	/** Phase tick at which each dragon's spawn was announced, used to time its kill relative to its own spawn. */
+	/** Phase tick each dragon spawned, to time its kill. */
 	private static final Map<String, Integer> dragonSpawnTick = new HashMap<>();
 	private static int aliveCount = 0;
 	/**
-	 * The order the colours take the five spawn slots when the dungeon is NOT rolling against you, which is classic
-	 * and Perfect RNG.  Realistic rolls instead - see {@link #spawnOrder}.
-	 * <p>
-	 * <b>This is the order the phase was hardcoded to before it was ever rolled</b> (v2.8.0 and earlier): Soul and
-	 * Ice together on the 260t clock, Flame at 600, then Power and Apex on kills.  It is not an arbitrary listing
-	 * - a practised route names these dragons - so do not reorder it to match some other list.
+	 * Classic and Perfect RNG order. The pre-roll hardcoded order (v2.8.0 and earlier): Soul and Ice at 260t, Flame at
+	 * 600, then Power and Apex on kills. Practised routes name these, so don't reorder.
 	 */
 	private static final List<String> SET_SPAWN_ORDER = List.of("purple", "blue", "orange", "red", "green");
 	/**
-	 * The five dragons in the order this run will spawn them.  <b>The SLOTS are fixed</b>: 0 and 1 are the pair on
-	 * the 260t clock, 2 is the third timer dragon, and 3 and 4 are the event-driven pair that fires when the last
-	 * living dragon dies.
-	 * <p>
-	 * <b>The colours are rolled in realistic only.</b>  Classic and Perfect RNG get {@link #SET_SPAWN_ORDER} every
-	 * run, because a known wall of dragons is what "the dungeon rolls in your favour" means here and a practised
-	 * route can name which one is coming; realistic takes that away.  Settled once, in
-	 * {@link #witherKingInstructions}, alongside the queue and the latch that have to agree with it.
-	 * <p>
-	 * Nothing downstream may name a colour for a slot: {@link #shouldSeeDragonPopup} splits the party by whether a
-	 * dragon is slot 0 or slot 1, not by whether it is Soul or Ice.
+	 * This run's order. SLOTS are fixed: 0 and 1 the 260t pair, 2 the third timer dragon, 3 and 4 the event pair.
+	 * Colours are rolled in realistic only; set in {@link #witherKingInstructions} with the queue and latch. Nothing
+	 * downstream may name a colour for a slot ({@link #shouldSeeDragonPopup} keys on slot).
 	 */
 	private static final List<String> spawnOrder = new ArrayList<>(SET_SPAWN_ORDER);
 	/**
-	 * The last dragon that spawns on a timer rather than on a kill, i.e. the one {@link #lastTimerSpawned} latches on.
-	 * <p>
-	 * Normally {@code spawnOrder} slot 2, the third.  <b>Alpha drops that dragon's 600t timer</b> and moves it to
-	 * the head of the event queue, so under alpha the last timer dragon is slot 1 and slot 2 begins the moment the
-	 * first pair is both down.
-	 * <p>
-	 * LATCHED in {@link #witherKingInstructions} next to the queue it has to agree with: read live, a settings flip
-	 * mid-phase would leave a queue holding a dragon and a latch still waiting for it, and no dragon would ever spawn.
+	 * Last timer dragon, what {@link #lastTimerSpawned} latches on. Normally slot 2; alpha drops its 600t timer and
+	 * queues it first, so the last timer dragon is slot 1. LATCHED with the queue: read live, a mid-phase settings flip
+	 * would leave the latch waiting for a queued dragon and nothing would ever spawn.
 	 */
 	private static String lastTimerDragon = "orange";
 
-	/** True once the last TIMER dragon (see {@link #lastTimerDragon}) has spawned.  This gates the event-driven
-	*  spawns so an early death in the opening pair, before the third timer dragon appears, can't trigger them. */
+	/** Gates event spawns so an early death in the opening pair can't trigger them. */
 	private static boolean lastTimerSpawned = false;
-	/** Event-spawned dragons, {@link #spawnOrder} slots 3 and 4. Spawned when the last living dragon is killed. */
+	/** Slots 3 and 4 (plus 2 under alpha), spawned when the last living dragon dies. */
 	private static final Deque<String> eventQueue = new ArrayDeque<>();
-	/** Ticks the spawn animation runs before the dragon actually appears (matches the {@link BossScheduler} delay). */
+	/** Spawn animation length; matches the {@link BossScheduler} delay. */
 	private static final int DRAGON_SPAWN_ANIM = 100;
-	/** Uniform scale of the "Nt" countdown TextDisplay, deliberately huge so it reads from across the arena. */
+	/** Huge so it reads from across the arena. */
 	private static final float DRAGON_COUNTDOWN_SCALE = 12f;
-	/** Live per-dragon "Nt" countdown display tasks, cancelled in {@link #forceCleanup}. */
+	/** Cancelled in {@link #forceCleanup}. */
 	private static final List<BukkitTask> countdownTasks = new ArrayList<>();
 
 	// ============================== Entry / summon phase ==============================
@@ -182,20 +151,16 @@ public class WitherKing {
 
 		forceCleanup(temp);
 		Utils.markPhaseStart();
-		// Record the Necron section's end for the practice scoreboard (overall tick at WK phase start).
+		// Necron's split ends at WK phase start.
 		WitherActions.recordSplit("Necron", Utils.runTick());
 
 		eventQueue.clear();
-		// Which colour takes each spawn slot.  Realistic rolls it; the other two modes get the set order, so the
-		// list is rebuilt from SET_SPAWN_ORDER first - a shuffle is in place, and without this a realistic run
-		// would leave its permutation behind for the next classic one.  Only the colours move either way: the
-		// schedule underneath them (two on the 260t clock, one at 600, then two on kills) is the same every run,
-		// so nothing about the phase's timing changes and a run is still comparable with any other.
+		// Rebuilt first since the shuffle is in place, or a realistic run's order leaks into the next classic one.
+		// Only colours move; the schedule is the same every run.
 		spawnOrder.clear();
 		spawnOrder.addAll(SET_SPAWN_ORDER);
 		if(damage.Difficulty.realPuzzles()) Collections.shuffle(spawnOrder, random);
-		// Alpha: slot 2 is event-driven too, so it heads the queue instead of waiting out a 600t timer, and slot 1
-		// becomes the last dragon on a clock.  The queue and the latch are set together for that reason.
+		// Alpha: slot 2 heads the queue instead of its 600t timer, so slot 1 is the last timer dragon. Set together.
 		lastTimerDragon = spawnOrder.get(Alpha.enabled() ? 1 : 2);
 		if(Alpha.enabled()) eventQueue.add(spawnOrder.get(2));
 		eventQueue.add(spawnOrder.get(3));
@@ -206,28 +171,21 @@ public class WitherKing {
 		spawnRelics();
 	}
 
-	/** Spawn the five relics as an ItemDisplay (0.66666³ wool) + an Interaction (1 × 1.1875 × 1 hitbox) per statue. */
+	/** ItemDisplay (0.66666³ wool) + Interaction (1 × 1.1875 × 1) per statue. */
 	private static void spawnRelics() {
 		for(Relic relic : Relic.values()) spawnRelicEntities(relic);
 		startRotation();
 	}
 
-	/**
-	 * Put one relic back on its statue: the floating wool and the hitbox that picks it up.
-	 * <p>
-	 * Shared by the initial spawn and by {@link #returnRelicToStatue}, so a relic that comes home after a
-	 * wrong-cauldron mistake is identical to one that was never taken - same position, same hitbox, same spin.
-	 * Idempotent: a relic that is already on its statue is left alone rather than given a second copy.
-	 */
+	/** Shared by the initial spawn and {@link #returnRelicToStatue}, so a returned relic is identical. Idempotent. */
 	private static void spawnRelicEntities(Relic relic) {
 		ItemDisplay existing = statueDisplays.get(relic);
 		if(existing != null && existing.isValid()) return;
 
-		// Floating wool sits at displayY (7.25, or 9.25 for Purple); the Interaction hitbox stays on the statue.
+		// Wool floats at displayY; the hitbox stays on the statue.
 		ItemDisplay display = world.spawn(new Location(world, relic.x, relic.displayY(), relic.z), ItemDisplay.class, d -> {
 			d.setItemStack(new ItemStack(relic.wool));
-			// Start at the CURRENT angle, not 0: the rotation task is already running for a mid-phase respawn, and
-			// a relic snapping back to zero would be the one thing out of step with the other four.
+			// CURRENT angle, not 0, so a mid-phase respawn stays in step with the other four.
 			d.setTransformation(rotationTransform(rotationAngle));
 			d.setBillboard(org.bukkit.entity.Display.Billboard.FIXED);
 			d.setPersistent(true);
@@ -250,36 +208,25 @@ public class WitherKing {
 	}
 
 	/**
-	 * Take a relic out of {@code p}'s hand and put it back on its own statue - the wrong-cauldron undo.
+	 * Wrong-cauldron undo: hand → its statue. A lost relic would strand the summon. Must run BEFORE the live-mode
+	 * death, since {@code death/Deaths} snapshots the inventory and would hand back a duplicate on revival.
 	 * <p>
-	 * <b>The relic must never just vanish.</b> The summon needs all five, so a relic lost to a mistake would strand
-	 * the phase; returning it to the statue is the only outcome that leaves the run finishable. It is also why this
-	 * has to run <b>before</b> the death that follows it in a live mode: {@code death/Deaths} snapshots the
-	 * inventory for the revival, so a relic still in hand at that moment would be handed straight back on revival
-	 * while the statue held a second copy of it.
-	 * <p>
-	 * <b>A relic that has been successfully placed is never returned.</b> The caller only reaches this on a WRONG
-	 * cauldron, so the two outcomes are already exclusive branches - but the rule is enforced here rather than left
-	 * to that structure, because getting it wrong un-places a relic the party has already banked. The test is "is
-	 * this relic still in that player's hand": a placed relic isn't, and neither is one somebody else is carrying.
-	 * That also makes a repeated interact event a no-op, since the first call empties the hand.
-	 * <p>
-	 * Spectator-gated at the chokepoint, the same as {@link #pickUpRelic} and {@link #placeRelic}: somebody who is
-	 * only watching must not be able to move a relic around the arena.
+	 * A placed relic is never returned: enforced here by "still in this player's hand", not left to the caller, since
+	 * getting it wrong un-places a banked relic. That also makes a repeated event a no-op. Spectator-gated.
 	 */
 	public static void returnRelicToStatue(Player p, String color) {
 		if(Utils.isSpectator(p)) return;
 		Relic relic = Relic.valueOf(color);
-		if(placedRelics.contains(relic)) return;                 // already banked on its altar
+		if(placedRelics.contains(relic)) return;                 // already banked
 		if(!relic.name().equals(relicColorOfItem(p.getInventory().getItem(8)))) return; // not in this player's hand
 
-		// Clear the relic out of hand (back to the SkyBlock-menu nether star), exactly as placeRelic does.
+		// Back to the SkyBlock-menu nether star, as placeRelic does.
 		p.getInventory().setItem(8, items.util.SkyblockMenu.INSTANCE.build());
 		instructions.Actions.setHotbarSlot(p, 8);
 		spawnRelicEntities(relic);
 	}
 
-	/** A 0.66666³-scale transform rotated {@code angle} radians about the Y axis.  Translation is zero, so it spins in place. */
+	/** 0.66666³, rotated {@code angle} radians about Y, spinning in place. */
 	private static Transformation rotationTransform(float angle) {
 		return new Transformation(
 				new Vector3f(0f, 0f, 0f),
@@ -288,7 +235,7 @@ public class WitherKing {
 				new AxisAngle4f(0f, 0f, 0f, 1f));
 	}
 
-	/** Slowly spin every relic + altar wool display about the Y axis. Runs until {@link #forceCleanup}. */
+	/** Runs until {@link #forceCleanup}. */
 	private static void startRotation() {
 		if(rotationTask != null && !rotationTask.isCancelled()) return;
 		rotationTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
@@ -300,7 +247,7 @@ public class WitherKing {
 		}, 1L, 1L);
 	}
 
-	/** Grow the Wither King 0.1 scale/tick from its spawn scale (0.1) up to {@link #WITHER_KING_SCALE}, then stop. */
+	/** 0.1 scale/tick up to {@link #WITHER_KING_SCALE}. */
 	private static void startWitherKingGrowth() {
 		if(growthTask != null && !growthTask.isCancelled()) growthTask.cancel();
 		growthTask = Bukkit.getScheduler().runTaskTimer(M7tas.getInstance(), () -> {
@@ -320,19 +267,19 @@ public class WitherKing {
 		}, 1L, 1L);
 	}
 
-	/** The relic this Interaction entity represents, or null if it's not a (still-present) relic interaction. */
+	/** Null if not a still-present relic interaction. */
 	public static String relicColorForInteraction(Interaction interaction) {
 		Relic r = interactionRelic.get(interaction.getUniqueId());
 		return r == null ? null : r.name();
 	}
 
-	/** The relic placed by right-clicking the altar block at (x,z), or null if not an altar block. */
+	/** Null if not an altar block. */
 	public static String altarColorAt(int x, int z) {
 		Relic r = Relic.altarAt(x, z);
 		return r == null ? null : r.name();
 	}
 
-	/** The relic color of an item that is genuinely a relic (correct wool AND "[Color] Relic" name), else null. */
+	/** Only for a real relic: right wool AND "[Color] Relic" name. */
 	public static String relicColorOfItem(ItemStack item) {
 		if(item == null) return null;
 		Relic r = Relic.fromWool(item.getType());
@@ -340,23 +287,18 @@ public class WitherKing {
 		return r.itemName().equals(Utils.displayName(item.getItemMeta())) ? r.name() : null;
 	}
 
-	/** True if the player is already carrying a relic in slot 8, used to block picking up a second. */
+	/** Blocks picking up a second. */
 	public static boolean isHoldingRelic(Player p) {
 		return relicColorOfItem(p.getInventory().getItem(8)) != null;
 	}
 
 	/**
-	 * Picks up the given relic (by {@link Relic} name).  Called from the relic Interaction right-click.
-	 * <br>
-	 * <b>Spectators are refused here, at the chokepoint.</b>  A relic pickup REMOVES the statue's display +
-	 * Interaction from the arena and puts the wool in that player's slot 8, and only the holder can place it, so
-	 * an idle m7 spectator clicking a relic used to strand the summon phase for the party actually running - and
-	 * a relic in a spectator's inventory is unrecoverable.  Vanilla doesn't gate this for us: it fires the
-	 * interact event for a spectator's click on an entity hitbox like anyone else's.
+	 * From the relic Interaction right-click. Spectators refused HERE: a spectator's pickup stranded the summon with
+	 * the relic unrecoverable, and vanilla fires the interact event for spectators too.
 	 */
 	public static void pickUpRelic(Player p, String color) {
 		if(Utils.isSpectator(p)) return;
-		// One relic at a time, so ignore this if the player is already carrying one and hasn't placed it.
+		// One at a time.
 		if(isHoldingRelic(p)) return;
 		Relic relic = Relic.valueOf(color);
 
@@ -365,7 +307,7 @@ public class WitherKing {
 		meta.displayName(Utils.nameComponent(relic.itemName()));
 		itemStack.setItemMeta(meta);
 
-		// Remove this relic's display + interaction so it can't be picked up twice.
+		// So it can't be picked up twice.
 		removeRelicEntities(relic);
 
 		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<green> picked up the " + relic.mm + relic.label + " Relic<green>!"));
@@ -375,16 +317,14 @@ public class WitherKing {
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 	}
 
-	/** Places the held relic on its altar (by {@link Relic} name).  Called from the altar block right-click.
-	 *  Spectator-gated for the same reason as {@link #pickUpRelic}: someone who is only watching must not be able
-	 *  to advance the summon, and this covers a relic carried into spectator rather than picked up there. */
+	/** From the altar right-click. Spectator-gated like {@link #pickUpRelic}; covers a relic carried into spectator. */
 	public static void placeRelic(Player p, String color) {
 		if(Utils.isSpectator(p)) return;
 		Relic relic = Relic.valueOf(color);
 		if(placedRelics.contains(relic)) return;
 		placedRelics.add(relic);
 
-		// Wool ItemDisplay centered on the altar at y=8.5, with the same 0.66666³ cube and spin as the statue relics.
+		// Same cube and spin as the statue relics.
 		Location woolLoc = new Location(world, relic.altarX + 0.5, 8.5, relic.altarZ + 0.5);
 		ItemDisplay wool = world.spawn(woolLoc, ItemDisplay.class, d -> {
 			d.setItemStack(new ItemStack(relic.wool));
@@ -396,14 +336,13 @@ public class WitherKing {
 		});
 		altarWoolDisplays.add(wool);
 
-		// Clear the relic out of hand (back to the SkyBlock-menu nether star).
+		// Back to the SkyBlock-menu nether star.
 		p.getInventory().setItem(8, items.util.SkyblockMenu.INSTANCE.build());
 		instructions.Actions.setHotbarSlot(p, 8);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 
 		if(placedRelics.size() == 5) {
 			Utils.timer("<gold><bold>All Relics </bold><green>placed in " + formatTick());
-			// Delay the intro 10 ticks after the last relic is placed.
 			startWitherKingIntro();
 		} else {
 			Utils.timer(relic.mm + relic.label + " Relic (" + placedRelics.size() + "/5)<green> placed in " + formatTick());
@@ -413,12 +352,9 @@ public class WitherKing {
 	// ============================== Wither King intro ==============================
 
 	/**
-	 * The Wither King's arrival: the golem-repair and thunder beds, three lines, and the first dragons.
-	 *
-	 * <p><b>Alpha halves the whole approach.</b>  The five golem repairs play on a 10t grid rather than a 20t one
-	 * (20-60 instead of 20-100), the thunder bed ends with the last line, and the opening pair no longer spawns
-	 * together: slot 0 goes with "You... again?" at 60 and slot 1 with the second line at 120.  Slot 2's 600t
-	 * timer is gone entirely - see {@link #lastTimerDragon}.
+	 * Golem-repair and thunder beds, three lines, first dragons. Alpha halves it: golem repairs on a 10t grid (20-60,
+	 * not 20-100), thunder ends with the last line, slot 0 spawns with "You... again?" at 60 and slot 1 with the
+	 * second line at 120. Slot 2's 600t timer is gone ({@link #lastTimerDragon}).
 	 */
 	private static void startWitherKingIntro() {
 		int golemStep = Alpha.ticks(20, 10);
@@ -433,8 +369,7 @@ public class WitherKing {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.0f), i);
 		}
 		Utils.scheduleTask(() -> sendChatMessage("You... again?"), firstLine);
-		// Spawn the Wither King 20 ticks before its "I no longer wish to fight" line, at scale 0.1, and grow it
-		// 0.1 scale per tick up to its full scale of 4, so it rises into existence over the lead-up to the line.
+		// Spawns 20t before "I no longer wish to fight" at scale 0.1 and grows into existence.
 		Utils.scheduleTask(() -> {
 			witherKing = (Wither) world.spawnEntity(new Location(world, 54.5, 6, 32.5, 0f, 0f), EntityType.WITHER);
 			witherKing.setAI(false);
@@ -450,10 +385,8 @@ public class WitherKing {
 			witherKing.setHealth(5);
 			witherKing.addScoreboardTag("TASWither");
 			witherKing.addScoreboardTag("TASWitherKing");
-			// That tag IS MobStats.witherKingPhaseActive, and Pet.forPlayer swaps Archer and Berserk onto the
-			// Ender Dragon behind it - so in the assumed modes their pet just changed, and the Chimera weapons in
-			// their hands are still printing the Golden Dragon's copy.  Cheap: the refresh is deferred a tick and
-			// writes nothing for a player whose pet did not move (every Mage, Healer and Tank here).
+			// That tag IS MobStats.witherKingPhaseActive: Pet.forPlayer moves Archer and Berserk to the Ender Dragon,
+			// so their Chimera lore still shows the Golden Dragon's. The refresh is deferred and skips unchanged pets.
 			for(Player pl : Bukkit.getOnlinePlayers()) damage.StatLore.refreshChimeraLore(pl);
 			WitherActions.setWitherArmor(witherKing, true);
 			startWitherKingGrowth();
@@ -465,16 +398,13 @@ public class WitherKing {
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_AMBIENT, 2.0f, 0.67f);
 		}, secondLine);
 		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), lastLine);
-		// The timer dragons, by SLOT rather than by colour: slots 0 and 1 together at 260 and slot 2 at 600, with
-		// alpha spawning the first two with the first two lines and handing slot 2 to the event queue.  Which
-		// colour is in which slot was rolled in witherKingInstructions.
-		// Slots 3 and 4 are NOT timer-spawned: they fire from handleDragonKilled when the last living dragon dies.
+		// Timer dragons by SLOT. Slots 3 and 4 come from handleDragonKilled.
 		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(0)), Alpha.ticks(260, 60));
 		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(1)), Alpha.ticks(260, 120));
-		if(!Alpha.enabled()) Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(2)), 600); // the last timer dragon
+		if(!Alpha.enabled()) Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(2)), 600); // last timer dragon
 	}
 
-	/** Colored bold display name for a dragon color key (e.g. "orange" → gold-bold "Flame Dragon"). */
+	/** "orange" → gold-bold "Flame Dragon". */
 	private static String dragonName(String color) {
 		return switch(color) {
 			case "orange" -> "<gold><bold>Flame Dragon";
@@ -486,7 +416,7 @@ public class WitherKing {
 		};
 	}
 
-	/** The color key for a spawned dragon entity (reverse lookup of {@link #dragons}), or "" if unknown. */
+	/** Reverse lookup of {@link #dragons}, "" if unknown. */
 	private static String colorOf(EnderDragon dragon) {
 		for(Map.Entry<String, EnderDragon> en : dragons.entrySet()) {
 			if(en.getValue() != null && en.getValue().getUniqueId().equals(dragon.getUniqueId())) return en.getKey();
@@ -513,11 +443,9 @@ public class WitherKing {
 		Utils.timer("<yellow>Triggered in " + formatTick());
 		announceDragonSpawn(color, dragonName, spawnLocation);
 
-		// Spawn on the boss lane, at the start of the target tick and before player choreography.  NOT a raw
-		// scheduleTask, which fires mid-tick AFTER the players' beams and eats the spawn-tick of damage.  This lets
-		// a beam on the same tick the dragon appears actually hit it.
+		// Boss lane, start of tick, so a same-tick beam hits it. A raw scheduleTask runs after the beams.
 		BossScheduler.schedule(() -> {
-			// Time the dragon from when it actually spawns in, not when the spawn animation began.
+			// Timed from the actual spawn, not the animation start.
 			dragonSpawnTick.put(color, Utils.phaseTick());
 			Utils.timer("<yellow>" + dragonName + "</bold><yellow> spawned in " + formatTick());
 			EnderDragon dragon = (EnderDragon) world.spawnEntity(spawnLocation, EntityType.ENDER_DRAGON);
@@ -525,7 +453,7 @@ public class WitherKing {
 			dragon.setSilent(true);
 			dragon.setPersistent(true);
 			dragon.setRemoveWhenFarAway(false);
-			// Formatted, not the literal "1B": damage/Mayor's Derpy doubles every mob's HP, the dragons included.
+			// Formatted, not "1B": Derpy doubles the dragons too.
 			dragon.customName(Utils.msg("<gold><bold>﴾ <red>" + dragonName + "<gold> ﴿ </bold><yellow>"
 					+ Utils.formatHealthM(damage.MobStats.WITHERED_DRAGON.internalHealth()) + "<red>❤"));
 			dragon.setCustomNameVisible(true);
@@ -534,7 +462,7 @@ public class WitherKing {
 			dragon.setHealth(damage.MobStats.WITHERED_DRAGON.internalHealth());
 			dragon.addScoreboardTag("WitherKingDragon");
 			aliveCount++;
-			if(color.equals(lastTimerDragon)) lastTimerSpawned = true; // last timer dragon is now alive
+			if(color.equals(lastTimerDragon)) lastTimerSpawned = true;
 			Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_GENERIC_EXPLODE, 2.0f, 1.0f);
 			Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f);
@@ -542,50 +470,42 @@ public class WitherKing {
 		}, 100);
 	}
 
-	/**
-	 * The moment a dragon begins spawning: the arrow "ding" cue (same as the clear's 300-score sound), a
-	 * per-player title naming the inbound dragon, and a green tick-countdown floating at the spawn point.
-	 */
+	/** Arrow "ding" (the clear's 300-score sound), a per-player title, and a floating tick countdown. */
 	private static void announceDragonSpawn(String color, String dragonName, Location spawnLocation) {
 		Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
 
-		// The opening pair spawns on the same tick, so their titles are split by class: Archer and Tank get the
-		// first, Berserk, Mage and Healer get the second.  Every later solo dragon titles everyone.
+		// Opening pair shares a tick, so titles split by class (shouldSeeDragonPopup).
 		Title.Times times = Title.Times.times(Duration.ZERO, Duration.ofMillis(40 * 50L), Duration.ofMillis(10 * 50L));
 		Title title = Title.title(Utils.msg(dragonName + " <yellow>spawning!"), Utils.msg(""), times);
 		for(Player p : Bukkit.getOnlinePlayers()) {
-			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue; // never the fake players themselves
+			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			if(shouldSeeDragonPopup(p, color)) p.showTitle(title);
 		}
 
 		startDragonCountdown(spawnLocation);
 	}
 
-	/** Which players get a given dragon's spawn title. Spawn slot 1 → Berserk/Mage/Healer; slot 0 → Archer/Tank
-	 *  (and anyone without one of those class tags); every later dragon → everyone.
-	 *  <p>The split exists only because the first two normally spawn on the SAME tick and one title would hide the
-	 *  other.  Alpha spawns them 60t apart, so there is nothing to split and both title the whole party.
-	 *  <p><b>Keyed on the SLOT, not the colour</b>: which dragon is first is rolled per run in realistic
-	 *  ({@link #spawnOrder}), so a colour test here would hand the split to whichever two happened to come up. */
+	/** Slot 1 → Berserk/Mage/Healer; slot 0 → everyone else; later dragons → everyone. Only because the pair shares a
+	 *  tick and one title would hide the other; alpha spawns them 60t apart, so no split. Keyed on SLOT, since the
+	 *  colours are rolled in realistic. */
 	private static boolean shouldSeeDragonPopup(Player p, String color) {
 		if(Alpha.enabled()) return true;
 		var tags = p.getScoreboardTags();
 		boolean iceClass = tags.contains("Berserk") || tags.contains("Mage") || tags.contains("Healer");
 		if(color.equals(spawnOrder.get(1))) return iceClass;
 		if(color.equals(spawnOrder.get(0))) return !iceClass;
-		return true; // every dragon after the opening pair spawns alone
+		return true; // later dragons spawn alone
 	}
 
-	/** Spawn a large green TextDisplay at {@code spawnLocation} that counts ticks down to the dragon's arrival
-	 *  ("100t" … "1t"), then removes itself. Also tracked in {@link #countdownTasks} for {@link #forceCleanup}. */
+	/** "100t" … "1t" above the spawn point, then removes itself. */
 	private static void startDragonCountdown(Location spawnLocation) {
-		Location loc = spawnLocation.clone().add(0, 3, 0); // float a few blocks above the spawn point
+		Location loc = spawnLocation.clone().add(0, 3, 0);
 		TextDisplay display = world.spawn(loc, TextDisplay.class, d -> {
 			d.text(Utils.msg("<green>" + DRAGON_SPAWN_ANIM + "t"));
-			d.setBillboard(org.bukkit.entity.Display.Billboard.CENTER); // always faces the viewer
+			d.setBillboard(org.bukkit.entity.Display.Billboard.CENTER);
 			d.setSeeThrough(true);
 			d.setPersistent(true);
-			d.addScoreboardTag("WitherKingDragon"); // swept by forceCleanup alongside the dragons
+			d.addScoreboardTag("WitherKingDragon"); // swept by forceCleanup with the dragons
 			d.setTransformation(new Transformation(new Vector3f(0f, 0f, 0f), new AxisAngle4f(0f, 0f, 0f, 1f),
 					new Vector3f(DRAGON_COUNTDOWN_SCALE, DRAGON_COUNTDOWN_SCALE, DRAGON_COUNTDOWN_SCALE), new AxisAngle4f(0f, 0f, 0f, 1f)));
 		});
@@ -604,12 +524,7 @@ public class WitherKing {
 		countdownTasks.add(holder[0]);
 	}
 
-	/**
-	 * Called the tick a Wither-King dragon's HP reaches 0 (from {@code damage.Damage.deal}'s kill chokepoint).
-	 * Forces the death animation in place and decrements the Wither King's HP.  Once all timer dragons have
-	 * spawned and the arena is clear, it begins the next event dragon's spawn animation.  When the fifth and last
-	 * dragon dies, it kicks off the death sequence.
-	 */
+	/** From {@code damage.Damage.deal}'s kill chokepoint. Next event dragon once the arena is clear; the fifth starts the death sequence. */
 	public static void handleDragonKilled(EnderDragon dragon) {
 		if(dragon == null || dyingDragons.contains(dragon.getUniqueId())) return;
 		dyingDragons.add(dragon.getUniqueId());
@@ -625,25 +540,19 @@ public class WitherKing {
 			deathSequence();
 		} else {
 			playDragonDeathSound(true);
-			// Begin the next event dragon the tick the last living dragon is killed (guarded on all timer
-			// dragons having spawned, so an early death in the opening pair can't trigger it).
+			// Guarded on lastTimerSpawned so an early death in the opening pair can't trigger it.
 			if(lastTimerSpawned && aliveCount <= 0 && !eventQueue.isEmpty()) {
 				spawnDragon(eventQueue.poll());
 			}
 		}
 	}
 
-	/**
-	 * Forces an Ender Dragon to play its death animation in place instead of flying
-	 * to 0,0,0 (the default portal target of DragonDeathPhase). Reflects
-	 * DragonDeathPhase.targetLocation to the dragon's current position and kicks
-	 * dragonDeathTime to 1 so the death animation starts this tick.
-	 * true if {@code e} is a Wither-King dragon currently playing its death animation. instaKillDragon pins the
-	 * dragon's HP to 1 for the animation, so isDead() and getHealth() can't detect this.  The UUID set is authoritative. */
+	/** Playing its death animation. instaKillDragon pins HP to 1, so isDead()/getHealth() can't tell; the UUID set is authoritative. */
 	public static boolean isDyingDragon(Entity e) {
 		return e != null && dyingDragons.contains(e.getUniqueId());
 	}
 
+	/** Death animation in place, not a flight to 0,0,0: reflects targetLocation to here and dragonDeathTime to 1. */
 	public static void instaKillDragon(EnderDragon dragon) {
 		if(!(dragon instanceof CraftEnderDragon craftDragon)) return;
 		net.minecraft.world.entity.boss.enderdragon.EnderDragon nmsDragon = craftDragon.getHandle();
@@ -688,9 +597,7 @@ public class WitherKing {
 	// ============================== Death / end ==============================
 
 	public static void deathSequence() {
-		// Alpha prints the score 60t earlier, so the network has 240t of dialogue left to hold rather than 180 -
-		// see M7Bridge.dialogueHoldTicks, which reads the same flag off the run payload.  Signal + hold is 250
-		// either way, which is what keeps the drop to spectator on the same absolute tick in both modes.
+		// Alpha scores 60t earlier, so M7Bridge.dialogueHoldTicks holds 240t, not 180. Signal + hold is 250 either way.
 		sendChatMessage("Incredible.  You did what I couldn't do myself.");
 		Utils.scheduleTask(() -> sendChatMessage("In a way, I should thank you.  I lost all hope centuries ago that it would ever end."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I hope you'll become the Heroes I could never be."), 120);
@@ -701,18 +608,12 @@ public class WitherKing {
 		int endDelay = Alpha.ticks(END_DELAY_TICKS, ALPHA_END_DELAY_TICKS);
 		Utils.scheduleTask(WitherKing::printFinalMessage, endDelay);
 
-		// Tell the network plugin the run is over, at the SCOREBOARD (t=70), NOT at the end of the death dialogue
-		// (t=250) where this used to sit.  A run has to be SAVED even if the whole party walks out while the King is
-		// still talking; holding the signal that long meant a full clear could quietly vanish.  The RESULT itself is
-		// frozen by printFinalMessage on this same tick (see there), so nothing measured here depends on who stays.
-		// The dialogue still plays out in full: the network plugin holds its teardown 180t longer to cover the
-		// difference, so players drop to spectator at the same moment they always did (M7Bridge.dialogueHoldTicks).
-		// Standalone there is nothing to hold - the run just ends when /reset or the next /m7practice says so.
+		// Signal at the SCOREBOARD (t=70), not the dialogue's end (t=250): a party walking out mid-dialogue lost the
+		// run. The network holds teardown 180t (M7Bridge.dialogueHoldTicks) so the spectator drop doesn't move.
 		Utils.scheduleTask(WitherActions::signalRunComplete, endDelay);
 	}
 
-	/** Final congratulation: hardcoded splits for a TAS run, live ticks for a practice run, a short line for
-	 *  a standalone Wither-King practice. */
+	/** TAS: hardcoded splits. Practice: live splits. Standalone WK practice: one line. */
 	private static void printFinalMessage() {
 		WitherActions.recordSplit("WitherKing", Utils.runTick());
 		WitherActions.recordPhaseDuration("WitherKing", Utils.phaseTick());
@@ -728,14 +629,10 @@ public class WitherKing {
 			printPracticeScoreboard();
 		}
 
-		// Freeze the run result HERE, with the scoreboard, which is also when the run-complete signal now fires
-		// (see deathSequence).  A result records whoever is still in the run, so capturing it any later - the signal
-		// used to wait out the ~180t of death dialogue - meant a player leaving mid-dialogue wiped the entire run
-		// from the leaderboards.  Capturing here also makes the recorded total agree with the numbers just printed.
+		// Freeze the result with the scoreboard so it matches the printed numbers and a mid-dialogue leave can't wipe it.
 		WitherActions.captureRunResult();
 	}
 
-	/** The hardcoded TAS victory screen. */
 	private static void printTasScoreboard() {
 		Utils.timer("<green>Wither King finished in " + formatWithSpaces(Utils.phaseTick()) + " ticks!");
 		Bukkit.broadcast(Utils.msg("<green><bold>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
@@ -760,14 +657,12 @@ public class WitherKing {
 		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
 	}
 
-	/** The victory screen for a chained practice run (full boss / full run): real splits from this run, in the same
-	 *  layout as the TAS scoreboard. Full run → Clear/Maxor/Storm, Terminals/Goldor/Necron, Wither King. Boss-only →
-	 *  Maxor/Storm/Terminals, Goldor/Necron/Wither King, then "Clear: Skipped". */
+	/** Chained practice run: real splits, TAS layout. Boss-only runs end with "Clear: Skipped". */
 	private static void printPracticeScoreboard() {
 		int overall = Utils.runTick();
 		boolean clearRan = WitherActions.getSplitEnd("Clear") != null;
 
-		// Compute each section's split (end − previous end) in run order.
+		// Split = end − previous end.
 		Map<String, Integer> sp = new HashMap<>();
 		int prev = 0;
 		for(String s : new String[]{"Clear", "Maxor", "Storm", "Terminals", "Goldor", "Necron", "WitherKing"}) {
@@ -780,7 +675,6 @@ public class WitherKing {
 		Bukkit.broadcast(Utils.msg("<green><bold>▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬"));
 		Bukkit.broadcast(Utils.msg("                <red>Master Mode The Catacombs <dark_gray>- <yellow>Floor VII"));
 		Bukkit.broadcast(Utils.msg(""));
-		// Full run → this run's live clear score; boss-only run (no clear) → "Skipped".
 		if(clearRan) {
 			Bukkit.broadcast(Utils.msg("                           <white>Team Score: <green>" + instructions.clear.ClearManager.teamScore()
 					+ " <white>(<aqua><bold>" + instructions.clear.ClearManager.grade() + "</bold><white>)"));
@@ -792,7 +686,6 @@ public class WitherKing {
 		Bukkit.broadcast(Utils.msg(""));
 		Bukkit.broadcast(Utils.msg("                              <gold>> <yellow><bold>EXTRA INFO </bold><gold>\\<"));
 		Bukkit.broadcast(Utils.msg("                                   <green><bold>SPLITS"));
-		// Build the ordered split segments, then pack them onto as many centered lines as the chat width allows.
 		List<String> segs = new ArrayList<>();
 		if(clearRan) {
 			segs.add(seg("<blue>", "Clear", sp.get("Clear")));
@@ -820,8 +713,7 @@ public class WitherKing {
 			Bukkit.broadcast(Utils.nameComponent(ChatFont.centerPad(line)));
 		}
 		Bukkit.broadcast(Utils.msg(""));
-		// The one place a party is told their time did not count.  It has to be ON the scoreboard: anything earlier
-		// is long forgotten by the time the number they care about is on screen.
+		// The one place a party is told their time didn't count; earlier would be forgotten by now.
 		if(Alpha.enabled()) {
 			Bukkit.broadcast(Utils.nameComponent(ChatFont.centerPad(Utils.mmLegacy(
 					"<red><bold>ALPHA TIMINGS - NOT VALID FOR LEADERBOARDS"))));
@@ -836,15 +728,14 @@ public class WitherKing {
 		Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.UI_TOAST_CHALLENGE_COMPLETE, 2f, 1f), 1);
 	}
 
-	/** "<color><b>Label</b></color>: N ticks" split segment for the practice scoreboard. */
 	private static String seg(String colorTag, String label, Integer ticks) {
 		return Utils.mmLegacy(colorTag + "<bold>" + label + "</bold><white>: " + (ticks == null ? "-" : formatWithSpaces(ticks)) + " ticks");
 	}
 
-	/** White " | " separator between scoreboard segments (legacy §-string, for {@link ChatFont} width measurement). */
+	/** Legacy §-string, for {@link ChatFont} width. */
 	private static final String SEG_SEP = Utils.mmLegacy("<white> | ");
 
-	/** Greedily pack segments onto centered lines: as many per line as fit {@link ChatFont#MAX_WIDTH}, then wrap. */
+	/** Greedy: as many per line as fit {@link ChatFont#WRAP_WIDTH}. */
 	private static List<String> packLines(List<String> segments) {
 		List<String> lines = new ArrayList<>();
 		StringBuilder line = new StringBuilder();
@@ -865,8 +756,7 @@ public class WitherKing {
 		return lines;
 	}
 
-	/** One name per online player, spectators excluded.  Gold only if they stayed in Adventure Mode the whole run,
-	*  which is a minor anti-cheat, and white if they changed game mode at any point. */
+	/** Spectators excluded. Gold if Adventure the whole run (minor anti-cheat), else white. */
 
 	private static List<String> packPlayerLines() {
 		List<String> names = new ArrayList<>();
@@ -881,7 +771,7 @@ public class WitherKing {
 
 	// ============================== Cleanup / helpers ==============================
 
-	/** Remove all relic/altar entities + any stray Wither-King / dragon entities, and reset all per-fight state. */
+	/** Removes relic/altar/King/dragon entities and resets per-fight state. */
 	public static void forceCleanup(World w) {
 		world = w;
 		if(rotationTask != null && !rotationTask.isCancelled()) {
@@ -904,7 +794,7 @@ public class WitherKing {
 		dyingDragons.clear();
 		dragonSpawnTick.clear();
 
-		// Stop any in-flight dragon-spawn countdowns (their TextDisplays are swept below by the WitherKingDragon tag).
+		// Their TextDisplays are swept below by tag.
 		for(BukkitTask t : countdownTasks) if(t != null && !t.isCancelled()) t.cancel();
 		countdownTasks.clear();
 
@@ -917,7 +807,7 @@ public class WitherKing {
 		interactionRelic.clear();
 		placedRelics.clear();
 
-		// Sweep any orphaned relic/dragon entities a prior run may have left behind.
+		// Orphans from a prior run.
 		if(world != null) {
 			for(org.bukkit.entity.Entity e : world.getEntities()) {
 				if(e.getScoreboardTags().contains("TASWitherKingRelic") || e.getScoreboardTags().contains("WitherKingDragon")) {
@@ -948,7 +838,7 @@ public class WitherKing {
 		return String.format("%.2f seconds | %d:%05.2f", secs, mins, rem);
 	}
 
-	/** Render an int with space thousands separators, e.g. 4404 → "4 404". */
+	/** 4404 → "4 404". */
 	private static String formatWithSpaces(int n) {
 		StringBuilder sb = new StringBuilder();
 		String s = String.valueOf(n);
@@ -959,7 +849,7 @@ public class WitherKing {
 		return sb.toString();
 	}
 
-	/** Timer line tick suffix: phase ticks since the WK phase start + the overall-run column (live in practice). */
+	/** Phase ticks + overall column (live in practice). */
 	private static String formatTick() {
 		int t = Utils.phaseTick();
 		int overall = WitherActions.isPracticeMode() ? Utils.runTick() : PRE_WITHERKING_TICKS + t;
@@ -967,7 +857,7 @@ public class WitherKing {
 				formatWithSpaces(t), t / 20.0, formatWithSpaces(overall), overall / 20.0);
 	}
 
-	/** Dragon-kill tick suffix: ticks since that dragon spawned, then the Wither-King section clock, then overall. */
+	/** Since that dragon spawned, then the WK clock, then overall. */
 	private static String formatDragonKillTick(int dragonElapsed) {
 		int phase = Utils.phaseTick();
 		int overall = WitherActions.isPracticeMode() ? Utils.runTick() : PRE_WITHERKING_TICKS + phase;

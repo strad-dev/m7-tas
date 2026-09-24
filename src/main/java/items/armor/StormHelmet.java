@@ -8,7 +8,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-/** The Storm's Helmet: the Mage set's Intelligence hat. */
+/** Mage set's Intelligence hat. */
 public final class StormHelmet implements Wearable {
 	public static final StormHelmet INSTANCE = new StormHelmet();
 

@@ -29,20 +29,13 @@ import plugin.FakePlayerManager;
 import java.lang.reflect.Field;
 
 public class JoinListener implements Listener {
-	/**
-	 * Handles the player login event and updates the server with fake players' data.
-	 * When a player logs in, this method retrieves and broadcasts data for all
-	 * fake players, ensuring they appear correctly to all clients.
-	 *
-	 * @param ev the PlayerLoginEvent that is triggered when a player logs in
-	 */
+	/** Player setup, packet interceptor install and boss bars for a joiner. */
 	@EventHandler
 	public void onJoin(PlayerJoinEvent ev) {
-		// Raw runTaskLater, NOT Utils.scheduleTask: this is join INFRASTRUCTURE (attributes, no-collision team,
-		// and crucially the packet-interceptor install), and must NOT be tracked by Utils' scheduledTasks. A
-		// network-warped practicer joins and, on the SAME tick, M7Bridge dispatches /m7practice → runPractice →
-		// Utils.cancelAllScheduled(), which would otherwise cancel this still-pending +1 task and leave the player
-		// with no interceptor (killing drop abilities, bow release, and the mob-melee mage beam).
+		// Raw runTaskLater, NOT Utils.scheduleTask: this is join infrastructure (attributes, no-collision team,
+		// interceptor install) and must not be tracked. A network-warped practicer joins and on the SAME tick
+		// M7Bridge dispatches /m7practice -> runPractice -> Utils.cancelAllScheduled(), which would cancel this
+		// pending task and leave no interceptor (no drop abilities, bow release or mob-melee mage beam).
 		Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
 			Player joiningPlayer = ev.getPlayer();
 
@@ -110,16 +103,14 @@ public class JoinListener implements Listener {
 			Wither activeWither = CustomBossBar.getActiveWither();
 
 			if(activeBossBar != null && activeWither != null) {
-				// Add the joining player to the custom boss bar
 				activeBossBar.addPlayer(joiningPlayer);
 
-				// Disable vanilla wither boss bar for this player
+				// Hide the vanilla wither boss bar for them
 				if(activeWither instanceof CraftWither) {
 					try {
 						WitherBoss nmsWither = ((CraftWither) activeWither).getHandle();
 						ServerPlayer nmsPlayer = ((CraftPlayer) joiningPlayer).getHandle();
 
-						// Remove the joining player from vanilla boss bar
 						nmsWither.bossEvent.removePlayer(nmsPlayer);
 					} catch(Exception e) {
 						Bukkit.getLogger().warning("Failed to remove vanilla wither bossbar for joining player: " + e.getMessage());
@@ -127,7 +118,6 @@ public class JoinListener implements Listener {
 				}
 			}
 
-			// Also check for active Watcher boss bar
 			BossBar watcherBossBar = Watcher.getActiveBossBar();
 			if(watcherBossBar != null) {
 				watcherBossBar.addPlayer(joiningPlayer);
@@ -136,70 +126,61 @@ public class JoinListener implements Listener {
 	}
 
 	/**
-	 * The attributes and team membership a real player needs to practice: no attack cooldown, no knockback of either
-	 * kind, no fall damage, no burning, one-tick block breaking, no collisions, and the class speed.  Idempotent,
-	 * and re-applied on respawn as well as join, since a respawn builds a fresh {@code ServerPlayer} and nothing
-	 * here is worth betting on surviving that.
+	 * Attributes and team a real practicer needs: no attack cooldown, no knockback of either kind, no fall damage, no
+	 * burning, one-tick breaking, no collisions, class speed. Idempotent; re-applied on respawn too, since a respawn
+	 * builds a fresh {@code ServerPlayer}.
 	 */
 	static void applyPlayerSetup(Player p) {
-		// Remove the vanilla attack cooldown (instant re-attack).
+		// No attack cooldown.
 		var attackSpeed = p.getAttribute(Attribute.ATTACK_SPEED);
 		if(attackSpeed != null) attackSpeed.setBaseValue(100);
 
-		// Full knockback resistance (so no armor needs to grant it).
+		// Full knockback resistance, so no armor needs to grant it.
 		var knockback = p.getAttribute(Attribute.KNOCKBACK_RESISTANCE);
 		if(knockback != null) knockback.setBaseValue(1);
 
-		// Full EXPLOSION knockback resistance too, since explosion knockback such as Necron's fireballs is governed by
-		// this separate attribute, NOT KNOCKBACK_RESISTANCE, so without it players still get blasted by blasts.
+		// Explosion knockback (Necron's fireballs) is this separate attribute, not KNOCKBACK_RESISTANCE.
 		var explosionKb = p.getAttribute(Attribute.EXPLOSION_KNOCKBACK_RESISTANCE);
 		if(explosionKb != null) explosionKb.setBaseValue(1);
 
-		// Large safe-fall distance so players don't take fall damage during practice.
+		// No fall damage.
 		var safeFall = p.getAttribute(Attribute.SAFE_FALL_DISTANCE);
 		if(safeFall != null) safeFall.setBaseValue(1024);
 
-		// No fire ticks ever, from lava or anything else.  BURNING_TIME is the multiplier LivingEntity applies to
-		// every ignite (Entity.igniteForSeconds -> LivingEntity.igniteForTicks scales the ticks by it), so a base of
-		// 0 means every source burns for 0 ticks.  MiscListener.onPlayerCombust cancels the combust EVENT, but that
-		// is only half the job: the client runs the same lava-ignite path for its own player (LavaFluid.entityInside
-		// requests LAVA_IGNITE on both sides, nothing there is server-gated), so a server-side cancel alone still
-		// leaves the practicer's own screen on fire for 15s after a lava jump.  BURNING_TIME is syncable, so the
-		// client's copy of the attribute is 0 too and its prediction never lights up.
+		// No fire ticks ever. BURNING_TIME multiplies every ignite (LivingEntity.igniteForTicks), so 0 means 0 ticks.
+		// MiscListener.onPlayerCombust cancelling the event is only the server half: the client runs the same
+		// lava-ignite path for itself (LavaFluid.entityInside, not server-gated) and would show fire for 15s after a
+		// lava jump. BURNING_TIME is synced, so the client's copy is 0 too.
 		var burningTime = p.getAttribute(Attribute.BURNING_TIME);
 		if(burningTime != null) burningTime.setBaseValue(0);
 
-		// Clear a burn already in progress.  While remainingFireTicks > 0, Entity.lavaIgnite takes its no-event
-		// branch and re-ignites straight from NMS, so a stale burn would re-arm itself on every lava contact.
+		// Clear a burn in progress: while remainingFireTicks > 0, Entity.lavaIgnite takes its no-event branch, so a
+		// stale burn re-arms on every lava contact.
 		p.setFireTicks(0);
 
-		// Instant block breaking: BLOCK_BREAK_SPEED is the final MULTIPLIER on destroy speed (unlike MINING_EFFICIENCY,
-		// which is additive and only counts when the held tool already suits the block), so 1024 breaks anything in one
-		// tick with anything. Items that carry can_break but must NOT actually break blocks cancel this out with a
-		// -1024 modifier of their own; see Utils.placeAndBreakAnythingInAdventure. Dungeonbreaker instead ADDS 1024.
+		// Instant breaking: BLOCK_BREAK_SPEED is the final multiplier on destroy speed (MINING_EFFICIENCY is additive
+		// and needs a suitable tool), so 1024 breaks anything in one tick. Items with can_break that must not break
+		// blocks cancel it with a -1024 modifier (Utils.placeAndBreakAnythingInAdventure). Dungeonbreaker ADDS 1024.
 		var breakSpeed = p.getAttribute(Attribute.BLOCK_BREAK_SPEED);
 		if(breakSpeed != null) breakSpeed.setBaseValue(1024);
 
-		// Put every player in the no-collision team so real players don't push each other (or the fakes).
+		// No-collision team so players don't push each other or the fakes.
 		plugin.PlayerCollision.addToNoCollisionTeam(p);
 
-		// Default real players to 400 speed, bumped if their helmet entitles them (Cow Hat 550 / Racing 650).
-		// Fakes are script-managed, so leave their speed alone.
+		// Real players get their Max Speed (MaxSpeedSync); fakes are script-managed.
 		if(!FakePlayerManager.getFakePlayers().containsValue(p)) {
 			plugin.MaxSpeedSync.initSpeed(p);
 		}
 	}
 
-	/** Inside the Start room, facing the first door: where "spawn" means for this plugin.  The world spawn is above
-	 *  the map, so nothing may use that. */
+	/** This plugin's "spawn": in the Start room facing the first door. World spawn is above the map; never use it. */
 	private static Location dungeonEntrance() {
 		World w = Bukkit.getWorld("world");
 		return w == null ? null : new Location(w, -120.5, 71, -183.5, 0.0f, 0.0f);
 	}
 
-	// Force every real player to the dungeon-entrance spawn on join so they stop appearing above the
-	// map. LOWEST priority so that if something runs /m7practice on the same join (e.g. the network
-	// plugin sending a practicer in), that teleport runs afterwards and still wins.
+	// Real players spawn at the entrance on join. LOWEST so a /m7practice on the same join (network plugin sending a
+	// practicer in) teleports afterwards and wins.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onJoinSpawn(PlayerJoinEvent ev) {
 		Player jp = ev.getPlayer();
@@ -209,17 +190,15 @@ public class JoinListener implements Listener {
 		if (entrance != null) jp.teleport(entrance);
 	}
 
-	// Respawn where a join lands, for the same reason: vanilla would send them to the world spawn above the map, from
-	// where they'd fall into the boss arena with the clear still running. Matters because OutOfBounds kills players
-	// mid-run and expects them to be able to carry on from spawn.
+	// Respawn at the entrance too: vanilla's world spawn drops them into the boss arena mid-clear, and OutOfBounds
+	// kills mid-run expecting them to carry on from spawn.
 	@EventHandler
 	public void onRespawn(PlayerRespawnEvent ev) {
 		Player p = ev.getPlayer();
 		if (FakePlayerManager.getFakePlayers().containsValue(p)) return;
 		Location entrance = dungeonEntrance();
 		if (entrance != null) ev.setRespawnLocation(entrance);
-		// Raw runTaskLater for the same reason onJoin uses one: this is infrastructure, and it must run after the
-		// respawn has actually placed the new player, not from inside the event.
+		// Raw runTaskLater as in onJoin, and it must run after the respawn has placed the new player.
 		Bukkit.getScheduler().runTaskLater(plugin.M7tas.getInstance(), () -> {
 			if (p.isOnline()) applyPlayerSetup(p);
 		}, 1L);
@@ -229,13 +208,12 @@ public class JoinListener implements Listener {
 	public void onQuit(PlayerQuitEvent ev) {
 		Player p = ev.getPlayer();
 		if (FakePlayerManager.getFakePlayers().containsValue(p)) return;
-		// Bank them on the run roster BEFORE they're gone: this is the last moment a player who lags out mid-run is
-		// still readable, and the run's result has to keep reporting them or the group size shrinks under the
-		// survivors (a duo losing its second player at 64s used to record a 65s solo). No-op outside a run.
+		// Bank them on the run roster now, the last moment they're readable, or the group size shrinks under the
+		// survivors (a duo losing a player at 64s used to record a 65s solo). No-op outside a run.
 		instructions.bosses.WitherActions.noteInRun(p);
-		// A ghost who logs out can't be revived, so drop the pending revival; the line above already banked them.
+		// A ghost who logs out can't be revived; drop the pending revival.
 		death.Deaths.onQuit(p);
-		// Drop cached helmet-speed / relic-debuff transition state so a relog re-evaluates cleanly.
+		// Drop cached speed transition state so a relog re-evaluates.
 		plugin.MaxSpeedSync.forget(p.getUniqueId());
 		try {
 			Channel ch = getChannel(p);

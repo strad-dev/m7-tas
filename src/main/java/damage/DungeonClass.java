@@ -5,20 +5,17 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
 /**
- * The five dungeon classes.  Which one a player is decides their equipment set (§1.11), their Accessory Power
- * (§1.12) and their class bonuses (§1.14).
+ * Decides equipment set (§1.11), Accessory Power (§1.12) and class bonuses (§1.14).
  * <p>
- * Identification mirrors {@code items.ItemUtils.isMageClass}: a real player carries an exclusive class scoreboard tag
- * set by {@code /class}, and a fake player carries none and is identified by name (all four {@code MageN} fakes run
- * the Mage inventory and cast Mage abilities, so every {@code Mage*}-named fake counts as a Mage).
+ * Mirrors {@code items.ItemUtils.isMageClass}: real players carry a class scoreboard tag from {@code /class}; fakes
+ * carry none and go by name (every {@code Mage*} fake is a Mage).
  */
 public enum DungeonClass {
 	MAGE, ARCHER, BERSERK, HEALER, TANK;
 
 	/**
-	 * The class {@code p} is playing.  A class scoreboard tag wins; failing that the player's NAME is matched, which
-	 * is how the fake players are identified ({@code Mage1}-{@code Mage4} and {@code Archer}).  Defaults to MAGE,
-	 * matching the beam gate every other class check in the plugin falls back to.
+	 * Scoreboard tag wins, then NAME prefix (fakes {@code Mage1}-{@code Mage4}, {@code Archer}). Defaults to MAGE,
+	 * like the beam gate every other class check falls back to.
 	 */
 	public static DungeonClass of(Player p) {
 		if(p == null) return MAGE;
@@ -31,19 +28,15 @@ public enum DungeonClass {
 		return MAGE;
 	}
 
-	/** The scoreboard tag / loadout role name for a class, e.g. {@code "Berserk"}. */
+	/** Scoreboard tag / loadout role name, e.g. {@code "Berserk"}. */
 	public static String name(DungeonClass c) {
 		String n = c.name().toLowerCase(java.util.Locale.ROOT);
 		return Character.toUpperCase(n.charAt(0)) + n.substring(1);
 	}
 
 	/**
-	 * True if {@code p} is the ONLY player in the party on this class, which is the bracketed "solo" column of
-	 * every §1.14 table.  Party composition, so it has to be evaluated live: {@code /m7practice} parties are
-	 * whatever players picked with {@code /class}, and baking in the old fake-player layout (four Mages and one
-	 * Archer, so the Archer was always solo) would be wrong the moment a real party runs.
-	 * <p>
-	 * Spectators are not on the team, so they do not count towards anyone's class.
+	 * {@code p} is the ONLY non-spectator on this class: the "solo" column of §1.14. Evaluated live, since parties
+	 * are whatever players picked; the old fake layout (four Mages, one always-solo Archer) broke for real parties.
 	 */
 	public static boolean isSoloOnClass(Player p) {
 		DungeonClass mine = of(p);
@@ -55,11 +48,7 @@ public enum DungeonClass {
 		return count <= 1;
 	}
 
-	/**
-	 * The damage path this class's aggregate is shown at by default, for readouts that have to pick one
-	 * ({@code /eq}, item lore).  A Mage has no melee path at all - the Mage Staff passive turns every melee attack
-	 * into the beam (§1.11) - so the beam set always applies to them.
-	 */
+	/** Default path for readouts ({@code /eq}, lore). Mage is BEAM: Mage Staff turns every melee into the beam (§1.11). */
 	public DamagePath primaryPath() {
 		return switch(this) {
 			case MAGE -> DamagePath.BEAM;

@@ -4,44 +4,25 @@ import instructions.bosses.storm.PadAndPillar;
 import org.bukkit.World;
 import plugin.Utils;
 
-/**
- * Static helpers shared across wither bosses that aren't owned by any single
- * {@link WitherLord} subclass.  In particular, setup-time block restoration
- * for the Storm pillars that runs at every {@code /tas} invocation.
- */
+/** Wither-boss helpers not owned by one {@link WitherLord} subclass, e.g. the Storm pillar restore on every {@code /tas}. */
 public final class WitherSpawn {
 	private WitherSpawn() {}
 
 	/**
-	 * Restore all three active Storm pillars to their initial state
-	 * (column y175..y196 of pillar material, with air below y175).
-	 * <br>
-	 * Runs as part of every {@code /tas} setup, not just at Storm fight start,
-	 * the user wants the world reset across all TAS invocations.
-	 * <br>
-	 * For each pillar:
-	 * <ol>
-	 *   <li>Air-clear y169..y175, which wipes any stale blocks left below the initial bottom
-	 *       if a previous run ended with the pillar over-extended down to y169..y174.
-	 *   <li>Exponentially clone-down from the anchor at y196: each step doubles the
-	 *       already-filled region, so a 21-row column rebuilds in ~5 clones instead of 21.
-	 *       The anchor at y196 stays put as the seed for the first clone.
-	 * </ol>
-	 *
-	 * Final state: 22-block pillar column from y175 to y196, with air at y169..y174.
+	 * Restores the three active Storm pillars to y175..y196, air at y169..y174. Runs on every {@code /tas} setup,
+	 * not just Storm's start, so the world resets across all runs. Air-clears y169..y175 (a pillar left
+	 * over-extended), then clones down from the y196 anchor, doubling each pass: ~5 clones instead of 21.
 	 */
 	public static void restoreStormPillars(World world) {
 		for(PadAndPillar p : PadAndPillar.ACTIVE) {
-			// Step 1: air-clear the lower extension (y169..y175 inclusive)
+			// Air-clear y169..y175 inclusive.
 			Utils.runCommand(
 					String.format("fill %d %d %d %d %d %d minecraft:air",
 							p.pillarX1(), PadAndPillar.PILLAR_BOTTOM_MIN, p.pillarZ1(),
 							p.pillarX2(), PadAndPillar.PILLAR_BOTTOM_INITIAL, p.pillarZ2()));
 
-			// Step 2: exponential clone-down. Each pass copies the lowest `rowsToAdd` rows
-			// of the filled region to the next `rowsToAdd` rows below it, doubling the
-			// column height (capped so we don't shoot past PILLAR_BOTTOM_INITIAL).
-			int bottom = PadAndPillar.PILLAR_ANCHOR_Y; // currently filled down to here (just the anchor row)
+			// Each pass copies the lowest `rowsToAdd` filled rows just below, doubling the column, capped at PILLAR_BOTTOM_INITIAL.
+			int bottom = PadAndPillar.PILLAR_ANCHOR_Y; // filled down to here
 			while(bottom > PadAndPillar.PILLAR_BOTTOM_INITIAL) {
 				int filledRows = PadAndPillar.PILLAR_ANCHOR_Y - bottom + 1;
 				int rowsToAdd = Math.min(filledRows, bottom - PadAndPillar.PILLAR_BOTTOM_INITIAL);

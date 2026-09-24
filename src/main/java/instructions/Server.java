@@ -31,19 +31,16 @@ public class Server {
 	private static final LivingEntity[] trashMobs = new LivingEntity[18]; // each 1x1 has 6 mobs spawned
 
 	// --- Clear-phase keys & doors ---
-	// Global keys: killing the matching Angry Archaeologist grants the key, which lets ANY player open the
-	// corresponding door by left/right-clicking a block within its bounds (detection + open in MiscListener).
+	// Team-wide keys from the Angry Archaeologists; any player opens the door by clicking inside its bounds (MiscListener).
 	private static boolean hasWitherKey = false;
 	private static boolean hasBloodKey = false;
 	private static boolean witherDoorOpened = false;
 	private static boolean bloodDoorOpened = false;
-	// False from serverSetup() until startSection() actually begins the run, so a player standing at a door
-	// during the pre-run countdown can't open it early. Deliberately gates the DOOR, not the key: the key
-	// archaeologists are only spawned at setup, so refusing a key mid-countdown would kill the mob without
-	// granting it and leave the door permanently unopenable.
+	// False from serverSetup() until startSection(), so doors can't open during the countdown. Gates the door, not
+	// the key: refusing a key mid-countdown would kill the archaeologist without granting it, door stuck forever.
 	private static boolean runStarted = false;
 
-	// Door bounds as {minX, minY, minZ, maxX, maxY, maxZ} (inclusive). Match the openXxxDoor() fill regions.
+	// {minX, minY, minZ, maxX, maxY, maxZ} inclusive, matching the openXxxDoor() fills.
 	private static final int[] START_DOOR = {-122, 69, -170, -120, 72, -168};
 	private static final int[] WITHER_DOOR = {-122, 69, -106, -120, 72, -104};
 	private static final int[] BLOOD_DOOR = {-122, 69, -74, -120, 72, -72};
@@ -101,20 +98,14 @@ public class Server {
 		return inBounds(b, BLOOD_DOOR);
 	}
 
-	/**
-	 * Open the Wither Door if the run has started, the player has the key, and it isn't already open (one-shot).
-	 * Called on a door click.
-	 */
+	/** On a door click: one-shot, needs run started and the key. */
 	public static void tryOpenWitherDoor(Player p) {
 		if(!runStarted || !hasWitherKey || witherDoorOpened) return;
 		witherDoorOpened = true;
 		openWitherDoor(p);
 	}
 
-	/**
-	 * Open the Blood Door if the run has started, the player has the key, and it isn't already open (one-shot).
-	 * Called on a door click.
-	 */
+	/** On a door click: one-shot, needs run started and the key. */
 	public static void tryOpenBloodDoor() {
 		if(!runStarted || !hasBloodKey || bloodDoorOpened) return;
 		bloodDoorOpened = true;
@@ -126,26 +117,18 @@ public class Server {
 	}
 
 	/**
-	 * @param delayTicks how long to wait before the section's instructions begin, i.e. the pre-run "get into
-	 *   position" window, followed by a shared 5-second countdown.  Defaults to 60 (3s) via the two-arg overload,
-	 *   and the network plugin passes a longer delay (e.g. 400 = 20s) when it warps a whole party in so everyone
-	 *   has time to get into position.  EXCEPTION: the boss and maxor sections ignore this.  Maxor is the
-	 *   dungeon-boss entry and on real Hypixel it starts the moment you enter, so those get only a 20-tick load
-	 *   grace and no countdown (see {@link #MAXOR_GRACE_TICKS}).
+	 * @param delayTicks pre-run "get into position" window before the countdown. 60 (3s) by default; the network
+	 *   passes more (e.g. 400) when warping a party in. Ignored by boss/maxor: Maxor starts on entry on Hypixel, so
+	 *   those get only {@link #MAXOR_GRACE_TICKS} and no countdown.
 	 */
 	public static void serverInstructions(World world, String section, int delayTicks) {
-		// Tear down any lingering Goldor phase from a previous run immediately, before this run's pre-fired
-		// arrows/abilities can interact with stale phase state (e.g. an already-activated S4 device). Without
-		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
+		// Kill a lingering Goldor phase now, or a re-run's first sharpshooter arrows land in the old active S4 and are rejected.
 		Goldor.INSTANCE.forceEndPhase();
 
-		// The pet you START with (the loadout editor's slot 51), for every section.  Here at setup, NOT in
-		// startSection: that is the end of the countdown, so the whole warp-in ran on the last run's pet, Max
-		// Speed included.  A late arrival gets it on join (PetMenu.onJoin).  An autopet RUN_START rule still
-		// wins, since that fires at the clear door.
+		// Starting pet (editor slot 51). At setup, not startSection (countdown end), or the warp-in runs on last
+		// run's pet and Max Speed. Late arrivals get it on join (PetMenu.onJoin); autopet RUN_START still wins.
 		pets.Pets.applyStartingPets();
 
-		// boss/maxor: no prep window and no countdown, just a short load grace, then Maxor starts.
 		if(section.equals("boss") || section.equals("maxor")) {
 			Utils.scheduleTask(() -> startSection(world, section), MAXOR_GRACE_TICKS);
 			return;
@@ -153,30 +136,25 @@ public class Server {
 
 		int seconds = Math.max(1, delayTicks / 20);
 		if(instructions.bosses.WitherActions.isPracticeMode()) {
-			// Practice: the input delay IS the countdown, so start counting down from `seconds` RIGHT NOW (5s in
-			// → "Starting in 5...4...3...2...1", then start), rather than waiting the delay and then a fixed 5s.
+			// Practice: the delay IS the countdown, starting now.
 			countdownThenStart(world, section, seconds);
 		} else {
-			// TAS is unchanged: the get-into-position window, then the shared 5s countdown.  The fake-player
-			// choreography is calibrated to this exact timing, scheduled at /tas-run time, so don't touch it.
+			// TAS: window then 5s countdown. Fake-player choreography is calibrated to this timing, don't touch.
 			Bukkit.broadcast(Utils.msg("TAS starts in " + seconds + " seconds"));
 			Utils.scheduleTask(() -> countdownThenStart(world, section, 5), delayTicks);
 		}
 	}
 
-	/** Load grace before Maxor (boss/maxor sections), just long enough for warped-in clients to finish loading. */
+	/** Enough for warped-in clients to load. */
 	private static final int MAXOR_GRACE_TICKS = 20;
 
 	/**
-	 * A "Starting in N seconds" countdown, then the section's actual start. To avoid spamming a long warp-in
-	 * window, only the FIRST second and the final five (5,4,3,2,1) are announced, and the in-between seconds stay
-	 * silent.  The first message fires immediately (tick 0), so the countdown length still equals {@code seconds}.
-	 * Used for every section except boss/maxor.
+	 * "Starting in N seconds", then start. Only the first second and the last five are announced so a long warp-in
+	 * doesn't spam. First message at tick 0. Every section but boss/maxor.
 	 */
 	private static void countdownThenStart(World world, String section, int seconds) {
 		for(int i = seconds; i >= 1; i--) {
 			int secs = i;
-			// Announce only the first tick of the countdown and the final 5s; skip everything in between.
 			if(secs != seconds && secs > 5) continue;
 			Utils.scheduleTask(() -> {
 				Bukkit.broadcast(Utils.msg("<green>Starting in " + secs + " second" + (secs == 1 ? "" : "s")));
@@ -189,27 +167,21 @@ public class Server {
 		}, seconds * 20L);
 	}
 
-	/** Runs the section-specific start actions. Callers own the pre-run delay/countdown; this is just the start. */
+	/** Callers own the delay/countdown. */
 	private static void startSection(World world, String section) {
-		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
-		// so this is the one place that means "the run is now live".  See runStarted.
+		// Every section starts here, so this is "the run is live".
 		runStarted = true;
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.markPhaseStart();
 				Utils.playGlobalSound(Sound.ENTITY_ENDER_DRAGON_GROWL, 2.0F, 1.0F);
-				// Arm the one-shot Blood-Room detection at clear-tick 0; the Watcher spawns the first tick a
-				// player enters the bounds (continuation intent + Maxor handoff were armed in TAS.runTAS).
+				// One-shot Blood Room detection; Watcher spawns on first entry (Maxor handoff armed in TAS.runTAS).
 				Watcher.INSTANCE.beginDetection(world);
-				// The autopet "On Run Start" trigger, and it sits INSIDE this branch on purpose: it means the
-				// first door opening in clear, the true beginning of a run, and nothing else.  It used to sit
-				// above the switch, where EVERY section's start fired it - so practising Wither King alone raised
-				// a "run start" at the Wither King, which is the one moment that rule is not about.
-				pets.Autopet.onRunStart(); // a no-op outside realistic mode
+				// Inside this branch on purpose: "run start" means the first clear door. Above the switch it fired
+				// for every section, e.g. at the Wither King in a WK-only practice.
+				pets.Autopet.onRunStart(); // no-op outside realistic
 				openFirstDoor();
-				// Spawn the minibosses now that the run has actually started (not during the pre-run setup window).
 				spawnMinibosses(world);
-				// Spin up the clear mechanics (secrets, chests, minimap, HUD, scoring) for this run.
 				instructions.clear.ClearManager.start(world);
 			}
 			case "boss" -> Maxor.maxorInstructions(world, true);
@@ -229,30 +201,21 @@ public class Server {
 	}
 
 	/**
-	 * Hard cleanup: kill every entity in the dungeon EXCEPT the handful of permanent fixtures that no run code
-	 * ever recreates. Run-end cleanups are supposed to tear a run's spawns down but currently don't fire reliably,
-	 * so a run aborted part-way leaves orphans (mobs, boss-bar/stun indicators, terminal labels, lever hitboxes,
-	 * quiz options, statue displays, crystals, stray projectiles) that no targeted forceCleanup owns and they stack
-	 * up across runs.  Nothing transient in the dungeon legitimately outlives a run, since every one of these is
-	 * respawned by the run that needs it, so nuking everything closes every leak path at once.  This replaces the
-	 * old targeted class-by-class {@code blanketKill}, which missed anything not on its hand-maintained list.
-	 * Called from {@code /reset}, {@code /setup}, {@code /m7practice} run start ({@code TAS.runPractice}), and
-	 * {@code M7tas.onDisable}, always BEFORE any spawns and NEVER from inside {@link #serverSetup} itself, since a
-	 * kill mid-startup would race the minibosses that method spawns.
+	 * Removes every entity except permanent fixtures. Run-end cleanups don't fire reliably, so aborted runs left
+	 * orphans (mobs, stun indicators, terminal labels, lever hitboxes, quiz options, crystals, projectiles) stacking
+	 * up. Every transient entity is respawned by the run that needs it, so nuking all closes every leak; replaces
+	 * the old list-based {@code blanketKill}. Called from {@code /reset}, {@code /setup}, {@code TAS.runPractice}
+	 * and {@code M7tas.onDisable}, always before spawns and never inside {@link #serverSetup} (would race its spawns).
 	 *
-	 * <p>The exclusion list is exactly the entity types that are NOT spawned anywhere in the plugin (verified: the
-	 * only references to these types in the source are exclusion lists like this one and {@code items.ItemUtils.doNotKill}),
-	 * so preserving them can never leak a run entity.  It only protects state that isn't ours to destroy:
+	 * <p>Exclusions are exactly the types the plugin never spawns (only referenced in lists like this and
+	 * {@code items.ItemUtils.doNotKill}), so they can't leak a run entity:
 	 * <ul>
-	 *   <li>{@code player}: real players AND the fake ServerPlayers that drive the run;
-	 *   <li>{@code villager}: the Mort/Wizard NPCs;
-	 *   <li>{@code item_frame}, {@code glow_item_frame}, {@code painting}, {@code block_display}: static map
-	 *       decoration built into the world.  The old {@code blanketKill} also spared these; it killed item and
-	 *       text displays and interactions, which the run spawns, but never these;
-	 *   <li>{@code marker}: invisible zero-hitbox command anchors.
+	 *   <li>{@code player}: real and fake;
+	 *   <li>{@code villager}: Mort/Wizard NPCs;
+	 *   <li>{@code item_frame}, {@code glow_item_frame}, {@code painting}, {@code block_display}: map decoration;
+	 *   <li>{@code marker}: command anchors.
 	 * </ul>
-	 * Runs from the console source stack, which executes in the overworld ({@code world}), the dungeon world, so
-	 * {@code @e} is scoped to the dungeon just as the old per-world {@code blanketKill} was.*/
+	 */
 	private static boolean cleanupInProgress = false;
 
 	public static boolean isCleanupInProgress() {
@@ -262,10 +225,8 @@ public class Server {
 	public static void hardMobCleanup() {
 		cleanupInProgress = true;
 		try {
-			// Use Entity.remove() rather than /kill: remove() despawns silently with NO EntityDeathEvent, so a purge
-			// can never grant a key or blessing or count as a kill.  Same coverage as the old "@e", i.e. everything
-			// except the handful of permanent fixtures below.  getEntities() returns a snapshot, so removing while
-			// iterating is safe.
+			// remove(), not /kill: no EntityDeathEvent, so a purge never grants a key or blessing. getEntities() is a
+			// snapshot, safe to remove while iterating.
 			for(org.bukkit.World w : Bukkit.getWorlds()) {
 				for(org.bukkit.entity.Entity e : w.getEntities()) {
 					switch(e.getType()) {
@@ -282,14 +243,12 @@ public class Server {
 
 	public static void serverSetup(World world) {
 		items.ItemUtils.flushStonkRestorations();
-		// Replace every superboomed wall / crypt still set to AIR and despawn active crypt mobs, then clear ender pearl
-		// cooldowns so a fresh run/setup starts from a clean state.
+		// Restore superboomed walls/crypts, despawn crypt mobs, clear pearl cooldowns.
 		items.ItemUtils.flushBlockRestorations();
 		for(Player pl : Bukkit.getOnlinePlayers()) {
 			pl.setCooldown(Material.ENDER_PEARL, 0);
 		}
-		// Minibosses are no longer spawned here; they spawn when the run actually starts (see startSection).
-		// serverSetup still resets the clear state (keys/doors + ClearManager) so /setup and /reset are clean.
+		// Minibosses spawn in startSection, not here.
 		resetClearState();
 		Utils.runCommand("fill -122 69 -170 -120 72 -168 minecraft:chiseled_stone_bricks");
 		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:barrier"); // clear any leftover Ice-Fill gate barriers
@@ -313,10 +272,8 @@ public class Server {
 		instructions.bosses.WitherSpawn.restoreStormPillars(world);
 		Goldor.resetS3Device(world);
 		Goldor.resetSectionLevers(world);
-		// Force-restore the S1 device's world blocks (any lit sea lantern, and the 16 input buttons with the "i1"
-		// sign under them) on this, the "before" edge of a run.  Unconditional, NOT inside the listener null-check
-		// below: a block left in the world outlives the listener instance, so the restore must not depend on it.
-		// Idempotent, and resetSimon calls it again for the ordinary path - one restore entry point, run twice.
+		// Restore S1 device blocks (lanterns, 16 buttons, "i1" sign). Outside the listener null-check: blocks outlive
+		// the listener. Idempotent; resetSimon calls it again.
 		instructions.bosses.goldor.GoldorSimonSays.INSTANCE.cleanup();
 		if(GoldorListener.INSTANCE != null) {
 			GoldorListener.INSTANCE.resetSharpShooter(world);
@@ -351,10 +308,8 @@ public class Server {
 			zombie.setAdult();
 			zombie.setPersistent(true);
 			zombie.setRemoveWhenFarAway(false);
-			// Real HP, defense and mob types (MAP.md §5): 12M base, scaled by the DEPTH of the room the
-			// archaeologist stands in (+10% per tier), which is why the name is written after apply() rather than
-			// from a hand-picked figure.  It replaces the old flat-kill handful of health, and clears the negative
-			// armour attributes that used to claw damage back out of vanilla's reduction.
+			// Real HP/defense/types (MAP.md §5): 12M scaled by room depth (+10% per tier), so the name comes after
+			// apply(). Also clears the old negative armour attributes.
 			damage.MobStats.apply(zombie, damage.MobStats.ANGRY_ARCHAEOLOGIST
 					.atDepthOf(locations[i]));
 			zombie.customName(Utils.msg("<light_purple><bold>Angry Archaeologist </bold><yellow>"
@@ -366,10 +321,10 @@ public class Server {
 			zombie.getEquipment().setBoots(new ItemStack(Material.DIAMOND_BOOTS));
 			zombie.getEquipment().setItemInMainHand(new ItemStack(Material.DIAMOND_SWORD));
 
-			// The first archaeologist (-120.5,69,-152.5) drops the Wither Key; the next one the Blood Key.
+			// First (-120.5,69,-152.5) drops the Wither Key, the next the Blood Key.
 			if(i == 0) zombie.addScoreboardTag("WitherKeyMob");
 			else if(i == 1) zombie.addScoreboardTag("BloodKeyMob");
-			// Clear-phase miniboss: killing it white-checks (and blesses) the room it stands in (see ClearListener).
+			// Kill white-checks and blesses its room (ClearListener).
 			zombie.addScoreboardTag("ClearMiniboss");
 
 			archaeologists[i] = zombie;
@@ -389,10 +344,8 @@ public class Server {
 		yellowShadowAssassin.setPersistent(true);
 		yellowShadowAssassin.setRemoveWhenFarAway(false);
 		yellowShadowAssassin.addScoreboardTag("ClearMiniboss"); // Yellow miniboss → green check + Wisdom V on kill
-		// 140M base in Yellow, which is depth II, so 140M x 1.10 = 154M (MAP.md §5).  A DIFFERENT mob from
-		// the 145M Shadow Assassins in Storm's boss fight, despite the shared name.  Humanoid + Arcane, so it
-		// takes those two Rulers and NO Smite at all - the softest-looking mob on the floor is the one that
-		// resists the whole undead package.
+		// 140M x 1.10 (depth II) = 154M (MAP.md §5). Not Storm's 145M Shadow Assassins. Humanoid + Arcane: those two
+		// Rulers, no Smite.
 		damage.MobStats.apply(yellowShadowAssassin, damage.MobStats.YELLOW_SHADOW_ASSASSIN.atDepthOf(assassinSpawn));
 		yellowShadowAssassin.customName(Utils.msg("<light_purple><bold>Shadow Assassin </bold><yellow>"
 				+ Utils.formatHealthM(yellowShadowAssassin) + "<red>❤"));
@@ -415,7 +368,7 @@ public class Server {
 		Utils.scheduleTask(() -> Utils.runCommand("fill -120 69 -106 -122 72 -104 minecraft:air"), 20);
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 2.0F);
 		Bukkit.broadcast(Utils.msg("<gold><name><green> opened a <dark_gray><bold>WITHER </bold><green>door!", Placeholder.unparsed("name", Utils.getRealName(p))));
-		// Opening the door auto-explores the room behind it on the minimap (no need to walk in).
+		// Auto-explores the room behind it on the map.
 		instructions.clear.ClearManager.exploreRoom(instructions.clear.Rooms.byName("Deathmite"));
 	}
 
@@ -426,15 +379,14 @@ public class Server {
 		Utils.playGlobalSound(Sound.ENTITY_GHAST_HURT, 1.0F, 0.5F);
 		Bukkit.broadcast(Utils.msg("<red>The <bold>BLOOD DOOR</bold> has been opened!"));
 		Bukkit.broadcast(Utils.msg("<dark_purple>A shiver runs down your spine..."));
-		// The Watcher encounter begins the moment the Blood Door opens (if it was armed this run and hasn't
-		// already spawned from a player walking into the Blood Room).
+		// Watcher starts when the Blood Door opens, if armed and not already spawned by entry.
 		Watcher.INSTANCE.startOnBloodDoor();
-		// Opening the door auto-explores the room behind it on the minimap (no need to walk in).
+		// Auto-explores the room behind it on the map.
 		instructions.clear.ClearManager.exploreRoom(instructions.clear.Rooms.BLOOD);
 	}
 
 	public static void openIceFillRewards() {
-		// Swap the iron bars for invisible barriers for 20 ticks, then clear them to air (the gate opens on a delay).
+		// Iron bars → barriers for 20 ticks, then air (gate opens on a delay).
 		Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:barrier replace minecraft:iron_bars");
 		Utils.scheduleTask(() -> Utils.runCommand("fill -69 82 -155 -69 74 -151 minecraft:air replace minecraft:barrier"), 20);
 	}
@@ -484,12 +436,10 @@ public class Server {
 		zombie.setRemoveWhenFarAway(false);
 		zombie.setCustomNameVisible(true);
 		zombie.getEquipment().setItemInMainHand(new ItemStack(Material.BONE));
-		// Bonus-score tracking: each Crypt Lurker kill = +1 (cap 5); a Prince kill also = +1 (see ClearListener).
-		// The tags are also what damage/MobStats identifies these two by, so they must be set before apply().
+		// +1 bonus per Crypt Lurker (cap 5), +1 for a Prince (ClearListener). damage/MobStats reads the tags, so set before apply().
 		zombie.addScoreboardTag(instructions.clear.ClearManager.TAG_CRYPT);
 		if(isPrince) zombie.addScoreboardTag("SecretPrince");
-		// Crypt Undead 9M, Prince 1M, both Undead + Subterranean so they take Smite, Undead Ruler AND Subterranean
-		// Ruler, and both scaled by room depth (MAP.md §5).  They used to be 1-HP flat-kill props.
+		// Crypt Undead 9M, Prince 1M, Undead + Subterranean (Smite + both Rulers), depth-scaled (MAP.md §5).
 		damage.MobStats.apply(zombie, (isPrince ? damage.MobStats.PRINCE : damage.MobStats.CRYPT_UNDEAD).atDepthOf(loc));
 		String mobName = isPrince ? "Prince" : "Crypt Lurker";
 		zombie.customName(Utils.msg("<red>" + mobName + " ❤<yellow>" + Utils.formatHealthM(zombie)));
@@ -508,16 +458,13 @@ public class Server {
 			Utils.playGlobalSound(Sound.ENTITY_GUARDIAN_HURT, 2.0f, 0.5f);
 		}
 
-		/** The question animation (chat, particle trails and floating ⓐ/ⓑ/ⓒ labels) WITHOUT auto-answering,
-		 *  used by the interactive practice quiz. Fills {@code options} with the spawned displays (a=+40t, b=+50t,
-		 *  c=+60t), so callers should only accept an answer once (c) has appeared (~tick 61). */
+		/** Question animation without auto-answer. Fills {@code options} (a=+40t, b=+50t, c=+60t); accept answers after (c). */
 		public static void animateQuestion(World world, Player player, int questionNum, String questionText, String[] answers, TextDisplay[] options) {
 			Location particleStart = PARTICLE_START.clone();
 			particleStart.setWorld(world);
 			Bukkit.broadcast(Utils.msg(""));
 			Bukkit.broadcast(Utils.msg("<gold>                                <bold>Question #" + questionNum));
-			// Wrapped + centered at render time: pass the question unpadded, since a line naming a player can't
-			// know its own rendered width (see PuzzleQuiz's question 3).
+			// Wrapped + centred at render time: a line naming a player can't know its width (PuzzleQuiz Q3).
 			for(String line : ChatFont.centerLines(questionText)) {
 				Bukkit.broadcast(Utils.msg("<gold>" + line));
 			}

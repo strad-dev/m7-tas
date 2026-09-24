@@ -25,7 +25,7 @@ public class Verbose implements CommandExecutor {
 			case "off", "false" -> level = VerboseLevel.OFF;
 			case "timer" -> level = VerboseLevel.TIMER;
 			case "on", "true" -> level = VerboseLevel.ON; // from SUPER this drops back to normal, not a no-op
-			// `super` toggles: engage it, or fall back to normal verbosity if it's already on.
+			// `super` toggles: on, or back to normal if already on.
 			case "super" -> level = (Utils.getVerboseLevel() == VerboseLevel.SUPER) ? VerboseLevel.ON : VerboseLevel.SUPER;
 			default -> {
 				p.sendMessage(Utils.msg("<red>Usage: /verbose \\<off|timer|on|super>"));

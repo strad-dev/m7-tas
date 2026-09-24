@@ -1,11 +1,9 @@
 package damage;
 
 /**
- * An immutable bag of {@link Stat} values.  Every stat source in MAP.md §2 returns one of these and no
- * source knows about any other, so the aggregate is a plain sum.
- * <p>
- * Values are raw SkyBlock numbers (a Fabled Hyperion's Strength is 560 unscaled, 3729.6 after the dungeon stage).
- * Instances are cheap and short-lived; the aggregator caches the finished sum, not the intermediates.
+ * Immutable bag of {@link Stat} values. Every §2 source returns one and none knows the others, so the aggregate is a
+ * plain sum. Raw SkyBlock numbers (Fabled Hyperion Strength 560 unscaled, 3729.6 after the dungeon stage). The
+ * aggregator caches only the finished sum.
  */
 public final class StatBlock {
 	public static final StatBlock EMPTY = new StatBlock(new double[Stat.values().length]);
@@ -16,14 +14,12 @@ public final class StatBlock {
 		this.values = values;
 	}
 
-	/** One stat, one value. */
 	public static StatBlock of(Stat stat, double value) {
 		double[] v = new double[Stat.values().length];
 		v[stat.ordinal()] = value;
 		return new StatBlock(v);
 	}
 
-	/** Two stats at once, the common shape for a reforge or gemstone row. */
 	public static StatBlock of(Stat a, double av, Stat b, double bv) {
 		double[] v = new double[Stat.values().length];
 		v[a.ordinal()] = av;
@@ -31,7 +27,6 @@ public final class StatBlock {
 		return new StatBlock(v);
 	}
 
-	/** Three stats at once (the Ancient armour reforge, and the Bizarre power's Strength/Crit Damage/Intelligence). */
 	public static StatBlock of(Stat a, double av, Stat b, double bv, Stat c, double cv) {
 		double[] v = new double[Stat.values().length];
 		v[a.ordinal()] = av;
@@ -58,7 +53,7 @@ public final class StatBlock {
 		return new StatBlock(v);
 	}
 
-	/** Every stat multiplied by the same factor.  Used by the Necron Head's x2 in M7 (§1.10). */
+	/** Used by the Necron Head's x2 (§1.10). */
 	public StatBlock times(double factor) {
 		if(factor == 1.0) return this;
 		double[] v = values.clone();
@@ -67,9 +62,8 @@ public final class StatBlock {
 	}
 
 	/**
-	 * The dungeon scaling stage (§1.0.1-3, §2.4): the four core stats take {@code coreMult}, everything else takes
-	 * {@code otherMult}.  It is a PIPELINE STAGE applied after summing an item's terms, never baked into a term, so
-	 * every authored value in {@link Items} stays the plain SkyBlock number the wiki prints.
+	 * Dungeon scaling stage (§1.0.1-3, §2.4): core stats x{@code coreMult}, rest x{@code otherMult}. Applied after
+	 * summing terms, never baked in, so {@link Items} values stay the wiki's numbers.
 	 */
 	public StatBlock scaled(double coreMult, double otherMult) {
 		double[] v = values.clone();
@@ -77,7 +71,7 @@ public final class StatBlock {
 		return new StatBlock(v);
 	}
 
-	/** True if every stat is zero, i.e. this source contributes nothing (used to skip lore rows). */
+	/** All zero; used to skip lore rows. */
 	public boolean isEmpty() {
 		for(double d : values) if(d != 0) return false;
 		return true;

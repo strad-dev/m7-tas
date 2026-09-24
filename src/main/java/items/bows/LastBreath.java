@@ -14,9 +14,8 @@ import org.bukkit.inventory.ItemStack;
 import java.util.List;
 
 /**
- * The Last Breath.  A DRAWN bow, so its damage scales by the vanilla charge fraction and a partial draw loses
- * the crit term entirely (§1.4) - both of which live in {@code Damage}'s bow path, not here.  Its shot and its
- * Duplex arrow build the Last Breath stack; the Archer's two bonus arrows never do.
+ * DRAWN bow: damage scales by charge and a partial draw loses the crit term (§1.4), both in {@code Damage}'s bow
+ * path. Shot and Duplex arrow build the Last Breath stack; the Archer's two never do.
  */
 public final class LastBreath implements Bow, AbilityItem {
 	public static final LastBreath INSTANCE = new LastBreath();
@@ -73,7 +72,7 @@ public final class LastBreath implements Bow, AbilityItem {
 		return true;
 	}
 
-	/** Start the vanilla draw.  The shot itself arrives as {@code EntityShootBowEvent} and runs {@code onShoot}. */
+	/** Starts the vanilla draw; the shot arrives as {@code EntityShootBowEvent} and runs {@code onShoot}. */
 	@Override
 	public boolean onRightClick(Cast cast) {
 		((CraftPlayer) cast.player()).getHandle().startUsingItem(InteractionHand.MAIN_HAND);

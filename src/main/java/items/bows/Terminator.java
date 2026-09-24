@@ -19,19 +19,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * The Terminator.  A <b>shortbow</b>: never drawn, so draw scaling never applies and every shot is a
- * full-damage crit (§1.2).
- *
- * <h2>Firing is POLLER-driven, not click-driven</h2>
- * A click only records the tick a packet arrived; {@link #pollAll()} fires on the first tick where a new packet
- * exists AND the cooldown has elapsed (5 ticks, or 4 with the full Thermodynamic set, which is what that set is
- * for - a rate cap, never a per-hit multiplier).  That caps the rate at one volley per cooldown however hard the
- * click is spammed, and it collapses a left- and a right-click landing on the same tick into one shot.
+ * <b>Shortbow</b>: never drawn, every shot a full-damage crit (§1.2).
  * <p>
- * <b>Salvation is a separate clock.</b>  The left-click beam runs its own 5-tick cooldown, held here rather than
- * declared through {@link #cooldownTicks()}, because a RIGHT-click must not spend it: the two sides of this bow
- * are two rate limits on one item.  Neither takes the Mage reduction, since the Terminator and its beam are
- * weapons, not abilities.
+ * POLLER-driven: a click only records its tick; {@link #pollAll()} fires on the first tick with a new packet AND
+ * the cooldown elapsed (5, or 4 with full Thermodynamic). One volley per cooldown however hard it's spammed, and a
+ * left + right click on one tick make one shot.
+ * <p>
+ * Salvation has its own 5-tick clock, held here and not via {@link #cooldownTicks()}, so a RIGHT-click can't spend
+ * it. Neither takes the Mage reduction: weapons, not abilities.
  */
 public final class Terminator implements Bow, AbilityItem {
 	public static final Terminator INSTANCE = new Terminator();
@@ -118,17 +113,14 @@ public final class Terminator implements Bow, AbilityItem {
 		return true;
 	}
 
-	/** A right-click only ARMS a volley.  {@link #pollAll()} decides whether it fires this tick or the next. */
+	/** Only ARMS a volley; {@link #pollAll()} decides when it fires. */
 	@Override
 	public boolean onRightClick(Cast cast) {
 		lastPacketTick.put(cast.player().getUniqueId(), cast.tick());
 		return true;
 	}
 
-	/**
-	 * A left-click arms the volley too, and additionally fires Salvation if its own cooldown has elapsed.  The
-	 * packet tick is recorded either way, so a beam on cooldown still shoots.
-	 */
+	/** Arms the volley too, plus Salvation if ready. The tick is recorded either way, so a beam on cooldown still shoots. */
 	@Override
 	public boolean onLeftClick(Cast cast) {
 		Player p = cast.player();
@@ -139,23 +131,19 @@ public final class Terminator implements Bow, AbilityItem {
 		return true;
 	}
 
-	/** Salvation's own cooldown key.  Kept off {@link #cooldownKey()} so a right-click cannot spend it. */
+	/** Kept off {@link #cooldownKey()} so a right-click can't spend it. */
 	private static final String SALVATION_KEY = "skyblock/combat/terminator/salvation";
 
-	// Salvation (Terminator left-click) cooldown: the tick the next Salvation beam is usable.  The shared left-click
-	// guard only caps to 1/tick, so this enforces the ability's own 5-tick cooldown.  Note that the Terminator and
-	// Salvation are weapons, NOT abilities, so they deliberately skip the Mage cooldown reduction.
+	// The shared left-click guard only caps to 1/tick; this is Salvation's own cooldown. No Mage reduction.
 	private static final int SALVATION_COOLDOWN_TICKS = 5;
 
-	/** Tick a new volley was armed on, per player, and the tick one last left the bow. */
+	/** Tick a volley was last armed, and last fired, per player. */
 	private static final Map<UUID, Integer> lastPacketTick = new ConcurrentHashMap<>();
 	private static final Map<UUID, Integer> lastFireTick = new ConcurrentHashMap<>();
 
 	/**
-	 * Per-tick terminator cooldown poller.  For each player who has recorded a terminator right-click since their
-	 * last shot, fires a bow shot on the first tick at or after {@code lastFire + cooldown} (5 ticks, or 4 with the
-	 * full Thermodynamic set).  Shots are anchored to the first shot and clamp to one per cooldown, so spamming the
-	 * right-click can't exceed it.  Started from {@link plugin.M7tas}.
+	 * Per tick: anyone with a click since their last shot fires at the first tick at or after
+	 * {@code lastFire + cooldown}. Anchored to the first shot. Started from {@link plugin.M7tas}.
 	 */
 	public static void pollAll() {
 		int now = MinecraftServer.currentTick;
@@ -175,7 +163,7 @@ public final class Terminator implements Bow, AbilityItem {
 		}
 	}
 
-	/** Clear the volley and Salvation clocks.  Part of the run reset. */
+	/** Part of the run reset. */
 	public static void reset() {
 		lastPacketTick.clear();
 		lastFireTick.clear();
@@ -187,68 +175,56 @@ public final class Terminator implements Bow, AbilityItem {
 		p.getInventory().remove(Material.TIPPED_ARROW);
 		p.getInventory().remove(Material.SPECTRAL_ARROW);
 
-		// Get NMS world and player
 		ServerLevel nmsWorld = ((CraftWorld) p.getWorld()).getHandle();
 		ServerPlayer nmsPlayer = ((CraftPlayer) p).getHandle();
 
-		// In creative mode, vanilla's BowItem.use() will start the bow-draw animation even with
-		// PlayerInteractEvent cancelled, because creative bypasses the arrow check.  Cancel the draw
-		// next tick: by then vanilla has run and we can release it cleanly.
+		// Creative skips the arrow check, so BowItem.use() starts a draw even with the interact cancelled.
+		// Stop it next tick, after vanilla has run.
 		Utils.scheduleTask(() -> {
 			if(nmsPlayer.isUsingItem()) nmsPlayer.stopUsingItem();
 		}, 1);
 
-		// Calculate directions
 		Vector baseDirection = p.getEyeLocation().getDirection().normalize();
 		Vector leftDirection = baseDirection.clone().rotateAroundY(Math.toRadians(-5));
 		Vector rightDirection = baseDirection.clone().rotateAroundY(Math.toRadians(5));
 
-		// Calculate spawn position (vanilla: eyeY - 0.1)
+		// vanilla: eyeY - 0.1
 		Location l = p.getEyeLocation().add(0, -0.1, 0);
 
-		// Create NMS arrows directly
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsLeft = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsMiddle = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 		net.minecraft.world.entity.projectile.arrow.Arrow nmsRight = new net.minecraft.world.entity.projectile.arrow.Arrow(nmsWorld, 0, 0, 0, new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.ARROW), null);
 
-		// Set positions
 		nmsLeft.setPos(l.getX(), l.getY(), l.getZ());
 		nmsMiddle.setPos(l.getX(), l.getY(), l.getZ());
 		nmsRight.setPos(l.getX(), l.getY(), l.getZ());
 
-		// shoot() sets both velocity and rotation from the direction vector
+		// shoot() sets velocity and rotation
 		float speed = 3.175f;
 		nmsLeft.shoot(leftDirection.getX(), leftDirection.getY(), leftDirection.getZ(), speed, 0);
 		nmsMiddle.shoot(baseDirection.getX(), baseDirection.getY(), baseDirection.getZ(), speed, 0);
 		nmsRight.shoot(rightDirection.getX(), rightDirection.getY(), rightDirection.getZ(), speed, 0);
 
-		// Set other properties
 		nmsLeft.setOwner(nmsPlayer);
 		nmsMiddle.setOwner(nmsPlayer);
 		nmsRight.setOwner(nmsPlayer);
 
-		// Add to world
 		nmsWorld.addFreshEntity(nmsLeft);
 		nmsWorld.addFreshEntity(nmsMiddle);
 		nmsWorld.addFreshEntity(nmsRight);
 
-		// Get Bukkit wrappers for further modification
 		Arrow left = (Arrow) nmsLeft.getBukkitEntity();
 		Arrow middle = (Arrow) nmsMiddle.getBukkitEntity();
 		Arrow right = (Arrow) nmsRight.getBukkitEntity();
 
-		// The Terminator is a SHORTBOW: it is never drawn, it just shoots, so draw scaling never applies and each
-		// of its three arrows is one shot's worth of damage, unchanged by release timing (MAP.md §1.2).
-		// Damage is stamped on each arrow at fire time (§1.0.5), so a mid-flight weapon swap cannot change it.
+		// Shortbow: each of the three arrows is one shot's damage, no draw scaling (MAP.md §1.2). Stamped at fire
+		// time (§1.0.5), so a mid-flight swap can't change it.
 		//
-		// The old hand-tuned terms are all gone: the Power/Strength-potion bonuses are now the weapon's own stat
-		// block through the formula, the 97.5% Thermodynamic penalty is deleted (that set exists only to raise the
-		// attack-speed cap to 150, i.e. the 4-tick cooldown below - it is a rate multiplier, not a per-hit one),
-		// and the Spring Boots / Racing Helmet reductions are deleted too, those wearables now costing only the
-		// stats their slot would otherwise carry.
+		// Old hand-tuned terms are gone: Power/Strength-potion bonuses are the weapon's stats via the formula, the
+		// 97.5% Thermodynamic penalty is deleted (the set only raises the attack-speed cap to 150, the 4-tick
+		// cooldown), and the Spring Boots / Racing Helmet reductions are deleted.
 		ItemStack bow = p.getInventory().getItemInMainHand();
 
-		// Set Bukkit properties
 		for(Arrow arrow : Arrays.asList(left, middle, right)) {
 			arrow.setPierceLevel(4);
 			arrow.setShooter(p);
@@ -266,16 +242,13 @@ public final class Terminator implements Bow, AbilityItem {
 
 		Utils.playLocalSound(p, Sound.ENTITY_ARROW_SHOOT, 1.0F, 1.0F);
 
-		// Duplex and the Archer's two bonus arrows are Bow's shared implementation, off its constants.  This
-		// used to be a copy of the same block that both branches of onEntityShootBow carried, and the copies had
-		// already drifted apart on how they tested for an Archer.
+		// Duplex + Archer arrows: Bow's shared implementation.
 		INSTANCE.fireBonusArrows(p, l, bow, speed, 1.0);
 	}
 
 	/**
-	 * The Terminator's left-click beam.  It is NOT a bow shot (MAP.md §1.4), so it is never draw-scaled -
-	 * it always resolves at full charge, and therefore always crits.  Its old flat 20 is gone; it is now the
-	 * Terminator's own stat block through the bow formula.
+	 * Left-click beam. NOT a bow shot (MAP.md §1.4): always full charge, so always crits. The old flat 20 is gone;
+	 * it's the Terminator's stats through the bow formula.
 	 */
 	public static void salvation(Player p) {
 		ItemStack weapon = p.getInventory().getItemInMainHand();

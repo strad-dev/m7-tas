@@ -14,26 +14,22 @@ import plugin.Utils;
 import java.util.List;
 
 /**
- * Interactive Oruo quiz (grid 0,0). The intro fires once a player enters the room; each question plays the
- * TAS animation (particle trails + floating ⓐ/ⓑ/ⓒ labels, reused from {@link Server.Quiz#animateQuestion}) and
- * answering is only accepted after option (c) has appeared. Answers are given by right-clicking one of three
- * buttons (A/B/C, ±1 block); the correct answer is always <b>B</b>. A wrong answer plays Oruo's mocking
- * dialogue and restarts the whole quiz from the intro. Three correct answers → green check + score immediately,
- * then Time V once Oruo's reward line has played.
- * <p>Question 3 is built per-run: it asks whether the player who <i>opened</i> the Quiz room (the first one to
- * set foot in it, which is also what starts the quiz) is bald. The answer is "Yes" for everyone except
- * {@code Beethoven_}, who isn't, so for him the A/B options are swapped and <b>B</b> stays the right button.
+ * Oruo quiz (grid 0,0). Intro fires on first entry; each question uses the TAS animation
+ * ({@link Server.Quiz#animateQuestion}) and answers are accepted only after option (c) appears. Answer by
+ * right-clicking button A/B/C (±1 block); B is always correct. Wrong answer: Oruo mocks, quiz restarts from the
+ * intro. Three right → green check + score now, Time V after Oruo's reward line.
+ * <p>Q3 asks whether whoever opened the room is bald. "Yes" for everyone but {@code Beethoven_}, so for him A/B
+ * swap and B stays correct.
  */
 public final class PuzzleQuiz {
 	private PuzzleQuiz() {
 	}
 
-	// Answer buttons (A, B, C).  Index 1 (B) is always correct.  ±1 block tolerance around each.
+	// A, B, C, ±1 block tolerance.
 	private static final int[][] BUTTONS = {{-20, 70, -34}, {-25, 70, -31}, {-30, 70, -34}};
 	private static final int CORRECT = 1; // B
 
-	// Unpadded and unwrapped: animateQuestion word-wraps and centers each line via ChatFont.centerLines.  Index 2
-	// is a template filled in by questionText() with whoever opened the room, so its width isn't known here.
+	// Unpadded: animateQuestion wraps and centers via ChatFont.centerLines. Index 2 is filled by questionText().
 	private static final String[] QUESTIONS = {
 			"How is the run going so far?",
 			"Did you know that you can sub scribe to Stradivarius Violin to see more content like this?!",
@@ -44,20 +40,20 @@ public final class PuzzleQuiz {
 			{"Oh wow, I should sub scribe!", "Oh wow, I should sub scribe!!", "Oh wow, I should sub scribe!!!"},
 			{"No", "Yes", "Decline to Answer"}
 	};
-	/** Q3's options for the one player who isn't bald: A/B swapped, so B ("No") is still the correct button. */
+	/** Q3 for the non-bald player: A/B swapped so B ("No") is still correct. */
 	private static final String[] ANSWERS_NOT_BALD = {"Yes", "No", "Decline to Answer"};
-	/** The player Q3 answers "No" for. Matched against {@link Utils#getRealName(Player)}, so the Mage1 fake counts. */
+	/** Matched against {@link Utils#getRealName(Player)}, so the Mage1 fake counts. */
 	private static final String NOT_BALD = "Beethoven_";
-	/** Q3's subject if nobody was recorded as opening the room.  This shouldn't happen: the quiz needs an entry to start. */
+	/** Q3 subject if no opener was recorded. Shouldn't happen: the quiz starts on entry. */
 	private static final String FALLBACK_OPENER = "akc0303";
 	private static final String ORUO = "<dark_red>[STATUE] Oruo the Omniscient<white>: ";
 
 	private static final TextDisplay[] options = new TextDisplay[3];
 	private static World world;
 	private static boolean started, solved, awaiting;
-	private static int question; // 0-based index of the current question
-	private static int gen;       // generation guard so restart/stop cancels stale scheduled tasks
-	/** Display name of the player who opened the Quiz room, the subject of question 3.  Null until entry. */
+	private static int question; // 0-based
+	private static int gen;       // generation guard: restart/stop cancels stale scheduled tasks
+	/** Who opened the room, Q3's subject. Null until entry. */
 	private static String opener;
 
 	public static void reset() {
@@ -74,7 +70,7 @@ public final class PuzzleQuiz {
 		Server.Quiz.removeOptions(options);
 	}
 
-	/** Start the intro the first tick a real player is standing in the Quiz room. */
+	/** Starts the intro the first tick a real player is in the room. */
 	public static void tick(World w, List<Player> players) {
 		if(started || solved || w == null) return;
 		for(Player p : players) {
@@ -87,7 +83,7 @@ public final class PuzzleQuiz {
 		}
 	}
 
-	/** Full run of the quiz from Oruo's intro dialogue.  This is also the restart target after a wrong answer. */
+	/** Whole quiz from Oruo's intro; also the restart after a wrong answer. */
 	private static void begin() {
 		started = true;
 		awaiting = false;
@@ -120,26 +116,25 @@ public final class PuzzleQuiz {
 		Server.Quiz.removeOptions(options);
 		Player p = ClearManager.nearestRealPlayer(new Location(world, -25, 71, -31));
 		Server.Quiz.animateQuestion(world, p, question + 1, questionText(question), answers(question), options);
-		// Answering is only allowed after option (c) has been shown (spawns at +60t).
+		// Only after option (c) shows (+60t).
 		Utils.scheduleTask(() -> {
 			if(g == gen) awaiting = true;
 		}, 62);
 	}
 
-	/** The question line, unpadded, since {@code animateQuestion} centers it.  Q3 names {@link #opener}. */
+	/** Unpadded, {@code animateQuestion} centers it. Q3 names {@link #opener}. */
 	private static String questionText(int index) {
 		if(index != 2) return QUESTIONS[index];
 		return String.format(QUESTIONS[2], opener == null ? FALLBACK_OPENER : opener);
 	}
 
-	/** The three options.  Q3 flips to {@link #ANSWERS_NOT_BALD} when {@link #NOT_BALD} opened the room, so the
-	*  correct text becomes "No", still on button B. */
+	/** Q3 flips to {@link #ANSWERS_NOT_BALD} when {@link #NOT_BALD} opened the room. */
 	private static String[] answers(int index) {
 		if(index == 2 && NOT_BALD.equals(opener)) return ANSWERS_NOT_BALD;
 		return ANSWERS[index];
 	}
 
-	/** A player right-clicked answer {@code index} (0=A,1=B,2=C). */
+	/** {@code index} 0=A, 1=B, 2=C. */
 	public static void answer(Player p, int index) {
 		if(!started || solved || !awaiting) return;
 		awaiting = false;
@@ -160,7 +155,6 @@ public final class PuzzleQuiz {
 				complete(p);
 			}
 		} else {
-			// Wrong answer → Oruo's mocking dialogue, then restart the whole quiz from the intro.
 			final int g = ++gen;
 			Utils.playGlobalSound(Sound.ENTITY_CAT_AMBIENT, 2.0f, 0.5f);
 			Server.Quiz.oruoMessage("<dark_red>Y<red>i<gold>k<yellow>e<green>s");
@@ -181,8 +175,7 @@ public final class PuzzleQuiz {
 		solved = true;
 		Server.Quiz.removeOptions(options);
 		final int g = ++gen;
-		// The room is beaten the moment the last question lands, so the green check and score go up now.  Waiting
-		// for Oruo's dialogue only delayed the score by 40 ticks.
+		// Check and score now; waiting for Oruo's dialogue only delayed the score 40 ticks.
 		ClearManager.puzzleSolved(Rooms.QUIZ, p, false);
 		// TAS timing: Q3 answered → (+20t) Oruo's reward line → (+20t) the blessing.
 		Utils.scheduleTask(() -> {
@@ -195,12 +188,12 @@ public final class PuzzleQuiz {
 		}, 40);
 	}
 
-	/** True if {@code b} is within 1 block of any answer button (used for Dungeonbreaker immunity). */
+	/** Within 1 block of an answer button (Dungeonbreaker immunity). */
 	public static boolean isButtonArea(Block b) {
 		return buttonIndex(b) >= 0;
 	}
 
-	/** The button index (0=A,1=B,2=C) a clicked block belongs to (±1 tolerance), or -1 if none. */
+	/** Button index (0=A, 1=B, 2=C) for a clicked block, ±1 tolerance, or -1. */
 	public static int buttonIndex(Block b) {
 		for(int i = 0; i < BUTTONS.length; i++) {
 			int[] btn = BUTTONS[i];

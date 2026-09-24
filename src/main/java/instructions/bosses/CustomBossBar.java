@@ -20,15 +20,12 @@ import plugin.Utils;
 
 @SuppressWarnings("DataFlowIssue")
 public class CustomBossBar {
-	// Add these fields to your class
 	private static BossBar activeWitherBossBar;
 	private static Wither activeWither;
 	private static BukkitTask bossBarUpdateTask;
 	private static TextDisplay activeStunIndicator;
 
-	// Generic method to handle any Wither boss bar
 	public static void setupWitherBossBar(Wither wither, String witherName) {
-		// Clean up any existing boss bar
 		cleanupActiveBossBar();
 
 		activeWither = wither;
@@ -44,8 +41,7 @@ public class CustomBossBar {
 		try {
 			Utils.scheduleTask(() -> {
 				WitherBoss nmsWither = ((CraftWither) wither).getHandle();
-				// Remove all players from vanilla bossbar
-				nmsWither.bossEvent.removeAllPlayers(); // Remove player from vanilla bossbar
+				nmsWither.bossEvent.removeAllPlayers();
 			}, 1);
 		} catch(Exception e) {
 			Bukkit.getLogger().warning("Failed to disable vanilla wither bossbar");
@@ -61,18 +57,16 @@ public class CustomBossBar {
 		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
 		String healthStr = exempt ? String.valueOf((int) maxHealth) : Utils.formatHealthM(activeWither);
 
-		// witherName is a MiniMessage string supplied by the caller; <reset> after it closes any obfuscated/bold it carries.
+		// witherName is MiniMessage; <reset> closes any obfuscated/bold it carries.
 		String title = "<gold><bold>﴾ <red><bold>" + witherName + "<reset><gold><bold> ﴿ <!bold><yellow>" + healthStr + "<red>❤";
 
 		activeWitherBossBar = Bukkit.createBossBar(Utils.mmLegacy(title), BarColor.PURPLE, BarStyle.SOLID);
 		activeWitherBossBar.setProgress(1.0);
 
-		// Add all current online players
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			activeWitherBossBar.addPlayer(player);
 		}
 
-		// Start the update task
 		startBossBarUpdateTask(witherName);
 	}
 
@@ -102,16 +96,13 @@ public class CustomBossBar {
 		boolean exempt = activeWither.getScoreboardTags().contains("TASWitherKing");
 		String healthStr = exempt ? String.valueOf((int) Math.floor(currentHealth)) : Utils.formatHealthM(activeWither);
 
-		// Update title with current health
 		String title = "<gold><bold>﴾ <red><bold>" + witherName + "<reset><gold><bold> ﴿ <!bold><yellow>" + healthStr + "<red>❤";
 
 		activeWitherBossBar.setTitle(Utils.mmLegacy(title));
 
-		// Update progress bar
 		double progress = Math.clamp(currentHealth / maxHealth, 0.0, 1.0);
 		activeWitherBossBar.setProgress(progress);
 
-		// Ensure all online players can see it
 		for(Player player : Bukkit.getOnlinePlayers()) {
 			if(!activeWitherBossBar.getPlayers().contains(player)) {
 				activeWitherBossBar.addPlayer(player);
@@ -119,7 +110,6 @@ public class CustomBossBar {
 		}
 	}
 
-	// Clean up method
 	private static void cleanupActiveBossBar() {
 		if(activeWitherBossBar != null) {
 			activeWitherBossBar.removeAll();
@@ -133,12 +123,10 @@ public class CustomBossBar {
 	}
 
 	public static void forceCleanup() {
-		// Remove the wither from the world first
 		if(activeWither != null && !activeWither.isDead()) {
 			activeWither.remove();
 		}
 
-		// Then clean up the boss bar
 		cleanupActiveBossBar();
 	}
 
@@ -162,8 +150,7 @@ public class CustomBossBar {
 		indicator.setSeeThrough(true);
 		indicator.setShadowed(true);
 
-		// Follow-the-wither + color rotation animation. Runs every tick so the indicator tracks a MOVING boss
-		// (e.g. Necron mid-chase); colors still rotate only every 5 ticks.
+		// Runs every tick so the indicator follows a moving boss (Necron mid-chase); colours rotate every 5 ticks.
 		new BukkitRunnable() {
 			int colorOffset = 0;
 			int tickCount = 0;
@@ -176,10 +163,8 @@ public class CustomBossBar {
 					return;
 				}
 
-				// Keep the indicator above the boss's head wherever he moves.
 				indicator.teleport(wither.getLocation().add(0, wither.getHeight() + 0.5, 0));
 
-				// Rotate the colors every 5 ticks.
 				if(tickCount++ % 5 == 0) {
 					String[] colors = {"<red>", "<yellow>", "<blue>"};
 					StringBuilder text = new StringBuilder();

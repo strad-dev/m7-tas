@@ -9,7 +9,7 @@ import org.bukkit.Material;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-/** Necron's Leggings, a dyed leather piece of the Necron set (§1.10). */
+/** Dyed leather, Necron set (§1.10). */
 public final class NecronLeggings implements Wearable {
 	public static final NecronLeggings INSTANCE = new NecronLeggings();
 

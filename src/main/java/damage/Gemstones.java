@@ -4,21 +4,18 @@ import java.util.EnumMap;
 import java.util.Map;
 
 /**
- * Gemstone values, keyed {@code (type, quality, item rarity)} (MAP.md §2.2).  Same story as
- * {@link Reforges}: an {@link ItemDef} stores a SLOT LIST, never a resolved number, so changing an item's gems is a
- * one-word edit and correcting a cell here fixes every item at once.
+ * Gemstone values keyed {@code (type, quality, item rarity)} (MAP.md §2.2). Like {@link Reforges}, an
+ * {@link ItemDef} stores a SLOT LIST, never a number, so fixing a cell here fixes every item.
  * <p>
- * Only three gem types feed damage - Jasper to Strength, Sapphire to Intelligence, Onyx to Crit Damage.  The rest
- * (Ruby, Amethyst, Opal and the skill gems) grant stats nothing in this system reads, so they are not modelled.
+ * Only Jasper (Strength), Sapphire (Int) and Onyx (Crit Damage) feed damage; the rest aren't modelled.
  * <p>
- * Every gemstone term in §1 and §1.10 turns out to be a Perfect gem at that item's own effective rarity, which is
- * what pins two rarities §1 originally had wrong: the Aspect of the Void is Legendary and the Ragnarock Axe is
- * Epic.  Quality is still an axis rather than a constant so a non-Perfect gem stays expressible.
+ * Every gem term in §1 and §1.10 is a Perfect gem at the item's effective rarity, which pinned two rarities §1 had
+ * wrong: AOTV is Legendary, Ragnarock Axe Epic. Quality stays an axis so non-Perfect gems are expressible.
  */
 public final class Gemstones {
 	private Gemstones() {}
 
-	/** The three gem types that matter for damage, each feeding exactly one stat. */
+	/** Each feeds exactly one stat. */
 	public enum Type {
 		JASPER(Stat.STRENGTH),
 		SAPPHIRE(Stat.INTELLIGENCE),
@@ -38,11 +35,8 @@ public final class Gemstones {
 	public enum Quality {ROUGH, FLAWED, FINE, FLAWLESS, PERFECT}
 
 	/**
-	 * A gemstone slot on an item: what the slot ACCEPTS, and what is socketed into it.
-	 * <p>
-	 * §2.3: slots are typed.  A {@code SAPPHIRE} slot accepts only Sapphire (so it is always Intelligence); a
-	 * {@code COMBAT} slot accepts any of the three, which is what makes the Hyperion's Heroic-vs-Fabled gem choice
-	 * possible in the same slot.  Recombobulating does not add slots, so the count comes from the base item.
+	 * What the slot ACCEPTS and what's socketed. §2.3: slots are typed; SAPPHIRE takes only Sapphire, COMBAT any of
+	 * the three (hence Hyperion's Heroic-vs-Fabled gem choice). Recombobulating adds no slots.
 	 */
 	public record Slot(Type accepts, Type gem, Quality quality) {
 		public Slot {
@@ -51,18 +45,18 @@ public final class Gemstones {
 			}
 		}
 
-		/** A Combat slot (accepts any of the three) holding the given gem. */
+		/** Combat slot (accepts any of the three). */
 		public static Slot combat(Type gem, Quality quality) {
 			return new Slot(null, gem, quality);
 		}
 
-		/** A slot typed to one gem, e.g. the Hyperion's and Ice Spray Wand's dedicated Sapphire slot. */
+		/** Typed to one gem, e.g. Hyperion's dedicated Sapphire slot. */
 		public static Slot typed(Type gem, Quality quality) {
 			return new Slot(gem, gem, quality);
 		}
 	}
 
-	// Rows are Rough → Perfect, columns Common → Mythic, transcribed from the wiki's Gemstone Slot § Stat Bonuses.
+	// Rows Rough → Perfect, columns Common → Mythic, from the wiki's Gemstone Slot § Stat Bonuses.
 	private static final Map<Type, int[][]> TABLES = new EnumMap<>(Type.class);
 
 	static {
@@ -81,7 +75,7 @@ public final class Gemstones {
 				/* Flawless */ {10, 11, 12, 14, 17, 20},
 				/* Perfect  */ {12, 14, 17, 20, 24, 30},
 		});
-		// Onyx's Fine and Flawless rows really are non-monotonic on the wiki.  Transcribed as published, not a typo.
+		// Onyx Fine/Flawless really are non-monotonic on the wiki. Not a typo.
 		TABLES.put(Type.ONYX, new int[][]{
 				/* Rough    */ {1, 1, 2, 2, 3, 4},
 				/* Flawed   */ {2, 2, 3, 3, 4, 6},
@@ -91,7 +85,7 @@ public final class Gemstones {
 		});
 	}
 
-	/** The stats one socketed slot grants on an item of the given EFFECTIVE rarity. */
+	/** Stats one slot grants at the item's EFFECTIVE rarity. */
 	public static StatBlock stats(Slot slot, Rarity rarity) {
 		if(slot == null || slot.gem() == null) return StatBlock.EMPTY;
 		int value = TABLES.get(slot.gem())[slot.quality().ordinal()][rarity.ordinal()];

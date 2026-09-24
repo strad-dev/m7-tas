@@ -6,59 +6,48 @@ import org.bukkit.entity.Player;
 import java.util.*;
 
 /**
- * Per-player and per-(player, target) combat state that damage sources read: the repeated-hit stack, the post-kill
- * buff, the kill combo, the Berserk ultimate window, the Tarantula Ring's per-target tenth-hit counter, and the
- * rolling damage history.
+ * Per-player and per-(player, target) combat state: repeated-hit stack, post-kill buff, kill combo, Berserk
+ * ultimate, Tarantula Ring's per-target tenth-hit counter, and the rolling damage history.
  * <p>
- * <b>The rolling history is one abstraction serving four features</b> (MAP.md §1.14).  Berserk's axe throw
- * ("highest hit in the last 60s"), Explosive Shot and Rapid Fire ("highest arrow damage in the last minute") and
- * Venomous's DPS term ("8x the highest hit in the last 100 ticks") are all the same query at different windows, so
- * this is one ring buffer rather than three trackers.
+ * The history serves four features with one query at different windows (MAP.md §1.14): Berserk's axe throw (60s),
+ * Explosive Shot and Rapid Fire (last minute, arrows) and Venomous's DPS (8x highest hit in 100 ticks).
  * <p>
- * Main-thread only, so no synchronisation.  Everything is cleared at run start by {@link #reset()}.
+ * Main-thread only. Cleared at run start by {@link #reset()}.
  */
 public final class CombatState {
 	private CombatState() {}
 
-	/** A hit's size and when it landed, for the rolling history. */
 	private record Hit(int tick, double damage) {}
 
-	/** How far back the history can see: 60s, the longest window any consumer asks for. */
+	/** 60s, the longest window any consumer asks for. */
 	private static final int HISTORY_TICKS = 1200;
-	/** Venomous reads a much shorter window than the other three consumers: the last 100 ticks. */
 	private static final int VENOMOUS_WINDOW_TICKS = 100;
-	/** Venomous's "DPS" is eight times the biggest hit in that window. */
+	/** Venomous "DPS" = 8x the biggest hit in its window. */
 	private static final double VENOMOUS_DPS_FACTOR = 8.0;
 
-	/** Consecutive hits on one target.  Does NOT decay - only switching target resets it (§1.14). */
+	/** Consecutive hits on one target. Doesn't decay; only switching target resets it (§1.14). */
 	private static final Map<UUID, UUID> lastTarget = new HashMap<>();
 	private static final Map<UUID, Integer> repeatCount = new HashMap<>();
-	/** Server tick the post-kill buff expires at, per player.  Armed by a kill, spent by the next hit either way. */
+	/** Tick the post-kill buff expires at. Armed by a kill, spent by the next hit either way. */
 	private static final Map<UUID, Integer> postKillExpiry = new HashMap<>();
-	/** Kill combo: count, and the tick the chain breaks at if no further kill lands. */
+	/** Kill combo: count, and the tick the chain breaks if no kill lands. */
 	private static final Map<UUID, Integer> comboCount = new HashMap<>();
 	private static final Map<UUID, Integer> comboExpiry = new HashMap<>();
 	private static final Map<UUID, Integer> berserkUltimateEnd = new HashMap<>();
 	/**
-	 * Melee hits landed, for the Tarantula Ring's every-tenth-hit x1.15.  Outer key attacker, inner key target, so
-	 * <b>the count is per mob</b>: the ring only ever procs on the tenth melee hit on the SAME target, and switching
-	 * targets neither advances nor resets the count on the one you left (same shape as Thunderlord's).  Dropped when
-	 * the mob dies ({@link #forgetTarget}).
+	 * Melee hits for Tarantula Ring's every-tenth x1.15, keyed attacker then target: per mob, so switching targets
+	 * neither advances nor resets the one you left (like Thunderlord). Dropped on death ({@link #forgetTarget}).
 	 */
 	private static final Map<UUID, Map<UUID, Integer>> meleeHits = new HashMap<>();
 	private static final Map<UUID, Deque<Hit>> history = new HashMap<>();
 	/**
-	 * Venomous ramp: hits landed on one target, feeding its 2%-per-hit growth to a 40-hit cap.  Outer key attacker,
-	 * inner key target, so <b>the ramp is one player's</b>: two players poisoning the same mob ramp separately, and
-	 * neither inherits the other's stacks.  Paired with the per-player {@link #history} that {@link #venomousDps}
-	 * reads, that makes both halves of a Venomous proc - its stack count and its DPS figure - the attacker's own.
-	 * <p>
-	 * <b>An entry lives exactly as long as the poison window it feeds</b> ({@link #resetVenomous}), so the ramp is a
-	 * measure of what this player has been doing to this mob for the last 100 ticks rather than a total for the run.
+	 * Venomous ramp (2% per hit, 40-hit cap), keyed attacker then target: two players on one mob ramp separately.
+	 * With the per-player {@link #history} behind {@link #venomousDps}, both halves of a proc are the attacker's own.
+	 * An entry lives exactly as long as its 100t poison window ({@link #resetVenomous}), not the whole run.
 	 */
 	private static final Map<UUID, Map<UUID, Integer>> venomousHits = new HashMap<>();
 
-	/** Clear every counter.  Called at the start of each run, alongside the ability-cooldown reset. */
+	/** Called at run start, alongside the ability-cooldown reset. */
 	public static void reset() {
 		lastTarget.clear();
 		repeatCount.clear();
@@ -69,22 +58,22 @@ public final class CombatState {
 		meleeHits.clear();
 		history.clear();
 		venomousHits.clear();
-		pets.Autopet.reset(); // the autopet "entered combat" edge is derived from hits, so it resets with them
+		pets.Autopet.reset(); // autopet "entered combat" edge is derived from hits, so it resets with them
 	}
 
 	// ===================== repeated-hit stack (Berserk) =====================
 
-	/** Prior consecutive hits on this target: 0 for the first hit.  Read-only. */
+	/** Prior consecutive hits on this target: 0 for the first. Read-only. */
 	public static int repeatHits(Player p, UUID target) {
 		if(p == null || target == null) return 0;
 		return target.equals(lastTarget.get(p.getUniqueId())) ? repeatCount.getOrDefault(p.getUniqueId(), 0) : 0;
 	}
 
-	/** Advance the stack for a PRIMARY hit.  Switching target resets it; nothing else does. */
+	/** Advance the stack for a PRIMARY hit. Only switching target resets it. */
 	public static void noteHit(Player p, UUID target, DamagePath path) {
 		if(p == null || target == null) return;
-		// The autopet "entered combat" trigger.  There is no in-combat FLAG here to hang it off, so this is the
-		// only chokepoint that means "a primary hit just landed"; Autopet works the entry edge out itself.
+		// Autopet "entered combat" trigger. No in-combat flag exists, so this is the one "primary hit landed"
+		// chokepoint; Autopet derives the entry edge itself.
 		pets.Autopet.onCombatHit(p);
 		UUID id = p.getUniqueId();
 		if(target.equals(lastTarget.get(id))) {
@@ -96,20 +85,17 @@ public final class CombatState {
 		if(path.isMelee()) meleeHits.computeIfAbsent(id, k -> new HashMap<>()).merge(target, 1, Integer::sum);
 	}
 
-	/** True on the FIRST hit this player has landed on this target, i.e. First Strike's window. */
+	/** First hit on this target: First Strike's window. */
 	public static boolean isFirstHitOn(Player p, UUID target) {
 		return repeatHits(p, target) == 0;
 	}
 
-	/** True for the first three hits on this target, i.e. Triple Strike's window. */
+	/** First three hits on this target: Triple Strike's window. */
 	public static boolean isTripleStrikeHitOn(Player p, UUID target) {
 		return repeatHits(p, target) < 3;
 	}
 
-	/**
-	 * True when THIS melee hit is the tenth <b>on this target</b>, which is the Tarantula Ring's x1.15 (§7).  The
-	 * count is per mob, not a running total across the fight: nine hits on one mob and one on another do not proc.
-	 */
+	/** True when this melee hit is the tenth ON THIS TARGET: Tarantula Ring's x1.15 (§7). Per mob, not a fight total. */
 	public static boolean isTarantulaHit(Player p, UUID target) {
 		if(p == null || target == null) return false;
 		return (meleeHits.getOrDefault(p.getUniqueId(), Map.of()).getOrDefault(target, 0) + 1) % 10 == 0;
@@ -118,9 +104,8 @@ public final class CombatState {
 	// ===================== kill-driven windows =====================
 
 	/**
-	 * Register a kill.  It arms TWO independent windows and they must not be conflated (§1.14): a one-shot
-	 * post-kill buff that expires after 5s if unspent, and the kill combo, which resets when 3s pass between
-	 * kills.  One kill does both.
+	 * Arms TWO independent windows, don't conflate them (§1.14): one-shot post-kill buff (expires 5s unspent) and
+	 * the kill combo (resets after 3s between kills).
 	 */
 	public static void noteKill(Player p) {
 		if(p == null) return;
@@ -129,14 +114,14 @@ public final class CombatState {
 		postKillExpiry.put(id, now + ClassBonuses.BERSERK_POST_KILL_TICKS);
 		if(now > comboExpiry.getOrDefault(id, 0)) comboCount.put(id, 0);
 		comboCount.merge(id, 1, Integer::sum);
-		comboExpiry.put(id, now + 60); // a combo is consecutive kills <=3s apart
+		comboExpiry.put(id, now + 60); // combo = kills <=3s apart
 	}
 
 	public static boolean hasPostKillBuff(Player p) {
 		return p != null && MinecraftServer.currentTick < postKillExpiry.getOrDefault(p.getUniqueId(), 0);
 	}
 
-	/** Spend the post-kill buff.  The next hit consumes it whether or not it was still live. */
+	/** The next hit consumes it whether or not it was still live. */
 	public static void spendPostKillBuff(Player p) {
 		if(p != null) postKillExpiry.remove(p.getUniqueId());
 	}
@@ -164,24 +149,19 @@ public final class CombatState {
 	// ===================== rolling damage history =====================
 
 	/**
-	 * Record a finished hit.  <b>Only real hits go in</b> (MAP.md §1.14): {@code Damage.deal} keeps out both
-	 * secondary instances (procs, Cleave) and DERIVED ones - the abilities that read this history and copy a figure
-	 * out of it.  Either would close a loop where the buffer feeds on its own output.
+	 * Record a finished hit. Only real hits (MAP.md §1.14): {@code Damage.deal} keeps out secondary (procs, Cleave)
+	 * and DERIVED ones (copied out of this history), either of which would make the buffer feed on its own output.
 	 */
 	public static void recordDamage(Player p, double sbDamage) {
 		if(p == null || sbDamage <= 0) return;
 		Deque<Hit> q = history.computeIfAbsent(p.getUniqueId(), k -> new ArrayDeque<>());
 		q.addLast(new Hit(MinecraftServer.currentTick, sbDamage));
 		int cutoff = MinecraftServer.currentTick - HISTORY_TICKS;
-		// Bounded two ways: by age for the time query, and by a generous count so a Terminator volley cannot grow
-		// it without limit.  The by-count query only ever looks at the last HISTORY_HITS entries.
+		// Bounded by age, and by count so a Terminator volley can't grow it without limit.
 		while(!q.isEmpty() && (q.peekFirst().tick() < cutoff || q.size() > 4096)) q.removeFirst();
 	}
 
-	/**
-	 * Largest hit within the last {@code ticks}.  All four consumers query this way: Berserk's axe throw,
-	 * Explosive Shot and Rapid Fire over 60s, Venomous over 100 ticks.
-	 */
+	/** Largest hit in the last {@code ticks}. Axe throw, Explosive Shot, Rapid Fire use 60s; Venomous 100 ticks. */
 	public static double maxInLastTicks(Player p, int ticks) {
 		if(p == null) return 0;
 		Deque<Hit> q = history.get(p.getUniqueId());
@@ -193,24 +173,21 @@ public final class CombatState {
 	}
 
 	/**
-	 * Venomous's "DPS": <b>eight times the biggest hit in the last 100 ticks</b>.  One stack is 2% of it, so the
-	 * 40-stack cap is 80% of this figure, i.e. 640% of that biggest hit.
-	 * <p>
-	 * Only PRIMARY hits reach the history (see {@link Damage}), which is load-bearing here rather than tidy: a
-	 * Venomous tick is itself several times the hit that spawned it, so recording one would raise the DPS figure
-	 * the next tick reads, and so on.
+	 * Venomous "DPS": 8x the biggest hit in the last 100 ticks. One stack is 2% of it, so 40 stacks = 80%, i.e. 640%
+	 * of that hit. Only PRIMARY hits reach the history ({@link Damage}), and that is load-bearing: a Venomous tick is
+	 * several times the hit behind it, so recording one would ratchet the figure up every tick.
 	 */
 	public static double venomousDps(Player p) {
 		return maxInLastTicks(p, VENOMOUS_WINDOW_TICKS) * VENOMOUS_DPS_FACTOR;
 	}
 
-	/** Venomous's ramp on one target: +2% per hit, capped at 40 hits (so 80% of the DPS figure). */
+	/** Venomous ramp on one target: +2% per hit, cap 40 (80% of the DPS figure). */
 	public static int venomousStacks(Player p, UUID target) {
 		if(p == null || target == null) return 0;
 		return venomousHits.getOrDefault(p.getUniqueId(), Map.of()).getOrDefault(target, 0);
 	}
 
-	/** Advance the Venomous ramp on one target and return the new stack count, capped at 40. */
+	/** Returns the new stack count, capped at 40. */
 	public static int noteVenomousHit(Player p, UUID target) {
 		if(p == null || target == null) return 0;
 		Map<UUID, Integer> perTarget = venomousHits.computeIfAbsent(p.getUniqueId(), k -> new HashMap<>());
@@ -220,10 +197,8 @@ public final class CombatState {
 	}
 
 	/**
-	 * Drop ONE attacker's Venomous ramp on one target.  Called from {@code Procs} the moment that player's 100t
-	 * poison window lapses on that mob: <b>the ramp lives exactly as long as the poison it feeds</b>, so a player who
-	 * stops swinging loses their stacks and starts again at one, while everyone else's ramps on the same mob are
-	 * untouched.
+	 * Drop ONE attacker's ramp on one target, from {@code Procs} when their 100t poison lapses. A player who stops
+	 * swinging restarts at one; other players' ramps on that mob are untouched.
 	 */
 	public static void resetVenomous(UUID attacker, UUID target) {
 		if(attacker == null || target == null) return;
@@ -232,9 +207,8 @@ public final class CombatState {
 	}
 
 	/**
-	 * Drop <b>every</b> attacker's Venomous ramp and Tarantula count on one target, once that target is dead.  Called
-	 * from {@code Procs.forgetTarget} alongside the Thunderlord counts: a fresh mob starts everyone at one Venomous
-	 * stack and hit one of the ring's ten, and without this the per-target maps grow for the whole run.
+	 * Drop EVERY attacker's Venomous ramp and Tarantula count on a dead target, from {@code Procs.forgetTarget}
+	 * with the Thunderlord counts. Without it the per-target maps grow all run.
 	 */
 	public static void forgetTarget(UUID target) {
 		if(target == null) return;

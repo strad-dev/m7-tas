@@ -9,13 +9,9 @@ import org.bukkit.entity.TextDisplay;
 import plugin.Utils;
 
 /**
- * One Goldor terminal: the Interaction hitbox players click and the two floating labels above it.
- * <p>
- * <b>Two behaviours, one terminal.</b>  In classic a click activates it outright.  In both live modes it opens
- * {@link GoldorTerminalGui} - realistic's generated puzzle or Perfect RNG's short stand-in board - and only
- * solving it activates the terminal, hence {@link #type}, set once as the section is built so a terminal keeps
- * the same puzzle for the whole phase however many times it is opened and abandoned.  Either way
- * {@link #markActivated} is the single finish line.
+ * One Goldor terminal: Interaction hitbox plus two floating labels. In classic a click activates it. In both live
+ * modes it opens {@link GoldorTerminalGui} (realistic's generated puzzle or Perfect RNG's stand-in) and only solving
+ * it activates. Either way {@link #markActivated} is the single finish line.
  */
 public final class GoldorTerminal {
 	public static final String TAG_PREFIX = "goldor_terminal_";
@@ -28,28 +24,17 @@ public final class GoldorTerminal {
 	public final int terminalIdx;
 
 	private final Interaction interaction;
-	/** Top display: "Inactive Terminal" when inactive; "Terminal Active" when activated. */
 	private final TextDisplay displayTop;
-	/** Bottom display: "CLICK HERE" when inactive; hidden/empty when activated. */
 	private final TextDisplay displayBottom;
 	private boolean activated = false;
 	private boolean pending = false;
 	/**
-	 * Which puzzle this terminal poses in the live modes.
-	 * <p>
-	 * <b>Assigned by the SECTION, not here</b> ({@link GoldorTerminalGui#assignTypes}, from
-	 * {@link GoldorSection}'s constructor).  A terminal cannot roll its own: the rule is "at most one of each type
-	 * per section", which is a property of the whole set and unknowable from inside one member of it.  Set once per
-	 * phase and never re-rolled, so a terminal keeps its puzzle however many times it is opened and abandoned.
+	 * Live-mode puzzle. Assigned by the SECTION ({@link GoldorTerminalGui#assignTypes}): "at most one of each type
+	 * per section" needs the whole set. Set once per phase, so reopening keeps the same puzzle.
 	 */
 	private GoldorTerminalGui.Type type;
 
-	/**
-	 * Block the Interaction hitbox was spawned on.  Read by {@link GoldorTerminalGui#assignTypes} for the STAND-IN
-	 * set's Melody pin (S2's fifth terminal, {@code 40 124 123}); the generated set has no pin and deals Melody
-	 * like any other card.  Worth keeping either way - "where is this terminal" is the first thing anybody
-	 * debugging one wants.
-	 */
+	/** Hitbox block. {@link GoldorTerminalGui#assignTypes} reads it for the stand-in Melody pin (S2's fifth, {@code 40 124 123}). */
 	public final int x, y, z;
 
 	public GoldorTerminal(World world, int sectionIdx, int terminalIdx, int x, int y, int z) {
@@ -60,7 +45,7 @@ public final class GoldorTerminal {
 		this.z = z;
 
 		Location interactionLoc = new Location(world, x + 0.5, y, z + 0.5);
-		// Two separate TextDisplays with vanilla backgrounds; gap between them has no background.
+		// Two TextDisplays so the gap between them has no background.
 		Location bottomLoc = new Location(world, x + 0.5, y + 1.0, z + 0.5);
 		Location topLoc = new Location(world, x + 0.5, y + 1.375, z + 0.5);
 
@@ -99,17 +84,16 @@ public final class GoldorTerminal {
 		pending = true;
 	}
 
-	/** Give the terminal back up, so somebody else can open it.  Closing a puzzle without solving it lands here. */
+	/** Frees the terminal for someone else; closing an unsolved puzzle lands here. */
 	public void clearPending() {
 		pending = false;
 	}
 
-	/** The puzzle this terminal poses in the live modes. */
 	public GoldorTerminalGui.Type type() {
 		return type;
 	}
 
-	/** Set by {@link GoldorTerminalGui#assignTypes} only, once, as the section is built. */
+	/** Only {@link GoldorTerminalGui#assignTypes}, once, as the section is built. */
 	void setType(GoldorTerminalGui.Type type) {
 		this.type = type;
 	}
@@ -117,13 +101,13 @@ public final class GoldorTerminal {
 	public void markActivated() {
 		activated = true;
 		pending = false;
-		// Active label replaces the bottom display; top display is emptied (no background when text is empty).
+		// Top emptied (no background when empty), active label goes on the bottom.
 		displayTop.text(Utils.msg(""));
 		displayBottom.text(Utils.msg(ACTIVE_TEXT));
 	}
 
 	public void cleanup() {
-		// A phase teardown must not leave somebody staring into a puzzle for a terminal that no longer exists.
+		// Don't leave anyone in a puzzle for a terminal that no longer exists.
 		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
 			if(p.getOpenInventory().getTopInventory().getHolder() instanceof GoldorTerminalGui gui
 					&& gui.terminal() == this) {

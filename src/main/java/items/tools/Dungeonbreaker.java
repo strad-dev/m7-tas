@@ -20,15 +20,12 @@ import plugin.M7tas;
 import plugin.Utils;
 
 /**
- * The Dungeonbreaker.  Not an ability item at all: its whole behaviour is that a block it breaks is removed
- * TEMPORARILY and without physics, and restored 200 ticks later ({@code ItemUtils.stonk}).
+ * No ability: a broken block is removed TEMPORARILY without physics and restored 200 ticks later
+ * ({@code ItemUtils.stonk}). As a pickaxe its right-click isn't cancelled, it may right-click entities, and it's the
+ * one item that works in the Trap room.
  * <p>
- * Three plumbing rules follow from it being a pickaxe rather than a weapon: its right-click is not cancelled
- * (so it still interacts with the world), it may still right-click an entity, and it is the one item that keeps
- * working inside the Trap room, where the clear phase disables right-click abilities.
- * <p>
- * <b>Its lore ID is {@code skyblock/combat/stonk}</b>, not {@code .../dungeonbreaker}.  That second ID appeared
- * in two of the old exemption lists and no item ever carried it; it is dropped here rather than carried over.
+ * Lore ID is {@code skyblock/combat/stonk}. The {@code .../dungeonbreaker} ID in two old exemption lists was never
+ * carried by any item and is dropped.
  */
 public final class Dungeonbreaker implements Tool, AbilityItem {
 	public static final Dungeonbreaker INSTANCE = new Dungeonbreaker();
@@ -87,8 +84,8 @@ public final class Dungeonbreaker implements Tool, AbilityItem {
 	}
 
 	/**
-	 * Efficiency 255 plus a flat +1024 block-break speed, so a stonk is instant, and the can-break-anything
-	 * stamp LAST, since that mutates the NMS copy directly and must follow every {@code setItemMeta}.
+	 * Efficiency 255 + flat +1024 break speed, so stonks are instant. Can-break stamp LAST: it mutates the NMS copy
+	 * and must follow every {@code setItemMeta}.
 	 */
 	private static ItemStack buildPickaxe(String name) {
 		ItemStack pickaxe = ItemFactory.item(Material.DIAMOND_PICKAXE, name, "skyblock/combat/stonk", "DUNGEONBREAKER");

@@ -13,10 +13,8 @@ import java.util.Random;
 import java.util.function.Function;
 
 /**
- * Specification for a group of mobs that all share configuration but spawn at
- * uniformly-random locations within a bounding box. Storm uses 16 of these for
- * its various Wither Miner / Sentry / Shadow Assassin clusters; Maxor could
- * also use this for the two groups of his opening miner wave.
+ * Group of identically configured mobs spawned at uniform-random spots in a box. Storm uses 16 for its
+ * Miner / Sentry / Shadow Assassin clusters; Maxor's two opening miner groups could use it too.
  */
 public record MobSpawnSpec(
 		String groupName,
@@ -37,14 +35,13 @@ public record MobSpawnSpec(
 		List<PotionEffect> potionEffects,
 		List<ItemStack> armorPieces,  // helmet, chestplate, leggings, boots; order matters, null entries skipped
 		int startTick,
-		Sound spawnSound,              // played once at first mob's location when the group spawns; null = silent
+		Sound spawnSound,              // played once at the first mob; null = silent
 		float spawnSoundPitch
 ) {
 
 	/**
-	 * Builds a uniform-random location provider over the given inclusive AABB.
-	 * Y is integer-quantized (matches the existing in-game behavior where mob spawns
-	 * use the box's Y coordinate directly, not a random Y within the box).
+	 * Uniform-random provider over an inclusive AABB. Y is integer-quantized: spawns use the box's Y directly,
+	 * not a random Y within it.
 	 */
 	public static Function<Random, Vector> uniformIn(BoundingBox box) {
 		double x1 = box.getMinX(), x2 = box.getMaxX();
@@ -58,7 +55,7 @@ public record MobSpawnSpec(
 		};
 	}
 
-	/** Builds a uniform-random provider over a 3D inclusive AABB given by two corner coords. */
+	/** Uniform-random provider over an inclusive AABB given by two corners. */
 	public static Function<Random, Vector> uniformIn(int x1, int y1, int z1, int x2, int y2, int z2) {
 		int minX = Math.min(x1, x2), maxX = Math.max(x1, x2);
 		int minY = Math.min(y1, y2), maxY = Math.max(y1, y2);
@@ -70,7 +67,7 @@ public record MobSpawnSpec(
 		);
 	}
 
-	/** Always returns the given fixed location (for one-off spawns like the Shadow Assassin corners). */
+	/** Fixed location, for one-off spawns like the Shadow Assassin corners. */
 	public static Function<Random, Vector> fixed(double x, double y, double z) {
 		Vector v = new Vector(x, y, z);
 		return rng -> v.clone();

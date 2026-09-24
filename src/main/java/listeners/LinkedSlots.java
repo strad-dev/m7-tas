@@ -22,27 +22,23 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Two inventory conveniences for real players:
- *
  * <ul>
- *   <li><b>Linked slots</b>: in the normal player inventory (the one opened with E), shift+left-clicking an item
- *       in a backpack slot (9-35) swaps it with the hotbar slot in the same column.  The 9th column (slots
- *       17/26/35) maps to hotbar slot 7 instead of 8, since hotbar slot 8 is reserved for the SkyBlock menu.</li>
- *   <li><b>SkyBlock-menu lock</b>: the SkyBlock menu can't be moved out of hotbar slot 8 by any inventory action,
- *       whether click, number-key swap, drag, or drop.  It only leaves when the game programmatically replaces it
- *       with the Energy Crystal or a Wither-King relic, which use direct inventory writes, not click events.</li>
+ *   <li><b>Linked slots</b>: in the E inventory, shift+left-click on a backpack slot swaps it with the hotbar slot in
+ *       its column. The 9th column maps to hotbar 7, since 8 is the SkyBlock menu.</li>
+ *   <li><b>SkyBlock-menu lock</b>: no click, number key, drag or drop moves the menu out of hotbar 8. Only direct
+ *       inventory writes replace it (Energy Crystal, Wither-King relic).</li>
  * </ul>
  */
 public class LinkedSlots implements Listener {
 
 	private static final int MENU_SLOT = 8;
-	/** Raw slot of the offhand in the survival/E inventory view, where the clear-phase dungeon map is locked. */
+	/** Offhand slot in the E inventory, where the clear-phase dungeon map is locked. */
 	private static final int OFFHAND_SLOT = 40;
-	/** A double-click's pickup-all event can trail its first click by up to the click window (~5 ticks). */
+	/** A double-click's pickup-all can trail its first click by ~5 ticks. */
 	private static final int DOUBLE_CLICK_WINDOW = 10;
-	/** Last server tick a linked swap ran per player, which collapses a double-click's burst of events into one swap. */
+	/** Last tick a linked swap ran, per player; collapses a double-click's burst into one swap. */
 	private static final Map<UUID, Integer> lastSwapTick = new HashMap<>();
-	/** Hotbar slot the most recent linked swap moved an item INTO.  A trailing double-click on it is ignored. */
+	/** Hotbar slot the last linked swap moved an item INTO; a trailing double-click on it is ignored. */
 	private static final Map<UUID, Integer> lastSwapHotbar = new HashMap<>();
 
 	@EventHandler
@@ -50,7 +46,7 @@ public class LinkedSlots implements Listener {
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		PlayerInventory inv = p.getInventory();
 
-		// --- SkyBlock-menu lock: block any click that would move the menu out of slot 8 ---
+		// SkyBlock-menu lock
 		if(FakePlayerInventory.isSkyblockMenu(inv.getItem(MENU_SLOT))) {
 			boolean clicksMenuSlot = e.getClickedInventory() != null && e.getClickedInventory().equals(inv) && e.getSlot() == MENU_SLOT;
 			boolean numberKeyToMenu = e.getClick() == ClickType.NUMBER_KEY && e.getHotbarButton() == MENU_SLOT;
@@ -62,10 +58,10 @@ public class LinkedSlots implements Listener {
 			}
 		}
 
-		// --- offhand dungeon-map lock: the clear-phase map can't be moved out of the offhand by any click ---
+		// Offhand dungeon-map lock
 		if(DungeonMap.isDungeonMap(inv.getItemInOffHand())) {
 			boolean clicksOffhand = e.getClickedInventory() != null && e.getClickedInventory().equals(inv) && e.getSlot() == OFFHAND_SLOT;
-			// SWAP_OFFHAND (F while hovering any slot) would pull the map out regardless of which slot is hovered.
+			// SWAP_OFFHAND (F over any slot) pulls the map out whatever slot is hovered.
 			boolean swapOffhand = e.getClick() == ClickType.SWAP_OFFHAND;
 			if(clicksOffhand || swapOffhand) {
 				e.setCancelled(true);
@@ -73,9 +69,8 @@ public class LinkedSlots implements Listener {
 			}
 		}
 
-		// A shift+double-click's second physical click trails ~5 ticks later as another SHIFT_LEFT, but landing
-		// on the hotbar slot I just swapped the item INTO (slotType QUICKBAR).  Vanilla would shift-move that
-		// item back out and undo the swap, so swallow a trailing quickbar shift or double-click on that slot.
+		// A shift+double-click's second click trails ~5 ticks later as SHIFT_LEFT on the hotbar slot I just swapped
+		// INTO. Vanilla would shift-move it back and undo the swap, so swallow it.
 		if((e.getClick() == ClickType.SHIFT_LEFT || e.getClick() == ClickType.DOUBLE_CLICK)
 				&& e.getSlotType() == InventoryType.SlotType.QUICKBAR) {
 			Integer swapTick = lastSwapTick.get(p.getUniqueId());
@@ -87,24 +82,23 @@ public class LinkedSlots implements Listener {
 			}
 		}
 
-		// --- Linked slots: shift+left-click a backpack slot swaps with its hotbar column ---
-		// The top row (slots 9-17) is ignored; only the middle/bottom rows (18-35) link.
+		// Linked slots. Top row (9-17) is ignored; only 18-35 link.
 		if(e.getClick() != ClickType.SHIFT_LEFT) return;
-		// Only the E inventory (CRAFTING).  Note that creative's inventory is client-authoritative: its clicks arrive
-		// as ServerboundSetCreativeModeSlotPacket and never as an InventoryClickEvent, so this is survival/adventure only.
+		// E inventory only. Creative's is client-authoritative (ServerboundSetCreativeModeSlotPacket, never an
+		// InventoryClickEvent), so this is survival/adventure only.
 		if(e.getView().getTopInventory().getType() != InventoryType.CRAFTING) return;
 		if(e.getClickedInventory() == null || !e.getClickedInventory().equals(inv)) return;
 		int slot = e.getSlot();
-		if(slot < 18 || slot > 35) return; // middle + bottom backpack rows only (top row excluded) → vanilla otherwise
+		if(slot < 18 || slot > 35) return; // vanilla otherwise
 		int hotbar = Math.min((slot - 9) % 9, 7); // column, but the 9th column maps to 7 (slot 8 is the menu)
 
 		ItemStack back = inv.getItem(slot);
 		ItemStack bar = inv.getItem(hotbar);
-		// Only swap two real items.  If either slot is empty, let vanilla handle the click instead.
+		// Only swap two real items; vanilla handles an empty slot.
 		if(isEmpty(back) || isEmpty(bar)) return;
 
-		e.setCancelled(true); // I own this gesture now, so suppress the vanilla shift-move
-		// Double-click guard: its burst of events lands in one tick, so swap at most once per player per tick.
+		e.setCancelled(true); // suppress the vanilla shift-move
+		// A double-click's burst lands in one tick: swap at most once per player per tick.
 		int now = MinecraftServer.currentTick;
 		if(lastSwapTick.getOrDefault(p.getUniqueId(), -1) == now) return;
 		lastSwapTick.put(p.getUniqueId(), now);
@@ -135,14 +129,13 @@ public class LinkedSlots implements Listener {
 	@EventHandler
 	public void onDrop(PlayerDropItemEvent e) {
 		ItemStack dropped = e.getItemDrop().getItemStack();
-		// The menu and the auto-managed offhand dungeon map are both undroppable.
+		// Menu and offhand dungeon map are undroppable.
 		if(FakePlayerInventory.isSkyblockMenu(dropped) || DungeonMap.isDungeonMap(dropped)) {
 			e.setCancelled(true);
 		}
 	}
 
-	// Pressing F with no inventory open fires this instead of an InventoryClickEvent, so block swapping the menu,
-	// or the clear-phase dungeon map that the clear tick keeps in the offhand, out of its slot.
+	// F with no inventory open fires this, not InventoryClickEvent: keep the menu and offhand dungeon map in place.
 	@EventHandler
 	public void onSwapHands(PlayerSwapHandItemsEvent e) {
 		if(FakePlayerInventory.isSkyblockMenu(e.getMainHandItem()) || FakePlayerInventory.isSkyblockMenu(e.getOffHandItem())

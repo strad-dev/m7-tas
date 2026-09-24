@@ -13,33 +13,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The five pets a realistic-mode player can summon, and how their heads are drawn in {@code /pets}.
+ * The five pets a realistic-mode player can summon, and how their heads draw in {@code /pets}.
  * <p>
- * <b>This is presentation, and only presentation.</b>  Every line below is transcribed from the real in-game
- * item; nothing reads a number back off it.  What a pet is WORTH to the damage pipeline is {@link Pet} and
- * nothing else (MAP.md §1.13), which is why the stat lines here are authored strings rather than a
- * {@code StatBlock}: a Golden Dragon's Attack Speed and Magic Find are real parts of its tooltip and are not
- * stats this plugin models, and building them into a StatBlock would imply otherwise.
+ * <b>Presentation only.</b> Lines are transcribed from the real item; nothing reads a number back. A pet's worth
+ * to the damage pipeline is {@link Pet} alone (MAP.md §1.13), so stat lines are authored strings, not a
+ * {@code StatBlock}: Golden Dragon's Attack Speed and Magic Find are on its tooltip but not modelled.
  * <p>
- * <b>The stats shown are the ones the HELD ITEM has already been applied to</b>, exactly as the game shows them.
- * Four of the five hold a Hephaestus Relic, so their figures are the base x 1.5 and match {@link Pet} line for
- * line: the Crow's +225 Intelligence is 150 x 1.5, the Ender Dragon's +90 Crit Damage is 60 x 1.5.  The Black
- * Cat's Unalloyed Speed multiplies nothing, so its numbers are raw.  Change a held item and the stat lines here
- * and the figures in {@link Pet} both move.
+ * Stats shown already include the held item, as in game. Four of five hold a Hephaestus Relic (base x 1.5,
+ * matching {@link Pet}: Crow's +225 Intelligence is 150 x 1.5, Ender Dragon's +90 Crit Damage is 60 x 1.5).
+ * Black Cat's Unalloyed Speed multiplies nothing, so raw. Change a held item and both this and {@link Pet} move.
  * <p>
- * <b>The SkyBlock glyphs are stripped</b> (the PUA codepoints behind ✦ ✯ ♣ ❁ ☠ ⊙ ❈ in the source tooltips).
- * Hypixel renders those from a resource-pack font and they come out as tofu boxes on a vanilla client, which is
- * the same call {@code damage/Stat} already made for its own stat rows.
+ * SkyBlock glyphs are stripped (PUA codepoints behind ✦ ✯ ♣ ❁ ☠ ⊙ ❈): they come from a resource-pack font and
+ * show as tofu on vanilla, same call as {@code damage/Stat}.
  * <p>
- * Each constant carries the {@link Pet} it equips, so the menu and the damage pipeline can never disagree about
- * what "the Phoenix" is.  {@link Pet#BLACK_CAT} is reachable two ways and they do not conflict: a hat forces it
- * on you in the assumed modes, and it is pickable here in realistic.
+ * Each constant carries its {@link Pet} so the menu and damage pipeline agree on what "the Phoenix" is.
+ * {@link Pet#BLACK_CAT} is reachable two ways without conflict: a hat forces it in assumed modes, and it's
+ * pickable here in realistic.
  */
 public enum PetType {
 	/**
-	 * <b>Level 200, not 100.</b>  The Golden Dragon hatches at 100 and levels to 200, and every figure this
-	 * plugin uses for it is the level-200 one - {@link Pet#GOLDEN_DRAGON}'s +300 Strength is a level-200 number,
-	 * so showing a level-100 tooltip next to it would be showing a pet the model does not use.
+	 * <b>Level 200, not 100.</b> Golden Dragon hatches at 100 and levels to 200; every figure here is level 200
+	 * ({@link Pet#GOLDEN_DRAGON}'s +300 Strength), so a level-100 tooltip would show a pet the model doesn't use.
 	 */
 	GOLDEN_DRAGON(Pet.GOLDEN_DRAGON, "Golden Dragon", Rarity.LEGENDARY, 200,
 			"ewogICJ0aW1lc3RhbXAiIDogMTYyMDM1MDA5ODgyNiwKICAicHJvZmlsZUlkIiA6ICJiNWRkZTVmODJlYjM0OTkzYmMwN2Q0MGFiNWY2ODYyMyIsCiAgInByb2ZpbGVOYW1lIiA6ICJsdXhlbWFuIiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzJlOWY5YjFmYzAxNDE2NmNiNDZhMDkzZTUzNDliMmJmNmVkZDIwMWI2ODBkNjJlNDhkYmYzYWY5YjA0NTkxMTYiLAogICAgICAibWV0YWRhdGEiIDogewogICAgICAgICJtb2RlbCIgOiAic2xpbSIKICAgICAgfQogICAgfQogIH0KfQ==",
@@ -84,14 +78,13 @@ public enum PetType {
 							"Magic Find by 10%.")))),
 
 	/**
-	 * <b>VERY SPECIAL is deliberate, and live SkyBlock still shows LEGENDARY.</b>  The wiki's Alpha Hypixel
-	 * Network changelog dated 2026-09-21 records "Changed rarity of the Phoenix Pet from Epic/Legendary to
-	 * Special/Very Special", so this is where the item is going and it is the tier the owner asked for.  <b>Do not
-	 * "fix" it back to LEGENDARY</b> - the stat block below is still the LEGENDARY one, because that is the set of
-	 * numbers the change moved across unaltered.
+	 * <b>VERY SPECIAL on purpose, though live SkyBlock still shows LEGENDARY.</b> The wiki's Alpha Hypixel Network
+	 * changelog of 2026-09-21 says "Changed rarity of the Phoenix Pet from Epic/Legendary to Special/Very Special",
+	 * and it's the tier the owner asked for. <b>Don't "fix" it back to LEGENDARY.</b> Stats below are still the
+	 * LEGENDARY ones; the change carried them over unaltered.
 	 * <p>
-	 * A red tier is not free elsewhere: {@code Rarity.SPECIAL}/{@code VERY_SPECIAL} never recombobulate and need
-	 * their own reforge row.  Neither applies here, because a pet is not a reforgeable item.
+	 * {@code Rarity.SPECIAL}/{@code VERY_SPECIAL} never recombobulate and need their own reforge row; neither
+	 * matters here since pets aren't reforgeable.
 	 */
 	PHOENIX(Pet.PHOENIX, "Phoenix", Rarity.VERY_SPECIAL, 100,
 			"ewogICJ0aW1lc3RhbXAiIDogMTY0Mjg2NTc3MTM5MSwKICAicHJvZmlsZUlkIiA6ICJiYjdjY2E3MTA0MzQ0NDEyOGQzMDg5ZTEzYmRmYWI1OSIsCiAgInByb2ZpbGVOYW1lIiA6ICJsYXVyZW5jaW8zMDMiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiB0cnVlLAogICJ0ZXh0dXJlcyIgOiB7CiAgICAiU0tJTiIgOiB7CiAgICAgICJ1cmwiIDogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNjZiMWI1OWJjODkwYzljOTc1Mjc3ODdkZGUyMDYwMGM4Yjg2ZjZiOTkxMmQ1MWE2YmZjZGIwZTRjMmFhM2M5NyIsCiAgICAgICJtZXRhZGF0YSIgOiB7CiAgICAgICAgIm1vZGVsIiA6ICJzbGltIgogICAgICB9CiAgICB9CiAgfQp9",
@@ -130,13 +123,11 @@ public enum PetType {
 							"Mana when using an ability.")))),
 
 	/**
-	 * The one pet here that is not a damage pick.  Its Intelligence is real ({@link Pet#BLACK_CAT}) but the rest
-	 * of its tooltip - Speed, Magic Find, Pet Luck and the speed cap its held item raises - is nothing this plugin
-	 * models, so summoning it is a deliberate trade of a dragon's Strength for a mana pool.
+	 * Only pet here that isn't a damage pick. Intelligence is real ({@link Pet#BLACK_CAT}); Speed, Magic Find, Pet
+	 * Luck and the speed cap from its held item aren't modelled, so it trades a dragon's Strength for mana.
 	 * <p>
-	 * <b>Speed +125 already contains Hunter's +100</b>, which is why the two are not added together: Hypixel
-	 * folded the Hunter, Omen and Supernatural amounts into the displayed base stats in 0.18.5, so the ability
-	 * lines restate them rather than stacking on top.
+	 * <b>Speed +125 already contains Hunter's +100</b>, don't add them: Hypixel folded Hunter, Omen and
+	 * Supernatural into the displayed base stats in 0.18.5, so ability lines restate them.
 	 */
 	BLACK_CAT(Pet.BLACK_CAT, "Black Cat", Rarity.MYTHIC, 100,
 			"ewogICJ0aW1lc3RhbXAiIDogMTcwODczNzEyMTIzNSwKICAicHJvZmlsZUlkIiA6ICJmY2ZhYTg0MzA0YjE0NDUxOThkNWYxNzQ3ZjI0Y2Q5MCIsCiAgInByb2ZpbGVOYW1lIiA6ICJTdGV3eVdvbGZ5IiwKICAic2lnbmF0dXJlUmVxdWlyZWQiIDogdHJ1ZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzgyODJiNWE5YmJlMmNkMzIyMzcyNDAyM2NkNGY2YWQ0MTNmNWJiOWUwZWRlZjgxNzAwYjhhZmMzMDcyZDA0YTUiCiAgICB9CiAgfQp9",
@@ -156,21 +147,20 @@ public enum PetType {
 							"monsters!"))));
 
 	/**
-	 * One named pet ability: the gold header line and the grey lines under it.
+	 * One pet ability: gold header line and grey lines under it.
 	 * <p>
-	 * The lines are pre-wrapped rather than word-wrapped at render time.  A tooltip has no width the server can
-	 * measure (the client's font and GUI scale decide it), so a wrapper here would be guessing; breaking each
-	 * description by hand is how the rest of the plugin writes multi-line lore.
+	 * Pre-wrapped by hand: the server can't measure tooltip width (client font and GUI scale decide it), same as
+	 * all multi-line lore in the plugin.
 	 */
 	public record Ability(String name, List<String> lines) {}
 
-	/** Every pet here is a Combat Pet, which is the line the real tooltip opens with. */
+	/** Every pet here is a Combat Pet, the real tooltip's first line. */
 	private static final String PET_TYPE_LINE = "Combat Pet";
 
 	private final Pet pet;
 	private final String displayName;
 	private final Rarity rarity;
-	/** The level this pet is shown at.  100 for four of them; see {@link #GOLDEN_DRAGON} for the one that is 200. */
+	/** Displayed level. 100 for four; {@link #GOLDEN_DRAGON} is 200. */
 	private final int level;
 	private final String texture;
 	private final HeldPetItem held;
@@ -189,7 +179,7 @@ public enum PetType {
 		this.abilities = abilities;
 	}
 
-	/** The damage-side constant this pet IS.  One direction only; {@link #of(Pet)} is the way back. */
+	/** Damage-side constant for this pet. {@link #of(Pet)} goes back. */
 	public Pet pet() {
 		return pet;
 	}
@@ -203,40 +193,35 @@ public enum PetType {
 	}
 
 	/**
-	 * The name as it appears everywhere a pet is mentioned: {@code [Lvl N] Name}.
-	 * <p>
-	 * <b>Two colours, not one.</b>  The level bracket is always grey and the rarity colour belongs to the NAME -
-	 * {@code <gray>[Lvl 200] <gold>Golden Dragon}.  This used to paint the whole string in the rarity colour,
-	 * which made the level read as part of it.
+	 * Name everywhere a pet is mentioned: {@code [Lvl N] Name}. Level bracket is always grey, rarity colour is on
+	 * the name only ({@code <gray>[Lvl 200] <gold>Golden Dragon}); colouring the whole string made the level read
+	 * as part of the name.
 	 */
 	public String colouredName() {
 		return "<gray>[Lvl " + level + "] <" + rarity.colour() + ">" + displayName;
 	}
 
-	/** The menu head this pet is drawn as.  {@code equipped} decides the glint and the last lore line. */
+	/** Menu head. {@code equipped} decides the glint and last lore line. */
 	public ItemStack icon(boolean equipped, boolean editing) {
-		// ItemFactory.head, not a second copy of the profile/NBT assembly: that duplication is what CLAUDE.md
-		// warns makes saved stacks stop matching, and it is the same builder every custom head in the plugin uses.
-		// Two things it does for a WEARABLE head have to come back off for a menu icon, though:
-		//   - it adds Protection 5, which would print an enchantment line and glint every pet unconditionally;
-		//   - StatLore.apply runs, which is a no-op here since no pet is a registered stat item.
-		// The signature is null: a head renders from the texture value alone on this server, which never
-		// authenticates a profile, so carrying one per pet would be dead weight in the enum.
+		// ItemFactory.head, not a second copy of the profile/NBT code: CLAUDE.md warns that duplication makes saved
+		// stacks stop matching. What it does for a wearable head that matters here:
+		//   - adds Protection 5, which would print an enchant line and glint every pet;
+		//   - runs StatLore.apply, a no-op since no pet is a registered stat item.
+		// Null signature: this server never authenticates profiles, so the texture value alone renders.
 		ItemStack head = ItemFactory.head(colouredName(), "pet" + name(), texture, null);
 		for(Enchantment e : new ArrayList<>(head.getEnchantments().keySet())) head.removeEnchantment(e);
 
 		ItemMeta meta = head.getItemMeta();
 		if(meta == null) return head;
-		// Component-based glint, which is what the rest of the codebase uses to mark a chosen item
-		// (GoldorTerminalGui.glint, and loadout/ItemRefresh already tests for the override).  Set either way
-		// rather than only when true, so the flag is never left over from a stack built elsewhere.
+		// Component glint, as elsewhere for a chosen item (GoldorTerminalGui.glint; loadout/ItemRefresh tests for
+		// it). Set either way so it's never left over from a stack built elsewhere.
 		meta.setEnchantmentGlintOverride(equipped);
 		meta.lore(lore(equipped, editing));
 		head.setItemMeta(meta);
 		return head;
 	}
 
-	/** The pet's whole tooltip: type, stats, abilities, held item, rarity footer, then what a click does. */
+	/** Whole tooltip: type, stats, abilities, held item, rarity footer, click action. */
 	private List<Component> lore(boolean equipped, boolean editing) {
 		List<String> out = new ArrayList<>();
 		out.add("<dark_gray>" + PET_TYPE_LINE);
@@ -248,13 +233,13 @@ public enum PetType {
 			for(String line : a.lines()) out.add("<gray>" + line);
 		}
 		out.add("");
-		// The label is gold and the item's name carries ITS OWN rarity colour, which is not the pet's: a MYTHIC
-		// Black Cat holding an EPIC Unalloyed Speed prints a light_purple name over a dark_purple one.
+		// Gold label, item name in its own rarity colour, not the pet's: MYTHIC Black Cat with EPIC Unalloyed
+		// Speed prints light_purple over dark_purple.
 		out.add("<gold>Held Item: " + held.colouredName());
 		out.add("<gray>" + held.effect());
 		out.add("");
-		// SkyBlock's rarity footer, with PET on the end the way a pet's own tooltip writes it.  The real item
-		// drops this in favour of a tooltip_style component, which a server cannot set per stack, so it stays.
+		// Rarity footer with PET on the end, like a real pet tooltip. The real item uses a tooltip_style component
+		// instead, which a server can't set per stack.
 		out.add("<" + rarity.colour() + "><bold>" + rarity.display() + " PET");
 		out.add("");
 		if(editing) {
@@ -270,13 +255,13 @@ public enum PetType {
 		return rendered;
 	}
 
-	/** The menu pet backing a damage-side {@link Pet}, or null if that pet has no menu entry. */
+	/** Menu pet for a damage-side {@link Pet}, or null if none. */
 	public static PetType of(Pet pet) {
 		for(PetType t : values()) if(t.pet == pet) return t;
 		return null;
 	}
 
-	/** Parse a stored enum name back, or null if the file holds a pet that no longer exists. */
+	/** Parse a stored enum name, or null if that pet no longer exists. */
 	public static PetType parse(String name) {
 		if(name == null) return null;
 		for(PetType t : values()) if(t.name().equals(name)) return t;

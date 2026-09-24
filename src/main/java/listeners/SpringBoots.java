@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SpringBoots {
-	/** The boots this drives, so the lore ID lives on the item and not in a second copy here. */
+	/** The boots this drives; the lore ID lives on the item. */
 	private static final items.Item BOOTS = items.armor.SpringBootsItem.INSTANCE;
 
 	// pitch values for BLOCK_NOTE_BLOCK_PLING (F#3=0 → F#5=24; pitch = 2^((n-12)/12))
@@ -151,8 +151,7 @@ public class SpringBoots {
 	}
 
 	private static boolean isOnGround(Player p) {
-		// Server-authoritative ground state via NMS. Every Bukkit Player on Paper is a CraftPlayer, and the NMS
-		// onGround() avoids the deprecated client-driven Bukkit Player#isOnGround().
+		// Server-authoritative NMS onGround(), not the deprecated client-driven Player#isOnGround().
 		return ((CraftPlayer) p).getHandle().onGround();
 	}
 
