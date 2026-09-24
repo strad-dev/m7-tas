@@ -270,9 +270,9 @@ public class Utils {
 	 * <b>The one action-bar send.</b>  Every HUD in the plugin goes through here - {@link #broadcastActionBar} for
 	 * the three boss bars, and directly for the two that render per player (Storm's pad colour, the clear HUD).
 	 * <p>
-	 * It does two things no caller should repeat.  It appends the cheat-death cooldown segments
-	 * ({@code death/CheatDeath}), which are per player and have to survive whatever else is on the bar - there is
-	 * one action-bar slot, so the only way two writers coexist is for one of them to own the append.  And it stamps
+	 * It does two things no caller should repeat.  It appends the per-player segments - the active pet in
+	 * Realistic ({@code pets/Pets}), the Rag Axe, the cheat-death cooldowns ({@code death/CheatDeath}) - which
+	 * have to survive whatever else is on the bar: there is one action-bar slot, so the only way two writers coexist is for one of them to own the append.  And it stamps
 	 * the tick, which is how {@code Deaths}' fallback knows not to overwrite a live HUD: the boss bars all draw at
 	 * the start of the tick, ahead of that fallback.
 	 * <p>
@@ -288,8 +288,9 @@ public class Utils {
 
 	public static void sendActionBar(Player p, Component bar) {
 		// Every per-player segment, in a fixed order so they never swap places under a player as their timers
-		// run out. Both providers answer "" on the common path, which is a map lookup each.
-		String extra = items.combat.RagnarockAxe.actionBarSegment(p) + death.CheatDeath.actionBarSuffix(p);
+		// run out. The pet leads because it never runs out; the two timers answer "" on the common path.
+		String extra = pets.Pets.actionBarSegment(p) + items.combat.RagnarockAxe.actionBarSegment(p)
+				+ death.CheatDeath.actionBarSuffix(p);
 		// The segments ARE the bar when nothing else owns it - the Goldor phase has no HUD of its own - and a
 		// bar opening with "| " reads like something in front of it got cut off.
 		if(!extra.isEmpty() && plain(bar).isEmpty()) extra = extra.substring(ACTION_BAR_SEPARATOR.length());

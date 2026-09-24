@@ -299,7 +299,8 @@ public final class Deaths {
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
 			if(Utils.actionBarOwnedThisTick(p)) continue;
-			if(CheatDeath.hasCooldowns(p) || items.combat.RagnarockAxe.ticksLeft(p) > 0) {
+			if(CheatDeath.hasCooldowns(p) || items.combat.RagnarockAxe.ticksLeft(p) > 0
+					|| !pets.Pets.actionBarSegment(p).isEmpty()) {
 				Utils.sendActionBar(p, Component.empty());
 			}
 		}

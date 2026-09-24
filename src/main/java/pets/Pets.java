@@ -113,6 +113,16 @@ public final class Pets {
 		return p == null ? DEFAULT_PET : profile(p.getUniqueId()).startingPet;
 	}
 
+	/**
+	 * The active pet's action-bar segment, {@code " | [Lvl N] Name"}, appended by {@code Utils.sendActionBar} and
+	 * drawn by {@code death/Deaths}' fallback when no HUD owns the bar.  <b>Realistic only</b>: every other mode
+	 * assumes the pet, so there is no "active pet" to show.  Spectators get nothing, since they are not in the run.
+	 */
+	public static String actionBarSegment(Player p) {
+		if(!Difficulty.manualPets() || Utils.isSpectator(p)) return "";
+		return Utils.ACTION_BAR_SEPARATOR + equipped(p).colouredName();
+	}
+
 	/** This player's menu layout: slot -> pet.  A live view of the profile, so callers must not mutate it. */
 	public static Map<Integer, PetType> layout(Player p) {
 		return profile(p.getUniqueId()).layout;
@@ -167,21 +177,24 @@ public final class Pets {
 	}
 
 	/**
-	 * Put every player on their starting pet, quietly.  Called once from {@code Server.startSection}, for EVERY
-	 * section: "the pet you start with" is about a run beginning, and a run begins whatever you are practising.
+	 * Put every player on their starting pet, quietly.  Called from {@code Server.serverInstructions}, i.e. run
+	 * SETUP, for every section.  Not the countdown's end: that left the warp-in on the last run's pet.
 	 * <p>
 	 * <b>Silent.</b>  It is not autopet reacting to something - it is the run being set up, like the kit - and a
 	 * line per player per run start would be noise.  <b>An autopet {@code RUN_START} rule still wins</b>, because
 	 * that fires later (inside the clear branch, once the door opens) and equipping is last-write-wins.
-	 * <p>
-	 * Spectators are skipped for the same reason autopet skips them: an idle m7 player is not in the run.
 	 */
 	public static void applyStartingPets() {
-		if(!Difficulty.manualPets()) return;
-		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) {
-			if(Utils.isSpectator(p)) continue;
-			equip(p, startingPet(p), null);
-		}
+		for(Player p : org.bukkit.Bukkit.getOnlinePlayers()) applyStartingPet(p);
+	}
+
+	/**
+	 * One player's half of {@link #applyStartingPets}; also {@code PetMenu.onJoin}'s, for someone arriving after
+	 * setup.  Spectators are skipped for the same reason autopet skips them: they are not in the run.
+	 */
+	public static void applyStartingPet(Player p) {
+		if(!Difficulty.manualPets() || Utils.isSpectator(p)) return;
+		equip(p, startingPet(p), null);
 	}
 
 	/** Move the layout wholesale (the arranging menu's save).  Slots are not validated here; the menu owns that. */

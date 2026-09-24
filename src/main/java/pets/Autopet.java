@@ -35,8 +35,14 @@ import java.util.UUID;
  */
 public final class Autopet implements Listener {
 
-	/** What autopet says when it moves a pet.  {@code Pets.equip} finishes the line with the pet's own name. */
-	private static final String ANNOUNCEMENT = "<green>Autopet<gray> equipped your ";
+	/**
+	 * What autopet says when it moves a pet.  {@code Pets.equip} finishes the line with the pet's own name.
+	 * <p>
+	 * <b>The "o" is a Greek omicron (U+03BF), on purpose.</b>  SkyBlock client mods hide Hypixel's real
+	 * "Autopet equipped your ..." line by matching its text, and they ate ours too.  Written as an escape so it
+	 * survives any source encoding and nobody "fixes" it back.
+	 */
+	private static final String ANNOUNCEMENT = "<green>Autοpet<gray> equipped your ";
 
 	/**
 	 * The four things that can move a pet.

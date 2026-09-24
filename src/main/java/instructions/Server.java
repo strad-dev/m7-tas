@@ -139,6 +139,12 @@ public class Server {
 		// this, a re-run's first sharpshooter arrows land into the old still-active phase and are rejected.
 		Goldor.INSTANCE.forceEndPhase();
 
+		// The pet you START with (the loadout editor's slot 51), for every section.  Here at setup, NOT in
+		// startSection: that is the end of the countdown, so the whole warp-in ran on the last run's pet, Max
+		// Speed included.  A late arrival gets it on join (PetMenu.onJoin).  An autopet RUN_START rule still
+		// wins, since that fires at the clear door.
+		pets.Pets.applyStartingPets();
+
 		// boss/maxor: no prep window and no countdown, just a short load grace, then Maxor starts.
 		if(section.equals("boss") || section.equals("maxor")) {
 			Utils.scheduleTask(() -> startSection(world, section), MAXOR_GRACE_TICKS);
@@ -188,10 +194,6 @@ public class Server {
 		// Every section's start funnels through here (boss/maxor via the load grace, the rest via the countdown),
 		// so this is the one place that means "the run is now live".  See runStarted.
 		runStarted = true;
-		// The pet you START with (the loadout editor's slot 51), for every section - a run begins whatever you
-		// are practising.  Quiet, because this is run setup like the kit rather than autopet reacting to
-		// something, and an autopet RUN_START rule still wins since that fires later, in the clear branch below.
-		pets.Pets.applyStartingPets();
 		switch(section) {
 			case "all", "clear" -> {
 				Utils.markPhaseStart();

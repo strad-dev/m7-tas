@@ -345,12 +345,16 @@ public final class PetMenu implements CommandExecutor, Listener {
 	}
 
 	/**
-	 * Load a joining player's pet profile, so the damage path never reads the disk.  Lives here rather than in a
-	 * listener of its own because this class is already the package's registered listener.
+	 * Load a joining player's pet profile, so the damage path never reads the disk, and put them on their starting
+	 * pet if no run is live.  Lives here rather than in a listener of its own because this class is already the
+	 * package's registered listener.
 	 */
 	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		Pets.preload(e.getPlayer().getUniqueId());
+		// Arriving before the run is live (a party member landing mid-countdown, or idle) means starting it on
+		// your starting pet.  Mid-run, the pet is whatever the run has made it.
+		if(!instructions.Server.isRunStarted()) Pets.applyStartingPet(e.getPlayer());
 	}
 
 	/** Shut every open arranging session down, saving as we go.  Called from {@code M7tas.onDisable}. */
