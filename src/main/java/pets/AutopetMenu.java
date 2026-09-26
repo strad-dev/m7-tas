@@ -1,5 +1,6 @@
 package pets;
 
+import damage.Difficulty;
 import loadout.SpectatorGuiAccess;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -117,13 +118,14 @@ public final class AutopetMenu implements Listener {
 		e.setCancelled(true); // a click target, not an inventory - see PetMenu
 		if(!(e.getWhoClicked() instanceof Player p)) return;
 		if(e.getClickedInventory() != e.getView().getTopInventory()) return;
-		// No mode check on purpose. Window is only reachable in realistic mode, and one left open across a mode
-		// change still edits the player's own preference; a gate would just make the buttons silently stop working.
+		// No mode check on purpose: /petloadout reaches this in every mode, and it only edits the player's own
+		// preference; a gate would just make the buttons silently stop working.
 
 		int slot = e.getRawSlot();
 		if(slot == BACK_SLOT) {
-			// Deferred a tick like every view swap: this window's close has to land first.
-			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> parent.open(p, false));
+			// Deferred a tick like every view swap: this window's close has to land first. Outside realistic, back to
+			// arranging, since the summoning half would summon.
+			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> parent.open(p, !Difficulty.manualPets()));
 			return;
 		}
 		for(int i = 0; i < TRIGGER_SLOTS.length && i < Autopet.Trigger.values().length; i++) {

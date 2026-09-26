@@ -73,8 +73,8 @@ public class CustomItems implements Listener {
 	private static final Map<UUID, Integer> lastLeftClickAbilityTick = new ConcurrentHashMap<>();
 	private static final Set<UUID> droppingPlayers = new HashSet<>();
 
-	/** Tick of last melee hit per player, so one swing lands one hit ({@link #meleeAttack}). */
-	private static final Map<UUID, Integer> lastMeleeTick = new ConcurrentHashMap<>();
+	/** Melee's 5-tick cooldown (4 with full Thermodynamic), same rule as the beam: hit on tick 0, denied 1-4, hit on 5 ({@link #meleeAttack}). */
+	private static final String MELEE_KEY = "melee";
 
 	/**
 	 * Mage beam's own 5-tick cooldown (the left-click guard only caps to one per tick). A rate cap, not an ability
@@ -123,11 +123,10 @@ public class CustomItems implements Listener {
 		if(target instanceof Player) return;
 		ItemStack held = p.getInventory().getItemInMainHand();
 		if(leftClickIsAbility(p, held)) return;
-		// One hit per swing: the drop-key path also swings, and a duplicate packet would double damage AND the
+		// Also one hit per swing: the drop-key path also swings, and a duplicate packet would double damage AND the
 		// repeated-hit stack.
-		int now = MinecraftServer.currentTick;
-		if(lastMeleeTick.getOrDefault(p.getUniqueId(), -1) == now) return;
-		lastMeleeTick.put(p.getUniqueId(), now);
+		if(!Cooldowns.ready(p, MELEE_KEY)) return;
+		Cooldowns.start(p, MELEE_KEY, ItemUtils.isThermoSet(p) ? 4 : 5);
 
 		// Only a melee weapon swings. Anything else (bow, held head, vanilla stack) lands a PUNCH: melee formula,
 		// held item contributes nothing. Before, a Precise Terminator punch folded in its 310 Damage, Strength and
@@ -432,10 +431,9 @@ public class CustomItems implements Listener {
 		damage.Stats.invalidateAll();
 	}
 
-	/** Clear Terminator volley clocks and the melee dedupe. Called at every practice run start. */
+	/** Clear Terminator volley clocks. Called at every practice run start. */
 	public static void resetTerminatorCooldowns() {
 		Terminator.reset();
-		lastMeleeTick.clear();
 	}
 
 	/**

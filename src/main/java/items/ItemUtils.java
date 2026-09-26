@@ -655,7 +655,12 @@ public final class ItemUtils {
 					}
 					if(!(e instanceof LivingEntity mob) || e instanceof Player) continue;
 					if(mob.isDead() || mob.getHealth() <= 0 || !hit.add(mob.getUniqueId())) continue;
-					if(e instanceof Wither w2 && w2.getInvulnerableTicks() != 0) continue;
+					if(e instanceof Wither w2 && w2.getInvulnerableTicks() != 0) {
+						// Stacks still build through the shield, like the beam; no damage.
+						damage.Damage.applyOnHitDebuffs(p, w2, damage.DamagePath.MELEE, weapon);
+						damage.Procs.buildVenomous(p, w2);
+						continue;
+					}
 					double reported;
 					if(derived) {
 						// Debuffs (Lethality) still land; only the damage half is skipped, it's already in the figure.
@@ -825,6 +830,7 @@ public final class ItemUtils {
 			// Debuffs land even without damage (MAP.md §7), so Lethality is stacked by the time it opens up. Covers
 			// Maxor and Storm, which can't be arrow-debuffed before they're vulnerable.
 			damage.Damage.applyOnHitDebuffs(p, wither, damage.DamagePath.BEAM, held);
+			damage.Procs.buildVenomous(p, wither);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {
 			// MELEE hit rescaled by the Mage Staff passive, faded by distance across the range tiers (§7). The old

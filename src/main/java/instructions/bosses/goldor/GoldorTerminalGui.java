@@ -288,6 +288,8 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/** Click In Order: next number owed, and the last. */
 	private int nextNumber = 1;
 	private int lastNumber;
+	/** Latched at build; {@link #clickOrderSlots} reads alpha live. */
+	private int[] orderSlots = new int[0];
 
 	/** Past {@link #melodyLastRow()} once solved. */
 	private int melodyRow = MELODY_FIRST_ROW;
@@ -619,13 +621,31 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	 */
 	private void buildClickInOrder() {
 		fill(FILLER);
-		int[] slots = clickOrderSlots();
-		lastNumber = slots.length;
+		orderSlots = clickOrderSlots();
+		lastNumber = orderSlots.length;
 		List<Integer> numbers = new ArrayList<>();
 		for(int n = 1; n <= lastNumber; n++) numbers.add(n);
 		if(!standIn) Collections.shuffle(numbers, RANDOM);
-		for(int i = 0; i < slots.length; i++) {
-			inv.setItem(slots[i], item(Material.RED_STAINED_GLASS_PANE, numbers.get(i)));
+		for(int i = 0; i < orderSlots.length; i++) {
+			inv.setItem(orderSlots[i], item(Material.RED_STAINED_GLASS_PANE, numbers.get(i)));
+		}
+		drawClickInOrder();
+	}
+
+	/** Colour by distance from the next number: solved green, next lime, then yellow, orange, the rest red. */
+	private void drawClickInOrder() {
+		for(int s : orderSlots) {
+			ItemStack at = inv.getItem(s);
+			if(at == null) continue;
+			int n = at.getAmount();
+			Material colour = switch(n - nextNumber) {
+				case 0 -> Material.LIME_STAINED_GLASS_PANE;
+				case 1 -> Material.YELLOW_STAINED_GLASS_PANE;
+				case 2 -> Material.ORANGE_STAINED_GLASS_PANE;
+				default -> n < nextNumber ? Material.GREEN_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE;
+			};
+			// A solved pane drops its number (amount 1 draws none); still below nextNumber, so it stays green and dead.
+			inv.setItem(s, item(colour, n < nextNumber ? 1 : n));
 		}
 	}
 
@@ -779,10 +799,12 @@ public final class GoldorTerminalGui implements InventoryHolder {
 
 	/** Next number only; anything else is eaten. */
 	private boolean clickInOrderClick(Player clicker, int slot) {
+		if(indexOf(orderSlots, slot) < 0) return false;
 		ItemStack at = inv.getItem(slot);
-		if(at == null || at.getType() != Material.RED_STAINED_GLASS_PANE || at.getAmount() != nextNumber) return false;
-		inv.setItem(slot, item(Material.GREEN_STAINED_GLASS_PANE, nextNumber));
-		if(nextNumber++ < lastNumber) { cue(clicker); return false; }
+		if(at == null || at.getAmount() != nextNumber) return false;
+		nextNumber++;
+		drawClickInOrder();
+		if(nextNumber <= lastNumber) { cue(clicker); return false; }
 		solved = true;
 		return true;
 	}

@@ -407,7 +407,8 @@ public class GoldorListener implements Listener {
 	// PHASE-INDEPENDENT, like the punch/break guards below.  It used to return when the phase was inactive, so in
 	// prep and between phases any frame could be rotated, and nothing re-deals the grid mid-run.
 	// Goldor.isTurnableArrowFrame is STATIC (frame position + item) so it answers before any scan.  MODE-DEPENDENT:
-	// all nine in realistic, else only the stand-in's one unfinished frame.  Every other frame is always untouchable.
+	// in realistic any frame not yet solved, else only the stand-in's one unfinished frame.  Every other frame is
+	// always untouchable.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onInteractEntity(PlayerInteractEntityEvent e) {
 		if(!(e.getRightClicked() instanceof ItemFrame frame)) return;
@@ -434,7 +435,7 @@ public class GoldorListener implements Listener {
 	 * solve: CustomItems' cancel skips vanilla's rotation, so the turn is done here, and the caller cancels so a
 	 * click vanilla did reach isn't worth two steps.
 	 * <p>
-	 * Realistic needs all nine on ordinal 1; classic + Perfect RNG only let the bottom-left frame through
+	 * Realistic needs all nine on ordinal 1, and a frame on it locks; classic + Perfect RNG only let the bottom-left frame through
 	 * ({@code Goldor.isTurnableArrowFrame}) and turning it activates.  Re-checks all state, so safe deferred.
 	 */
 	private boolean processArrowFrame(ItemFrame frame, Player p, boolean wasDeferred) {

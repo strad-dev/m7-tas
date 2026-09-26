@@ -130,13 +130,27 @@ public final class Procs {
 		double fire = sbDamage * FIRE_ASPECT_SHARE * TargetDebuffs.fireMultiplier(target);
 		apply(target, attacker, DamageKind.FIRE, fire, FIRE_ASPECT_INTERVAL, FIRE_ASPECT_DURATION);
 
+		venomous(attacker, target);
+	}
+
+	/**
+	 * Venomous alone, for a beam on an ARMOURED wither: the stack and the poison window build, and its ticks deal
+	 * nothing until the armour drops ({@code Damage.deal} refuses them).
+	 */
+	public static void buildVenomous(Player attacker, LivingEntity target) {
+		if(attacker == null || target == null) return;
+		venomous(attacker, target);
+	}
+
+	private static void venomous(Player attacker, LivingEntity target) {
 		// Venomous VII: a stack per hit, 2% of DPS (8x highest hit in 100t), cap 40 = 640% of that hit, every 20t
 		// for 100t. §7's "(80% of the hit)" is 8x smaller than its own DPS definition; owner ruled DPS operative, so
 		// this is the largest proc by design, which is why it must run on its own 20t cadence, never per swing.
 		// Ramp is bounded by the window too: cleared when this player's poison lapses (see tick).
 		int stacks = CombatState.noteVenomousHit(attacker, target.getUniqueId());
+		// Applied even at 0 (an armoured wither and no recent hit): the window is what resets the ramp.
 		double venom = CombatState.venomousDps(attacker) * VENOMOUS_PER_STACK * stacks;
-		if(venom > 0) apply(target, attacker, DamageKind.VENOMOUS, venom, VENOMOUS_INTERVAL, VENOMOUS_DURATION);
+		apply(target, attacker, DamageKind.VENOMOUS, venom, VENOMOUS_INTERVAL, VENOMOUS_DURATION);
 	}
 
 	/**

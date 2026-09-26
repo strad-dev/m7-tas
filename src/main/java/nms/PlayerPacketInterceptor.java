@@ -93,13 +93,16 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			// 26.2 moved melee into ServerboundAttackPacket (ServerboundInteractPacket is interact/interact-at only).
 			// Every attack dispatches LEFT_CLICK_AIR: EntityDamageByEntityEvent only fires when damage lands (not on
 			// shielded withers or dying mobs), and no PlayerInteractEvent fires with a mob in melee range, so this is
-			// what fires the beam there. lastLeftClickAbilityTick dedupes against the EDBEE dispatch.
+			// what fires the beam there.
 			//
 			// The entity id is also the only source of an ordinary melee hit, since vanilla damage is cancelled
 			// (CustomItems.onEntityDamageByEntity). meleeAttack stands down for left-click-ability items, so a beam
 			// swing doesn't also melee.
+			//
+			// Server executor, not runTask: runTask landed a tick late, so a beam on a mob ran a tick behind a beam at
+			// air and the 5-tick cooldown dropped the next click if the two alternated.
 			int targetId = attackPkt.entityId();
-			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> {
+			MinecraftServer.getServer().execute(() -> {
 				CustomItems.handleCustomItems(null, EquipmentSlot.HAND, player.getInventory().getItemInMainHand(), Action.LEFT_CLICK_AIR, player);
 				net.minecraft.world.entity.Entity target =
 						((org.bukkit.craftbukkit.CraftWorld) player.getWorld()).getHandle().getEntity(targetId);

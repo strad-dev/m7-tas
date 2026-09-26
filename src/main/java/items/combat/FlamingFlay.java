@@ -127,7 +127,13 @@ public final class FlamingFlay implements Weapon, AbilityItem {
 					if(entity instanceof Wither w && w.getScoreboardTags().contains("TASWither")) {
 						instructions.bosses.WitherActions.noteDamager(p);
 					}
-					if(entity instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) continue;
+					if(entity instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) {
+						// Stacks still build through the shield, like the beam; no damage.
+						damage.Damage.applyOnHitDebuffs(p, armoured, damage.DamagePath.MELEE, p.getInventory().getItemInMainHand());
+						damage.Procs.buildVenomous(p, armoured);
+						hitEntities.add(entity);
+						continue;
+					}
 					// Deals the SAME as its melee hit (MAP.md §1.8), so melee formula, not ability.
 					double sbDamage = damage.Damage.melee(p, entity1, p.getInventory().getItemInMainHand());
 					damage.Damage.deal(entity1, sbDamage, damage.DamageKind.NORMAL, p, damage.DamagePath.MELEE);

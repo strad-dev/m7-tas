@@ -33,10 +33,11 @@ public final class Stats {
 	private static final int CACHE_TICKS = 5;
 
 	/**
-	 * {@code weapon} false = UNARMED aggregate (punch), minus the main hand. In the key, not an uncached call, since
-	 * someone hitting with a bow punches every click.
+	 * {@code weapon} null = UNARMED aggregate (punch), minus the main hand. In the key, not an uncached call, since
+	 * someone hitting with a bow punches every click. The DEF, not "the main hand", so a Duplex or Archer arrow
+	 * stamped after a swap still reads the bow that fired it.
 	 */
-	private record Key(UUID player, DamagePath path, boolean weapon) {}
+	private record Key(UUID player, DamagePath path, ItemDef weapon) {}
 
 	private record Cached(int tick, StatBlock stats) {}
 
@@ -54,15 +55,17 @@ public final class Stats {
 	}
 
 	public static StatBlock of(Player p, DamagePath path) {
-		return of(p, path, true);
+		if(p == null) return StatBlock.EMPTY;
+		return of(p, path, Items.of(p.getInventory().getItemInMainHand()));
 	}
 
 	/** Aggregate with an EMPTY main hand, for a punch. Everything else still counts, as in SkyBlock. */
 	public static StatBlock unarmed(Player p) {
-		return of(p, DamagePath.MELEE, false);
+		return of(p, DamagePath.MELEE, (ItemDef) null);
 	}
 
-	private static StatBlock of(Player p, DamagePath path, boolean weapon) {
+	/** With {@code weapon} in place of the main hand: a bow's arrows stamped ticks after the shot. */
+	public static StatBlock of(Player p, DamagePath path, ItemDef weapon) {
 		if(p == null) return StatBlock.EMPTY;
 		Key key = new Key(p.getUniqueId(), path, weapon);
 		Cached hit = CACHE.get(key);
@@ -75,10 +78,11 @@ public final class Stats {
 
 	/** Itemised by source for {@code /verbose super} and {@code /eq}. Uncached; only built when someone looks. */
 	public static Map<String, StatBlock> breakdown(Player p, DamagePath path) {
-		return breakdown(p, path, true);
+		if(p == null) return new LinkedHashMap<>();
+		return breakdown(p, path, Items.of(p.getInventory().getItemInMainHand()));
 	}
 
-	private static Map<String, StatBlock> breakdown(Player p, DamagePath path, boolean weapon) {
+	private static Map<String, StatBlock> breakdown(Player p, DamagePath path, ItemDef weapon) {
 		Map<String, StatBlock> out = new LinkedHashMap<>();
 		if(p == null) return out;
 		DungeonClass clazz = DungeonClass.of(p);
@@ -86,7 +90,7 @@ public final class Stats {
 		Pet pet = Pet.forPlayer(p, path);
 		PlayerInventory inv = p.getInventory();
 
-		if(weapon) put(out, "weapon", itemStats(inv.getItemInMainHand(), pet));
+		if(weapon != null) put(out, "weapon", weapon.stats(pet));
 		put(out, "helmet", itemStats(inv.getHelmet(), pet));
 		put(out, "chestplate", itemStats(inv.getChestplate(), pet));
 		put(out, "leggings", itemStats(inv.getLeggings(), pet));
@@ -104,7 +108,7 @@ public final class Stats {
 		if(stats != null && !stats.isEmpty()) out.put(label, stats);
 	}
 
-	private static StatBlock compute(Player p, DamagePath path, boolean weapon) {
+	private static StatBlock compute(Player p, DamagePath path, ItemDef weapon) {
 		StatBlock sum = StatBlock.EMPTY;
 		for(StatBlock part : breakdown(p, path, weapon).values()) sum = sum.plus(part);
 

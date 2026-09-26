@@ -17,7 +17,9 @@ import java.util.List;
  * DRAWN bow: damage scales by charge and a partial draw loses the crit term (§1.4), both in {@code Damage}'s bow path.
  * <p>
  * <b>x2 vs Undead</b> lives in {@code Damage.multiplicative} keyed on the lore ID, beside Hyperion's x1.5 vs Wither,
- * so it follows the WEAPON and the Duplex and Archer arrows (landing ticks later) get it too.
+ * so it follows the WEAPON and the Archer arrows (landing ticks later) get it too.
+ * <p>
+ * Runs <b>Swarm V</b>, not Duplex ({@code ItemDef.swarm}): no 0.2x arrow, no fire debuff.
  * <p>
  * The 50% arrow bounce to another target is <b>not modelled</b>.
  */

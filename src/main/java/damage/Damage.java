@@ -67,6 +67,9 @@ public final class Damage {
 	private static final double EXECUTE_VI_PER_PERCENT_MISSING = 1.25;
 	private static final double PROSECUTE_VI_PER_PERCENT_REMAINING = 1.0;
 	private static final double PRECISE_HEADSHOT = 10;
+	private static final double SWARM_V_PER_ENEMY = 10;
+	private static final int SWARM_MAX_ENEMIES = 10;
+	private static final double SWARM_RADIUS = 10;
 	private static final double RULER = 39;
 	private static final double WARRIOR = 25;
 	private static final double SKELETOR = 25;
@@ -179,10 +182,11 @@ public final class Damage {
 	/**
 	 * STAT half of a bow shot, stamped by {@link Arrows} at fire time (§1.0.5).
 	 *
-	 * @param crit false only for a partial draw, which loses the whole crit term
+	 * @param weapon the bow that fired, not the main hand: bonus arrows are stamped ticks later
+	 * @param crit   false only for a partial draw, which loses the whole crit term
 	 */
-	public static double bowCore(Player p, boolean crit) {
-		return statCore(p, DamagePath.BOW, crit, null);
+	public static double bowCore(Player p, ItemDef weapon, boolean crit) {
+		return statCore(Stats.of(p, DamagePath.BOW, weapon), crit, null);
 	}
 
 	/**
@@ -345,6 +349,7 @@ public final class Damage {
 		// --- ENCHANTMENTS, on the WEAPON, so a punch gets none. Everything outside this block (attributes, potions,
 		// pet, class) belongs to the player and a punch keeps it.
 		if(weaponEnchants) {
+			if(weapon != null && weapon.swarm()) sum += SWARM_V_PER_ENEMY * swarmEnemies(p);
 			// These four are on swords AND bows; the rest are sword-only.
 			if(types.contains(MobType.CUBIC)) sum += CUBISM_VI;
 			if(types.contains(MobType.AIRBORNE)) sum += GRAVITY_VI;
@@ -390,6 +395,18 @@ public final class Damage {
 		DungeonClass clazz = DungeonClass.of(p);
 		sum += ClassBonuses.damageAdditive(p, clazz, path, target.getUniqueId(), DungeonClass.isSoloOnClass(p));
 		return sum;
+	}
+
+	/** Live enemies within 10 blocks of the PLAYER at the hit, not the target, capped at 10. */
+	private static int swarmEnemies(Player p) {
+		int n = 0;
+		for(org.bukkit.entity.Entity e : p.getNearbyEntities(SWARM_RADIUS, SWARM_RADIUS, SWARM_RADIUS)) {
+			if(!(e instanceof org.bukkit.entity.Enemy) || !(e instanceof LivingEntity mob)) continue;
+			if(mob.isDead() || mob.getHealth() <= 0 || mob.getScoreboardTags().contains("TASDying")) continue;
+			if(mob.getLocation().distanceSquared(p.getLocation()) > SWARM_RADIUS * SWARM_RADIUS) continue;
+			if(++n >= SWARM_MAX_ENEMIES) break;
+		}
+		return n;
 	}
 
 	private static double giantKiller() {
@@ -474,7 +491,7 @@ public final class Damage {
 		if(path.isMelee()) TargetDebuffs.applyLethality(target);
 		if(path == DamagePath.BOW) {
 			TargetDebuffs.applyTwilightPoison(target);
-			TargetDebuffs.applyDuplexFire(target);
+			if(weapon == null || !weapon.swarm()) TargetDebuffs.applyDuplexFire(target);
 			if(buildsLastBreath && weapon != null && "skyblock/combat/last_breath".equals(weapon.loreId())) {
 				TargetDebuffs.applyLastBreath(target);
 			}

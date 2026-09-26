@@ -25,6 +25,7 @@ public final class ItemDef {
 	private final ReforgeId reforge;
 	private final List<Gemstones.Slot> gemSlots;
 	private final boolean chimera;
+	private final boolean swarm;
 	private final double selfMultiplier;
 	private final boolean shortbow;
 	private final Ability ability;
@@ -41,6 +42,7 @@ public final class ItemDef {
 		this.reforge = b.reforge;
 		this.gemSlots = List.copyOf(b.gemSlots);
 		this.chimera = b.chimera;
+		this.swarm = b.swarm;
 		this.selfMultiplier = b.selfMultiplier;
 		this.shortbow = b.shortbow;
 		this.ability = b.ability;
@@ -125,6 +127,11 @@ public final class ItemDef {
 		return chimera;
 	}
 
+	/** Swarm V in the ultimate slot, so on a bow no Duplex: no extra arrow, no fire debuff. */
+	public boolean swarm() {
+		return swarm;
+	}
+
 	/** Item-wide multiplier and dungeon stage, applied once to the summed terms. */
 	private StatBlock finish(StatBlock sum) {
 		StatBlock scaled = sum.times(selfMultiplier);
@@ -147,6 +154,7 @@ public final class ItemDef {
 		private ReforgeId reforge = ReforgeId.NONE;
 		private final List<Gemstones.Slot> gemSlots = new ArrayList<>();
 		private boolean chimera = false;
+		private boolean swarm = false;
 		private double selfMultiplier = 1.0;
 		private boolean shortbow = false;
 		private ItemDef.Ability ability = null;
@@ -218,6 +226,12 @@ public final class ItemDef {
 		/** Chimera V: copies the pet's base stats onto ITSELF (§2). */
 		public Builder chimera() {
 			this.chimera = true;
+			return this;
+		}
+
+		/** Swarm V: +10% additive per enemy within 10 blocks, 10 max. Replaces Duplex on a bow. */
+		public Builder swarm() {
+			this.swarm = true;
 			return this;
 		}
 

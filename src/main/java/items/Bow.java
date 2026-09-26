@@ -3,6 +3,8 @@ package items;
 import damage.Arrows;
 import damage.DungeonClass;
 import damage.ItemCategory;
+import damage.ItemDef;
+import damage.Items;
 import instructions.Actions;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -25,7 +27,7 @@ public interface Bow extends Item {
 
 	/**
 	 * Duplex V: ONE extra arrow at x0.2 damage, {@link #DUPLEX_DELAY} ticks behind. Its own damage instance, not a
-	 * multiplier. Every bow runs it, so none carries Chimera (§7).
+	 * multiplier. Every bow but the Death Bow (Swarm) runs it, so none carries Chimera (§7).
 	 */
 	double DUPLEX_SHARE = 0.2;
 	int DUPLEX_DELAY = 3;
@@ -103,10 +105,13 @@ public interface Bow extends Item {
 		return false;
 	}
 
-	/** Duplex arrow, plus the two Archer arrows for an Archer. */
+	/** Duplex arrow unless the bow runs Swarm (Death Bow), plus the two Archer arrows for an Archer. */
 	default void fireBonusArrows(Player p, Location aimFrom, ItemStack bow, float speed, double charge) {
-		Utils.scheduleTask(() -> fireBonusArrow(p, aimFrom, bow, speed, charge, DUPLEX_SHARE,
-				duplexBuildsLastBreathStacks(), false), DUPLEX_DELAY);
+		ItemDef def = Items.of(bow);
+		if(def == null || !def.swarm()) {
+			Utils.scheduleTask(() -> fireBonusArrow(p, aimFrom, bow, speed, charge, DUPLEX_SHARE,
+					duplexBuildsLastBreathStacks(), false), DUPLEX_DELAY);
+		}
 		if(DungeonClass.of(p) != DungeonClass.ARCHER) return;
 		for(int delay : ARCHER_BONUS_DELAYS) {
 			Utils.scheduleTask(() -> fireBonusArrow(p, aimFrom, bow, speed, charge, ARCHER_BONUS_SHARE,

@@ -64,10 +64,10 @@ public final class Arrows {
 			double share, boolean buildsLastBreath) {
 		if(arrow == null || shooter == null) return;
 		boolean full = chargeFraction >= 1.0;
-		double core = Damage.bowCore(shooter, full) * Math.max(0, Math.min(chargeFraction, 1.0)) * share;
+		ItemDef def = Items.of(weapon);
+		double core = Damage.bowCore(shooter, def, full) * Math.max(0, Math.min(chargeFraction, 1.0)) * share;
 		var pdc = arrow.getPersistentDataContainer();
 		pdc.set(CORE, PersistentDataType.DOUBLE, core);
-		ItemDef def = Items.of(weapon);
 		pdc.set(WEAPON, PersistentDataType.STRING, def == null ? "" : def.displayName());
 		Location o = arrow.getLocation();
 		pdc.set(ORIGIN, PersistentDataType.STRING, o.getX() + "," + o.getY() + "," + o.getZ());

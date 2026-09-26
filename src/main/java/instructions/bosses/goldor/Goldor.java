@@ -152,13 +152,14 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * All nine in realistic, only {@link #standInArrowFrame} otherwise: the other eight already read the answer, and
-	 * the stand-in activates on the first click, so one of them would finish the device off the wrong frame. Asked
-	 * live; a cache would need invalidating on every teardown and mode change.
+	 * Realistic: any frame not yet on {@link #ARROW_SOLVED_ROTATION}, so a solved frame locks like the stand-in's
+	 * eight. Otherwise only {@link #standInArrowFrame}: the other eight already read the answer, and the stand-in
+	 * activates on the first click, so one of them would finish the device off the wrong frame. Asked live; a cache
+	 * would need invalidating on every teardown and mode change.
 	 */
 	public static boolean isTurnableArrowFrame(ItemFrame frame) {
 		if(!isArrowAlignFrame(frame)) return false;
-		if(damage.Difficulty.realPuzzles()) return true;
+		if(damage.Difficulty.realPuzzles()) return frame.getRotation() != ARROW_SOLVED_ROTATION;
 		ItemFrame standIn = standInArrowFrame(frame.getWorld());
 		return standIn != null && standIn.getUniqueId().equals(frame.getUniqueId());
 	}

@@ -195,13 +195,14 @@ public final class Items {
 				.build());
 
 		// ============================== Death Bow - Precise ==============================
-		// DUNGEON bow (Ophelia, after Floor VI), so x6.65. Overload not Critical (a sword enchant), no Chimera since
-		// bows run Duplex (§7). Its x2 vs Undead is a MULTIPLICATIVE source in damage/Damage; arrow bounce unmodelled.
+		// DUNGEON bow (Ophelia, after Floor VI), so x6.65. Overload not Critical (a sword enchant). Swarm V, the one
+		// bow not on Duplex. Its x2 vs Undead is a MULTIPLICATIVE source in damage/Damage; arrow bounce unmodelled.
 		register(ItemDef.of("Precise Death Bow", ItemCategory.RANGED)
 				.loreId("skyblock/combat/death_bow").rarity(Rarity.EPIC)
 				.base(Stat.DAMAGE, 300)
 				.with(Upgrade.POTATO_BOOKS, Upgrade.ART_OF_WAR, Upgrade.OVERLOAD)
 				.reforge(ReforgeId.PRECISE)
+				.swarm()
 				.build());
 
 		// ============================== §1.10 Armour ==============================

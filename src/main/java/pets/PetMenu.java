@@ -59,8 +59,9 @@ import java.util.UUID;
  * paths is how items disappear.
  *
  * <h2>Realistic only</h2>
- * Both commands refuse in other modes and say why. In classic and Perfect RNG the pet is assumed from what the
+ * {@code /pets} refuses in other modes and says why. In classic and Perfect RNG the pet is assumed from what the
  * player does and wears ({@code damage/Pet.forPlayer}), so a menu would offer a choice nothing reads.
+ * {@code /petloadout} opens in any mode: it only edits layout and autopet settings.
  */
 public final class PetMenu implements CommandExecutor, Listener {
 
@@ -130,14 +131,16 @@ public final class PetMenu implements CommandExecutor, Listener {
 			sender.sendMessage(Utils.msg("<red>Only players have pets"));
 			return true;
 		}
-		if(!Difficulty.manualPets()) {
+		boolean arranging = command.getName().equalsIgnoreCase("petloadout");
+		// /petloadout only edits settings, so it opens in any mode.
+		if(!arranging && !Difficulty.manualPets()) {
 			// Say which mode it needs: opening onto an assumed pet would be worse than not opening.
 			sender.sendMessage(Utils.msg("<red>Pets are yours to pick only in <white>Realistic</white> mode."));
 			sender.sendMessage(Utils.msg("<gray>The mode is <white>" + Difficulty.current().displayName()
 					+ "</white>, where your pet follows from what you are doing."));
 			return true;
 		}
-		open(p, command.getName().equalsIgnoreCase("petloadout"));
+		open(p, arranging);
 		return true;
 	}
 
