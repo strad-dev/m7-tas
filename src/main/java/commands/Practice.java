@@ -23,7 +23,7 @@ import java.util.Map;
  * 2. Equips each with their saved /m7loadout kit, refreshed to current item definitions, teleports them to the
  *    phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport. Bare "classic"/"perfect_rng"/"rta" sets the damage mode (MAP.md §0),
- *    "paul"/"derpy"/"other" the mayor, "on"/"off" the alpha timings; omitted, current settings stand, so
+ *    a damage.Mayor id the mayor, "on"/"off" the alpha timings; omitted, current settings stand, so
  *    standalone keeps whatever /dungeonsettings set. The network always sends all three.
  * 4. Runs the same boss and server instructions as /tas, WITHOUT fake-player routines, handoffs or spectator
  *    sync. Pre-run delay is 60 ticks (3s); a bare integer overrides it: the network sends
@@ -67,7 +67,7 @@ public class Practice implements CommandExecutor {
 		// /dungeonsettings choice. The network always passes one: damage.Difficulty is server-wide and a run must
 		// not inherit the last party's mode, which decides whether anyone can die (both live modes kill).
 		damage.Difficulty difficulty = null;
-		// Optional mayor ("paul" / "derpy" / "other"). Null leaves it alone, same reason: damage.Mayor is
+		// Optional mayor (a damage.Mayor id). Null leaves it alone, same reason: damage.Mayor is
 		// server-wide, and it decides whether every mob has double health.
 		damage.Mayor mayorArg = null;
 		// Optional alpha timings ("on" / "off"). Null leaves it alone, same reason: plugin.Alpha is server-wide,

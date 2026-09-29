@@ -190,7 +190,12 @@ public abstract class WitherLord {
 	}
 
 	protected final void setAggro(double stopDistance, double yOffset, double maxSpeed) {
-		WitherActions.setWitherAggro(boss, stopDistance, yOffset, maxSpeed);
+		WitherActions.setWitherAggro(boss, stopDistance, yOffset, maxSpeed, this::clampRise);
+	}
+
+	/** Aggro's upward step for hitbox {@code box}; default unlimited. */
+	protected double clampRise(org.bukkit.util.BoundingBox box, double vy) {
+		return vy;
 	}
 
 	protected final void clearAggro() {

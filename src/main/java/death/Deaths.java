@@ -281,7 +281,6 @@ public final class Deaths {
 
 		String name = "<gold>" + Utils.getRealName(p);
 		Bukkit.broadcast(Utils.msg("<green> ❣ " + name + " <green>was revived by " + name + "<green>!"));
-		Utils.playGlobalSound(Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.6f);
 	}
 
 	// ==================== messages ====================

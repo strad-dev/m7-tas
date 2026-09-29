@@ -107,7 +107,7 @@ public final class Profile {
 		double sum = 0;
 		if(stat == Stat.STRENGTH || stat == Stat.CRIT_DAMAGE || stat == Stat.INTELLIGENCE
 				|| stat == Stat.ABILITY_DAMAGE) {
-			sum += 10;                                   // Jerry
+			sum += Mayor.jerryBonus();
 			sum += 1.4 * legionStacks(p);
 			sum += 1.0 * renownedPiecesWorn(p);
 		}

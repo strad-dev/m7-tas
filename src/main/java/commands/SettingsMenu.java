@@ -128,9 +128,11 @@ public final class SettingsMenu implements Listener {
 
 	private static String colour(Mayor m) {
 		return switch(m) {
+			case JERRY_PAUL -> "<gold>";
 			case PAUL -> "<green>";
-			case DERPY -> "<light_purple>";
+			case JERRY -> "<yellow>";
 			case OTHER -> "<gray>";
+			case DERPY -> "<light_purple>";
 		};
 	}
 
@@ -150,9 +152,11 @@ public final class SettingsMenu implements Listener {
 
 	private static String label(Mayor m) {
 		return switch(m) {
+			case JERRY_PAUL -> "Jerry-Paul";
 			case PAUL -> "Paul";
-			case DERPY -> "Derpy";
+			case JERRY -> "Jerry";
 			case OTHER -> "Other";
+			case DERPY -> "Derpy";
 		};
 	}
 

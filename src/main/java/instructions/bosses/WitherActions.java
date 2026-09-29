@@ -207,6 +207,12 @@ public class WitherActions {
 		}
 	}
 
+	/** Caps a tick's upward step; {@code box} is the hitbox after that tick's horizontal step. */
+	@FunctionalInterface
+	public interface RiseLimit {
+		double clamp(org.bukkit.util.BoundingBox box, double vy);
+	}
+
 	/** Per-tick vertical cap so a big goalY-wy gap doesn't snap-teleport. */
 	private static final double AGGRO_SPEED_VERTICAL_MAX = 0.2;
 
@@ -215,9 +221,10 @@ public class WitherActions {
 	 * goal is the spot {@code stopDistance} from the target, {@code yOffset} up; {@code v += dir*A - v*0.6} then
 	 * {@code *= 0.91}, like {@code Wither.aiStep}. Vanilla's A=0.3 gives ~0.4717 blocks/tick, so
 	 * {@code A = maxSpeed * 0.636} makes steady state {@code maxSpeed}. Overshoot snaps to the goal and zeroes
-	 * velocity. {@code noPhysics} on, so it phases through walls. Wither must have setAI(false).
+	 * velocity. {@code noPhysics} on, so it phases through walls. Wither must have setAI(false). {@code riseLimit} may
+	 * cut an upward step, never a horizontal one.
 	 */
-	public static void setWitherAggro(Wither wither, double stopDistance, double yOffset, double maxSpeed) {
+	public static void setWitherAggro(Wither wither, double stopDistance, double yOffset, double maxSpeed, RiseLimit riseLimit) {
 		clearWitherAggro(wither);
 
 		net.minecraft.world.entity.boss.wither.WitherBoss w = ((CraftWither) wither).getHandle();
@@ -322,6 +329,11 @@ public class WitherActions {
 				}
 				if(Math.abs(vy) > AGGRO_SPEED_VERTICAL_MAX) {
 					vy = Math.signum(vy) * AGGRO_SPEED_VERTICAL_MAX;
+				}
+				if(vy > 0) {
+					net.minecraft.world.phys.AABB bb = w.getBoundingBox().move(vx, 0, vz);
+					vy = Math.max(0, Math.min(vy, riseLimit.clamp(new org.bukkit.util.BoundingBox(
+							bb.minX, bb.minY, bb.minZ, bb.maxX, bb.maxY, bb.maxZ), vy)));
 				}
 
 				Vec3 v = new Vec3(vx, vy, vz);

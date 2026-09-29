@@ -829,7 +829,8 @@ public final class ItemUtils {
 			if(wither.getScoreboardTags().contains("TASWither")) instructions.bosses.WitherActions.noteDamager(p);
 			// Debuffs land even without damage (MAP.md §7), so Lethality is stacked by the time it opens up. Covers
 			// Maxor and Storm, which can't be arrow-debuffed before they're vulnerable.
-			damage.Damage.applyOnHitDebuffs(p, wither, damage.DamagePath.BEAM, held);
+			// beam() applies them; its figure goes in the history too, or Venomous ticks for 0 until the first real hit.
+			damage.CombatState.recordDamage(p, damage.Damage.beam(p, wither, held, distance));
 			damage.Procs.buildVenomous(p, wither);
 			if(!targetDead) Utils.playLocalSound(p, Sound.ENTITY_WITHER_HURT, 1.0f, 1.0f);
 		} else if(targetEntity instanceof LivingEntity temp) {

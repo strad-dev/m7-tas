@@ -566,10 +566,6 @@ public final class Damage {
 		// Aggro used to be noted here, before the immunity returns, so a boss chased whoever hit it through an armoured
 		// window. Now it's noted below where health moved; the three shield-aggro abilities note it themselves.
 
-		// Armoured wither takes nothing. Call sites check too, but this stops Cleave/procs slipping past.
-		// WithersNotImmuneToArrows' same-tick "vulnerable then re-armoured" exception clears the counter first.
-		if(target instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) return 0;
-
 		// WK is immune to direct damage; HP moves only via dragon kills. Debuffs already landed at the call site.
 		if(target.getScoreboardTags().contains("TASWitherKing")) return 0;
 
@@ -580,6 +576,16 @@ public final class Damage {
 		double resistance = MobStats.resistanceOf(target);
 		double mcDamage = sbDamage * resistance / Scale.defenseDivisor(defense) / Scale.SB_PER_MC_HP;
 		double preClamp = mcDamage;
+
+		// Armoured wither takes nothing. Call sites check too, but this stops Cleave/procs slipping past.
+		// WithersNotImmuneToArrows' same-tick "vulnerable then re-armoured" exception clears the counter first.
+		// Venomous still shows its number through the shield, health untouched.
+		if(target instanceof Wither armoured && armoured.getInvulnerableTicks() != 0) {
+			if(kind == DamageKind.VENOMOUS && !target.getScoreboardTags().contains("TASDying")) {
+				DamageNumbers.show(target, preClamp * Scale.SB_PER_MC_HP, kind, attacker);
+			}
+			return 0;
+		}
 
 		// Hurt sound on PRE-clamp damage, or hits past Maxor's 75% / Storm's 55% stun cap go silent.
 		witherHurtSound(target, attacker, mcDamage, kind);

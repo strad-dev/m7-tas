@@ -802,8 +802,8 @@ public final class Storm extends WitherLord {
 
 	/**
 	 * Before each DOWN clone: if the new bottom row would dip into Storm, shove him down a block. Stops at
-	 * {@link #STORM_FLOOR_Y}, where the pillar crushes. Flying into a stationary or rising pillar still crushes via
-	 * the poll.
+	 * {@link #STORM_FLOOR_Y}, where the pillar crushes. Flying sideways into a stationary or rising pillar still
+	 * crushes via the poll; flying up into one is stopped by {@link #clampRise}.
 	 */
 	public void tryPushBelowDescendingPillar(PadAndPillar pillar, int newBottomY) {
 		if(boss == null || !boss.isValid()) return;
@@ -821,6 +821,29 @@ public final class Storm extends WitherLord {
 		Location loc = boss.getLocation();
 		loc.setY(loc.getY() - 1);
 		boss.teleport(loc);
+	}
+
+	/**
+	 * Aggro never flies him up into pillar diorite: the step stops at the lowest pillar block above his head, and
+	 * inside a pillar (flown in sideways, which is allowed) he can't rise at all. Any footprint, Red included.
+	 */
+	@Override
+	protected double clampRise(BoundingBox box, double vy) {
+		int minX = (int) Math.floor(box.getMinX()), maxX = (int) Math.floor(box.getMaxX() - 1e-7);
+		int minY = (int) Math.floor(box.getMinY()), maxY = (int) Math.floor(box.getMaxY() + vy - 1e-7);
+		int minZ = (int) Math.floor(box.getMinZ()), maxZ = (int) Math.floor(box.getMaxZ() - 1e-7);
+		double allowed = vy;
+		for(int x = minX; x <= maxX; x++) {
+			for(int z = minZ; z <= maxZ; z++) {
+				if(!inAnyPillarColumn(x, z)) continue;
+				for(int y = minY; y <= maxY; y++) {
+					if(!isPillarMaterial(world.getBlockAt(x, y, z).getType())) continue;
+					allowed = Math.min(allowed, y - box.getMaxY());
+					break;
+				}
+			}
+		}
+		return allowed;
 	}
 
 	// --- Mob spawning ---

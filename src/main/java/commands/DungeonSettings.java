@@ -13,7 +13,7 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /dungeonsettings [difficulty [<mode>] | mayor [<paul|derpy|other>] | alpha [<on|off>]]} - this server's
+ * {@code /dungeonsettings [difficulty [<mode>] | mayor [<jerry_paul|paul|jerry|other|derpy>] | alpha [<on|off>]]} - this server's
  * dungeon settings (MAP.md §0). No args prints them; a setting with no value steps it to the next value.
  * <p>
  * Three independent settings, any combination is valid:
@@ -23,9 +23,9 @@ import plugin.Utils;
  *       to be built, blessings are what the party collected) and turns on the instakills in {@code death/Deaths},
  *       but the dungeon still rolls your way: one-click terminals, short devices, assumed pet. <i>rta</i> (shown
  *       as "Realistic") adds the manual work: generated terminal puzzles, working devices, your own pet menu.</li>
- *   <li><b>mayor</b> ({@link Mayor}) - <i>paul</i> (default) gives EZPZ +10 bonus score and boosted blessings,
- *       <i>derpy</i> gives neither and doubles every mob's health, <i>other</i> gives neither and leaves health
- *       alone.</li>
+ *   <li><b>mayor</b> ({@link Mayor}) - <i>jerry_paul</i> (default) gives EZPZ +10 bonus score, boosted blessings
+ *       and Jerry's +10% stats, <i>paul</i> the first two, <i>jerry</i> only the stats, <i>other</i> none,
+ *       <i>derpy</i> none and doubles every mob's health.</li>
  * </ul>
  * Both are flags on inputs, never second damage paths - see the two classes.
  * <p>
@@ -35,17 +35,17 @@ import plugin.Utils;
  * Replaced {@code /toggledungeondifficulty}, which was the difficulty half.
  * <p>
  * On the network the party leader sets these ({@code /p settings difficulty <mode>},
- * {@code /p settings mayor <paul|derpy|other>}) and they ride the practice request so the whole party inherits
+ * {@code /p settings mayor <jerry_paul|paul|jerry|other|derpy>}) and they ride the practice request so the whole party inherits
  * them: a mixed-mode party would make one boss take different damage per player and let half of it die. This is
  * the standalone equivalent.
  * <p>
  * <b>Times from different settings aren't comparable.</b> So difficulty travels on the run payload
- * ({@code plugin/RunResult}) and network leaderboards key on it as a third axis; mayor travels too, but boards
- * don't split on it yet.
+ * ({@code plugin/RunResult}) and network leaderboards key on it as a third axis; mayor travels too, and the
+ * network folds it onto three boards (Paul, Other, Derpy).
  */
 public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
-			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [paul|derpy|other] | alpha [on|off]]";
+			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [jerry_paul|paul|jerry|other|derpy] | alpha [on|off]]";
 
 	/**
 	 * Typed mode names, joined from {@link Difficulty} so the usage line can't drift from the enum.
@@ -88,10 +88,9 @@ public class DungeonSettings implements CommandExecutor {
 		// Name, not id: "rta" is a storage key. Every name is also a parse alias, so what's shown can be typed back.
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>difficulty: <yellow><value>  <dark_gray><desc>",
 				Placeholder.unparsed("value", Difficulty.current().displayName()),
-				Placeholder.unparsed("desc", describe(Difficulty.current()))));
-		sender.sendMessage(Utils.msg("<dark_gray>- <gray>mayor: <yellow><value>  <dark_gray><desc>",
-				Placeholder.unparsed("value", Mayor.current().id()),
-				Placeholder.unparsed("desc", describe(Mayor.current()))));
+				Placeholder.parsed("desc", describe(Difficulty.current()))));
+		sender.sendMessage(Utils.msg("<dark_gray>- <gray>mayor: <yellow><value>",
+				Placeholder.unparsed("value", Mayor.current().id())));
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>alpha: <yellow><value>  <dark_gray><desc>",
 				Placeholder.unparsed("value", Alpha.current().id()),
 				Placeholder.unparsed("desc", describe(Alpha.current()))));
@@ -121,7 +120,7 @@ public class DungeonSettings implements CommandExecutor {
 	static void applyDifficulty(Difficulty next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>DUNGEON DIFFICULTY<reset><gray> is now <yellow><value>",
 				Placeholder.unparsed("value", next.displayName())));
-		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
+		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.parsed("desc", describe(next))));
 	}
 
 	private static void mayor(CommandSender sender, String[] args) {
@@ -143,7 +142,6 @@ public class DungeonSettings implements CommandExecutor {
 	static void applyMayor(Mayor next) {
 		Bukkit.broadcast(Utils.msg("<gold><bold>MAYOR<reset><gray> is now <yellow><value>",
 				Placeholder.unparsed("value", next.id())));
-		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
 		// HP is latched at spawn, so a mid-session change leaves mobs already on the floor alone.
 		if(instructions.bosses.WitherActions.isPracticeMode()) {
 			Bukkit.broadcast(Utils.msg("<dark_gray>Mob health is set when a mob spawns, so this only affects what spawns from now on."));
@@ -176,15 +174,12 @@ public class DungeonSettings implements CommandExecutor {
 		}
 	}
 
-	/**
-	 * One line on what a value means. Plain text: {@link #show} inserts it as an unparsed placeholder, so a
-	 * MiniMessage tag here would print as literal angle brackets.
-	 */
+	/** One line on what a value means. MiniMessage: inserted as a parsed placeholder. */
 	private static String describe(Difficulty d) {
 		return switch(d) {
 			case CLASSIC -> "Debuffs are automatically applied and blessings are always maxed.";
-			case PERFECT_RNG -> "Live debuffs and real blessing levels, and you can die - but the dungeon always rolls your way: one-click terminals, short devices, the pet you need is the pet you have.";
-			case REALISTIC -> "Perfect RNG plus what a real run makes you do by hand: generated terminal puzzles, working devices, and your own pet menu.";
+			case PERFECT_RNG -> "Debuffs must be manually applied, you can <bold><red>die</red></bold>, terminals must be manually completed.  Assumes the best RNG possible.";
+			case REALISTIC -> "In addition to modifiers in Perfect RNG, you must manually manage pets, and terminals are randomly generated.";
 		};
 	}
 
@@ -192,14 +187,6 @@ public class DungeonSettings implements CommandExecutor {
 		return switch(a) {
 			case OFF -> "The normal Hypixel timings.";
 			case ON -> "Experimental short timings.  Times set under alpha are NOT valid for the leaderboards.";
-		};
-	}
-
-	private static String describe(Mayor m) {
-		return switch(m) {
-			case PAUL -> "EZPZ gives +10 bonus score and blessings are boosted; a perfect clear scores 319.";
-			case DERPY -> "Mobs have double health, blessings are weaker and there is no +10 bonus score (max 309).";
-			case OTHER -> "A mayor with no dungeon perks: no +10 bonus score (max 309) and weaker blessings.";
 		};
 	}
 }

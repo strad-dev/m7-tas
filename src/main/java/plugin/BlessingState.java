@@ -31,7 +31,7 @@ public final class BlessingState {
 	public String difficulty;
 
 	/**
-	 * {@code damage/Mayor}: {@code paul}, {@code derpy} or {@code other}. Here because Paul's Benediction is a term of
+	 * {@code damage/Mayor.id()}, one of the five. Here because Paul's Benediction is a term of
 	 * {@link Blessings#effectIncrease()} (1.815, 1.452 without), so {@link Entry#multiplier} and
 	 * {@link Entry#flatDamage} differ at the same {@link Entry#effectiveLevel}.
 	 */

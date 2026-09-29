@@ -45,11 +45,11 @@ public final class RunResult {
 	public String difficulty;
 
 	/**
-	 * {@code paul}, {@code derpy} or {@code other} ({@code damage/Mayor}). Paul: EZPZ +10 score and boosted
-	 * blessings. Derpy: neither, and double mob HP. Other: neither.
+	 * {@code damage/Mayor.id()}: {@code jerry_paul}, {@code paul}, {@code jerry}, {@code other} or {@code derpy};
+	 * the class javadoc has what each changes.
 	 * <p>
-	 * Times across mayors aren't comparable (a Derpy full clear tops out at 309, not 319). The network's boards
-	 * don't split on it yet.
+	 * Times across mayors aren't comparable (a Derpy full clear tops out at 309, not 319). The network folds the
+	 * five onto three boards: Paul, Other, Derpy.
 	 */
 	public String mayor;
 
