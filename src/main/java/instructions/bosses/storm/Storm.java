@@ -767,7 +767,7 @@ public final class Storm extends WitherLord {
 
 	private void playDeathDialogue() {
 		// Goldor wall and handoff share this tick.
-		int handoffTick = Alpha.ticks(100, 50);
+		int handoffTick = Alpha.ticks(100, 60);
 		sendChatMessage("I should have known that I stand no chance.");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Storm killed in " + formatTick(displayTick()));

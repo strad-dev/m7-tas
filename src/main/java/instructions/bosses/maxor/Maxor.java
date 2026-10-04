@@ -34,10 +34,9 @@ public final class Maxor extends WitherLord {
 	private static final double LASER_CENTER_X = 73.5;
 	private static final double LASER_CENTER_Z = 73.5;
 	private static final double LASER_RADIUS_SQ = 2.5 * 2.5;
-	private static final int CHARGE_DELAY_TICKS = 30;
-	// Laser only tests Maxor's position on phase ticks divisible by this (Hypixel's 20-tick grid, like Storm's pad
-	// poll). Also the action bar's countdown period.
-	private static final int LASER_CYCLE_TICKS = 20;
+	private static final int CHARGE_DELAY_TICKS = 28;
+	// Laser only tests Maxor's position on phase ticks divisible by this. Also the action bar's countdown period.
+	private static final int LASER_CYCLE_TICKS = 10;
 	// Maxor starts moving here, so it's also where the laser countdown starts.
 	private static final int AGGRO_TICK = 160;
 	/** Alpha: dialogue is 40t per line instead of 60t. */
@@ -297,7 +296,7 @@ public final class Maxor extends WitherLord {
 
 	private void beginLaserCharge() {
 		cancelLaserScan();
-		Utils.scheduleTask(() -> {
+		BossScheduler.schedule(() -> {
 			if(boss == null || boss.isDead()) return;
 			if(plateLeftCrystal == null || plateRightCrystal == null) return;
 			String chargeMsg = "<green>The Energy Laser is charging up!\n" + formatTick(displayTick());
@@ -321,7 +320,6 @@ public final class Maxor extends WitherLord {
 					laserTicker = null;
 					return;
 				}
-				// Hypixel checks on a 20-tick cycle, like Storm's crush detection.
 				if(displayTick() % LASER_CYCLE_TICKS != 0) return;
 				// Alpha has no cooldown: it may stun again next cycle, even mid-stun.
 				if(stunCooldownActive && !Alpha.enabled()) return;
@@ -336,6 +334,8 @@ public final class Maxor extends WitherLord {
 			}
 		};
 		BossScheduler.addTicker(laserTicker);
+		// Armed from a boss ticker, so the copy-on-write list skips it this tick; check the arming tick now.
+		laserTicker.run();
 	}
 
 	private void cancelLaserScan() {
@@ -349,7 +349,7 @@ public final class Maxor extends WitherLord {
 	 * Per-tick HUD, same slot as Storm's. One segment, checked in this order since later states overlap earlier:
 	 * <ul>
 	 *   <li><b>Laser</b>: ticks to the next laser check, {@link #LASER_CYCLE_TICKS} → 1t on the scan's grid. Shown
-	 *       from {@link #AGGRO_TICK}, not when the scan arms: the grid is absolute (phase tick mod 20), so it's right
+	 *       from {@link #AGGRO_TICK}, not when the scan arms: the grid is absolute (phase tick mod cycle), so it's right
 	 *       while crystals are still being carried.</li>
 	 *   <li><b>Stunned</b>: ticks to auto-enrage. Replaced early by a 75% cap-enrage ({@link #enrageMaxor} re-renders).</li>
 	 *   <li><b>Immune</b>: what's left of {@link #STUN_COOLDOWN_TICKS}, counted from the STUN, so normally the 40t
