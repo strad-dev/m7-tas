@@ -325,6 +325,24 @@ public class Utils {
 		return CraftItemStack.asBukkitCopy(nms);
 	}
 
+	/** Copy placeable on anvils and cauldrons in adventure, so the client outlines a relic's altar. Apply LAST, after
+	 *  any setItemMeta. */
+	public static ItemStack placeOnAltarsInAdventure(ItemStack item) {
+		net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
+		BlockPredicate altars = BlockPredicate.Builder.block()
+				.of(net.minecraft.core.registries.BuiltInRegistries.BLOCK,
+						net.minecraft.world.level.block.Blocks.ANVIL,
+						net.minecraft.world.level.block.Blocks.CHIPPED_ANVIL,
+						net.minecraft.world.level.block.Blocks.DAMAGED_ANVIL,
+						net.minecraft.world.level.block.Blocks.CAULDRON,
+						net.minecraft.world.level.block.Blocks.WATER_CAULDRON,
+						net.minecraft.world.level.block.Blocks.LAVA_CAULDRON,
+						net.minecraft.world.level.block.Blocks.POWDER_SNOW_CAULDRON)
+				.build();
+		nms.set(DataComponents.CAN_PLACE_ON, new AdventureModePredicate(List.of(altars)));
+		return CraftItemStack.asBukkitCopy(nms);
+	}
+
 	/** Copy placeable on ANY block in adventure, same empty-predicate trick as {@link #breakAnyBlockInAdventure}.
 	 *  Apply LAST, after any setItemMeta. */
 	public static ItemStack placeOnAnythingInAdventure(ItemStack item) {

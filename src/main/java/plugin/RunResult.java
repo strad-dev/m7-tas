@@ -54,10 +54,10 @@ public final class RunResult {
 	public String mayor;
 
 	/**
-	 * Run was under the alpha timings ({@code plugin/Alpha}). Not a record: the experiment moves whenever retuned, so
-	 * it compares with nothing, not even another build's alpha run. The network's {@code Leaderboards.submit} drops it.
+	 * Run had Fix Watcher Bug on ({@code plugin/WatcherFix}). The network's {@code Leaderboards.submit} keeps it off the
+	 * Clear and Full Run boards; boss boards still take it.
 	 */
-	public boolean alpha;
+	public boolean watcherFix;
 
 	/** {@link Utils#runTick()} at completion. */
 	public int runTicks;
@@ -121,7 +121,7 @@ public final class RunResult {
 		r.success = success;
 		r.difficulty = damage.Difficulty.current().id();
 		r.mayor = damage.Mayor.current().id();
-		r.alpha = Alpha.enabled();
+		r.watcherFix = WatcherFix.enabled();
 		r.runTicks = Utils.runTick();
 		r.phaseDurations = WitherActions.phaseDurations();
 		r.splitEnds = WitherActions.splitEnds();

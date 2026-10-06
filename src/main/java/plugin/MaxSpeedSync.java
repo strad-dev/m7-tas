@@ -16,7 +16,7 @@ import java.util.UUID;
  * Models the SkyBlock Max Speed <i>cap</i> and assumes they're always at it. A sum of parts:
  * <pre>
  *   {@link #BASE_MAX_SPEED} 400
- * + {@link #ALPHA_SHARD} 50          alpha timings on
+ * + {@link #ALPHA_SHARD} 50
  * + {@code damage.Pet.maxSpeedBonus} 150 for the Black Cat (100 pet + 50 Unalloyed Speed), else 0
  * + {@code items.Wearable.maxSpeedBonus} 100 for the Racing Helmet, else 0
  * </pre>
@@ -27,7 +27,7 @@ import java.util.UUID;
  * No mode branch: {@code damage.Pet.forPlayer} already answers "assumed from the hat" or "what they summoned".
  * <p>
  * Per-tick poll, since vanilla helmet swaps and the four autopet triggers call nothing. Fakes are skipped. Applied
- * only on a transition so {@code /setspeed} survives; an {@link Alpha} flip or {@code /dungeonsettings} change
+ * only on a transition so {@code /setspeed} survives; a {@code /dungeonsettings} change
  * reads as an ordinary transition.
  * <p>
  * The poll also applies a separate 50% debuff while carrying a Wither-King relic without a Cow Hat.
@@ -39,7 +39,7 @@ public final class MaxSpeedSync {
 
 	/** No pet bonus, no speed helmet. */
 	private static final int BASE_MAX_SPEED = 400;
-	/** Alpha-exclusive shard, while alpha timings are on. */
+	/** Alpha-exclusive shard. */
 	private static final int ALPHA_SHARD = 50;
 
 	/** Max Speed as of last tick, for transitions. */
@@ -74,7 +74,7 @@ public final class MaxSpeedSync {
 
 	/** The sum in the class note. Public for {@code instructions/Actions.swapItems}'s fake helmet swap: one formula. */
 	public static int maxSpeed(Player p) {
-		int total = BASE_MAX_SPEED + (Alpha.enabled() ? ALPHA_SHARD : 0);
+		int total = BASE_MAX_SPEED + ALPHA_SHARD;
 		// MELEE is a placeholder, as in StatLore: the assumed table branches on path only after the hat check, and
 		// the Black Cat is the only Max Speed pet. A second one would need a real path here.
 		total += damage.Pet.forPlayer(p, damage.DamagePath.MELEE).maxSpeedBonus();

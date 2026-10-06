@@ -10,7 +10,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
-import plugin.Alpha;
 import plugin.Utils;
 
 import java.util.ArrayList;
@@ -23,7 +22,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Real S1 Simon Says: the 4x4 obsidian grid lights a sequence, the party plays it back on buttons. Realistic only;
- * classic and Perfect RNG keep the 15-click stand-in in {@code GoldorListener.processSimonClick}.
+ * classic and Perfect RNG keep the 12-click stand-in in {@code GoldorListener.processSimonClick}.
  * <ol>
  *   <li>Start click opens a {@value #SPAM_WINDOW_TICKS}-tick spam window; it is click #1.</li>
  *   <li>Each further start click queues a lantern, counted per player.</li>
@@ -234,7 +233,7 @@ public final class GoldorSimonSays {
 			skips += skipsFor(c);
 		}
 
-		// S skips = start at phase S+1, so past the last phase is finishing. The spec's "5+ skips", written so alpha's 4 follows.
+		// S skips = start at phase S+1, so past the last phase is finishing. The spec's "5+ skips", written so a target length of 4 follows.
 		if(skips + 1 > targetLength()) {
 			Utils.debug(Utils.DebugType.BOSS, "Simon Says short-circuited on " + skips + " skips");
 			complete(resolveSolver(), false);
@@ -301,9 +300,8 @@ public final class GoldorSimonSays {
 		return skips;
 	}
 
-	/** The one alpha knob here. */
 	private static int targetLength() {
-		return Alpha.count(5, 4);
+		return 4;
 	}
 
 	private void complete(Player p, boolean wasDeferred) {

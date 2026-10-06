@@ -18,7 +18,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
-import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.FakePlayerManager;
 import plugin.Utils;
@@ -36,15 +35,12 @@ public final class Storm extends WitherLord {
 	private static final int PRE_STORM_TICKS = 1238;
 
 	// Aggro + crush detection enable here.
-	private static final int INTRO_END_TICK = 665;
-	/** Alpha: volley 20t earlier, same 130t tail. */
-	private static final int ALPHA_INTRO_END_TICK = 645;
+	private static final int INTRO_END_TICK = 645;
 
 	// pollCycle runs on phase ticks divisible by this (Hypixel's 20-tick grid).
 	private static final int PAD_CYCLE_TICKS = 20;
 	// First volley. The "Storm moves in" countdown runs from here to INTRO_END_TICK.
-	private static final int LIGHTNING_TICK = 535;
-	private static final int ALPHA_LIGHTNING_TICK = 515;
+	private static final int LIGHTNING_TICK = 515;
 
 	private static final double CRUSH_DAMAGE_FRACTION = 0.05;
 	private static final double STUN_DAMAGE_CAP_FRACTION = 0.55;
@@ -162,7 +158,7 @@ public final class Storm extends WitherLord {
 		Utils.scheduleTask(() -> {
 			crushEnabled = true;
 			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
-		}, Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK));
+		}, INTRO_END_TICK);
 
 		startCycleTask();
 	}
@@ -178,27 +174,26 @@ public final class Storm extends WitherLord {
 	}
 
 	/**
-	 * Four lines, the lightning warning with a 4-3-2-1 countdown, two volleys. Alpha re-times from the warning on but
-	 * leaves the first four lines and the flight (done at 400): warning and "4" together at 420, countdown uneven on
-	 * purpose (420 / 445 / 470 / 495), volleys 20t earlier.
+	 * Four lines, the lightning warning with a 4-3-2-1 countdown, two volleys. The flight is done at 400; warning and
+	 * "4" together at 420, countdown uneven on purpose (420 / 445 / 470 / 495).
 	 */
 	private void scheduleIntroDialogue() {
-		int warning = Alpha.ticks(400, 420);
-		int volley = Alpha.ticks(LIGHTNING_TICK, ALPHA_LIGHTNING_TICK);
+		int warning = 420;
+		int volley = LIGHTNING_TICK;
 		sendChatMessage("Pathetic Maxor, just like expected.");
 		Utils.scheduleTask(() -> sendChatMessage("Don't boast about beating this simple-minded Wither."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("My abilities are unparalleled, in may ways I am the last bastion."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("The memory of your death will be your fondest, focus up!"), 180);
-		// Belongs to the FLIGHT, not the dialogue, so it stays on 400 in both modes.
+		// Belongs to the FLIGHT, not the dialogue.
 		Utils.scheduleTask(() -> Actions.turnHead(boss, 90f, 0f), 400);
 		Utils.scheduleTask(() -> sendChatMessage(
 				"The power of lightning is quite phenomenal.  A single strike can vaporize a person whole."), warning);
-		countdownTitle("4", Alpha.ticks(440, 420));
-		Utils.scheduleTask(() -> sendChatMessage("I'd be happy to show you what that's like!"), Alpha.ticks(460, 480));
-		countdownTitle("3", Alpha.ticks(465, 445));
-		countdownTitle("2", Alpha.ticks(490, 470));
-		countdownTitle("1", Alpha.ticks(515, 495));
-		// Leads the first volley by 10t in both modes.
+		countdownTitle("4", 420);
+		Utils.scheduleTask(() -> sendChatMessage("I'd be happy to show you what that's like!"), 480);
+		countdownTitle("3", 445);
+		countdownTitle("2", 470);
+		countdownTitle("1", 495);
+		// Leads the first volley by 10t.
 		Utils.scheduleTask(() -> sendChatMessage(LIGHTNING_MESSAGE[random.nextInt(LIGHTNING_MESSAGE.length)]), volley - 10);
 		Utils.scheduleTask(this::lightningVolley, volley);
 		Utils.scheduleTask(this::lightningVolley, volley + 10);
@@ -373,9 +368,8 @@ public final class Storm extends WitherLord {
 		String pad = "Pad <white>" + (PAD_CYCLE_TICKS - Math.floorMod(t, PAD_CYCLE_TICKS)) + "t";
 		// Right behind the pad counter: it's what people read while it's up.
 		String stun = inStun ? " <dark_gray>| <yellow>Stunned <white>" + Math.max(0, stunEndTick - t) + "t" : "";
-		// The ticks the intro actually runs on, alpha included.
-		int volley = Alpha.ticks(LIGHTNING_TICK, ALPHA_LIGHTNING_TICK);
-		int introEnd = Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK);
+		int volley = LIGHTNING_TICK;
+		int introEnd = INTRO_END_TICK;
 		String armed = t >= volley ? armedSegments() : "";
 		String moves = t >= volley && t <= introEnd
 				? " <dark_gray>| <red>Storm moves in <white>" + (introEnd - t) + "t"
@@ -767,13 +761,13 @@ public final class Storm extends WitherLord {
 
 	private void playDeathDialogue() {
 		// Goldor wall and handoff share this tick.
-		int handoffTick = Alpha.ticks(100, 60);
+		int handoffTick = 60;
 		sendChatMessage("I should have known that I stand no chance.");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Storm killed in " + formatTick(displayTick()));
 		// Restored on the next /reset.
 		Utils.scheduleTask(instructions.bosses.BossTransition::openStormToGoldor, handoffTick);
-		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), Alpha.ticks(60, 40));
+		Utils.scheduleTask(() -> sendChatMessage("At least my son died by your hands."), 40);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Storm finished in " + formatTick(displayTick()));
 			// Leaderboard duration at the phase's real end, not the killing blow. Before chainNext, which re-anchors the phase clock.

@@ -115,6 +115,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new AllMobsHaveNames(), this);
 		getServer().getPluginManager().registerEvents(new StormCrushExplosion(), this);
 		getServer().getPluginManager().registerEvents(new GoldorListener(), this);
+		getServer().getPluginManager().registerEvents(instructions.bosses.necron.NecronDrag.LISTENER, this);
 		getServer().getPluginManager().registerEvents(new WitherKingListener(), this);
 		getServer().getPluginManager().registerEvents(new SpiritLeapListener(), this);
 		getServer().getPluginManager().registerEvents(new Eq(), this);

@@ -23,7 +23,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.EulerAngle;
 import org.bukkit.util.Vector;
-import plugin.Alpha;
+import plugin.WatcherFix;
 import plugin.BossScheduler;
 import plugin.FakePlayerManager;
 import plugin.M7tas;
@@ -34,7 +34,7 @@ import java.util.*;
 /**
  * Blood Room pre-boss. Detection armed at clear-tick 0 spawns the Watcher the first tick a player is in bounds; kill
  * lines fire on real Blood-Mob deaths ({@link #handleMobDeath}); 80t after the last death a portal opens that
- * teleports the actors to the boss spawn and hands off to Maxor. Singleton; {@link #resetState()} clears per-fight state.
+ * teleports the actors to the boss spawn and hands off to Maxor (clear-only: entry ends the run). Singleton; {@link #resetState()} clears per-fight state.
  */
 public class Watcher {
 	public static final Watcher INSTANCE = new Watcher();
@@ -47,9 +47,8 @@ public class Watcher {
 	private static final Location ORIGINAL_POSITION = new Location(null, -120.5, 72.0, -56.5, -180, 0);
 	private final List<Location> MOB_SPAWN_LOCATIONS = new ArrayList<>();
 	/**
-	 * Blood mob names in spawn order, parallel to {@link #MOB_SPAWN_LOCATIONS}, LATCHED at {@link #spawnEncounter}
-	 * (alpha uses a shorter table, {@link #fillMobTables()}). Ask {@link #mobTotal()}, never "19", so an {@link Alpha}
-	 * flip mid-run can't leave the bar counting to a total nobody spawns.
+	 * Blood mob names in spawn order, parallel to {@link #MOB_SPAWN_LOCATIONS}, filled at {@link #spawnEncounter}.
+	 * Ask {@link #mobTotal()}, never "15".
 	 */
 	private final List<String> mobNames = new ArrayList<>();
 	private static final List<String> SPAWN_LINES = List.of("This guy looks like a fighter.", "Hmmm... this one!", "You'll do.", "Go, fight!", "Go and live again!");
@@ -57,12 +56,13 @@ public class Watcher {
 	private int mobCount = 0;
 	private int mobsKilled = 0;
 	private static final Random random = new Random();
-	private static final double MAX_SPEED = 0.64;       // blocks per tick
-	private static final double ALPHA_MAX_SPEED = 1.0;  // blocks per tick, alpha timings
-	private static final double ACCEL = 0.08;           // blocks per tick per tick
-	private static final double ALPHA_ACCEL = 0.1;      // blocks per tick per tick, alpha timings
-	/** Alpha only: phase tick the second wave starts, from the Blood Room opening. */
-	private static final int ALPHA_SECOND_WAVE_TICK = 440;
+	private static final double MAX_SPEED = 1.0;        // blocks per tick
+	private static final double ACCEL = 0.1;            // blocks per tick per tick
+	private static final double HEAD_ACCEL = 0.08;      // blocks per tick per tick, the head stand
+	/** Phase tick the second wave starts, from the Blood Room opening: the hard cooldown {@link WatcherFix} removes. */
+	private static final int SECOND_WAVE_TICK = 440;
+	/** {@link WatcherFix}: second wave this long after he is back on his perch. */
+	private static final int FIXED_SECOND_WAVE_DELAY = 60;
 
 	private BossBar watcherBossBar;
 
@@ -191,64 +191,33 @@ public class Watcher {
 		createWatcherBossBar();
 
 		// Anchored to the real entry tick, not the old hardcoded 3-tick "time to bounds".
-		if(Alpha.enabled()) {
-			sendChatMessage("Ah, we meet again.  As I foresaw...");
-		} else {
-			sendChatMessage("Things feel a little more roomy now, eh?");
-			Utils.scheduleTask(() -> sendChatMessage("I've knocked down those pillars to go for a more... open concept."), 80);
-			Utils.scheduleTask(() -> sendChatMessage("Plus I needed to give my new friends some space to roam..."), 160);
-		}
-		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), mobNames.getFirst()),
-				Alpha.ticks(240, 80));
+		sendChatMessage("Ah, we meet again.  As I foresaw...");
+		Utils.scheduleTask(() -> travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.getFirst(), mobNames.getFirst()), 80);
 	}
 
 	/**
-	 * Normal: 19 mobs. {@link Alpha}: 15, reordered; Nucleararmadillo, Jamie_2013, s3a3m3 and editqble are gone, and
-	 * Diamante Giant and Bonzo take s3a3m3's and editqble's spots so the opening trip is short. The first four are the
-	 * first wave, then he returns to his perch ({@link #returnToOriginalPosition()}).
+	 * 15 mobs; Diamante Giant and Bonzo take s3a3m3's and editqble's old spots so the opening trip is short. The first
+	 * four are the first wave, then he returns to his perch ({@link #returnToOriginalPosition()}).
 	 */
 	private void fillMobTables() {
 		MOB_SPAWN_LOCATIONS.clear();
 		mobNames.clear();
-		if(Alpha.enabled()) {
-			mob(-109.5, 71, -52.5, "Diamante Giant"); // s3a3m3's spawn point
-			mob(-111.5, 71, -45.5, "Bonzo");          // editqble's spawn point
-			mob(-111.5, 75, -45.5, "valej");
-			mob(-111.5, 79, -45.5, "Merlynade");
-			/* -------------------- back to the perch until tick 440 -------------------- */
-			mob(-109.5, 75, -52.5, "Katsumi9877");
-			mob(-109.5, 79, -52.5, "HenbotB");
-			mob(-109.5, 79, -56.5, "Beethoven_");
-			mob(-109.5, 79, -60.5, "AsapIcey");
-			mob(-111.5, 79, -67.5, "akc0303");
-			mob(-111.5, 75, -67.5, "Cubpletionist");
-			mob(-111.5, 71, -67.5, "aalatif_");
-			mob(-109.5, 71, -60.5, "TypeW");
-			mob(-109.5, 75, -60.5, "derM0RITZZ");
-			mob(-109.5, 75, -56.5, "BananaBrigade");
-			mob(-109.5, 71, -56.5, "JennAiel");
-			return;
-		}
-		mob(-131.5, 71, -56.5, "Diamante Giant");
-		mob(-131.5, 71, -60.5, "Bonzo");
-		mob(-131.5, 75, -60.5, "Nucleararmadillo");
-		mob(-131.5, 75, -56.5, "Jamie_2013");
-		/* -------------------- "Let's see how you can handle this" -------------------- */
-		mob(-109.5, 71, -56.5, "JennAiel");
-		mob(-109.5, 71, -52.5, "s3a3m3");
-		mob(-111.5, 71, -45.5, "editqble");
+		mob(-109.5, 71, -52.5, "Diamante Giant"); // s3a3m3's spawn point
+		mob(-111.5, 71, -45.5, "Bonzo");          // editqble's spawn point
 		mob(-111.5, 75, -45.5, "valej");
 		mob(-111.5, 79, -45.5, "Merlynade");
-		mob(-109.5, 79, -52.5, "HenbotB");
+		/* -------------------- back to the perch until tick 440 -------------------- */
 		mob(-109.5, 75, -52.5, "Katsumi9877");
-		mob(-109.5, 75, -56.5, "BananaBrigade");
-		mob(-109.5, 75, -60.5, "derM0RITZZ");
-		mob(-109.5, 71, -60.5, "TypeW");
-		mob(-111.5, 71, -67.5, "aalatif_");
-		mob(-111.5, 75, -67.5, "Cubpletionist");
-		mob(-111.5, 79, -67.5, "akc0303");
-		mob(-109.5, 79, -60.5, "AsapIcey");
+		mob(-109.5, 79, -52.5, "HenbotB");
 		mob(-109.5, 79, -56.5, "Beethoven_");
+		mob(-109.5, 79, -60.5, "AsapIcey");
+		mob(-111.5, 79, -67.5, "akc0303");
+		mob(-111.5, 75, -67.5, "Cubpletionist");
+		mob(-111.5, 71, -67.5, "aalatif_");
+		mob(-109.5, 71, -60.5, "TypeW");
+		mob(-109.5, 75, -60.5, "derM0RITZZ");
+		mob(-109.5, 75, -56.5, "BananaBrigade");
+		mob(-109.5, 71, -56.5, "JennAiel");
 	}
 
 	/** Where he flies to and who he drops there. */
@@ -289,24 +258,8 @@ public class Watcher {
 			sendChatMessage(KILLED_LINES.get(random.nextInt(5)));
 		} else {
 			sendChatMessage("You have proven yourself.  You may pass.");
-			if(doContinue) {
-				// "all": portal to Maxor.
-				Utils.scheduleTask(this::openPortal, 80);
-			} else {
-				// Clear-only: the Watcher IS the end, so no portal. Clean up, record the split, signal completion.
-				Utils.scheduleTask(() -> {
-					removeWatcherEntity();
-					bloodCampFinished(); // only once the Watcher vanishes
-					awardBloodClear(); // lands as the Watcher disappears
-					// Portal's strike and sound, no portal.
-					world.spawnEntity(new Location(world, -120.5, 69, -42.5), EntityType.LIGHTNING_BOLT);
-					Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT);
-					Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER);
-					WitherActions.recordSplit("Clear", Utils.runTick());
-					active = false;
-					WitherActions.signalRunComplete();
-				}, 80);
-			}
+			// Both modes: "all" portals to Maxor, clear-only ends on portal entry.
+			Utils.scheduleTask(this::openPortal, 80);
 		}
 	}
 
@@ -377,6 +330,13 @@ public class Watcher {
 		boss.setWorld(world);
 		// Clear split ends on portal entry (Wither-King practice scoreboard).
 		WitherActions.recordSplit("Clear", Utils.runTick());
+		if(!doContinue) {
+			Utils.debug(Utils.DebugType.BOSS, "Portal entered by " + Utils.getRealName(p) + " → clear ends");
+			closePortal();
+			active = false;
+			WitherActions.signalRunComplete();
+			return;
+		}
 		Utils.debug(Utils.DebugType.BOSS, "Portal entered by " + Utils.getRealName(p) + " → teleporting " + (tasActive ? "fakes" : "all players"));
 
 		// Teleport THIS tick; boss + player routines start together NEXT tick.
@@ -482,12 +442,9 @@ public class Watcher {
 	 * Trapezoid speed profile (accel, cruise at {@code maxSpeed}, decel), one teleport per tick. Tick counts round up,
 	 * so the raw profile misses the distance and the old code snapped with {@code teleport(end)} on the last tick.
 	 * {@code scale} stretches {@code cumulative} to land on {@code end}; tick count unchanged.
-	 * <p>Alpha only: {@code scale} is 1 with alpha off, reproducing the old snap exactly, since everything else is
-	 * timed against it.
 	 */
 	private void moveEntitySmooth(Entity entity, Location start, Location end, double maxSpeed, Runnable onComplete) {
-		// Alpha only changes the Watcher's accel, not the head stand's.
-		final double accel = entity.equals(watcher) ? Alpha.value(ACCEL, ALPHA_ACCEL) : ACCEL;
+		final double accel = entity.equals(watcher) ? ACCEL : HEAD_ACCEL;
 		final Vector totalVector = end.toVector().subtract(start.toVector());
 		final double totalDistance = totalVector.length();
 		final Vector direction = totalVector.clone().normalize();
@@ -522,7 +479,7 @@ public class Watcher {
 			travelled += speed;
 			cumulative[i + 1] = travelled;
 		}
-		final double scale = Alpha.enabled() && travelled > 1e-9 ? totalDistance / travelled : 1.0;
+		final double scale = travelled > 1e-9 ? totalDistance / travelled : 1.0;
 
 		entity.teleport(start.clone());
 
@@ -644,15 +601,20 @@ public class Watcher {
 	private void returnToOriginalPosition() {
 		if(watcher != null && world != null) {
 			if(mobCount != mobTotal()) {
-				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, watcherSpeed(),
-						() -> sendChatMessage("Let's see how you can handle this."));
-				// Alpha waits for an ABSOLUTE tick: second wave 22s after the Blood Room opened, however long the first
-				// four took. Min 1, the chain hands off through the scheduler.
-				int wait = Alpha.enabled() ? Math.max(1, ALPHA_SECOND_WAVE_TICK - phaseRel()) : 60;
-				Utils.scheduleTask(() -> {
+				Runnable secondWave = () -> {
 					Utils.debug(Utils.DebugType.BOSS, "Watcher moved");
 					travelToAndSpawnMob(MOB_SPAWN_LOCATIONS.get(mobCount), mobNames.get(mobCount));
-				}, wait);
+				};
+				// Latched so a mid-trip flip can't start the second wave twice or never.
+				boolean fixed = WatcherFix.enabled();
+				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, watcherSpeed(), () -> {
+					sendChatMessage("Let's see how you can handle this.");
+					if(fixed) Utils.scheduleTask(secondWave, FIXED_SECOND_WAVE_DELAY);
+				});
+				if(fixed) return;
+				// Waits for an ABSOLUTE tick: second wave 22s after the Blood Room opened, however long the first
+				// four took. Min 1, the chain hands off through the scheduler.
+				Utils.scheduleTask(secondWave, Math.max(1, SECOND_WAVE_TICK - phaseRel()));
 			} else {
 				moveEntitySmooth(watcher, watcher.getLocation(), ORIGINAL_POSITION, watcherSpeed(), null);
 			}
@@ -661,7 +623,7 @@ public class Watcher {
 
 	/** Blocks per tick. The head stand keeps its own 0.4. */
 	private static double watcherSpeed() {
-		return Alpha.value(MAX_SPEED, ALPHA_MAX_SPEED);
+		return MAX_SPEED;
 	}
 
 	private void sendChatMessage(String message) {

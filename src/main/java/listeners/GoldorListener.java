@@ -41,9 +41,10 @@ public class GoldorListener implements Listener {
 
 	// ------ Per-device runtime state (cleared on each phase via Goldor's resetState by reference) ------
 
-	// Simon Says STAND-IN (classic + Perfect RNG): GLOBAL click count, not per-player; 15 activates, no time limit.
+	// Simon Says STAND-IN (classic + Perfect RNG): GLOBAL click count, not per-player; SIMON_STANDIN_CLICKS activates, no time limit.
 	// Reset on completion and serverSetup (resetSimon).  Realistic uses the real GoldorSimonSays behind the same entry point.
 	private int simonClicks = 0;
+	private static final int SIMON_STANDIN_CLICKS = 12;
 	// Last tick each player registered a Simon Says click (start button, and the 16 grid buttons in realistic).
 	// One right-click can surface as TWO same-tick PlayerInteractEvents (off-hand while sneaking, and/or vanilla
 	// re-firing after PlayerPacketInterceptor resets its dedupe), so same-tick repeats per player are dropped.
@@ -329,7 +330,7 @@ public class GoldorListener implements Listener {
 
 	/**
 	 * Start-button click once the phase is live; re-checks state, so safe deferred.  Two devices, one entry (like
-	 * {@link #registerSharpHit}): realistic goes to {@link GoldorSimonSays}, classic + Perfect RNG to the 15-click stand-in.
+	 * {@link #registerSharpHit}): realistic goes to {@link GoldorSimonSays}, classic + Perfect RNG to the 12-click stand-in.
 	 */
 	private void processSimonClick(Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return;
@@ -340,8 +341,8 @@ public class GoldorListener implements Listener {
 		GoldorSection s1 = Goldor.INSTANCE.getSection(0);
 		if(s1 == null || s1.device.isActivated()) return;
 		simonClicks++;
-		Utils.debug(Utils.DebugType.BOSS, "Button clicked by " + Utils.getRealName(p) + " " + simonClicks + "/15");
-		if(simonClicks >= 15) {
+		Utils.debug(Utils.DebugType.BOSS, "Button clicked by " + Utils.getRealName(p) + " " + simonClicks + "/" + SIMON_STANDIN_CLICKS);
+		if(simonClicks >= SIMON_STANDIN_CLICKS) {
 			s1.device.markActivated();
 			Goldor.INSTANCE.onActivation(p, s1, "device", wasDeferred);
 			simonClicks = 0;
@@ -416,10 +417,12 @@ public class GoldorListener implements Listener {
 		if(!Goldor.INSTANCE.isInS3FrameRegion(frame)) return; // frames outside S3 behave normally
 		if(Goldor.isTurnableArrowFrame(frame)) {
 			if(Goldor.INSTANCE.isPhaseInactive()) {
+				e.setCancelled(true);
+				// Realistic turns early, short of the solve.
+				if(!cannotSolve(p) && Goldor.preTurnArrowFrame(frame)) return;
 				// Defer an early solve (full-run chain timing) and cancel vanilla's turn now: processArrowFrame turns
 				// it itself, so an early click was worth two steps.
 				runWhenPhaseActive(deferred -> processArrowFrame(frame, p, deferred));
-				e.setCancelled(true);
 				return;
 			}
 			// processArrowFrame rotates it; cancel so vanilla doesn't double-turn when the held item is exempt from CustomItems' cancel.

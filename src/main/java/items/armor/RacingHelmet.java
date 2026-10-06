@@ -53,8 +53,8 @@ public final class RacingHelmet implements Wearable {
 	}
 
 	/**
-	 * Its own +100 only. The old 650 was base 400 + Black Cat 150 + this (alpha 700 adds the shard's 50);
-	 * {@code MaxSpeedSync} sums those, so this stays right under alpha and in realistic.
+	 * Its own +100 only. The old 650 was base 400 + Black Cat 150 + this (the shard's 50 makes it 700);
+	 * {@code MaxSpeedSync} sums those, so this stays right in realistic.
 	 */
 	private static final int MAX_SPEED_BONUS = 100;
 

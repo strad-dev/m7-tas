@@ -17,7 +17,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
-import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.M7tas;
 import plugin.Utils;
@@ -174,6 +173,7 @@ public final class Goldor extends WitherLord {
 	public static void resetArrowFrames(World world) {
 		List<ItemFrame> frames = arrowFrames(world);
 		if(frames.isEmpty()) return;
+		realisticArrowWall = damage.Difficulty.realPuzzles();
 		if(frames.size() != ARROW_FRAME_COUNT) {
 			Utils.debug(Utils.DebugType.ERROR, "Arrow Align: found " + frames.size()
 					+ " arrow frames in the S3 wall, expected " + ARROW_FRAME_COUNT);
@@ -194,6 +194,27 @@ public final class Goldor extends WitherLord {
 				if(r != ARROW_SOLVED_ROTATION) alreadySolved = false;
 			}
 		} while(alreadySolved);
+	}
+
+	/** Last {@link #resetArrowFrames} dealt the realistic wall, so the phase start may keep its pre-turns. */
+	private static boolean realisticArrowWall = false;
+
+	/**
+	 * Realistic, before the phase: the wall turns but can't be finished, so the turn that would put the last frame
+	 * on {@link #ARROW_SOLVED_ROTATION} is refused (false), leaving at least one unsolved.
+	 */
+	public static boolean preTurnArrowFrame(ItemFrame frame) {
+		if(!damage.Difficulty.realPuzzles() || !isTurnableArrowFrame(frame)) return false;
+		Rotation next = frame.getRotation().rotateClockwise();
+		if(next == ARROW_SOLVED_ROTATION) {
+			boolean othersSolved = true;
+			for(ItemFrame f : arrowFrames(frame.getWorld())) {
+				if(!f.getUniqueId().equals(frame.getUniqueId()) && f.getRotation() != ARROW_SOLVED_ROTATION) othersSolved = false;
+			}
+			if(othersSolved) return false;
+		}
+		frame.setRotation(next);
+		return true;
 	}
 
 	/** S3 solve test, from {@code GoldorListener.processArrowFrame} after it turns the clicked frame. */
@@ -257,6 +278,7 @@ public final class Goldor extends WitherLord {
 	protected void chainNext(boolean doContinue) {
 		if(doContinue) {
 			Necron.necronInstructions(world, true);
+			instructions.bosses.necron.NecronDrag.start(world);
 			runPlayerHandoff(); // players' necron() routine, same tick Necron spawns
 		} else {
 			instructions.bosses.WitherActions.signalRunComplete(); // last boss of this practice
@@ -362,8 +384,9 @@ public final class Goldor extends WitherLord {
 				protectedFrames.add(frame);
 			}
 		}
-		// Fresh board, so a chained full run doesn't inherit the last one's rotations.
-		resetArrowFrames(world);
+		// Fresh board, so a chained full run doesn't inherit the last one's rotations. Realistic keeps a realistic
+		// wall: serverSetup already dealt it, and the pre-phase turns are the player's.
+		if(!(damage.Difficulty.realPuzzles() && realisticArrowWall)) resetArrowFrames(world);
 	}
 
 	/** For /setup. Non-arrow frames are left alone; nothing may turn them anyway. */
@@ -885,15 +908,15 @@ public final class Goldor extends WitherLord {
 	}
 
 	private void playDeathDialogue() {
-		int handoffTick = Alpha.ticks(80, 60);
+		int handoffTick = 60;
 		sendChatMessage("...");
 		// Since core opened, then Terminals and Overall.
 		int coreTicks = displayTick() - coreOpenTick;
 		Utils.timer("<green>" + String.format("Goldor killed in %s ticks (%.2f seconds) | Terminals: ",
 				formatWithSpaces(coreTicks), coreTicks / 20.0) + formatTick(displayTick()));
-		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), Alpha.ticks(60, 40));
-		// Restored on the next /reset. 20t after the handoff normally; with it under alpha, no dialogue left to cover it.
-		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, Alpha.ticks(100, 60));
+		Utils.scheduleTask(() -> sendChatMessage("Necron, forgive me."), 40);
+		// Restored on the next /reset. On the handoff: no dialogue left to cover it.
+		Utils.scheduleTask(instructions.bosses.BossTransition::openGoldorToNecron, 60);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Goldor finished in " + formatTick(displayTick()));
 			// Leaderboard duration at the phase's real end, before chainNext re-anchors the clock. The WHOLE phase,

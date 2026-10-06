@@ -1,5 +1,7 @@
 package instructions.bosses.goldor;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
@@ -12,7 +14,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitTask;
 import org.jspecify.annotations.NonNull;
-import plugin.Alpha;
 import plugin.M7tas;
 import plugin.Utils;
 
@@ -64,9 +65,9 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		SELECT_ALL(54, "Sеlect all the %s items!"),
 		/** "What starts with 'D'?" - the letter is rolled, so this one is a template too.  No colon. */
 		STARTS_WITH(45, "What starts with '%s'?"),
-		/** "Click the button on time!" - four rows, each cleared by clicking its button on the beat. */
+		/** "Click the button on time!" - three rows, each cleared by clicking its button on the beat. */
 		MELODY(54, "Click the buttοn οn time!"),
-		/** "Click in order!" - fourteen numbered panes, ascending. */
+		/** "Click in order!" - ten numbered panes, ascending. */
 		CLICK_IN_ORDER(36, "Click in οrder!");
 
 		public final int size;
@@ -130,11 +131,21 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	}
 
 	private static ItemStack item(Material m) {
-		return new ItemStack(m);
+		return item(m, 1);
 	}
 
 	private static ItemStack item(Material m, int amount) {
+		return noTooltip(new ItemStack(m, amount));
+	}
+
+	/** Same Color keeps its tooltip: the pane name spells out the clicks. */
+	private static ItemStack withTooltip(Material m, int amount) {
 		return new ItemStack(m, amount);
+	}
+
+	private static ItemStack noTooltip(ItemStack stack) {
+		stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().hideTooltip(true));
+		return stack;
 	}
 
 	private static final Material FILLER = Material.BLACK_STAINED_GLASS_PANE;
@@ -161,27 +172,24 @@ public final class GoldorTerminalGui implements InventoryHolder {
 			Material.BLUE_STAINED_GLASS_PANE,
 			Material.RED_STAINED_GLASS_PANE};
 
-	// --- Melody: four rows of five cells, button to the right ---
-	private static final int MELODY_FIRST_ROW = 1, MELODY_LAST_ROW = 4;
-	/** Alpha: three clicks, not four. */
-	private static final int ALPHA_MELODY_LAST_ROW = 3;
+	// --- Melody: three rows of five cells, button to the right ---
+	private static final int MELODY_FIRST_ROW = 1, MELODY_LAST_ROW = 3;
 	private static final int MELODY_FIRST_COL = 1, MELODY_LAST_COL = 5;
 	private static final int MELODY_BUTTON_COL = 7;
 	private static final int MELODY_STEP_TICKS = 10;
 	/** Freeze after an off-target click; a miss costs time, never the row. */
 	private static final int MELODY_MISS_FREEZE_TICKS = 20;
 
-	/** Read live, not latched: every row's target is rolled, so a mid-view flip only adds a playable row. */
 	private static int melodyLastRow() {
-		return Alpha.count(MELODY_LAST_ROW, ALPHA_MELODY_LAST_ROW);
+		return MELODY_LAST_ROW;
 	}
 
-	/** Last is {@code 8 - first}. Alpha: ten numbers, not fourteen. */
+	/** Last is {@code 8 - first}: ten numbers. */
 	private static int clickOrderFirstCol() {
-		return Alpha.count(1, 2);
+		return 2;
 	}
 
-	/** Rows 1-2, cols 1-7 (2-6 in alpha). */
+	/** Rows 1-2, cols 2-6. */
 	private static int[] clickOrderSlots() {
 		int first = clickOrderFirstCol();
 		int last = 8 - first;
@@ -288,14 +296,13 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/** Click In Order: next number owed, and the last. */
 	private int nextNumber = 1;
 	private int lastNumber;
-	/** Latched at build; {@link #clickOrderSlots} reads alpha live. */
+	/** Latched at build. */
 	private int[] orderSlots = new int[0];
 
 	/** Past {@link #melodyLastRow()} once solved. */
 	private int melodyRow = MELODY_FIRST_ROW;
-	/** Rolled for ALL four rows even in alpha, so a mid-view flip never finds an unrolled row. */
 	private int[] melodyTarget;
-	/** Bottom purple marker, right under the last playable row (5, or 4 in alpha). Latched in {@link #buildMelody()}. */
+	/** Bottom purple marker, right under the last playable row (4). Latched in {@link #buildMelody()}. */
 	private int melodyBottomRow = MELODY_LAST_ROW + 1;
 	// Mover position, direction and the two pacing counters.
 	private int melodyPos = MELODY_FIRST_COL;
@@ -321,6 +328,12 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		// Not in the constructor: the ticker cancels itself with no viewers, and there are none yet. The stand-in
 		// has no mover; it's parked on target.
 		if(gui.type == Type.MELODY && !gui.standIn) gui.startMelodyTicker();
+		if(gui.type == Type.MELODY) melodyShout(p, 0);
+	}
+
+	/** Said as the player on open and after rows 1 and 2, real and stand-in. */
+	private static void melodyShout(Player p, int rowsDone) {
+		p.chat(p.getName() + " HAS NEVER SEEN SUCH BULLSHIT BEFORE " + rowsDone + "/" + (MELODY_LAST_ROW - MELODY_FIRST_ROW + 1));
 	}
 
 	@Override
@@ -445,7 +458,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	private void drawSameColor() {
 		for(int i = 0; i < SAME_COLOR_SLOTS.length; i++) {
 			int signed = RubixSolver.signed(rubix[i], rubixTarget);
-			ItemStack pane = item(CYCLE[rubix[i]], rubixAmount(signed));
+			ItemStack pane = withTooltip(CYCLE[rubix[i]], rubixAmount(signed));
 			ItemMeta meta = pane.getItemMeta();
 			if(meta != null) {
 				meta.displayName(Utils.mm(rubixHint(signed)));
@@ -533,14 +546,13 @@ public final class GoldorTerminalGui implements InventoryHolder {
 			meta.setEnchantmentGlintOverride(true);
 			stack.setItemMeta(meta);
 		}
-		return stack;
+		return noTooltip(stack);
 	}
 
 	// --- Melody ---
 
 	private void buildMelody() {
 		fill(FILLER);
-		// LATCHED: if alpha moved the marker mid-view the old one would be stranded on what is then a playable row.
 		melodyBottomRow = melodyLastRow() + 1;
 		melodyTarget = new int[MELODY_LAST_ROW + 1];
 		for(int row = MELODY_FIRST_ROW; row <= MELODY_LAST_ROW; row++) melodyTarget[row] = rollMelodyTarget(row);
@@ -616,7 +628,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	// --- Click In Order ---
 
 	/**
-	 * 1..14 (1..10 in alpha), shuffled; the number is the stack size, the only copy of the permutation. The stand-in
+	 * 1..10, shuffled; the number is the stack size, the only copy of the permutation. The stand-in
 	 * deals them in order, only reached if the mode changed under a built section ({@link #assignTypes}).
 	 */
 	private void buildClickInOrder() {
@@ -669,8 +681,8 @@ public final class GoldorTerminalGui implements InventoryHolder {
 			}
 			case SAME_COLOR -> {
 				fill(FILLER);
-				for(int s : SAME_COLOR_SLOTS) inv.setItem(s, item(Material.BLUE_STAINED_GLASS_PANE));
-				inv.setItem(standInAnswer, item(Material.GREEN_STAINED_GLASS_PANE));
+				for(int s : SAME_COLOR_SLOTS) inv.setItem(s, withTooltip(Material.BLUE_STAINED_GLASS_PANE, 1));
+				inv.setItem(standInAnswer, withTooltip(Material.GREEN_STAINED_GLASS_PANE, 1));
 			}
 			case SELECT_ALL -> {
 				frameAndFill(Material.BARRIER);
@@ -789,6 +801,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 			stopMelodyTicker();
 			return true;
 		}
+		melodyShout(clicker, melodyRow - MELODY_FIRST_ROW);
 		// The mover CARRIES OVER, same cell, direction and clock: one continuous walk, not a fresh reaction test
 		// per row. No freeze can be live here; a freeze parks the mover off target.
 		drawMelodyMarkers();

@@ -2,7 +2,7 @@ package commands;
 
 import damage.Difficulty;
 import damage.Mayor;
-import plugin.Alpha;
+import plugin.WatcherFix;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -13,7 +13,7 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /dungeonsettings [difficulty [<mode>] | mayor [<jerry_paul|paul|jerry|other|derpy>] | alpha [<on|off>]]} - this server's
+ * {@code /dungeonsettings [difficulty [<mode>] | mayor [<jerry_paul|paul|jerry|other|derpy>] | watcherfix [<on|off>]]} - this server's
  * dungeon settings (MAP.md §0). No args prints them; a setting with no value steps it to the next value.
  * <p>
  * Three independent settings, any combination is valid:
@@ -45,7 +45,7 @@ import plugin.Utils;
  */
 public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
-			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [jerry_paul|paul|jerry|other|derpy] | alpha [on|off]]";
+			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [jerry_paul|paul|jerry|other|derpy] | watcherfix [on|off]]";
 
 	/**
 	 * Typed mode names, joined from {@link Difficulty} so the usage line can't drift from the enum.
@@ -76,7 +76,7 @@ public class DungeonSettings implements CommandExecutor {
 		switch(args[0].toLowerCase()) {
 			case "difficulty", "mode" -> difficulty(sender, args);
 			case "mayor" -> mayor(sender, args);
-			case "alpha" -> alpha(sender, args);
+			case "watcherfix" -> watcherFix(sender, args);
 			default -> sender.sendMessage(Utils.msg(USAGE));
 		}
 		return true;
@@ -91,9 +91,9 @@ public class DungeonSettings implements CommandExecutor {
 				Placeholder.parsed("desc", describe(Difficulty.current()))));
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>mayor: <yellow><value>",
 				Placeholder.unparsed("value", Mayor.current().id())));
-		sender.sendMessage(Utils.msg("<dark_gray>- <gray>alpha: <yellow><value>  <dark_gray><desc>",
-				Placeholder.unparsed("value", Alpha.current().id()),
-				Placeholder.unparsed("desc", describe(Alpha.current()))));
+		sender.sendMessage(Utils.msg("<dark_gray>- <gray>watcherfix: <yellow><value>  <dark_gray><desc>",
+				Placeholder.unparsed("value", WatcherFix.current().id()),
+				Placeholder.unparsed("desc", describe(WatcherFix.current()))));
 		sender.sendMessage(Utils.msg("<dark_gray>Change one with <white>/dungeonsettings <setting> [value]"));
 	}
 
@@ -148,30 +148,26 @@ public class DungeonSettings implements CommandExecutor {
 		}
 	}
 
-	private static void alpha(CommandSender sender, String[] args) {
-		Alpha next;
+	private static void watcherFix(CommandSender sender, String[] args) {
+		WatcherFix next;
 		if(args.length >= 2) {
-			next = Alpha.parse(args[1]);
+			next = WatcherFix.parse(args[1]);
 			if(next == null) {
 				sender.sendMessage(Utils.msg(USAGE));
 				return;
 			}
-			Alpha.set(next);
+			WatcherFix.set(next);
 		} else {
-			next = Alpha.toggle();
+			next = WatcherFix.toggle();
 		}
-		applyAlpha(next);
+		applyWatcherFix(next);
 	}
 
-	/** Announce alpha timings on/off. Same split and reason as {@link #applyDifficulty}. */
-	static void applyAlpha(Alpha next) {
-		Bukkit.broadcast(Utils.msg("<gold><bold>ALPHA TIMINGS<reset><gray> are now <yellow><value>",
+	/** Announce Fix Watcher Bug on/off. Same split and reason as {@link #applyDifficulty}. */
+	static void applyWatcherFix(WatcherFix next) {
+		Bukkit.broadcast(Utils.msg("<gold><bold>FIX WATCHER BUG<reset><gray> is now <yellow><value>",
 				Placeholder.unparsed("value", next.id())));
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
-		// Timings latch when a phase arms its schedule, so a mid-run flip only reaches phases not yet started.
-		if(instructions.bosses.WitherActions.isPracticeMode()) {
-			Bukkit.broadcast(Utils.msg("<dark_gray>A phase arms its timings when it starts, so this only affects phases that have not begun."));
-		}
 	}
 
 	/** One line on what a value means. MiniMessage: inserted as a parsed placeholder. */
@@ -183,10 +179,10 @@ public class DungeonSettings implements CommandExecutor {
 		};
 	}
 
-	private static String describe(Alpha a) {
-		return switch(a) {
-			case OFF -> "The normal Hypixel timings.";
-			case ON -> "Experimental short timings.  Times set under alpha are NOT valid for the leaderboards.";
+	private static String describe(WatcherFix w) {
+		return switch(w) {
+			case OFF -> "The Watcher waits for tick 440 before his second wave, like Hypixel.";
+			case ON -> "The Watcher starts his second wave 3s after returning to the center.  Not valid for Clear or Full Run leaderboards.";
 		};
 	}
 }

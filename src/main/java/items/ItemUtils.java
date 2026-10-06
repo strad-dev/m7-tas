@@ -528,6 +528,7 @@ public final class ItemUtils {
 	private static boolean isGuidedTarget(Entity e, List<EntityType> doNotKill) {
 		if(!(e instanceof LivingEntity mob) || e instanceof Player) return false;
 		if(e.getScoreboardTags().contains(GUIDED_TAG) || doNotKill.contains(e.getType())) return false;
+		if(e.getScoreboardTags().contains(instructions.bosses.necron.NecronDrag.PIG_TAG)) return false;
 		if(mob.isDead() || mob.getHealth() <= 0) return false;
 		return !(e instanceof Wither wither && wither.getInvulnerableTicks() != 0);
 	}

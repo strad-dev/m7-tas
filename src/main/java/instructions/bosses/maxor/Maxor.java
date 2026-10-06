@@ -13,7 +13,6 @@ import org.bukkit.block.data.Powerable;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
-import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.FakePlayerInventory;
 import plugin.Utils;
@@ -38,14 +37,9 @@ public final class Maxor extends WitherLord {
 	// Laser only tests Maxor's position on phase ticks divisible by this. Also the action bar's countdown period.
 	private static final int LASER_CYCLE_TICKS = 10;
 	// Maxor starts moving here, so it's also where the laser countdown starts.
-	private static final int AGGRO_TICK = 160;
-	/** Alpha: dialogue is 40t per line instead of 60t. */
-	private static final int ALPHA_AGGRO_TICK = 80;
-	private static final int STUN_COOLDOWN_TICKS = 200;
+	private static final int AGGRO_TICK = 80;
 	// Stun to auto-enrage. A constant because the action bar counts down the same number the enrage is scheduled on.
 	private static final int STUN_AUTO_ENRAGE_TICKS = 160;
-	/** Plates arm when the fight does; tracks the aggro tick. */
-	private static final int PLATE_GATE_TICKS = 160;
 	private static final int CRYSTAL_RESPAWN_DELAY_TICKS = 40;
 
 	// Energy Crystal pressure plates. Stonk and break immune (isProtected).
@@ -69,7 +63,6 @@ public final class Maxor extends WitherLord {
 	// Boss-lane, so it fires at the start of its tick.
 	private Runnable stunEnrageTask;
 	private boolean platesActive;
-	private boolean stunCooldownActive;
 	private boolean inStun;
 	private double stunDamageDealt;
 	// Latched at the 75% stun cap; clampDamage rejects everything until the next stun. Without it, same-tick arrows
@@ -82,7 +75,6 @@ public final class Maxor extends WitherLord {
 	private Runnable barTicker;
 	// So the bar counts down the mechanic's own clocks.
 	private int stunEndTick;
-	private int laserImmuneUntilTick;
 	// Lets an idle phase clear the bar once instead of broadcasting an empty one every tick.
 	private boolean barShown;
 
@@ -132,9 +124,7 @@ public final class Maxor extends WitherLord {
 		inStun = false;
 		stunDamageDealt = 0;
 		stunCapReached = false;
-		stunCooldownActive = false;
 		stunEndTick = 0;
-		laserImmuneUntilTick = 0;
 		platesActive = false;
 		// Indicator goes red in beginLaserCharge and back only in triggerStun, so a run ending between them left it
 		// red. Black is idle (serverSetup:289 sets the same block).
@@ -147,23 +137,21 @@ public final class Maxor extends WitherLord {
 		startBarTicker();
 		startPlateTicker();
 
-		// Plates arm the tick the fight does, alpha included (80).
-		int aggroTick = Alpha.ticks(AGGRO_TICK, ALPHA_AGGRO_TICK);
-		// The poll picks up an already-pressed plate next tick, so no rechecks to queue.
-		Utils.scheduleTask(() -> platesActive = true, Alpha.ticks(PLATE_GATE_TICKS, ALPHA_AGGRO_TICK));
+		// Plates arm the tick the fight does. The poll picks up an already-pressed plate next tick, so no rechecks to queue.
+		Utils.scheduleTask(() -> platesActive = true, AGGRO_TICK);
 
 		resetCrystals();
 
 		sendChatMessage("WELL WELL WELL, LOOK WHO'S HERE!");
-		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), Alpha.ticks(60, 40));
-		// Alpha lands the third line ON the aggro tick; normally it leads it by 40t.
-		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), Alpha.ticks(120, 80));
+		Utils.scheduleTask(() -> sendChatMessage("I'VE BEEN TOLD I COULD HAVE A BIT OF FUN WITH YOU."), 40);
+		// Third line lands ON the aggro tick.
+		Utils.scheduleTask(() -> sendChatMessage("DON'T DISAPPOINT ME, I HAVEN'T HAD A GOOD FIGHT IN A WHILE."), 80);
 		Utils.scheduleTask(() -> {
 			setAggro(3.0, 1.0, 0.5);
 			spawnMiners();
 			Utils.playGlobalSound(Sound.ENTITY_WITHER_SPAWN);
 			Utils.playGlobalSound(Sound.ENTITY_ZOMBIE_VILLAGER_CURE, 1.0F, 2.0F);
-		}, aggroTick);
+		}, AGGRO_TICK);
 	}
 
 	@Override
@@ -240,7 +228,7 @@ public final class Maxor extends WitherLord {
 	 * The whole plate mechanic, polled per tick. The only trigger is the real stone plate's {@code powered} flag at
 	 * {@code (x, 224, 41)}; vanilla owns hitbox, sensitivity and the 20-tick release. Polled because
 	 * {@code Action.PHYSICAL} fires only on the EDGE, so someone already on the plate before holding a crystal, or
-	 * before {@link #PLATE_GATE_TICKS}, never got a second one.
+	 * before {@link #AGGRO_TICK}, never got a second one.
 	 */
 	private void plateTick() {
 		if(!platesActive) return;
@@ -321,8 +309,7 @@ public final class Maxor extends WitherLord {
 					return;
 				}
 				if(displayTick() % LASER_CYCLE_TICKS != 0) return;
-				// Alpha has no cooldown: it may stun again next cycle, even mid-stun.
-				if(stunCooldownActive && !Alpha.enabled()) return;
+				// No cooldown: it may stun again next cycle, even mid-stun.
 
 				double dx = boss.getLocation().getX() - LASER_CENTER_X;
 				double dz = boss.getLocation().getZ() - LASER_CENTER_Z;
@@ -352,10 +339,8 @@ public final class Maxor extends WitherLord {
 	 *       from {@link #AGGRO_TICK}, not when the scan arms: the grid is absolute (phase tick mod cycle), so it's right
 	 *       while crystals are still being carried.</li>
 	 *   <li><b>Stunned</b>: ticks to auto-enrage. Replaced early by a 75% cap-enrage ({@link #enrageMaxor} re-renders).</li>
-	 *   <li><b>Immune</b>: what's left of {@link #STUN_COOLDOWN_TICKS}, counted from the STUN, so normally the 40t
-	 *       remainder, more after a cap-enrage.</li>
 	 * </ul>
-	 * Both stun counters use ticks stamped at {@link #triggerStun}, so they can't drift. No clash with
+	 * The stun counter uses the tick stamped at {@link #triggerStun}, so it can't drift. No clash with
 	 * {@code ClearManager}'s bar, which skips anyone outside the room grid.
 	 */
 	private void updateActionBar() {
@@ -363,8 +348,6 @@ public final class Maxor extends WitherLord {
 		String bar;
 		if(inStun) {
 			bar = "<yellow>Stunned <white>" + Math.max(0, stunEndTick - t) + "t";
-		} else if(stunCooldownActive) {
-			bar = "<yellow>Immune <white>" + Math.max(0, laserImmuneUntilTick - t) + "t";
 		} else if(t >= AGGRO_TICK) {
 			bar = "<red>Laser <white>" + (LASER_CYCLE_TICKS - Math.floorMod(t, LASER_CYCLE_TICKS)) + "t";
 		} else {
@@ -427,7 +410,7 @@ public final class Maxor extends WitherLord {
 			BossScheduler.removeTicker(barTicker);
 			barTicker = null;
 		}
-		// Wipe instead of letting the last "Immune 1t" sit through its fade-out.
+		// Wipe instead of letting the last segment sit through its fade-out.
 		barShown = false;
 		Utils.broadcastActionBar(Component.empty());
 	}
@@ -448,22 +431,10 @@ public final class Maxor extends WitherLord {
 			return;
 		}
 
-		// Alpha has no immune window, so the bar never shows "Immune".
-		stunCooldownActive = !Alpha.enabled();
-		if(stunCooldownActive) {
-			// Boss-lane: lifts at the START of its tick so the laser ticker sees it the same tick.
-			BossScheduler.schedule(() -> {
-				stunCooldownActive = false;
-				// Re-render: the HUD ticker already drew this tick's bar from the pre-clear state.
-				updateActionBar();
-			}, STUN_COOLDOWN_TICKS);
-		}
 		inStun = true;
 		stunDamageDealt = 0;
 		stunCapReached = false;
-		// Both windows open HERE: immune is the stun's 160t plus a 40t tail, not 200t after the enrage.
 		stunEndTick = displayTick() + STUN_AUTO_ENRAGE_TICKS;
-		laserImmuneUntilTick = displayTick() + STUN_COOLDOWN_TICKS;
 
 		clearAggro();
 		setArmor(false);
@@ -532,7 +503,7 @@ public final class Maxor extends WitherLord {
 		CustomBossBar.removeStunIndicator();
 		setAggro(3.0, 1.0, 0.5);
 
-		// A cap-enrage runs mid-tick from the damage path, after the HUD ticker; flip "Stunned" to "Immune" now.
+		// A cap-enrage runs mid-tick from the damage path, after the HUD ticker; flip "Stunned" to "Laser" now.
 		updateActionBar();
 	}
 
@@ -585,13 +556,13 @@ public final class Maxor extends WitherLord {
 
 	private void playDeathDialogue() {
 		// Storm wall and handoff share this tick.
-		int handoffTick = Alpha.ticks(100, 60);
+		int handoffTick = 60;
 		sendChatMessage("I'M TOO YOUNG TO DIE AGAIN!");
 		Utils.timer("<green>Maxor killed in " + formatTick(displayTick()));
 		Server.playWitherDeathSound(boss);
 		// Restored on the next /reset.
 		Utils.scheduleTask(instructions.bosses.BossTransition::openMaxorToStorm, handoffTick);
-		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), Alpha.ticks(60, 40));
+		Utils.scheduleTask(() -> sendChatMessage("I'LL MAKE YOU REMEMBER MY DEATH!"), 40);
 		Utils.scheduleTask(() -> {
 			Utils.timer("<green>Maxor finished in " + formatTick(displayTick()));
 			// Leaderboard duration at the phase's real end, not the killing blow. Before chainNext, which re-anchors the phase clock.

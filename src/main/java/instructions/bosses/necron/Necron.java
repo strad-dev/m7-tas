@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import plugin.Alpha;
 import plugin.BossScheduler;
 import plugin.Utils;
 
@@ -54,15 +53,10 @@ public final class Necron extends WitherLord {
 	// Fractions of max HP, consumed in order.
 	private static final double[] THRESHOLD_FRACTIONS = {0.80, 0.25, 0.05};
 
-	private static final int INTRO_END_TICK = 160;       // aggro + damageability begin here
-	/** Alpha: salvo starts at 20 instead of 60, so the platform still goes 40t later. */
-	private static final int ALPHA_INTRO_END_TICK = 80;
-	private static final int FRENZY_DURATION_TICKS = 140;
-	/** Alpha: both frenzies. */
-	private static final int ALPHA_FRENZY_DURATION_TICKS = 60;
+	private static final int INTRO_END_TICK = 80;        // aggro + damageability begin here
+	private static final int FRENZY_DURATION_TICKS = 60;
 	private static final int FIREBALL_DURATION_TICKS = 60;
-	private static final int DEATH_TO_WK_TICKS = 100;
-	private static final int ALPHA_DEATH_TO_WK_TICKS = 60;
+	private static final int DEATH_TO_WK_TICKS = 60;
 
 	// Frenzy snap point (his spawn).
 	private static final double MIDDLE_X = 54.5, MIDDLE_Y = 66, MIDDLE_Z = 76.5;
@@ -105,6 +99,7 @@ public final class Necron extends WitherLord {
 	protected void resetState() {
 		cancelInterludeEndTask();
 		cancelBarTicker();
+		NecronDrag.release();
 		if(boss != null) clearAggro();
 		CustomBossBar.removeStunIndicator();
 		eventsDone = 0;
@@ -121,15 +116,13 @@ public final class Necron extends WitherLord {
 
 		// Goldor's split ends as Necron spawns (Wither-King practice scoreboard).
 		instructions.bosses.WitherActions.recordSplit("Goldor", Utils.runTick());
-		// Intro: not damageable, doesn't fly. 160t (salvo 60, platform 100, Goodbye 120); alpha 80t (salvo 20,
-		// platform 60, Goodbye 80). The salvo always leads the platform by its own 40t.
-		int introEnd = Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK);
-		int salvoTick = Alpha.ticks(60, 20);
+		// Intro: not damageable, doesn't fly. 80t (salvo 20, platform 60, Goodbye 80). The salvo leads the platform
+		// by its own 40t.
+		int salvoTick = 20;
 		sendChatMessage("You went further than any human before, congratulations.");
-		// Queued first so it leads when both land on 60 (normal mode).
-		Utils.scheduleTask(() -> sendChatMessage("I'm afraid your journey ends now."), Alpha.ticks(60, 40));
+		Utils.scheduleTask(() -> sendChatMessage("I'm afraid your journey ends now."), 40);
 		Utils.scheduleTask(() -> destroyPlatform(true), salvoTick); // guarded by platformIntact
-		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), Alpha.ticks(120, 80));
+		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), 80);
 
 		// After intro: armour off, damageable, chase.
 		Utils.scheduleTask(() -> {
@@ -137,9 +130,7 @@ public final class Necron extends WitherLord {
 			damageable = true;
 			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 			// No ??? indicator here: only after a frenzy (endInterlude).
-			// Alpha drops this line: the 80t intro already ends on "Goodbye." and there's no slot left.
-			if(!Alpha.enabled()) sendChatMessage("That's a very impressive trick.  I guess I'll have to handle this myself.");
-		}, introEnd);
+		}, INTRO_END_TICK);
 	}
 
 	@Override
@@ -210,7 +201,7 @@ public final class Necron extends WitherLord {
 			destroyPlatform(false); // fireballs only
 		} else {
 			// 80% and 5%: frenzy.
-			duration = Alpha.ticks(FRENZY_DURATION_TICKS, ALPHA_FRENZY_DURATION_TICKS);
+			duration = FRENZY_DURATION_TICKS;
 			moveBossToCenter();
 			sendChatMessage(FRENZY_START_MESSAGES[random.nextInt(FRENZY_START_MESSAGES.length)]);
 			applyBlindness();
@@ -269,7 +260,7 @@ public final class Necron extends WitherLord {
 			bar = interludeIsFireball ? "<gold>Fireballs <white>" + left + "t" : "<red>Frenzy <white>" + left + "t";
 		} else if(!damageable) {
 			bar = "<yellow>Damageable In <white>"
-					+ Math.max(0, Alpha.ticks(INTRO_END_TICK, ALPHA_INTRO_END_TICK) - t) + "t";
+					+ Math.max(0, INTRO_END_TICK - t) + "t";
 		} else {
 			// Nothing to count: clear once rather than every tick.
 			if(barShown) {
@@ -405,13 +396,13 @@ public final class Necron extends WitherLord {
 	private void playDeathDialogue() {
 		final int deathTick = displayTick(); // t=0 of the death sequence
 		// Handoff tick; the delays below are measured from it.
-		final int toWitherKing = Alpha.ticks(DEATH_TO_WK_TICKS, ALPHA_DEATH_TO_WK_TICKS);
+		final int toWitherKing = DEATH_TO_WK_TICKS;
 		sendChatMessage("All this, for nothing...");
 		Server.playWitherDeathSound(boss);
 		Utils.timer("<green>Necron killed in " + formatTick(displayTick()));
 		// Wall to Wither King's arena opens 100t after the handoff (restored on next /reset).
 		Utils.scheduleTask(instructions.bosses.BossTransition::openNecronToWitherKing, toWitherKing + 100);
-		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), Alpha.ticks(60, 40));
+		Utils.scheduleTask(() -> sendChatMessage("I understand your words now, my master."), 40);
 		// note: In most mods, the Necron timer ends 2 seconds too early, making Wither King start 2 seconds too early.
 		// This TAS fixes that. To compare to those timers, subtract 2 seconds here and add 2 seconds to Wither King time.
 		Utils.scheduleTask(() -> {
@@ -427,7 +418,7 @@ public final class Necron extends WitherLord {
 		 * note: all of the wither partitions are one-ticked in this TAS, matching DPS achieved in normal f7
 		 * thus, there are no timesaves available in normal f7 VS master mode m7
 		 */
-		// Normal F7 completes 140t after the final blow (toWitherKing + 40). The offset goes OUTSIDE overallTick():
+		// Normal F7 completes toWitherKing + 40 after the final blow. The offset goes OUTSIDE overallTick():
 		// in practice it returns the live run tick and ignores its argument.
 		final int normalF7Overall = overallTick(deathTick) + toWitherKing + 40;
 		Utils.scheduleTask(() -> {

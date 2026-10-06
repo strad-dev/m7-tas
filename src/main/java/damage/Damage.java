@@ -555,6 +555,7 @@ public final class Damage {
 		if(target instanceof Villager) return 0;
 		// The Watcher can't be damaged; you win by killing its Undeads.
 		if(target.getScoreboardTags().contains("TASWatcher")) return 0;
+		if(target.getScoreboardTags().contains(instructions.bosses.necron.NecronDrag.PIG_TAG)) return 0;
 		// Blood mobs are shielded ~2 ticks so a spawn-tick arrow can't kill them before they count. Was only in
 		// MiscListener.onWatcherDamage, a vanilla event this path never fires.
 		if(target.getScoreboardTags().contains("WatcherMobSpawning")) return 0;

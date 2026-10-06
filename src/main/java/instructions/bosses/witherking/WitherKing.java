@@ -17,7 +17,6 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Transformation;
 import org.joml.AxisAngle4f;
 import org.joml.Vector3f;
-import plugin.Alpha;
 import plugin.*;
 
 import java.lang.reflect.Field;
@@ -47,10 +46,8 @@ public class WitherKing {
 
 	/** TAS overall column: Clear 738 + Maxor 500 + Storm 860 + Goldor 304 + Necron 600. */
 	private static final int PRE_WITHERKING_TICKS = 3002;
-	/** Final kill to congratulation (WK split 1029 − final kill 959). */
-	private static final int END_DELAY_TICKS = 70;
-	/** Alpha: score lands right on the kill. */
-	private static final int ALPHA_END_DELAY_TICKS = 10;
+	/** Final kill to congratulation. */
+	private static final int END_DELAY_TICKS = 10;
 
 	// --- Summon-phase relics ---
 	/** Wool, chat colour, label, statue spawn point, altar X/Z. */
@@ -122,19 +119,17 @@ public class WitherKing {
 	/**
 	 * This run's order. SLOTS are fixed: 0 and 1 the 260t pair, 2 the third timer dragon, 3 and 4 the event pair.
 	 * Colours are rolled in realistic only; set in {@link #witherKingInstructions} with the queue and latch. Nothing
-	 * downstream may name a colour for a slot ({@link #shouldSeeDragonPopup} keys on slot).
+	 * downstream may name a colour for a slot (keys on slot).
 	 */
 	private static final List<String> spawnOrder = new ArrayList<>(SET_SPAWN_ORDER);
 	/**
-	 * Last timer dragon, what {@link #lastTimerSpawned} latches on. Normally slot 2; alpha drops its 600t timer and
-	 * queues it first, so the last timer dragon is slot 1. LATCHED with the queue: read live, a mid-phase settings flip
-	 * would leave the latch waiting for a queued dragon and nothing would ever spawn.
+	 * Last timer dragon, what {@link #lastTimerSpawned} latches on: slot 1. Slot 2 has no timer and heads the queue.
 	 */
 	private static String lastTimerDragon = "orange";
 
 	/** Gates event spawns so an early death in the opening pair can't trigger them. */
 	private static boolean lastTimerSpawned = false;
-	/** Slots 3 and 4 (plus 2 under alpha), spawned when the last living dragon dies. */
+	/** Slots 2, 3 and 4, spawned when the last living dragon dies. */
 	private static final Deque<String> eventQueue = new ArrayDeque<>();
 	/** Spawn animation length; matches the {@link BossScheduler} delay. */
 	private static final int DRAGON_SPAWN_ANIM = 100;
@@ -160,9 +155,8 @@ public class WitherKing {
 		spawnOrder.clear();
 		spawnOrder.addAll(SET_SPAWN_ORDER);
 		if(damage.Difficulty.realPuzzles()) Collections.shuffle(spawnOrder, random);
-		// Alpha: slot 2 heads the queue instead of its 600t timer, so slot 1 is the last timer dragon. Set together.
-		lastTimerDragon = spawnOrder.get(Alpha.enabled() ? 1 : 2);
-		if(Alpha.enabled()) eventQueue.add(spawnOrder.get(2));
+		lastTimerDragon = spawnOrder.get(1);
+		eventQueue.add(spawnOrder.get(2));
 		eventQueue.add(spawnOrder.get(3));
 		eventQueue.add(spawnOrder.get(4));
 		aliveCount = 0;
@@ -312,7 +306,7 @@ public class WitherKing {
 
 		Bukkit.broadcast(Utils.msg("<gold>" + Utils.getRealName(p) + "<green> picked up the " + relic.mm + relic.label + " Relic<green>!"));
 		Utils.timer("<green>Picked up in " + formatTick());
-		p.getInventory().setItem(8, itemStack);
+		p.getInventory().setItem(8, Utils.placeOnAltarsInAdventure(itemStack));
 		instructions.Actions.setHotbarSlot(p, 8);
 		Utils.playGlobalSound(Sound.ENTITY_ENDERMAN_SCREAM, 2.0f, 0.5f);
 	}
@@ -352,19 +346,19 @@ public class WitherKing {
 	// ============================== Wither King intro ==============================
 
 	/**
-	 * Golem-repair and thunder beds, three lines, first dragons. Alpha halves it: golem repairs on a 10t grid (20-60,
-	 * not 20-100), thunder ends with the last line, slot 0 spawns with "You... again?" at 60 and slot 1 with the
-	 * second line at 120. Slot 2's 600t timer is gone ({@link #lastTimerDragon}).
+	 * Golem-repair and thunder beds, three lines, first dragons. Golem repairs on a 10t grid (20-60), thunder ends with
+	 * the last line, slot 0 spawns with "You... again?" at 60 and slot 1 with the second line at 120. Slot 2 has no
+	 * timer ({@link #lastTimerDragon}).
 	 */
 	private static void startWitherKingIntro() {
-		int golemStep = Alpha.ticks(20, 10);
-		int firstLine = Alpha.ticks(100, 60);
-		int secondLine = Alpha.ticks(160, 120);
-		int lastLine = Alpha.ticks(220, 180);
+		int golemStep = 10;
+		int firstLine = 60;
+		int secondLine = 120;
+		int lastLine = 180;
 		for(int i = 20; i <= 20 + golemStep * 4; i += golemStep) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_ITEM_BREAK, 1.0f, 0.5f), i);
 		}
-		for(int i = 20; i <= Alpha.ticks(261, 181); i += 20) {
+		for(int i = 20; i <= 181; i += 20) {
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_THUNDER, 2.0f, 1.0f), i);
 			Utils.scheduleTask(() -> Utils.playGlobalSound(Sound.ENTITY_LIGHTNING_BOLT_IMPACT, 1.0f, 1.0f), i);
 		}
@@ -399,9 +393,8 @@ public class WitherKing {
 		}, secondLine);
 		Utils.scheduleTask(() -> sendChatMessage("We will decide it all, here, now."), lastLine);
 		// Timer dragons by SLOT. Slots 3 and 4 come from handleDragonKilled.
-		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(0)), Alpha.ticks(260, 60));
-		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(1)), Alpha.ticks(260, 120));
-		if(!Alpha.enabled()) Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(2)), 600); // last timer dragon
+		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(0)), 60);
+		Utils.scheduleTask(() -> spawnDragon(spawnOrder.get(1)), 120);
 	}
 
 	/** "orange" → gold-bold "Flame Dragon". */
@@ -474,27 +467,14 @@ public class WitherKing {
 	private static void announceDragonSpawn(String color, String dragonName, Location spawnLocation) {
 		Utils.playGlobalSound(Sound.ENTITY_ARROW_HIT_PLAYER, 2.0f, 0.5f);
 
-		// Opening pair shares a tick, so titles split by class (shouldSeeDragonPopup).
 		Title.Times times = Title.Times.times(Duration.ZERO, Duration.ofMillis(40 * 50L), Duration.ofMillis(10 * 50L));
 		Title title = Title.title(Utils.msg(dragonName + " <yellow>spawning!"), Utils.msg(""), times);
 		for(Player p : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(p)) continue;
-			if(shouldSeeDragonPopup(p, color)) p.showTitle(title);
+			p.showTitle(title);
 		}
 
 		startDragonCountdown(spawnLocation);
-	}
-
-	/** Slot 1 → Berserk/Mage/Healer; slot 0 → everyone else; later dragons → everyone. Only because the pair shares a
-	 *  tick and one title would hide the other; alpha spawns them 60t apart, so no split. Keyed on SLOT, since the
-	 *  colours are rolled in realistic. */
-	private static boolean shouldSeeDragonPopup(Player p, String color) {
-		if(Alpha.enabled()) return true;
-		var tags = p.getScoreboardTags();
-		boolean iceClass = tags.contains("Berserk") || tags.contains("Mage") || tags.contains("Healer");
-		if(color.equals(spawnOrder.get(1))) return iceClass;
-		if(color.equals(spawnOrder.get(0))) return !iceClass;
-		return true; // later dragons spawn alone
 	}
 
 	/** "100t" … "1t" above the spawn point, then removes itself. */
@@ -597,7 +577,7 @@ public class WitherKing {
 	// ============================== Death / end ==============================
 
 	public static void deathSequence() {
-		// Alpha scores 60t earlier, so M7Bridge.dialogueHoldTicks holds 240t, not 180. Signal + hold is 250 either way.
+		// M7Bridge.dialogueHoldTicks holds 240t after the score. Signal + hold is 250.
 		sendChatMessage("Incredible.  You did what I couldn't do myself.");
 		Utils.scheduleTask(() -> sendChatMessage("In a way, I should thank you.  I lost all hope centuries ago that it would ever end."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("I hope you'll become the Heroes I could never be."), 120);
@@ -605,12 +585,11 @@ public class WitherKing {
 		Utils.scheduleTask(() -> sendChatMessage("My strengths are depleting.  This... this is it."), 240);
 		Utils.scheduleTask(() -> { if(witherKing != null && witherKing.isValid()) witherKing.remove(); }, 300);
 
-		int endDelay = Alpha.ticks(END_DELAY_TICKS, ALPHA_END_DELAY_TICKS);
-		Utils.scheduleTask(WitherKing::printFinalMessage, endDelay);
+		Utils.scheduleTask(WitherKing::printFinalMessage, END_DELAY_TICKS);
 
-		// Signal at the SCOREBOARD (t=70), not the dialogue's end (t=250): a party walking out mid-dialogue lost the
-		// run. The network holds teardown 180t (M7Bridge.dialogueHoldTicks) so the spectator drop doesn't move.
-		Utils.scheduleTask(WitherActions::signalRunComplete, endDelay);
+		// Signal at the SCOREBOARD (t=10), not the dialogue's end (t=250): a party walking out mid-dialogue lost the
+		// run. The network holds teardown 240t (M7Bridge.dialogueHoldTicks) so the spectator drop doesn't move.
+		Utils.scheduleTask(WitherActions::signalRunComplete, END_DELAY_TICKS);
 	}
 
 	/** TAS: hardcoded splits. Practice: live splits. Standalone WK practice: one line. */
@@ -714,9 +693,9 @@ public class WitherKing {
 		}
 		Bukkit.broadcast(Utils.msg(""));
 		// The one place a party is told their time didn't count; earlier would be forgotten by now.
-		if(Alpha.enabled()) {
+		if(plugin.WatcherFix.enabled()) {
 			Bukkit.broadcast(Utils.nameComponent(ChatFont.centerPad(Utils.mmLegacy(
-					"<red><bold>ALPHA TIMINGS - NOT VALID FOR LEADERBOARDS"))));
+					"<red><bold>WATCHER FIX - NO CLEAR OR FULL RUN LEADERBOARDS"))));
 			Bukkit.broadcast(Utils.msg(""));
 		}
 		Bukkit.broadcast(Utils.msg("   <green><bold>Plugin by </bold><aqua>Stradivarius Violin<green>, also known as <aqua>Beethoven_"));

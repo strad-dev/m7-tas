@@ -90,7 +90,7 @@ public class TabCompletor implements TabCompleter {
 
 			case "dungeonsettings" -> {
 				if(args.length == 1) {
-					for(String setting : new String[]{"difficulty", "mayor", "alpha"}) {
+					for(String setting : new String[]{"difficulty", "mayor", "watcherfix"}) {
 						if(setting.startsWith(args[0].toLowerCase())) completions.add(setting);
 					}
 				} else if(args.length == 2 && args[0].equalsIgnoreCase("difficulty")) {
@@ -103,9 +103,9 @@ public class TabCompletor implements TabCompleter {
 					for(damage.Mayor m : damage.Mayor.values()) {
 						if(m.id().startsWith(args[1].toLowerCase())) completions.add(m.id());
 					}
-				} else if(args.length == 2 && args[0].equalsIgnoreCase("alpha")) {
-					for(plugin.Alpha a : plugin.Alpha.values()) {
-						if(a.id().startsWith(args[1].toLowerCase())) completions.add(a.id());
+				} else if(args.length == 2 && args[0].equalsIgnoreCase("watcherfix")) {
+					for(plugin.WatcherFix w : plugin.WatcherFix.values()) {
+						if(w.id().startsWith(args[1].toLowerCase())) completions.add(w.id());
 					}
 				}
 			}

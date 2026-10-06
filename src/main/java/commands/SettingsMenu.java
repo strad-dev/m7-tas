@@ -2,7 +2,7 @@ package commands;
 
 import damage.Difficulty;
 import damage.Mayor;
-import plugin.Alpha;
+import plugin.WatcherFix;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * One-row <b>M7 Settings</b> menu behind bare {@code /dungeonsettings}: difficulty, mayor and alpha timings, one
+ * One-row <b>M7 Settings</b> menu behind bare {@code /dungeonsettings}: difficulty, mayor and Fix Watcher Bug, one
  * button each; lore lists every value with the active one bold, each click steps to the next.
  *
  * <p><b>Standalone only.</b> On the network those three are party settings (they ride the practice request so a
@@ -36,7 +36,7 @@ import java.util.UUID;
  * text form works either way; the network gates it to admins (see {@code M7Bridge}).
  */
 public final class SettingsMenu implements Listener {
-	private static final int DIFFICULTY_SLOT = 2, MAYOR_SLOT = 4, ALPHA_SLOT = 6;
+	private static final int DIFFICULTY_SLOT = 2, MAYOR_SLOT = 4, WATCHER_FIX_SLOT = 6;
 
 	/** On every button so right-click isn't a secret. */
 	private static final String CYCLE_HINT = "<yellow>Click to change <dark_gray>(right-click to go back)";
@@ -72,13 +72,15 @@ public final class SettingsMenu implements Listener {
 		mayorLore.add(CYCLE_HINT);
 		inv.setItem(MAYOR_SLOT, mayorHead(mayorLore));
 
-		List<String> alphaLore = new ArrayList<>();
-		for(Alpha a : Alpha.values()) alphaLore.add(option(a == Alpha.current(), colour(a), label(a)));
-		alphaLore.add("");
-		alphaLore.add("<red>Alpha times are NOT valid for leaderboards");
-		alphaLore.add("");
-		alphaLore.add(CYCLE_HINT);
-		inv.setItem(ALPHA_SLOT, button(Material.SMITHING_TABLE, "<gold>Alpha Timings", alphaLore));
+		List<String> fixLore = new ArrayList<>();
+		for(WatcherFix w : WatcherFix.values()) fixLore.add(option(w == WatcherFix.current(), colour(w), label(w)));
+		fixLore.add("");
+		fixLore.add("<gray>Second wave 3s after the Watcher returns");
+		fixLore.add("<gray>to the center, not at tick 440");
+		fixLore.add("<red>NOT valid for Clear or Full Run leaderboards");
+		fixLore.add("");
+		fixLore.add(CYCLE_HINT);
+		inv.setItem(WATCHER_FIX_SLOT, button(Material.SMITHING_TABLE, "<gold>Fix Watcher Bug", fixLore));
 
 		p.openInventory(inv);
 	}
@@ -98,8 +100,8 @@ public final class SettingsMenu implements Listener {
 			DungeonSettings.applyDifficulty(back ? Difficulty.toggleBack() : Difficulty.toggle());
 		} else if(e.getRawSlot() == MAYOR_SLOT) {
 			DungeonSettings.applyMayor(back ? Mayor.toggleBack() : Mayor.toggle());
-		} else if(e.getRawSlot() == ALPHA_SLOT) {
-			DungeonSettings.applyAlpha(back ? Alpha.toggleBack() : Alpha.toggle());
+		} else if(e.getRawSlot() == WATCHER_FIX_SLOT) {
+			DungeonSettings.applyWatcherFix(back ? WatcherFix.toggleBack() : WatcherFix.toggle());
 		} else {
 			return;
 		}
@@ -136,15 +138,15 @@ public final class SettingsMenu implements Listener {
 		};
 	}
 
-	private static String colour(Alpha a) {
-		return switch(a) {
+	private static String colour(WatcherFix w) {
+		return switch(w) {
 			case OFF -> "<gray>";
 			case ON -> "<gold>";
 		};
 	}
 
-	private static String label(Alpha a) {
-		return switch(a) {
+	private static String label(WatcherFix w) {
+		return switch(w) {
 			case OFF -> "Off";
 			case ON -> "On";
 		};

@@ -18,7 +18,7 @@ public interface Wearable extends Item {
 	/**
 	 * Added to <b>Max Speed</b>. A BONUS, not a total: it used to be the helmet's finished number (400 / 550 / 650),
 	 * which folded in the Black Cat's +150, so Cow Hat and Racing Helmet disagreed about a stat neither owns.
-	 * {@code plugin/MaxSpeedSync} sums base, alpha shard, pet and helmet now.
+	 * {@code plugin/MaxSpeedSync} sums base, Alpha shard, pet and helmet now.
 	 */
 	default int maxSpeedBonus() {
 		return 0;

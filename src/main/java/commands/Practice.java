@@ -23,7 +23,7 @@ import java.util.Map;
  * 2. Equips each with their saved /m7loadout kit, refreshed to current item definitions, teleports them to the
  *    phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport. Bare "classic"/"perfect_rng"/"rta" sets the damage mode (MAP.md §0),
- *    a damage.Mayor id the mayor, "on"/"off" the alpha timings; omitted, current settings stand, so
+ *    a damage.Mayor id the mayor, "on"/"off" Fix Watcher Bug; omitted, current settings stand, so
  *    standalone keeps whatever /dungeonsettings set. The network always sends all three.
  * 4. Runs the same boss and server instructions as /tas, WITHOUT fake-player routines, handoffs or spectator
  *    sync. Pre-run delay is 60 ticks (3s); a bare integer overrides it: the network sends
@@ -70,20 +70,20 @@ public class Practice implements CommandExecutor {
 		// Optional mayor (a damage.Mayor id). Null leaves it alone, same reason: damage.Mayor is
 		// server-wide, and it decides whether every mob has double health.
 		damage.Mayor mayorArg = null;
-		// Optional alpha timings ("on" / "off"). Null leaves it alone, same reason: plugin.Alpha is server-wide,
-		// and an inherited flag times the run under timings nobody chose, so leaderboards refuse it.
-		plugin.Alpha alphaArg = null;
+		// Optional Fix Watcher Bug ("on" / "off"). Null leaves it alone, same reason: plugin.WatcherFix is
+		// server-wide, and an inherited flag costs a clear record nobody chose to give up.
+		plugin.WatcherFix watcherFixArg = null;
 		for(String arg : args) {
 			// Parsed up front, before the section fallback, which swallows any unknown word and would read
 			// "classic" as a section name.
 			damage.Difficulty mode = damage.Difficulty.parse(arg);
 			damage.Mayor mayor = damage.Mayor.parse(arg);
-			plugin.Alpha alpha = plugin.Alpha.parse(arg);
+			plugin.WatcherFix watcherFix = plugin.WatcherFix.parse(arg);
 			if(arg.equalsIgnoreCase("--no-teleport") || arg.equalsIgnoreCase("--noteleport")) noTeleport = true;
 			else if(arg.matches("\\d+")) delayTicks = Integer.parseInt(arg);
 			else if(mode != null) difficulty = mode;
 			else if(mayor != null) mayorArg = mayor;
-			else if(alpha != null) alphaArg = alpha;
+			else if(watcherFix != null) watcherFixArg = watcherFix;
 			else section = arg.toLowerCase();
 		}
 		if(!DEFAULT_LOCATIONS.containsKey(section)) {
@@ -141,11 +141,10 @@ public class Practice implements CommandExecutor {
 		if(difficulty != null) damage.Difficulty.set(difficulty);
 		// Mayor too, and it matters more: mob HP is written once at spawn, so it must be right before anything spawns.
 		if(mayorArg != null) damage.Mayor.set(mayorArg);
-		// Alpha too: a phase arms its whole schedule the tick it starts.
-		if(alphaArg != null) plugin.Alpha.set(alphaArg);
-		if(plugin.Alpha.enabled()) {
-			org.bukkit.Bukkit.broadcast(Utils.msg("<gold><bold>ALPHA TIMINGS<reset><gray> are on.  "
-					+ "<red>This run is not valid for the leaderboards."));
+		if(watcherFixArg != null) plugin.WatcherFix.set(watcherFixArg);
+		if(plugin.WatcherFix.enabled()) {
+			org.bukkit.Bukkit.broadcast(Utils.msg("<gold><bold>FIX WATCHER BUG<reset><gray> is on.  "
+					+ "<red>This run is not valid for the Clear or Full Run leaderboards."));
 		}
 
 		TAS.runPractice(world, section, delayTicks);
