@@ -81,6 +81,13 @@ public class Watcher {
 
 	private static final Location BOSS_SPAWN = new Location(null, 73.5, 221, 14.5, 0f, 0f);
 
+	/** Where the portal drops the party; {@code OutOfBounds}' boss-phase revive point too. */
+	public static Location bossSpawn(World w) {
+		Location l = BOSS_SPAWN.clone();
+		l.setWorld(w);
+		return l;
+	}
+
 	// ============================== Arming & detection ==============================
 
 	/** Does NOT spawn or detect; that's {@link #beginDetection(World)} at clear-tick 0. From TAS.runTAS for "all" and "clear". */

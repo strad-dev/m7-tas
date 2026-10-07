@@ -121,7 +121,7 @@ public final class M7tas extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new Eq(), this);
 		getServer().getPluginManager().registerEvents(new LinkedSlots(), this);
 		getServer().getPluginManager().registerEvents(new listeners.ClearListener(), this);
-		getServer().getPluginManager().registerEvents(new listeners.OutOfBounds(), this);
+		getServer().getPluginManager().registerEvents(new death.GenericKill(), this);
 		getServer().getPluginManager().registerEvents(loadoutEditor, this);
 		getServer().getPluginManager().registerEvents(settingsMenu, this);
 		// First two MUST be petMenu's own instance: it holds the carried pet onDisable hands back.

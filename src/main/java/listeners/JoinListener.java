@@ -174,7 +174,7 @@ public class JoinListener implements Listener {
 	}
 
 	/** This plugin's "spawn": in the Start room facing the first door. World spawn is above the map; never use it. */
-	private static Location dungeonEntrance() {
+	public static Location dungeonEntrance() {
 		World w = Bukkit.getWorld("world");
 		return w == null ? null : new Location(w, -120.5, 71, -183.5, 0.0f, 0.0f);
 	}
@@ -190,8 +190,8 @@ public class JoinListener implements Listener {
 		if (entrance != null) jp.teleport(entrance);
 	}
 
-	// Respawn at the entrance too: vanilla's world spawn drops them into the boss arena mid-clear, and OutOfBounds
-	// kills mid-run expecting them to carry on from spawn.
+	// Respawn at the entrance too: vanilla's world spawn drops them into the boss arena mid-clear. Run deaths are
+	// ghosts and never respawn; this is the network anticheat's vanilla kill and a /kill outside a run.
 	@EventHandler
 	public void onRespawn(PlayerRespawnEvent ev) {
 		Player p = ev.getPlayer();

@@ -684,9 +684,7 @@ public final class ClearManager {
 
 	/**
 	 * Only caller is {@code death/Deaths.kill}, once per real death: after the mode gate and {@code CheatDeath},
-	 * wipes included. Never runs in classic, where players can't die.
-	 * <p>
-	 * {@code OutOfBounds} doesn't call it: leaving the map is a practice mishap, a hard kill that skips {@code Deaths}.
+	 * wipes included. In classic only {@code /kill} and out of bounds get here.
 	 */
 	public static void noteDeath() {
 		deaths++;

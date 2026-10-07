@@ -418,6 +418,19 @@ public class MiscListener implements Listener {
 		Maxor.INSTANCE.pickUp(p, crystal);
 	}
 
+	@EventHandler
+	public void onPlatePromptRightClick(PlayerInteractAtEntityEvent e) {
+		if(!(e.getRightClicked() instanceof Interaction)) return;
+		if(Maxor.INSTANCE.clickPlatePrompt(e.getPlayer(), e.getRightClicked())) e.setCancelled(true);
+	}
+
+	@EventHandler
+	public void onPlatePromptLeftClick(EntityDamageByEntityEvent e) {
+		if(!(e.getEntity() instanceof Interaction)) return;
+		if(!(e.getDamager() instanceof Player p)) return;
+		if(Maxor.INSTANCE.clickPlatePrompt(p, e.getEntity())) e.setCancelled(true);
+	}
+
 	// Mort and the Wizard are villagers, so block right-clicks and the vanilla trade GUI won't open.
 	@EventHandler(priority = EventPriority.LOWEST)
 	public void onVillagerInteract(PlayerInteractEntityEvent e) {

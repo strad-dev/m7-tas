@@ -54,6 +54,9 @@ public final class Maxor extends WitherLord {
 	// Plate-placed, NOT pickupable.
 	private EnderCrystal plateLeftCrystal;
 	private EnderCrystal plateRightCrystal;
+	// Click-to-place prompts over an empty plate while anyone carries a crystal. Index 0 left, 1 right.
+	private final Interaction[] plateInteractions = new Interaction[2];
+	private final TextDisplay[] plateLabels = new TextDisplay[2];
 	private final Map<UUID, ItemStack> previousSlot8 = new HashMap<>();
 	/** Every opening-wave miner across all groups, so a re-spawn can clear the previous set. */
 	private final List<WitherSkeleton> miners = new ArrayList<>();
@@ -120,6 +123,7 @@ public final class Maxor extends WitherLord {
 		cancelStunEnrageTask();
 		cancelBarTicker();
 		cancelPlateTicker();
+		removePlatePrompts();
 		CustomBossBar.removeStunIndicator();
 		inStun = false;
 		stunDamageDealt = 0;
@@ -208,9 +212,7 @@ public final class Maxor extends WitherLord {
 		if(notEnergyCrystal(crystal)) return;
 
 		// Already holding one anywhere? Reject.
-		for(ItemStack item : p.getInventory().getContents()) {
-			if(item != null && ENERGY_CRYSTAL_ID.equals(items.ItemUtils.getID(item))) return;
-		}
+		if(carriesCrystal(p)) return;
 
 		ItemStack prev = p.getInventory().getItem(8);
 		previousSlot8.put(p.getUniqueId(), prev == null ? null : prev.clone());
@@ -234,6 +236,76 @@ public final class Maxor extends WitherLord {
 		if(!platesActive) return;
 		if(plateLeftCrystal == null) tryPlate(PLATE_LEFT_X);
 		if(plateRightCrystal == null) tryPlate(PLATE_RIGHT_X);
+
+		boolean carried = false;
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(carriesCrystal(p)) {
+				carried = true;
+				break;
+			}
+		}
+		updatePlatePrompt(0, PLATE_LEFT_X, carried && plateLeftCrystal == null);
+		updatePlatePrompt(1, PLATE_RIGHT_X, carried && plateRightCrystal == null);
+	}
+
+	private static boolean carriesCrystal(Player p) {
+		for(ItemStack item : p.getInventory().getContents()) {
+			if(item != null && ENERGY_CRYSTAL_ID.equals(items.ItemUtils.getID(item))) return true;
+		}
+		return false;
+	}
+
+	private void updatePlatePrompt(int idx, int plateX, boolean show) {
+		if(!show) {
+			removePlatePrompt(idx);
+			return;
+		}
+		Interaction interaction = plateInteractions[idx];
+		TextDisplay label = plateLabels[idx];
+		if(interaction != null && interaction.isValid() && label != null && label.isValid()) return;
+		removePlatePrompt(idx);
+
+		plateInteractions[idx] = world.spawn(new Location(world, plateX + 0.5, PLATE_Y, PLATE_Z + 0.5), Interaction.class, i -> {
+			i.setInteractionWidth(1.0f);
+			i.setInteractionHeight(1.5f);
+			i.setResponsive(true);
+			i.setPersistent(false);
+			i.addScoreboardTag("TASNoName");
+		});
+		plateLabels[idx] = world.spawn(new Location(world, plateX + 0.5, PLATE_Y + 1.5, PLATE_Z + 0.5), TextDisplay.class, d -> {
+			d.text(Utils.msg("<red>Energy Crystal Missing\n<yellow><bold>CLICK HERE"));
+			d.setBillboard(Display.Billboard.CENTER);
+			d.setAlignment(TextDisplay.TextAlignment.CENTER);
+			d.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+			d.setPersistent(false);
+			d.addScoreboardTag("TASNoName");
+		});
+	}
+
+	private void removePlatePrompt(int idx) {
+		if(plateInteractions[idx] != null) {
+			plateInteractions[idx].remove();
+			plateInteractions[idx] = null;
+		}
+		if(plateLabels[idx] != null) {
+			plateLabels[idx].remove();
+			plateLabels[idx] = null;
+		}
+	}
+
+	private void removePlatePrompts() {
+		removePlatePrompt(0);
+		removePlatePrompt(1);
+	}
+
+	/** Either click on a plate prompt places like stepping on that plate. True if {@code clicked} is a prompt. */
+	public boolean clickPlatePrompt(Player p, Entity clicked) {
+		for(int idx = 0; idx < plateInteractions.length; idx++) {
+			if(!clicked.equals(plateInteractions[idx])) continue;
+			if(platesActive) placeAtPlate(p, idx == 0 ? PLATE_LEFT_X : PLATE_RIGHT_X);
+			return true;
+		}
+		return false;
 	}
 
 	/** Places a crystal if that plate is pressed. */
@@ -390,6 +462,7 @@ public final class Maxor extends WitherLord {
 				if(boss == null || boss.isDead()) {
 					BossScheduler.removeTicker(this);
 					plateTicker = null;
+					removePlatePrompts();
 					return;
 				}
 				plateTick();

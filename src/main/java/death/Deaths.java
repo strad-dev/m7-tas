@@ -6,10 +6,12 @@ import instructions.clear.ClearManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import plugin.FakePlayerManager;
@@ -21,7 +23,7 @@ import java.time.Duration;
 import java.util.*;
 
 /**
- * Death and revival in both live modes; classic has none (MAP.md § Death, revival and real terminals). Gate is
+ * Death and revival in both live modes; classic has only /kill and out of bounds (MAP.md § Death, revival and real terminals). Gate is
  * {@code Difficulty.deathsEnabled()}: Perfect RNG kills the same as Realistic. Players stay invulnerable, nothing
  * here is HP-driven; every death is an explicit instakill from a mechanic:
  * <ul>
@@ -30,8 +32,10 @@ import java.util.*;
  *   <li>Goldor's 60-tick invalid-location sweep ({@code goldor/Goldor.pollInvalidLocations});</li>
  *   <li>relic in the wrong cauldron ({@code listeners/WitherKingListener}).</li>
  * </ul>
+ * Plus {@code /kill} ({@link GenericKill}) and out of bounds ({@code listeners/OutOfBounds}), through
+ * {@link #forceKill}: every mode, no {@link CheatDeath}.
  *
- * <p>{@link #kill} is the only way in and owns the whole decision: mode gate, run gate, who's killable,
+ * <p>{@link #kill} / {@link #forceKill} are the only ways in and own the whole decision: mode gate, run gate, who's killable,
  * {@link CheatDeath} proc, wipe check. Call sites must not pre-screen any of it or they drift.
  *
  * <p>A ghost is a vanilla spectator on purpose: {@code Utils.isSpectator} is already what every player mechanic
@@ -61,8 +65,9 @@ public final class Deaths {
 	 * Held in death order.
 	 * @param gameMode revival restores it rather than assuming Adventure
 	 * @param diedAt   absolute server tick; countdown and revival read it
+	 * @param reviveAt null = revive where they stand
 	 */
-	private record Ghost(UUID uuid, PlayerInventoryBackup inventory, GameMode gameMode, int diedAt) {}
+	private record Ghost(UUID uuid, PlayerInventoryBackup inventory, GameMode gameMode, int diedAt, Location reviveAt) {}
 
 	private static final Map<UUID, Ghost> ghosts = new LinkedHashMap<>();
 
@@ -80,13 +85,36 @@ public final class Deaths {
 	 */
 	public static boolean kill(Player p, String killer) {
 		if(!damage.Difficulty.deathsEnabled()) return false;
-		if(!Server.isRunStarted()) return false;
+		return kill(p, mob(killer), false, null);
+	}
+
+	/**
+	 * {@code /kill} ({@link GenericKill}) and out of bounds: every mode, classic included, and no {@link CheatDeath}, as
+	 * vanilla's /kill skips totems.
+	 *
+	 * @param killer   already styled: {@link #mob} or {@link #displayName}
+	 * @param reviveAt the ghost is moved here and revives here; null = where they died
+	 */
+	public static boolean forceKill(Player p, Component killer, Location reviveAt) {
+		return kill(p, killer, true, reviveAt);
+	}
+
+	/**
+	 * A practice is live. {@code Server.isRunStarted()} alone stays true after {@code TAS.endPractice} until the next
+	 * {@code /setup}, and the network's anticheat ends the practice to get a vanilla kill through {@link GenericKill}.
+	 */
+	public static boolean inRun() {
+		return Server.isRunStarted() && WitherActions.isPracticeMode();
+	}
+
+	private static boolean kill(Player p, Component killer, boolean forced, Location reviveAt) {
+		if(!inRun()) return false;
 		if(!appliesTo(p)) return false;
 
 		// Hit cue, not death cue, so it plays before anything decides: a mask proc with no sound reads as nothing.
 		playHurtSound(p);
 
-		if(CheatDeath.tryProc(p)) return false;
+		if(!forced && CheatDeath.tryProc(p)) return false;
 
 		// Bank while still readable: a ghost is out of realPlayers(), and leaderboards take group size from the roster.
 		WitherActions.noteInRun(p);
@@ -96,7 +124,8 @@ public final class Deaths {
 		announceDeath(p, killer);
 		// Party-wide "someone is down"; playGlobalSound plays at each listener.
 		Utils.playGlobalSound(Sound.BLOCK_NOTE_BLOCK_PLING, 2.0f, 0.5f);
-		Utils.debug(Utils.DebugType.SERVER, Utils.getRealName(p) + " was killed by " + killer);
+		Utils.debug(Utils.DebugType.SERVER, Utils.getRealName(p) + " was killed by "
+				+ PlainTextComponentSerializer.plainText().serialize(killer));
 
 		// Before ghosting: last one standing never becomes a ghost (avoids a flicker and inventory round trip).
 		if(isLastAlive(p)) {
@@ -105,11 +134,12 @@ public final class Deaths {
 		}
 
 		ghosts.put(p.getUniqueId(),
-				new Ghost(p.getUniqueId(), new PlayerInventoryBackup(p), p.getGameMode(), Utils.serverTick()));
+				new Ghost(p.getUniqueId(), new PlayerInventoryBackup(p), p.getGameMode(), Utils.serverTick(), reviveAt));
 		// A terminal is one player's at a time; a ghost mustn't hold it. Close handler clears its pending flag.
 		p.closeInventory();
 		expectGameModeChange(p);
 		p.setGameMode(GameMode.SPECTATOR);
+		if(reviveAt != null) p.teleport(reviveAt, PlayerTeleportEvent.TeleportCause.PLUGIN);
 		showReviveTitle(p, REVIVE_TICKS);
 		return true;
 	}
@@ -269,11 +299,12 @@ public final class Deaths {
 	}
 
 	/**
-	 * No teleport: revives wherever 5s of spectator flight left them, so death costs distance too. Out of bounds
-	 * there means {@code OutOfBounds} kills them a tick later.
+	 * Revives wherever 5s of spectator flight left them, so death costs distance too, unless the kill pinned a spot
+	 * ({@link Ghost#reviveAt}, out of bounds). Out of bounds there means {@code OutOfBounds} kills them a tick later.
 	 */
 	private static void revive(Player p, Ghost g) {
 		ghosts.remove(g.uuid());
+		if(g.reviveAt() != null) p.teleport(g.reviveAt(), PlayerTeleportEvent.TeleportCause.PLUGIN);
 		expectGameModeChange(p);
 		p.setGameMode(g.gameMode());
 		g.inventory().restore(p);
@@ -286,15 +317,32 @@ public final class Deaths {
 	// ==================== messages ====================
 
 	/** "You were killed by" to the dead, "&lt;name&gt; was killed by" to others, so per player. Unparsed, no tag injection. */
-	private static void announceDeath(Player p, String killer) {
-		TagResolver mob = Placeholder.unparsed("mob", killer);
-		TagResolver who = Placeholder.unparsed("who", Utils.getRealName(p));
+	private static void announceDeath(Player p, Component killer) {
+		TagResolver mob = Placeholder.component("mob", killer);
+		TagResolver who = Placeholder.component("who", displayName(p));
 		for(Player other : Bukkit.getOnlinePlayers()) {
 			if(FakePlayerManager.getFakePlayers().containsValue(other)) continue;
 			other.sendMessage(other.equals(p)
-					? Utils.msg("<red> ☠ <gray>You were killed by <red><mob> <gray>and became a ghost.", mob)
-					: Utils.msg("<red> ☠ <gold><who> <gray>was killed by <red><mob> <gray>and became a ghost.", who, mob));
+					? Utils.msg("<red> ☠ <gray>You were killed by <mob> <gray>and became a ghost.", mob)
+					: Utils.msg("<red> ☠ <who> <gray>was killed by <mob> <gray>and became a ghost.", who, mob));
 		}
+	}
+
+	/** A non-player killer (mob, "The World Border"): red, unparsed. */
+	public static Component mob(String name) {
+		return Utils.msg("<red><name>", Placeholder.unparsed("name", name));
+	}
+
+	/**
+	 * MiniMessage display name (role prefix + colour) the network keeps on each player; its serializer escapes the
+	 * name, so parsing it can't inject tags. Standalone there is none, so gold.
+	 */
+	public static final String NAME_KEY = "m7_name";
+
+	public static Component displayName(Player p) {
+		List<MetadataValue> values = p.getMetadata(NAME_KEY);
+		if(!values.isEmpty()) return Utils.msg(values.getLast().asString());
+		return Utils.msg("<gold><name>", Placeholder.unparsed("name", Utils.getRealName(p)));
 	}
 
 	// ==================== lifecycle ====================

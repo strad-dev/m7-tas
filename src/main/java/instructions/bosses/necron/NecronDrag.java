@@ -1,6 +1,5 @@
 package instructions.bosses.necron;
 
-import io.papermc.paper.entity.TeleportFlag;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -31,7 +30,7 @@ public final class NecronDrag implements Listener {
 	private static final int MOUNT_TICK = 20;
 	private static final int RELEASE_TICK = 60;
 	private static final double GOAL_X = 54.5, GOAL_Y = 67, GOAL_Z = 114.5;
-	private static final double MAX_HORIZONTAL_STEP = 1.0;
+	private static final double MAX_HORIZONTAL_STEP = 1.2;
 	private static final int VERTICAL_TICKS = 60;
 
 	/** Pig -> its fixed vertical step per tick. */
@@ -85,7 +84,7 @@ public final class NecronDrag implements Listener {
 			}
 			double dy = GOAL_Y - cur.getY();
 			if(Math.abs(dy) > Math.abs(r.getValue())) dy = r.getValue();
-			pig.teleport(cur.add(dx, dy, dz), TeleportFlag.EntityState.RETAIN_PASSENGERS);
+			pig.teleport(cur.add(dx, dy, dz));
 		}
 	}
 
