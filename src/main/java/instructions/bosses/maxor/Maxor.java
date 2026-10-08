@@ -277,6 +277,7 @@ public final class Maxor extends WitherLord {
 			d.setBillboard(Display.Billboard.CENTER);
 			d.setAlignment(TextDisplay.TextAlignment.CENTER);
 			d.setBackgroundColor(Color.fromARGB(0, 0, 0, 0));
+			d.setShadowed(true);
 			d.setPersistent(false);
 			d.addScoreboardTag("TASNoName");
 		});

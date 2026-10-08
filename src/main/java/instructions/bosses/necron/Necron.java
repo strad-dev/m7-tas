@@ -53,8 +53,9 @@ public final class Necron extends WitherLord {
 	// Fractions of max HP, consumed in order.
 	private static final double[] THRESHOLD_FRACTIONS = {0.80, 0.25, 0.05};
 
-	private static final int INTRO_END_TICK = 80;        // aggro + damageability begin here
-	private static final int FRENZY_DURATION_TICKS = 60;
+	private static final int AGGRO_START_TICK = 80;
+	private static final int INTRO_END_TICK = 100;       // damageability begins here
+	private static final int FRENZY_DURATION_TICKS = 80;
 	private static final int FIREBALL_DURATION_TICKS = 60;
 	private static final int DEATH_TO_WK_TICKS = 60;
 
@@ -116,7 +117,7 @@ public final class Necron extends WitherLord {
 
 		// Goldor's split ends as Necron spawns (Wither-King practice scoreboard).
 		instructions.bosses.WitherActions.recordSplit("Goldor", Utils.runTick());
-		// Intro: not damageable, doesn't fly. 80t (salvo 20, platform 60, Goodbye 80). The salvo leads the platform
+		// Intro: not damageable. Salvo 20, platform 60, Goodbye + chase 80, damageable 100. The salvo leads the platform
 		// by its own 40t.
 		int salvoTick = 20;
 		sendChatMessage("You went further than any human before, congratulations.");
@@ -124,11 +125,11 @@ public final class Necron extends WitherLord {
 		Utils.scheduleTask(() -> destroyPlatform(true), salvoTick); // guarded by platformIntact
 		Utils.scheduleTask(() -> sendChatMessage("Goodbye."), 80);
 
-		// After intro: armour off, damageable, chase.
+		// Chase from Goodbye; armour off and damageable at the end of the intro.
+		Utils.scheduleTask(() -> setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED), AGGRO_START_TICK);
 		Utils.scheduleTask(() -> {
 			setArmor(false);
 			damageable = true;
-			setAggro(AGGRO_STOP_DISTANCE, AGGRO_Y_OFFSET, AGGRO_MAX_SPEED);
 			// No ??? indicator here: only after a frenzy (endInterlude).
 		}, INTRO_END_TICK);
 	}
