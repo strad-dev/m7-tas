@@ -227,6 +227,7 @@ public class TAS implements CommandExecutor {
 		death.Deaths.reset();
 		instructions.clear.ClearManager.stop(world); // remove secrets/chests, restore hotbar map slot, stop HUD loop
 		Utils.cancelAllScheduled();
+		items.combat.RagnarockAxe.reset();
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
 		Maxor.INSTANCE.armPlayerHandoff(null);

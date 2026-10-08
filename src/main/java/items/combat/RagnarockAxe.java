@@ -4,6 +4,7 @@ import damage.Rarity;
 import damage.ReforgeId;
 import items.*;
 import net.minecraft.server.MinecraftServer;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -169,8 +170,12 @@ public final class RagnarockAxe implements Weapon, AbilityItem {
 		return left <= 0 ? "" : Utils.ACTION_BAR_SEPARATOR + "<red>Rag Axe <white>" + left + "t";
 	}
 
-	/** Run reset. Clearing the cast stamp is what kills a live wind-up chain. */
+	/** Run reset. Clearing the cast stamp is what kills a live wind-up chain. The tag goes too: cancelAllScheduled
+	 *  kills its expiry task, which left the buff on for good. */
 	public static void reset() {
+		for(Player p : Bukkit.getOnlinePlayers()) {
+			if(p.removeScoreboardTag(damage.RagnarockBuff.TAG)) damage.Stats.invalidate(p);
+		}
 		ragBuffExpiry.clear();
 		ragCastStart.clear();
 	}

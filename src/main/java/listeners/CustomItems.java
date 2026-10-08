@@ -436,13 +436,15 @@ public class CustomItems implements Listener {
 		Terminator.reset();
 	}
 
-	/**
-	 * Reset every ability cooldown, plus the two abilities with extra state. Called on boss start
-	 * ({@code WitherLord.start}) and at run start.
-	 */
+	/** Reset every ability cooldown, plus the two abilities with extra state. Called at run start. */
 	public static void resetAbilityCooldowns() {
 		Cooldowns.clearAll();
 		RagnarockAxe.reset(); // also kills any wind-up chain still in flight
 		AxeOfTheShredded.reset();
+	}
+
+	/** Class (drop-key) cooldowns only. Called on boss start ({@code WitherLord.start}); item cooldowns carry over. */
+	public static void resetClassAbilityCooldowns() {
+		Cooldowns.clearPrefix(abilities.ClassAbility.COOLDOWN_PREFIX);
 	}
 }

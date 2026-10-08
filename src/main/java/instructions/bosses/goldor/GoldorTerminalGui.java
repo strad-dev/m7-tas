@@ -213,7 +213,8 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	private static String startLetters;
 
 	/** Per slot, so answer count varies per board but not per question ({@link #buildPick}). */
-	private static final int ANSWER_CHANCE_IN = 6;
+	private static final double SELECT_ALL_ANSWER_CHANCE = 0.20;
+	private static final double STARTS_WITH_ANSWER_CHANCE = 0.25;
 
 	/** Built once; a missing suffix is skipped. */
 	private static List<Material> dyedPool() {
@@ -387,8 +388,8 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		switch(type) {
 			case ON_OFF -> buildOnOff();
 			case SAME_COLOR -> buildSameColor();
-			case SELECT_ALL -> buildPick(dyedPool(), this::matchesColour);
-			case STARTS_WITH -> buildPick(itemPool(), this::matchesLetter);
+			case SELECT_ALL -> buildPick(dyedPool(), this::matchesColour, SELECT_ALL_ANSWER_CHANCE);
+			case STARTS_WITH -> buildPick(itemPool(), this::matchesLetter, STARTS_WITH_ANSWER_CHANCE);
 			case MELODY -> buildMelody();
 			case CLICK_IN_ORDER -> buildClickInOrder();
 		}
@@ -501,13 +502,13 @@ public final class GoldorTerminalGui implements InventoryHolder {
 	/**
 	 * Answers scattered in a wall of barriers (barriers painted first; non-answers are never seen).
 	 * <p>
-	 * Each slot rolls answer-or-not FIRST at {@link #ANSWER_CHANCE_IN}, then draws from that side. Drawing from the
+	 * Each slot rolls answer-or-not FIRST at {@code answerChance}, then draws from that side. Drawing from the
 	 * whole pool made density a property of the QUESTION: a colour is 13 of 208 dyed items, a letter anything from a
-	 * handful to hundreds. No answer at all (about 1 board in 50) forces one in.
+	 * handful to hundreds. No answer at all (under 1 board in 400) forces one in.
 	 * <p>
 	 * Duplicates allowed, like Hypixel; de-duplicating would cap answers at the matching pool size (two, for some letters).
 	 */
-	private void buildPick(List<Material> pool, Predicate<Material> matches) {
+	private void buildPick(List<Material> pool, Predicate<Material> matches, double answerChance) {
 		frameAndFill(Material.BARRIER);
 		int[] slots = innerSlots();
 		List<Material> answers = new ArrayList<>();
@@ -517,7 +518,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 		Material[] drawn = new Material[slots.length];
 		boolean any = false;
 		for(int i = 0; i < slots.length; i++) {
-			boolean answer = RANDOM.nextInt(ANSWER_CHANCE_IN) == 0;
+			boolean answer = RANDOM.nextDouble() < answerChance;
 			List<Material> from = answer ? answers : others;
 			drawn[i] = from.get(RANDOM.nextInt(from.size()));
 			any |= answer;

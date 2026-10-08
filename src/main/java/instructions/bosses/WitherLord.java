@@ -42,7 +42,7 @@ public abstract class WitherLord {
 		this.doContinue = doContinue;
 
 		// Class-ability cooldowns reset on entering a boss fight.
-		listeners.CustomItems.resetAbilityCooldowns();
+		listeners.CustomItems.resetClassAbilityCooldowns();
 
 		if(boss != null) {
 			boss.remove();

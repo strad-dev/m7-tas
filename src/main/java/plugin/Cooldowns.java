@@ -58,8 +58,15 @@ public final class Cooldowns {
 		NEXT_USABLE.remove(p.getUniqueId());
 	}
 
-	/** Every cooldown for everyone (was {@code CustomItems.resetAbilityCooldowns}). Called at {@code WitherLord.start} and run start. */
+	/** Every cooldown for everyone (was {@code CustomItems.resetAbilityCooldowns}). Called at run start. */
 	public static void clearAll() {
 		NEXT_USABLE.clear();
+	}
+
+	/** Every key starting with {@code prefix}, for everyone. */
+	public static void clearPrefix(String prefix) {
+		for(Map<String, Integer> keys : NEXT_USABLE.values()) {
+			keys.keySet().removeIf(k -> k.startsWith(prefix));
+		}
 	}
 }

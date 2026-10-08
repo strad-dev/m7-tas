@@ -25,9 +25,12 @@ public interface ClassAbility {
 		return false;
 	}
 
+	/** Every {@link #cooldownKey()} starts with this, so boss start can clear class cooldowns alone. */
+	String COOLDOWN_PREFIX = "class/";
+
 	/** {@code plugin/Cooldowns} key. Distinct per ability so a class's two never share a clock. */
 	default String cooldownKey() {
-		return "class/" + owner() + "/" + getClass().getSimpleName();
+		return COOLDOWN_PREFIX + owner() + "/" + getClass().getSimpleName();
 	}
 
 	/** @return true if it fired, which is what spends the cooldown. */

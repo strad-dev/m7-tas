@@ -24,6 +24,7 @@ public class Reset implements CommandExecutor {
 		MovementAudit.cancelAll();
 		Actions.cancelAllMovement();
 		Utils.cancelAllScheduled();
+		items.combat.RagnarockAxe.reset();
 		Location hide = new Location(Bukkit.getWorld("world"), -120.5, 71, -183.5);
 		FakePlayerManager.getFakePlayers().values().forEach(npc -> npc.teleport(hide, PlayerTeleportEvent.TeleportCause.PLUGIN));
 		// Cleanup before serverSetup respawns minibosses so it never nukes the fresh spawns.
