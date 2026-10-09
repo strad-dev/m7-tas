@@ -13,10 +13,12 @@ import plugin.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Goldor -> Necron drag: 20t after Necron spawns from Goldor every live player is sat on an invisible, invulnerable pig that
- * carries them toward {@link #GOAL}; 60t after, they are dropped. They can't dismount in between.
+ * carries them toward the goal, jittered per pig by up to {@value #JITTER_XZ} on X/Z and {@value #JITTER_Y} on Y;
+ * 60t after, they are dropped. They can't dismount in between.
  * Horizontal: at most {@value #MAX_HORIZONTAL_STEP} block per tick. Vertical: a fixed step per pig, set at mount so
  * the full height change takes {@value #VERTICAL_TICKS}t.
  */
@@ -30,11 +32,14 @@ public final class NecronDrag implements Listener {
 	private static final int MOUNT_TICK = 20;
 	private static final int RELEASE_TICK = 60;
 	private static final double GOAL_X = 54.5, GOAL_Y = 67, GOAL_Z = 114.5;
-	private static final double MAX_HORIZONTAL_STEP = 1.2;
+	private static final double MAX_HORIZONTAL_STEP = 1.25;
 	private static final int VERTICAL_TICKS = 60;
+	private static final double JITTER_XZ = 5, JITTER_Y = 2;
 
-	/** Pig -> its fixed vertical step per tick. */
-	private static final Map<Pig, Double> rides = new HashMap<>();
+	/** One pig's destination and its fixed vertical step per tick. */
+	private record Ride(double x, double y, double z, double yStep) {}
+
+	private static final Map<Pig, Ride> rides = new HashMap<>();
 	private static Runnable mover;
 	// Our own dismount, not the player's: the listener lets it through.
 	private static boolean releasing;
@@ -64,7 +69,10 @@ public final class NecronDrag implements Listener {
 			pig.customName(null);
 			pig.setCustomNameVisible(false);
 			pig.addPassenger(p);
-			rides.put(pig, (GOAL_Y - at.getY()) / VERTICAL_TICKS);
+			ThreadLocalRandom rng = ThreadLocalRandom.current();
+			double gy = GOAL_Y + rng.nextDouble(-JITTER_Y, JITTER_Y);
+			rides.put(pig, new Ride(GOAL_X + rng.nextDouble(-JITTER_XZ, JITTER_XZ), gy,
+					GOAL_Z + rng.nextDouble(-JITTER_XZ, JITTER_XZ), (gy - at.getY()) / VERTICAL_TICKS));
 		}
 		if(rides.isEmpty()) return;
 		mover = NecronDrag::step;
@@ -72,18 +80,19 @@ public final class NecronDrag implements Listener {
 	}
 
 	private static void step() {
-		for(Map.Entry<Pig, Double> r : rides.entrySet()) {
+		for(Map.Entry<Pig, Ride> r : rides.entrySet()) {
 			Pig pig = r.getKey();
+			Ride ride = r.getValue();
 			if(!pig.isValid()) continue;
 			Location cur = pig.getLocation();
-			double dx = GOAL_X - cur.getX(), dz = GOAL_Z - cur.getZ();
+			double dx = ride.x() - cur.getX(), dz = ride.z() - cur.getZ();
 			double horizontal = Math.sqrt(dx * dx + dz * dz);
 			if(horizontal > MAX_HORIZONTAL_STEP) {
 				dx *= MAX_HORIZONTAL_STEP / horizontal;
 				dz *= MAX_HORIZONTAL_STEP / horizontal;
 			}
-			double dy = GOAL_Y - cur.getY();
-			if(Math.abs(dy) > Math.abs(r.getValue())) dy = r.getValue();
+			double dy = ride.y() - cur.getY();
+			if(Math.abs(dy) > Math.abs(ride.yStep())) dy = ride.yStep();
 			pig.teleport(cur.add(dx, dy, dz));
 		}
 	}

@@ -749,4 +749,35 @@ public class Utils {
 				+ "<white> found a <light_purple>Blessing of " + name + " " + romanLevel + "<white>!"));
 		Bukkit.broadcast(msg(damage.Blessings.describe(type, level)));
 	}
+
+	private static final java.util.Map<Material, Boolean> USES_BLOCK = new java.util.EnumMap<>(Material.class);
+
+	/**
+	 * Whether right-clicking {@code b} uses the block (chest, door, lever...) rather than the held item, so an item
+	 * ability stands down. Vanilla's rule: the block's class overrides {@code useWithoutItem} and the player isn't
+	 * sneaking. Fences (leads only), redstone dust and iron doors/trapdoors override it but almost never act on a
+	 * click, so they don't count; nor do anvils, which never open here ({@code MiscListener.onAnvilInteract}).
+	 */
+	public static boolean usesBlock(Player p, org.bukkit.block.Block b) {
+		if(b == null || p.isSneaking()) return false;
+		Material m = b.getType();
+		if(m == Material.IRON_DOOR || m == Material.IRON_TRAPDOOR || Tag.ANVIL.isTagged(m)) return false;
+		return USES_BLOCK.computeIfAbsent(m, k ->
+				overridesUseWithoutItem(org.bukkit.craftbukkit.block.CraftBlockType.bukkitToMinecraft(k).getClass()));
+	}
+
+	private static boolean overridesUseWithoutItem(Class<?> c) {
+		for(; c != null && c != net.minecraft.world.level.block.state.BlockBehaviour.class; c = c.getSuperclass()) {
+			if(c == net.minecraft.world.level.block.FenceBlock.class
+					|| c == net.minecraft.world.level.block.RedStoneWireBlock.class) return false;
+			try {
+				c.getDeclaredMethod("useWithoutItem", net.minecraft.world.level.block.state.BlockState.class,
+						net.minecraft.world.level.Level.class, net.minecraft.core.BlockPos.class,
+						net.minecraft.world.entity.player.Player.class, net.minecraft.world.phys.BlockHitResult.class);
+				return true;
+			} catch(NoSuchMethodException ignored) {
+			}
+		}
+		return false;
+	}
 }

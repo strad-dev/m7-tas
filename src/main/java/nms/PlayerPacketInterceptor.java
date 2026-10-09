@@ -132,12 +132,14 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 				}
 				// Simon Says clicks straight from the packet so rapid clicks all register (1/tick in GoldorListener).
 				GoldorListener.tryRegisterSimonClick(player, bx, by, bz);
-				// A lever or button owns the click, so no item ability on top. Mirrors CustomItems.onPlayerInteract's
-				// guard; without it an item's right-click fired on S2 levers and hijacked the toggle.
+				// A lever, button or any block vanilla would use (Utils.usesBlock) owns the click, so no item ability on
+				// top. Mirrors CustomItems.onPlayerInteract's guard; without it an item's right-click fired on S2 levers
+				// and hijacked the toggle.
 
 				org.bukkit.block.Block clickedBlock = player.getWorld().getBlockAt(bx, by, bz);
 				if(clicked != org.bukkit.Material.LEVER && !org.bukkit.Tag.BUTTONS.isTagged(clicked)
-						&& !instructions.clear.ClearManager.isSecretBlock(clickedBlock)) {
+						&& !instructions.clear.ClearManager.isSecretBlock(clickedBlock)
+						&& !plugin.Utils.usesBlock(player, clickedBlock)) {
 					// Vanilla's hit block, so block abilities (Superboom TNT) match vanilla's range and target.
 					CustomItems.handleCustomItems(null, EquipmentSlot.HAND,
 							player.getInventory().getItemInMainHand(), Action.RIGHT_CLICK_BLOCK, player, clickedBlock);

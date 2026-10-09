@@ -147,8 +147,9 @@ public class CustomItems implements Listener {
 				&& (e.getClickedBlock().getType() == Material.LEVER || Tag.BUTTONS.isTagged(e.getClickedBlock().getType()))) {
 			return;
 		}
-		// Same for a clear-phase secret (chest/essence).
-		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && instructions.clear.ClearManager.isSecretBlock(e.getClickedBlock())) {
+		// Same for a clear-phase secret (chest/essence), and any block vanilla would use (chest, door...).
+		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && (instructions.clear.ClearManager.isSecretBlock(e.getClickedBlock())
+				|| Utils.usesBlock(e.getPlayer(), e.getClickedBlock()))) {
 			return;
 		}
 		// getClickedBlock() is vanilla's hit result (null for air); block abilities use it as their reach.
@@ -169,7 +170,8 @@ public class CustomItems implements Listener {
 		if(item == null || !item.allowsEntityInteract()) e.setCancelled(true);
 	}
 
-	@EventHandler
+	// ignoreCancelled: a mechanic that took the click cancelled it first (Mort/Wizard at LOWEST, terminals at LOW).
+	@EventHandler(ignoreCancelled = true)
 	public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent e) {
 		// Item frames and interaction entities own the click.
 		if(e.getRightClicked() instanceof ItemFrame || e.getRightClicked() instanceof Interaction) return;

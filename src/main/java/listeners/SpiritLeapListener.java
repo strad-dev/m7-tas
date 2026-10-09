@@ -19,6 +19,7 @@ public class SpiritLeapListener implements Listener {
 	@EventHandler
 	public void onLeapItemRightClick(PlayerInteractEvent e) {
 		if(e.getAction() != Action.RIGHT_CLICK_AIR && e.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+		if(e.getAction() == Action.RIGHT_CLICK_BLOCK && Utils.usesBlock(e.getPlayer(), e.getClickedBlock())) return;
 		// Resolved through the registry, so the item opens its own menu (items.MenuItem.open); this owns only the gates.
 		if(!(items.ItemRegistry.of(e.getItem()) instanceof items.MenuItem menu)) return;
 		Player p = e.getPlayer();

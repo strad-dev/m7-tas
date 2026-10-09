@@ -149,13 +149,13 @@ public class Server {
 	private static final int MAXOR_GRACE_TICKS = 20;
 
 	/**
-	 * "Starting in N seconds", then start. Only the first second and the last five are announced so a long warp-in
+	 * "Starting in N seconds", then start. Only the first second, 10 and the last five are announced so a long warp-in
 	 * doesn't spam. First message at tick 0. Every section but boss/maxor.
 	 */
 	private static void countdownThenStart(World world, String section, int seconds) {
 		for(int i = seconds; i >= 1; i--) {
 			int secs = i;
-			if(secs != seconds && secs > 5) continue;
+			if(secs != seconds && secs > 5 && secs != 10) continue;
 			Utils.scheduleTask(() -> {
 				Bukkit.broadcast(Utils.msg("<green>Starting in " + secs + " second" + (secs == 1 ? "" : "s")));
 				Utils.playGlobalSound(Sound.BLOCK_LEVER_CLICK, 2.0F, 1.0F);

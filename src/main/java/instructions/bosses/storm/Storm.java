@@ -173,33 +173,30 @@ public final class Storm extends WitherLord {
 		}
 	}
 
-	/**
-	 * Four lines, the lightning warning with a 4-3-2-1 countdown, two volleys. The flight is done at 400; warning and
-	 * "4" together at 420, countdown uneven on purpose (420 / 445 / 470 / 495).
-	 */
 	private void scheduleIntroDialogue() {
-		int warning = 420;
-		int volley = LIGHTNING_TICK;
 		sendChatMessage("Pathetic Maxor, just like expected.");
 		Utils.scheduleTask(() -> sendChatMessage("Don't boast about beating this simple-minded Wither."), 60);
 		Utils.scheduleTask(() -> sendChatMessage("My abilities are unparalleled, in may ways I am the last bastion."), 120);
 		Utils.scheduleTask(() -> sendChatMessage("The memory of your death will be your fondest, focus up!"), 180);
 		// Belongs to the FLIGHT, not the dialogue.
-		Utils.scheduleTask(() -> Actions.turnHead(boss, 90f, 0f), 400);
-		Utils.scheduleTask(() -> sendChatMessage(
-				"The power of lightning is quite phenomenal.  A single strike can vaporize a person whole."), warning);
+		Utils.scheduleTask(() -> {
+			Actions.turnHead(boss, 90f, 0f);
+			sendChatMessage("The power of lightning is quite phenomenal.  A single strike can vaporize a person whole.");
+		}, 400);
 		countdownTitle("4", 420);
-		Utils.scheduleTask(() -> sendChatMessage("I'd be happy to show you what that's like!"), 480);
+		Utils.scheduleTask(() -> sendChatMessage("I'd be happy to show you what that's like!"), 460);
 		countdownTitle("3", 445);
 		countdownTitle("2", 470);
 		countdownTitle("1", 495);
 		// Leads the first volley by 10t.
-		Utils.scheduleTask(() -> sendChatMessage(LIGHTNING_MESSAGE[random.nextInt(LIGHTNING_MESSAGE.length)]), volley - 10);
-		Utils.scheduleTask(this::lightningVolley, volley);
-		Utils.scheduleTask(this::lightningVolley, volley + 10);
+		Utils.scheduleTask(() -> sendChatMessage(LIGHTNING_MESSAGE[random.nextInt(LIGHTNING_MESSAGE.length)]), 505);
+		Utils.scheduleTask(this::lightningVolley, 515);
+		Utils.scheduleTask(this::lightningVolley, 525);
 	}
 
-	/** Held 25 ticks. */
+	/**
+	 * Held 25 ticks.
+	 */
 	private void countdownTitle(String digit, int at) {
 		Utils.scheduleTask(() -> {
 			for(Player player : Bukkit.getOnlinePlayers()) {
@@ -285,7 +282,9 @@ public final class Storm extends WitherLord {
 		return false;
 	}
 
-	/** Both diorites, matching {@link #stormInCrushablePillar} and the crush explosion's filter. */
+	/**
+	 * Both diorites, matching {@link #stormInCrushablePillar} and the crush explosion's filter.
+	 */
 	private static boolean isPillarMaterial(Material m) {
 		return m == Material.DIORITE || m == Material.POLISHED_DIORITE;
 	}
@@ -298,7 +297,9 @@ public final class Storm extends WitherLord {
 		return inPillarColumn(x, z, PadAndPillar.ACTIVE);
 	}
 
-	/** Any footprint, Red included. */
+	/**
+	 * Any footprint, Red included.
+	 */
 	private static boolean inAnyPillarColumn(int x, int z) {
 		return inPillarColumn(x, z, PadAndPillar.ALL);
 	}
@@ -380,7 +381,9 @@ public final class Storm extends WitherLord {
 		}
 	}
 
-	/** Fixed Purple/Yellow/Green order so segments don't swap places as timers run out. Same for every player. */
+	/**
+	 * Fixed Purple/Yellow/Green order so segments don't swap places as timers run out. Same for every player.
+	 */
 	private String armedSegments() {
 		StringBuilder sb = new StringBuilder();
 		for(PillarOscillator osc : pillars) {
@@ -392,7 +395,9 @@ public final class Storm extends WitherLord {
 		return sb.toString();
 	}
 
-	/** Of all four, Red included (still worth naming). Y ignored so it doesn't flip while riding a pillar. */
+	/**
+	 * Of all four, Red included (still worth naming). Y ignored so it doesn't flip while riding a pillar.
+	 */
 	private static String nearestPadColor(Location loc) {
 		PadAndPillar nearest = PadAndPillar.ALL.getFirst();
 		double bestDistSq = Double.POSITIVE_INFINITY;
@@ -412,7 +417,9 @@ public final class Storm extends WitherLord {
 		Utils.broadcastActionBar(bar);
 	}
 
-	/** Advance each occupied pad's pillar, then crush detection. Every 20th phase tick plus tick 0. */
+	/**
+	 * Advance each occupied pad's pillar, then crush detection. Every 20th phase tick plus tick 0.
+	 */
 	private void pollCycle() {
 		// Used pillars' pads are dead.
 		for(PillarOscillator osc : pillars) {
@@ -559,7 +566,9 @@ public final class Storm extends WitherLord {
 		updateActionBar();
 	}
 
-	/** Pillar Storm overlaps horizontally, else the closest unused one; null only if all are used. */
+	/**
+	 * Pillar Storm overlaps horizontally, else the closest unused one; null only if all are used.
+	 */
 	private PillarOscillator findPillarStormIsIn() {
 		BoundingBox box = boss.getBoundingBox();
 		double sx1 = box.getMinX(), sx2 = box.getMaxX();
@@ -589,7 +598,9 @@ public final class Storm extends WitherLord {
 		return closest;
 	}
 
-	/** Anchored to Storm's current position, independent of what happens to him in the delay. */
+	/**
+	 * Anchored to Storm's current position, independent of what happens to him in the delay.
+	 */
 	private void scheduleCrushExplosion() {
 		pendingCrushLoc = boss != null ? boss.getLocation().clone() : pendingCrushLoc;
 		crushExplosionPending = true;
@@ -626,7 +637,9 @@ public final class Storm extends WitherLord {
 		}
 	}
 
-	/** Boss-less fallback for {@link #fireCrushExplosion}: same end state, no particles. */
+	/**
+	 * Boss-less fallback for {@link #fireCrushExplosion}: same end state, no particles.
+	 */
 	private void clearCrushedPillarColumn() {
 		PadAndPillar p = currentCrushPillar;
 		if(p == null) return;
@@ -672,7 +685,9 @@ public final class Storm extends WitherLord {
 		return true;
 	}
 
-	/** Lines at +0 and +60t from the enrage, fail message and run end at +120t. */
+	/**
+	 * Lines at +0 and +60t from the enrage, fail message and run end at +120t.
+	 */
 	private void playFailSequence() {
 		sendChatMessage("Bahahaha!  Not a single intact pillar remains!");
 		Utils.scheduleTask(() -> sendChatMessage("Rejoice, your last moments are with me and my lightning."), 60);
@@ -695,7 +710,9 @@ public final class Storm extends WitherLord {
 		stunEnrageTask = null;
 	}
 
-	/** Same as {@code Maxor.clampDamage} but with the 0.55 crush cap. */
+	/**
+	 * Same as {@code Maxor.clampDamage} but with the 0.55 crush cap.
+	 */
 	@Override
 	public double clampDamage(double incoming) {
 		if(boss == null) return incoming;
@@ -781,7 +798,9 @@ public final class Storm extends WitherLord {
 		return dying && w != null && w.equals(boss);
 	}
 
-	/** Set in {@link #triggerCrush}, read by {@link listeners.StormCrushExplosion}. */
+	/**
+	 * Set in {@link #triggerCrush}, read by {@link listeners.StormCrushExplosion}.
+	 */
 	public PadAndPillar getCurrentCrushPillar() {
 		return currentCrushPillar;
 	}

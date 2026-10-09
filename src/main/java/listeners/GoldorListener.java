@@ -122,7 +122,8 @@ public class GoldorListener implements Listener {
 	@EventHandler(priority = EventPriority.LOW)
 	public void onInteractAt(PlayerInteractAtEntityEvent e) {
 		if(cannotSolve(e.getPlayer())) return;
-		tryActivateTerminal(e.getRightClicked(), e.getPlayer());
+		// Cancelled so the held item's ability stands down (CustomItems.onPlayerInteractAtEntity).
+		if(tryActivateTerminal(e.getRightClicked(), e.getPlayer())) e.setCancelled(true);
 	}
 
 	// =================== Terminal click (left-click) ===================
