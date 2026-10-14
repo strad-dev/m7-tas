@@ -57,7 +57,7 @@ public final class Necron extends WitherLord {
 	private static final int INTRO_END_TICK = 100;       // damageability begins here
 	private static final int FRENZY_DURATION_TICKS = 80;
 	private static final int FIREBALL_DURATION_TICKS = 60;
-	private static final int DEATH_TO_WK_TICKS = 30;
+	private static final int DEATH_TO_WK_TICKS = 60;
 
 	// Frenzy snap point (his spawn).
 	private static final double MIDDLE_X = 54.5, MIDDLE_Y = 66, MIDDLE_Z = 76.5;
@@ -429,8 +429,5 @@ public final class Necron extends WitherLord {
 			Bukkit.broadcast(Utils.msg("<gold>Normal Floor 7 Finishes Here in " + formatWithSpaces(normalF7Overall)
 					+ " ticks (" + String.format("%.2f", secs) + " seconds | " + mins + ":" + String.format("%05.2f", rem) + ")"));
 		}, 100);
-		Utils.scheduleTask(() -> {
-			if(boss != null && boss.isValid()) boss.remove();
-		}, toWitherKing + 60);
 	}
 }
