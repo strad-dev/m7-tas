@@ -334,7 +334,7 @@ public final class GoldorTerminalGui implements InventoryHolder {
 
 	/** Said as the player on open and after rows 1 and 2, real and stand-in. */
 	private static void melodyShout(Player p, int rowsDone) {
-		p.chat(p.getName() + " HAS NEVER SEEN SUCH BULLSHIT BEFORE " + rowsDone + "/" + (MELODY_LAST_ROW - MELODY_FIRST_ROW + 1));
+		p.chat(p.getName().toUpperCase(java.util.Locale.ROOT) + " HAS NEVER SEEN SUCH BULLSHIT BEFORE " + rowsDone + "/" + (MELODY_LAST_ROW - MELODY_FIRST_ROW + 1));
 	}
 
 	@Override

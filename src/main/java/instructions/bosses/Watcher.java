@@ -309,7 +309,7 @@ public class Watcher {
 				for(Player p : world.getPlayers()) {
 					// A spectator must not warp the party; after a run everyone IS one.
 					if(Utils.isSpectator(p)) continue;
-					if(inPortal(p.getLocation())) {
+					if(inPortal(p)) {
 						enterPortal(p);
 						cancel();
 						return;
@@ -325,11 +325,12 @@ public class Watcher {
 		Utils.runCommand("fill -120 69 -43 -122 72 -43 minecraft:air");
 	}
 
-	/** Portal block region: x [-122,-120], y [69,72], z = -43. */
-	private static boolean inPortal(Location l) {
-		return l.getBlockX() >= -122 && l.getBlockX() <= -120
-				&& l.getBlockY() >= 69 && l.getBlockY() <= 72
-				&& l.getBlockZ() == -43;
+	/** Portal blocks x [-122,-120], y [69,72], z -43; axis=x, so only the middle 4px of z is the portal. */
+	private static final org.bukkit.util.BoundingBox PORTAL = new org.bukkit.util.BoundingBox(-122, 69, -43 + 6 / 16.0, -119, 73, -43 + 10 / 16.0);
+
+	/** Hitbox touches the portal itself, as vanilla's entity-inside test. */
+	private static boolean inPortal(Player p) {
+		return p.getBoundingBox().overlaps(PORTAL);
 	}
 
 	private void enterPortal(Player p) {
@@ -337,6 +338,9 @@ public class Watcher {
 		boss.setWorld(world);
 		// Clear split ends on portal entry (Wither-King practice scoreboard).
 		WitherActions.recordSplit("Clear", Utils.runTick());
+		Utils.timer("<green>Portal entered in " + formatTick(phaseRel()));
+		// Console, not debug: the network runs at verbose timer, which hides who ended the clear.
+		M7tas.getInstance().getLogger().info("Watcher portal entered by " + Utils.getRealName(p) + " (" + p.getGameMode() + ") at " + fmt(p.getLocation()));
 		if(!doContinue) {
 			Utils.debug(Utils.DebugType.BOSS, "Portal entered by " + Utils.getRealName(p) + " → clear ends");
 			closePortal();

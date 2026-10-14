@@ -16,11 +16,13 @@ import plugin.M7tas;
 import plugin.Utils;
 
 /**
- * Kills anyone who leaves the dungeon during a live run. In bounds is exactly:
+ * Kills anyone who leaves the part of the dungeon the run is in. In bounds is exactly:
  * <ul>
- *   <li>the boss arena, {@link LavaJump#isInBossArena} (all five phases);</li>
- *   <li>a clear room's volume, {@link Rooms#inRoomBounds} (its cells, floor..ceiling);</li>
- *   <li>a door, {@link Rooms#inDoor}, frame included.</li>
+ *   <li>while the clear is on: a clear room's volume, {@link Rooms#inRoomBounds} (its cells, floor..ceiling), or a
+ *       door, {@link Rooms#inDoor}, frame included;</li>
+ *   <li>once it's over (portal entered, or a boss-only section): the boss arena, {@link LavaJump#isInBossArena} (all
+ *       five phases);</li>
+ *   <li>both, for {@link #BOSS_GRACE_TICKS} after portal entry. A clear-only run keeps the clear's bounds.</li>
  * </ul>
  * Everything else is out, mainly the 1-block crevices between rooms: they run the length of the grid and let a
  * player walk past a closed door. A door is the only legal way through one.
@@ -55,10 +57,32 @@ public final class OutOfBounds {
 		}
 	}
 
+	/** Ticks after portal entry (the "Clear" split) during which the clear stays in bounds too: 20 s. */
+	private static final int BOSS_GRACE_TICKS = 400;
+
+	/**
+	 * In bounds for the phase the run is in: the clear (rooms and doors) while it's on, the boss arena once it's over.
+	 * For {@link #BOSS_GRACE_TICKS} after portal entry both count, so nobody still in the dungeon dies the tick the party
+	 * warps.
+	 */
 	public static boolean isInBounds(Location loc) {
-		if(LavaJump.isInBossArena(loc)) return true;
-		if(Rooms.inRoomBounds(loc)) return true;
-		return Rooms.inDoor(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+		boolean arena = LavaJump.isInBossArena(loc);
+		// A clear-only run ends at the portal with everyone still in the Blood Room, and isRunStarted stays true until
+		// the next run: it never gets a boss phase.
+		if(clearActive() || WitherActions.runSection().equals("clear")) return !arena && inClear(loc);
+		Integer clearEnd = WitherActions.getSplitEnd("Clear");
+		if(clearEnd != null && Utils.runTick() - clearEnd < BOSS_GRACE_TICKS) return arena || inClear(loc);
+		return arena;
+	}
+
+	private static boolean inClear(Location loc) {
+		return Rooms.inRoomBounds(loc) || Rooms.inDoor(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+	}
+
+	/** This run has a clear and nobody has entered the Watcher's portal yet. */
+	private static boolean clearActive() {
+		String section = WitherActions.runSection();
+		return (section.equals("clear") || section.equals("all")) && WitherActions.getSplitEnd("Clear") == null;
 	}
 
 	private static void tick() {
@@ -86,8 +110,6 @@ public final class OutOfBounds {
 
 	/** Dungeon entrance while the clear is on, the boss spawn after the portal or in a boss-only section. */
 	private static Location respawnPoint(World world) {
-		String section = WitherActions.runSection();
-		boolean clear = (section.equals("clear") || section.equals("all")) && WitherActions.getSplitEnd("Clear") == null;
-		return clear ? JoinListener.dungeonEntrance() : Watcher.bossSpawn(world);
+		return clearActive() ? JoinListener.dungeonEntrance() : Watcher.bossSpawn(world);
 	}
 }
