@@ -42,6 +42,8 @@ public final class Goldor extends WitherLord {
 	private static final double CORE_TARGET_Y = 116.0;
 	private static final double CORE_APPROACH_SPEED = 0.8;
 	private static final double Y_DESCENT_SPEED = 0.1;
+	// Live modes: the core approach and core damage wait for every live player inside blocks 38..70, 109..157, 53..119.
+	private static final BoundingBox CORE_ROOM = new BoundingBox(38, 109, 53, 71, 158, 120);
 
 	// S3 frame wall (-2,119,74 to -2,125,80), expanded 1 each way for the frame entity's offset from its block.
 	private static final BoundingBox S3_FRAME_BOUNDS = new BoundingBox(-3, 118, 73, 0, 126, 81);
@@ -78,6 +80,8 @@ public final class Goldor extends WitherLord {
 	private boolean phaseActive = false;
 	/** Before this he's on patrol and takes no health damage. */
 	private boolean coreOpen = false;
+	/** Core open AND everyone inside {@link #CORE_ROOM}; latched. Until then core hits are patrol hits. */
+	private boolean coreEngaged = false;
 	/** Last patrol hit; halves patrol speed for 10 ticks. */
 	private int lastDamagedTick = -1000;
 	private BukkitTask patrolTask;
@@ -245,6 +249,7 @@ public final class Goldor extends WitherLord {
 	protected void resetState() {
 		phaseActive = false;
 		coreOpen = false;
+		coreEngaged = false;
 		lastDamagedTick = -1000;
 		currentSectionIdx = 0;
 		bossSectionIdx = 0;
@@ -829,6 +834,10 @@ public final class Goldor extends WitherLord {
 					cancel();
 					return;
 				}
+				if(!coreEngaged) {
+					if(!everyoneInCoreRoom()) return;
+					coreEngaged = true;
+				}
 				Location loc = boss.getLocation();
 				double x = loc.getX(), y = loc.getY(), z = loc.getZ();
 
@@ -865,6 +874,15 @@ public final class Goldor extends WitherLord {
 		}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
 	}
 
+	private boolean everyoneInCoreRoom() {
+		if(!damage.Difficulty.liveInputs()) return true;
+		for(Player p : world.getPlayers()) {
+			if(Utils.isSpectator(p) || p.isDead()) continue;
+			if(!CORE_ROOM.contains(p.getLocation().toVector())) return false;
+		}
+		return true;
+	}
+
 	private static float computeYaw(double dx, double dz) {
 		return (float) Math.toDegrees(Math.atan2(-dx, dz));
 	}
@@ -877,9 +895,9 @@ public final class Goldor extends WitherLord {
 		if(boss == null) return incoming;
 		if(dying) return 0;
 		if(incoming <= 0) return 0;
-		// Patrol: hits register (ding, 10-tick slow) but take no health. Blocking kills the hurt flash, so send it;
+		// Patrol, or core open with someone still outside: hits register (ding, 10-tick slow) but take no health. Blocking kills the hurt flash, so send it;
 		// one packet flashes ~10 ticks, matching the slow window.
-		if(!coreOpen) {
+		if(!coreOpen || !coreEngaged) {
 			lastDamagedTick = tick;
 			Utils.broadcastPacket(new ClientboundHurtAnimationPacket(((CraftWither) boss).getHandle()));
 			return 0;

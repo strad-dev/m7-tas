@@ -488,7 +488,7 @@ public final class Damage {
 	public static void applyOnHitDebuffs(Player p, LivingEntity target, DamagePath path, ItemDef weapon, boolean buildsLastBreath) {
 		if(target == null) return;
 		// Lethality is a sword enchant; bows never build it.
-		if(path.isMelee()) TargetDebuffs.applyLethality(target);
+		if(path.isMelee()) TargetDebuffs.applyLethality(target, p);
 		if(path == DamagePath.BOW) {
 			TargetDebuffs.applyTwilightPoison(target);
 			if(weapon == null || !weapon.swarm()) TargetDebuffs.applyDuplexFire(target);

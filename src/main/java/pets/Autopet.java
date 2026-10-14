@@ -240,7 +240,7 @@ public final class Autopet implements Listener {
 	private static void fireForEveryone(Trigger t) {
 		if(!Difficulty.manualPets()) {
 			Utils.debug(Utils.DebugType.BOSS, "Autopet " + t.name() + ": skipped, mode is "
-					+ Difficulty.current().displayName() + " and autopet is Realistic-only");
+					+ Difficulty.current().displayName() + " and autopet is off in Classic");
 			return;
 		}
 		for(Player p : Bukkit.getOnlinePlayers()) fire(p, t);

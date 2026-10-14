@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack;
 
 /**
  * One resolved click, handed to an {@link AbilityItem} hook. Captured once because one physical click reaches the
- * dispatcher twice ({@code CustomItems.RIGHT_CLICK_GATE_TICKS}) and a teleporting ability must not re-look-up its
+ * dispatcher twice ({@code CustomItems.rightClickGate}) and a teleporting ability must not re-look-up its
  * target block afterwards.
  *
  * @param stack        main-hand stack the ability was resolved from

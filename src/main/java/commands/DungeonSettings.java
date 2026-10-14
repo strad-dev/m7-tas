@@ -2,6 +2,7 @@ package commands;
 
 import damage.Difficulty;
 import damage.Mayor;
+import plugin.BadBonzo;
 import plugin.WatcherFix;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
@@ -13,10 +14,10 @@ import org.jspecify.annotations.NonNull;
 import plugin.Utils;
 
 /**
- * {@code /dungeonsettings [difficulty [<mode>] | mayor [<jerry_paul|paul|jerry|other|derpy>] | watcherfix [<on|off>]]} - this server's
+ * {@code /dungeonsettings [difficulty [<mode>] | mayor [<jerry_paul|paul|jerry|other|derpy>] | watcherfix [<on|off>] | badbonzo [<on|off>]]} - this server's
  * dungeon settings (MAP.md §0). No args prints them; a setting with no value steps it to the next value.
  * <p>
- * Three independent settings, any combination is valid:
+ * Four independent settings, any combination is valid:
  * <ul>
  *   <li><b>difficulty</b> ({@link Difficulty}) - <i>classic</i> assumes all four debuffs applied and blessings
  *       maxed, so you can focus on movement and routing. <i>perfect_rng</i> makes those live inputs (debuffs have
@@ -45,7 +46,7 @@ import plugin.Utils;
  */
 public class DungeonSettings implements CommandExecutor {
 	private static final String USAGE =
-			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [jerry_paul|paul|jerry|other|derpy] | watcherfix [on|off]]";
+			"<red>Usage: /dungeonsettings [difficulty [" + modeIds() + "] | mayor [jerry_paul|paul|jerry|other|derpy] | watcherfix [on|off] | badbonzo [on|off]]";
 
 	/**
 	 * Typed mode names, joined from {@link Difficulty} so the usage line can't drift from the enum.
@@ -77,6 +78,7 @@ public class DungeonSettings implements CommandExecutor {
 			case "difficulty", "mode" -> difficulty(sender, args);
 			case "mayor" -> mayor(sender, args);
 			case "watcherfix" -> watcherFix(sender, args);
+			case "badbonzo" -> badBonzo(sender, args);
 			default -> sender.sendMessage(Utils.msg(USAGE));
 		}
 		return true;
@@ -94,6 +96,9 @@ public class DungeonSettings implements CommandExecutor {
 		sender.sendMessage(Utils.msg("<dark_gray>- <gray>watcherfix: <yellow><value>  <dark_gray><desc>",
 				Placeholder.unparsed("value", WatcherFix.current().id()),
 				Placeholder.unparsed("desc", describe(WatcherFix.current()))));
+		sender.sendMessage(Utils.msg("<dark_gray>- <gray>badbonzo: <yellow><value>  <dark_gray><desc>",
+				Placeholder.unparsed("value", BadBonzo.current().id()),
+				Placeholder.unparsed("desc", describe(BadBonzo.current()))));
 		sender.sendMessage(Utils.msg("<dark_gray>Change one with <white>/dungeonsettings <setting> [value]"));
 	}
 
@@ -170,12 +175,41 @@ public class DungeonSettings implements CommandExecutor {
 		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
 	}
 
+	private static void badBonzo(CommandSender sender, String[] args) {
+		BadBonzo next;
+		if(args.length >= 2) {
+			next = BadBonzo.parse(args[1]);
+			if(next == null) {
+				sender.sendMessage(Utils.msg(USAGE));
+				return;
+			}
+			BadBonzo.set(next);
+		} else {
+			next = BadBonzo.toggle();
+		}
+		applyBadBonzo(next);
+	}
+
+	/** Announce Bad Bonzo on/off. Same split and reason as {@link #applyDifficulty}. */
+	static void applyBadBonzo(BadBonzo next) {
+		Bukkit.broadcast(Utils.msg("<gold><bold>BAD BONZO<reset><gray> is now <yellow><value>",
+				Placeholder.unparsed("value", next.id())));
+		Bukkit.broadcast(Utils.msg("<gray><desc>", Placeholder.unparsed("desc", describe(next))));
+	}
+
 	/** One line on what a value means. MiniMessage: inserted as a parsed placeholder. */
 	private static String describe(Difficulty d) {
 		return switch(d) {
 			case CLASSIC -> "Debuffs are automatically applied and blessings are always maxed.";
 			case PERFECT_RNG -> "Debuffs must be manually applied, you can <bold><red>die</red></bold>, terminals must be manually completed.  Assumes the best RNG possible.";
 			case REALISTIC -> "In addition to modifiers in Perfect RNG, you must manually manage pets, and terminals are randomly generated.";
+		};
+	}
+
+	private static String describe(BadBonzo b) {
+		return switch(b) {
+			case OFF -> "Bonzo Staff wind charges spawn on the tick you click.";
+			case ON -> "This should make Bonzo Staff behave closer to actual Hypixel, but I think Hypixel's implementation is bullshit.";
 		};
 	}
 

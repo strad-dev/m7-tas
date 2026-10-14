@@ -125,7 +125,7 @@ public class SpiritLeapMenu implements InventoryHolder {
 	}
 
 	/** Class from the player's scoreboard tag (set by /class), falling back to the fake-player name. */
-	private static String resolveClass(Player p) {
+	public static String resolveClass(Player p) {
 		for(String c : new String[]{"Archer", "Berserk", "Healer", "Mage", "Tank"}) {
 			if(p.getScoreboardTags().contains(c)) return c;
 		}

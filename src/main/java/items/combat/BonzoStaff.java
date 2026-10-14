@@ -76,6 +76,17 @@ public final class BonzoStaff implements Weapon, AbilityItem {
 	public static final Map<Integer, Integer> bonzoFireTick = new HashMap<>();
 
 	public static void bonzo(Player p) {
+		// Bad Bonzo: Hypixel's charge spawns a tick late, from where the player is by then.
+		if(plugin.BadBonzo.enabled()) {
+			plugin.Utils.scheduleTask(() -> {
+				if(p.isOnline()) spawnCharge(p);
+			}, 1);
+			return;
+		}
+		spawnCharge(p);
+	}
+
+	private static void spawnCharge(Player p) {
 		Location l = p.getEyeLocation();
 		WindCharge windCharge = (WindCharge) l.getWorld().spawnEntity(l, EntityType.WIND_CHARGE);
 		windCharge.addScoreboardTag("Bonzo");

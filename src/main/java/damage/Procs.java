@@ -18,6 +18,8 @@ import java.util.UUID;
  *   <caption>The procs</caption>
  *   <tr><th>Source</th><th>Behaviour</th></tr>
  *   <tr><td>Fire Aspect III</td><td>9% of the hit at ticks 0, 20, 40, 60, 80: five procs over 80t.</td></tr>
+ *   <tr><td>Flame I (Terminator)</td><td>6% of the arrow at ticks 0, 20, 40, 60, 80. Bow, so not from
+ *       {@link #onHit}: {@code Arrows.hit} calls {@link #flame}.</td></tr>
  *   <tr><td>Thunderlord VII</td><td>Every third hit ON THE SAME MOB, 60% of that hit. Not a DoT: fires once on the
  *       hit, state is only the per-target counter.</td></tr>
  *   <tr><td>Venomous VII</td><td>Each hit adds a stack worth 2% of DPS, cap 40 (80% of DPS), every 20t for 100t.
@@ -49,7 +51,7 @@ import java.util.UUID;
  * changes, so a reconnected player would start a duplicate beside their own. The effect drops once the UUID lookup
  * comes back empty.
  * <p>
- * All three are sword-only (§7), so bows produce none.
+ * Fire Aspect, Thunderlord and Venomous are sword-only (§7); Flame is the one bow proc.
  */
 public final class Procs {
 	private Procs() {}
@@ -58,6 +60,11 @@ public final class Procs {
 	private static final int FIRE_ASPECT_INTERVAL = 20;
 	/** Procs at 0, 20, 40, 60, 80; ends 80t after the applying hit. */
 	private static final int FIRE_ASPECT_DURATION = 80;
+
+	private static final double FLAME_SHARE = 0.06;
+	private static final int FLAME_INTERVAL = 20;
+	/** Same shape as Fire Aspect: 0, 20, 40, 60, 80. */
+	private static final int FLAME_DURATION = 80;
 
 	private static final double THUNDERLORD_SHARE = 0.60;
 	private static final int THUNDERLORD_EVERY = 3;
@@ -131,6 +138,13 @@ public final class Procs {
 		apply(target, attacker, DamageKind.FIRE, fire, FIRE_ASPECT_INTERVAL, FIRE_ASPECT_DURATION);
 
 		venomous(attacker, target);
+	}
+
+	/** Flame I off an arrow that landed. Duplex scales it like Fire Aspect: both are FIRE. */
+	public static void flame(Player attacker, LivingEntity target, double sbDamage) {
+		if(attacker == null || target == null || sbDamage <= 0) return;
+		double flame = sbDamage * FLAME_SHARE * TargetDebuffs.fireMultiplier(target);
+		apply(target, attacker, DamageKind.FLAME, flame, FLAME_INTERVAL, FLAME_DURATION);
 	}
 
 	/**

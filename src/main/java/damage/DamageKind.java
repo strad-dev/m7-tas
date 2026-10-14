@@ -8,6 +8,7 @@ public enum DamageKind {
 	/** Every melee, beam and bow hit crits (§7), so this is effectively the crit form. */
 	NORMAL(null, true, true, true),
 	FIRE("<gold>", false, false, false),
+	FLAME("<gold>", false, false, false),
 	VENOMOUS("<dark_green>", false, false, false),
 	THUNDERLORD("<blue>", false, false, false),
 	/** Magic and any non-crit: abilities, partially drawn bow. Grey, no crit decoration. */

@@ -144,9 +144,14 @@ public final class Arrows {
 		double sbDamage = resolve(arrow, shooter, target, countPierce);
 		// Partial draw isn't a crit: grey digits, no ✧. Display half of the rule applied at stamp time.
 		DamageKind kind = isCrit(arrow) ? DamageKind.NORMAL : DamageKind.MAGIC;
-		return isDerived(arrow)
+		double reported = isDerived(arrow)
 				? Damage.dealDerived(target, sbDamage, kind, shooter, DamagePath.BOW)
 				: Damage.deal(target, sbDamage, kind, shooter, DamagePath.BOW);
+		// Zero where deal refused the target outright (armoured wither, WK, corpse), the same cases that skip Fire Aspect.
+		ItemDef def = arrow == null ? null : Items.byName(arrow.getPersistentDataContainer()
+				.getOrDefault(WEAPON, PersistentDataType.STRING, ""));
+		if(reported > 0 && def != null && def.flame()) Procs.flame(shooter, target, sbDamage);
+		return reported;
 	}
 
 	/**

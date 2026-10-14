@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The five pets a realistic-mode player can summon, and how their heads draw in {@code /pets}.
+ * The five pets a live-mode player can summon, and how their heads draw in {@code /pets}.
  * <p>
  * <b>Presentation only.</b> Lines are transcribed from the real item; nothing reads a number back. A pet's worth
  * to the damage pipeline is {@link Pet} alone (MAP.md §1.13), so stat lines are authored strings, not a
@@ -28,7 +28,7 @@ import java.util.List;
  * <p>
  * Each constant carries its {@link Pet} so the menu and damage pipeline agree on what "the Phoenix" is.
  * {@link Pet#BLACK_CAT} is reachable two ways without conflict: a hat forces it in assumed modes, and it's
- * pickable here in realistic.
+ * pickable here in the live modes.
  */
 public enum PetType {
 	/**

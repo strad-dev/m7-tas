@@ -123,7 +123,7 @@ public final class AutopetMenu implements Listener {
 
 		int slot = e.getRawSlot();
 		if(slot == BACK_SLOT) {
-			// Deferred a tick like every view swap: this window's close has to land first. Outside realistic, back to
+			// Deferred a tick like every view swap: this window's close has to land first. Outside the live modes, back to
 			// arranging, since the summoning half would summon.
 			Bukkit.getScheduler().runTask(M7tas.getInstance(), () -> parent.open(p, !Difficulty.manualPets()));
 			return;

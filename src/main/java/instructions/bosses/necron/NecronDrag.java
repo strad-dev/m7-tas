@@ -1,5 +1,6 @@
 package instructions.bosses.necron;
 
+import listeners.SpiritLeapMenu;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -11,14 +12,17 @@ import org.bukkit.event.entity.EntityDismountEvent;
 import plugin.BossScheduler;
 import plugin.Utils;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Goldor -> Necron drag: 20t after Necron spawns from Goldor every live player is sat on an invisible, invulnerable pig that
  * carries them toward the goal, jittered per pig by up to {@value #JITTER_XZ} on X/Z and {@value #JITTER_Y} on Y;
- * 60t after, they are dropped. They can't dismount in between.
+ * 60t after, they are dropped. Outside realistic the jitter is fixed: {@link #FIXED_SPOTS} in (class, name) order. They can't dismount in between.
  * Horizontal: at most {@value #MAX_HORIZONTAL_STEP} block per tick. Vertical: a fixed step per pig, set at mount so
  * the full height change takes {@value #VERTICAL_TICKS}t.
  */
@@ -36,6 +40,10 @@ public final class NecronDrag implements Listener {
 	private static final int VERTICAL_TICKS = 60;
 	private static final double JITTER_XZ = 5, JITTER_Y = 2;
 
+	/** Centre, then the jitter rectangle's corners clockwise from north-east; a sixth player loops back to centre. */
+	private static final double[][] FIXED_SPOTS = {{0, 0}, {JITTER_XZ, -JITTER_XZ}, {JITTER_XZ, JITTER_XZ},
+			{-JITTER_XZ, JITTER_XZ}, {-JITTER_XZ, -JITTER_XZ}};
+
 	/** One pig's destination and its fixed vertical step per tick. */
 	private record Ride(double x, double y, double z, double yStep) {}
 
@@ -51,8 +59,12 @@ public final class NecronDrag implements Listener {
 	}
 
 	private static void mount(World world) {
-		for(Player p : world.getPlayers()) {
-			if(Utils.isSpectator(p) || p.isDead()) continue;
+		boolean fixed = !damage.Difficulty.realPuzzles();
+		List<Player> riders = new ArrayList<>(world.getPlayers());
+		riders.removeIf(p -> Utils.isSpectator(p) || p.isDead());
+		riders.sort(Comparator.comparing(SpiritLeapMenu::resolveClass).thenComparing(Player::getName, String.CASE_INSENSITIVE_ORDER));
+		for(int i = 0; i < riders.size(); i++) {
+			Player p = riders.get(i);
 			if(p.isInsideVehicle()) p.leaveVehicle();
 			Location at = p.getLocation();
 			Pig pig = world.spawn(at, Pig.class, pg -> {
@@ -70,9 +82,11 @@ public final class NecronDrag implements Listener {
 			pig.setCustomNameVisible(false);
 			pig.addPassenger(p);
 			ThreadLocalRandom rng = ThreadLocalRandom.current();
-			double gy = GOAL_Y + rng.nextDouble(-JITTER_Y, JITTER_Y);
-			rides.put(pig, new Ride(GOAL_X + rng.nextDouble(-JITTER_XZ, JITTER_XZ), gy,
-					GOAL_Z + rng.nextDouble(-JITTER_XZ, JITTER_XZ), (gy - at.getY()) / VERTICAL_TICKS));
+			double[] spot = FIXED_SPOTS[i % FIXED_SPOTS.length];
+			double gx = GOAL_X + (fixed ? spot[0] : rng.nextDouble(-JITTER_XZ, JITTER_XZ));
+			double gy = GOAL_Y + (fixed ? 0 : rng.nextDouble(-JITTER_Y, JITTER_Y));
+			double gz = GOAL_Z + (fixed ? spot[1] : rng.nextDouble(-JITTER_XZ, JITTER_XZ));
+			rides.put(pig, new Ride(gx, gy, gz, (gy - at.getY()) / VERTICAL_TICKS));
 		}
 		if(rides.isEmpty()) return;
 		mover = NecronDrag::step;

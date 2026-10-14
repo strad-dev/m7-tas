@@ -114,10 +114,10 @@ public final class CheatDeath {
 	}
 
 	/**
-	 * Outside realistic, yes by assumption: {@code damage/Pet.forPlayer}'s table never returns the Phoenix, so a
+	 * In classic, yes by assumption: {@code damage/Pet.forPlayer}'s table never returns the Phoenix, so a
 	 * mask-less player is taken to have it.
 	 * <p>
-	 * Realistic ({@link damage.Difficulty#manualPets()}) requires it summoned: a Phoenix trades the Golden Dragon's
+	 * The live modes ({@link damage.Difficulty#manualPets()}) require it summoned: a Phoenix trades the Golden Dragon's
 	 * stats and +250% for this, and giving it free would make that choice meaningless.
 	 */
 	private static boolean phoenixOut(Player p) {

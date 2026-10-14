@@ -23,8 +23,8 @@ import java.util.Map;
  * 2. Equips each with their saved /m7loadout kit, refreshed to current item definitions, teleports them to the
  *    phase's default location, then starts it.
  * 3. "--no-teleport" skips the teleport. Bare "classic"/"perfect_rng"/"rta" sets the damage mode (MAP.md §0),
- *    a damage.Mayor id the mayor, "on"/"off" Fix Watcher Bug; omitted, current settings stand, so
- *    standalone keeps whatever /dungeonsettings set. The network always sends all three.
+ *    a damage.Mayor id the mayor, "on"/"off" Fix Watcher Bug, "badbonzo=on"/"badbonzo=off" Bad Bonzo; omitted,
+ *    current settings stand, so standalone keeps whatever /dungeonsettings set. The network always sends all four.
  * 4. Runs the same boss and server instructions as /tas, WITHOUT fake-player routines, handoffs or spectator
  *    sync. Pre-run delay is 60 ticks (3s); a bare integer overrides it: the network sends
  *    "m7tas:m7practice <section> 400" for a 20s window. See Server.serverInstructions.
@@ -73,7 +73,14 @@ public class Practice implements CommandExecutor {
 		// Optional Fix Watcher Bug ("on" / "off"). Null leaves it alone, same reason: plugin.WatcherFix is
 		// server-wide, and an inherited flag costs a clear record nobody chose to give up.
 		plugin.WatcherFix watcherFixArg = null;
+		// Optional Bad Bonzo ("badbonzo=on" / "badbonzo=off"), prefixed because a bare on/off is Fix Watcher Bug's.
+		plugin.BadBonzo badBonzoArg = null;
 		for(String arg : args) {
+			if(arg.toLowerCase().startsWith("badbonzo=")) {
+				plugin.BadBonzo bonzo = plugin.BadBonzo.parse(arg.substring("badbonzo=".length()));
+				if(bonzo != null) badBonzoArg = bonzo;
+				continue;
+			}
 			// Parsed up front, before the section fallback, which swallows any unknown word and would read
 			// "classic" as a section name.
 			damage.Difficulty mode = damage.Difficulty.parse(arg);
@@ -142,6 +149,10 @@ public class Practice implements CommandExecutor {
 		// Mayor too, and it matters more: mob HP is written once at spawn, so it must be right before anything spawns.
 		if(mayorArg != null) damage.Mayor.set(mayorArg);
 		if(watcherFixArg != null) plugin.WatcherFix.set(watcherFixArg);
+		if(badBonzoArg != null) plugin.BadBonzo.set(badBonzoArg);
+		if(plugin.BadBonzo.enabled()) {
+			org.bukkit.Bukkit.broadcast(Utils.msg("<gold><bold>BAD BONZO<reset><gray> is on.  <light_purple>Experimental."));
+		}
 		if(plugin.WatcherFix.enabled()) {
 			org.bukkit.Bukkit.broadcast(Utils.msg("<gold><bold>FIX WATCHER BUG<reset><gray> is on.  "
 					+ "<red>This run is not valid for the Clear or Full Run leaderboards."));

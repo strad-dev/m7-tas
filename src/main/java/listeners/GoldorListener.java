@@ -41,11 +41,11 @@ public class GoldorListener implements Listener {
 
 	// ------ Per-device runtime state (cleared on each phase via Goldor's resetState by reference) ------
 
-	// Simon Says STAND-IN (classic + Perfect RNG): GLOBAL click count, not per-player; SIMON_STANDIN_CLICKS activates, no time limit.
-	// Reset on completion and serverSetup (resetSimon).  Realistic uses the real GoldorSimonSays behind the same entry point.
+	// Simon Says STAND-IN (classic): GLOBAL click count, not per-player; SIMON_STANDIN_CLICKS activates, no time limit.
+	// Reset on completion and serverSetup (resetSimon).  Live modes use the real GoldorSimonSays behind the same entry point.
 	private int simonClicks = 0;
 	private static final int SIMON_STANDIN_CLICKS = 12;
-	// Last tick each player registered a Simon Says click (start button, and the 16 grid buttons in realistic).
+	// Last tick each player registered a Simon Says click (start button, and the 16 grid buttons in the live modes).
 	// One right-click can surface as TWO same-tick PlayerInteractEvents (off-hand while sneaking, and/or vanilla
 	// re-firing after PlayerPacketInterceptor resets its dedupe), so same-tick repeats per player are dropped.
 	// Real clicks land on different ticks, so nothing is rate-limited.  Stale entries self-expire via the comparison.
@@ -290,7 +290,7 @@ public class GoldorListener implements Listener {
 		}
 	}
 
-	/** True if (bx,by,bz) takes S1 clicks: start button always, grid buttons in realistic.  Same lookup as {@link #tryRegisterSimonClick}. */
+	/** True if (bx,by,bz) takes S1 clicks: start button always, grid buttons in the live modes.  Same lookup as {@link #tryRegisterSimonClick}. */
 	private static boolean isSimonInput(Player p, int bx, int by, int bz) {
 		if(bx == SIMON_BX && by == SIMON_BY && bz == SIMON_BZ) return true;
 		return simonCellAt(p, bx, by, bz) >= 0;
@@ -302,7 +302,7 @@ public class GoldorListener implements Listener {
 	 * the "i1" sign at {@code 110 121 93}.
 	 */
 	private static int simonCellAt(Player p, int bx, int by, int bz) {
-		if(!damage.Difficulty.realPuzzles()) return -1;
+		if(!damage.Difficulty.realSimonSays()) return -1;
 		int idx = GoldorSimonSays.cellAtButton(bx, by, bz);
 		if(idx < 0) return -1;
 		return Tag.BUTTONS.isTagged(p.getWorld().getBlockAt(bx, by, bz).getType()) ? idx : -1;
@@ -331,11 +331,11 @@ public class GoldorListener implements Listener {
 
 	/**
 	 * Start-button click once the phase is live; re-checks state, so safe deferred.  Two devices, one entry (like
-	 * {@link #registerSharpHit}): realistic goes to {@link GoldorSimonSays}, classic + Perfect RNG to the 12-click stand-in.
+	 * {@link #registerSharpHit}): the live modes go to {@link GoldorSimonSays}, classic to the 12-click stand-in.
 	 */
 	private void processSimonClick(Player p, boolean wasDeferred) {
 		if(cannotSolve(p)) return;
-		if(damage.Difficulty.realPuzzles()) {
+		if(damage.Difficulty.realSimonSays()) {
 			GoldorSimonSays.INSTANCE.onStartClick(p, wasDeferred);
 			return;
 		}
@@ -350,10 +350,10 @@ public class GoldorListener implements Listener {
 		}
 	}
 
-	/** Grid-button click once the phase is live, realistic only.  Re-checks mode and spectator gate since a deferred click can land after either changed. */
+	/** Grid-button click once the phase is live, live modes only.  Re-checks mode and spectator gate since a deferred click can land after either changed. */
 	private void processSimonCell(Player p, int cellIdx, boolean wasDeferred) {
 		if(cannotSolve(p)) return;
-		if(!damage.Difficulty.realPuzzles()) return;
+		if(!damage.Difficulty.realSimonSays()) return;
 		GoldorSimonSays.INSTANCE.onCellClick(p, cellIdx, wasDeferred);
 	}
 

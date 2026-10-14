@@ -412,6 +412,7 @@ public final class ClearManager {
 		if(s == null || s.found) return;
 		s.found = true;
 		Utils.playSecretFoundSound(p, s.type);
+		items.tools.Dungeonbreaker.onSecret(p);
 		if(s.blessing != null) awardBlessing(p, s.blessing);
 		if(s.room != null && s.room.type == RoomType.TRAP && s.blessing != null
 				&& s.blessing.type() == Utils.BlessingType.POWER && s.blessing.level() == 2) {

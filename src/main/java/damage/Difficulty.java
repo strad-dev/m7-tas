@@ -22,12 +22,12 @@ import plugin.Utils;
  * </table>
  *
  * Classic lets a player focus on movement and routing without keeping up four debuffs and a blessing count. The
- * TAS was reasoned in it; it's the default.
+ * TAS was reasoned in it. Realistic is the default.
  * <p>
  * <b>Perfect RNG and realistic differ only in what's done BY HAND</b>, never damage. Perfect RNG rolls in your
- * favour: easy terminal boards, Sharp Shooter in the one learnable order, fixed dragon colours, the pet you need is
- * the pet you have. Realistic takes that away: {@link #realPuzzles()} turns on generated terminals, real Simon Says
- * / Arrow Align, rolled Sharp Shooter and dragon orders; {@link #manualPets()} makes you run your own pet menu.
+ * favour: easy terminal boards, Sharp Shooter in the one learnable order, fixed dragon colours. Realistic takes that
+ * away: {@link #realPuzzles()} turns on generated terminals, real Arrow Align, rolled Sharp Shooter, dragon orders and
+ * Simon Says sequences. Both run their own pet menu ({@link #manualPets()}).
  * <p>
  * Ask {@link #liveInputs()}, never {@code == PERFECT_RNG}, which silently drops realistic to the classic tables.
  * <p>
@@ -37,23 +37,22 @@ import plugin.Utils;
  * First of the {@code /dungeonsettings}; {@link Mayor} is independent and stacks with any mode.
  */
 public enum Difficulty {
-	/** TAS style: all four debuffs applied, blessings maxed, nobody dies. Default. */
-	CLASSIC("classic", "Classic"),
 	/**
-	 * Live damage inputs and death, every roll goes your way: stand-in terminal boards, fixed Sharp Shooter and
-	 * dragon orders, assumed pet table. <b>Used to be called "Realistic"</b>; old "Ultra Realistic" folded into it
-	 * (see network {@code Leaderboards} migration) and is where the stand-in boards come from.
-	 */
-	PERFECT_RNG("perfect_rng", "Perfect RNG"),
-	/**
-	 * Perfect RNG plus everything a real run makes you do by hand: generated terminals, working devices, your own
-	 * pet menu.
+	 * Perfect RNG plus everything a real run makes you do by hand: generated terminals, working devices.
 	 * <p>
 	 * <b>Id is {@code rta}, not {@code realistic}</b>: {@code realistic} is on disk as the id of every run under what
 	 * is now Perfect RNG, and board keys are permanent, so reusing it would make old and new files indistinguishable.
-	 * "RTA Mode" was the design-time name.
+	 * "RTA Mode" was the design-time name. Default.
 	 */
-	REALISTIC("rta", "Realistic");
+	REALISTIC("rta", "Realistic"),
+	/**
+	 * Live damage inputs and death, every roll goes your way: stand-in terminal boards, fixed Sharp Shooter and
+	 * dragon orders. <b>Used to be called "Realistic"</b>; old "Ultra Realistic" folded into it
+	 * (see network {@code Leaderboards} migration) and is where the stand-in boards come from.
+	 */
+	PERFECT_RNG("perfect_rng", "Perfect RNG"),
+	/** TAS style: all four debuffs applied, blessings maxed, nobody dies. */
+	CLASSIC("classic", "Classic");
 
 	// Maxed blessing levels, the classic table (§0). TOTAL levels: sum over every blessing of that type collected.
 	private static final int MAX_POWER = 29;
@@ -61,7 +60,7 @@ public enum Difficulty {
 	private static final int MAX_WISDOM = 14;
 	private static final int MAX_STONE = 9;
 
-	private static Difficulty current = CLASSIC;
+	private static Difficulty current = REALISTIC;
 
 	private final String id;
 	private final String displayName;
@@ -158,8 +157,8 @@ public enum Difficulty {
 	}
 
 	/**
-	 * Real generated content instead of stand-ins: {@code goldor/GoldorTerminalGui} boards, working Simon Says and
-	 * Arrow Align, rolled orders (Sharp Shooter's nine, the Wither King's five dragons). Realistic only. Changes no
+	 * Real generated content instead of stand-ins: {@code goldor/GoldorTerminalGui} boards, working Arrow Align, rolled
+	 * orders (Sharp Shooter's nine, the Wither King's five dragons, Simon Says' sequence). Realistic only. Changes no
 	 * damage or timing, only how much work a section is, so nothing in {@code damage/} may read it.
 	 */
 	public static boolean realPuzzles() {
@@ -167,11 +166,19 @@ public enum Difficulty {
 	}
 
 	/**
-	 * Player manages their own pet ({@code pets/}). Realistic only; the one case {@code damage/Pet.forPlayer} stops
+	 * The real S1 device ({@code goldor/GoldorSimonSays}) instead of the 12-click stand-in. Both live modes; outside
+	 * {@link #realPuzzles()} it plays one fixed order.
+	 */
+	public static boolean realSimonSays() {
+		return current != CLASSIC;
+	}
+
+	/**
+	 * Player manages their own pet ({@code pets/}). Both live modes; the one case {@code damage/Pet.forPlayer} stops
 	 * answering from its table.
 	 */
 	public static boolean manualPets() {
-		return current == REALISTIC;
+		return current != CLASSIC;
 	}
 
 	// What a blessing is WORTH lives in damage/Blessings. This class owns only which LEVEL is in force.

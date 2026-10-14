@@ -58,9 +58,8 @@ import java.util.UUID;
  * removes the session first. Same structure as {@code loadout/LoadoutEditor.finish}: missing one of those four
  * paths is how items disappear.
  *
- * <h2>Realistic only</h2>
- * {@code /pets} refuses in other modes and says why. In classic and Perfect RNG the pet is assumed from what the
- * player does and wears ({@code damage/Pet.forPlayer}), so a menu would offer a choice nothing reads.
+ * <h2>Live modes only</h2>
+ * {@code /pets} refuses in classic and says why. There the pet is assumed from what the player does and wears ({@code damage/Pet.forPlayer}), so a menu would offer a choice nothing reads.
  * {@code /petloadout} opens in any mode: it only edits layout and autopet settings.
  */
 public final class PetMenu implements CommandExecutor, Listener {
@@ -135,7 +134,7 @@ public final class PetMenu implements CommandExecutor, Listener {
 		// /petloadout only edits settings, so it opens in any mode.
 		if(!arranging && !Difficulty.manualPets()) {
 			// Say which mode it needs: opening onto an assumed pet would be worse than not opening.
-			sender.sendMessage(Utils.msg("<red>Pets are yours to pick only in <white>Realistic</white> mode."));
+			sender.sendMessage(Utils.msg("<red>Pets are yours to pick only in <white>Perfect RNG</white> and <white>Realistic</white> mode."));
 			sender.sendMessage(Utils.msg("<gray>The mode is <white>" + Difficulty.current().displayName()
 					+ "</white>, where your pet follows from what you are doing."));
 			return true;

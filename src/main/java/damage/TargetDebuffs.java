@@ -2,13 +2,15 @@ package damage;
 
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * State on a TARGET, not an attacker (MAP.md §7), so it helps EVERY attacker. None of it stacks with itself.
+ * State on a TARGET (MAP.md §7), so it helps EVERY attacker. None of it stacks with itself, except Lethality across
+ * attackers: each player builds their own 4 and every player's live stacks multiply into the one defense.
  *
  * <table>
  *   <caption>What lives here</caption>
@@ -16,7 +18,7 @@ import java.util.UUID;
  *   <tr><td>Ice Spray Wand</td><td>x1.1 damage taken</td><td>every enemy within 8 blocks of the caster's eyes</td><td>5s</td></tr>
  *   <tr><td>Twilight Arrow Poison</td><td>x1.1 damage taken</td><td>any enemy hit by a bow</td><td>20s</td></tr>
  *   <tr><td>Duplex V</td><td>x1.5 FIRE damage</td><td>any enemy hit by that bow</td><td>60s</td></tr>
- *   <tr><td>Lethality VI</td><td>x0.91 defense per stack, MULTIPLICATIVE, 4 stacks</td><td>hitting</td><td>4s, refreshed by every further hit</td></tr>
+ *   <tr><td>Lethality VI</td><td>x0.91 defense per stack, MULTIPLICATIVE, 4 stacks PER ATTACKER, all attackers' combined</td><td>hitting</td><td>4s, refreshed by that attacker's further hits</td></tr>
  *   <tr><td>Last Breath</td><td>-10% defense per stack, ADDITIVE then applied once, 5 stacks</td><td>landing arrows</td><td><b>permanent</b></td></tr>
  * </table>
  *
@@ -33,8 +35,8 @@ import java.util.UUID;
  * Per damage INSTANCE, not per tick: each Terminator arrow debuffs before its own damage; Cleave reads what the main
  * hit left.
  * <p>
- * Durations §7 left [TBD]: Lethality 4s, refreshed by every hit, so it holds while anyone attacks; Last Breath
- * PERMANENT until death or run reset. Live modes only; classic assumes both maxed.
+ * Durations §7 left [TBD]: Lethality 4s, refreshed by the same player's hits, so one player's stacks lapse even
+ * while someone else attacks; Last Breath PERMANENT until death or run reset. Live modes only; classic assumes both maxed.
  */
 public final class TargetDebuffs {
 	private TargetDebuffs() {}
@@ -56,9 +58,14 @@ public final class TargetDebuffs {
 	/** FIRE only: multiplies Fire Aspect procs, not the hit. */
 	private static final double DUPLEX_FIRE_MULTIPLIER = 1.5;
 
+	/** One attacker's Lethality on one target. */
+	private static final class Lethality {
+		int stacks;
+		int expiry;
+	}
+
 	private static final class State {
-		int lethalityStacks;
-		int lethalityExpiry;
+		final Map<UUID, Lethality> lethality = new HashMap<>();
 		/** No expiry: Last Breath is permanent. */
 		int lastBreathStacks;
 		int iceSprayExpiry;
@@ -83,13 +90,13 @@ public final class TargetDebuffs {
 
 	// ===================== applying =====================
 
-	/** Cap 4, before the hit resolves. Each stack refreshes the window; 4s of silence drops the lot. */
-	public static void applyLethality(LivingEntity target) {
-		if(target == null) return;
-		State s = state(target);
-		if(!live(s.lethalityExpiry)) s.lethalityStacks = 0;
-		s.lethalityStacks = Math.min(s.lethalityStacks + 1, LETHALITY_MAX_STACKS);
-		s.lethalityExpiry = MinecraftServer.currentTick + LETHALITY_STACK_TICKS;
+	/** Cap 4 per attacker, before the hit resolves. Each stack refreshes the window; 4s of silence drops the lot. */
+	public static void applyLethality(LivingEntity target, Player attacker) {
+		if(target == null || attacker == null) return;
+		Lethality l = state(target).lethality.computeIfAbsent(attacker.getUniqueId(), k -> new Lethality());
+		if(!live(l.expiry)) l.stacks = 0;
+		l.stacks = Math.min(l.stacks + 1, LETHALITY_MAX_STACKS);
+		l.expiry = MinecraftServer.currentTick + LETHALITY_STACK_TICKS;
 	}
 
 	/**
@@ -116,13 +123,17 @@ public final class TargetDebuffs {
 
 	// ===================== reading =====================
 
-	/** After Lethality and Last Breath. Classic: both maxed (§0), a flag on the input, no second path. */
+	/**
+	 * After Lethality (every attacker's live stacks) and Last Breath. Classic: one player's 4 and 5 (§0), a flag on the
+	 * input, no second path.
+	 */
 	public static double reducedDefense(LivingEntity target, double baseDefense) {
 		int lethality = LETHALITY_MAX_STACKS;
 		int lastBreath = LAST_BREATH_MAX_STACKS;
 		if(!Difficulty.debuffsAssumed() && target != null) {
 			State s = state(target);
-			lethality = live(s.lethalityExpiry) ? s.lethalityStacks : 0;
+			lethality = 0;
+			for(Lethality l : s.lethality.values()) if(live(l.expiry)) lethality += l.stacks;
 			lastBreath = s.lastBreathStacks; // permanent, no window
 		}
 		double reduced = baseDefense * Math.pow(LETHALITY_PER_STACK, lethality);

@@ -133,6 +133,7 @@ public final class M7tas extends JavaPlugin {
 
 		// One driver for every DoT chain (Fire Aspect, Venomous), not a task per proc.
 		damage.Procs.start();
+		items.tools.Dungeonbreaker.start();
 
 		PlayerInventoryBackup.startInventorySync();
 		MaxSpeedSync.start();

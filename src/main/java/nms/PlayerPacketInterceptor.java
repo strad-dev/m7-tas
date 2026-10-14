@@ -110,9 +110,9 @@ public class PlayerPacketInterceptor extends ChannelDuplexHandler {
 			});
 		}
 		// Right-click abilities are dispatched straight from the packet (UseItemOn -> RIGHT_CLICK_BLOCK, UseItem ->
-		// RIGHT_CLICK_AIR), bypassing vanilla's same-block interact suppression. RIGHT_CLICK_GATE_TICKS dedupes
-		// against vanilla's event; it's 2 ticks, not 1, because the two are separate main-thread tasks and a tick
-		// boundary can fall between them.
+		// RIGHT_CLICK_AIR), bypassing vanilla's same-block interact suppression. CustomItems.rightClickGate dedupes
+		// against vanilla's event across a tick, since the two are separate main-thread tasks and a tick boundary can
+		// fall between them.
 		//
 		// Server executor, not Bukkit runTask: same FIFO queue as the packet handler, so it runs just before vanilla
 		// processes the packet.

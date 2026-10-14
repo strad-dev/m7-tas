@@ -42,15 +42,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * Ability dispatcher: resolves the held stack to an {@code items.Item}, applies the gates that belong to the
  * CLICK rather than the item, and calls the item's hook. Abilities live under {@code items/}, cooldowns in
  * {@code plugin/Cooldowns}, drop-key abilities in {@code abilities/}. What stays here: spectator gate (vanilla
- * doesn't do it; a ghost is a spectator), Trap room right-click ban, {@link #RIGHT_CLICK_GATE_TICKS},
+ * doesn't do it; a ghost is a spectator), Trap room right-click ban, {@link #rightClickGate},
  * {@link #lastRightBlockTick}, {@link #lastLeftClickAbilityTick}, and the melee/mage-beam tests, which depend on
  * the holder's CLASS.
  *
  * <h2>ONE CLICK, TWO DISPATCHES</h2>
  * A real player's right-click reaches {@link #handleCustomItems} twice, from {@code PlayerPacketInterceptor}
- * and from {@code PlayerInteractEvent}, as two main-thread tasks. On a lagging tick the server stops draining
- * its queue and the pair straddles a boundary: a DOUBLE etherwarp. They are at most ONE tick apart (adjacent in
- * one FIFO queue), so {@link #RIGHT_CLICK_GATE_TICKS} is 2 and <b>must not be set to 1</b>.
+ * and from {@code PlayerInteractEvent} (or {@code PlayerInteractAtEntityEvent}), as two main-thread tasks. On a
+ * lagging tick the server stops draining its queue and the pair straddles a boundary: a DOUBLE etherwarp. They are
+ * at most ONE tick apart (adjacent in one FIFO queue), so {@link #rightClickGate} drops a dispatch within a tick of
+ * one from the OTHER source. Its own source is capped at one per tick only: a flat 2-tick cap halved anyone
+ * clicking faster than 10 CPS (the Jerry-chine "fires too slowly").
  * <p>
  * The pair can PRINT the same {@code [tick: N]}: {@code Utils.debug} stamps {@code getTickCount()}, bumped in
  * {@code tickServer} AFTER the task drain, while {@code currentTick} is bumped at the top of {@code runServer}.
@@ -58,12 +60,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CustomItems implements Listener {
 
-	/**
-	 * Right-click ability rate cap in ticks. TWO, not one (see class javadoc). Every ability has a longer cooldown
-	 * anyway; the Terminator only records a packet tick. Vanilla items (pearls, food) never reach this gate.
-	 */
-	private static final int RIGHT_CLICK_GATE_TICKS = 2;
-	private static final Map<UUID, Integer> rightClickGate = new ConcurrentHashMap<>();
+	/** Last right-click dispatch per player: [0] packet (no event), [1] Bukkit event. See class javadoc. */
+	private static final Map<UUID, int[]> rightClickGates = new ConcurrentHashMap<>();
 
 	/**
 	 * Tick of last RIGHT_CLICK_BLOCK per player. A block right-click sends UseItemOn (BLOCK) then UseItem (AIR);
@@ -387,14 +385,22 @@ public class CustomItems implements Listener {
 				int blockTick = lastRightBlockTick.getOrDefault(p.getUniqueId(), Integer.MIN_VALUE);
 				if(tick == blockTick || tick == blockTick + 1) return;
 			}
-			if(ability != null && ability.hasRightClick() && tick >= rightClickGate.getOrDefault(p.getUniqueId(), 0)) {
-				rightClickGate.put(p.getUniqueId(), tick + RIGHT_CLICK_GATE_TICKS);
+			if(ability != null && ability.hasRightClick() && rightClickGate(p, e != null, tick)) {
 				fired = fire(p, ability, new Cast(p, stack, clickedBlock, action, tick), true);
 			}
 		}
 
 		// Cancel left-click events only if an ability actually fired
 		if(e != null && fired) e.setCancelled(true);
+	}
+
+	/** One per tick per source, and none within a tick of the other source's (the same click seen twice). */
+	private static boolean rightClickGate(Player p, boolean fromEvent, int tick) {
+		int[] last = rightClickGates.computeIfAbsent(p.getUniqueId(), k -> new int[]{Integer.MIN_VALUE / 2, Integer.MIN_VALUE / 2});
+		int self = fromEvent ? 1 : 0;
+		if(tick <= last[self] || tick - last[1 - self] <= 1) return false;
+		last[self] = tick;
+		return true;
 	}
 
 	/**
@@ -443,6 +449,7 @@ public class CustomItems implements Listener {
 		Cooldowns.clearAll();
 		RagnarockAxe.reset(); // also kills any wind-up chain still in flight
 		AxeOfTheShredded.reset();
+		items.tools.Dungeonbreaker.reset();
 	}
 
 	/** Class (drop-key) cooldowns only. Called on boss start ({@code WitherLord.start}); item cooldowns carry over. */

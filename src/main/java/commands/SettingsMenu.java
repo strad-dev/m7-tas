@@ -2,6 +2,7 @@ package commands;
 
 import damage.Difficulty;
 import damage.Mayor;
+import plugin.BadBonzo;
 import plugin.WatcherFix;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -26,17 +27,17 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * One-row <b>M7 Settings</b> menu behind bare {@code /dungeonsettings}: difficulty, mayor and Fix Watcher Bug, one
+ * One-row <b>M7 Settings</b> menu behind bare {@code /dungeonsettings}: difficulty, mayor, Fix Watcher Bug and Bad Bonzo, one
  * button each; lore lists every value with the active one bold, each click steps to the next.
  *
- * <p><b>Standalone only.</b> On the network those three are party settings (they ride the practice request so a
+ * <p><b>Standalone only.</b> On the network these are party settings (they ride the practice request so a
  * party can't be mixed-mode) and the lobby has its own copy of this menu. This one flips server-wide globals,
  * which on a shared instance would change what someone else's run is scored under, so {@link #suppressed()}
  * refuses to open it when the network plugin is installed and {@code /dungeonsettings} falls back to text. The
  * text form works either way; the network gates it to admins (see {@code M7Bridge}).
  */
 public final class SettingsMenu implements Listener {
-	private static final int DIFFICULTY_SLOT = 2, MAYOR_SLOT = 4, WATCHER_FIX_SLOT = 6;
+	private static final int DIFFICULTY_SLOT = 1, MAYOR_SLOT = 3, WATCHER_FIX_SLOT = 5, BAD_BONZO_SLOT = 7;
 
 	/** On every button so right-click isn't a secret. */
 	private static final String CYCLE_HINT = "<yellow>Click to change <dark_gray>(right-click to go back)";
@@ -82,6 +83,17 @@ public final class SettingsMenu implements Listener {
 		fixLore.add(CYCLE_HINT);
 		inv.setItem(WATCHER_FIX_SLOT, button(Material.SMITHING_TABLE, "<gold>Fix Watcher Bug", fixLore));
 
+		List<String> bonzoLore = new ArrayList<>();
+		for(BadBonzo b : BadBonzo.values()) bonzoLore.add(option(b == BadBonzo.current(), colour(b), label(b)));
+		bonzoLore.add("");
+		bonzoLore.add("<gray>This should make Bonzo Staff behave closer");
+		bonzoLore.add("<gray>to actual Hypixel, but I think Hypixel's");
+		bonzoLore.add("<gray>implementation is bullshit.");
+		bonzoLore.add("<light_purple>Experimental");
+		bonzoLore.add("");
+		bonzoLore.add(CYCLE_HINT);
+		inv.setItem(BAD_BONZO_SLOT, button(Material.BREEZE_ROD, "<gold>Bad Bonzo", bonzoLore));
+
 		p.openInventory(inv);
 	}
 
@@ -102,6 +114,8 @@ public final class SettingsMenu implements Listener {
 			DungeonSettings.applyMayor(back ? Mayor.toggleBack() : Mayor.toggle());
 		} else if(e.getRawSlot() == WATCHER_FIX_SLOT) {
 			DungeonSettings.applyWatcherFix(back ? WatcherFix.toggleBack() : WatcherFix.toggle());
+		} else if(e.getRawSlot() == BAD_BONZO_SLOT) {
+			DungeonSettings.applyBadBonzo(back ? BadBonzo.toggleBack() : BadBonzo.toggle());
 		} else {
 			return;
 		}
@@ -142,6 +156,20 @@ public final class SettingsMenu implements Listener {
 		return switch(w) {
 			case OFF -> "<gray>";
 			case ON -> "<gold>";
+		};
+	}
+
+	private static String colour(BadBonzo b) {
+		return switch(b) {
+			case OFF -> "<gray>";
+			case ON -> "<gold>";
+		};
+	}
+
+	private static String label(BadBonzo b) {
+		return switch(b) {
+			case OFF -> "Off";
+			case ON -> "On";
 		};
 	}
 

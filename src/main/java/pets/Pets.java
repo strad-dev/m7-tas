@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Who has which pet out, menu layout, autopet rules: all of realistic mode's pet state, in memory and on disk.
+ * Who has which pet out, menu layout, autopet rules: all of the live modes' pet state, in memory and on disk.
  *
  * <h2>The damage pipeline's entry point</h2>
  * {@code damage/Pet.forPlayer} calls {@link #equippedDamagePet(Player)} whenever {@link Difficulty#manualPets()}
@@ -49,7 +49,7 @@ public final class Pets {
 
 	/**
 	 * Pet out before the menu is ever opened. Golden Dragon, same as the assumed fallthrough in
-	 * {@code damage/Pet.forPlayer}, so switching to realistic changes nobody's damage until they pick.
+	 * {@code damage/Pet.forPlayer}, so switching to a live mode changes nobody's damage until they pick.
 	 */
 	public static final PetType DEFAULT_PET = PetType.GOLDEN_DRAGON;
 
@@ -104,7 +104,7 @@ public final class Pets {
 
 	/**
 	 * Action-bar segment {@code " | [Lvl N] Name"}, appended by {@code Utils.sendActionBar} and drawn by
-	 * {@code death/Deaths}' fallback when no HUD owns the bar. <b>Realistic only</b>, other modes assume the pet.
+	 * {@code death/Deaths}' fallback when no HUD owns the bar. <b>Live modes only</b>, classic assumes the pet.
 	 * Nothing for spectators.
 	 */
 	public static String actionBarSegment(Player p) {

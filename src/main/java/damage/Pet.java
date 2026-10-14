@@ -4,8 +4,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.PlayerInventory;
 
 /**
- * Equipped pet. Outside realistic it's assumed, not owned (MAP.md §1.13): it follows from what the player is doing
- * and wearing. In realistic ({@link Difficulty#manualPets()}) the player chooses and {@code pets/} answers.
+ * Equipped pet. In classic it's assumed, not owned (MAP.md §1.13): it follows from what the player is doing
+ * and wearing. In the live modes ({@link Difficulty#manualPets()}) the player chooses and {@code pets/} answers.
  * <p>
  * Three separate contributions, NOT the same numbers:
  * <ul>
@@ -24,10 +24,10 @@ public enum Pet {
 	CROW(StatBlock.of(Stat.INTELLIGENCE, 225, Stat.ABILITY_DAMAGE, 30)),
 	/** Archer / Berserk during the Wither King phase. */
 	ENDER_DRAGON(StatBlock.of(Stat.STRENGTH, 75, Stat.CRIT_CHANCE, 15, Stat.CRIT_DAMAGE, 90)),
-	/** Cheat-death pet ({@code death/CheatDeath}), pickable in realistic. No assumption table returns it. */
+	/** Cheat-death pet ({@code death/CheatDeath}), pickable in the live modes. No assumption table returns it. */
 	PHOENIX(StatBlock.of(Stat.STRENGTH, 90, Stat.INTELLIGENCE, 225)),
 	/**
-	 * Assumed with a Racing Helmet or Cow Hat, pickable in realistic. Int is its only damage-relevant stat (Speed,
+	 * Assumed with a Racing Helmet or Cow Hat, pickable in the live modes. Int is its only damage-relevant stat (Speed,
 	 * Magic Find, Pet Luck unmodelled). Holds Unalloyed Speed, not a relic, which raises a speed CAP and multiplies
 	 * nothing, so this is the raw level-100 figure.
 	 */
@@ -86,7 +86,7 @@ public enum Pet {
 	}
 
 	/**
-	 * Realistic: the player's choice wins ({@link Difficulty#manualPets()}), a map read in {@code pets/Pets} since
+	 * Live modes: the player's choice wins ({@link Difficulty#manualPets()}), a map read in {@code pets/Pets} since
 	 * this runs per aggregate. That branch sits ABOVE the hat override on purpose: a hat forces the Black Cat only
 	 * when nobody chose, so a hat no longer costs a Realistic player their pet. Move it below the hat test to put
 	 * that cost back.

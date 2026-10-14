@@ -21,8 +21,9 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Real S1 Simon Says: the 4x4 obsidian grid lights a sequence, the party plays it back on buttons. Realistic only;
- * classic and Perfect RNG keep the 12-click stand-in in {@code GoldorListener.processSimonClick}.
+ * Real S1 Simon Says: the 4x4 obsidian grid lights a sequence, the party plays it back on buttons. Both live modes;
+ * classic keeps the 12-click stand-in in {@code GoldorListener.processSimonClick}. Realistic rolls the cells, Perfect
+ * RNG always plays {@link #FIXED_ORDER}.
  * <ol>
  *   <li>Start click opens a {@value #SPAM_WINDOW_TICKS}-tick spam window; it is click #1.</li>
  *   <li>Each further start click queues a lantern, counted per player.</li>
@@ -66,6 +67,9 @@ public final class GoldorSimonSays {
 	private static final int COLS = GRID[0].length;
 	/** Also the ceiling on sequence length. */
 	private static final int CELL_COUNT = ROWS * COLS;
+
+	/** Perfect RNG's sequence, {@code row * COLS + col}: [1,1], [1,2], [2,2], [2,1], clockwise round the middle. */
+	private static final int[] FIXED_ORDER = {5, 6, 10, 9};
 
 	/** One block west of its cell, {@code face=wall, facing=west} like the start button. */
 	private static final int BUTTON_DX = -1;
@@ -242,8 +246,9 @@ public final class GoldorSimonSays {
 
 		// N distinct cells, so at most 16. Only bites on a big team spread thin (five people could reach 19 clicks on 4 skips).
 		int n = Math.max(1, Math.min(clicks, CELL_COUNT));
-		List<Integer> played = randomDistinctCells(n);
 		int answerLen = Math.min(skips + 1, n);
+		List<Integer> played = damage.Difficulty.realPuzzles() ? randomDistinctCells(n) : fixedOpening(n, answerLen);
+		n = played.size();
 		sequence.clear();
 		sequence.addAll(played.subList(n - answerLen, n));
 		inputIdx = 0;
@@ -279,8 +284,12 @@ public final class GoldorSimonSays {
 		}, (long) toPlay.size() * FLASH_TICKS);
 	}
 
-	/** A cell not already in the sequence. */
+	/** A cell not already in the sequence; Perfect RNG's next {@link #FIXED_ORDER} cell. */
 	private void appendCell() {
+		if(!damage.Difficulty.realPuzzles()) {
+			if(sequence.size() < FIXED_ORDER.length) sequence.add(FIXED_ORDER[sequence.size()]);
+			return;
+		}
 		List<Integer> free = new ArrayList<>(CELL_COUNT);
 		for(int i = 0; i < CELL_COUNT; i++) if(!sequence.contains(i)) free.add(i);
 		if(free.isEmpty()) return; // unreachable at target 5; never repeat a cell
@@ -292,6 +301,16 @@ public final class GoldorSimonSays {
 		for(int i = 0; i < CELL_COUNT; i++) all.add(i);
 		java.util.Collections.shuffle(all, ThreadLocalRandom.current());
 		return new ArrayList<>(all.subList(0, Math.min(n, CELL_COUNT)));
+	}
+
+	/** Lead-in lanterns are the non-{@link #FIXED_ORDER} cells in index order, then the first {@code answerLen} of it. */
+	private static List<Integer> fixedOpening(int n, int answerLen) {
+		List<Integer> fixed = new ArrayList<>();
+		for(int c : FIXED_ORDER) fixed.add(c);
+		List<Integer> out = new ArrayList<>(CELL_COUNT);
+		for(int i = 0; i < CELL_COUNT && out.size() < n - answerLen; i++) if(!fixed.contains(i)) out.add(i);
+		out.addAll(fixed.subList(0, answerLen));
+		return out;
 	}
 
 	private static int skipsFor(int clicks) {
