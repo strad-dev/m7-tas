@@ -42,7 +42,8 @@ public final class Goldor extends WitherLord {
 	private static final double CORE_TARGET_Y = 116.0;
 	private static final double CORE_APPROACH_SPEED = 0.8;
 	private static final double Y_DESCENT_SPEED = 0.1;
-	// Live modes: the core approach and core damage wait for every live player inside blocks 38..70, 109..157, 53..119.
+	// Live modes: patrol, not the core approach, and no core damage until every live player is inside blocks 38..70,
+	// 109..157, 53..119.
 	private static final BoundingBox CORE_ROOM = new BoundingBox(38, 109, 53, 71, 158, 120);
 
 	// S3 frame wall (-2,119,74 to -2,125,80), expanded 1 each way for the frame entity's offset from its block.
@@ -80,7 +81,7 @@ public final class Goldor extends WitherLord {
 	private boolean phaseActive = false;
 	/** Before this he's on patrol and takes no health damage. */
 	private boolean coreOpen = false;
-	/** Core open AND everyone inside {@link #CORE_ROOM}; latched. Until then core hits are patrol hits. */
+	/** Core open AND everyone inside {@link #CORE_ROOM}; latched. Until then he patrols and core hits are patrol hits. */
 	private boolean coreEngaged = false;
 	/** Last patrol hit; halves patrol speed for 10 ticks. */
 	private int lastDamagedTick = -1000;
@@ -519,8 +520,9 @@ public final class Goldor extends WitherLord {
 	 *       progress. Finish S2 while he walks S1 or S2 and you live; linger in S1 as he enters S2 and you die.</li>
 	 * </ul>
 	 * S4 is exempt from OVERTAKEN only, and only once open: before that it's fatal like any unopened section (it used
-	 * to be exempt from both, making S4 free parking all phase). The ring arithmetic gives this for free, since
-	 * {@code bossSectionIdx} never exceeds 3. Outside every corridor is never invalid.
+	 * to be exempt from both, making S4 free parking all phase). The arithmetic gives this for free, since
+	 * {@code bossSectionIdx} never exceeds 3. Overtaken is for good: once he reaches S4, S1-S3 stay fatal however many
+	 * laps he walks. Outside every corridor is never invalid.
 	 * <p>
 	 * 60t poll vs {@code CheatDeath}'s 60t shortest immunity: staying put is saved once, then dies. Intended.
 	 */
@@ -567,7 +569,7 @@ public final class Goldor extends WitherLord {
 	}
 
 	/**
-	 * See {@link #startInvalidLocationTicker}. No S4 special case, deliberately: the ring arithmetic already exempts
+	 * See {@link #startInvalidLocationTicker}. No S4 special case, deliberately: the arithmetic already exempts
 	 * it, and an explicit one swallowed the first rule too.
 	 */
 	private boolean isInvalidSection(int idx) {
@@ -578,16 +580,19 @@ public final class Goldor extends WitherLord {
 	/**
 	 * Goldor's corridor. TRACKED, not derived: he spawns at (80.5, 40.5), inside S4's box, which would kill a party in
 	 * S1 on the first sweep, and the loop would un-overtake stragglers every lap. Starts at S1;
-	 * {@link #trackBossSection} only steps to the NEXT corridor in ring order.
+	 * {@link #trackBossSection} only steps to the NEXT corridor, up to S4.
 	 */
 	private int bossSectionIdx = 0;
 
-	/** Single forward steps only. Between corridors reads -1 and is ignored; at 0.1/tick he can't skip one. */
+	/**
+	 * Single forward steps only, and S4 is the last: a lap back into S1 never makes S1-S3 safe again. Between
+	 * corridors reads -1 and is ignored; at 0.1/tick he can't skip one.
+	 */
 	private void trackBossSection() {
 		if(boss == null || !boss.isValid()) return;
 		int geo = sectionAt(boss.getLocation());
 		if(geo < 0) return;
-		if(geo == (bossSectionIdx + 1) % SECTION_BOUNDS.length) bossSectionIdx = geo;
+		if(geo == bossSectionIdx + 1) bossSectionIdx = geo;
 	}
 
 	/** -1 for none; first match in progression order wins. */
@@ -785,7 +790,8 @@ public final class Goldor extends WitherLord {
 		coreOpenTick = displayTick();
 		// Terminals split ends as the core opens.
 		instructions.bosses.WitherActions.recordSplit("Terminals", plugin.Utils.runTick());
-		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
+		// Live modes: he keeps patrolling until the party is in the core room (startCoreApproach stops it).
+		if(!damage.Difficulty.liveInputs()) stopPatrol();
 
 		sendChatMessage("You have done it, you destroyed the factory...");
 		setArmor(false);
@@ -837,6 +843,7 @@ public final class Goldor extends WitherLord {
 				if(!coreEngaged) {
 					if(!everyoneInCoreRoom()) return;
 					coreEngaged = true;
+					stopPatrol();
 				}
 				Location loc = boss.getLocation();
 				double x = loc.getX(), y = loc.getY(), z = loc.getZ();
@@ -872,6 +879,10 @@ public final class Goldor extends WitherLord {
 				}
 			}
 		}.runTaskTimer(M7tas.getInstance(), 1L, 1L);
+	}
+
+	private void stopPatrol() {
+		if(patrolTask != null && !patrolTask.isCancelled()) patrolTask.cancel();
 	}
 
 	private boolean everyoneInCoreRoom() {
